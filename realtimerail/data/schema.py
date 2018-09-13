@@ -21,8 +21,8 @@ class Route(Base):
     __tablename__ = 'routes'
 
     id = Column(Integer, primary_key=True)
-    route_id = Column(String)
-    system_id = Column(Integer, ForeignKey("systems.id"), index=True)
+    route_id = Column(String, index=True)
+    system_pri_key = Column(Integer, ForeignKey("systems.id"), index=True)
     frequency = Column(Float, nullable=True, default=None)
     running = Column(Boolean, default=False)
     color = Column(String)
@@ -32,6 +32,8 @@ class Route(Base):
     timetable_url = Column(String)
 
     system = relationship("System", back_populates="routes")
+    list_entries = relationship("RouteListEntry", back_populates="route",
+        order_by="RouteListEntry.position", cascade="all, delete-orphan")
 
     def __repr__(self):
         return 'Route {}'.format(route_id)
@@ -40,14 +42,15 @@ class Stop(Base):
     __tablename__ = 'stops'
 
     id = Column(Integer, primary_key=True)
-    stop_id = Column(String, unique=True)
-    station_id = Column(Integer, ForeignKey("stations.id"), index=True)
+    stop_id = Column(String, index=True)
+    station_pri_key = Column(Integer, ForeignKey("stations.id"), index=True)
     name = Column(String)
     longitude = Column(Numeric(precision=9, scale=6))
     lattitude = Column(Numeric(precision=9, scale=6))
 
     station = relationship("Station", back_populates="stops")
-    direction_names = relationship("DirectionName", back_populates="stop", cascade="all, delete-orphan")
+    direction_names = relationship("DirectionName", back_populates="stop",
+        cascade="all, delete-orphan")
 
 class Station(Base):
     __tablename__ = "stations"
@@ -64,13 +67,23 @@ class DirectionName(Base):
     __tablename__ = 'direction_names'
 
     id = Column(Integer, primary_key=True)
-    stop_id = Column(String, ForeignKey("stops.stop_id"), index=True)
+    stop_pri_key = Column(Integer, ForeignKey("stops.id"), index=True)
     direction = Column(String)
     name = Column(String)
     track = Column(String)
 
     stop = relationship("Stop", back_populates="direction_names")
 
+class RouteListEntry(Base):
+    __tablename__ = 'route_list_entries'
+
+    id = Column(Integer, primary_key=True)
+    stop_pri_key = Column(Integer, ForeignKey("stops.id"), index=True)
+    route_pri_key = Column(Integer, ForeignKey("routes.id"), index=True)
+    position = Column(Integer)
+
+    stop = relationship("Stop") #, back_populates="direction_names")
+    route = relationship("Route", back_populates="list_entries")
 
 """
 class ServiceAdvisory(Base):
@@ -81,6 +94,7 @@ class ServiceAdvisory(Base):
     time_posted = Column(String)
     message_type = Column(String)
 
+# is this really how we are doing this many-to-many relationship?
 class RouteServiceAdvisory(Base):
     __tablename__ = "route_service_advisories"
 

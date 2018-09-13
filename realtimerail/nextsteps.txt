@@ -1,0 +1,21 @@
+Main dev thread:
+ - next add a feeds.csv file and import that
+ - build out the basic route, station and stop services, feed GET method
+ - soft feed introduction: write the XML update code
+ - then incorporate the GTFS code!
+ - add the terminus abbr table and load the data. Can this be done in a way
+    that is not so specific to the NYC subway?
+
+
+
+Other tasks
+- Make route list entries better (rename). Add relationship to Stop
+    like daytime_routes, evening_routes etc.
+- write the feed health code, including having a database table that tracks
+    feed updates....or a protobuf file is probably better
+    Maybe need a feed runnable that deletes old feed data
+- write the optimized topological sort algorithm for generating routes lists
+    (better name than route lists?)
+- write the version of topological sort
+    that also takes additional paths to help order disconnected
+    components

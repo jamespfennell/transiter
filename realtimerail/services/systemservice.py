@@ -56,6 +56,7 @@ def _import_static_data(system):
     session = dbconnection.get_session()
 
     routes_data_file = os.path.join(agency_data_dir, 'routes.txt')
+    routes_by_route_id = {}
     with open(routes_data_file, mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         line_count = 0
@@ -69,6 +70,8 @@ def _import_static_data(system):
             route.long_name = row['route_long_name']
             route.description = row['route_desc']
             route.system = system
+
+            routes_by_route_id[route.route_id] = route
 
     stops_data_file = os.path.join(agency_data_dir, 'stops.txt')
     station_sets_by_stop_id = {}
@@ -124,7 +127,17 @@ def _import_static_data(system):
         system,
         stop_times_data_file
     )
-    
+    for (route_id, route_list) in route_lists.items():
+        route = routes_by_route_id[route_id]
+        position = 0
+        for stop_id in route_list:
+            route_list_entry = schema.RouteListEntry()
+            session.add(route_list_entry)
+            route_list_entry.route = route
+            route_list_entry.stop = stops_by_stop_id[stop_id]
+            route_list_entry.position = position
+            position += 1
+
     # The following two data imports are definitely custom logic, though
     # custom to the program rather than the NYC subway
     # Default other option: N=north, S=south ;)
