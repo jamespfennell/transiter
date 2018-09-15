@@ -1,7 +1,17 @@
-The new real time rail project
+# Transiter
+
+Transiter is a web service for distributing realtime transit information.
+When deployed, Transiter consumes data from transit agencies (typically in
+    GTFS realtime format), stores that data in a database and provides
+    access to it through a simple REST API.
+
+Transiter is currently in the initial development phase.
+Version 0.1 will be somewhere between a refactor and a total rewrite of the
+current backend of the realtimerail.nyc web app.
+
+## API endpoints
 
 
-API Endpoints: all under api/
 
 
 feeds/
