@@ -43,16 +43,13 @@ def update(feed_id):
         feed.system.system_id,
         feed.parser_module
         )
-    print(__name__)
     module = importlib.import_module(module_path, __name__)
     function = getattr(module, feed.parser_function)
-    with open('./realtimerail/ServiceStatusSubway.xml') as f:
+    with open('./realtimerail/l2.gtfs', 'rb') as f:
         content = f.read()
     #request = requests.get(feed.url)
     #content = request.content
-    m = hashlib.md5()
-    m.update(content.encode('utf-8'))
-    print(m.hexdigest())
+    #m = hashlib.md5()
+    #m.update(content.encode('utf-8'))
+    #print(m.hexdigest())
     function(feed, feed.system, content)
-    print(hash(content))
-    print('Updating')

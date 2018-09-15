@@ -21,3 +21,12 @@ Other tasks
     that also takes additional paths to help order disconnected
     components
 - find out when sqlalchemy triggers updates and use this to inform the sync
+- have a way to force reset the feeds
+- have a way to force reset the database
+
+
+
+
+PROTOCOL BUFFERS
+
+ protoc --python_out ./gtfsrealtime.py realtimerail/utils/protobuf/gtfs-realtime.proto
