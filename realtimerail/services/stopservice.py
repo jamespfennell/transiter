@@ -1,11 +1,11 @@
-from ..data import stopdata
+from ..data import stopdam
 
 
 def list():
 
     response = []
 
-    for stop in stopdata.list():
+    for stop in stopdam.list():
         stop_response = {
             'stop_id': stop.stop_id,
             'name': stop.name
@@ -20,7 +20,7 @@ def google_maps_url(location):
 
 def get(stop_id):
 
-    stop = stopdata.get(stop_id)
+    stop = stopdam.get(stop_id)
     response = {
         'stop_id': stop.stop_id,
         'name': stop.name,
@@ -52,4 +52,3 @@ def get(stop_id):
     response['directions'] = direction_names_response
 
     return response
-

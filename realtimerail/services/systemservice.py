@@ -122,6 +122,8 @@ def _import_static_data(system):
             station.system = system
             station_set.clear()
 
+    """
+    Commenting out as very intensive
     stop_times_data_file = os.path.join(agency_data_dir, 'stop_times.txt')
     route_lists = routelistutil.construct_route_lists_from_stop_times_file(
         system,
@@ -137,6 +139,7 @@ def _import_static_data(system):
             route_list_entry.stop = stops_by_stop_id[stop_id]
             route_list_entry.position = position
             position += 1
+    """
 
     # The following two data imports are definitely custom logic, though
     # custom to the program rather than the NYC subway
@@ -181,3 +184,15 @@ def _import_static_data(system):
             direction.track = row['track']
             direction.direction = row['direction']
             direction.stop = stops_by_stop_id[row['stop_id']]
+
+    feeds_data_file = os.path.join(custom_data_dir, 'feeds.csv')
+    with open(feeds_data_file, mode='r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        for row in csv_reader:
+            feed = schema.Feed()
+            session.add(feed)
+            feed.system = system
+            feed.feed_id = row['feed_id']
+            feed.url = row['url']
+            feed.parser_module = row['parser_module']
+            feed.parser_function = row['parser_function']

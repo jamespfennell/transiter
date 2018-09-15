@@ -1,0 +1,3 @@
+feed_id,url,parser_module,parser_function
+ServiceStatus,http://web.mta.info/status/ServiceStatusSubway.xml,servicestatusxmlupdater,update
+L,http://datamine.mta.info/mta_esi.php?key=18f496b0ab3ae1fbb1aa471e63377ce4&feed_id=2,gtfsupdater,update

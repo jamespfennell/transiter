@@ -1,14 +1,15 @@
 Main dev thread:
- - next add a feeds.csv file and import that
- - build out the basic route, station and stop services, feed GET method
- - soft feed introduction: write the XML update code
  - then incorporate the GTFS code!
+ - look at the current API and replicate it. Do this by
+    first documenting _everything_
  - add the terminus abbr table and load the data. Can this be done in a way
     that is not so specific to the NYC subway?
 
 
 
 Other tasks
+- Improve/clean up the NYC Subway xml file
+- Get rid of individuals DAMS, no needed. Generic dam or possibly factor
 - Make route list entries better (rename). Add relationship to Stop
     like daytime_routes, evening_routes etc.
 - write the feed health code, including having a database table that tracks
@@ -19,3 +20,4 @@ Other tasks
 - write the version of topological sort
     that also takes additional paths to help order disconnected
     components
+- find out when sqlalchemy triggers updates and use this to inform the sync

@@ -1,10 +1,16 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
 # TODO: put in UniqueConstraint on stop_ids
+
+status_messages_routes = Table(
+    'status_messages_routes', Base.metadata,
+    Column('status_message_pri_key', Integer, ForeignKey("status_messages.id")),
+    Column('route_pri_key', Integer, ForeignKey("routes.id"))
+)
 
 class System(Base):
     __tablename__ = 'systems'
@@ -14,8 +20,12 @@ class System(Base):
     name = Column(String, nullable=True)
     directory_hash = Column(String, nullable=True)
 
-    routes = relationship("Route", back_populates="system", cascade="all, delete-orphan")
-    stations = relationship("Station", back_populates="system", cascade="all, delete-orphan")
+    routes = relationship("Route", back_populates="system",
+        cascade="all, delete-orphan")
+    stations = relationship("Station", back_populates="system",
+        cascade="all, delete-orphan")
+    feeds = relationship("Feed", back_populates="system",
+        cascade="all, delete-orphan")
 
 class Route(Base):
     __tablename__ = 'routes'
@@ -35,8 +45,10 @@ class Route(Base):
     list_entries = relationship("RouteListEntry", back_populates="route",
         order_by="RouteListEntry.position", cascade="all, delete-orphan")
 
+    status_messages = relationship("StatusMessage", secondary="status_messages_routes",
+        back_populates="routes")
     def __repr__(self):
-        return 'Route {}'.format(route_id)
+        return 'Route {}'.format(self.route_id)
 
 class Stop(Base):
     __tablename__ = 'stops'
@@ -85,37 +97,41 @@ class RouteListEntry(Base):
     stop = relationship("Stop") #, back_populates="direction_names")
     route = relationship("Route", back_populates="list_entries")
 
-"""
-class ServiceAdvisory(Base):
-    __tablename__ = "service_advisories"
+class Feed(Base):
+    __tablename__ = 'feeds'
+    id = Column(Integer, primary_key=True)
+    system_id = Column(Integer, ForeignKey("systems.id"), index=True)
+    feed_id = Column(String, index=True)
+    url = Column(String)
+    parser_module = Column(String)
+    parser_function = Column(String)
+    last_sha1 = Column(String)
+
+    system = relationship("System", back_populates="feeds")
+
+class StatusMessage(Base):
+    __tablename__ = "status_messages"
 
     id = Column(Integer, primary_key=True)
+    message_id = Column(String)
     message = Column(String)
     time_posted = Column(String)
     message_type = Column(String)
 
-# is this really how we are doing this many-to-many relationship?
-class RouteServiceAdvisory(Base):
-    __tablename__ = "route_service_advisories"
 
-    id = Column(Integer, primary_key=True)
-    service_advisory_message = Column(Integer, ForeignKey("service_advisories.id"))
-    route_id = Column(String, ForeignKey("routes.route_id"))
+    routes = relationship("Route", secondary="status_messages_routes",
+        back_populates="status_messages")
+
+
+"""
+
+Need to make this less NYC subway specific
 class TerminusAbbr(Base):
     __tablename__ = "terminus_abbrs"
 
     id = Column(Integer, primary_key=True)
     abbreviation = Column(String)
     stop_id = Column(String, ForeignKey("stops.stop_id"), nullable=False, index=True)
-
-class ServiceEntry(Base):
-    __tablename__ = 'regular_service_entries'
-
-    id = Column(Integer, primary_key=True)
-    stop_id = Column(String, ForeignKey("stops.stop_id"), nullable=False, index=True)
-    route_id = Column(String, ForeignKey("routes.route_id"), nullable=False, index=True)
-    sequence_index = Column(Integer) #Index for when sorting it?
-    kind = Column(String) # Enum with Day, Night, Weekend?
 
 class Trips(Base):
     __tablename__ = 'trips'
