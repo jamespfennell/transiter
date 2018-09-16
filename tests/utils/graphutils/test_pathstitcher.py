@@ -46,6 +46,12 @@ class TestPathSticher(unittest.TestCase):
         self._process_test(paths, edges)
 
 
+    def test_stitch_7(self):
+        paths = [['a', 'b', 'c'], ['z', 'a', 'b']]
+        edges = set([('z', 'a'), ('a', 'b'), ('b', 'c')])
+        self._process_test(paths, edges)
+
+
     def _process_test(self, paths, edges):
         paths = [graphdatastructs.DirectedPath(path) for path in paths]
         graph = pathstitcher.stitch(paths)
