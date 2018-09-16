@@ -41,6 +41,9 @@ def update(feed, system, content):
         __name__
         )
     feed_json = gtfsutil.gtfs_to_json(content, nyc_subway_gtfs_extension)
+    feed_json = gtfsutil.restructure(feed_json)
+
+
 
     # transformed_json = gtfsutil.transform(feed_json,
     #    trip_extenion='a', stop_event_extension='b')
@@ -50,7 +53,11 @@ def update(feed, system, content):
 
     db_json = interpret_nyc_subway_gtfs_feed(feed_json)
 
-    #print(db_json)
+    gtfsutil.sync_to_db(db_json)
+    # For the sync step, compare with all route ids in db_json['route_ids']
+
+
+    #    print(jsonify(db_json))
 
 
 
@@ -139,8 +146,8 @@ def interpret_nyc_subway_gtfs_feed(data):
             continue
 
         # Checking for buggy trains: trains whose start time is in the past but have not been assigned
-        start_time = generate_trip_start_time(trip['trip_id'], trip['start_date'])
-        if trip['nyct_trip_descriptor']['is_assigned'] is False and (start_time.timestamp() - feed_timestamp <-300):
+        start_time = int(generate_trip_start_time(trip['trip_id'], trip['start_date']).timestamp())
+        if trip['nyct_trip_descriptor']['is_assigned'] is False and (start_time - feed_timestamp <-300):
             print('Buggy train {}; skipping.'.format(trip_uid))
             continue
 
@@ -152,10 +159,10 @@ def interpret_nyc_subway_gtfs_feed(data):
                     'trip_id' : trip_uid,
                     'route_id' : trip['route_id'],
                     'direction' : direction,
-                    'start_time' : start_time.astimezone(pytz.utc),
+                    'start_time' : start_time,
                     'train_id' : trip['nyct_trip_descriptor']['train_id'],
                     'is_assigned' : trip['nyct_trip_descriptor']['is_assigned'],
-                    'update_time' : feed_time,
+                    'last_update_time' : feed_time,
                     'current_status' : None,
                     'current_stop_sequence' : None
                     }
@@ -169,7 +176,7 @@ def interpret_nyc_subway_gtfs_feed(data):
             current_stop_sequence = entity['vehicle']['current_stop_sequence']
             update_time = timestamp_to_datetime(entity['vehicle']['timestamp'])
             trip_data.update({
-                'update_time' : update_time,
+                'last_update_time' : update_time,
                 'current_status' : entity['vehicle']['current_status'],
                 'current_stop_sequence' : entity['vehicle']['current_stop_sequence']
             })
@@ -190,7 +197,7 @@ def interpret_nyc_subway_gtfs_feed(data):
                         #'trip_id' : trip_uid,
                         'stop_id' : stop_time_update['stop_id'][0:3],
                         'direction' : direction,
-                        'future' : '1',
+                        'future' : True,
                         }
 
 
@@ -239,13 +246,13 @@ def interpret_nyc_subway_gtfs_feed(data):
                 first_stop_time = trip_data['stop_events'][0]['arrival_time']
                 if first_stop_time is None:
                     first_stop_time = trip_data['stop_events'][0]['departure_time']
-                if first_stop_time <= trip_data['update_time']:
-                    if current_timestamp() - trip_data['update_time'].timestamp() > 15:
+                if first_stop_time <= trip_data['last_update_time']:
+                    if current_timestamp() - trip_data['last_update_time'].timestamp() > 15:
                         trips_with_fake_first_stop.add(trip_data['trip_id'])
                         del trip_data['stop_events'][0]
 
         # The last stop is given by residual information from the last for loop
-        trip_data['terminating_stop_uid'] = stop_event_data['stop_id']
+        #trip_data['terminating_stop_uid'] = stop_event_data['stop_id']
 
     if len(trips_with_fake_first_stop) > 0:
         print('Some trips were deemed to have already left the first stop given:')
@@ -265,6 +272,7 @@ eastern = pytz.timezone('US/Eastern')
 
 
 def timestamp_to_datetime(timestamp):
+    return timestamp
     return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
 
 

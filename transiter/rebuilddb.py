@@ -1,6 +1,8 @@
-from data import dbconnection
-from data import schema
+from .data import dbconnection
+from .data import schema
 import sqlalchemy
+
+from .services import systemservice
 
 
 def create_database():
@@ -20,3 +22,4 @@ def create_tables():
 
 create_database()
 create_tables()
+systemservice.install('nycsubway')

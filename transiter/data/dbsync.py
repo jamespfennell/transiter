@@ -1,7 +1,11 @@
 from . import dbconnection
 
 
-def sync(DbObject, db_entities, new_entities, keys):
+def delete_from_db(session, entity):
+    session.delete(entity)
+
+
+def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_db):
     """
     This sync function only goes to one level
 
@@ -29,8 +33,8 @@ def sync(DbObject, db_entities, new_entities, keys):
     session = dbconnection.get_session()
 
     for id in ids_to_delete:
-        session.delete(id_to_db_entities[id])
-        del id_to_db_entities[id]
+        delete_function(session, id_to_db_entity[id])
+        del id_to_db_entity[id]
 
     for id in ids_to_create:
         new_entity = DbObject()

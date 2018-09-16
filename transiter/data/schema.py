@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -40,6 +40,7 @@ class Route(Base):
     long_name = Column(String)
     description = Column(String)
     timetable_url = Column(String)
+    last_update_time = Column(TIMESTAMP(timezone=True))
 
     system = relationship("System", back_populates="routes")
     list_entries = relationship("RouteListEntry", back_populates="route",
@@ -132,33 +133,38 @@ class TerminusAbbr(Base):
     id = Column(Integer, primary_key=True)
     abbreviation = Column(String)
     stop_id = Column(String, ForeignKey("stops.stop_id"), nullable=False, index=True)
+"""
 
-class Trips(Base):
+class Trip(Base):
     __tablename__ = 'trips'
 
     id = Column(Integer, primary_key=True)
-    trip_id = Column(String, unique=True)
-    route_id = Column(String, ForeignKey("routes.route_id"))
+    trip_id = Column(String, unique=True, index=True)
+    route_pri_key = Column(Integer, ForeignKey("routes.id"))
     direction = Column(String)
-    start_time = Column(String)
+    start_time = Column(TIMESTAMP(timezone=True))
     is_assigned = Column(Boolean)
     train_id = Column(String)
-    update_time = Column(String)
+    last_update_time = Column(TIMESTAMP(timezone=True))
     current_status = Column(Integer)
     current_stop_sequence = Column(Integer)
 
+    route = relationship("Route")
+    stop_events = relationship("StopEvent", back_populates="trip")
 
 class StopEvent(Base):
     __tablename__ = 'stop_events'
 
     id = Column(Integer, primary_key=True)
-    stop_id = Column(String, ForeignKey('stops.stop_id'))
-    trip_id = Column(String, ForeignKey('trips.trip_id'))
+    stop_pri_key = Column(Integer, ForeignKey('stops.id'))
+    trip_pri_key = Column(Integer, ForeignKey('trips.id'))
     future = Column(Boolean)
-    arrival_time = Column(Integer)
-    departure_time = Column(Integer)
-    update_time = Column(Integer)
+    arrival_time = Column(TIMESTAMP(timezone=True))
+    departure_time = Column(TIMESTAMP(timezone=True))
+    last_update_time = Column(TIMESTAMP(timezone=True))
     sequence_index = Column(Integer)
     scheduled_track = Column(String)
     actual_track = Column(String)
-"""
+
+    stop = relationship("Stop") #, back_populates="stop_events")
+    trip = relationship("Trip", back_populates="stop_events")

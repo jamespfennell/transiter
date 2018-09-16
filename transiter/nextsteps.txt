@@ -1,14 +1,16 @@
 Main dev thread:
- - then incorporate the GTFS code!
+ - The next step is to test the GTFS update code to ensure it's working.
+    Probaby the right time to create a fake database and make unittests
  - look at the current API and replicate it. Do this by
     first documenting _everything_
-- write unit tests for everything
- - add the terminus abbr table and load the data. Can this be done in a way
-    that is not so specific to the NYC subway?
 
 
 
 Other tasks
+- write unit tests for everything - for SQLALchemy can use sqllite
+ - add the terminus abbr table and load the data. Can this be done in a way
+    that is not so specific to the NYC subway?
+- Split up GTFS parser into NYC subway specific logic and restructure step
 - Improve/clean up the NYC Subway xml file
 - Get rid of individuals DAMS, no needed. Generic dam or possibly factor
 - Make route list entries better (rename). Add relationship to Stop
@@ -22,12 +24,12 @@ Other tasks
     that also takes additional paths to help order disconnected
     components
 - find out when sqlalchemy triggers updates and use this to inform the sync
-- have a way to force reset the feeds
-- have a way to force reset the database
+- have a way to force reset the feeds (admin service?)
+- have a way to force reset the database (admin service?)
+- make a system to download the latest GTFS static data from the transit agency
+    and check if up to date
+- add uniqueness and not null conditions to the schema
+- all of our SQL queries should be filtering on the transit system!!!!
 
-
-
-
-PROTOCOL BUFFERS
-
- protoc --python_out ./gtfsrealtime.py realtimerail/utils/protobuf/gtfs-realtime.proto
+ - put the protocol buffer command in the makefile
+    protoc --python_out ./gtfsrealtime.py realtimerail/utils/protobuf/gtfs-realtime.proto
