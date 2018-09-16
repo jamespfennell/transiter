@@ -22,7 +22,6 @@ def gtfs_to_json(content, extension=None):
         extension.activate()
     gtfs_feed = gtfs_realtime_pb2.FeedMessage()
     gtfs_feed.ParseFromString(content)
-    #print(jsonify(_parse_protobuf_message(gtfs_feed)))
     return(_parse_protobuf_message(gtfs_feed))
 
 def _identity(value):
@@ -38,13 +37,13 @@ def _parse_protobuf_message(message):
         # if descriptor.type = 11, this is a message field
         # Recursively parse it with the function
         # Otherwise just return the value
-        if descriptor.type == 11:
+        if descriptor.type == descriptor.TYPE_MESSAGE:
             parsing_function = _parse_protobuf_message
         else:
             parsing_function = _identity
 
         # If this is a repeated field
-        if descriptor.label == 3:
+        if descriptor.label == descriptor.LABEL_REPEATED:
             parsed_value = [parsing_function(v) for v in value]
         else:
             parsed_value = parsing_function(value)

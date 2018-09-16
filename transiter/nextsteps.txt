@@ -2,6 +2,7 @@ Main dev thread:
  - then incorporate the GTFS code!
  - look at the current API and replicate it. Do this by
     first documenting _everything_
+- write unit tests for everything
  - add the terminus abbr table and load the data. Can this be done in a way
     that is not so specific to the NYC subway?
 

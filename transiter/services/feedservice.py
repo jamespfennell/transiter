@@ -45,7 +45,7 @@ def update(feed_id):
         )
     module = importlib.import_module(module_path, __name__)
     function = getattr(module, feed.parser_function)
-    with open('./realtimerail/l2.gtfs', 'rb') as f:
+    with open('./transiter/l2.gtfs', 'rb') as f:
         content = f.read()
     #request = requests.get(feed.url)
     #content = request.content

@@ -51,7 +51,6 @@ def update(feed, system, content):
     db_json = interpret_nyc_subway_gtfs_feed(feed_json)
 
     #print(db_json)
-    print(jsonify(db_json))
 
 
 
