@@ -1,2 +1,2 @@
 test:
-	nosetests --rednose -v
+	nosetests --with-coverage --rednose -v
