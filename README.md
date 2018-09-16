@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master)](https://coveralls.io/github/jamespfennell/transiter?branch=master) [![Build Status](https://travis-ci.org/jamespfennell/transiter.svg?branch=master)](https://travis-ci.org/jamespfennell/transiter)
+
 # Transiter
 
 Transiter is a web service for distributing realtime transit information.
