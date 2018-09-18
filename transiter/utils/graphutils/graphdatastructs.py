@@ -120,7 +120,6 @@ class DirectedGraph():
         return DirectedPath(label_list)
 
 
-"""
 
 def construct_graph_from_edge_tuples(edges):
 
@@ -128,19 +127,22 @@ def construct_graph_from_edge_tuples(edges):
     for edge in edges:
         for tag in edge:
             if tag not in tag_to_vertex:
-                tag_to_vertex[tag] = DirectedGraphNode(tag)
+                tag_to_vertex[tag] = DirectedGraphVertex(tag)
     for (tag_1, tag_2) in edges:
-        add_directed_graph_edge(tag_to_vertex[tag_1], tag_to_vertex[tag_2])
+
+        tag_to_vertex[tag_1].next.add(tag_to_vertex[tag_2])
+        tag_to_vertex[tag_2].prev.add(tag_to_vertex[tag_1])
 
     graph = DirectedGraph()
     for vertex in tag_to_vertex.values():
-        if len(vertex._prev) == 0:
+        if len(vertex.prev) == 0:
             graph.sources.add(vertex)
-        if len(vertex._next) == 0:
-            graph.sinks.add(vertex)
 
     return graph
-"""
+
+
+
+
 
 class DirectedGraphVertex():
     def __init__(self, label):

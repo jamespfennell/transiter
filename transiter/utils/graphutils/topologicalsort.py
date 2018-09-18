@@ -40,14 +40,3 @@ def sort(graph):
         del vertex.t_next
         del vertex.t_prev
     return graphdatastructs.SortedDirectedGraph(graph, sorted_graph)
-
-
-
-
-def test_sort():
-    edges = [('a', 'b'), ('b', 'c'), ('d', 'c'), ('c', 'e'), ('c', 'f'), ('f', 'g')]
-    graph = construct_graph_from_edge_tuples(edges)
-    sorted_graph = topological_sort(graph)
-    for vertex in sorted_graph:
-        print(vertex.label)
-    print('Hello')
