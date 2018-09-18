@@ -1,8 +1,8 @@
 
 class DirectedPath():
 
-    def __init__(self):
-        self._vertices = []
+    #def __init__(self):
+    #    self._vertices = []
 
     def __init__(self, label_list):
         self._vertices = [DirectedPathVertex(label) for label in label_list]
@@ -60,8 +60,8 @@ class DirectedGraph():
         self.sources = set()
 
     # TODO: implmenet this and use it
-    def add_edge(vertex_a, vertex_b):
-        pass
+    #def add_edge(vertex_a, vertex_b):
+    #    pass
 
     def vertices(self):
         def add_vertices_from_vertex(vertex):

@@ -4,7 +4,7 @@ from transiter.utils.graphutils import topologicalsort
 
 
 class TestTopologicalSort(unittest.TestCase):
-    def test_stitch_1(self):
+    def test_sort(self):
         edges = [('a', 'b'), ('b', 'c'), ('d', 'c'), ('c', 'e'), ('c', 'f'), ('f', 'g')]
         graph = graphdatastructs.construct_graph_from_edge_tuples(edges)
         sorted_graph = topologicalsort.sort(graph)
