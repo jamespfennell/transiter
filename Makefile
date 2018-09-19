@@ -1,5 +1,5 @@
 test:
-	nosetests --with-coverage --rednose -v tests
+	nosetests --with-coverage --cover-package=transiter --rednose -v tests
 
 refresh-db:
 	python -m transiter.rebuilddb
