@@ -90,6 +90,8 @@ def archive_function_factory(cutoff):
 #to_timestamp(int)
 # Should accept system as a parameter
 # Should be inside the dbsync instead ...
+# IN the dbsyncutil
+# Call this sync_trip_data
 def sync_to_db(data):
 
     # get all the routes first

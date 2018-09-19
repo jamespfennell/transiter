@@ -9,19 +9,26 @@ class TestGtfsUtil(unittest.TestCase):
 
         self.assertDictEqual(json, _create_json())
 
+GTFS_REALTIME_VERSION = '2.0'
+INCREMENTALITY = gtfs.FeedHeader.Incrementality.Value('FULL_DATASET')
+TIMESTAMP = 100000
+
+ENTITY_1_ID = '1'
+ENTITY_2_ID = '2'
+
 def _create_gtfs():
     root = gtfs.FeedMessage()
     header = root.header
 
-    header.gtfs_realtime_version = "2.0"
-    root.header.incrementality = 0 #=header.Incrementality.Value('FULL_DATASET')
-    header.timestamp = 1000
+    header.gtfs_realtime_version = GTFS_REALTIME_VERSION
+    root.header.incrementality = INCREMENTALITY
+    header.timestamp = TIMESTAMP
 
     entity_1 = root.entity.add()
-    entity_1.id = "1"
+    entity_1.id = ENTITY_1_ID
 
     entity_2 = root.entity.add()
-    entity_2.id = "2"
+    entity_2.id = ENTITY_2_ID
 
 
     print(root)
@@ -31,16 +38,16 @@ def _create_gtfs():
 def _create_json():
     json = {
         'header': {
-            'gtfs_realtime_version': '2.0',
-            'incrementality': 0,
-            'timestamp': 1000
+            'gtfs_realtime_version': GTFS_REALTIME_VERSION,
+            'incrementality': INCREMENTALITY,
+            'timestamp': TIMESTAMP
         },
         'entity': [
             {
-            'id': '1'
+            'id': ENTITY_1_ID
             },
             {
-            'id': '2'
+            'id': ENTITY_2_ID
             }
         ]
     }

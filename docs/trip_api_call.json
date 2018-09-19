@@ -1,0 +1,207 @@
+{ 
+    "route_id" : "L",
+    "update_time" : 1537316659,
+    "origin_name" : "Canarsie - Rockaway Pkwy",
+    "origin_stop_uid" : "L29",
+    "start_time" : "19:56",
+    "is_assigned" : 1,
+    "trip_uid" : "LN1537314960",
+    "full_dataset" : true,
+    "stops" : [ 
+        { 
+            "stop_uid" : "L29",
+            "arrival_time" : null,
+            "departure_time" : "19:56",
+            "name" : "Canarsie - Rockaway Pkwy",
+            "sequence_index" : 1,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L28",
+            "arrival_time" : "19:57",
+            "departure_time" : "19:58",
+            "name" : "E 105 St",
+            "sequence_index" : 2,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L27",
+            "arrival_time" : "19:59",
+            "departure_time" : "19:59",
+            "name" : "New Lots Av",
+            "sequence_index" : 3,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L26",
+            "arrival_time" : "20:01",
+            "departure_time" : "20:01",
+            "name" : "Livonia Av",
+            "sequence_index" : 4,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L25",
+            "arrival_time" : "20:02",
+            "departure_time" : "20:02",
+            "name" : "Sutter Av",
+            "sequence_index" : 5,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L24",
+            "arrival_time" : "20:04",
+            "departure_time" : "20:04",
+            "name" : "Atlantic Av",
+            "sequence_index" : 6,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L22",
+            "arrival_time" : "20:06",
+            "departure_time" : "20:06",
+            "name" : "Broadway Jct",
+            "sequence_index" : 7,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L21",
+            "arrival_time" : "20:11",
+            "departure_time" : "20:11",
+            "name" : "Bushwick Av - Aberdeen St",
+            "sequence_index" : 8,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L20",
+            "arrival_time" : "20:11",
+            "departure_time" : "20:11",
+            "name" : "Wilson Av",
+            "sequence_index" : 9,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L19",
+            "arrival_time" : "20:13",
+            "departure_time" : "20:13",
+            "name" : "Halsey St",
+            "sequence_index" : 10,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L17",
+            "arrival_time" : "20:14",
+            "departure_time" : "20:14",
+            "name" : "Myrtle - Wyckoff Avs",
+            "sequence_index" : 11,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L16",
+            "arrival_time" : "20:16",
+            "departure_time" : "20:16",
+            "name" : "DeKalb Av",
+            "sequence_index" : 12,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L15",
+            "arrival_time" : "20:17",
+            "departure_time" : "20:18",
+            "name" : "Jefferson St",
+            "sequence_index" : 13,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L14",
+            "arrival_time" : "20:19",
+            "departure_time" : "20:19",
+            "name" : "Morgan Av",
+            "sequence_index" : 14,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L13",
+            "arrival_time" : "20:20",
+            "departure_time" : "20:21",
+            "name" : "Montrose Av",
+            "sequence_index" : 15,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L12",
+            "arrival_time" : "20:22",
+            "departure_time" : "20:22",
+            "name" : "Grand St",
+            "sequence_index" : 16,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L11",
+            "arrival_time" : "20:23",
+            "departure_time" : "20:23",
+            "name" : "Graham Av",
+            "sequence_index" : 17,
+            "future" : 0
+        },
+        { 
+            "stop_uid" : "L10",
+            "arrival_time" : "20:24",
+            "departure_time" : "20:24",
+            "name" : "Lorimer St",
+            "sequence_index" : 18,
+            "future" : 1
+        },
+        { 
+            "stop_uid" : "L08",
+            "arrival_time" : "20:26",
+            "departure_time" : "20:26",
+            "name" : "Bedford Av",
+            "sequence_index" : 19,
+            "future" : 1
+        },
+        { 
+            "stop_uid" : "L06",
+            "arrival_time" : "20:30",
+            "departure_time" : "20:30",
+            "name" : "1 Av",
+            "sequence_index" : 20,
+            "future" : 1
+        },
+        { 
+            "stop_uid" : "L05",
+            "arrival_time" : "20:31",
+            "departure_time" : "20:31",
+            "name" : "3 Av",
+            "sequence_index" : 21,
+            "future" : 1
+        },
+        { 
+            "stop_uid" : "L03",
+            "arrival_time" : "20:32",
+            "departure_time" : "20:32",
+            "name" : "Union Sq - 14 St",
+            "sequence_index" : 22,
+            "future" : 1
+        },
+        { 
+            "stop_uid" : "L02",
+            "arrival_time" : "20:33",
+            "departure_time" : "20:33",
+            "name" : "6 Av",
+            "sequence_index" : 23,
+            "future" : 1
+        },
+        { 
+            "stop_uid" : "L01",
+            "arrival_time" : "20:36",
+            "departure_time" : null,
+            "name" : "8 Av",
+            "sequence_index" : 24,
+            "future" : 1
+        }
+    ],
+    "train_id" : "0L 1956+RPY/8AV",
+    "terminating_stop_name" : "8 Av",
+    "terminating_stop_uid" : "L01"
+}

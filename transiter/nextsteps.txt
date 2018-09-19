@@ -1,6 +1,6 @@
 Main dev thread:
  - The next step is to test the GTFS update code to ensure it's working.
-    Probaby the right time to create a fake database and make unittests
+    Probably the right time to create a fake database and make unittests
  - look at the current API and replicate it. Do this by
     first documenting _everything_
 
@@ -30,6 +30,8 @@ Other tasks
     and check if up to date
 - add uniqueness and not null conditions to the schema
 - all of our SQL queries should be filtering on the transit system!!!!
+- could speed up sync_trip_data by doing one query to retrieve all stop_events
 
- - put the protocol buffer command in the makefile
-    protoc --python_out ./gtfsrealtime.py realtimerail/utils/protobuf/gtfs-realtime.proto
+
+Testing with sqlalchemy:
+https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
