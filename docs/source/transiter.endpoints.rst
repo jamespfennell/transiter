@@ -4,14 +4,6 @@ transiter.endpoints package
 Submodules
 ----------
 
-transiter.endpoints.abstractservice module
-------------------------------------------
-
-.. automodule:: transiter.endpoints.abstractservice
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 transiter.endpoints.feedendpoints module
 ----------------------------------------
 

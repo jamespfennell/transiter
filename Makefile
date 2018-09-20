@@ -3,3 +3,6 @@ test:
 
 refresh-db:
 	python -m transiter.rebuilddb
+
+refresh-docs:
+	cd docs; rm -r source; sphinx-apidoc -o source ../transiter; make html
