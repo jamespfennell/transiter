@@ -41,6 +41,7 @@ def update(feed, system, content):
         __name__
         )
     feed_json = gtfsutil.gtfs_to_json(content, nyc_subway_gtfs_extension)
+    #print(jsonify(feed_json))
     feed_json = gtfsutil.restructure(feed_json)
 
 
@@ -67,205 +68,88 @@ def interpret_nyc_subway_gtfs_feed(data):
     Output: json containing data represented in the same way as the Transiter DB
     This is where NYC Subway specific logic/intepretation/cleanin goes
     """
+    trips_to_delete = set()
+    for trip in data['trips']:
+        trip['direction'] = trip['direction'][0]
+        #if trip['direction'] == '':
+        #    trip['direction'] = 'N'
+        #else:
+        #    trip['direction'] = 'S'
 
-    header = data['header']
-    # Read header information from the feed: the time it was created, and the routes contained within.
-    feed_timestamp = header['timestamp']
-    if feed_timestamp == 0:
-        print('Invalid feed, raw feed text:')
-        print(gtfs_feed)
-        raise InvalidGTFSFile('Invalid GTFS file.')
-    feed_time = timestamp_to_datetime(feed_timestamp)
-    feed_route_ids = set()
-    actual_feed_route_ids = set()
-    nyct_feed_header = header['nyct_feed_header']
-    for route_info in nyct_feed_header['trip_replacement_period']:
-        route_id = route_info['route_id']
-        # The routes declared in the feeds are buggy
-        # and don't correspond exactly to what's in the feed.
-        if route_id == "S":
-            feed_route_ids.add("GS")
-        elif route_id == "5":
-            feed_route_ids.add("5")
-        elif route_id == "6":
-            feed_route_ids.add("6")
-            feed_route_ids.add("6X")
-        elif route_id == "SI":
-            feed_route_ids.add("SS")
-            feed_route_ids.add("SI")
-        else:
-            feed_route_ids.add(route_id)
-
-    if ("6" in feed_route_ids) and ("7" in feed_route_ids):
-        feed_route_ids.discard("7")
-
-    # Now iterate over trips in the feed, placing the trip data in memory
-    # Each trip corresponds to two different entities in the feed file: a trip_update entity and a vehicle entity
-    # (the latter provided only if the trip has been assigned). Both entities contain basic trip information in a
-    # trip field.
-    trips = {}
-    trips_with_fake_first_stop = set()
-    for entity in data['entity']:
-        # Based on which type of entity, the location of the trip data is different.
-        if 'trip_update' in entity:
-            trip = entity['trip_update']['trip']
-        if 'vehicle' in entity:
-            trip = entity['vehicle']['trip']
-
-        # Generate the trip_uid. First determine the direction
-        if trip['nyct_trip_descriptor']['direction'] == 1:
-            direction = 'N'
-        else:
-            direction = 'S'
         # There is a bug (as of Jan 31 2018) that southbound E trains are marked as northbound and vice-versa.
         # So for E trains, the direction needs to be inverted
         # Also for 5 trains, the id 5X is not meaningful so it's just mapped to 5
         if trip['route_id'] == 'E':
-            direction = invert_direction(direction)
+            trip['direction'] = invert_direction(trip['direction'])
         if trip['route_id'] == '5X':
             trip['route_id'] = '5'
-        if trip['route_id'] not in feed_route_ids:
-            # Actually in the logs I'm seeing a lot of route_id = ''
-            print('Found trip in feed with route "{}" not present in routes declared in header.'.format(trip.route_id))
-            #with open('tmp/problems-bad-routes.txt','a') as f:
-            #    f.write('{} - {}\n'.format(trip.route_id, list(feed_route_ids)))
+        if trip['route_id'] == '':
+            trips_to_delete.add(trip['trip_id'])
             continue
-        actual_feed_route_ids.add(trip['route_id'])
 
         # Now generate the trip_uid and the start time
         try:
+            # TODO: just pass the trip dictionary
             trip_uid = generate_trip_uid(
                 trip['trip_id'],
                 trip['start_date'],
                 trip['route_id'],
-                direction
+                trip['direction']
                 )
         except Exception as e:
             print('Could not generate trip_uid; skipping.')
             print(e)
+            trips_to_delete.add(trip['trip_id'])
             continue
+        start_time = generate_trip_start_time(trip['trip_id'],
+                                              trip['start_date'])
+        trip['start_time'] = start_time
+        trip['trip_id'] = trip_uid
+        del trip['train_id']
 
+
+        # TODO: reactivate this when you've had more coffee
         # Checking for buggy trains: trains whose start time is in the past but have not been assigned
-        start_time = int(generate_trip_start_time(trip['trip_id'], trip['start_date']).timestamp())
-        if trip['nyct_trip_descriptor']['is_assigned'] is False and (start_time - feed_timestamp <-300):
-            print('Buggy train {}; skipping.'.format(trip_uid))
-            continue
+        #start_time = int(generate_trip_start_time(trip['trip_id'], trip['start_date']).timestamp())
+        #if trip['nyct_trip_descriptor']['is_assigned'] is False and (start_time - feed_timestamp <-300):
+        #    print('Buggy train {}; skipping.'.format(trip_uid))
+        #    continue
 
-        # If the basic trip_uid settings have already been imported, do nothing; otherwise, import then.
-        if trip_uid in trips:
-            trip_data = trips[trip_uid]
-        else:
-            trip_data = {
-                    'trip_id' : trip_uid,
-                    'route_id' : trip['route_id'],
+        for stop_event in trip['stop_events']:
+
+            # There is a bug (as of Jan 31 2018) that southbound E trains are marked as northbound and vice-versa.
+            # So for E trains, the direction needs to be inverted
+            direction = stop_event['stop_id'][3:4]
+            if trip['route_id'] == 'E':
+                direction = invert_direction(direction)
+            # Basic information
+            stop_event.update({
+                    #'trip_id' : trip_uid,
+                    'stop_id' : stop_event['stop_id'][0:3],
                     'direction' : direction,
-                    'start_time' : start_time,
-                    'train_id' : trip['nyct_trip_descriptor']['train_id'],
-                    'is_assigned' : trip['nyct_trip_descriptor']['is_assigned'],
-                    'last_update_time' : feed_time,
-                    'current_status' : None,
-                    'current_stop_sequence' : None
-                    }
-            if trip['route_id'] == "":
-                # Probaby this was already caught above already
-                print('Buggy train {} (no route id); skipping.'.format(trip_uid))
-                continue
-            trips[trip_uid] = trip_data
-
-        if 'vehicle' in entity:
-            current_stop_sequence = entity['vehicle']['current_stop_sequence']
-            update_time = timestamp_to_datetime(entity['vehicle']['timestamp'])
-            trip_data.update({
-                'last_update_time' : update_time,
-                'current_status' : entity['vehicle']['current_status'],
-                'current_stop_sequence' : entity['vehicle']['current_stop_sequence']
-            })
+                    'future' : True,
+                    })
 
 
-
-        if 'trip_update' in entity:
-            trip_data['stop_events'] = []
-            current_stop_sequence = 0
-            for stop_time_update in entity['trip_update']['stop_time_update']:
-                # There is a bug (as of Jan 31 2018) that southbound E trains are marked as northbound and vice-versa.
-                # So for E trains, the direction needs to be inverted
-                direction = stop_time_update['stop_id'][3:4]
-                if trip['route_id'] == 'E':
-                    direction = invert_direction(direction)
-                # Basic information
-                stop_event_data = {
-                        #'trip_id' : trip_uid,
-                        'stop_id' : stop_time_update['stop_id'][0:3],
-                        'direction' : direction,
-                        'future' : True,
-                        }
-
-
-                # Arrival/departure time information
-                if 'arrival' in stop_time_update and +stop_time_update['arrival']['time'] != 0:
-                    stop_event_data['arrival_time'] = timestamp_to_datetime(stop_time_update['arrival']['time'])
-                else:
-                    stop_event_data['arrival_time'] = None
-                if 'departure' in stop_time_update and stop_time_update['departure']['time'] != 0:
-                    stop_event_data['departure_time'] = timestamp_to_datetime(stop_time_update['departure']['time'])
-                else:
-                    stop_event_data['departure_time'] = None
-
-                # Track information
-                nyct_stop_time_update = stop_time_update['nyct_stop_time_update']
-                stop_event_data['scheduled_track'] = nyct_stop_time_update['scheduled_track']
-                if 'actual_track' in nyct_stop_time_update:
-                    stop_event_data['actual_track'] = nyct_stop_time_update['actual_track']
-                else:
-                    stop_event_data['actual_track'] = None
-
-                # Sequence index data (provisional if the trip has been assigned)
-                current_stop_sequence += 1
-                stop_event_data['sequence_index'] = current_stop_sequence
-
-                trip_data['stop_events'].append(stop_event_data)
-
-
-        # This following condition checks that both the vehicle and trip_update entities respectively have been imported.
-        # If they have been, the sequence indices should be updated to factor in the number of stops already passed
-        # (which is given by the current_stop_sequence field in the vehicle entity
-        if trip_data['current_stop_sequence'] is not None and 'stop_events' in trip_data:
-            # Update the stop sequence indices
-            current_stop_sequence = trip_data['current_stop_sequence']
-            for stop_event_data in trip_data['stop_events']:
-                current_stop_sequence += 1
-                stop_event_data['sequence_index'] = current_stop_sequence
-
-            # There is a 'problem' with the MTA feed whereby a stop may be in the feed even if it has passed.
-            # This happens when the feed data is only updated at stops.
-            # So when going from A -> B, the train needs to reach B before noting that it has left A
-            # The mark of this scenario is that the arrival time at A is the same as the update time
-            # In this case then, we ignore the stop if the update time is more than 15 seconds ago -- time for the train to have left.
-            # To avoid a bug, this ignoring only happens if there are more than 2 stops left.
-            if len(trip_data['stop_events'])>1:
-                first_stop_time = trip_data['stop_events'][0]['arrival_time']
-                if first_stop_time is None:
-                    first_stop_time = trip_data['stop_events'][0]['departure_time']
-                if first_stop_time <= trip_data['last_update_time']:
-                    if current_timestamp() - trip_data['last_update_time'].timestamp() > 15:
-                        trips_with_fake_first_stop.add(trip_data['trip_id'])
-                        del trip_data['stop_events'][0]
-
-        # The last stop is given by residual information from the last for loop
-        #trip_data['terminating_stop_uid'] = stop_event_data['stop_id']
-
-    if len(trips_with_fake_first_stop) > 0:
-        print('Some trips were deemed to have already left the first stop given:')
-        print(trips_with_fake_first_stop)
-    response = {
-            'timestamp' : header['timestamp'],
-            'actual_route_ids' : list(actual_feed_route_ids),
-            'route_ids' : list(feed_route_ids),
-            'trips' : list(trips.values())
-            }
+        # TODO: reactivate this when you've had more coffee
+        # There is a 'problem' with the MTA feed whereby a stop may be in the feed even if it has passed.
+        # This happens when the feed data is only updated at stops.
+        # So when going from A -> B, the train needs to reach B before noting that it has left A
+        # The mark of this scenario is that the arrival time at A is the same as the update time
+        # In this case then, we ignore the stop if the update time is more than 15 seconds ago -- time for the train to have left.
+        # To avoid a bug, this ignoring only happens if there are more than 2 stops left.
+        """
+        if len(trip['stop_events'])>1:
+            first_stop_time = trip['stop_events'][0]['arrival_time']
+            if first_stop_time is None:
+                first_stop_time = trip_data['stop_events'][0]['departure_time']
+            if first_stop_time <= trip_data['last_update_time']:
+                if current_timestamp() - trip_data['last_update_time'].timestamp() > 15:
+                    trips_with_fake_first_stop.add(trip_data['trip_id'])
+                    del trip_data['stop_events'][0]
+        """
     print('Parsing complete.')
-    return response
-
+    return data
 
 
 eastern = pytz.timezone('US/Eastern')

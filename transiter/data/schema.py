@@ -48,6 +48,7 @@ class Route(Base):
 
     status_messages = relationship("StatusMessage", secondary="status_messages_routes",
         back_populates="routes")
+
     def __repr__(self):
         return 'Route {}'.format(self.route_id)
 
@@ -146,7 +147,7 @@ class Trip(Base):
     is_assigned = Column(Boolean)
     train_id = Column(String)
     last_update_time = Column(TIMESTAMP(timezone=True))
-    current_status = Column(Integer)
+    current_status = Column(String)
     current_stop_sequence = Column(Integer)
 
     route = relationship("Route")

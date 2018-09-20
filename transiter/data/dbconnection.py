@@ -11,7 +11,7 @@ def get_session():
     return Session()
 
 #Need to this to allow nesting of read sessions
-# Fail hard if a nested write session is atttempted
+# Fail hard if a nested write session is attempted
 @decorator
 def unit_of_work(func, *args, **kw):
     session = Session()

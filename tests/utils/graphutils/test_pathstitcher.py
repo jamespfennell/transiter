@@ -9,12 +9,10 @@ class TestPathSticher(unittest.TestCase):
         edges = set([('b','w'), ('w', 'c')])
         self._process_test(paths, edges)
 
-
     def test_stitch_2(self):
         paths = [['a', 'b', 'c'], ['d', 'b', 'c']]
         edges = set([('a', 'b'), ('d', 'b'), ('b', 'c')])
         self._process_test(paths, edges)
-
 
     def test_stitch_3(self):
         paths = [['a', 'b', 'c'], ['a', 'b', 'd']]

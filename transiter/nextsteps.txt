@@ -1,12 +1,9 @@
 Main dev thread:
- - The next step is to test the GTFS update code to ensure it's working.
-    Probably the right time to create a fake database and make unittests
- - look at the current API and replicate it. Do this by
-    first documenting _everything_
-
+ - Need to document the API
 
 
 Other tasks
+    3. And then somehow need to test the new GTFS DB sync code. Hard!
 - write unit tests for everything - for SQLALchemy can use sqllite
  - add the terminus abbr table and load the data. Can this be done in a way
     that is not so specific to the NYC subway?

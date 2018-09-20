@@ -34,7 +34,116 @@ class GtfsExtension():
 
 
 def restructure(content):
-    return content
+
+    data = content
+
+    header = data['header']
+    # Read header information from the feed: the time it was created, and the routes contained within.
+    #feed_timestamp = header['timestamp']
+    #if feed_timestamp == 0:
+    #    print('Invalid feed, raw feed text:')
+    #    print(gtfs_feed)
+    #    raise InvalidGTFSFile('Invalid GTFS file.')
+    #feed_time = timestamp_to_datetime(feed_timestamp)
+    #feed_route_ids = set()
+    actual_feed_route_ids = set()
+
+    # Now iterate over trips in the feed, placing the trip data in memory
+    # Each trip corresponds to two different entities in the feed file: a trip_update entity and a vehicle entity
+    # (the latter provided only if the trip has been assigned). Both entities contain basic trip information in a
+    # trip field.
+    trips = {}
+    for entity in data['entity']:
+        # Based on which type of entity, the location of the trip data is different.
+        if 'trip_update' in entity:
+            trip = entity['trip_update']['trip']
+        if 'vehicle' in entity:
+            trip = entity['vehicle']['trip']
+
+        actual_feed_route_ids.add(trip['route_id'])
+
+        # Now generate the trip_uid and the start time
+        try:
+            trip_uid = trip['trip_id']
+        except Exception as e:
+            print('Could not generate trip_uid; skipping.')
+            print(e)
+            continue
+
+        # If the basic trip_uid settings have already been imported, do nothing; otherwise, import then.
+        if trip_uid in trips:
+            trip_data = trips[trip_uid]
+        else:
+            trip_data = {
+                    'trip_id' : trip_uid,
+                    'route_id' : trip['route_id'],
+                    'start_date': trip['start_date'],
+                    'current_status': None,
+                    'current_stop_sequence': None,
+                    'last_update_time': None
+                    }
+
+            trips[trip_uid] = trip_data
+
+        # TODO: take this logic out of here
+        if "nyct_trip_descriptor" in trip:
+            trip_data.update(trip["nyct_trip_descriptor"])
+        if 'vehicle' in entity:
+            #current_stop_sequence = entity['vehicle']['current_stop_sequence']
+            update_time = timestamp_to_datetime(entity['vehicle']['timestamp'])
+            trip_data.update({
+                'last_update_time' : update_time,
+                'current_status': entity['vehicle']['current_status'],
+                'current_stop_sequence': entity['vehicle']['current_stop_sequence']
+            })
+
+
+
+        if 'trip_update' in entity:
+            trip_data['stop_events'] = []
+            current_stop_sequence = 0
+            for stop_time_update in entity['trip_update']['stop_time_update']:
+                stop_event_data = {
+                        'stop_id' : stop_time_update['stop_id'],
+                        }
+
+                # Arrival/departure time information
+                # TODO Replace these by get(key, default) <- could use this for gtfs
+                if 'arrival' in stop_time_update and +stop_time_update['arrival']['time'] != 0:
+                    stop_event_data['arrival_time'] = timestamp_to_datetime(stop_time_update['arrival']['time'])
+                else:
+                    stop_event_data['arrival_time'] = None
+                if 'departure' in stop_time_update and stop_time_update['departure']['time'] != 0:
+                    stop_event_data['departure_time'] = timestamp_to_datetime(stop_time_update['departure']['time'])
+                else:
+                    stop_event_data['departure_time'] = None
+
+                trip_data['stop_events'].append(stop_event_data)
+
+                # TODO: take this logic out of here
+                if "nyct_stop_time_update" in stop_time_update:
+                    trip_data.update(stop_time_update["nyct_stop_time_update"])
+
+        # This following condition checks that both the vehicle and trip_update entities respectively have been imported.
+        # If they have been, the sequence indices should be updated to factor in the number of stops already passed
+        # (which is given by the current_stop_sequence field in the vehicle entity
+        if trip_data['current_stop_sequence'] is not None and 'stop_events' in trip_data:
+            # Update the stop sequence indices
+            current_stop_sequence = trip_data['current_stop_sequence']
+            for stop_event_data in trip_data['stop_events']:
+                current_stop_sequence += 1
+                stop_event_data['sequence_index'] = current_stop_sequence
+
+        #trip_data['terminating_stop_uid'] = stop_event_data['stop_id']
+
+    response = {
+            'timestamp': timestamp_to_datetime(header['timestamp']),
+            'route_ids': list(actual_feed_route_ids),
+            'trips' : list(trips.values())
+            }
+    print('Parsing complete.')
+    return response
+
 
 
 # Rename pb2_to_json
@@ -60,6 +169,9 @@ def _parse_protobuf_message(message):
         # Otherwise just return the value
         if descriptor.type == descriptor.TYPE_MESSAGE:
             parsing_function = _parse_protobuf_message
+        elif descriptor.type == descriptor.TYPE_ENUM:
+            parsing_function = (lambda index:
+                descriptor.enum_type.values_by_number[index].name)
         else:
             parsing_function = _identity
 
@@ -73,6 +185,11 @@ def _parse_protobuf_message(message):
 
     return d
 
+def _parse_protobuf_enum(value):
+    help(value)
+    exit()
+    return "enum"
+    pass
 
 import datetime
 def timestamp_to_datetime(timestamp):
@@ -113,8 +230,8 @@ def sync_to_db(data):
         trip['route'] = route_id_to_route[trip['route_id']]
         del trip['route_id']
 
-        trip['start_time'] = timestamp_to_datetime(trip['start_time'])
-        trip['last_update_time'] = timestamp_to_datetime(trip['last_update_time'])
+        #trip['start_time'] = timestamp_to_datetime(trip['start_time'])
+        #trip['last_update_time'] = timestamp_to_datetime(trip['last_update_time'])
 
 
     stop_id_to_stop = {
@@ -132,9 +249,6 @@ def sync_to_db(data):
 
         # Get rid of this -> should be in the restructure function
         for stop_event in trip_id_to_stop_events[trip.trip_id]:
-            for key in ['arrival_time', 'departure_time', 'last_update_time']:
-                if key in stop_event and stop_event[key] is not None:
-                    stop_event[key] = timestamp_to_datetime(stop_event[key])
 
             stop_event['trip'] = trip
             stop_event['stop_pri_key'] = stop_id_to_stop[stop_event['stop_id']].id
