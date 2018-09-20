@@ -20,6 +20,8 @@ def create_database():
 def create_tables():
     schema.Base.metadata.create_all(dbconnection.engine)
 
-create_database()
-create_tables()
-systemservice.install('nycsubway')
+
+if(__name__=='__main__'):
+    create_database()
+    create_tables()
+    systemservice.install('nycsubway')

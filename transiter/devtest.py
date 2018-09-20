@@ -16,4 +16,6 @@ def jsonify(data):
 
 #print(jsonify(stopservice.get('L03')))
 #print(jsonify(routeservice.get('D')))
-print(jsonify(feedservice.update('L')))
+if(__name__=='__main__'):
+    print(jsonify(feedservice.update('L')))
+

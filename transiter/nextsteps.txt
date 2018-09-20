@@ -1,14 +1,16 @@
 Main dev thread:
  - Need to document the API
+ - Build the basic GET services
+ - After the update process is running, test that it's giving the same
+    data as realtimerail app (before improving the predictions)
 
 
 Other tasks
-    3. And then somehow need to test the new GTFS DB sync code. Hard!
+  - And then somehow need to test the new GTFS DB sync code. Hard!
 - write unit tests for everything - for SQLALchemy can use sqllite
  - add the terminus abbr table and load the data. Can this be done in a way
     that is not so specific to the NYC subway?
-- Split up GTFS parser into NYC subway specific logic and restructure step
-- Improve/clean up the NYC Subway xml file
+- Improve/clean up the NYC Subway xml file parser
 - Get rid of individuals DAMS, no needed. Generic dam or possibly factor
 - Make route list entries better (rename). Add relationship to Stop
     like daytime_routes, evening_routes etc.
@@ -28,7 +30,9 @@ Other tasks
 - add uniqueness and not null conditions to the schema
 - all of our SQL queries should be filtering on the transit system!!!!
 - could speed up sync_trip_data by doing one query to retrieve all stop_events
-
+- Use APScheduler (Advanced Python Scheduler) to create runnables that
+    can automatically update the feeds
+    https://apscheduler.readthedocs.io/en/latest/userguide.html
 
 Testing with sqlalchemy:
 https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html

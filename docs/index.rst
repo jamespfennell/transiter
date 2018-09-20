@@ -10,7 +10,11 @@ Welcome to Transiter's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+API
+===
 
+.. autoflask:: transiter.flaskapp:app
+   :undoc-static:
 
 Indices and tables
 ==================
