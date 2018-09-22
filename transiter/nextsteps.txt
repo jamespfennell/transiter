@@ -34,5 +34,11 @@ Other tasks
     can automatically update the feeds
     https://apscheduler.readthedocs.io/en/latest/userguide.html
 
-Testing with sqlalchemy:
-https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
+
+Version 0.2:
+  - Testing with sqlalchemy:
+    https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
+  - Complexes
+  - Auto update static data
+
+

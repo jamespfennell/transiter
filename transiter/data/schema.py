@@ -107,9 +107,30 @@ class Feed(Base):
     url = Column(String)
     parser_module = Column(String)
     parser_function = Column(String)
-    last_sha1 = Column(String)
-
+    auto_updater_enabled = Column(Boolean)
+    auto_updater_frequency = Column(Integer)
+    last_update_pri_key = Column(Integer, ForeignKey("feed_updates.id"))
+    # TODO: or just run another sql query and get the most recent
     system = relationship("System", back_populates="feeds")
+
+
+class FeedUpdate(Base):
+    __tablename__ = 'feed_updates'
+
+    id = Column(Integer, primary_key=True)
+    feed_pri_key = Column(Integer, ForeignKey("feeds.id"), index=True)
+    status = Column(String)
+    # SCHEDULED,
+    # IN_PROGRESS,
+    # SUCCESS_UPDATED,
+    # SUCCESS_NOT_NEEDED,
+    # FAILURE_COULD_NOT_PARSE,
+    # FAILURE_COULD_NOT_DOWNLOAD,
+    # FAILURE_EMPTY_FEED
+    failure_message = Column(String)
+    raw_data_hash = Column(String)
+    time = Column(TIMESTAMP(timezone=True))
+
 
 class StatusMessage(Base):
     __tablename__ = "status_messages"

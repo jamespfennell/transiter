@@ -1,16 +1,191 @@
 from flask import Blueprint
-from ..services import systemservice
+from ..services import feedservice
 
 feed_endpoints = Blueprint('feed_endpoints', __name__)
 
 @feed_endpoints.route('/')
 def list_all(system_id):
-    return feedservice.list_all()
+    """List all feeds for a specific system
+
+
+    .. :quickref: Feed; List all feeds for a specific system
+
+    :param system_id:
+    :return:
+
+    .. code-block:: json
+
+        [
+            {
+                "feed_id": "123456",
+                "href": "https://transiter.io/systems/nycsubway/feeds/123456",
+                "last_update_time": 67876543,
+                "health": {
+                    "status": "GOOD"
+                }
+            },
+        ]
+    """
+    return feedservice.list_all(system_id)
 
 @feed_endpoints.route('/<feed_id>/')
 def get(system_id, feed_id):
+    """Retrieve a specific feed
+
+
+    .. :quickref: Feed; Retrieve a specific feed
+
+    :param system_id:
+    :param feed_id:
+    :return:
+
+    .. code-block:: json
+
+        {
+            "feed_id": "123456",
+            "last_update_time": 67876543,
+            "health": {
+                "status": "GOOD",
+                "score": 0.8694,
+                "update_types": [
+                    {
+                        "status": "SUCCESS_UPDATED",
+                        "failure_message": null,
+                        "fraction": 0.2
+                    },
+                    {
+                        "status": "SUCCESS_NOTHING_TO_DO",
+                        "failure_message": null,
+                        "fraction": 0.6694
+                    },
+                    {
+                        "status": "FAILURE_COULD_NOT_PARSE",
+                        "failure_message": "Could not parse feed",
+                        "fraction": 0.1306
+                    }
+                ]
+            }
+        }
+    """
     return 'Feed data (NI)\n'
 
 @feed_endpoints.route('/<feed_id>/', methods=['POST'])
-def update(system_id, feed_id):
+def create_update(system_id, feed_id):
+    """Create a new feed update
+
+    .. :quickref: Feed; Create a new feed update
+
+    :param system_id:
+    :param feed_id:
+    :status 201: created
+    :return:
+
+    .. code-block:: json
+
+        {
+            "feed_update_id": 9873,
+            "href": "https://transiter.io/systems/nycsubway/feeds/123456/updates/9873"
+        }
+    """
     return 'Updating feed \n'
+
+@feed_endpoints.route('/<feed_id>/updates')
+def list_updates(system_id, feed_id):
+    """List recent feed updates
+
+    .. :quickref: Feed; List recent feed updates
+
+    In future versions this response will be paginated
+
+    :param system_id:
+    :param feed_id:
+    :status 200: created
+    :status 404: always
+    :return:
+
+    .. code-block:: json
+
+        [
+            {
+                "status": "FAILURE_COULD_NOT_PARSE",
+                "intitiated_by": "AUTO_UPDATER",
+                "failure_message": "Could not parse feed",
+                "raw_data_hash": "5fce76e37e4568afc7514e411fa64ae1283ec87d",
+                "update_time": 19585335345
+            },
+        ]
+    """
+    return 'Updating feed \n'
+
+
+@feed_endpoints.route('/<feed_id>/updates/<update_id>', methods=['GET'])
+def get_update(system_id, feed_id):
+    """Retrieve a specific feed update
+
+    .. :quickref: Feed; Retrieve a specfic feed update
+
+    :param system_id:
+    :param feed_id:
+    :status 201: created
+    :status 404: always
+    :return:
+
+    .. code-block:: json
+
+        {
+            "status": "FAILURE_COULD_NOT_PARSE",
+            "intitiated_by": "AUTO_UPDATER",
+            "failure_message": "Could not parse feed",
+            "raw_data_hash": "5fce76e37e4568afc7514e411fa64ae1283ec87d",
+            "update_time": 19585335345
+        }
+    """
+    return 'Updating feed \n'
+
+
+
+@feed_endpoints.route('/<feed_id>/autoupdater')
+def get_autoupdater(system_id, feed_id):
+    """Retrieve the auto updater
+
+    .. :quickref: Feed; Retrieve the autoupdater
+
+    :param system_id:
+    :param feed_id:
+    :status 201: created
+    :status 404: always
+    :return:
+
+    .. code-block:: json
+
+        {
+            "active": true,
+            "frequency": 2
+        }
+    """
+    return 'Updating feed \n'
+
+
+
+@feed_endpoints.route('/<feed_id>/autoupdater', methods=['PUT'])
+def configure_autoupdater(system_id, feed_id):
+    """Configure the autoupdater
+
+    .. :quickref: Feed; Configure the autoupdater
+
+    :param system_id:
+    :param feed_id:
+    :status 201: created
+    :status 404: always
+    :return:
+
+    .. code-block:: json
+
+        {
+            "active": true,
+            "frequency": 2
+        }
+    """
+    return 'Updating feed \n'
+
+

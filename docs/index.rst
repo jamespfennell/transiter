@@ -10,6 +10,13 @@ Welcome to Transiter's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+
+Quick API
+=========
+.. qrefflask:: transiter.flaskapp:app
+  :undoc-static:
+
+
 API
 ===
 
