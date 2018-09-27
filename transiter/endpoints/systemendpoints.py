@@ -1,9 +1,12 @@
 from flask import Blueprint
 from ..services import systemservice
+from .responsemanager import http_get_response, http_delete_response, http_put_response
 
 system_endpoints = Blueprint('system_endpoints', __name__)
 
+
 @system_endpoints.route('/')
+@http_get_response
 def list_all():
     """List all systems
 
@@ -24,7 +27,9 @@ def list_all():
     """
     return systemservice.list_all()
 
-@system_endpoints.route('/<system_id>/')
+
+@system_endpoints.route('/<system_id>/', methods=['GET'])
+@http_get_response
 def get(system_id):
     """Retrieve a specific system
 
@@ -58,9 +63,11 @@ def get(system_id):
         }
 
     """
-    return 'System data (NI)\n'
+    return systemservice.get_by_id(system_id)
+
 
 @system_endpoints.route('/<system_id>/', methods=['PUT'])
+@http_put_response
 def install(system_id):
     """Install a system
 
@@ -73,9 +80,11 @@ def install(system_id):
     :status 200: the system's data was found on disk and the system was installed
     :status 404: data for such a system was not found
     """
-    return 'Installing system (NI)\n'
+    return systemservice.install(system_id)
+
 
 @system_endpoints.route('/<system_id>/', methods=['DELETE'])
+@http_delete_response
 def delete(system_id):
     """Uninstall a system
 
@@ -85,4 +94,4 @@ def delete(system_id):
     :status 200: the system was uninstalled
     :status 404: a system with that ID does not exists
     """
-    return 'Deleting system (NI)\n'
+    return systemservice.delete(system_id)

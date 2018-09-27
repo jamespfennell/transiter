@@ -32,7 +32,7 @@ class Route(Base):
 
     id = Column(Integer, primary_key=True)
     route_id = Column(String, index=True)
-    system_pri_key = Column(Integer, ForeignKey("systems.id"), index=True)
+    system_id = Column(String, ForeignKey("systems.system_id"), index=True)
     frequency = Column(Float, nullable=True, default=None)
     running = Column(Boolean, default=False)
     color = Column(String)

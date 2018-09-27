@@ -1,15 +1,9 @@
-from .services import systemservice
-from .services import stopservice
 from .services import routeservice
-from .services import feedservice
-import json
+from .services import stopservice
+from .services import systemservice
+from .utils import jsonutil
+from .data import dbexceptions
 
-def jsonify(data):
-    return json.dumps(data, indent=4, separators=(',', ': '))
-
-#systemservice.delete('nycsubway')
-
-#systemservice.install('nycsubway')
 
 #print(jsonify(systemservice.get('nycsubway')))
 
@@ -17,5 +11,16 @@ def jsonify(data):
 #print(jsonify(stopservice.get('L03')))
 #print(jsonify(routeservice.get('D')))
 if(__name__=='__main__'):
-    print(jsonify(feedservice.update('L')))
+    # print(jsonutil.convert_for_cli(routeservice.get_by_id(None, 'L')))
+    #print(jsonutil.convert_for_cli(stopservice.get_by_id(None, 'L03')))
+
+    try:
+        systemservice.delete('nycsubway')
+    except dbexceptions.IdNotFoundError:
+        pass
+
+    systemservice.install('nycsubway')
+
+
+
 

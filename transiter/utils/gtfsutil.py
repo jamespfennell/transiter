@@ -4,7 +4,7 @@ import importlib
 from google.transit import gtfs_realtime_pb2
 import json
 import datetime
-from ..data import schema
+from ..data import dbschema
 from ..data import dbsync
 from ..data import dbconnection
 
@@ -15,7 +15,7 @@ def json_serial(obj):
 
     if isinstance(obj, (datetime.date, datetime.datetime)):
         return obj.isoformat()
-    elif isinstance(obj, schema.Base):
+    elif isinstance(obj, dbschema.Base):
         return str(obj)
     raise TypeError ("Type %s not serializable" % type(obj))
 
@@ -215,7 +215,7 @@ def sync_to_db(data):
 
     session = dbconnection.get_session()
     route_id_to_route = {route.route_id: route for route in
-        session.query(schema.Route).filter(schema.Route.route_id.in_(data['route_ids']))}
+                         session.query(dbschema.Route).filter(dbschema.Route.route_id.in_(data['route_ids']))}
     route_pri_keys = [route.id for route in route_id_to_route.values()]
     print(jsonify(route_id_to_route))
 
@@ -236,14 +236,14 @@ def sync_to_db(data):
 
     stop_id_to_stop = {
         stop.stop_id: stop for
-        stop in session.query(schema.Stop).filter(schema.Stop.stop_id.in_(stop_ids))
+        stop in session.query(dbschema.Stop).filter(dbschema.Stop.stop_id.in_(stop_ids))
     }
 
-    db_trips = session.query(schema.Trip).filter(schema.Trip.route_pri_key.in_(route_pri_keys)).all()
-    trips = dbsync.sync(schema.Trip, db_trips, data['trips'], ['trip_id'])
+    db_trips = session.query(dbschema.Trip).filter(dbschema.Trip.route_pri_key.in_(route_pri_keys)).all()
+    trips = dbsync.sync(dbschema.Trip, db_trips, data['trips'], ['trip_id'])
 
     for trip in trips:
-        db_stop_events = session.query(schema.StopEvent).filter(schema.StopEvent.trip_pri_key==trip.id).filter(schema.StopEvent.future == True).all()
+        db_stop_events = session.query(dbschema.StopEvent).filter(dbschema.StopEvent.trip_pri_key == trip.id).filter(dbschema.StopEvent.future == True).all()
 
         archive_function = archive_function_factory(trip.current_stop_sequence)
 
@@ -256,10 +256,10 @@ def sync_to_db(data):
             del stop_event['stop_id']
 
 
-        dbsync.sync(schema.StopEvent, db_stop_events,
-            trip_id_to_stop_events[trip.trip_id],
-            ['stop_pri_key'],
-            delete_function=archive_function)
+        dbsync.sync(dbschema.StopEvent, db_stop_events,
+                    trip_id_to_stop_events[trip.trip_id],
+                    ['stop_pri_key'],
+                    delete_function=archive_function)
 
         print('Updated trip {}'.format(trip.trip_id))
         #print(trip.trip_id)

@@ -1,14 +1,14 @@
 from flask import Flask
 from .endpoints.systemendpoints import system_endpoints
 from .endpoints.routeendpoints import route_endpoints
-from .endpoints.stopendpoints import stop_endpoints
-from .endpoints.tripendpoints import trip_endpoints
-from .endpoints.feedendpoints import feed_endpoints
+#from .endpoints.stopendpoints import stop_endpoints
+#from .endpoints.tripendpoints import trip_endpoints
+#from .endpoints.feedendpoints import feed_endpoints
 
 app = Flask(__name__)
-app.register_blueprint(feed_endpoints, url_prefix='/systems/<system_id>/feeds')
-app.register_blueprint(stop_endpoints, url_prefix='/systems/<system_id>/stops')
-app.register_blueprint(trip_endpoints, url_prefix='/systems/<system_id>/trips')
+#app.register_blueprint(feed_endpoints, url_prefix='/systems/<system_id>/feeds')
+#app.register_blueprint(stop_endpoints, url_prefix='/systems/<system_id>/stops')
+#app.register_blueprint(trip_endpoints, url_prefix='/systems/<system_id>/trips')
 app.register_blueprint(route_endpoints, url_prefix='/systems/<system_id>/routes')
 app.register_blueprint(system_endpoints, url_prefix='/systems')
 

@@ -1,5 +1,6 @@
 import datetime
 import pytz
+import json
 
 class ContainerTypeError(Exception):
     pass
@@ -7,6 +8,13 @@ class ContainerTypeError(Exception):
 class ValueTypeError(Exception):
     pass
 
+
+def convert_for_http(data):
+    return json.dumps(data, indent=4, separators=(',', ': '))
+
+
+def convert_for_cli(data):
+    return json.dumps(data, indent=4, separators=(',', ': '))
 
 _tab_string = "    "
 

@@ -11,3 +11,6 @@ reset-docs:
 
 docs:
 	cd docs; rm -r _build; make html
+
+run-debug-server:
+	export FLASK_APP=transiter/flaskapp.py; export FLASK_DEBUG=1; python -m flask run

@@ -2,10 +2,17 @@
 
 ## Main development thread
 
+ 1. Implement the feed operations
+ 1. Need to go over the Daos again and how they accept system_ids
+        list_by_system_id
+        list_by_ids
+ 1. These two unblock the rest of the GET services
  1. Implement the basic GET services
- 2. After the update process is running, test that it's giving 
+ 1. After the update process is running, test that it's giving 
     the exact same
     data as the realtimerail app.
+ 1. Rewrite the install system to use the new DAOs
+ 1. Make Daos singletons?
 
 ## Version 0.1
 
@@ -39,6 +46,7 @@
     can automatically update the feeds
     https://apscheduler.readthedocs.io/en/latest/userguide.html
     - Aka, implement the autoupdate feature.
+- Add a verbose option to route and stop get endpoints
     
 ### Existing code clean up
 - Improve/clean up the NYC Subway xml file parser.

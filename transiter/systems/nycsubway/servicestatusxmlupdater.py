@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import json
 from ...data import dbconnection
 from ...data import dbsync
-from ...data import schema
+from ...data import dbschema
 def jsonify(data):
     return json.dumps(data, indent=4, separators=(',', ': '))
 
@@ -11,16 +11,16 @@ def update(feed, service, content):
     feed_messages = parse(content)
 
     session = dbconnection.get_session()
-    routes = {route.route_id: route for route in session.query(schema.Route)}
+    routes = {route.route_id: route for route in session.query(dbschema.Route)}
 
     for message in feed_messages.values():
         message['routes'] = [routes[route_id] for route_id in message['route_ids']]
         print(message['routes'])
         del message['route_ids']
-    db_messages = set(session.query(schema.StatusMessage))
+    db_messages = set(session.query(dbschema.StatusMessage))
     # What to do about routes? Could manually add them
     # to the JSON - yes
-    dbsync.sync(schema.StatusMessage, db_messages, feed_messages.values(), ['message_id'])
+    dbsync.sync(dbschema.StatusMessage, db_messages, feed_messages.values(), ['message_id'])
 
     return True
 

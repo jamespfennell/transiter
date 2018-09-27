@@ -1,11 +1,13 @@
 from flask import Blueprint
 
 from ..services import routeservice
+from .responsemanager import http_get_response
 
 route_endpoints = Blueprint('route_endpoints', __name__)
 
 
 @route_endpoints.route('/')
+@http_get_response
 def list_all(system_id):
     """List all routes for a specific system
 
@@ -27,10 +29,11 @@ def list_all(system_id):
         ]
 
     """
-    return routeservice.list_all(system_id)
+    return routeservice.list(system_id)
 
 
 @route_endpoints.route('/<route_id>/')
+@http_get_response
 def get(system_id, route_id):
     """Retrieve a specific route in a specific system
 
@@ -68,4 +71,4 @@ def get(system_id, route_id):
             ]
         }
     """
-    return routeservice.get(system_id, route_id)
+    return routeservice.get_by_id(system_id, route_id)

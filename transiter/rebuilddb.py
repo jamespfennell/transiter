@@ -1,5 +1,5 @@
 from .data import dbconnection
-from .data import schema
+from .data import dbschema
 import sqlalchemy
 
 from .services import systemservice
@@ -18,7 +18,7 @@ def create_database():
     conn.close()
 
 def create_tables():
-    schema.Base.metadata.create_all(dbconnection.engine)
+    dbschema.Base.metadata.create_all(dbconnection.engine)
 
 
 if(__name__=='__main__'):
