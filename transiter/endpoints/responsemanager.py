@@ -1,21 +1,23 @@
 from ..utils import jsonutil
 from decorator import decorator
-from ..data import dbexceptions
+from ..services import exceptions
 
 
 HTTP_200_OK = 200
 HTTP_201_CREATED = 201
 HTTP_204_NO_CONTENT = 204
 HTTP_404_NOT_FOUND = 404
+HTTP_500_SERVER_ERROR = 500
 
 
 def _process_request(callback, func, *args, **kw):
     try:
         result = func(*args, **kw)
-    except dbexceptions.IdNotFoundError:
+    except exceptions.IdNotFoundError:
         return '', HTTP_404_NOT_FOUND
-    #except Exception as e:
-    #    return str(e), 500
+    except Exception as e:
+        print(e)
+        return str(e), HTTP_500_SERVER_ERROR
 
     return callback(result)
 

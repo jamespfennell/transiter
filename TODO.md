@@ -4,8 +4,10 @@
 
  1. Implement the feed operations
  1. Need to go over the Daos again and how they accept system_ids
-        list_by_system_id
-        list_by_ids
+        list_all_in_system
+        list_all
+        get_in_system_by_id
+        get_by_id
  1. These two unblock the rest of the GET services
  1. Implement the basic GET services
  1. After the update process is running, test that it's giving 
@@ -24,7 +26,7 @@
     - Testing with sqlalchemy:
     https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
  - add the terminus abbr table and load the data. Can this be done in a way
-    that is not so specific to the NYC subway?
+    that is not so specific to the NYC subway? Maybe a message table?
     
 ### Features
 
