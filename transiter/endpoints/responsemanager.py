@@ -22,6 +22,10 @@ def _process_request(callback, func, *args, **kw):
     return callback(result)
 
 
+def _post_process_post(result):
+    return jsonutil.convert_for_http(result), HTTP_201_CREATED
+
+
 def _post_process_get(result):
     return jsonutil.convert_for_http(result), HTTP_200_OK
 
@@ -42,6 +46,11 @@ def _post_process_delete(result):
 @decorator
 def http_get_response(func, *args, **kw):
     return _process_request(_post_process_get, func, *args, **kw)
+
+
+@decorator
+def http_post_response(func, *args, **kw):
+    return _process_request(_post_process_post, func, *args, **kw)
 
 
 @decorator

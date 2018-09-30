@@ -15,6 +15,10 @@ class _BaseDao:
         self._order_field = None
         self.system_id = None
 
+    @staticmethod
+    def get_session():
+        return dbconnection.get_session()
+
     def list(self):
         session = dbconnection.get_session()
         query = session.query(self._DbObj)
@@ -65,7 +69,7 @@ class _BaseDao:
 
 
 def _dao_factory(schema_entity, id_field, order_field=None):
-
+    # @singleton
     class NewDao(_BaseDao):
         def __init__(self):
             super().__init__()
@@ -81,6 +85,7 @@ StopDao = _dao_factory(dbschema.Stop, 'stop_id', 'name')
 RouteDao = _dao_factory(dbschema.Route, 'route_id', 'route_id')
 SystemDao = _dao_factory(dbschema.System, 'system_id', 'system_id')
 FeedDao = _dao_factory(dbschema.Feed, 'feed_id', 'feed_id')
+FeedUpdateDao = _dao_factory(dbschema.FeedUpdate, 'id', 'id')
 
 _StopEventDao = _dao_factory(dbschema.StopEvent, 'id')
 class StopEventDao(_StopEventDao):

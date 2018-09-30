@@ -3,11 +3,15 @@
 ## Main development thread
 
  1. Implement the feed operations
+    - Looks like the basic feed update code works
+    - Implement the latest endpoint for debugging easyness
+    - Then need to test if the updates are giving some data:
+        if so, time to implement the GET services
  1. Need to go over the Daos again and how they accept system_ids
-        list_all_in_system
-        list_all
-        get_in_system_by_id
-        get_by_id
+       - list_all_in_system
+       - list_all
+       - get_in_system_by_id
+       - get_by_id
  1. These two unblock the rest of the GET services
  1. Implement the basic GET services
  1. After the update process is running, test that it's giving 

@@ -6,11 +6,13 @@ engine = create_engine("postgres://james@/realtimerail")
 session_factory = sessionmaker(bind=engine)
 Session = scoped_session(session_factory)
 
+
 # Fail hard if doesn't exist -> means not in a unit of work context
 def get_session():
     return Session()
 
-#Need to this to allow nesting of read sessions
+
+# Need to this to allow nesting of read sessions
 # Fail hard if a nested write session is attempted
 @decorator
 def unit_of_work(func, *args, **kw):

@@ -1,10 +1,13 @@
 from flask import Blueprint
 from ..services import feedservice
+from .responsemanager import http_get_response, http_post_response
 
 feed_endpoints = Blueprint('feed_endpoints', __name__)
 
+
 @feed_endpoints.route('/')
-def list_all(system_id):
+@http_get_response
+def list_all_in_system(system_id):
     """List all feeds for a specific system
 
 
@@ -26,10 +29,12 @@ def list_all(system_id):
             },
         ]
     """
-    return feedservice.list_all(system_id)
+    return feedservice.list_all_in_system(system_id)
+
 
 @feed_endpoints.route('/<feed_id>/')
-def get(system_id, feed_id):
+@http_get_response
+def get_in_system_by_id(system_id, feed_id):
     """Retrieve a specific feed
 
 
@@ -67,10 +72,12 @@ def get(system_id, feed_id):
             }
         }
     """
-    return 'Feed data (NI)\n'
+    return feedservice.get_in_system_by_id(system_id, feed_id)
+
 
 @feed_endpoints.route('/<feed_id>/', methods=['POST'])
-def create_update(system_id, feed_id):
+@http_post_response
+def create_feed_update(system_id, feed_id):
     """Create a new feed update
 
     .. :quickref: Feed; Create a new feed update
@@ -87,10 +94,12 @@ def create_update(system_id, feed_id):
             "href": "https://transiter.io/systems/nycsubway/feeds/123456/updates/9873"
         }
     """
-    return 'Updating feed \n'
+    return feedservice.create_feed_update(system_id, feed_id)
+
 
 @feed_endpoints.route('/<feed_id>/updates')
-def list_updates(system_id, feed_id):
+@http_get_response
+def list_updates_in_feed(system_id, feed_id):
     """List recent feed updates
 
     .. :quickref: Feed; List recent feed updates
@@ -115,11 +124,11 @@ def list_updates(system_id, feed_id):
             },
         ]
     """
-    return 'Updating feed \n'
+    return feedservice.list_updates_in_feed(system_id, feed_id)
 
 
 @feed_endpoints.route('/<feed_id>/updates/<update_id>', methods=['GET'])
-def get_update(system_id, feed_id):
+def get_update_in_feed(system_id, feed_id):
     """Retrieve a specific feed update
 
     .. :quickref: Feed; Retrieve a specfic feed update
@@ -140,12 +149,11 @@ def get_update(system_id, feed_id):
             "update_time": 19585335345
         }
     """
-    return 'Updating feed \n'
-
+    return 'Not implemented'
 
 
 @feed_endpoints.route('/<feed_id>/autoupdater')
-def get_autoupdater(system_id, feed_id):
+def get_autoupdater_for_feed(system_id, feed_id):
     """Retrieve the auto updater
 
     .. :quickref: Feed; Retrieve the autoupdater
@@ -163,12 +171,12 @@ def get_autoupdater(system_id, feed_id):
             "frequency": 2
         }
     """
-    return 'Updating feed \n'
+    return 'NI'
 
 
 
 @feed_endpoints.route('/<feed_id>/autoupdater', methods=['PUT'])
-def configure_autoupdater(system_id, feed_id):
+def configure_autoupdater_for_feed(system_id, feed_id):
     """Configure the autoupdater
 
     .. :quickref: Feed; Configure the autoupdater
@@ -186,6 +194,6 @@ def configure_autoupdater(system_id, feed_id):
             "frequency": 2
         }
     """
-    return 'Updating feed \n'
+    return 'NI'
 
 

@@ -1,20 +1,31 @@
-import datetime
-import pytz
+from datetime import date, datetime
 import json
 
+"""
 class ContainerTypeError(Exception):
     pass
 
 class ValueTypeError(Exception):
     pass
+"""
 
 
 def convert_for_http(data):
-    return json.dumps(data, indent=4, separators=(',', ': '))
+    return json.dumps(data, indent=4, separators=(',', ': '), default=json_serial)
 
 
 def convert_for_cli(data):
     return json.dumps(data, indent=4, separators=(',', ': '))
+
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError ("Type %s not serializable" % type(obj))
+
+"""
 
 _tab_string = "    "
 
@@ -38,7 +49,6 @@ def _type_to_str(value):
         utc_dt = pytz.utc.localize(value)
         return int(utc_dt.timestamp())
     raise ValueTypeError('Unknown type "{}" for use as value.'.format(t))
-
 
 
 def jsonify(root, indent=''):
@@ -76,3 +86,4 @@ def jsonify(root, indent=''):
     return '\n'.join(pre_json)
 
 
+"""

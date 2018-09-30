@@ -1,15 +1,20 @@
-from ..data import feeddam
+from ..data.dbaccessobjects import FeedDao, FeedUpdateDao
 from ..data import dbconnection
 import importlib
 import requests
 import hashlib
 
+
+feed_dao = FeedDao()
+feed_update_dao = FeedUpdateDao()
+
+
 @dbconnection.unit_of_work
-def list():
+def list_all_in_system(system_id):
 
     response = []
 
-    for feed in feeddam.list():
+    for feed in feed_dao.list():
         feed_response = {
             'feed_id': feed.feed_id
             }
@@ -18,23 +23,62 @@ def list():
 
 
 @dbconnection.unit_of_work
-def get(feed_id):
+def get_in_system_by_id(system_id, feed_id):
 
-    feed = feeddam.get(feed_id)
+    feed = feed_dao.get_by_id(feed_id, system_id)
     response = {
         'feed_id': feed.feed_id,
         'url': feed.url
         }
     return response
 
+
 @dbconnection.unit_of_work
-def update(feed_id):
+def create_feed_update(system_id, feed_id):
+
+    feed = feed_dao.get_by_id(feed_id, system_id)
+
+    feed_update = feed_update_dao.create()
+    feed_update.feed = feed
+    feed_update.status = 'SCHEDULED'
+
+    # TODO make this asynchronous
+    execute_feed_update(feed_update)
+    return {'done': 'true'}
+
+
+@dbconnection.unit_of_work
+def list_updates_in_feed(system_id, feed_id):
+
+    feed = feed_dao.get_by_id(feed_id, system_id)
+    session = feed_update_dao.get_session()
+    query = session.query(feed_update_dao._DbObj).filter(
+        feed_update_dao._DbObj.feed_pri_key==feed.id
+    ).order_by(feed_update_dao._DbObj.last_action_time.desc())
+    response = []
+    for feed_update in query:
+        response.append(
+            {
+                'id': feed_update.id,
+                'status': feed_update.status,
+                'last_action_time': feed_update.last_action_time
+            }
+        )
+    return response
+
+
+def execute_feed_update(feed_update):
+
+    feed_update.status = 'IN_PROGRESS'
+    #return {'created': 'tre'}
+
     importlib.invalidate_caches()
-    feed = feeddam.get(feed_id)
-    # Need to more flexible with these - maybe alpha numberic
+    feed = feed_update.feed
+    # TODO Need to more flexible with these - maybe alpha numberic
     # Or maybe a separate system_dir_name
+    # TODO These checks should also exist when installing
     if not feed.system.system_id.isalnum():
-        raise IllegalSystemeName
+        raise IllegalSystemName
     if not feed.parser_module.isalpha():
         raise IllegalModuleName
     if not feed.parser_function.isalpha():
@@ -44,7 +88,7 @@ def update(feed_id):
         feed.parser_module
         )
     module = importlib.import_module(module_path, __name__)
-    function = getattr(module, feed.parser_function)
+    update_function = getattr(module, feed.parser_function)
     with open('./transiter/l2.gtfs', 'rb') as f:
         content = f.read()
     #request = requests.get(feed.url)
@@ -52,4 +96,8 @@ def update(feed_id):
     #m = hashlib.md5()
     #m.update(content.encode('utf-8'))
     #print(m.hexdigest())
-    function(feed, feed.system, content)
+    try:
+        update_function(feed, feed.system, content)
+    except Exception:
+        feed_update.status = 'FAILURE_COULD_NOT_PARSE'
+    feed_update.status = 'SUCCESS_UPDATED'

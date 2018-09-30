@@ -1,7 +1,7 @@
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-
+from sqlalchemy.sql import functions as sql_functions
 Base = declarative_base()
 
 # TODO: put in UniqueConstraint on stop_ids
@@ -102,14 +102,14 @@ class RouteListEntry(Base):
 class Feed(Base):
     __tablename__ = 'feeds'
     id = Column(Integer, primary_key=True)
-    system_id = Column(Integer, ForeignKey("systems.id"), index=True)
+    system_id = Column(String, ForeignKey("systems.system_id"), index=True)
     feed_id = Column(String, index=True)
     url = Column(String)
     parser_module = Column(String)
     parser_function = Column(String)
     auto_updater_enabled = Column(Boolean)
     auto_updater_frequency = Column(Integer)
-    last_update_pri_key = Column(Integer, ForeignKey("feed_updates.id"))
+    # last_update_pri_key = Column(Integer, ForeignKey("feed_updates.id"))
     # TODO: or just run another sql query and get the most recent
     system = relationship("System", back_populates="feeds")
 
@@ -130,6 +130,11 @@ class FeedUpdate(Base):
     failure_message = Column(String)
     raw_data_hash = Column(String)
     time = Column(TIMESTAMP(timezone=True))
+    last_action_time = Column(TIMESTAMP(timezone=True),
+                              server_default=sql_functions.now(),
+                              onupdate=sql_functions.current_timestamp())
+
+    feed = relationship("Feed")
 
 
 class StatusMessage(Base):
