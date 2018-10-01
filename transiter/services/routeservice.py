@@ -6,8 +6,7 @@ route_dao = RouteDao()
 def list(system_id):
 
     response = []
-    route_dao.system_id = system_id
-    for route in route_dao.list():
+    for route in route_dao.list_all_in_system(system_id):
         route_response = {
             'route_id': route.route_id,
             'service_status': 'not implemented',
@@ -20,7 +19,7 @@ def list(system_id):
 def get_by_id(system_id, route_id):
     # TODO: have verbose option
 
-    route = route_dao.get_by_id(route_id, system_id)
+    route = route_dao.get_in_system_by_id(system_id, route_id)
     response = {
         'route_id': route.route_id,
         'frequency': 'not implemented',

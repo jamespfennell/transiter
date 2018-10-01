@@ -1,6 +1,7 @@
 from ..utils import jsonutil
 from decorator import decorator
 from ..services import exceptions
+from flask import Response
 
 
 HTTP_200_OK = 200
@@ -14,12 +15,13 @@ def _process_request(callback, func, *args, **kw):
     try:
         result = func(*args, **kw)
     except exceptions.IdNotFoundError:
-        return '', HTTP_404_NOT_FOUND
-    except Exception as e:
-        print(e)
-        return str(e), HTTP_500_SERVER_ERROR
+        return '', HTTP_404_NOT_FOUND, ''
+    #except Exception as e:
+    #    print(e)
+    #    return str(e), HTTP_500_SERVER_ERROR, ''
 
-    return callback(result)
+    (content, code) = callback(result)
+    return content, code, {'Content-Type': 'application/json'}
 
 
 def _post_process_post(result):

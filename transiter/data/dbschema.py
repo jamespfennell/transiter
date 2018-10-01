@@ -43,6 +43,8 @@ class Route(Base):
     last_update_time = Column(TIMESTAMP(timezone=True))
 
     system = relationship("System", back_populates="routes")
+    trips = relationship("Trip", back_populates="route",
+                                cascade="all, delete-orphan")
     list_entries = relationship("RouteListEntry", back_populates="route",
         order_by="RouteListEntry.position", cascade="all, delete-orphan")
 
@@ -58,12 +60,16 @@ class Stop(Base):
     id = Column(Integer, primary_key=True)
     stop_id = Column(String, index=True)
     station_pri_key = Column(Integer, ForeignKey("stations.id"), index=True)
+    system_id = Column(String, ForeignKey("systems.system_id"), index=True)
     name = Column(String)
     longitude = Column(Numeric(precision=9, scale=6))
     lattitude = Column(Numeric(precision=9, scale=6))
 
+    system = relationship("System")
     station = relationship("Station", back_populates="stops")
     direction_names = relationship("DirectionName", back_populates="stop",
+                                   cascade="all, delete-orphan")
+    stop_events = relationship("StopEvent", back_populates="stop",
         cascade="all, delete-orphan")
 
 class Station(Base):
@@ -112,6 +118,7 @@ class Feed(Base):
     # last_update_pri_key = Column(Integer, ForeignKey("feed_updates.id"))
     # TODO: or just run another sql query and get the most recent
     system = relationship("System", back_populates="feeds")
+    updates = relationship("FeedUpdate", back_populates="feed", cascade="all, delete-orphan")
 
 
 class FeedUpdate(Base):
@@ -134,7 +141,7 @@ class FeedUpdate(Base):
                               server_default=sql_functions.now(),
                               onupdate=sql_functions.current_timestamp())
 
-    feed = relationship("Feed")
+    feed = relationship("Feed", back_populates="updates")
 
 
 class StatusMessage(Base):
@@ -176,7 +183,7 @@ class Trip(Base):
     current_status = Column(String)
     current_stop_sequence = Column(Integer)
 
-    route = relationship("Route")
+    route = relationship("Route", back_populates="trips")
     stop_events = relationship("StopEvent", back_populates="trip")
 
 class StopEvent(Base):
@@ -193,5 +200,5 @@ class StopEvent(Base):
     scheduled_track = Column(String)
     actual_track = Column(String)
 
-    stop = relationship("Stop") #, back_populates="stop_events")
+    stop = relationship("Stop", back_populates="stop_events")
     trip = relationship("Trip", back_populates="stop_events")

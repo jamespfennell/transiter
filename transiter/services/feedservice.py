@@ -14,7 +14,7 @@ def list_all_in_system(system_id):
 
     response = []
 
-    for feed in feed_dao.list():
+    for feed in feed_dao.list_all_in_system(system_id):
         feed_response = {
             'feed_id': feed.feed_id
             }
@@ -25,7 +25,7 @@ def list_all_in_system(system_id):
 @dbconnection.unit_of_work
 def get_in_system_by_id(system_id, feed_id):
 
-    feed = feed_dao.get_by_id(feed_id, system_id)
+    feed = feed_dao.get_in_system_by_id(system_id, feed_id)
     response = {
         'feed_id': feed.feed_id,
         'url': feed.url
@@ -36,7 +36,7 @@ def get_in_system_by_id(system_id, feed_id):
 @dbconnection.unit_of_work
 def create_feed_update(system_id, feed_id):
 
-    feed = feed_dao.get_by_id(feed_id, system_id)
+    feed = feed_dao.get_in_system_by_id(system_id, feed_id)
 
     feed_update = feed_update_dao.create()
     feed_update.feed = feed
@@ -50,7 +50,7 @@ def create_feed_update(system_id, feed_id):
 @dbconnection.unit_of_work
 def list_updates_in_feed(system_id, feed_id):
 
-    feed = feed_dao.get_by_id(feed_id, system_id)
+    feed = feed_dao.get_in_system_by_id(system_id, feed_id)
     session = feed_update_dao.get_session()
     query = session.query(feed_update_dao._DbObj).filter(
         feed_update_dao._DbObj.feed_pri_key==feed.id

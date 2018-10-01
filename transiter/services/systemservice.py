@@ -12,7 +12,7 @@ system_dao = dbaccessobjects.SystemDao()
 
 @dbconnection.unit_of_work
 def list_all():
-    return [_convert(system) for system in system_dao.list()]
+    return [_convert(system) for system in system_dao.list_all()]
 
 
 @dbconnection.unit_of_work
@@ -35,8 +35,8 @@ def install(system_id):
     return True
 
 @dbconnection.unit_of_work
-def delete(system_id):
-    deleted = system_dao.delete(system_id)
+def delete_by_id(system_id):
+    deleted = system_dao.delete_by_id(system_id)
     if not deleted:
         raise exceptions.IdNotFoundError
     return True
@@ -99,6 +99,7 @@ def _import_static_data(system):
             stop.name = row['stop_name']
             stop.longitude = row['stop_lon']
             stop.lattitude = row['stop_lat']
+            stop.system = system
 
             station_sets_by_stop_id[stop_id] = set([stop_id])
             stops_by_stop_id[stop_id] = stop

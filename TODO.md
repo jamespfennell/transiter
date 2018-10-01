@@ -2,18 +2,8 @@
 
 ## Main development thread
 
- 1. Implement the feed operations
-    - Looks like the basic feed update code works
-    - Implement the latest endpoint for debugging easyness
-    - Then need to test if the updates are giving some data:
-        if so, time to implement the GET services
- 1. Need to go over the Daos again and how they accept system_ids
-       - list_all_in_system
-       - list_all
-       - get_in_system_by_id
-       - get_by_id
- 1. These two unblock the rest of the GET services
- 1. Implement the basic GET services
+ 1. Implement the basic GET services.
+    All the data should be in the DB
  1. After the update process is running, test that it's giving 
     the exact same
     data as the realtimerail app.
@@ -56,18 +46,15 @@
     
 ### Existing code clean up
 - Improve/clean up the NYC Subway xml file parser.
-- Get rid of individuals DAMS, not needed. 
-    Generic DAM will probably be good enough.
+- Optimize the SQL ALchemy config, especially with joins
+    and figure out what the cascades are doing
     
     
 ### Misc small task
 - find out when SQL Alchemy triggers updates 
     and use this to inform the sync method.
-- Should there be a way to force reset the feeds?
-    What is the use case here?
 - Add uniqueness and not null conditions to the schema
     where possible.
-- All of our SQL queries should be filtering on the transit system!
 - Speed up sync_trip_data by doing one query to retrieve
     all relevent stop_events.
 

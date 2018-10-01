@@ -30,7 +30,7 @@ def list_all():
 
 @system_endpoints.route('/<system_id>/', methods=['GET'])
 @http_get_response
-def get(system_id):
+def get_by_id(system_id):
     """Retrieve a specific system
 
     .. :quickref: System; Retrieve a specific system
@@ -85,7 +85,7 @@ def install(system_id):
 
 @system_endpoints.route('/<system_id>/', methods=['DELETE'])
 @http_delete_response
-def delete(system_id):
+def delete_by_id(system_id):
     """Uninstall a system
 
     .. :quickref: System; Delete a system
@@ -94,4 +94,4 @@ def delete(system_id):
     :status 200: the system was uninstalled
     :status 404: a system with that ID does not exists
     """
-    return systemservice.delete(system_id)
+    return systemservice.delete_by_id(system_id)
