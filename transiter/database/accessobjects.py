@@ -135,6 +135,34 @@ _StopEventDao = _dao_factory(schema_entity=models.StopEvent,
                              order_field='id',
                              base_dao=_BaseEntityDao)
 
+_TripDao = _dao_factory(schema_entity=models.Trip,
+                        id_field='id',
+                        order_field='id',
+                        base_dao=_BaseEntityDao)
+
+
+class TripDao(_TripDao):
+    @staticmethod
+    def list_all_in_route(system_id, route_id):
+        session = connection.get_session()
+        query = session.query(models.Trip) \
+            .join(models.Route, models.Route.id == models.Trip.route_pri_key) \
+            .filter(models.Route.system_id == system_id) \
+            .filter(models.Route.route_id == route_id)
+        for row in query:
+            yield row
+
+    @staticmethod
+    def get_in_route_by_id(system_id, route_id, trip_id):
+        session = connection.get_session()
+        query = session.query(models.Trip)\
+            .join(models.Route, models.Route.id == models.Trip.route_pri_key)\
+            .filter(models.Route.system_id == system_id)\
+            .filter(models.Route.route_id == route_id)\
+            .filter(models.Trip.trip_id == trip_id)
+        return query.one()
+
+
 
 class RouteDao(_RouteDao):
     @staticmethod

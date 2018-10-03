@@ -19,3 +19,13 @@ class Trip(Base):
 
     route = relationship("Route", back_populates="trips")
     stop_events = relationship("StopEvent", back_populates="trip")
+
+
+    def repr_for_list(self):
+        return {
+            'trip_id': self.trip_id
+        }
+    def repr_for_get(self):
+        return {
+            'trip_id': self.trip_id
+        }

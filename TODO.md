@@ -2,11 +2,14 @@
 
 ## Main development thread
 
- 1. Implement the basic GET services.
+ 1. Implement 
+    - The get trip endpoint
+    - The get stop endpoint <- both rely on stopevent
     All the data should be in the DB
  1. After the update process is running, test that it's giving 
     the exact same
     data as the realtimerail app.
+    - ideally using a script that pulls down all the RRR data
 
 ## Version 0.1
 
@@ -21,7 +24,8 @@
     that is not so specific to the NYC subway? Maybe a message table?
     
 ### Features
-- Rewrite the NYC status priority code
+- Rewrite the NYC subway status priority code to make it
+    actually workable
 - Write the feed health code. Might need a feed runnable
     that deletes the old data?
 - Implement the 'route list entries' DB layout to actually
@@ -35,7 +39,8 @@
     - Take into consideration the 'usual routes' at a specifc
         stop, may be different. Though plan is to store
         these separate anyway...
-    - Make ServicePatternEdge
+    - Make ServicePatternEdge table
+    - routelistutil -> servicepatternutil
 - write the optimized topological sort algorithm for generating routes lists.
     (Also, better name than route lists?)
 - Use APScheduler (Advanced Python Scheduler) to create runnables that
@@ -51,9 +56,6 @@
 - Optimize the SQL ALchemy config, especially with joins
     and figure out what the cascades are doing
     Just adding .join(Model.attribute) loads it I think
-    
-    
-### Misc small task
 - Make Daos singletons?
 - find out when SQL Alchemy triggers updates 
     and use this to inform the sync method.

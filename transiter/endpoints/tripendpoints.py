@@ -1,11 +1,13 @@
 from flask import Blueprint
 
 from ..services import tripservice
+from .responsemanager import http_get_response
 
 trip_endpoints = Blueprint('trip_endpoints', __name__)
 
 
 @trip_endpoints.route('/')
+@http_get_response
 def list_all(system_id, route_id):
     """List all trips for a specific system
 
@@ -33,8 +35,10 @@ def list_all(system_id, route_id):
     """
     return tripservice.list_all_in_route(system_id, route_id)
 
+urlutil.
 
 @trip_endpoints.route('/<trip_id>/')
+@http_get_response
 def get(system_id, route_id, trip_id):
     """Retrieve a specific trip in a specific system.
 
@@ -86,4 +90,4 @@ def get(system_id, route_id, trip_id):
     in a stop response, except stop database is returned instead of
     trip database.
     """
-    return tripservice.get(system_id, trip_id)
+    return tripservice.get_in_route_by_id(system_id, route_id, trip_id)
