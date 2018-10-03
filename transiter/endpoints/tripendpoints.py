@@ -35,7 +35,6 @@ def list_all(system_id, route_id):
     """
     return tripservice.list_all_in_route(system_id, route_id)
 
-urlutil.
 
 @trip_endpoints.route('/<trip_id>/')
 @http_get_response
