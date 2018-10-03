@@ -1,6 +1,5 @@
-from . import dbschema
-from . import dbconnection
-from . import dbexceptions
+from . import connection
+from . import models
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -42,7 +41,7 @@ class _BaseEntityDao:
 
     @staticmethod
     def get_session():
-        return dbconnection.get_session()
+        return connection.get_session()
 
     def list_all(self):
         query = _Query(self)
@@ -56,7 +55,7 @@ class _BaseEntityDao:
         return query.one()
 
     def create(self):
-        session = dbconnection.get_session()
+        session = connection.get_session()
         entity = self._DbObj()
         session.add(entity)
         return entity
@@ -71,7 +70,7 @@ class _BaseEntityDao:
         entity = self.get_by_id(entity_id)
         if entity is None:
             return False
-        session = dbconnection.get_session()
+        session = connection.get_session()
         session.delete(entity)
         return True
 
@@ -92,65 +91,8 @@ class _SystemChildEntityDao(_BaseEntityDao):
         return query.one()
 
 
-class _BaseDao:
+def _dao_factory(schema_entity, id_field, order_field=None, base_dao=_BaseEntityDao):
 
-    def __init__(self):
-        self._DbObj = None
-        self._id_field = None
-        self._order_field = None
-        self.system_id = None
-
-    @staticmethod
-    def get_session():
-        return dbconnection.get_session()
-
-    def list_all_in_system(self, system_id):
-        pass
-
-    def list(self):
-        session = dbconnection.get_session()
-        query = session.query(self._DbObj)
-        if self._order_field is not None:
-            query = query.order_by(self._order_field)
-        for row in query:
-            yield row
-
-    def get_by_id(self, entity_id, system_id=None):
-        if system_id is None:
-            system_id = self.system_id
-        session = dbconnection.get_session()
-        query = session.query(self._DbObj).filter(self._id_field==entity_id)
-        if system_id is not None:
-            query = query.filter(self._DbObj.system_id==system_id)
-        try:
-            return query.one()
-        except NoResultFound:
-            return None
-
-    def create(self):
-        session = dbconnection.get_session()
-        entity = self._DbObj()
-        session.add(entity)
-        return entity
-
-    def delete(self, entity_id):
-        """
-        Delete an entity from the DB whose ID is given
-        :param entity_id:
-        :return: True if an entity was found and deleted, false if no such
-         entity exists
-        """
-        session = dbconnection.get_session()
-        entity = self.get_by_id(entity_id)
-        if entity is None:
-            return False
-        session.delete(entity)
-        return True
-
-
-def _dao_factory(schema_entity, id_field, order_field=None, base_dao=None):
-    if base_dao is None:
-        base_dao = _BaseDao
     # @singleton
     class NewDao(base_dao):
         def __init__(self):
@@ -163,41 +105,54 @@ def _dao_factory(schema_entity, id_field, order_field=None, base_dao=None):
     return NewDao
 
 
-StopDao = _dao_factory(schema_entity=dbschema.Stop,
+StopDao = _dao_factory(schema_entity=models.Stop,
                        id_field='stop_id',
                        order_field='name',
                        base_dao=_SystemChildEntityDao)
 
-RouteDao = _dao_factory(schema_entity=dbschema.Route,
-                        id_field='route_id',
-                        order_field='route_id',
-                        base_dao=_SystemChildEntityDao)
+_RouteDao = _dao_factory(schema_entity=models.Route,
+                         id_field='route_id',
+                         order_field='route_id',
+                         base_dao=_SystemChildEntityDao)
 
-SystemDao = _dao_factory(schema_entity=dbschema.System,
+SystemDao = _dao_factory(schema_entity=models.System,
                          id_field='system_id',
                          order_field='system_id',
                          base_dao=_BaseEntityDao)
 
-FeedDao = _dao_factory(schema_entity=dbschema.Feed,
+FeedDao = _dao_factory(schema_entity=models.Feed,
                        id_field='feed_id',
                        order_field='feed_id',
                        base_dao=_SystemChildEntityDao)
 
-FeedUpdateDao = _dao_factory(schema_entity=dbschema.FeedUpdate,
+FeedUpdateDao = _dao_factory(schema_entity=models.FeedUpdate,
                              id_field='id',
                              order_field='id',
                              base_dao=_BaseEntityDao)
 
-_StopEventDao = _dao_factory(schema_entity=dbschema.StopEvent,
+_StopEventDao = _dao_factory(schema_entity=models.StopEvent,
                              id_field='id',
                              order_field='id',
                              base_dao=_BaseEntityDao)
+
+
+class RouteDao(_RouteDao):
+    @staticmethod
+    def get_active_stop_ids(route_pri_key):
+        session = connection.get_session()
+        query = session.query(models.Stop.stop_id)\
+            .join(models.StopEvent, models.Stop.id == models.StopEvent.stop_pri_key)\
+            .join(models.Trip, models.Trip.id == models.StopEvent.trip_pri_key)\
+            .join(models.Route, models.Trip.route_pri_key == models.Route.id)\
+            .filter(models.Route.id == route_pri_key)
+        for row in query:
+            yield row[0]
 
 
 class StopEventDao(_StopEventDao):
 
     def get_by_stop_pri_key(self, stop_pri_key):
-        session = dbconnection.get_session()
+        session = connection.get_session()
         query = session.query(self._DbObj).filter(
             self._DbObj.stop_pri_key==stop_pri_key).order_by(
             self._DbObj.arrival_time

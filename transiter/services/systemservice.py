@@ -1,21 +1,21 @@
-from ..data import dbconnection
-from ..data import dbaccessobjects
-from ..data import dbschema
+from ..database import connection
+from ..database import models
+from ..database import accessobjects
 from . import exceptions
 from ..utils import routelistutil
 import csv
 import os
 from ..utils import jsonutil
 
-system_dao = dbaccessobjects.SystemDao()
+system_dao = accessobjects.SystemDao()
 
 
-@dbconnection.unit_of_work
+@connection.unit_of_work
 def list_all():
     return [_convert(system) for system in system_dao.list_all()]
 
 
-@dbconnection.unit_of_work
+@connection.unit_of_work
 def get_by_id(system_id):
     system = system_dao.get_by_id(system_id)
     if system is None:
@@ -23,7 +23,7 @@ def get_by_id(system_id):
     return _convert(system)
 
 
-@dbconnection.unit_of_work
+@connection.unit_of_work
 def install(system_id):
     if system_dao.get_by_id(system_id) is not None:
         return False
@@ -34,7 +34,7 @@ def install(system_id):
     _import_static_data(system)
     return True
 
-@dbconnection.unit_of_work
+@connection.unit_of_work
 def delete_by_id(system_id):
     deleted = system_dao.delete_by_id(system_id)
     if not deleted:
@@ -60,7 +60,7 @@ def _import_static_data(system):
     custom_data_dir = os.path.join(system_base_dir, 'customdata')
     print(agency_data_dir)
 
-    session = dbconnection.get_session()
+    session = connection.get_session()
 
     routes_data_file = os.path.join(agency_data_dir, 'routes.txt')
     routes_by_route_id = {}
@@ -68,7 +68,7 @@ def _import_static_data(system):
         csv_reader = csv.DictReader(csv_file)
         line_count = 0
         for row in csv_reader:
-            route = dbschema.Route()
+            route = models.Route()
             session.add(route)
             route.route_id=row['route_id']
             route.color = row['route_color']
@@ -93,7 +93,7 @@ def _import_static_data(system):
             if stop_id[-1] == 'N' or stop_id[-1] == 'S':
                 continue
 
-            stop = dbschema.Stop()
+            stop = models.Stop()
             session.add(stop)
             stop.stop_id=row['stop_id']
             stop.name = row['stop_name']
@@ -123,7 +123,7 @@ def _import_static_data(system):
             if len(station_set) == 0:
                 continue
 
-            station = dbschema.Station()
+            station = models.Station()
             session.add(station)
             for stop_id in station_set:
                 stops_by_stop_id[stop_id].station = station
@@ -139,7 +139,7 @@ def _import_static_data(system):
         route = routes_by_route_id[route_id]
         position = 0
         for stop_id in route_list:
-            route_list_entry = dbschema.RouteListEntry()
+            route_list_entry = models.RouteListEntry()
             session.add(route_list_entry)
             route_list_entry.route = route
             route_list_entry.stop = stops_by_stop_id[stop_id]
@@ -160,14 +160,14 @@ def _import_static_data(system):
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
             while sorted_stop_ids[index] != row['stop_id']:
-                north = dbschema.DirectionName()
+                north = models.DirectionName()
                 session.add(north)
                 north.name = row['north_direction_name']
                 north.track = None
                 north.direction = 'N'
                 north.stop = stops_by_stop_id[sorted_stop_ids[index]]
 
-                south = dbschema.DirectionName()
+                south = models.DirectionName()
                 session.add(south)
                 south.name = row['south_direction_name']
                 south.track = None
@@ -183,7 +183,7 @@ def _import_static_data(system):
     with open(direction_name_exceptions_data_file, mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
-            direction = dbschema.DirectionName()
+            direction = models.DirectionName()
             session.add(direction)
             direction.name = row['name']
             direction.track = row['track']
@@ -194,7 +194,7 @@ def _import_static_data(system):
     with open(feeds_data_file, mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
-            feed = dbschema.Feed()
+            feed = models.Feed()
             session.add(feed)
             feed.system = system
             feed.feed_id = row['feed_id']

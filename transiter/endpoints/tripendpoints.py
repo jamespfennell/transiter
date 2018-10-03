@@ -6,7 +6,7 @@ trip_endpoints = Blueprint('trip_endpoints', __name__)
 
 
 @trip_endpoints.route('/')
-def list_all(system_id):
+def list_all(system_id, route_id):
     """List all trips for a specific system
 
     .. :quickref: Trip; List all trips for a specific system
@@ -31,11 +31,11 @@ def list_all(system_id):
         ]
 
     """
-    return tripservice.list_all(system_id)
+    return tripservice.list_all_in_route(system_id, route_id)
 
 
 @trip_endpoints.route('/<trip_id>/')
-def get(system_id, trip_id):
+def get(system_id, route_id, trip_id):
     """Retrieve a specific trip in a specific system.
 
     .. :quickref: Trip; Retrieve a specific trip
@@ -83,7 +83,7 @@ def get(system_id, trip_id):
         }
 
     Note that the stop event item here is the same as the stop event
-    in a stop response, except stop data is returned instead of
-    trip data.
+    in a stop response, except stop database is returned instead of
+    trip database.
     """
     return tripservice.get(system_id, trip_id)

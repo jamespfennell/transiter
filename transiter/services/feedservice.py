@@ -1,5 +1,5 @@
-from ..data.dbaccessobjects import FeedDao, FeedUpdateDao
-from ..data import dbconnection
+from ..database.accessobjects import FeedDao, FeedUpdateDao
+from ..database import connection
 import importlib
 import requests
 import hashlib
@@ -9,7 +9,7 @@ feed_dao = FeedDao()
 feed_update_dao = FeedUpdateDao()
 
 
-@dbconnection.unit_of_work
+@connection.unit_of_work
 def list_all_in_system(system_id):
 
     response = []
@@ -22,7 +22,7 @@ def list_all_in_system(system_id):
     return response
 
 
-@dbconnection.unit_of_work
+@connection.unit_of_work
 def get_in_system_by_id(system_id, feed_id):
 
     feed = feed_dao.get_in_system_by_id(system_id, feed_id)
@@ -33,7 +33,7 @@ def get_in_system_by_id(system_id, feed_id):
     return response
 
 
-@dbconnection.unit_of_work
+@connection.unit_of_work
 def create_feed_update(system_id, feed_id):
 
     feed = feed_dao.get_in_system_by_id(system_id, feed_id)
@@ -47,7 +47,7 @@ def create_feed_update(system_id, feed_id):
     return {'done': 'true'}
 
 
-@dbconnection.unit_of_work
+@connection.unit_of_work
 def list_updates_in_feed(system_id, feed_id):
 
     feed = feed_dao.get_in_system_by_id(system_id, feed_id)
@@ -89,7 +89,14 @@ def execute_feed_update(feed_update):
         )
     module = importlib.import_module(module_path, __name__)
     update_function = getattr(module, feed.parser_function)
-    with open('./transiter/l2.gtfs', 'rb') as f:
+
+
+    if feed.feed_id == 'ServiceStatus':
+        filename = 'ServiceStatusSubway.xml'
+    else:
+        filename = 'l2.gtfs'
+
+    with open('./transiter/{}'.format(filename), 'rb') as f:
         content = f.read()
     #request = requests.get(feed.url)
     #content = request.content
@@ -98,6 +105,6 @@ def execute_feed_update(feed_update):
     #print(m.hexdigest())
     try:
         update_function(feed, feed.system, content)
+        feed_update.status = 'SUCCESS_UPDATED'
     except Exception:
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
-    feed_update.status = 'SUCCESS_UPDATED'

@@ -1,7 +1,7 @@
-from ..data import dbaccessobjects
+from ..database import accessobjects
 
-stop_dao = dbaccessobjects.StopDao()
-stop_event_dao = dbaccessobjects.StopEventDao()
+stop_dao = accessobjects.StopDao()
+stop_event_dao = accessobjects.StopEventDao()
 
 def list_all_in_system(system_id):
 

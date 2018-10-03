@@ -7,8 +7,6 @@
  1. After the update process is running, test that it's giving 
     the exact same
     data as the realtimerail app.
- 1. Rewrite the install system to use the new DAOs
- 1. Make Daos singletons?
 
 ## Version 0.1
 
@@ -23,11 +21,12 @@
     that is not so specific to the NYC subway? Maybe a message table?
     
 ### Features
-
+- Rewrite the NYC status priority code
 - Write the feed health code. Might need a feed runnable
     that deletes the old data?
 - Implement the 'route list entries' DB layout to actually
     make it usable
+    It's actually called ServicePattern
     - When loading static GTFS data, have a system for
         detecting nights/weekends/days/rush hours etc
         possibly using regex
@@ -36,6 +35,7 @@
     - Take into consideration the 'usual routes' at a specifc
         stop, may be different. Though plan is to store
         these separate anyway...
+    - Make ServicePatternEdge
 - write the optimized topological sort algorithm for generating routes lists.
     (Also, better name than route lists?)
 - Use APScheduler (Advanced Python Scheduler) to create runnables that
@@ -45,12 +45,16 @@
 - Add a verbose option to route and stop get endpoints
     
 ### Existing code clean up
+- Move the trip sync function from gtfsutil to syncutil
+- Rewrite the install and update systems to use the new DAOs
 - Improve/clean up the NYC Subway xml file parser.
 - Optimize the SQL ALchemy config, especially with joins
     and figure out what the cascades are doing
+    Just adding .join(Model.attribute) loads it I think
     
     
 ### Misc small task
+- Make Daos singletons?
 - find out when SQL Alchemy triggers updates 
     and use this to inform the sync method.
 - Add uniqueness and not null conditions to the schema
@@ -62,7 +66,7 @@
 ## Version 0.2
 
 ### Features
-
+- Service pattern endpoints 
 - Make a system to download the latest GTFS static data 
     from the transit agency
     and check if it's up to date.
@@ -72,3 +76,5 @@
 - Implement the stations endpoints.
 
 
+
+    

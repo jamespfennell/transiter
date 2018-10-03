@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
 import json
-from ...data import dbconnection
-from ...data import dbsync
-from ...data import dbschema
+from ...database import connection
+from ...database import syncutil
+from ...database import models
 def jsonify(data):
     return json.dumps(data, indent=4, separators=(',', ': '))
 
@@ -10,17 +10,17 @@ def jsonify(data):
 def update(feed, service, content):
     feed_messages = parse(content)
 
-    session = dbconnection.get_session()
-    routes = {route.route_id: route for route in session.query(dbschema.Route)}
+    session = connection.get_session()
+    routes = {route.route_id: route for route in session.query(models.Route)}
 
     for message in feed_messages.values():
         message['routes'] = [routes[route_id] for route_id in message['route_ids']]
         print(message['routes'])
         del message['route_ids']
-    db_messages = set(session.query(dbschema.StatusMessage))
+    db_messages = set(session.query(models.StatusMessage))
     # What to do about routes? Could manually add them
     # to the JSON - yes
-    dbsync.sync(dbschema.StatusMessage, db_messages, feed_messages.values(), ['message_id'])
+    syncutil.sync(models.StatusMessage, db_messages, feed_messages.values(), ['message_id'])
 
     return True
 
@@ -63,6 +63,7 @@ def parse(content):
 
             message_data['message'] = situation.find(namespace + 'Description').text
             message_data['message_type'] = situation.find(namespace + 'ReasonName').text
+            message_data['priority'] = situation.find(namespace + 'MessagePriority').text
 
             affected_routes = set()
             for route in situation.find(namespace + 'Affects').iter(namespace + 'LineRef'):

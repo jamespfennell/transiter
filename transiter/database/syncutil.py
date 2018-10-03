@@ -1,4 +1,4 @@
-from . import dbconnection
+from . import connection
 
 
 def delete_from_db(session, entity):
@@ -30,7 +30,7 @@ def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_
     ids_to_delete = db_ids - new_ids
     ids_to_create = new_ids - db_ids
 
-    session = dbconnection.get_session()
+    session = connection.get_session()
 
     for id in ids_to_delete:
         delete_function(session, id_to_db_entity[id])
