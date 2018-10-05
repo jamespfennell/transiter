@@ -58,10 +58,6 @@ def get(system_id, route_id, trip_id):
 
         {
             "trip_id" : "LN1537314960",
-            "route": {
-                "route_id" : "L",
-                "href": "https://transiter.io/systems/nycsubway/routes/L"
-            },
             "direction": "NORTH",
             "start_time": 100000000,
             "last_update_time": 100000000,

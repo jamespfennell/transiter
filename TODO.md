@@ -2,14 +2,14 @@
 
 ## Main development thread
 
- 1. Implement 
-    - The get trip endpoint
-    - The get stop endpoint <- both rely on stopevent
-    All the data should be in the DB
- 1. After the update process is running, test that it's giving 
+ 1. Double check all of the endpoints match the API with
+    appropriate not implemented flags. Update the API and services
+    as appropriate to get 100% consistency
+ 1. After the update process is running test that it's giving 
     the exact same
     data as the realtimerail app.
-    - ideally using a script that pulls down all the RRR data
+    - ideally using a script that pulls down all the RRR data in
+    a snapshot and compares every single possible API call
 
 ## Version 0.1
 
@@ -21,9 +21,11 @@
     - Testing with sqlalchemy:
     https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
  - add the terminus abbr table and load the data. Can this be done in a way
-    that is not so specific to the NYC subway? Maybe a message table?
+    that is not so specific to the NYC subway? Maybe the message table?
+    Yes - only needed in the update step
     
 ### Features
+- Use YAML for configiguring the subway
 - Rewrite the NYC subway status priority code to make it
     actually workable
 - Write the feed health code. Might need a feed runnable
@@ -41,7 +43,8 @@
         these separate anyway...
     - Make ServicePatternEdge table
     - routelistutil -> servicepatternutil
-- write the optimized topological sort algorithm for generating routes lists.
+- write the optimized topological 
+sort algorithm for generating routes lists.
     (Also, better name than route lists?)
 - Use APScheduler (Advanced Python Scheduler) to create runnables that
     can automatically update the feeds
@@ -50,6 +53,8 @@
 - Add a verbose option to route and stop get endpoints
     
 ### Existing code clean up
+- Rename the representation short_repr and long_repr?
+- Rename DB columns
 - Move the trip sync function from gtfsutil to syncutil
 - Rewrite the install and update systems to use the new DAOs
 - Improve/clean up the NYC Subway xml file parser.
@@ -63,6 +68,13 @@
     where possible.
 - Speed up sync_trip_data by doing one query to retrieve
     all relevent stop_events.
+
+
+### The package refactor
+
+- Have two packages transitor and transiter_nycsubway
+- THe transitor package comes with a YAML config file
+
 
 
 ## Version 0.2

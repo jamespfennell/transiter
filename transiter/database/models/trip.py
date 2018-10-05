@@ -11,14 +11,18 @@ class Trip(Base):
     route_pri_key = Column(Integer, ForeignKey("routes.id"))
     direction = Column(String)
     start_time = Column(TIMESTAMP(timezone=True))
+    # TODO: remove
     is_assigned = Column(Boolean)
     train_id = Column(String)
     last_update_time = Column(TIMESTAMP(timezone=True))
+    #TODO: rename status
     current_status = Column(String)
     current_stop_sequence = Column(Integer)
 
     route = relationship("Route", back_populates="trips")
-    stop_events = relationship("StopEvent", back_populates="trip")
+    stop_events = relationship("StopEvent",
+                               back_populates="trip",
+                               order_by="StopEvent.sequence_index")
 
 
     def repr_for_list(self):
@@ -27,5 +31,12 @@ class Trip(Base):
         }
     def repr_for_get(self):
         return {
-            'trip_id': self.trip_id
+            'trip_id': self.trip_id,
+            'direction': self.direction,
+            'start_time': self.start_time,
+            'last_update_time': self.last_update_time,
+            'feed_update_time': 'NI',
+            'status': self.current_status,
+            'train_id': self.train_id,
+            'terminus': 'NI'
         }
