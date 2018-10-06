@@ -1,7 +1,7 @@
 from flask import Blueprint
 from ..services import feedservice
 from .responsemanager import http_get_response, http_post_response
-
+import time
 feed_endpoints = Blueprint('feed_endpoints', __name__)
 
 
@@ -94,7 +94,9 @@ def create_feed_update(system_id, feed_id):
             "href": "https://transiter.io/systems/nycsubway/feeds/123456/updates/9873"
         }
     """
-    return feedservice.create_feed_update(system_id, feed_id)
+    a = feedservice.create_feed_update(system_id, feed_id)
+    print(time.time())
+    return a
 
 
 @feed_endpoints.route('/<feed_id>/updates')

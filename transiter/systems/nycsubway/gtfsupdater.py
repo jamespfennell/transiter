@@ -13,11 +13,12 @@ Need to activate the DB entities
 
 """
 
+from ...utils import jsonutil
 
 import pytz
 #import os
 import datetime
-#import time
+import time
 #import hashlib
 import json
 
@@ -35,14 +36,16 @@ from ...utils import gtfsutil
 
 
 def update(feed, system, content):
-
+    #print('1   {}'.format(time.time()))
     nyc_subway_gtfs_extension = gtfsutil.GtfsExtension(
         '..nyc_subway_pb2',
         __name__
         )
     feed_json = gtfsutil.gtfs_to_json(content, nyc_subway_gtfs_extension)
+    #print('2   {}'.format(time.time()))
     #print(jsonify(feed_json))
     feed_json = gtfsutil.restructure(feed_json)
+    #print('3   {}'.format(time.time()))
 
 
 
@@ -53,8 +56,11 @@ def update(feed, system, content):
     # ....and then sync
 
     db_json = interpret_nyc_subway_gtfs_feed(feed_json)
+    #print('4   {}'.format(time.time()))
 
+    # This step is taking half a second!
     gtfsutil.sync_to_db(db_json)
+    #print('5   {}'.format(time.time()))
     # For the sync step, compare with all route ids in db_json['route_ids']
 
 
@@ -69,7 +75,7 @@ def interpret_nyc_subway_gtfs_feed(data):
     This is where NYC Subway specific logic/intepretation/cleanin goes
     """
     trips_to_delete = set()
-    for trip in data['trips']:
+    for index, trip in enumerate(data['trips']):
         trip['direction'] = trip['direction'][0]
         #if trip['direction'] == '':
         #    trip['direction'] = 'N'
@@ -97,9 +103,9 @@ def interpret_nyc_subway_gtfs_feed(data):
                 trip['direction']
                 )
         except Exception as e:
-            print('Could not generate trip_uid; skipping.')
-            print(e)
-            trips_to_delete.add(trip['trip_id'])
+            #print('Could not generate trip_uid; skipping.')
+            #print(e)
+            trips_to_delete.add(index)
             continue
         start_time = generate_trip_start_time(trip['trip_id'],
                                               trip['start_date'])
@@ -108,12 +114,20 @@ def interpret_nyc_subway_gtfs_feed(data):
         del trip['train_id']
 
 
-        # TODO: reactivate this when you've had more coffee
+
+
         # Checking for buggy trains: trains whose start time is in the past but have not been assigned
         #start_time = int(generate_trip_start_time(trip['trip_id'], trip['start_date']).timestamp())
-        #if trip['nyct_trip_descriptor']['is_assigned'] is False and (start_time - feed_timestamp <-300):
-        #    print('Buggy train {}; skipping.'.format(trip_uid))
-        #    continue
+        #print((trip['start_time']))
+        #print((data['timestamp']))
+        #print(data['timestamp']-trip['start_time'])
+        #print(( trip['start_time']  - data['timestamp'] ).total_seconds())
+        #print(trip['is_assigned'])
+        seconds_since_started = (data['timestamp'] - trip['start_time']).total_seconds()
+        if not trip['is_assigned'] and seconds_since_started > 300:
+            #print('Buggy train {}; skipping.'.format(trip_uid))
+            trips_to_delete.add(index)
+            continue
 
         for stop_event in trip['stop_events']:
 
@@ -124,31 +138,53 @@ def interpret_nyc_subway_gtfs_feed(data):
                 direction = invert_direction(direction)
             # Basic information
             stop_event.update({
-                    #'trip_id' : trip_uid,
-                    'stop_id' : stop_event['stop_id'][0:3],
-                    'direction' : direction,
-                    'future' : True,
+                    # 'trip_id' : trip_uid,
+                    'stop_id': stop_event['stop_id'][0:3],
+                    'direction': direction,
+                    'future': True,
                     })
 
 
-        # TODO: reactivate this when you've had more coffee
         # There is a 'problem' with the MTA feed whereby a stop may be in the feed even if it has passed.
         # This happens when the feed data is only updated at stops.
         # So when going from A -> B, the train needs to reach B before noting that it has left A
         # The mark of this scenario is that the arrival time at A is the same as the update time
-        # In this case then, we ignore the stop if the update time is more than 15 seconds ago -- time for the train to have left.
+        # In this case then, we ignore the stop if the update time is more than
+        # 15 seconds ago -- time for the train to have left.
         # To avoid a bug, this ignoring only happens if there are more than 2 stops left.
-        """
+
         if len(trip['stop_events'])>1:
             first_stop_time = trip['stop_events'][0]['arrival_time']
             if first_stop_time is None:
-                first_stop_time = trip_data['stop_events'][0]['departure_time']
-            if first_stop_time <= trip_data['last_update_time']:
-                if current_timestamp() - trip_data['last_update_time'].timestamp() > 15:
-                    trips_with_fake_first_stop.add(trip_data['trip_id'])
-                    del trip_data['stop_events'][0]
-        """
-    print('Parsing complete.')
+                first_stop_time = trip['stop_events'][0]['departure_time']
+            if trip['last_update_time'] is None:
+                #print('no last update time')
+                continue
+            if first_stop_time <= trip['last_update_time']:
+                current_time = timestamp_to_datetime(current_timestamp())
+                #print('here')
+                #print(current_time)
+                #print(trip['last_update_time'])
+                seconds_since_update = (current_time - trip['last_update_time']).total_seconds()
+                if seconds_since_update > 15:
+                    #trips_with_fake_first_stop.add(trip_data['trip_id'])
+                    trip['stop_events'].pop(0)
+                    #print('Buggy first stop')
+
+    #print('Parsing complete.')
+    #for trip_id in trips_to_delete:
+    #    print('DELETING')
+    #    print(trip_id)
+    #    data['trips'].pop(trip_id)
+
+    new_trips = []
+    for index, trip in enumerate(data['trips']):
+        if index not in trips_to_delete:
+            new_trips.append(trip)
+
+    data['trips'] = new_trips
+
+    #print(jsonutil.convert_for_http(data))
     return data
 
 
@@ -156,7 +192,6 @@ eastern = pytz.timezone('US/Eastern')
 
 
 def timestamp_to_datetime(timestamp):
-    return timestamp
     return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
 
 

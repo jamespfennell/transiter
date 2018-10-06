@@ -4,9 +4,11 @@ import importlib
 from google.transit import gtfs_realtime_pb2
 import json
 import datetime
+import time
 from ..database import models
 from ..database import syncutil
 from ..database import connection
+from ..utils import jsonutil
 
 def jsonify(data):
     return json.dumps(data, indent=2, separators=(',', ': '), default=json_serial)
@@ -66,8 +68,8 @@ def restructure(content):
         try:
             trip_uid = trip['trip_id']
         except Exception as e:
-            print('Could not generate trip_uid; skipping.')
-            print(e)
+            #print('Could not generate trip_uid; skipping.')
+            #print(e)
             continue
 
         # If the basic trip_uid settings have already been imported, do nothing; otherwise, import then.
@@ -79,12 +81,14 @@ def restructure(content):
                     'route_id' : trip['route_id'],
                     'start_date': trip['start_date'],
                     'current_status': None,
-                    'current_stop_sequence': None,
-                    'last_update_time': None
+                    'current_stop_sequence': 0,
+                    'last_update_time': None,
+                    'feed_update_time': timestamp_to_datetime(header['timestamp'])
                     }
 
             trips[trip_uid] = trip_data
-
+        #print('Trip_uid')
+        #print(trip_uid)
         # TODO: take this logic out of here
         if "nyct_trip_descriptor" in trip:
             trip_data.update(trip["nyct_trip_descriptor"])
@@ -127,7 +131,7 @@ def restructure(content):
         # This following condition checks that both the vehicle and trip_update entities respectively have been imported.
         # If they have been, the sequence indices should be updated to factor in the number of stops already passed
         # (which is given by the current_stop_sequence field in the vehicle entity
-        if trip_data['current_stop_sequence'] is not None and 'stop_events' in trip_data:
+        if 'stop_events' in trip_data:
             # Update the stop sequence indices
             current_stop_sequence = trip_data['current_stop_sequence']
             for stop_event_data in trip_data['stop_events']:
@@ -141,22 +145,30 @@ def restructure(content):
             'route_ids': list(actual_feed_route_ids),
             'trips' : list(trips.values())
             }
-    print('Parsing complete.')
+    #print('Parsing complete.')
     return response
 
 
 
 # Rename pb2_to_json
 def gtfs_to_json(content, extension=None):
+    #print('1.1 {}'.format(time.time()))
     if extension is not None:
         extension.activate()
     gtfs_feed = gtfs_realtime_pb2.FeedMessage()
+    #print('1.2 {}'.format(time.time()))
     gtfs_feed.ParseFromString(content)
-    return(_parse_protobuf_message(gtfs_feed))
+    #print('1.3 {}'.format(time.time()))
+    a = _parse_protobuf_message(gtfs_feed)
+    #print('1.4 {}'.format(time.time()))
+    return a
 
 def _identity(value):
     return value
 
+
+# Takes 40 milliseconds for the 123456 -> kind of a small bottleneck
+# Can it be sped up?
 def _parse_protobuf_message(message):
     """
     Input is of type a google.protobuf.message.Message
@@ -198,6 +210,7 @@ def timestamp_to_datetime(timestamp):
 
 def archive_function_factory(cutoff):
     def archive_function(session, stop_event):
+        #print(stop_event)
         if cutoff is not None and stop_event.sequence_index < cutoff:
             stop_event.future = False
         else:
@@ -209,61 +222,81 @@ def archive_function_factory(cutoff):
 # Should be inside the dbsync instead ...
 # IN the dbsyncutil
 # Call this sync_trip_data
+# TODO need to also take in the transit system id as route_id is ambiguous
 def sync_to_db(data):
 
-    # get all the routes first
+    #print('Beginning the mega query')
+
+
 
     session = connection.get_session()
-    route_id_to_route = {route.route_id: route for route in
-                         session.query(models.Route).filter(models.Route.route_id.in_(data['route_ids']))}
-    route_pri_keys = [route.id for route in route_id_to_route.values()]
-    print(jsonify(route_id_to_route))
+
+    # TODO: why do I have all() here?
+    query = session.query(models.Route.route_id, models.Route.id) \
+        .filter(models.Route.route_id.in_(data['route_ids']))\
+        .all()
+    route_id_to_route_pri_key = {route_id: route_pri_key for (route_id, route_pri_key) in query}
+
+    # TODO Investigate breaking this up into two queries
+    # Should be easy as can find the stop events using the trip_pri_keys?
+    query = session.query(
+        models.Trip, models.StopEvent) \
+        .filter(models.Trip.route_pri_key.in_(route_id_to_route_pri_key.values()))\
+        .filter(models.Trip.id == models.StopEvent.trip_pri_key) \
+        .filter(models.StopEvent.future == True)\
+        .all()
+
+
+    db_trips = set()
+    trip_id_to_db_stop_events = {}
+    for (trip, stop_event) in query:
+        db_trips.add(trip)
+        if trip.trip_id not in trip_id_to_db_stop_events:
+            trip_id_to_db_stop_events[trip.trip_id] = set()
+        trip_id_to_db_stop_events[trip.trip_id].add(stop_event)
+
+
+
+    trip_id_to_feed_stop_events = {trip['trip_id']: trip['stop_events'] for trip in data['trips']}
+    for trip in data['trips']:
+        trip['route_pri_key'] = route_id_to_route_pri_key[trip['route_id']]
+        del trip['route_id']
+        del trip['stop_events']
+        #print(jsonutil.convert_for_http(trip))
+
+    persisted_trips = syncutil.sync(models.Trip, db_trips, data['trips'], ['trip_id'])
 
     stop_ids = set()
-    trip_id_to_stop_events = {}
-    for trip in data['trips']:
-        for stop_event in trip['stop_events']:
-            stop_ids.add(stop_event['stop_id'])
-        trip_id_to_stop_events[trip['trip_id']] = trip['stop_events']
-        del trip['stop_events']
+    for trip in persisted_trips:
+        stop_ids.update([stop_event['stop_id']
+                         for stop_event
+                         in trip_id_to_feed_stop_events[trip.trip_id]])
 
-        trip['route'] = route_id_to_route[trip['route_id']]
-        del trip['route_id']
+    query = session.query(models.Stop.stop_id, models.Stop.id) \
+        .filter(models.Stop.stop_id.in_(stop_ids)) \
+        .all()
+    stop_id_to_stop_pri_key = {stop_id: stop_pri_key for (stop_id, stop_pri_key) in query}
 
-        #trip['start_time'] = timestamp_to_datetime(trip['start_time'])
-        #trip['last_update_time'] = timestamp_to_datetime(trip['last_update_time'])
-
-
-    stop_id_to_stop = {
-        stop.stop_id: stop for
-        stop in session.query(models.Stop).filter(models.Stop.stop_id.in_(stop_ids))
-    }
-
-    db_trips = session.query(models.Trip).filter(models.Trip.route_pri_key.in_(route_pri_keys)).all()
-    trips = syncutil.sync(models.Trip, db_trips, data['trips'], ['trip_id'])
-
-    for trip in trips:
-        db_stop_events = session.query(models.StopEvent).filter(models.StopEvent.trip_pri_key == trip.id).filter(models.StopEvent.future == True).all()
+    for trip in persisted_trips:
+        stop_events = trip_id_to_feed_stop_events[trip.trip_id]
+        db_stop_events = trip_id_to_db_stop_events.get(trip.trip_id, [])
+        for stop_event in stop_events:
+            stop_event['stop_pri_key'] = stop_id_to_stop_pri_key[stop_event['stop_id']]
+            stop_event['trip_pri_key'] = trip.id
+            del stop_event['stop_id']
 
         archive_function = archive_function_factory(trip.current_stop_sequence)
 
-        # Get rid of this -> should be in the restructure function
-        for stop_event in trip_id_to_stop_events[trip.trip_id]:
-
-            stop_event['trip'] = trip
-            stop_event['stop_pri_key'] = stop_id_to_stop[stop_event['stop_id']].id
-
-            del stop_event['stop_id']
-
-
-        syncutil.sync(models.StopEvent, db_stop_events,
-                      trip_id_to_stop_events[trip.trip_id],
+        syncutil.sync(models.StopEvent, db_stop_events, stop_events,
                       ['stop_pri_key'],
                       delete_function=archive_function)
 
-        print('Updated trip {}'.format(trip.trip_id))
+
+        #print('Updated trip {}'.format(trip.trip_id))
         #print(trip.trip_id)
         #print(db_stop_events)
         #print(jsonify(trip_id_to_stop_events[trip.trip_id]))
 
         #break;
+    #print([t1, t2, t3])
+    #print('4.5 {}'.format(time.time()))

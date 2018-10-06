@@ -7,14 +7,15 @@ class Trip(Base):
     __tablename__ = 'trips'
 
     id = Column(Integer, primary_key=True)
-    trip_id = Column(String, unique=True, index=True)
-    route_pri_key = Column(Integer, ForeignKey("routes.id"))
+    trip_id = Column(String, index=True)
+    route_pri_key = Column(Integer, ForeignKey("routes.id"), nullable=False)
     direction = Column(String)
     start_time = Column(TIMESTAMP(timezone=True))
     # TODO: remove
     is_assigned = Column(Boolean)
     train_id = Column(String)
     last_update_time = Column(TIMESTAMP(timezone=True))
+    feed_update_time = Column(TIMESTAMP(timezone=True))
     #TODO: rename status
     current_status = Column(String)
     current_stop_sequence = Column(Integer)
@@ -22,7 +23,8 @@ class Trip(Base):
     route = relationship("Route", back_populates="trips")
     stop_events = relationship("StopEvent",
                                back_populates="trip",
-                               order_by="StopEvent.sequence_index")
+                               order_by="StopEvent.sequence_index",
+                               cascade="all, delete-orphan")
 
 
     def repr_for_list(self):
@@ -35,7 +37,7 @@ class Trip(Base):
             'direction': self.direction,
             'start_time': self.start_time,
             'last_update_time': self.last_update_time,
-            'feed_update_time': 'NI',
+            'feed_update_time': self.feed_update_time,
             'status': self.current_status,
             'train_id': self.train_id,
             'terminus': 'NI'

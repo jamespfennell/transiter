@@ -5,9 +5,11 @@ from .base import Base
 
 
 class ServicePatternEntry(Base):
-
+    pass
+    """
 
     id = Column(Integer, primary_key=True)
     service_pattern_pri_key
     stop_pri_key
     position =
+    """

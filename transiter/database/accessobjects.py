@@ -181,9 +181,10 @@ class StopEventDao(_StopEventDao):
 
     def get_by_stop_pri_key(self, stop_pri_key):
         session = connection.get_session()
-        query = session.query(self._DbObj).filter(
-            self._DbObj.stop_pri_key==stop_pri_key).order_by(
-            self._DbObj.arrival_time
-        )
+        query = session.query(self._DbObj)\
+            .filter(self._DbObj.stop_pri_key==stop_pri_key) \
+            .filter(self._DbObj.future == True)\
+            .order_by(self._DbObj.departure_time)\
+            .order_by(self._DbObj.arrival_time)
         for row in query:
             yield row

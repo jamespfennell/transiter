@@ -8,8 +8,9 @@ class StopEvent(Base):
     __tablename__ = 'stop_events'
 
     id = Column(Integer, primary_key=True)
-    stop_pri_key = Column(Integer, ForeignKey('stops.id'))
-    trip_pri_key = Column(Integer, ForeignKey('trips.id'))
+    direction = Column(String)
+    stop_pri_key = Column(Integer, ForeignKey('stops.id'), nullable=False)
+    trip_pri_key = Column(Integer, ForeignKey('trips.id'), nullable=False)
     # TODO rename to status and make a string
     future = Column(Boolean)
     arrival_time = Column(TIMESTAMP(timezone=True))

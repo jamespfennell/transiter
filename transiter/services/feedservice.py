@@ -1,6 +1,7 @@
 from ..database.accessobjects import FeedDao, FeedUpdateDao
 from ..database import connection
 import importlib
+import time
 import requests
 import hashlib
 
@@ -37,13 +38,14 @@ def get_in_system_by_id(system_id, feed_id):
 def create_feed_update(system_id, feed_id):
 
     feed = feed_dao.get_in_system_by_id(system_id, feed_id)
-
+    print(feed.feed_id)
     feed_update = feed_update_dao.create()
     feed_update.feed = feed
     feed_update.status = 'SCHEDULED'
 
     # TODO make this asynchronous
     execute_feed_update(feed_update)
+    print(time.time())
     return {'done': 'true'}
 
 
@@ -98,8 +100,9 @@ def execute_feed_update(feed_update):
 
     with open('./transiter/{}'.format(filename), 'rb') as f:
         content = f.read()
-    #request = requests.get(feed.url)
-    #content = request.content
+    print(feed.url)
+    request = requests.get(feed.url)
+    content = request.content
     #m = hashlib.md5()
     #m.update(content.encode('utf-8'))
     #print(m.hexdigest())
@@ -108,3 +111,4 @@ def execute_feed_update(feed_update):
         feed_update.status = 'SUCCESS_UPDATED'
     except Exception:
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
+        raise
