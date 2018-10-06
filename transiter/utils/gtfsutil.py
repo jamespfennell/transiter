@@ -1,5 +1,7 @@
 import importlib
 #from .protobuf import gtfs_realtime_pb2
+
+
 #from .protobuf import nyc_subway_pb2
 from google.transit import gtfs_realtime_pb2
 import json
@@ -38,8 +40,12 @@ class GtfsExtension():
 def restructure(content):
 
     data = content
+    try:
+        header = data['header']
+    except KeyError:
 
-    header = data['header']
+        print(data)
+        return
     # Read header information from the feed: the time it was created, and the routes contained within.
     #feed_timestamp = header['timestamp']
     #if feed_timestamp == 0:
@@ -124,9 +130,20 @@ def restructure(content):
 
                 trip_data['stop_events'].append(stop_event_data)
 
+
                 # TODO: take this logic out of here
                 if "nyct_stop_time_update" in stop_time_update:
-                    trip_data.update(stop_time_update["nyct_stop_time_update"])
+                    try:
+                        mta_data = stop_time_update["nyct_stop_time_update"]
+                        if 'actual_track' not in mta_data:
+                            stop_event_data['track'] = mta_data['scheduled_track']
+                        else:
+                            stop_event_data['track'] = mta_data['actual_track']
+                    except KeyError:
+                        print(mta_data)
+                        print('Bug')
+                else:
+                    stop_event_data['track'] = None
 
         # This following condition checks that both the vehicle and trip_update entities respectively have been imported.
         # If they have been, the sequence indices should be updated to factor in the number of stops already passed
@@ -143,21 +160,29 @@ def restructure(content):
     response = {
             'timestamp': timestamp_to_datetime(header['timestamp']),
             'route_ids': list(actual_feed_route_ids),
-            'trips' : list(trips.values())
+            'trips': list(trips.values())
             }
     #print('Parsing complete.')
     return response
 
 
+from google.protobuf.message import DecodeError
 
 # Rename pb2_to_json
 def gtfs_to_json(content, extension=None):
     #print('1.1 {}'.format(time.time()))
     if extension is not None:
         extension.activate()
+
+
     gtfs_feed = gtfs_realtime_pb2.FeedMessage()
+    try:
+        gtfs_feed.ParseFromString(content)
+    except DecodeError:
+        print('Decode error')
+        return {}
+
     #print('1.2 {}'.format(time.time()))
-    gtfs_feed.ParseFromString(content)
     #print('1.3 {}'.format(time.time()))
     a = _parse_protobuf_message(gtfs_feed)
     #print('1.4 {}'.format(time.time()))
@@ -277,13 +302,24 @@ def sync_to_db(data):
         .all()
     stop_id_to_stop_pri_key = {stop_id: stop_pri_key for (stop_id, stop_pri_key) in query}
 
+    unknown_stop_ids = set()
     for trip in persisted_trips:
         stop_events = trip_id_to_feed_stop_events[trip.trip_id]
         db_stop_events = trip_id_to_db_stop_events.get(trip.trip_id, [])
-        for stop_event in stop_events:
+
+        buggy_indices = set()
+        for index, stop_event in enumerate(stop_events):
+            stop_id = stop_event['stop_id']
+            if stop_id not in stop_id_to_stop_pri_key:
+                buggy_indices.add(index)
+                unknown_stop_ids.add(stop_id)
+                continue
             stop_event['stop_pri_key'] = stop_id_to_stop_pri_key[stop_event['stop_id']]
             stop_event['trip_pri_key'] = trip.id
             del stop_event['stop_id']
+
+        for index in buggy_indices:
+            stop_events[index] = None
 
         archive_function = archive_function_factory(trip.current_stop_sequence)
 
@@ -300,3 +336,5 @@ def sync_to_db(data):
         #break;
     #print([t1, t2, t3])
     #print('4.5 {}'.format(time.time()))
+    if len(unknown_stop_ids) > 0:
+        print('During parsing found {} unknown stop_ids: {}'.format(len(unknown_stop_ids), ', '.join(unknown_stop_ids)))

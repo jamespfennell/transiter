@@ -41,7 +41,13 @@ def update(feed, system, content):
         '..nyc_subway_pb2',
         __name__
         )
+
+    if len(content) == 0:
+        print('Feed empty')
+        return False
+
     feed_json = gtfsutil.gtfs_to_json(content, nyc_subway_gtfs_extension)
+
     #print('2   {}'.format(time.time()))
     #print(jsonify(feed_json))
     feed_json = gtfsutil.restructure(feed_json)
@@ -54,6 +60,10 @@ def update(feed, system, content):
     # fix_nyc_subway_data(transformed_json)
     # ....swap out DB bobjects
     # ....and then sync
+    if feed_json is None:
+        print('Error')
+        print(jsonutil.convert_for_http(feed_json))
+        return False
 
     db_json = interpret_nyc_subway_gtfs_feed(feed_json)
     #print('4   {}'.format(time.time()))
@@ -75,7 +85,7 @@ def interpret_nyc_subway_gtfs_feed(data):
     This is where NYC Subway specific logic/intepretation/cleanin goes
     """
     trips_to_delete = set()
-    for index, trip in enumerate(data['trips']):
+    for index, trip in enumerate(data.get('trips', [])):
         trip['direction'] = trip['direction'][0]
         #if trip['direction'] == '':
         #    trip['direction'] = 'N'

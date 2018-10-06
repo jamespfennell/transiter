@@ -22,6 +22,8 @@ def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_
 
     id_to_new_entity = {}
     for new_entity in new_entities:
+        if new_entity is None:
+            continue
         id = tuple(new_entity[key] for key in keys)
         id_to_new_entity[id] = new_entity
 

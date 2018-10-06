@@ -52,45 +52,94 @@ def compare_responses(rtr_s, transiter_s):
             if rtr_trip['arrival_time'] == trn_trip['arrival_time']:
                 right += 1
             else:
+                if trn_trip['trip']['feed_update_time'] != rtr_trip['feed_last_updated']:
+                    continue
                 print('Trip {} mismatching details'.format(rtr_trip['trip_uid']))
                 print('   Arrival time: RTR: {}; Transitor: {}'.format(
                     rtr_trip['arrival_time'],
                     trn_trip['arrival_time']))
                 #print(jsonutil.convert_for_http(trn_trip))
                 #trn_trip['trip']'['feed_update_time']
-                if trn_trip['trip']['feed_update_time'] != rtr_trip['feed_last_updated']:
-                    print('Probably because of different feed update times')
-                    continue
                 wrong += 1
 
     for trip_id in trn_stop_event.keys():
         print('Trip {} not in RTR; in Transitor'.format(trip_id))
     wrong += len(trn_stop_event)
+    if right+wrong == 0:
+        return 1
     print('Trip matching: {}%'.format(right*100/(right+wrong)))
     return right/(right+wrong)
     #print('Trips in Transitor not in RTR: {}'.format(len(trn_stop_event)))
 
 
+"""
+from .database.accessobjects import StopDao
+stop_dao = StopDao()
+
+
+stops = stop_dao.list_all_in_system('nycsubway')
+stops = reversed(sorted(stops, key = lambda stop: stop.stop_id))
+north = None
+south = None
+lines = []
+for stop in stops:
+    if len(stop.direction_names) >= 2:
+        for direction_name in stop.direction_names:
+            if direction_name.track is not None:
+                continue
+            if direction_name.direction == 'N':
+                north = direction_name.name
+            else:
+                south = direction_name.name
+    lines.append((stop.stop_id, north, south))
+
+lines.append(('stop_id', 'north_direction_name', 'south_direction_name'))
+lines.reverse()
+
+
+with open('direction_names.csv', 'w') as f:
+    for line in lines:
+        f.write('{},{},{}\n'.format(*line))
+exit()
+
+"""
+
 stop_ids = set()
 
-route_ids = ['1', '2', '3', '4', '5', '6']
+routes = routeservice.list_all_in_system('nycsubway')
+route_ids = [route['route_id'] for route in routes]
+print(route_ids)
 
+#route_ids = ['R'] #, '2', '3', '4', '5', '6', 'L', 'A', 'B', 'C', 'D', 'E', 'F']
 for route_id in route_ids:
     route = routeservice.get_in_system_by_id('nycsubway', route_id)
     for stop in route['stops']:
         stop_ids.add(stop['stop_id'])
 
-print(stop_ids)
+print(sorted(stop_ids))
 
 stop_id_to_rtr_response = {}
 
 comparisons = 0
 sum_of_proportions = 0
 
+
+#stop_ids = ['D26']
+
+
 for index, stop_id in enumerate(sorted(stop_ids)):
+
     if index%10 == 0:
         print('Updating Transitor')
         requests.post('http://localhost:5000/systems/nycsubway/feeds/123456/')
+        requests.post('http://localhost:5000/systems/nycsubway/feeds/L/')
+        requests.post('http://localhost:5000/systems/nycsubway/feeds/G/')
+        requests.post('http://localhost:5000/systems/nycsubway/feeds/ACE/')
+        requests.post('http://localhost:5000/systems/nycsubway/feeds/BDFM/')
+        requests.post('http://localhost:5000/systems/nycsubway/feeds/NQRW/')
+        requests.post('http://localhost:5000/systems/nycsubway/feeds/7/')
+        requests.post('http://localhost:5000/systems/nycsubway/feeds/SIR/')
+        requests.post('http://localhost:5000/systems/nycsubway/feeds/JZ/')
 
     print('Retrieving RTR response for stop_id={}'.format(stop_id))
     rtr_response = \
@@ -104,8 +153,8 @@ for index, stop_id in enumerate(sorted(stop_ids)):
     comparisons += 1
     sum_of_proportions += compare_responses(rtr_response, transitor_response)
 
-    if index == 0:
-        break
+    #if index == 19:
+    #    break
 
 print('Total success: {}%'.format(sum_of_proportions*100/comparisons))
 

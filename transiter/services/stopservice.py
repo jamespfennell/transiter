@@ -22,13 +22,19 @@ class DirectionNamesMatcher:
         self._directory = {None: {}}
 
     def match_stop_event(self, stop_event):
-        track = stop_event.scheduled_track
+        track = stop_event.track
         direction = stop_event.direction
         #print(self._directory)
         #print(direction)
         if track in self._directory and direction in self._directory[track]:
             return self._directory[track][direction]
-        return self._directory[None][direction]
+
+        if direction in self._directory[None]:
+            return self._directory[None][direction]
+
+        print('Unknown direction name for track={}, direction={}'.format(track, direction))
+        print(self._directory)
+        return direction
 
 
     def add_direction_name(self, direction_name):
@@ -40,6 +46,7 @@ class DirectionNamesMatcher:
 import time
 def get_in_system_by_id(system_id, stop_id):
 
+    # TODO make this more robust for stops without direction names
     stop = stop_dao.get_in_system_by_id(system_id, stop_id)
     response = stop.repr_for_list()
 
@@ -60,7 +67,7 @@ def get_in_system_by_id(system_id, stop_id):
     for stop_event in stop_events:
 
         direction_name = direction_names_matcher.match_stop_event(stop_event)
-        print(direction_name)
+        #print(direction_name)
         if stop_event.departure_time is None:
             this_time = stop_event.arrival_time.timestamp()
         else:
@@ -80,11 +87,11 @@ def get_in_system_by_id(system_id, stop_id):
         condition2 = (this_time - time.time() <= 600)
         # If not trips of this route have been added so far
         condition3 = (stop_event.trip.route.route_id not in route_ids_so_far[direction_name])
-        print(count)
-        print('Considering {}'.format(stop_event.trip.trip_id))
-        print([condition1, condition2, condition3])
+        #print(count)
+        #print('Considering {}'.format(stop_event.trip.trip_id))
+        #print([condition1, condition2, condition3])
         if not (condition1 or condition2 or condition3):
-            print('Skipping {}'.format(stop_event.trip.trip_id))
+            #print('Skipping {}'.format(stop_event.trip.trip_id))
             continue
 
 

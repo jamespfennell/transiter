@@ -120,10 +120,10 @@ SystemDao = _dao_factory(schema_entity=models.System,
                          order_field='system_id',
                          base_dao=_BaseEntityDao)
 
-FeedDao = _dao_factory(schema_entity=models.Feed,
-                       id_field='feed_id',
-                       order_field='feed_id',
-                       base_dao=_SystemChildEntityDao)
+_FeedDao = _dao_factory(schema_entity=models.Feed,
+                        id_field='feed_id',
+                        order_field='feed_id',
+                        base_dao=_SystemChildEntityDao)
 
 FeedUpdateDao = _dao_factory(schema_entity=models.FeedUpdate,
                              id_field='id',
@@ -139,6 +139,18 @@ _TripDao = _dao_factory(schema_entity=models.Trip,
                         id_field='id',
                         order_field='id',
                         base_dao=_BaseEntityDao)
+
+class FeedDao(_FeedDao):
+    @staticmethod
+    def get_last_successful_update(feed_pri_key):
+        session = connection.get_session()
+        query = session.query(models.FeedUpdate)\
+            .filter(models.FeedUpdate.feed_pri_key==feed_pri_key)\
+            .order_by(models.FeedUpdate.last_action_time.desc())\
+            .filter(models.FeedUpdate.status == 'SUCCESS_UPDATED')\
+            .limit(1)
+
+        return query.first()
 
 
 class TripDao(_TripDao):

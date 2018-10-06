@@ -24,6 +24,10 @@
     Yes - only needed in the update step
     
 ### Features
+- Have three separate apps:
+    - read only
+    - non admin
+    - all
 - Use YAML for configiguring the subway
 - Rewrite the NYC subway status priority code to make it
     actually workable
@@ -42,14 +46,12 @@
         these separate anyway...
     - Make ServicePatternEdge table
     - routelistutil -> servicepatternutil
-- write the optimized topological 
-sort algorithm for generating routes lists.
-    (Also, better name than route lists?)
 - Use APScheduler (Advanced Python Scheduler) to create runnables that
     can automatically update the feeds
     https://apscheduler.readthedocs.io/en/latest/userguide.html
     - Aka, implement the autoupdate feature.
 - Add a verbose option to route and stop get endpoints
+- In feeds add an ALLOW_EMPTY_CONTENT flag
     
 ### Existing code clean up
 - Rename the representation short_repr and long_repr?
@@ -80,6 +82,9 @@ sort algorithm for generating routes lists.
 
 ### Features
 - Service pattern endpoints 
+- write the optimized topological 
+sort algorithm for generating routes lists.
+    (Also, better name than route lists?)
 - Make a system to download the latest GTFS static data 
     from the transit agency
     and check if it's up to date.

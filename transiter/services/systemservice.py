@@ -159,22 +159,31 @@ def _import_static_data(system):
     with open(direction_names_data_file, mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
-            while sorted_stop_ids[index] != row['stop_id']:
-                north = models.DirectionName()
-                session.add(north)
-                north.name = row['north_direction_name']
-                north.track = None
-                north.direction = 'N'
-                north.stop = stops_by_stop_id[sorted_stop_ids[index]]
+            stop_id = row['stop_id']
+            north = models.DirectionName()
+            session.add(north)
+            north.name = row['north_direction_name']
+            north.track = None
+            north.direction = 'N'
+            north.stop = stops_by_stop_id[stop_id]
 
-                south = models.DirectionName()
-                session.add(south)
-                south.name = row['south_direction_name']
-                south.track = None
-                south.direction = 'S'
-                south.stop = stops_by_stop_id[sorted_stop_ids[index]]
+            south = models.DirectionName()
+            session.add(south)
+            south.name = row['south_direction_name']
+            south.track = None
+            south.direction = 'S'
+            south.stop = stops_by_stop_id[stop_id]
 
-                index += 1
+            index += 1
+
+
+
+
+
+
+
+
+
 
     direction_name_exceptions_data_file = os.path.join(
         custom_data_dir,

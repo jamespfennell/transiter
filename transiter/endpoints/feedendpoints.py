@@ -94,9 +94,7 @@ def create_feed_update(system_id, feed_id):
             "href": "https://transiter.io/systems/nycsubway/feeds/123456/updates/9873"
         }
     """
-    a = feedservice.create_feed_update(system_id, feed_id)
-    print(time.time())
-    return a
+    return feedservice.create_feed_update(system_id, feed_id)
 
 
 @feed_endpoints.route('/<feed_id>/updates')

@@ -38,14 +38,14 @@ def get_in_system_by_id(system_id, feed_id):
 def create_feed_update(system_id, feed_id):
 
     feed = feed_dao.get_in_system_by_id(system_id, feed_id)
-    print(feed.feed_id)
+    #print(feed.feed_id)
     feed_update = feed_update_dao.create()
     feed_update.feed = feed
     feed_update.status = 'SCHEDULED'
 
     # TODO make this asynchronous
     execute_feed_update(feed_update)
-    print(time.time())
+    #print(time.time())
     return {'done': 'true'}
 
 
@@ -59,13 +59,7 @@ def list_updates_in_feed(system_id, feed_id):
     ).order_by(feed_update_dao._DbObj.last_action_time.desc())
     response = []
     for feed_update in query:
-        response.append(
-            {
-                'id': feed_update.id,
-                'status': feed_update.status,
-                'last_action_time': feed_update.last_action_time
-            }
-        )
+        response.append(feed_update.short_repr())
     return response
 
 
@@ -98,14 +92,26 @@ def execute_feed_update(feed_update):
     else:
         filename = 'l2.gtfs'
 
-    with open('./transiter/{}'.format(filename), 'rb') as f:
-        content = f.read()
-    print(feed.url)
+    #with open('./transiter/{}'.format(filename), 'rb') as f:
+    #    content = f.read()
+    #print(feed.url)
     request = requests.get(feed.url)
     content = request.content
-    #m = hashlib.md5()
-    #m.update(content.encode('utf-8'))
-    #print(m.hexdigest())
+
+    print(time.time())
+    m = hashlib.md5()
+    m.update(content)
+    feed_update.raw_data_hash = m.hexdigest()
+    print(time.time())
+
+    last_successful_update = feed_dao.get_last_successful_update(feed.id)
+    print(time.time())
+    if last_successful_update is not None and \
+            last_successful_update.raw_data_hash == feed_update.raw_data_hash:
+        feed_update.status = 'SUCCESS_NOT_NEEDED'
+        return
+    print(time.time())
+
     try:
         update_function(feed, feed.system, content)
         feed_update.status = 'SUCCESS_UPDATED'
