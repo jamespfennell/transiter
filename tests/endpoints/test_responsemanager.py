@@ -38,6 +38,7 @@ class TestPutRequests(unittest.TestCase):
         def response():
             return True
 
+
         content, http_code, __ = response()
 
         self.assertEqual(content, '')
