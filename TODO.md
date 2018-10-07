@@ -2,10 +2,6 @@
 
 ## Main development thread
 
- 1. After the update process is running test that it's giving 
-    the exact same data as the realtimerail app.
-    - ideally using a script that pulls down all the RRR data in
-    a snapshot and compares every single possible API call
  1. Double check all of the endpoints match the API with
     appropriate not implemented flags. Update the API and services
     as appropriate to get 100% consistency
