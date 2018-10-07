@@ -1,7 +1,7 @@
-from sqlalchemy import Column, TIMESTAMP, Index, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, TIMESTAMP, Index, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-
 from sqlalchemy.sql import functions as sql_functions
+
 from .base import Base
 
 
@@ -32,18 +32,24 @@ class FeedUpdate(Base):
         return {
             'id': self.id,
             'status': self.status,
+            'last_action_time': self.last_action_time
+        }
+
+    def long_repr(self):
+        return {
+            'id': self.id,
+            'status': self.status,
             'raw_data_hash': self.raw_data_hash,
             'last_action_time': self.last_action_time
         }
 
-Index(
-    'feed_updates_ordered_for_feed_idx',
-    FeedUpdate.feed_pri_key,
-    FeedUpdate.last_action_time)
 
-Index(
-    'feed_updates_last_successful_idx',
-    FeedUpdate.feed_pri_key,
-    FeedUpdate.last_action_time,
-    FeedUpdate.status)
+Index('feed_updates_ordered_for_feed_idx',
+      FeedUpdate.feed_pri_key,
+      FeedUpdate.last_action_time)
+
+Index('feed_updates_last_successful_idx',
+      FeedUpdate.feed_pri_key,
+      FeedUpdate.last_action_time,
+      FeedUpdate.status)
 

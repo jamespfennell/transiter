@@ -1,6 +1,5 @@
 
 from ..database.accessobjects import TripDao
-
 trip_dao = TripDao()
 
 

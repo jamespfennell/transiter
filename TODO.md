@@ -48,6 +48,7 @@
     - Aka, implement the autoupdate feature.
 - Add a verbose option to route and stop get endpoints
 - In feeds add an ALLOW_EMPTY_CONTENT flag
+- Implement href
     
 ### Existing code clean up
 - Rename the representation short_repr and long_repr?
@@ -63,8 +64,6 @@
     and use this to inform the sync method.
 - Add uniqueness and not null conditions to the schema
     where possible.
-- Speed up sync_trip_data by doing one query to retrieve
-    all relevent stop_events.
 
 
 ### The package refactor
