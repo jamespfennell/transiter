@@ -9,12 +9,16 @@ def list_all_in_route(system_id, route_id):
     :param system_id: the text id of the system
     :param route_id: the route id of the system
     :return: a list of short model.Trip representations.
-    [
-        {
-            <fields in a long model.Trip representation>,
-        },
-        ...
-    ]
+
+    .. code-block:: json
+
+        [
+            {
+                <fields in a short model.Trip representation>,
+            },
+            ...
+        ]
+
     """
     return [trip.repr_for_list()
             for trip

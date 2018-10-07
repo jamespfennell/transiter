@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock as mock
 from transiter.endpoints import responsemanager
 from transiter.services import exceptions
 
@@ -11,12 +12,14 @@ def mock_convert_for_http(data):
     raise NotImplementedError
 
 
-responsemanager.jsonutil.convert_for_http = mock_convert_for_http
+#responsemanager.jsonutil.convert_for_http = mock_convert_for_http
 
 
 class TestGetRequests(unittest.TestCase):
 
-    def test_content(self):
+    @mock.patch('transiter.endpoints.responsemanager.jsonutil')
+    def test_content(self, jsonutil):
+        jsonutil.convert_for_http = mock_convert_for_http
         @responsemanager.http_get_response
         def response():
             return RAW_RESPONSE
