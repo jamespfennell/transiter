@@ -39,6 +39,5 @@ class Trip(Base):
             'last_update_time': self.last_update_time,
             'feed_update_time': self.feed_update_time,
             'status': self.current_status,
-            'train_id': self.train_id,
-            'terminus': 'NI'
+            'train_id': self.train_id
         }

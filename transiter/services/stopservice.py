@@ -110,16 +110,19 @@ def get_in_system_by_id(system_id, stop_id):
         stop_event_response.update(stop_event.repr_for_list())
         trip_response = stop_event.trip.repr_for_get()
         trip_response['route'] = stop_event.trip.route.repr_for_list()
+        trip_response['origin'] = 'NI'
+        trip_response['terminus'] = 'NI'
         stop_event_response['trip'] = trip_response
         stop_event_responses.append(stop_event_response)
     response['stop_events'] = stop_event_responses
     station_response = stop.station.repr_for_list()
     station_response['system'] = 'NI'
-    station_response['sibling_stops'] = []
+    station_response['href'] = 'NI'
+    station_response['child_stops'] = []
     for sibling_stop in stop.station.stops:
         if sibling_stop.stop_id == stop_id:
             continue
-        station_response['sibling_stops'].append(
+        station_response['child_stops'].append(
             sibling_stop.repr_for_list()
         )
     # TODO use a Get parameter to specify a depth

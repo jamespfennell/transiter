@@ -1,0 +1,537 @@
+{
+	"info": {
+		"_postman_id": "f95af11d-b25c-4106-b0f0-a8f5d77f4105",
+		"name": "Transiter",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "About",
+			"item": [
+				{
+					"name": "About",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/about",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"about"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Index",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}",
+							"host": [
+								"{{transiter_server}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "System",
+			"item": [
+				{
+					"name": "List systems",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get system",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Install system",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete system",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Route",
+			"item": [
+				{
+					"name": "List routes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/routes",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								"routes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get route",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/routes/L",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								"routes",
+								"L"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Trip",
+			"item": [
+				{
+					"name": "List trips",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/routes/2/trips",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								"routes",
+								"2",
+								"trips"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get trip",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/routes/2/trips/2N1538873040",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								"routes",
+								"2",
+								"trips",
+								"2N1538873040"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Feed",
+			"item": [
+				{
+					"name": "Route feed",
+					"item": [
+						{
+							"name": "Get feed (route)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"L"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create feed update (route)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"L",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get feed updates (route)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/updates",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"L",
+										"updates"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get specific feed update",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/updates/921",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"L",
+										"updates",
+										"921"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get autoupdater",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/autoupdater",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"L",
+										"autoupdater"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update autoupdater",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/autoupdater",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"L",
+										"autoupdater"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Service status feed",
+					"item": [
+						{
+							"name": "Get feed (service status)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"L"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create feed update (service status)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/ServiceStatus/",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"ServiceStatus",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get feed updates (service status)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {},
+								"url": {
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/ServiceStatus/updates",
+									"host": [
+										"{{transiter_server}}"
+									],
+									"path": [
+										"systems",
+										"nycsubway",
+										"feeds",
+										"ServiceStatus",
+										"updates"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "List feeds",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/feeds",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								"feeds"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Stop",
+			"item": [
+				{
+					"name": "List stops",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/stops",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								"stops"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get stop",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "{{transiter_server}}/systems/nycsubway/stops/L22",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"nycsubway",
+								"stops",
+								"L22"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "9de40805-00e5-4303-8680-c678a61a21a6",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "73a985a9-43be-41ad-b3fe-a0c12ce95dc8",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "7bb46ed5-2189-45fb-9b82-652828850bcc",
+			"key": "transiter_server",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	]
+}

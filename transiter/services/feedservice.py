@@ -17,8 +17,13 @@ def list_all_in_system(system_id):
 
     for feed in feed_dao.list_all_in_system(system_id):
         feed_response = {
-            'feed_id': feed.feed_id
+            'feed_id': feed.feed_id,
+            'href': 'NI',
+            'last_update_time': 'NI',
+            'health': {
+                'status': 'NI'
             }
+        }
         response.append(feed_response)
     return response
 
@@ -29,7 +34,18 @@ def get_in_system_by_id(system_id, feed_id):
     feed = feed_dao.get_in_system_by_id(system_id, feed_id)
     response = {
         'feed_id': feed.feed_id,
-        'url': feed.url
+        'last_update_time': 'NI',
+        'health': {
+            'status': 'NI',
+            'score': 'NI',
+            "update_types": [
+                {
+                    "status": "NI",
+                    "failure_message": 'NI',
+                    "fraction": 'NI'
+                },
+            ]
+        }
         }
     return response
 
@@ -46,7 +62,9 @@ def create_feed_update(system_id, feed_id):
     # TODO make this asynchronous
     execute_feed_update(feed_update)
     #print(time.time())
-    return {'done': 'true'}
+    return {
+        'href': 'NI'
+    }
 
 
 @connection.unit_of_work

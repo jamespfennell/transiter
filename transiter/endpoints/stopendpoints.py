@@ -24,7 +24,8 @@ def list_all_in_system(system_id):
             {
                 "stop_id": "F01",
                 "name": "14th st",
-                "daytime_routes": ["4", "5", "6"],
+                "location": "Brooklyn",
+                "usual_service": ["4", "5", "6"],
                 "href": "https://transiter.io/systems/nycsubway/stops/F01"
             },
         ]
@@ -54,42 +55,52 @@ def get_in_system_by_id(system_id, stop_id):
 
         {
             "stop_id" : "L03",
-            "directions" : ["West Side (8 Av)", "East Side and Brooklyn"],
+            "location": "Brooklyn",
+            "href": "(not implemented yet)",
+            "usual_service": ['L'],
+            "direction_names" : ["West Side (8 Av)", "East Side and Brooklyn"],
             "stop_events" : [
                 {
-                    "direction": "West Side (8 Av)",
+                    "direction_name": "West Side (8 Av)",
                     "trip": {
                         "trip_id" : "LN1537314780",
+                        "direction": "NI",
                         "status": "RUNNING",
+                        "start_time" : 1537316340,
                         "last_update_time" : 1537316340,
                         "feed_update_time" : 1537316640,
                         "route": {
                             "route_id" : "L",
                             "href": "https://transiter.io/systems/nycsubway/routes/L"
                         },
-                        "terminus" : "8 Av",
+                        "origin" : "NI",
+                        "terminus" : "NI",
                         "href": "https://transiter.io/systems/nycsubway/trips/LN1537314780",
                     },
                     "arrival_time" : 1537316801,
                     "departure_time" : 1537316816,
-                    "scheduled_track" : "2",
-                    "actual_track" : "2",
+                    "track" : "2",
                     "sequence_index" : 22,
                     "status": "FUTURE"
                 },
             ],
-            "station": {
+            "parent_station": {
                 "station_id" : 602,
-                "borough" : "Manhattan",
-                "sibling_stops" : [
+                "name": "NI",
+                "system": "NI",
+                "location" : "Manhattan",
+                "href": "(not implemented yet)",
+                "child_stops" : [
                     {
                         "stop_id" : "635",
                         "name": "14th st",
+                        'location' : 'NI',
                         "daytime_routes": ["4", "5", "6"],
                         "href": "https://transiter.io/systems/nycsubway/stops/602"
                     },
                 ],
-                "href": "(not implemented yet)"
+                "child_stations": [],
+                "parent_station": null
             }
         }
     """

@@ -54,9 +54,9 @@ def get_in_system_by_id(system_id, route_id):
             "service_status" : "Planned Work",
             "service_status_messages" : [
                 {
-                    "message_heading" : "Planned Work: Track Maintenance",
-                    "posted_time" : 136266526,
-                    "message_text" : "Downtown [B] [D] [F] [M] trains run at a slower speed."
+                    "type" : "Planned Work: Track Maintenance",
+                    "time_posted" : 136266526,
+                    "content" : "Downtown [B] [D] [F] [M] trains run at a slower speed."
                 }
             ],
             "stops" : [

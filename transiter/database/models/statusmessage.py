@@ -9,6 +9,7 @@ class StatusMessage(Base):
     id = Column(Integer, primary_key=True)
     message_id = Column(String)
     message = Column(String)
+    # TODO convert to timestamp field
     time_posted = Column(String)
     message_type = Column(String)
     priority = Column(Integer)
@@ -20,7 +21,8 @@ class StatusMessage(Base):
     def repr_for_list(self):
         return {
             'type': self.message_type,
-            'content': self.message
+            'content': self.message,
+            'time_posted': self.time_posted
         }
 
 

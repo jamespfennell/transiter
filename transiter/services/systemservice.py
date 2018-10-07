@@ -20,8 +20,26 @@ def get_by_id(system_id):
     system = system_dao.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError
-    return _convert(system)
-
+    response = _convert(system)
+    response.update({
+        "stops": {
+            "count": "NI",
+            "href": "NI"
+        },
+        "stations": {
+            "count": "NI",
+            "href": "NI"
+        },
+        "routes": {
+            "count": "NI",
+            "href": "NI"
+        },
+        "trips": {
+            "count": "NI",
+            "href": "NI"
+        }
+    })
+    return response
 
 @connection.unit_of_work
 def install(system_id):
@@ -44,7 +62,8 @@ def delete_by_id(system_id):
 
 def _convert(system):
     return {
-        'system_id': system.system_id
+        'system_id': system.system_id,
+        'href': 'NI'
         #'name': system.name,
         #'routes': routes_data
         }

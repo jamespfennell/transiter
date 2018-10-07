@@ -4,6 +4,7 @@ from .endpoints.routeendpoints import route_endpoints
 from .endpoints.stopendpoints import stop_endpoints
 from .endpoints.tripendpoints import trip_endpoints
 from .endpoints.feedendpoints import feed_endpoints
+from .endpoints.responsemanager import http_get_response
 
 app = Flask(__name__)
 app.register_blueprint(feed_endpoints, url_prefix='/systems/<system_id>/feeds')
@@ -14,6 +15,7 @@ app.register_blueprint(system_endpoints, url_prefix='/systems')
 
 
 @app.route('/')
+@http_get_response
 def root():
     """Basic entry info
 
@@ -33,10 +35,18 @@ def root():
             }
         }
     """
-    return 'Not implemented'
+    return {
+        'about': {
+            'href': 'Not implemented'
+        },
+        'systems': {
+            'href': 'Not implemented'
+        }
+    }
 
 
 @app.route('/about')
+@http_get_response
 def about():
     """Get information about this Transiter instance.
 
@@ -59,7 +69,17 @@ def about():
             }
         }
     """
-    return 'Not implemented'
+    return {
+        "name": "Transiter",
+        "version": "0.1",
+        "source": {
+            "licence": {
+                "name": "MIT Licence",
+                "href": "https://github.com/jamespfennell/transiter/blob/master/LICENSE"
+            },
+            "href": "https://github.com/jamespfennell/transiter"
+        }
+    }
 
 
 

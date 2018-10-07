@@ -5,21 +5,9 @@
  1. Double check all of the endpoints match the API with
     appropriate not implemented flags. Update the API and services
     as appropriate to get 100% consistency
- 1. Finish the unit tests for the endpoints layer, maybe do services layer as part
-    of general cleanup
 
 ## Version 0.1
 
-### Testing
-
- - Write unit tests for everything - aim for 100% test coverage, 
-    to be safe.
-  - This incudes adding DB tests, especially for the GTFS Realtime DB sync code.
-    - Testing with sqlalchemy:
-    https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
- - add the terminus abbr table and load the data. Can this be done in a way
-    that is not so specific to the NYC subway? Maybe the message table?
-    Yes - only needed in the update step
     
 ### Features
 - Have three separate apps:
@@ -51,6 +39,9 @@
 - Add a verbose option to route and stop get endpoints
 - In feeds add an ALLOW_EMPTY_CONTENT flag
 - Implement href
+ - add the terminus abbr table and load the data. Can this be done in a way
+    that is not so specific to the NYC subway? Maybe the message table?
+    Yes - only needed in the update step
     
 ### Existing code clean up
 - Rename the representation short_repr and long_repr?
@@ -67,6 +58,13 @@
 - Add uniqueness and not null conditions to the schema
     where possible.
 
+### Testing
+
+ - Write unit tests for everything for the service layer and document the responses
+    - aim for 100% test coverage, to be safe.
+  - This incudes adding DB tests, especially for the GTFS Realtime DB sync code.
+    - Testing with sqlalchemy:
+    https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
 
 ### The package refactor
 

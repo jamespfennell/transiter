@@ -24,11 +24,20 @@ def list_all_in_route(system_id, route_id):
         [
             {
                 "trip_id" : "LN1537314780",
-                "route": {
-                    "route_id" : "L",
-                    "href": "https://transiter.io/systems/nycsubway/routes/L"
+                "origin" : {
+                    "stop_id": "L20",
+                    "name": "Canarsie",
+                    'location': 'NI',
+                    "usual_service": ['4', '5', '6'],
+                    "href": "..."
                 },
-                "terminus" : "8 Av",
+                "terminus" : {
+                    "stop_id": "L01",
+                    "name": "8 Av",
+                    'location': 'NI',
+                    "usual_service": ['4', '5', '6'],
+                    "href": "..."
+                },
                 "href": "https://transiter.io/systems/nycsubway/trips/LN1537314780",
             },
         ]
@@ -71,13 +80,14 @@ def get_in_route_by_id(system_id, route_id, trip_id):
                     "stop": {
                         "stop_id": "F01",
                         "name": "14th st",
+                        'location': 'NI',
+                        "usual_service": ['4', '5', '6'],
                         "href": "https://transiter.io/systems/nycsubway/stops/F01"
                     },
                     "arrival_time" : 1537316801,
                     "departure_time" : 1537316816,
                     "scheduled_track" : "2",
-                    "actual_track" : "2",
-                    "sequence_index" : 22,
+                    "track" : "2",
                     "status": "FUTURE"
                 },
             ],

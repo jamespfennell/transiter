@@ -20,9 +20,28 @@ def list_all_in_route(system_id, route_id):
         ]
 
     """
-    return [trip.repr_for_list()
-            for trip
-            in trip_dao.list_all_in_route(system_id, route_id)]
+    response = []
+    for trip in trip_dao.list_all_in_route(system_id, route_id):
+        trip_response = trip.repr_for_list()
+        trip_response.update({
+            "origin": {
+                "stop_id": "NI",
+                "name": "NI",
+                'location': 'NI',
+                "usual_service": "NI",
+                "href": "NI"
+            },
+            "terminus": {
+                "stop_id": "NI",
+                "name": "NI",
+                'location': 'NI',
+                "usual_service": "NI",
+                "href": "NI"
+            },
+            'href': 'NI',
+        })
+        response.append(trip_response)
+    return response
 
 
 def get_in_route_by_id(system_id, route_id, trip_id):

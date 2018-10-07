@@ -90,7 +90,6 @@ def create_feed_update(system_id, feed_id):
     .. code-block:: json
 
         {
-            "feed_update_id": 9873,
             "href": "https://transiter.io/systems/nycsubway/feeds/123456/updates/9873"
         }
     """
@@ -127,7 +126,7 @@ def list_updates_in_feed(system_id, feed_id):
     return feedservice.list_updates_in_feed(system_id, feed_id)
 
 
-@feed_endpoints.route('/<feed_id>/updates/<update_id>', methods=['GET'])
+@feed_endpoints.route('/<feed_id>/updates/<feed_update_id>', methods=['GET'])
 @http_get_response
 def get_update_in_feed(system_id, feed_id, feed_update_id):
     """Retrieve a specific feed update
