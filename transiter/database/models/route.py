@@ -31,13 +31,13 @@ class Route(Base):
     status_messages = relationship("StatusMessage", secondary="status_messages_routes",
         back_populates="routes")
 
-    def repr_for_list(self):
+    def short_repr(self):
         return {
             'route_id': self.route_id,
             'href': 'NI'
         }
 
-    def repr_for_get(self, verbose=False):
+    def long_repr(self, verbose=False):
         repr = {
             'route_id': self.route_id,
             'frequency': 'NI', #self.frequency

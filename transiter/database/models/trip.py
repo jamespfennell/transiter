@@ -16,7 +16,7 @@ class Trip(Base):
     train_id = Column(String)
     last_update_time = Column(TIMESTAMP(timezone=True))
     feed_update_time = Column(TIMESTAMP(timezone=True))
-    #TODO: rename status
+    # TODO: rename status
     current_status = Column(String)
     current_stop_sequence = Column(Integer)
 
@@ -26,12 +26,12 @@ class Trip(Base):
                                order_by="StopEvent.sequence_index",
                                cascade="all, delete-orphan")
 
-
-    def repr_for_list(self):
+    def short_repr(self):
         return {
             'trip_id': self.trip_id
         }
-    def repr_for_get(self):
+
+    def long_repr(self):
         return {
             'trip_id': self.trip_id,
             'direction': self.direction,

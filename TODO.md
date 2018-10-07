@@ -2,26 +2,41 @@
 
 ## Main development thread
 
- 1. Double check all of the endpoints match the API with
-    appropriate not implemented flags. Update the API and services
-    as appropriate to get 100% consistency
+1. F3
+1. F4
+
+
 
 ## Version 0.1
 
     
 ### Features
-- Have three separate apps:
-    - read only
-    - non admin
-    - all
-- Use YAML for configiguring the subway
-- Rewrite the NYC subway status priority code to make it
-    actually workable
-- Write the feed health code. Might need a feed runnable
-    that deletes the old data?
-- Implement the 'route list entries' DB layout to actually
-    make it usable
-    It's actually called ServicePattern
+
+#### F1: Have three separate Flask apps
+1. Consumer app
+2. Only GET endpoints app
+3. All endpoints app
+
+Think about how in deployments the admin app would be used
+if only the consumer app is deployed.
+
+#### F2: Use YAML for configuring individual systems
+Probably deprecate direction_name_exceptions.csv and put that in the
+YAML. Or maybe an option to read it remotely
+
+#### F3: Rewrite the NYC Subway priority code
+Right now that priorities stated by the feed are not great.
+Manually override them using also the message type.
+
+Probably a good time to redo the message table to ensure its
+serving use cases correctly
+
+#### F4: Write the Feed Health Code
+How to delete old entries?
+
+#### F5: Service Patterns
+- Blocked by C3
+- Implement the DB layout
     - When loading static GTFS data, have a system for
         detecting nights/weekends/days/rush hours etc
         possibly using regex
@@ -32,30 +47,34 @@
         these separate anyway...
     - Make ServicePatternEdge table
     - routelistutil -> servicepatternutil
+    
+#### F6: Feed autoupdaters
 - Use APScheduler (Advanced Python Scheduler) to create runnables that
     can automatically update the feeds
     https://apscheduler.readthedocs.io/en/latest/userguide.html
-    - Aka, implement the autoupdate feature.
-- Add a verbose option to route and stop get endpoints
-- In feeds add an ALLOW_EMPTY_CONTENT flag
-- Implement href
- - add the terminus abbr table and load the data. Can this be done in a way
-    that is not so specific to the NYC subway? Maybe the message table?
-    Yes - only needed in the update step
     
+#### F7: Add a verbose option to route and stop GET endpoints
+
+#### F8: Implement href tags using an endpoint util
+Can duplication be avoided in the flask app?
+
+#### F9: Add terminus abbr feature for NYC Subway
+- Using the message table
+
+#### F10: Refactor the NYC Subway code into its own package
+   
 ### Existing code clean up
-- Rename the representation short_repr and long_repr?
-- Rename DB columns
-- Move the trip sync function from gtfsutil to syncutil
-- Rewrite the install and update systems to use the new DAOs
-- Improve/clean up the NYC Subway xml file parser.
-- Optimize the SQL ALchemy config, especially with joins
-    and figure out what the cascades are doing
-    Just adding .join(Model.attribute) loads it I think
-- Make Daos singletons?
-- find out when SQL Alchemy triggers updates 
+- C2: Move the trip sync function from gtfsutil to syncutil
+- C3: Rewrite the install and update systems to use the new DAOs
+- C4: Abstract out the CSV reading logic from the installer
+- C5: Improve/clean up the NYC Subway xml file parser.
+- C6: Optimize the SQL ALchemy config
+    - especially with joins
+    - figure out what the cascades are doing
+    - Just adding .join(Model.attribute) loads it I think
+- C7: find out when SQL Alchemy triggers updates 
     and use this to inform the sync method.
-- Add uniqueness and not null conditions to the schema
+- C8: Add uniqueness and not null conditions to the schema
     where possible.
 
 ### Testing
@@ -66,10 +85,6 @@
     - Testing with sqlalchemy:
     https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
 
-### The package refactor
-
-- Have two packages transitor and transiter_nycsubway
-- THe transitor package comes with a YAML config file
 
 
 
@@ -87,7 +102,7 @@ sort algorithm for generating routes lists.
 - Add the complexes feature (i.e., collections of stations
     spanning multiple transit systems).
 - Implement the stations endpoints.
-
+- System wide trip endpoints
 
 
     

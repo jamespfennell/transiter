@@ -22,7 +22,7 @@ class Stop(Base):
     stop_events = relationship("StopEvent", back_populates="stop",
         cascade="all, delete-orphan")
 
-    def repr_for_list(self, verbose=False):
+    def short_repr(self, verbose=False):
         return {
             'stop_id': self.stop_id,
             'name': self.name,

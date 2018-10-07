@@ -22,11 +22,11 @@ class TestRouteService(unittest.TestCase):
     @classmethod
     def setUp(cls):
         cls.route_one = mock.MagicMock()
-        cls.route_one.repr_for_list.return_value = cls.ROUTE_ONE_REPR.copy()
-        cls.route_one.repr_for_get.return_value = cls.ROUTE_ONE_REPR.copy()
+        cls.route_one.short_repr.return_value = cls.ROUTE_ONE_REPR.copy()
+        cls.route_one.short_repr.return_value = cls.ROUTE_ONE_REPR.copy()
 
         cls.route_two = mock.MagicMock()
-        cls.route_two.repr_for_list.return_value = cls.ROUTE_TWO_REPR
+        cls.route_two.short_repr.return_value = cls.ROUTE_TWO_REPR
 
 
         """
@@ -65,8 +65,8 @@ class TestRouteService(unittest.TestCase):
 
         self.assertEqual(actual, expected)
         route_dao.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
-        self.route_one.repr_for_list.assert_called_once()
-        self.route_two.repr_for_list.assert_called_once()
+        self.route_one.short_repr.assert_called_once()
+        self.route_two.short_repr.assert_called_once()
 
     def test_construct_status_good(self):
         route = mock.MagicMock()

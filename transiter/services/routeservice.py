@@ -23,7 +23,7 @@ def list_all_in_system(system_id):
     """
     response = []
     for route in route_dao.list_all_in_system(system_id):
-        route_response = route.repr_for_list()
+        route_response = route.short_repr()
         route_response.update({
             'service_status': _construct_status(route)
         })
@@ -41,16 +41,16 @@ def get_in_system_by_id(system_id, route_id):
     # TODO: have verbose option
 
     route = route_dao.get_in_system_by_id(system_id, route_id)
-    response = route.repr_for_get()
+    response = route.long_repr()
     response.update({
         'service_status': _construct_status(route),
         'service_status_messages':
-            [message.repr_for_list() for message in route.status_messages],
+            [message.short_repr() for message in route.status_messages],
         'stops': []
         })
     current_stop_ids = list(route_dao.get_active_stop_ids(route.id))
     for index, entry in enumerate(route.list_entries):
-        stop_response = entry.stop.repr_for_list()
+        stop_response = entry.stop.short_repr()
         stop_response.update({
             'current_service': stop_response['stop_id'] in current_stop_ids,
             'index': index

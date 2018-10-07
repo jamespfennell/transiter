@@ -16,17 +16,17 @@ class TestTripService(unittest.TestCase):
     @classmethod
     def setUp(cls):
         cls.trip_one = mock.MagicMock()
-        cls.trip_one.repr_for_list.return_value = cls.TRIP_ONE_REPR
-        cls.trip_one.repr_for_get.return_value = cls.TRIP_ONE_REPR
+        cls.trip_one.short_repr.return_value = cls.TRIP_ONE_REPR
+        cls.trip_one.long_repr.return_value = cls.TRIP_ONE_REPR
 
         cls.trip_two = mock.MagicMock()
-        cls.trip_two.repr_for_list.return_value = cls.TRIP_TWO_REPR
+        cls.trip_two.short_repr.return_value = cls.TRIP_TWO_REPR
 
         stop = mock.MagicMock()
-        stop.repr_for_list.return_value = cls.STOP_REPR
+        stop.short_repr.return_value = cls.STOP_REPR
 
         stop_event = mock.MagicMock()
-        stop_event.repr_for_list.return_value = cls.STOP_EVENT_REPR
+        stop_event.short_repr.return_value = cls.STOP_EVENT_REPR
         stop_event.stop = stop
         cls.trip_one.stop_events = [stop_event]
 
@@ -41,8 +41,8 @@ class TestTripService(unittest.TestCase):
         self.assertEqual(actual, expected)
         trip_dao.list_all_in_route.assert_called_once_with(self.SYSTEM_ID,
                                                            self.ROUTE_ID)
-        self.trip_one.repr_for_list.assert_called_once()
-        self.trip_two.repr_for_list.assert_called_once()
+        self.trip_one.short_repr.assert_called_once()
+        self.trip_two.short_repr.assert_called_once()
         pass
 
     @mock.patch('transiter.services.tripservice.trip_dao')

@@ -2,6 +2,7 @@ from . import connection
 from . import models
 
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import func
 
 
 class _Query:
@@ -115,7 +116,7 @@ _RouteDao = _dao_factory(schema_entity=models.Route,
                          order_field='route_id',
                          base_dao=_SystemChildEntityDao)
 
-SystemDao = _dao_factory(schema_entity=models.System,
+_SystemDao = _dao_factory(schema_entity=models.System,
                          id_field='system_id',
                          order_field='system_id',
                          base_dao=_BaseEntityDao)
@@ -139,6 +140,32 @@ _TripDao = _dao_factory(schema_entity=models.Trip,
                         id_field='id',
                         order_field='id',
                         base_dao=_BaseEntityDao)
+
+class SystemDao(_SystemDao):
+
+    @classmethod
+    def _count_child_entity_in_system(cls, system_id, Model):
+        session = connection.get_session()
+        query = session.query(func.count(Model.id)) \
+            .filter(Model.system_id == system_id)
+        return query.one()[0]
+
+    @staticmethod
+    def count_stations_in_system(system_id):
+        return 0
+
+    @classmethod
+    def count_stops_in_system(cls, system_id):
+        return cls._count_child_entity_in_system(system_id, models.Stop)
+
+    @classmethod
+    def count_routes_in_system(cls, system_id):
+        return cls._count_child_entity_in_system(system_id, models.Route)
+
+    @classmethod
+    def count_feeds_in_system(cls, system_id):
+        return cls._count_child_entity_in_system(system_id, models.Feed)
+
 
 class FeedDao(_FeedDao):
     @staticmethod

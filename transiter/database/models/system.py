@@ -21,3 +21,9 @@ class System(Base):
     feeds = relationship("Feed",
                          back_populates="system",
                          cascade="all, delete-orphan")
+
+    def short_repr(self):
+        return {
+            'system_id': self.system_id,
+            'href': 'NI'
+        }

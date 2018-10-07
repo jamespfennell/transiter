@@ -8,7 +8,7 @@ def list_all_in_system(system_id):
     response = []
 
     for stop in stop_dao.list_all_in_system(system_id):
-        response.append(stop.repr_for_list())
+        response.append(stop.short_repr())
     return response
 
 def google_maps_url(location):
@@ -48,7 +48,7 @@ def get_in_system_by_id(system_id, stop_id):
 
     # TODO make this more robust for stops without direction names
     stop = stop_dao.get_in_system_by_id(system_id, stop_id)
-    response = stop.repr_for_list()
+    response = stop.short_repr()
 
     direction_names_matcher = DirectionNamesMatcher()
     count = {}
@@ -107,15 +107,15 @@ def get_in_system_by_id(system_id, stop_id):
         stop_event_response = {
             'direction_name': direction_name
         }
-        stop_event_response.update(stop_event.repr_for_list())
-        trip_response = stop_event.trip.repr_for_get()
-        trip_response['route'] = stop_event.trip.route.repr_for_list()
+        stop_event_response.update(stop_event.short_repr())
+        trip_response = stop_event.trip.long_repr()
+        trip_response['route'] = stop_event.trip.route.short_repr()
         trip_response['origin'] = 'NI'
         trip_response['terminus'] = 'NI'
         stop_event_response['trip'] = trip_response
         stop_event_responses.append(stop_event_response)
     response['stop_events'] = stop_event_responses
-    station_response = stop.station.repr_for_list()
+    station_response = stop.station.short_repr()
     station_response['system'] = 'NI'
     station_response['href'] = 'NI'
     station_response['child_stops'] = []
@@ -123,7 +123,7 @@ def get_in_system_by_id(system_id, stop_id):
         if sibling_stop.stop_id == stop_id:
             continue
         station_response['child_stops'].append(
-            sibling_stop.repr_for_list()
+            sibling_stop.short_repr()
         )
     # TODO use a Get parameter to specify a depth
     station_response['child_stations'] = []

@@ -18,7 +18,7 @@ class StatusMessage(Base):
     routes = relationship("Route", secondary="status_messages_routes")
     #    back_populates="status_messages")
 
-    def repr_for_list(self):
+    def short_repr(self):
         return {
             'type': self.message_type,
             'content': self.message,

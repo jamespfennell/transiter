@@ -23,7 +23,7 @@ class StopEvent(Base):
     stop = relationship("Stop", back_populates="stop_events")
     trip = relationship("Trip", back_populates="stop_events")
 
-    def repr_for_list(self):
+    def short_repr(self):
         return {
             'arrival_time': self.arrival_time,
             'departure_time': self.departure_time,

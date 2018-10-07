@@ -12,7 +12,11 @@ system_dao = accessobjects.SystemDao()
 
 @connection.unit_of_work
 def list_all():
-    return [_convert(system) for system in system_dao.list_all()]
+    """
+    List all installed systems.
+    :return: A list of short representation of systems
+    """
+    return [system.short_repr() for system in system_dao.list_all()]
 
 
 @connection.unit_of_work
@@ -20,26 +24,27 @@ def get_by_id(system_id):
     system = system_dao.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError
-    response = _convert(system)
+    response = system.short_repr()
     response.update({
         "stops": {
-            "count": "NI",
+            "count": system_dao.count_stops_in_system(system_id),
             "href": "NI"
         },
         "stations": {
-            "count": "NI",
+            "count": system_dao.count_stations_in_system(system_id),
             "href": "NI"
         },
         "routes": {
-            "count": "NI",
+            "count": system_dao.count_routes_in_system(system_id),
             "href": "NI"
         },
-        "trips": {
-            "count": "NI",
+        "feeds": {
+            "count": system_dao.count_feeds_in_system(system_id),
             "href": "NI"
         }
     })
     return response
+
 
 @connection.unit_of_work
 def install(system_id):
@@ -52,21 +57,13 @@ def install(system_id):
     _import_static_data(system)
     return True
 
+
 @connection.unit_of_work
 def delete_by_id(system_id):
     deleted = system_dao.delete_by_id(system_id)
     if not deleted:
         raise exceptions.IdNotFoundError
     return True
-
-
-def _convert(system):
-    return {
-        'system_id': system.system_id,
-        'href': 'NI'
-        #'name': system.name,
-        #'routes': routes_data
-        }
 
 
 def _import_static_data(system):
