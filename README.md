@@ -28,5 +28,5 @@ is hosted on Read The Docs.
 
 [![Build Status](https://travis-ci.org/jamespfennell/transiter.svg?branch=master)](https://travis-ci.org/jamespfennell/transiter)
 [![Documentation Status](https://readthedocs.org/projects/transiter/badge/?version=latest)](https://transiter.readthedocs.io/en/latest/?badge=latest)
-[![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master)](https://coveralls.io/github/jamespfennell/transiter?branch=master) 
+[![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master&service=github)](https://coveralls.io/github/jamespfennell/transiter?branch=master) 
 
