@@ -1,4 +1,4 @@
-.PHONY: docs, test
+.PHONY: docs test
 
 test:
 	nosetests --with-coverage --cover-package=transiter --rednose -v tests
