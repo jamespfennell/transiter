@@ -5,6 +5,8 @@
  1. Double check all of the endpoints match the API with
     appropriate not implemented flags. Update the API and services
     as appropriate to get 100% consistency
+ 1. Finish the unit tests for the endpoints layer, maybe do services layer as part
+    of general cleanup
 
 ## Version 0.1
 

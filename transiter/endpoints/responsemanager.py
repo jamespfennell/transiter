@@ -10,6 +10,7 @@ HTTP_201_CREATED = 201
 HTTP_204_NO_CONTENT = 204
 HTTP_404_NOT_FOUND = 404
 HTTP_500_SERVER_ERROR = 500
+HTTP_501_NOT_IMPLEMENTED = 501
 
 
 def _process_request(callback, func, *args, **kw):
@@ -17,6 +18,8 @@ def _process_request(callback, func, *args, **kw):
         result = func(*args, **kw)
     except exceptions.IdNotFoundError:
         return '', HTTP_404_NOT_FOUND, ''
+    except NotImplementedError:
+        return '', HTTP_501_NOT_IMPLEMENTED, ''
     #except Exception as e:
     #    print(e)
     #    return str(e), HTTP_500_SERVER_ERROR, ''

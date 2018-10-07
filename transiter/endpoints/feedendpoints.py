@@ -1,6 +1,6 @@
 from flask import Blueprint
 from ..services import feedservice
-from .responsemanager import http_get_response, http_post_response
+from .responsemanager import http_get_response, http_post_response, http_put_response
 import time
 feed_endpoints = Blueprint('feed_endpoints', __name__)
 
@@ -128,7 +128,8 @@ def list_updates_in_feed(system_id, feed_id):
 
 
 @feed_endpoints.route('/<feed_id>/updates/<update_id>', methods=['GET'])
-def get_update_in_feed(system_id, feed_id):
+@http_get_response
+def get_update_in_feed(system_id, feed_id, feed_update_id):
     """Retrieve a specific feed update
 
     .. :quickref: Feed; Retrieve a specfic feed update
@@ -149,10 +150,11 @@ def get_update_in_feed(system_id, feed_id):
             "update_time": 19585335345
         }
     """
-    return 'Not implemented'
+    raise NotImplementedError
 
 
 @feed_endpoints.route('/<feed_id>/autoupdater')
+@http_get_response
 def get_autoupdater_for_feed(system_id, feed_id):
     """Retrieve the auto updater
 
@@ -171,11 +173,12 @@ def get_autoupdater_for_feed(system_id, feed_id):
             "frequency": 2
         }
     """
-    return 'NI'
+    raise NotImplementedError
 
 
 
 @feed_endpoints.route('/<feed_id>/autoupdater', methods=['PUT'])
+@http_put_response
 def configure_autoupdater_for_feed(system_id, feed_id):
     """Configure the autoupdater
 
@@ -194,6 +197,6 @@ def configure_autoupdater_for_feed(system_id, feed_id):
             "frequency": 2
         }
     """
-    return 'NI'
+    raise NotImplementedError
 
 

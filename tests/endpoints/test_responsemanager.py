@@ -30,6 +30,19 @@ class TestGetRequests(unittest.TestCase):
         self.assertEqual(http_code, responsemanager.HTTP_200_OK)
 
 
+class TestPostRequests(unittest.TestCase):
+
+    @mock.patch('transiter.endpoints.responsemanager.jsonutil')
+    def test_content(self, jsonutil):
+        jsonutil.convert_for_http = mock_convert_for_http
+        @responsemanager.http_get_response
+        def response():
+            return RAW_RESPONSE
+
+        content, http_code, __ = response()
+
+        self.assertEqual(content, JSON_RESPONSE)
+        self.assertEqual(http_code, responsemanager.HTTP_200_OK)
 
 class TestPutRequests(unittest.TestCase):
 
