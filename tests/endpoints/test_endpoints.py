@@ -146,7 +146,7 @@ class TestTripEndpoints(_TestEndpoints):
                                      (self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ID))
 
 
-class TestServiceEndpoints(_TestEndpoints):
+class TestSystemEndpoints(_TestEndpoints):
 
     @mock.patch('transiter.endpoints.systemendpoints.systemservice')
     def test_list_all(self, systemservice):
@@ -155,8 +155,9 @@ class TestServiceEndpoints(_TestEndpoints):
 
     @mock.patch('transiter.endpoints.systemendpoints.systemservice')
     def test_get_by_id(self, systemservice):
-        self._test_response_endpoint(systemendpoints.list_all,
-                                     systemservice.list_all)
+        self._test_response_endpoint(systemendpoints.get_by_id,
+                                     systemservice.get_by_id,
+                                     (self.SYSTEM_ID))
 
     @mock.patch('transiter.endpoints.systemendpoints.systemservice')
     def test_install(self, systemservice):
@@ -169,5 +170,4 @@ class TestServiceEndpoints(_TestEndpoints):
         self._test_no_response_endpoint(systemendpoints.delete_by_id,
                                         systemservice.delete_by_id,
                                         (self.SYSTEM_ID))
-
 

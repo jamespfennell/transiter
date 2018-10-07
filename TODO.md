@@ -14,7 +14,6 @@
 
  - Write unit tests for everything - aim for 100% test coverage, 
     to be safe.
-    - think of a way to test the endpoints without a load of boilerplate
   - This incudes adding DB tests, especially for the GTFS Realtime DB sync code.
     - Testing with sqlalchemy:
     https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html

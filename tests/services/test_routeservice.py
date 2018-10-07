@@ -1,0 +1,123 @@
+import unittest.mock as mock
+import unittest
+import itertools
+from transiter.services import routeservice
+
+
+class TestRouteService(unittest.TestCase):
+
+    SYSTEM_ID = '1'
+    ROUTE_ONE_ID = '3'
+    ROUTE_ONE_REPR = {'route_id': ROUTE_ONE_ID}
+    ROUTE_ONE_STATUS = 'Bad'
+    ROUTE_TWO_STATUS = 'Good'
+    ROUTE_TWO_REPR = {'route_id': '4'}
+    STOP_REPR = {'stop_id': '5'}
+    STOP_EVENT_REPR = {'track': 'Track Two'}
+    GOOD_STATUS = "Good Service"
+    OKAY_STATUS = "Okay"
+    BAD_STATUS = "Quite Bad"
+    REALLY_BAD_STATUS = "Really Bad"
+
+    @classmethod
+    def setUp(cls):
+        cls.route_one = mock.MagicMock()
+        cls.route_one.repr_for_list.return_value = cls.ROUTE_ONE_REPR.copy()
+        cls.route_one.repr_for_get.return_value = cls.ROUTE_ONE_REPR.copy()
+
+        cls.route_two = mock.MagicMock()
+        cls.route_two.repr_for_list.return_value = cls.ROUTE_TWO_REPR
+
+
+        """
+        stop = mock.MagicMock()
+        stop.repr_for_list.return_value = cls.STOP_REPR
+
+        stop_event = mock.MagicMock()
+        stop_event.repr_for_list.return_value = cls.STOP_EVENT_REPR
+        stop_event.stop = stop
+        cls.trip_one.stop_events = [stop_event]
+        """
+
+    def _construct_status_mock(self, route):
+        if route == self.route_one:
+            return self.ROUTE_ONE_STATUS
+        elif route == self.route_two:
+            return self.ROUTE_TWO_STATUS
+        else:
+            self.fail('Unwanted interaction with _construct_status')
+
+    @mock.patch('transiter.services.routeservice._construct_status')
+    @mock.patch('transiter.services.routeservice.route_dao')
+    def test_list_all_in_route(self, route_dao, _construct_status):
+        expected = [{
+            'service_status': self.ROUTE_ONE_STATUS,
+            **self.ROUTE_ONE_REPR
+        },{
+            'service_status': self.ROUTE_TWO_STATUS,
+            **self.ROUTE_TWO_REPR
+        }]
+        route_dao.list_all_in_system.return_value = [self.route_one,
+                                                     self.route_two]
+        _construct_status.side_effect = self._construct_status_mock
+
+        actual = routeservice.list_all_in_system(self.SYSTEM_ID)
+
+        self.assertEqual(actual, expected)
+        route_dao.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
+        self.route_one.repr_for_list.assert_called_once()
+        self.route_two.repr_for_list.assert_called_once()
+
+    def test_construct_status_good(self):
+        route = mock.MagicMock()
+        route.status_messages = []
+
+        actual = routeservice._construct_status(route)
+
+        self.assertEqual(actual, self.GOOD_STATUS)
+
+    def test_construct_status_bad(self):
+
+        message_1 = mock.MagicMock()
+        message_1.priority = 1
+        message_1.message_type = self.OKAY_STATUS
+
+        message_2 = mock.MagicMock()
+        message_2.priority = 2
+        message_2.message_type = self.BAD_STATUS
+
+        message_3 = mock.MagicMock()
+        message_3.priority = 4
+        message_3.message_type = self.REALLY_BAD_STATUS
+
+        for messages in itertools.permutations([message_1, message_2, message_3]):
+            route = mock.MagicMock()
+            route.status_messages = messages
+
+            actual = routeservice._construct_status(route)
+
+            self.assertEqual(actual, self.REALLY_BAD_STATUS)
+
+    @mock.patch('transiter.services.routeservice._construct_status')
+    @mock.patch('transiter.services.routeservice.route_dao')
+    def test_get_in_route_by_id(self, route_dao, _construct_status):
+        """expected = {
+            'stop_events': [{
+                'stop': self.STOP_REPR,
+                **self.STOP_EVENT_REPR
+            }],
+            **self.TRIP_ONE_REPR
+        }"""
+        route_dao.get_in_system_by_id.return_value = self.route_one
+
+        actual = routeservice.get_in_system_by_id(
+            self.SYSTEM_ID,
+            self.ROUTE_ONE_ID)
+
+        #self.assertDictEqual(actual, expected)
+        route_dao.get_in_system_by_id.assert_called_once_with(
+            self.SYSTEM_ID,
+            self.ROUTE_ONE_ID)
+
+
+

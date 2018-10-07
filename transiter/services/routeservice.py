@@ -2,20 +2,25 @@ from ..database.accessobjects import RouteDao
 
 route_dao = RouteDao()
 
-def _construct_status(route):
-    status = None
-    priority = -100000
-    for message in route.status_messages:
-        if message.priority > priority:
-            status = message.message_type
-            priority = message.priority
-    if status is None:
-        status = 'Good Service'
-    return status
-
 
 def list_all_in_system(system_id):
+    """
+    Get representations for all routes in a system.
+    :param system_id: the text id of the system
+    :return: a list of short model.Route representations with an additional
+    'service_status' entry describing the current status.
 
+    .. code-block:: json
+
+        [
+            {
+                <fields in a short model.Route representation>,
+                'service_status': <service status>
+            },
+            ...
+        ]
+
+    """
     response = []
     for route in route_dao.list_all_in_system(system_id):
         route_response = route.repr_for_list()
@@ -27,6 +32,12 @@ def list_all_in_system(system_id):
 
 
 def get_in_system_by_id(system_id, route_id):
+    """
+    Get a representation for a route in the system
+    :param system_id: the system's text id
+    :param route_id: the route's text id
+    :return:
+    """
     # TODO: have verbose option
 
     route = route_dao.get_in_system_by_id(system_id, route_id)
@@ -46,3 +57,21 @@ def get_in_system_by_id(system_id, route_id):
         })
         response['stops'].append(stop_response)
     return response
+
+
+def _construct_status(route):
+    """
+    Constructs the status for a route. This is defined as the message type of
+    the highest priority message.
+    :param route: a model.Route object
+    :return: a string
+    """
+    status = None
+    priority = -100000
+    for message in route.status_messages:
+        if message.priority > priority:
+            status = message.message_type
+            priority = message.priority
+    if status is None:
+        status = 'Good Service'
+    return status
