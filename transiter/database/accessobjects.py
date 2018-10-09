@@ -106,6 +106,11 @@ def _dao_factory(schema_entity, id_field, order_field=None, base_dao=_BaseEntity
     return NewDao
 
 
+StationDao = _dao_factory(schema_entity=models.Station,
+                       id_field='id',
+                       order_field='name',
+                       base_dao=_SystemChildEntityDao)
+
 StopDao = _dao_factory(schema_entity=models.Stop,
                        id_field='stop_id',
                        order_field='name',
@@ -140,6 +145,11 @@ _TripDao = _dao_factory(schema_entity=models.Trip,
                         id_field='id',
                         order_field='id',
                         base_dao=_BaseEntityDao)
+
+DirectionNameDao = _dao_factory(schema_entity=models.DirectionName,
+                             id_field='id',
+                             order_field='id',
+                             base_dao=_BaseEntityDao)
 
 class SystemDao(_SystemDao):
 
@@ -200,7 +210,6 @@ class TripDao(_TripDao):
             .filter(models.Route.route_id == route_id)\
             .filter(models.Trip.trip_id == trip_id)
         return query.one()
-
 
 
 class RouteDao(_RouteDao):

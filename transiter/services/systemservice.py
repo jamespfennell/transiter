@@ -8,7 +8,11 @@ import os
 from ..utils import jsonutil
 
 system_dao = accessobjects.SystemDao()
-
+route_dao = accessobjects.RouteDao()
+stop_dao = accessobjects.StopDao()
+station_dao = accessobjects.StationDao()
+feed_dao = accessobjects.FeedDao()
+direction_name_dao = accessobjects.DirectionNameDao()
 
 @connection.unit_of_work
 def list_all():
@@ -66,6 +70,13 @@ def delete_by_id(system_id):
     return True
 
 
+
+def _read_csv_file(file_path):
+    with open(file_path, mode='r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        yield from csv_reader
+
+
 def _import_static_data(system):
     system_base_dir = os.path.join(
         os.path.dirname(__file__),
@@ -76,75 +87,60 @@ def _import_static_data(system):
     custom_data_dir = os.path.join(system_base_dir, 'customdata')
     print(agency_data_dir)
 
-    session = connection.get_session()
 
     routes_data_file = os.path.join(agency_data_dir, 'routes.txt')
     routes_by_route_id = {}
-    with open(routes_data_file, mode='r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        line_count = 0
-        for row in csv_reader:
-            route = models.Route()
-            session.add(route)
-            route.route_id=row['route_id']
-            route.color = row['route_color']
-            route.timetable_url = row['route_url']
-            route.short_name = row['route_short_name']
-            route.long_name = row['route_long_name']
-            route.description = row['route_desc']
-            route.system = system
-
-            routes_by_route_id[route.route_id] = route
+    for row in _read_csv_file(routes_data_file):
+        route = route_dao.create()
+        route.route_id=row['route_id']
+        route.color = row['route_color']
+        route.timetable_url = row['route_url']
+        route.short_name = row['route_short_name']
+        route.long_name = row['route_long_name']
+        route.description = row['route_desc']
+        route.system = system
+        routes_by_route_id[route.route_id] = route
 
     stops_data_file = os.path.join(agency_data_dir, 'stops.txt')
     station_sets_by_stop_id = {}
     stops_by_stop_id = {}
-    with open(stops_data_file, mode='r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        line_count = 0
-        for row in csv_reader:
-            # Note, this may be NYC subway specific logic: if so extract the
-            # it to the NYC subway module
-            stop_id = row['stop_id']
-            if stop_id[-1] == 'N' or stop_id[-1] == 'S':
-                continue
+    for row in _read_csv_file(stops_data_file):
+        # Note, this may be NYC subway specific logic: if so extract the
+        # it to the NYC subway module
+        stop_id = row['stop_id']
+        if stop_id[-1] == 'N' or stop_id[-1] == 'S':
+            continue
 
-            stop = models.Stop()
-            session.add(stop)
-            stop.stop_id=row['stop_id']
-            stop.name = row['stop_name']
-            stop.longitude = row['stop_lon']
-            stop.lattitude = row['stop_lat']
-            stop.system = system
-
-            station_sets_by_stop_id[stop_id] = set([stop_id])
-            stops_by_stop_id[stop_id] = stop
+        stop = stop_dao.create()
+        stop.stop_id=row['stop_id']
+        stop.name = row['stop_name']
+        stop.longitude = row['stop_lon']
+        stop.lattitude = row['stop_lat']
+        stop.system = system
+        station_sets_by_stop_id[stop_id] = {stop_id}
+        stops_by_stop_id[stop_id] = stop
 
     transfers_data_file = os.path.join(agency_data_dir, 'transfers.txt')
-    with open(transfers_data_file, mode='r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        line_count = 0
-        for row in csv_reader:
-            stop_id_1 = row['from_stop_id']
-            stop_id_2 = row['to_stop_id']
-            if stop_id_1 == stop_id_2:
-                continue
+    for row in _read_csv_file(transfers_data_file):
+        stop_id_1 = row['from_stop_id']
+        stop_id_2 = row['to_stop_id']
+        if stop_id_1 == stop_id_2:
+            continue
 
-            updated_station_set = station_sets_by_stop_id[stop_id_1].union(
-                station_sets_by_stop_id[stop_id_2])
-            for stop_id in updated_station_set:
-                station_sets_by_stop_id[stop_id] = updated_station_set
+        updated_station_set = station_sets_by_stop_id[stop_id_1].union(
+            station_sets_by_stop_id[stop_id_2])
+        for stop_id in updated_station_set:
+            station_sets_by_stop_id[stop_id] = updated_station_set
 
-        for station_set in station_sets_by_stop_id.values():
-            if len(station_set) == 0:
-                continue
+    for station_set in station_sets_by_stop_id.values():
+        if len(station_set) == 0:
+            continue
 
-            station = models.Station()
-            session.add(station)
-            for stop_id in station_set:
-                stops_by_stop_id[stop_id].station = station
-            station.system = system
-            station_set.clear()
+        station = station_dao.create()
+        for stop_id in station_set:
+            stops_by_stop_id[stop_id].station = station
+        station.system = system
+        station_set.clear()
 
     stop_times_data_file = os.path.join(agency_data_dir, 'stop_times.txt')
     route_lists = routelistutil.construct_route_lists_from_stop_times_file(
@@ -155,7 +151,9 @@ def _import_static_data(system):
         route = routes_by_route_id[route_id]
         position = 0
         for stop_id in route_list:
+            # TODO put this in a DAO when ServicePattern is a thing
             route_list_entry = models.RouteListEntry()
+            session = connection.get_session()
             session.add(route_list_entry)
             route_list_entry.route = route
             route_list_entry.stop = stops_by_stop_id[stop_id]
@@ -166,31 +164,24 @@ def _import_static_data(system):
     # custom to the program rather than the NYC subway
     # Default other option: N=north, S=south ;)
     # Also direction name exceptions is a bad name
-    sorted_stop_ids = sorted(stops_by_stop_id.keys())
-    index = 0
     direction_names_data_file = os.path.join(
         custom_data_dir,
         'direction_names.csv'
         )
-    with open(direction_names_data_file, mode='r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        for row in csv_reader:
-            stop_id = row['stop_id']
-            north = models.DirectionName()
-            session.add(north)
-            north.name = row['north_direction_name']
-            north.track = None
-            north.direction = 'N'
-            north.stop = stops_by_stop_id[stop_id]
+    for row in _read_csv_file(direction_names_data_file):
+        stop_id = row['stop_id']
+        north = direction_name_dao.create()
+        north.name = row['north_direction_name']
+        north.track = None
+        north.direction = 'N'
+        north.stop = stops_by_stop_id[stop_id]
 
-            south = models.DirectionName()
-            session.add(south)
-            south.name = row['south_direction_name']
-            south.track = None
-            south.direction = 'S'
-            south.stop = stops_by_stop_id[stop_id]
+        south = direction_name_dao.create()
+        south.name = row['south_direction_name']
+        south.track = None
+        south.direction = 'S'
+        south.stop = stops_by_stop_id[stop_id]
 
-            index += 1
 
 
 
@@ -205,24 +196,19 @@ def _import_static_data(system):
         custom_data_dir,
         'direction_name_exceptions.csv'
         )
-    with open(direction_name_exceptions_data_file, mode='r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        for row in csv_reader:
-            direction = models.DirectionName()
-            session.add(direction)
-            direction.name = row['name']
-            direction.track = row['track']
-            direction.direction = row['direction']
-            direction.stop = stops_by_stop_id[row['stop_id']]
+    for row in _read_csv_file(direction_name_exceptions_data_file):
+        direction = direction_name_dao.create()
+
+        direction.name = row['name']
+        direction.track = row['track']
+        direction.direction = row['direction']
+        direction.stop = stops_by_stop_id[row['stop_id']]
 
     feeds_data_file = os.path.join(custom_data_dir, 'feeds.csv')
-    with open(feeds_data_file, mode='r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        for row in csv_reader:
-            feed = models.Feed()
-            session.add(feed)
-            feed.system = system
-            feed.feed_id = row['feed_id']
-            feed.url = row['url']
-            feed.parser_module = row['parser_module']
-            feed.parser_function = row['parser_function']
+    for row in _read_csv_file(feeds_data_file):
+        feed = feed_dao.create()
+        feed.system = system
+        feed.feed_id = row['feed_id']
+        feed.url = row['url']
+        feed.parser_module = row['parser_module']
+        feed.parser_function = row['parser_function']

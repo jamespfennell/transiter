@@ -9,7 +9,7 @@ class Station(Base):
     id = Column(Integer, primary_key=True)
     borough = Column(String)
     name = Column(String)
-    system_id = Column(Integer, ForeignKey("systems.id"), index=True)
+    system_id = Column(String, ForeignKey("systems.system_id"), index=True)
 
     system = relationship("System", back_populates="stations")
     stops = relationship("Stop", back_populates="station", cascade="all, delete-orphan")

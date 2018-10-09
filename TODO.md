@@ -2,6 +2,8 @@
 
 ## Main development thread
 
+1. C2
+1. C9
 1. F3
 1. F4
 
@@ -31,11 +33,16 @@ Manually override them using also the message type.
 Probably a good time to redo the message table to ensure its
 serving use cases correctly
 
+Improve/clean up the NYC Subway xml file parser
+as part of this task
+
 #### F4: Write the Feed Health Code
 How to delete old entries?
+Just delete old entries when updating?
+Yes - have the time a configuration parameter
+
 
 #### F5: Service Patterns
-- Blocked by C3
 - Implement the DB layout
     - When loading static GTFS data, have a system for
         detecting nights/weekends/days/rush hours etc
@@ -64,27 +71,34 @@ Can duplication be avoided in the flask app?
 #### F10: Refactor the NYC Subway code into its own package
    
 ### Existing code clean up
-- C2: Move the trip sync function from gtfsutil to syncutil
-- C3: Rewrite the install and update systems to use the new DAOs
-- C4: Abstract out the CSV reading logic from the installer
-- C5: Improve/clean up the NYC Subway xml file parser.
+- C2: Move the trip sync function from gtfsutil to syncutil. Clean up both and write
+        tests for both utils -- looks like sqlalchemy tests not needed!
+        Just need to ensure it's calling the delete function
+        and populating the new models and updating 
+        the existing one.
+        - So for the basic sync there are 4 cases
+        if we can assume everything is independent
 - C6: Optimize the SQL ALchemy config
     - especially with joins
     - figure out what the cascades are doing
     - Just adding .join(Model.attribute) loads it I think
 - C7: find out when SQL Alchemy triggers updates 
-    and use this to inform the sync method.
+    and use this to inform the sync method. This should be doable manually
 - C8: Add uniqueness and not null conditions to the schema
     where possible.
+- C9: split the daos into separate models and initialize them
+    in the modules
 
 ### Testing
 
  - Write unit tests for everything for the service layer and document the responses
     - aim for 100% test coverage, to be safe.
-  - This incudes adding DB tests, especially for the GTFS Realtime DB sync code.
+  - This incudes adding DB tests, for the daos
     - Testing with sqlalchemy:
     https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
 
+
+   - NOTE: It is important not to test things that are just part of the basic functionality of SQLAlchemy, as SQLAlchemy already comes with a large collection of well-written tests. For example, we wouldn’t want to test a simple insert, select, delete, or update statement, as those are tested within the SQLAlchemy project itself. Instead, look to test things that your code manipulates that could affect how the SQLAlchemy statement is run or the results returned by it.
 
 
 
@@ -98,10 +112,10 @@ sort algorithm for generating routes lists.
 - Make a system to download the latest GTFS static data 
     from the transit agency
     and check if it's up to date.
-    - If it's not, what happens?
-- Add the complexes feature (i.e., collections of stations
-    spanning multiple transit systems).
+    - If it's not, what happens? 
+    Maybe use the sync util carefully to allow updates
 - Implement the stations endpoints.
+- How does one make stations?
 - System wide trip endpoints
 
 
