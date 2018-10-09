@@ -28,6 +28,7 @@ class Route(Base):
                                 back_populates="route",
                                 order_by="RouteListEntry.position",
                                 cascade="all, delete-orphan")
+    # service_pattern = relationship('Service')
     status_messages = relationship("StatusMessage", secondary="status_messages_routes",
         back_populates="routes")
 

@@ -95,7 +95,7 @@ def _create_json():
 
 def _create_formatted_json():
     json = {
-        "timestamp": gtfsutil.timestamp_to_datetime(TIMESTAMP),
+        "timestamp": gtfsutil._timestamp_to_datetime(TIMESTAMP),
         "route_ids": [
             "4"
         ],
@@ -106,13 +106,13 @@ def _create_formatted_json():
                 "start_date": "20180915",
                 "current_stop_sequence": 16,
                 "current_status": 2,
-                'feed_update_time': gtfsutil.timestamp_to_datetime(TIMESTAMP),
-                'last_update_time': gtfsutil.timestamp_to_datetime(1537031806),
+                'feed_update_time': gtfsutil._timestamp_to_datetime(TIMESTAMP),
+                'last_update_time': gtfsutil._timestamp_to_datetime(1537031806),
                 "stop_events": [{
                     "stop_id": "418N",
                     "sequence_index": 17,
-                    "arrival_time": gtfsutil.timestamp_to_datetime(1537031850),
-                    "departure_time": gtfsutil.timestamp_to_datetime(1537031850),
+                    "arrival_time": gtfsutil._timestamp_to_datetime(1537031850),
+                    "departure_time": gtfsutil._timestamp_to_datetime(1537031850),
                     'track': None
                 }]
             }

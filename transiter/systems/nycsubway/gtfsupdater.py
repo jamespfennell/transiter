@@ -13,7 +13,8 @@ Need to activate the DB entities
 
 """
 
-from ...utils import jsonutil
+from transiter.utils import jsonutil
+from transiter.database import syncutil
 
 import pytz
 #import os
@@ -36,46 +37,23 @@ from ...utils import gtfsutil
 
 
 def update(feed, system, content):
-    #print('1   {}'.format(time.time()))
-    nyc_subway_gtfs_extension = gtfsutil.GtfsExtension(
+    nyc_subway_gtfs_extension = gtfsutil.GtfsRealtimeExtension(
         '..nyc_subway_pb2',
         __name__
         )
 
     if len(content) == 0:
-        print('Feed empty')
         return False
 
-    feed_json = gtfsutil.gtfs_to_json(content, nyc_subway_gtfs_extension)
+    feed_json = gtfsutil.read_gtfs_realtime(content, nyc_subway_gtfs_extension)
+    feed_json = gtfsutil.transform_to_transiter_structure(feed_json)
 
-    #print('2   {}'.format(time.time()))
-    #print(jsonify(feed_json))
-    feed_json = gtfsutil.restructure(feed_json)
-    #print('3   {}'.format(time.time()))
-
-
-
-    # transformed_json = gtfsutil.transform(feed_json,
-    #    trip_extenion='a', stop_event_extension='b')
-    # fix_nyc_subway_data(transformed_json)
-    # ....swap out DB bobjects
-    # ....and then sync
     if feed_json is None:
-        print('Error')
-        print(jsonutil.convert_for_http(feed_json))
         return False
 
     db_json = interpret_nyc_subway_gtfs_feed(feed_json)
-    #print('4   {}'.format(time.time()))
 
-    # This step is taking half a second!
-    gtfsutil.sync_to_db(db_json)
-    #print('5   {}'.format(time.time()))
-    # For the sync step, compare with all route ids in db_json['route_ids']
-
-
-    #    print(jsonify(db_json))
-
+    syncutil.sync_trips(db_json)
 
 
 def interpret_nyc_subway_gtfs_feed(data):

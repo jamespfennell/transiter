@@ -2,7 +2,8 @@
 
 ## Main development thread
 
-1. C2
+1. Continue C2 by breaking up the GTFS transform logic into smaller steps, 
+    adding tests, taking the track logic out of Transiter
 1. C9
 1. F3
 1. F4
@@ -86,7 +87,7 @@ Can duplication be avoided in the flask app?
     and use this to inform the sync method. This should be doable manually
 - C8: Add uniqueness and not null conditions to the schema
     where possible.
-- C9: split the daos into separate models and initialize them
+- C9: split the daos into separate modules and initialize them
     in the modules
 
 ### Testing

@@ -3,11 +3,17 @@ from sqlalchemy.orm import relationship
 
 from .base import Base
 
+
 class ServicePattern(Base):
-    pass
-    """
-    id =
-    route_pri_key =
-    description =
-    pass
-    """
+    __tablename__ = 'service_patterns'
+
+    id = Column(Integer, primary_key=True)
+    route_pri_key = Column(Integer, ForeignKey('routes.id'))
+    name = Column(String)
+
+    #route = relationship("Route",
+    #                     back_populates='service_patterns')
+    vertices = relationship("ServicePatternVertex",
+                            back_populates='service_pattern',
+                            cascade='all, delete-orphan')
+    # edges=? How can we delete them
