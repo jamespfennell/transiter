@@ -113,7 +113,6 @@ class _GtfsRealtimeToTransiterTransformer:
                 'trip_id' : trip_id,
                 'route_id' : trip['route_id'],
                 'start_date': trip['start_date'],
-                'track': trip.get('track', None),
                 'train_id': trip.get('train_id', None),
                 'direction': trip.get('direction', None),
                 'current_status': trip.get('status', None),

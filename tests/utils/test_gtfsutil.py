@@ -59,24 +59,6 @@ class TestReadGtfsRealtime(unittest.TestCase):
         extension.activate.assert_called_once_with()
 
 
-
-
-
-    """
-    #def test_gtfs_to_json(self):
-    #    gtfs = _create_gtfs()
-    #    json = gtfsutil.gtfs_to_json(gtfs)
-    #
-    #    self.assertDictEqual(json, _create_json())
-
-    def test_restructure(self):
-        json_1 = gtfsutil.restructure(_create_json())
-        json_2 = _create_formatted_json()
-        self.maxDiff = None
-        self.assertDictEqual(json_1, json_2)
-    
-    """
-
 class TestReadProtobufMessage(unittest.TestCase):
 
     GTFS_REALTIME_VERSION = '2.0'
@@ -128,6 +110,30 @@ class TestReadProtobufMessage(unittest.TestCase):
         actual_data = gtfsutil._read_protobuf_message(root)
 
         self.assertDictEqual(actual_data, expected_data)
+
+
+GTFS_REALTIME_VERSION = '2.0'
+INCREMENTALITY = "FULL_DATASET"
+INCREMENTALITY_INT = gtfs.FeedHeader.Incrementality.Value(INCREMENTALITY)
+TIMESTAMP = 4
+ENTITY_1_ID = '1'
+ENTITY_2_ID = '2'
+
+
+class TestReadGtfsRealtime(unittest.TestCase):
+
+    def test_parse(self):
+
+        input = _create_json()
+        expected_output = _create_formatted_json()
+
+
+        actual_output = gtfsutil.transform_to_transiter_structure(input)
+
+        self.maxDiff = None
+        self.assertDictEqual(actual_output, expected_output)
+
+
 
 
 def _create_json():
@@ -188,10 +194,12 @@ def _create_formatted_json():
         "trips": [
             {
                 "trip_id": "trip_id",
+                'train_id': None,
                 "route_id": "4",
                 "start_date": "20180915",
                 "current_stop_sequence": 16,
                 "current_status": 2,
+                'direction': None,
                 'feed_update_time': gtfsutil._timestamp_to_datetime(TIMESTAMP),
                 'last_update_time': gtfsutil._timestamp_to_datetime(1537031806),
                 "stop_events": [{
