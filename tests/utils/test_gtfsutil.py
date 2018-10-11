@@ -77,33 +77,58 @@ class TestReadGtfsRealtime(unittest.TestCase):
     
     """
 
+class TestReadProtobufMessage(unittest.TestCase):
 
-GTFS_REALTIME_VERSION = '2.0'
-INCREMENTALITY = gtfs.FeedHeader.Incrementality.Value('FULL_DATASET')
-TIMESTAMP = 100000
+    GTFS_REALTIME_VERSION = '2.0'
+    INCREMENTALITY = "FULL_DATASET"
+    INCREMENTALITY_INT = gtfs.FeedHeader.Incrementality.Value(INCREMENTALITY)
+    TIMESTAMP = 4
+    ENTITY_1_ID = '1'
+    ENTITY_2_ID = '2'
+    CONGESTION_ONE = 'STOP_AND_GO'
+    CONGESTION_ONE_INT = gtfs.VehiclePosition.CongestionLevel.Value(CONGESTION_ONE)
+    CONGESTION_TWO = 'CONGESTION'
+    CONGESTION_TWO_INT = gtfs.VehiclePosition.CongestionLevel.Value(CONGESTION_TWO)
 
-ENTITY_1_ID = '1'
-ENTITY_2_ID = '2'
+    def test_read_protobuf_message(self):
+        root = gtfs.FeedMessage()
+        header = root.header
+        header.gtfs_realtime_version = self.GTFS_REALTIME_VERSION
+        header.incrementality = self.INCREMENTALITY_INT
+        header.timestamp = self.TIMESTAMP
+        entity_1 = root.entity.add()
+        entity_1.id = self.ENTITY_1_ID
+        entity_1.vehicle.congestion_level = self.CONGESTION_ONE_INT
+        entity_2 = root.entity.add()
+        entity_2.id = self.ENTITY_2_ID
+        entity_2.vehicle.congestion_level = self.CONGESTION_TWO_INT
 
+        expected_data = {
+            'header': {
+                'gtfs_realtime_version': self.GTFS_REALTIME_VERSION,
+                'incrementality': self.INCREMENTALITY,
+                'timestamp': self.TIMESTAMP
+            },
+            'entity': [
+                {
+                    'id': self.ENTITY_1_ID,
+                    'vehicle': {
+                        'congestion_level': self.CONGESTION_ONE
+                    }
+                },
+                {
+                    'id': self.ENTITY_2_ID,
+                    'vehicle': {
+                        'congestion_level': self.CONGESTION_TWO
+                    }
+                }
+            ]
+        }
 
-def _create_gtfs():
-    root = gtfs.FeedMessage()
-    header = root.header
+        actual_data = gtfsutil._read_protobuf_message(root)
 
-    header.gtfs_realtime_version = GTFS_REALTIME_VERSION
-    root.header.incrementality = INCREMENTALITY
-    header.timestamp = TIMESTAMP
+        self.assertDictEqual(actual_data, expected_data)
 
-    entity_1 = root.entity.add()
-    entity_1.id = ENTITY_1_ID
-
-    entity_2 = root.entity.add()
-    entity_2.id = ENTITY_2_ID
-
-
-    print(root)
-
-    return root.SerializeToString()
 
 def _create_json():
     json = {
