@@ -77,8 +77,9 @@ Can duplication be avoided in the flask app?
         Just need to ensure it's calling the delete function
         and populating the new models and updating 
         the existing one.
-        - So for the basic sync there are 4 cases
+        - So for the basic sync there are 3 cases
         if we can assume everything is independent
+        Could iterate over all 8 combinations of each missing or not
 - C6: Optimize the SQL ALchemy config
     - especially with joins
     - figure out what the cascades are doing

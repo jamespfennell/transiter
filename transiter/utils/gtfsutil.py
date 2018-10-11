@@ -71,128 +71,126 @@ def _parse_protobuf_message(message):
     return d
 
 
-def transform_to_transiter_structure(content):
+class _GtfsRealtimeToTransiterTransformer:
 
-    data = content
-    try:
-        header = data['header']
-    except KeyError:
-        return {}
-    actual_feed_route_ids = set()
+    def __init__(self, raw_data):
+        self._raw_data = raw_data
+        self._trip_id_to_raw_entities = {}
+        self._trip_id_to_transformed_entity = {}
+        self._transformed_metadata = None
+        self._feed_route_ids = set()
+        self._feed_time = None
 
-    # Now iterate over trips in the feed, placing the trip data in memory
-    # Each trip corresponds to two different entities in the feed file: a
-    # trip_update entity and a vehicle entity
-    # (the latter provided only if the trip has been assigned). Both entities
-    # contain basic trip information in a
-    # trip field.
-    trips = {}
-    vehicle_parsed_trip_ids = set()
-    trip_update_parsed_trip_ids = set()
-    for entity in data['entity']:
-        # Based on which type of entity, the location of the trip data is different.
-        if 'trip_update' in entity:
-            trip = entity['trip_update']['trip']
-        elif 'vehicle' in entity:
-            trip = entity['vehicle']['trip']
-        else:
-            continue
+    def transform(self):
+        self._transform_feed_metadata()
+        self._group_trip_entities()
+        self._transform_trip_base_data()
+        self._transform_trip_stop_events()
+        self._update_stop_event_indices()
+        return self._collect_transformed_data()
 
-        actual_feed_route_ids.add(trip['route_id'])
+    def _transform_feed_metadata(self):
+        self._feed_time = _timestamp_to_datetime(
+            self._raw_data['header']['timestamp'])
+        self._transformed_metadata = {
+            'timestamp': self._feed_time
+        }
 
-        # Now generate the trip_uid and the start time
-        try:
-            trip_id = trip['trip_id']
-        except Exception as e:
-            # Should log something here and skip
-            continue
+    def _group_trip_entities(self):
+        for entity in self._raw_data['entity']:
+            if 'trip_update' in entity:
+                main_entity_key = 'trip_update'
+            elif 'vehicle' in entity:
+                main_entity_key = 'vehicle'
+            else:
+                continue
+            trip_entity = entity[main_entity_key]['trip']
+            trip_id = trip_entity['trip_id']
+            self._trip_id_to_raw_entities.setdefault(trip_id, {})
+            self._trip_id_to_raw_entities[trip_id]['trip'] = trip_entity
+            self._trip_id_to_raw_entities[trip_id][main_entity_key] \
+                = entity[main_entity_key]
 
-        # If the basic trip_uid settings have already been imported, do nothing;
-        # otherwise, import then.
-        if trip_id in trips:
-            trip_data = trips[trip_id]
-        else:
-            trip_data = {
+    def _transform_trip_base_data(self):
+        for trip_id, entity in self._trip_id_to_raw_entities.items():
+            trip_data = self._trip_id_to_transformed_entity.get(trip_id, {})
+            trip = entity['trip']
+            trip_data.update({
                 'trip_id' : trip_id,
                 'route_id' : trip['route_id'],
                 'start_date': trip['start_date'],
-                'current_status': None,
+                'track': trip.get('track', None),
+                'train_id': trip.get('train_id', None),
+                'direction': trip.get('direction', None),
+                'current_status': trip.get('status', None),
                 'current_stop_sequence': 0,
                 'last_update_time': None,
-                'feed_update_time': _timestamp_to_datetime(header['timestamp'])
-            }
-            trips[trip_id] = trip_data
-
-        # TODO: take this logic out of here and put in gtfsupdater
-        # What is this actually doing?
-        if "nyct_trip_descriptor" in trip:
-            trip_data.update(trip["nyct_trip_descriptor"])
-
-        if 'vehicle' in entity:
-            update_time = _timestamp_to_datetime(entity['vehicle']['timestamp'])
-            trip_data.update({
-                'last_update_time' : update_time,
-                'current_status': entity['vehicle']['current_status'],
-                'current_stop_sequence': entity['vehicle']['current_stop_sequence']
+                'feed_update_time': self._feed_time
             })
-            vehicle_parsed_trip_ids.add(trip_id)
+            self._feed_route_ids.add(trip['route_id'])
+            if 'vehicle' in entity:
+                vehicle = entity['vehicle']
+                update_time = _timestamp_to_datetime(vehicle['timestamp'])
+                trip_data.update({
+                    'last_update_time': update_time,
+                    'current_status': vehicle['current_status'],
+                    'current_stop_sequence': vehicle['current_stop_sequence']
+                })
+            self._trip_id_to_transformed_entity[trip_id] = trip_data
 
-        if 'trip_update' in entity:
+    def _transform_trip_stop_events(self):
+        for trip_id, entity in self._trip_id_to_raw_entities.items():
+            trip_update = entity.get('trip_update', None)
+            if trip_update is None:
+                continue
+            trip_data = self._trip_id_to_transformed_entity.get(trip_id, {})
             trip_data['stop_events'] = []
-            for stop_time_update in entity['trip_update']['stop_time_update']:
+            for stop_time_update in trip_update['stop_time_update']:
                 stop_event_data = {
-                    'stop_id' : stop_time_update['stop_id'],
-                    'track': stop_time_update.get('track', None)
+                    'stop_id': stop_time_update['stop_id'],
+                    'track': stop_time_update.get('track', None),
+                    'arrival_time': None,
+                    'departure_time': None
                 }
-
-                # Arrival/departure time information
-                # TODO Replace these by get(key, default) <- could use this for gtfs
-                if 'arrival' in stop_time_update and stop_time_update['arrival']['time'] != 0:
-                    stop_event_data['arrival_time'] = _timestamp_to_datetime(stop_time_update['arrival']['time'])
-                else:
-                    stop_event_data['arrival_time'] = None
-                if 'departure' in stop_time_update and stop_time_update['departure']['time'] != 0:
-                    stop_event_data['departure_time'] = _timestamp_to_datetime(stop_time_update['departure']['time'])
-                else:
-                    stop_event_data['departure_time'] = None
+                for time_type in ('arrival', 'departure'):
+                    time_entity = stop_time_update.get(time_type, None)
+                    if time_entity is None:
+                        continue
+                    timestamp = time_entity.get('time', 0)
+                    if timestamp == 0:
+                        continue
+                    stop_event_data[time_type + '_time'] =\
+                        _timestamp_to_datetime(timestamp)
 
                 trip_data['stop_events'].append(stop_event_data)
+            self._trip_id_to_transformed_entity[trip_id] = trip_data
 
-                # TODO: take this logic out of here
-                if "nyct_stop_time_update" in stop_time_update:
-                    try:
-                        mta_data = stop_time_update["nyct_stop_time_update"]
-                        if 'actual_track' not in mta_data:
-                            stop_event_data['track'] = mta_data['scheduled_track']
-                        else:
-                            stop_event_data['track'] = mta_data['actual_track']
-                    except KeyError:
-                        print(mta_data)
-                        print('Bug')
-                else:
-                    stop_event_data['track'] = None
+    def _update_stop_event_indices(self):
+        for trip_id, entity in self._trip_id_to_transformed_entity.items():
+            index = entity['current_stop_sequence']
+            for stop_event in entity['stop_events']:
+                index += 1
+                stop_event['sequence_index'] = index
 
-            trip_update_parsed_trip_ids.add(trip_id)
+    def _collect_transformed_data(self):
+        transformed_data = self._transformed_metadata
+        transformed_data.update({
+            'route_ids': list(self._feed_route_ids),
+            'trips': list(self._trip_id_to_transformed_entity.values())
+        })
+        return transformed_data
 
-        # This following condition checks that both the vehicle and trip_update
-        # entities respectively have been imported.
-        # If they have been, the sequence indices should be updated to factor
-        # in the number of stops already passed
-        # (which is given by the current_stop_sequence field in the vehicle entity
-        if trip_id in trip_update_parsed_trip_ids and trip_id in vehicle_parsed_trip_ids:
-            current_stop_sequence = trip_data['current_stop_sequence']
-            for stop_event_data in trip_data['stop_events']:
-                current_stop_sequence += 1
-                stop_event_data['sequence_index'] = current_stop_sequence
 
-    return {
-        'timestamp': _timestamp_to_datetime(header['timestamp']),
-        'route_ids': list(actual_feed_route_ids),
-        'trips': list(trips.values())
-    }
+def transform_to_transiter_structure(data):
+    transformer = _GtfsRealtimeToTransiterTransformer(data)
+    return transformer.transform()
+
+
 
 
 def _timestamp_to_datetime(timestamp):
+    if timestamp is None or timestamp == 0:
+        return None
     return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
 
 

@@ -17,7 +17,7 @@ class StopEvent(Base):
     departure_time = Column(TIMESTAMP(timezone=True))
     last_update_time = Column(TIMESTAMP(timezone=True))
     # TODO rename? or is this a GTFS realtime name?
-    sequence_index = Column(Integer)
+    sequence_index = Column(Integer, nullable=False)
     track = Column(String)
 
     stop = relationship("Stop", back_populates="stop_events")

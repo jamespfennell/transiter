@@ -24,7 +24,7 @@ import time
 import json
 
 def jsonify(data):
-    return json.dumps(data, indent=2, separators=(',', ': '), default=json_serial)
+    return json.dumps(data, indent=2, sort_keys=True, separators=(',', ': '), default=json_serial)
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
 
@@ -36,6 +36,13 @@ def json_serial(obj):
 from ...utils import gtfsutil
 
 
+def compare_dicts(dict_a, dict_b):
+    def to_string(d):
+        return jsonify(d)
+    return to_string(dict_a) == to_string(dict_b)
+
+
+
 def update(feed, system, content):
     nyc_subway_gtfs_extension = gtfsutil.GtfsRealtimeExtension(
         '..nyc_subway_pb2',
@@ -45,31 +52,69 @@ def update(feed, system, content):
     if len(content) == 0:
         return False
 
-    feed_json = gtfsutil.read_gtfs_realtime(content, nyc_subway_gtfs_extension)
-    feed_json = gtfsutil.transform_to_transiter_structure(feed_json)
+    feed_data = gtfsutil.read_gtfs_realtime(content, nyc_subway_gtfs_extension)
 
-    if feed_json is None:
+    feed_data = merge_in_nyc_subway_extension_data(feed_data)
+    feed_data = gtfsutil.transform_to_transiter_structure(feed_data)
+
+    if feed_data is None:
         return False
 
-    db_json = interpret_nyc_subway_gtfs_feed(feed_json)
+    feed_data = clean_nyc_subway_gtfs_feed(feed_data)
 
-    syncutil.sync_trips(db_json)
+    syncutil.sync_trips(feed_data)
 
 
-def interpret_nyc_subway_gtfs_feed(data):
+def merge_in_nyc_subway_extension_data(data):
+    data['header'].pop('nyct_feed_header', None)
+
+    for entity in data['entity']:
+        stop_time_updates = []
+        if 'trip_update' in entity:
+            trip = entity['trip_update']['trip']
+            stop_time_updates = entity['trip_update']['stop_time_update']
+        elif 'vehicle' in entity:
+            trip = entity['vehicle']['trip']
+        else:
+            continue
+
+        nyct_trip_data = trip['nyct_trip_descriptor']
+        trip['train_id'] = nyct_trip_data.get('train_id', None)
+        trip['direction'] = nyct_trip_data.get('direction', None)
+        if nyct_trip_data.get('is_assigned', False):
+            trip['status'] = 'RUNNING'
+        else:
+            trip['status'] = 'SCHEDULED'
+
+        del trip['nyct_trip_descriptor']
+
+        for stop_time_update in stop_time_updates:
+            nyct_stop_event_data = stop_time_update.get('nyct_stop_time_update', None)
+            if nyct_stop_event_data is None:
+                continue
+
+            stop_time_update['track'] = nyct_stop_event_data.get(
+                'actual_track', nyct_stop_event_data.get('scheduled_track', None))
+            del stop_time_update['nyct_stop_time_update']
+
+    return data
+
+
+def clean_nyc_subway_gtfs_feed(data):
     """
     Input: gtfs feed in json format
     Output: json containing data represented in the same way as the Transiter DB
-    This is where NYC Subway specific logic/intepretation/cleanin goes
+    This is where NYC Subway specific logic/interpretation/cleaning goes
     """
     trips_to_delete = set()
     for index, trip in enumerate(data.get('trips', [])):
-        trip['direction'] = trip['direction'][0]
         #if trip['direction'] == '':
         #    trip['direction'] = 'N'
         #else:
         #    trip['direction'] = 'S'
 
+        # TODO: we still need something like this as for the sync util
+        # we have to have a way of knowing that there are no, say, C trains
         # There is a bug (as of Jan 31 2018) that southbound E trains are marked as northbound and vice-versa.
         # So for E trains, the direction needs to be inverted
         # Also for 5 trains, the id 5X is not meaningful so it's just mapped to 5
@@ -81,25 +126,23 @@ def interpret_nyc_subway_gtfs_feed(data):
             trips_to_delete.add(trip['trip_id'])
             continue
 
-        # Now generate the trip_uid and the start time
+        # Now generate the trip_id and the start time
         try:
             # TODO: just pass the trip dictionary
             trip_uid = generate_trip_uid(
                 trip['trip_id'],
                 trip['start_date'],
                 trip['route_id'],
-                trip['direction']
+                trip['direction'][0]
                 )
         except Exception as e:
-            #print('Could not generate trip_uid; skipping.')
-            #print(e)
+            # TODO: log
             trips_to_delete.add(index)
             continue
         start_time = generate_trip_start_time(trip['trip_id'],
                                               trip['start_date'])
         trip['start_time'] = start_time
         trip['trip_id'] = trip_uid
-        del trip['train_id']
 
 
 
@@ -112,7 +155,7 @@ def interpret_nyc_subway_gtfs_feed(data):
         #print(( trip['start_time']  - data['timestamp'] ).total_seconds())
         #print(trip['is_assigned'])
         seconds_since_started = (data['timestamp'] - trip['start_time']).total_seconds()
-        if not trip['is_assigned'] and seconds_since_started > 300:
+        if trip['current_status'] == 'SCHEDULED' and seconds_since_started > 300:
             #print('Buggy train {}; skipping.'.format(trip_uid))
             trips_to_delete.add(index)
             continue
