@@ -120,7 +120,7 @@ ENTITY_1_ID = '1'
 ENTITY_2_ID = '2'
 
 
-class TestReadGtfsRealtime(unittest.TestCase):
+class TestTransformGtfsRealtime(unittest.TestCase):
 
     def test_parse(self):
 
@@ -175,6 +175,12 @@ def _create_json():
                             "time": 1537031850
                         },
                         "stop_id": "418N"
+                    },
+                    {
+                        "arrival": {
+                            "time": 1537031850
+                        },
+                        "stop_id": "419N"
                     }
                 ]
                 }
@@ -202,13 +208,22 @@ def _create_formatted_json():
                 'direction': None,
                 'feed_update_time': gtfsutil._timestamp_to_datetime(TIMESTAMP),
                 'last_update_time': gtfsutil._timestamp_to_datetime(1537031806),
-                "stop_events": [{
-                    "stop_id": "418N",
-                    "sequence_index": 17,
-                    "arrival_time": gtfsutil._timestamp_to_datetime(1537031850),
-                    "departure_time": gtfsutil._timestamp_to_datetime(1537031850),
-                    'track': None
-                }]
+                "stop_events": [
+                    {
+                        "stop_id": "418N",
+                        "sequence_index": 17,
+                        "arrival_time": gtfsutil._timestamp_to_datetime(1537031850),
+                        "departure_time": gtfsutil._timestamp_to_datetime(1537031850),
+                        'track': None
+                    },
+                    {
+                        "stop_id": "419N",
+                        "sequence_index": 18,
+                        "arrival_time": gtfsutil._timestamp_to_datetime(1537031850),
+                        "departure_time": None,
+                        'track': None
+                    }
+                ]
             }
         ]
     }

@@ -84,7 +84,7 @@ class _GtfsRealtimeToTransiterTransformer:
         return self._collect_transformed_data()
 
     def _transform_feed_metadata(self):
-        self._feed_time = _timestamp_to_datetime(
+        self._feed_time = self._timestamp_to_datetime(
             self._raw_data['header']['timestamp'])
         self._transformed_metadata = {
             'timestamp': self._feed_time
@@ -123,7 +123,7 @@ class _GtfsRealtimeToTransiterTransformer:
             self._feed_route_ids.add(trip['route_id'])
             if 'vehicle' in entity:
                 vehicle = entity['vehicle']
-                update_time = _timestamp_to_datetime(vehicle['timestamp'])
+                update_time = self._timestamp_to_datetime(vehicle['timestamp'])
                 trip_data.update({
                     'last_update_time': update_time,
                     'current_status': vehicle['current_status'],
@@ -153,7 +153,7 @@ class _GtfsRealtimeToTransiterTransformer:
                     if timestamp == 0:
                         continue
                     stop_event_data[time_type + '_time'] =\
-                        _timestamp_to_datetime(timestamp)
+                        self._timestamp_to_datetime(timestamp)
 
                 trip_data['stop_events'].append(stop_event_data)
             self._trip_id_to_transformed_entity[trip_id] = trip_data
