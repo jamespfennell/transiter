@@ -48,20 +48,12 @@ def update(feed, system, content):
         '..nyc_subway_pb2',
         __name__
         )
-
     if len(content) == 0:
         return False
-
     feed_data = gtfsutil.read_gtfs_realtime(content, nyc_subway_gtfs_extension)
-
     feed_data = merge_in_nyc_subway_extension_data(feed_data)
     feed_data = gtfsutil.transform_to_transiter_structure(feed_data)
-
-    if feed_data is None:
-        return False
-
     feed_data = clean_nyc_subway_gtfs_feed(feed_data)
-
     syncutil.sync_trips(feed_data)
 
 

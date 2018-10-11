@@ -4,7 +4,7 @@ from google.transit import gtfs_realtime_pb2
 from google.protobuf.message import DecodeError
 
 
-class GtfsRealtimeExtension():
+class GtfsRealtimeExtension:
 
     def __init__(self, pb_module, base_module):
         self._pb_module = pb_module
@@ -26,20 +26,13 @@ def read_gtfs_realtime(content, extension=None):
     if extension is not None:
         extension.activate()
     gtfs_feed = gtfs_realtime_pb2.FeedMessage()
-    try:
-        gtfs_feed.ParseFromString(content)
-    except DecodeError:
-        return {}
-    return _parse_protobuf_message(gtfs_feed)
-
-
-def _identity(value):
-    return value
+    gtfs_feed.ParseFromString(content)
+    return _read_protobuf_message(gtfs_feed)
 
 
 # Takes 40 milliseconds for the 123456 -> kind of a small bottleneck
 # Can it be sped up?
-def _parse_protobuf_message(message):
+def _read_protobuf_message(message):
     """
     Convert a protobuf message into a dictionary and list structure.
     This is not an exaustive converter but mean to be sufficient for GTFS
@@ -54,12 +47,13 @@ def _parse_protobuf_message(message):
         # Iterate through the possible protobuf field types to decide how to
         # parse this value
         if descriptor.type == descriptor.TYPE_MESSAGE:
-            parsing_function = _parse_protobuf_message
+            parsing_function = _read_protobuf_message
         elif descriptor.type == descriptor.TYPE_ENUM:
-            parsing_function = (lambda index:
-                descriptor.enum_type.values_by_number[index].name)
+            def parsing_function(value):
+                return descriptor.enum_type.values_by_number[value].name
         else:
-            parsing_function = _identity
+            def parsing_function(value):
+                return value
 
         # Then parse it
         if descriptor.label == descriptor.LABEL_REPEATED:
@@ -180,6 +174,12 @@ class _GtfsRealtimeToTransiterTransformer:
         })
         return transformed_data
 
+    @staticmethod
+    def _timestamp_to_datetime(timestamp):
+        if timestamp is None or timestamp == 0:
+            return None
+        return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
+
 
 def transform_to_transiter_structure(data):
     transformer = _GtfsRealtimeToTransiterTransformer(data)
@@ -187,7 +187,7 @@ def transform_to_transiter_structure(data):
 
 
 
-
+#deprecate
 def _timestamp_to_datetime(timestamp):
     if timestamp is None or timestamp == 0:
         return None

@@ -1,9 +1,68 @@
 import unittest
+from unittest import mock
 from google.transit import gtfs_realtime_pb2 as gtfs
 from transiter.utils import gtfsutil
 
 
-class TestGtfsUtil(unittest.TestCase):
+class TestGtfsRealtimeExtension(unittest.TestCase):
+
+    PB_MODULE = 'Module One'
+    BASE_MODULE = 'Module Two'
+
+    @mock.patch('transiter.utils.gtfsutil.importlib')
+    def test_gtfs_realtime_extension(self, importlib):
+        gtfs_realtime_extension = gtfsutil.GtfsRealtimeExtension(
+            self.PB_MODULE, self.BASE_MODULE)
+
+        gtfs_realtime_extension.activate()
+
+        importlib.import_module.assert_called_once_with(
+            self.PB_MODULE, self.BASE_MODULE)
+
+
+class TestReadGtfsRealtime(unittest.TestCase):
+
+    RAW_CONTENT = 'Some content'
+    PARSED_CONTENT = 'Transformed'
+
+    def setUp(self):
+        self.gtfs_feed = mock.MagicMock()
+
+        self. patch1 = mock.patch('transiter.utils.gtfsutil.gtfs_realtime_pb2')
+        self.gtfs_realtime_pb2 = self.patch1.start()
+        self.gtfs_realtime_pb2.FeedMessage.return_value = self.gtfs_feed
+
+        self.patch2 = mock.patch('transiter.utils.gtfsutil._read_protobuf_message')
+        self._read_protobuf_message = self.patch2.start()
+        self._read_protobuf_message.return_value = self.PARSED_CONTENT
+
+    def tearDown(self):
+        self.gtfs_realtime_pb2.FeedMessage.assert_called_once_with()
+        self.gtfs_feed.ParseFromString.assert_called_once_with(self.RAW_CONTENT)
+        self.patch1.stop()
+
+        self._read_protobuf_message.assert_called_once_with(self.gtfs_feed)
+        self.patch2.stop()
+
+    def test_read_gtfs_realtime(self):
+        actual_response = gtfsutil.read_gtfs_realtime(self.RAW_CONTENT)
+
+        self.assertEqual(actual_response, self.PARSED_CONTENT)
+
+    def test_read_gtfs_realtime_with_extension(self):
+        extension = mock.MagicMock()
+
+        actual_response = gtfsutil.read_gtfs_realtime(self.RAW_CONTENT, extension)
+
+        self.assertEqual(actual_response, self.PARSED_CONTENT)
+
+        extension.activate.assert_called_once_with()
+
+
+
+
+
+    """
     #def test_gtfs_to_json(self):
     #    gtfs = _create_gtfs()
     #    json = gtfsutil.gtfs_to_json(gtfs)
@@ -15,6 +74,8 @@ class TestGtfsUtil(unittest.TestCase):
         json_2 = _create_formatted_json()
         self.maxDiff = None
         self.assertDictEqual(json_1, json_2)
+    
+    """
 
 
 GTFS_REALTIME_VERSION = '2.0'
