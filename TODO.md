@@ -2,8 +2,13 @@
 
 ## Main development thread
 
-1. Continue C2 by breaking up the GTFS transform logic into smaller steps, 
-    adding tests, taking the track logic out of Transiter
+1. Continue C2 by 
+    - fixing up the big test for the transformer
+    - then write small tests for deep dive debugging, these should give 100% cov
+    - For the merge in function:
+        - write small tests for the bit of functionality
+    - DO the same class break up for the clean function
+        - write small tests for the whole thing, no need to try individual functions
 1. C9
 1. F3
 1. F4

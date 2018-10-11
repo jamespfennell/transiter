@@ -150,8 +150,6 @@ class _GtfsRealtimeToTransiterTransformer:
                     if time_entity is None:
                         continue
                     timestamp = time_entity.get('time', 0)
-                    if timestamp == 0:
-                        continue
                     stop_event_data[time_type + '_time'] =\
                         self._timestamp_to_datetime(timestamp)
 
