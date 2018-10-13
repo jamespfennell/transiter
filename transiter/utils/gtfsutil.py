@@ -65,6 +65,11 @@ def _read_protobuf_message(message):
     return d
 
 
+def transform_to_transiter_structure(data):
+    transformer = _GtfsRealtimeToTransiterTransformer(data)
+    return transformer.transform()
+
+
 class _GtfsRealtimeToTransiterTransformer:
 
     def __init__(self, raw_data):

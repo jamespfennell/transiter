@@ -193,6 +193,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
         self.assertDictEqual(expected_raw_entities,
                              transformer._trip_id_to_raw_entities)
+        self.assertEqual(True, False)
 
     def test_transform_trip_base_data(self):
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
@@ -420,7 +421,6 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         transformer._collect_transformed_data.assert_called_once_with()
         transformer._collect_transformed_data.assert_called_once_with()
 
-    """
     def test_start_to_finish_parse(self):
 
         input = {
@@ -521,6 +521,4 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
         self.maxDiff = None
         self.assertDictEqual(actual_output, expected_output)
-    """
-
 

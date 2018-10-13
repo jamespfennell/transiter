@@ -3,7 +3,6 @@
 ## Main development thread
 
 1. Continue C2 by 
-    - then write small tests for deep dive debugging, these should give 100% cov
     - For the merge in function:
         - write small tests for the bit of functionality
     - DO the same class break up for the clean function
