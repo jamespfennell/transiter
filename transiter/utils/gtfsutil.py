@@ -1,5 +1,6 @@
 import datetime
 import importlib
+import time
 from google.transit import gtfs_realtime_pb2
 from google.protobuf.message import DecodeError
 
@@ -131,8 +132,10 @@ class _GtfsRealtimeToTransiterTransformer:
                 update_time = self._timestamp_to_datetime(vehicle['timestamp'])
                 trip_data.update({
                     'last_update_time': update_time,
-                    'current_status': vehicle['current_status'],
-                    'current_stop_sequence': vehicle['current_stop_sequence']
+                    'current_status': vehicle.get(
+                        'current_status', trip_data['current_status']),
+                    'current_stop_sequence': vehicle.get(
+                        'current_stop_sequence', trip_data['current_stop_sequence'])
                 })
             self._trip_id_to_transformed_entity[trip_id] = trip_data
 
@@ -182,10 +185,4 @@ class _GtfsRealtimeToTransiterTransformer:
         if timestamp is None or timestamp == 0:
             return None
         return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
-
-
-
-
-
-
 

@@ -124,7 +124,7 @@ comparisons = 0
 sum_of_proportions = 0
 
 
-stop_ids = ['112']*20
+#stop_ids = ['112']*20
 
 
 for index, stop_id in enumerate(sorted(stop_ids)):

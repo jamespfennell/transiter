@@ -2,6 +2,8 @@
 
 ## Main development thread
 
+Bug: I'm transforming IS_ASSIGNED to a status, but then overwriting that status in vehicle
+
 1. Continue C2 by 
     - For the merge in function:
         - write small tests for the bit of functionality
