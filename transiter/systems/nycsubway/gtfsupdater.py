@@ -42,15 +42,13 @@ def compare_dicts(dict_a, dict_b):
     return to_string(dict_a) == to_string(dict_b)
 
 
-
 def update(feed, system, content):
-    nyc_subway_gtfs_extension = gtfsutil.GtfsRealtimeExtension(
-        '..nyc_subway_pb2',
-        __name__
-        )
     if len(content) == 0:
         return False
+    nyc_subway_gtfs_extension = gtfsutil.GtfsRealtimeExtension(
+        '..nyc_subway_pb2', __name__)
     feed_data = gtfsutil.read_gtfs_realtime(content, nyc_subway_gtfs_extension)
+    print(jsonify(feed_data))
     feed_data = merge_in_nyc_subway_extension_data(feed_data)
     feed_data = gtfsutil.transform_to_transiter_structure(feed_data)
     feed_data = clean_nyc_subway_gtfs_feed(feed_data)
@@ -153,6 +151,10 @@ def clean_nyc_subway_gtfs_feed(data):
             continue
 
         for stop_event in trip['stop_events']:
+            if stop_event['stop_id'][:3] == 'M14':
+                print('Route {}; route direction {}; stop direction {}'.format(
+                    trip['route_id'], trip['direction'], stop_event['stop_id'][3]
+                ))
 
             # There is a bug (as of Jan 31 2018) that southbound E trains are marked as northbound and vice-versa.
             # So for E trains, the direction needs to be inverted

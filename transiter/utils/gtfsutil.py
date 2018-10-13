@@ -112,7 +112,7 @@ class _GtfsRealtimeToTransiterTransformer:
             trip_data.update({
                 'trip_id' : trip_id,
                 'route_id' : trip['route_id'],
-                'start_date': trip['start_date'],
+                'start_date': trip.get('start_date', None),
                 'train_id': trip.get('train_id', None),
                 'direction': trip.get('direction', None),
                 'current_status': trip.get('status', None),
@@ -134,10 +134,11 @@ class _GtfsRealtimeToTransiterTransformer:
     def _transform_trip_stop_events(self):
         for trip_id, entity in self._trip_id_to_raw_entities.items():
             trip_update = entity.get('trip_update', None)
-            if trip_update is None:
-                continue
             trip_data = self._trip_id_to_transformed_entity.get(trip_id, {})
             trip_data['stop_events'] = []
+            if trip_update is None:
+                self._trip_id_to_transformed_entity[trip_id] = trip_data
+                continue
             for stop_time_update in trip_update['stop_time_update']:
                 stop_event_data = {
                     'stop_id': stop_time_update['stop_id'],
@@ -178,17 +179,8 @@ class _GtfsRealtimeToTransiterTransformer:
         return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
 
 
-def transform_to_transiter_structure(data):
-    transformer = _GtfsRealtimeToTransiterTransformer(data)
-    return transformer.transform()
 
 
-
-#deprecate
-def _timestamp_to_datetime(timestamp):
-    if timestamp is None or timestamp == 0:
-        return None
-    return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
 
 
 

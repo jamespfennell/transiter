@@ -112,120 +112,415 @@ class TestReadProtobufMessage(unittest.TestCase):
         self.assertDictEqual(actual_data, expected_data)
 
 
-GTFS_REALTIME_VERSION = '2.0'
-INCREMENTALITY = "FULL_DATASET"
-INCREMENTALITY_INT = gtfs.FeedHeader.Incrementality.Value(INCREMENTALITY)
-TIMESTAMP = 4
-ENTITY_1_ID = '1'
-ENTITY_2_ID = '2'
-
-
 class TestTransformGtfsRealtime(unittest.TestCase):
 
-    def test_parse(self):
+    GTFS_REALTIME_VERSION = '2.0'
+    INCREMENTALITY = 'FULL_DATASET'
+    INCREMENTALITY_INT = gtfs.FeedHeader.Incrementality.Value(INCREMENTALITY)
+    FEED_UPDATE_TIMESTAMP = 4
+    TRIP_UPDATE_TIMESTAMP = 5
+    STOP_ONE_ID = "Stop 1"
+    STOP_ONE_ARR_TIMESTAMP = 6
+    STOP_ONE_DEP_TIMESTAMP = 7
+    STOP_TWO_ID = "Stop 2"
+    STOP_TWO_ARR_TIMESTAMP = 8
+    ENTITY_1_ID = '1'
+    ENTITY_2_ID = '2'
+    TRIP_ID = "Trip 1"
+    ROUTE_ID = 'L'
+    START_DATE = '26031990'
+    TRAIN_ID = 'Train ID'
+    TRIP_DIRECTION = 'North'
+    CURRENT_STATUS = 'Stopped'
+    CURRENT_STOP_SEQUENCE = 14
 
-        input = _create_json()
-        expected_output = _create_formatted_json()
+    def setUp(self):
+        self.timestamp_to_datetime \
+            = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
 
-
-        actual_output = gtfsutil.transform_to_transiter_structure(input)
-
-        self.maxDiff = None
-        self.assertDictEqual(actual_output, expected_output)
-
-
-
-
-def _create_json():
-    json = {
-        'header': {
-            'gtfs_realtime_version': GTFS_REALTIME_VERSION,
-            'incrementality': INCREMENTALITY,
-            'timestamp': TIMESTAMP
-        },
-        'entity': [
-            {
-            'id': ENTITY_1_ID,
-            "vehicle": {
-                "trip": {
-                    "trip_id": "trip_id",
-                    "start_date": "20180915",
-                    "route_id": "4",
-                },
-                "current_stop_sequence": 16,
-                "current_status": 2,
-                "timestamp": 1537031806,
-                "stop_id": "626S"
-                }
+    def test_transform_feed_metadata(self):
+        raw_data = {
+            'header': {
+                'timestamp': self.FEED_UPDATE_TIMESTAMP,
+                'other_field': 'other value'
             },
-            {
-            'id': ENTITY_2_ID,
-            "trip_update": {
-                "trip": {
-                    "trip_id": "trip_id",
-                    "start_date": "20180915",
-                    "route_id": "4"
+            'other_field': 'other value'
+        }
+        expected_transformed_metadata = {
+            'timestamp': self.timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
+        }
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(raw_data)
+
+        transformer._transform_feed_metadata()
+
+        self.assertDictEqual(
+            expected_transformed_metadata, transformer._transformed_metadata)
+
+    def test_group_trip_entities(self):
+        trip_dict = {'trip_id': self.TRIP_ID}
+        trip = mock.MagicMock()
+        trip.__getitem__.side_effect = trip_dict.__getitem__
+
+        entity_dict = {'trip': trip}
+        trip_update = mock.MagicMock()
+        trip_update.__getitem__.side_effect = entity_dict.__getitem__
+        vehicle = mock.MagicMock()
+        vehicle.__getitem__.side_effect = entity_dict.__getitem__
+
+        raw_data = {
+            'entity': [
+                {
+                    'trip_update': trip_update
                 },
-                "stop_time_update": [
-                    {
-                        "arrival": {
-                            "time": 1537031850
-                        },
-                        "departure": {
-                            "time": 1537031850
-                        },
-                        "stop_id": "418N"
-                    },
-                    {
-                        "arrival": {
-                            "time": 1537031850
-                        },
-                        "stop_id": "419N"
-                    }
-                ]
+                {
+                    'vehicle': vehicle
+                },
+                {
+                    'unknown': 'unknown'
+                }
+            ]
+        }
+        expected_raw_entities = {
+            self.TRIP_ID: {
+                'trip': trip,
+                'trip_update': trip_update,
+                'vehicle': vehicle
+            }
+        }
+
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(raw_data)
+        transformer._group_trip_entities()
+
+        self.assertDictEqual(expected_raw_entities,
+                             transformer._trip_id_to_raw_entities)
+
+    def test_transform_trip_base_data(self):
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_raw_entities = {
+            self.TRIP_ID: {
+                'trip': {
+                    'trip_id': self.TRIP_ID,
+                    'route_id': self.ROUTE_ID,
+                    'start_date': self.START_DATE,
+                    'train_id': self.TRAIN_ID,
+                    'direction': self.TRIP_DIRECTION,
                 }
             }
-        ]
-    }
+        }
+        transformer._feed_time = self.FEED_UPDATE_TIMESTAMP
 
-    return json
+        expected_transformed_base_data = {
+            self.TRIP_ID: {
+                'trip_id': self.TRIP_ID,
+                'route_id': self.ROUTE_ID,
+                'start_date': self.START_DATE,
+                'train_id': self.TRAIN_ID,
+                'direction': self.TRIP_DIRECTION,
+                'current_status': None,
+                'current_stop_sequence': 0,
+                'last_update_time': None,
+                'feed_update_time': self.FEED_UPDATE_TIMESTAMP
+            }
+        }
 
+        transformer._transform_trip_base_data()
 
-def _create_formatted_json():
-    json = {
-        "timestamp": gtfsutil._timestamp_to_datetime(TIMESTAMP),
-        "route_ids": [
-            "4"
-        ],
-        "trips": [
-            {
-                "trip_id": "trip_id",
-                'train_id': None,
-                "route_id": "4",
-                "start_date": "20180915",
-                "current_stop_sequence": 16,
-                "current_status": 2,
-                'direction': None,
-                'feed_update_time': gtfsutil._timestamp_to_datetime(TIMESTAMP),
-                'last_update_time': gtfsutil._timestamp_to_datetime(1537031806),
-                "stop_events": [
+        self.assertDictEqual(
+            expected_transformed_base_data,
+            transformer._trip_id_to_transformed_entity)
+        self.assertSetEqual(transformer._feed_route_ids, set(self.ROUTE_ID))
+
+    def test_transform_trip_base_data_with_vehicle(self):
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_raw_entities = {
+            self.TRIP_ID: {
+                'trip': {
+                    'trip_id': self.TRIP_ID,
+                    'route_id': self.ROUTE_ID,
+                    'start_date': self.START_DATE,
+                    'train_id': self.TRAIN_ID,
+                    'direction': self.TRIP_DIRECTION,
+                },
+                'vehicle': {
+                    'timestamp': self.TRIP_UPDATE_TIMESTAMP,
+                    'current_status': self.CURRENT_STATUS,
+                    'current_stop_sequence': self.CURRENT_STOP_SEQUENCE,
+                }
+            }
+        }
+        transformer._feed_time = self.FEED_UPDATE_TIMESTAMP
+
+        expected_transformed_base_data = {
+            self.TRIP_ID: {
+                'trip_id': self.TRIP_ID,
+                'route_id': self.ROUTE_ID,
+                'start_date': self.START_DATE,
+                'train_id': self.TRAIN_ID,
+                'direction': self.TRIP_DIRECTION,
+                'last_update_time': self.timestamp_to_datetime(
+                    self.TRIP_UPDATE_TIMESTAMP),
+                'current_status': self.CURRENT_STATUS,
+                'current_stop_sequence': self.CURRENT_STOP_SEQUENCE,
+                'feed_update_time': self.FEED_UPDATE_TIMESTAMP
+            }
+        }
+
+        transformer._transform_trip_base_data()
+
+        self.assertDictEqual(
+            expected_transformed_base_data,
+            transformer._trip_id_to_transformed_entity)
+        self.assertSetEqual(transformer._feed_route_ids, set(self.ROUTE_ID))
+
+    def test_transform_trip_stop_events_short_circuit(self):
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_raw_entities = {
+            self.TRIP_ID: {
+                'trip': 'Data'
+            }
+        }
+        expected_transformed_entity = {
+            self.TRIP_ID: {
+                'stop_events': []
+            }
+        }
+
+        transformer._transform_trip_stop_events()
+
+        self.assertDictEqual(
+            expected_transformed_entity, transformer._trip_id_to_transformed_entity)
+
+    def test_transform_trip_stop_events(self):
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_raw_entities = {
+            self.TRIP_ID: {
+                'trip': 'Data',
+                'trip_update': {
+                    "stop_time_update": [
+                        {
+                            "arrival": {
+                                "time": self.STOP_ONE_ARR_TIMESTAMP,
+                            },
+                            "departure": {
+                                "time": self.STOP_ONE_DEP_TIMESTAMP,
+                            },
+                            "stop_id": self.STOP_ONE_ID,
+                        },
+                        {
+                            "arrival": {
+                                "time": self.STOP_TWO_ARR_TIMESTAMP,
+                            },
+                            "stop_id": self.STOP_TWO_ID,
+                        }
+                    ]
+                }
+            }
+        }
+        expected_transformed_entity = {
+            self.TRIP_ID: {
+                'stop_events': [
                     {
-                        "stop_id": "418N",
-                        "sequence_index": 17,
-                        "arrival_time": gtfsutil._timestamp_to_datetime(1537031850),
-                        "departure_time": gtfsutil._timestamp_to_datetime(1537031850),
+                        "stop_id": self.STOP_ONE_ID,
+                        "arrival_time": self.timestamp_to_datetime(
+                            self.STOP_ONE_ARR_TIMESTAMP),
+                        "departure_time": self.timestamp_to_datetime(
+                            self.STOP_ONE_DEP_TIMESTAMP),
                         'track': None
                     },
                     {
-                        "stop_id": "419N",
-                        "sequence_index": 18,
-                        "arrival_time": gtfsutil._timestamp_to_datetime(1537031850),
+                        "stop_id": self.STOP_TWO_ID,
+                        "arrival_time": self.timestamp_to_datetime(
+                            self.STOP_TWO_ARR_TIMESTAMP),
                         "departure_time": None,
                         'track': None
                     }
                 ]
             }
-        ]
-    }
-    return json
+        }
+
+        transformer._transform_trip_stop_events()
+
+        self.maxDiff = None
+        self.assertDictEqual(
+            expected_transformed_entity, transformer._trip_id_to_transformed_entity)
+
+    def test_update_stop_event_indices(self):
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_transformed_entity = {
+            self.TRIP_ID: {
+                'current_stop_sequence': 5,
+                'stop_events': [
+                    {},
+                    {}
+                ]
+            }
+        }
+
+        expected_updated_entity = {
+            self.TRIP_ID: {
+                'current_stop_sequence': 5,
+                'stop_events': [
+                    {
+                        'sequence_index': 6,
+                    },
+                    {
+                        'sequence_index': 7,
+                    }
+                ]
+            }
+        }
+
+        transformer._update_stop_event_indices()
+
+        self.assertDictEqual(
+            expected_updated_entity, transformer._trip_id_to_transformed_entity)
+
+    def test_collect_transformed_metadata(self):
+        trip = mock.MagicMock()
+        feed_time = mock.MagicMock()
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_transformed_entity = {
+            self.TRIP_ID: trip
+        }
+        transformer._transformed_metadata = {
+            'timestamp': feed_time
+        }
+        transformer._feed_route_ids = set(self.ROUTE_ID)
+
+        expected_data = {
+            'timestamp': feed_time,
+            'trips': [trip],
+            'route_ids': [self.ROUTE_ID]
+        }
+
+        actual_data = transformer._collect_transformed_data()
+
+        self.assertDictEqual(expected_data, actual_data)
+
+    def test_transform(self):
+        expected_data = mock.MagicMock()
+        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._transform_feed_metadata = mock.MagicMock()
+        transformer._group_trip_entities = mock.MagicMock()
+        transformer._transform_trip_base_data = mock.MagicMock()
+        transformer._transform_trip_stop_events = mock.MagicMock()
+        transformer._update_stop_event_indices = mock.MagicMock()
+        transformer._collect_transformed_data = mock.MagicMock()
+        transformer._collect_transformed_data.return_value = expected_data
+
+        actual_data = transformer.transform()
+
+        self.assertEqual(expected_data, actual_data)
+
+        transformer._transform_feed_metadata.assert_called_once_with()
+        transformer._group_trip_entities.assert_called_once_with()
+        transformer._transform_trip_base_data.assert_called_once_with()
+        transformer._transform_trip_stop_events.assert_called_once_with()
+        transformer._update_stop_event_indices.assert_called_once_with()
+        transformer._collect_transformed_data.assert_called_once_with()
+        transformer._collect_transformed_data.assert_called_once_with()
+
+    """
+    def test_start_to_finish_parse(self):
+
+        input = {
+            'header': {
+                'gtfs_realtime_version': self.GTFS_REALTIME_VERSION,
+                'incrementality': self.INCREMENTALITY,
+                'timestamp': self.FEED_UPDATE_TIMESTAMP
+            },
+            'entity': [
+                {
+                'id': self.ENTITY_1_ID,
+                "vehicle": {
+                    "trip": {
+                        "trip_id": "trip_id",
+                        "start_date": "20180915",
+                        "route_id": "4",
+                    },
+                    "current_stop_sequence": 16,
+                    "current_status": 2,
+                    "timestamp": self.TRIP_UPDATE_TIMESTAMP,
+                    "stop_id": "626S"
+                    }
+                },
+                {
+                'id': self.ENTITY_2_ID,
+                "trip_update": {
+                    "trip": {
+                        "trip_id": "trip_id",
+                        "start_date": "20180915",
+                        "route_id": "4"
+                    },
+                    "stop_time_update": [
+                        {
+                            "arrival": {
+                                "time": self.STOP_ONE_ARR_TIMESTAMP,
+                            },
+                            "departure": {
+                                "time": self.STOP_ONE_DEP_TIMESTAMP,
+                            },
+                            "stop_id": self.STOP_ONE_ID,
+                        },
+                        {
+                            "arrival": {
+                                "time": self.STOP_TWO_ARR_TIMESTAMP,
+                            },
+                            "stop_id": self.STOP_TWO_ID,
+                        }
+                    ]
+                    }
+                }
+            ]
+        }
+
+        timestamp_to_datetime \
+            = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
+        expected_output = {
+            "timestamp": timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP),
+            "route_ids": [
+                "4"
+            ],
+            "trips": [
+                {
+                    "trip_id": "trip_id",
+                    'train_id': None,
+                    "route_id": "4",
+                    "start_date": "20180915",
+                    "current_stop_sequence": 16,
+                    "current_status": 2,
+                    'direction': None,
+                    'feed_update_time': timestamp_to_datetime(
+                        self.FEED_UPDATE_TIMESTAMP),
+                    'last_update_time': timestamp_to_datetime(
+                        self.TRIP_UPDATE_TIMESTAMP),
+                    "stop_events": [
+                        {
+                            "stop_id": self.STOP_ONE_ID,
+                            "sequence_index": 17,
+                            "arrival_time": timestamp_to_datetime(
+                                self.STOP_ONE_ARR_TIMESTAMP),
+                            "departure_time": timestamp_to_datetime(
+                                self.STOP_ONE_DEP_TIMESTAMP),
+                            'track': None
+                        },
+                        {
+                            "stop_id": self.STOP_TWO_ID,
+                            "sequence_index": 18,
+                            "arrival_time": timestamp_to_datetime(
+                                self.STOP_TWO_ARR_TIMESTAMP),
+                            "departure_time": None,
+                            'track': None
+                        }
+                    ]
+                }
+            ]
+        }
+
+        actual_output = gtfsutil.transform_to_transiter_structure(input)
+
+        self.maxDiff = None
+        self.assertDictEqual(actual_output, expected_output)
+    """
+
 

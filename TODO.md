@@ -3,7 +3,6 @@
 ## Main development thread
 
 1. Continue C2 by 
-    - fixing up the big test for the transformer
     - then write small tests for deep dive debugging, these should give 100% cov
     - For the merge in function:
         - write small tests for the bit of functionality
