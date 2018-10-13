@@ -193,7 +193,6 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
         self.assertDictEqual(expected_raw_entities,
                              transformer._trip_id_to_raw_entities)
-        self.assertEqual(True, False)
 
     def test_transform_trip_base_data(self):
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
@@ -490,24 +489,24 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                     "current_stop_sequence": 16,
                     "current_status": 2,
                     'direction': None,
-                    'feed_update_time': timestamp_to_datetime(
+                    'feed_update_time': self.timestamp_to_datetime(
                         self.FEED_UPDATE_TIMESTAMP),
-                    'last_update_time': timestamp_to_datetime(
+                    'last_update_time': self.timestamp_to_datetime(
                         self.TRIP_UPDATE_TIMESTAMP),
                     "stop_events": [
                         {
                             "stop_id": self.STOP_ONE_ID,
                             "sequence_index": 17,
-                            "arrival_time": timestamp_to_datetime(
+                            "arrival_time": self.timestamp_to_datetime(
                                 self.STOP_ONE_ARR_TIMESTAMP),
-                            "departure_time": timestamp_to_datetime(
+                            "departure_time": self.timestamp_to_datetime(
                                 self.STOP_ONE_DEP_TIMESTAMP),
                             'track': None
                         },
                         {
                             "stop_id": self.STOP_TWO_ID,
                             "sequence_index": 18,
-                            "arrival_time": timestamp_to_datetime(
+                            "arrival_time": self.timestamp_to_datetime(
                                 self.STOP_TWO_ARR_TIMESTAMP),
                             "departure_time": None,
                             'track': None
