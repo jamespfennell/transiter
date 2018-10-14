@@ -49,7 +49,8 @@ class TestRouteService(unittest.TestCase):
 
     @mock.patch('transiter.services.routeservice._construct_status')
     @mock.patch('transiter.services.routeservice.route_dao')
-    def test_list_all_in_route(self, route_dao, _construct_status):
+    def test_list_all_in_system(self, route_dao, _construct_status):
+        """[Route service] Listing all routes in a system"""
         expected = [{
             'service_status': self.ROUTE_ONE_STATUS,
             **self.ROUTE_ONE_REPR
@@ -69,6 +70,7 @@ class TestRouteService(unittest.TestCase):
         self.route_two.short_repr.assert_called_once()
 
     def test_construct_status_good(self):
+        """[Route service] Constructing good route status from empty messages"""
         route = mock.MagicMock()
         route.status_messages = []
 
@@ -77,6 +79,7 @@ class TestRouteService(unittest.TestCase):
         self.assertEqual(actual, self.GOOD_STATUS)
 
     def test_construct_status_bad(self):
+        """[Route service] Constructing bad route status from multiple messages"""
 
         message_1 = mock.MagicMock()
         message_1.priority = 1
@@ -100,14 +103,8 @@ class TestRouteService(unittest.TestCase):
 
     @mock.patch('transiter.services.routeservice._construct_status')
     @mock.patch('transiter.services.routeservice.route_dao')
-    def test_get_in_route_by_id(self, route_dao, _construct_status):
-        """expected = {
-            'stop_events': [{
-                'stop': self.STOP_REPR,
-                **self.STOP_EVENT_REPR
-            }],
-            **self.TRIP_ONE_REPR
-        }"""
+    def test_get_in_system_by_id(self, route_dao, _construct_status):
+        """[Route service] Getting a specific route in a system"""
         route_dao.get_in_system_by_id.return_value = self.route_one
 
         actual = routeservice.get_in_system_by_id(

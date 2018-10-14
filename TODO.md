@@ -5,10 +5,7 @@
 Bug: I'm transforming IS_ASSIGNED to a status, but then overwriting that status in vehicle
 
 1. Continue C2 by 
-    - For the merge in function:
-        - write small tests for the bit of functionality
-    - DO the same class break up for the clean function
-        - write small tests for the whole thing, no need to try individual functions
+    - Finish the syncutil.sync test
 1. C9
 1. F3
 1. F4
@@ -41,6 +38,9 @@ serving use cases correctly
 
 Improve/clean up the NYC Subway xml file parser
 as part of this task
+
+Write tests for the parser -> very important!
+Input a sample test file
 
 #### F4: Write the Feed Health Code
 How to delete old entries?
@@ -77,14 +77,12 @@ Can duplication be avoided in the flask app?
 #### F10: Refactor the NYC Subway code into its own package
    
 ### Existing code clean up
-- C2: Move the trip sync function from gtfsutil to syncutil. Clean up both and write
-        tests for both utils -- looks like sqlalchemy tests not needed!
-        Just need to ensure it's calling the delete function
-        and populating the new models and updating 
-        the existing one.
-        - So for the basic sync there are 3 cases
-        if we can assume everything is independent
-        Could iterate over all 8 combinations of each missing or not
+- C2: Continue cleaning up sync util:
+    - See if the syncuti.synctrips can be refactored
+    - Write tests for it
+    - Write more tests for the gtfs cleaner to get full coverage
+    - Merge in the functions at the end into the cleaner
+    - Write the cleaner that switches the directions on the J or M train
 - C6: Optimize the SQL ALchemy config
     - especially with joins
     - figure out what the cascades are doing
@@ -94,7 +92,11 @@ Can duplication be avoided in the flask app?
 - C8: Add uniqueness and not null conditions to the schema
     where possible.
 - C9: split the daos into separate modules and initialize them
-    in the modules
+    in the modules. Write tests for these? Might have to touch sql.. :/
+- C10: the sync util should use non-persisted models and then session.merge()
+    - This means the GTFS util should output models and not JSON
+    - Might be tricky to coordinate stop time update merging -> may need to 
+        delete the stop events from the object first
 
 ### Testing
 

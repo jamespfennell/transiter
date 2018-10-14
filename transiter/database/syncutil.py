@@ -49,7 +49,7 @@ def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_
         for key, new_value in new_entity.items():
             setattr(db_entity, key, new_value)
 
-    return id_to_db_entity.values()
+    return list(id_to_db_entity.values())
 
 
 

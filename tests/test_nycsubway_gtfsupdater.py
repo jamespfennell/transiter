@@ -14,6 +14,7 @@ class TestMergeInExtensionData(unittest.TestCase):
     STATUS_SCHEDULED = 'SCHEDULED'
 
     def test_merge_in_trip_update(self):
+        """[NYC Subway extension] Merge in trip update data"""
         nyct_feed_header = mock.MagicMock()
 
         nyct_trip_descriptor_dict = {
@@ -78,6 +79,7 @@ class TestMergeInExtensionData(unittest.TestCase):
         self.assertDictEqual(expected_output_data, actual_output_data)
 
     def test_merge_in_vehicle(self):
+        """[NYC Subway extension] Merge in vehicle data"""
         nyct_feed_header = mock.MagicMock()
 
         nyct_trip_descriptor_dict = {
@@ -135,6 +137,7 @@ class TestMergeInExtensionData(unittest.TestCase):
 class TestNycSubwayGtfsCleaner(unittest.TestCase):
 
     def test_fix_route_ids_5x(self):
+        """[NYC Subway cleaner] Fix 5X route IDs"""
         data = {
             'route_id': '5X'
         }
@@ -148,6 +151,7 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
         self.assertDictEqual(expected_output_data, data)
 
     def test_fix_route_ids_no_route_id(self):
+        """[NYC Subway cleaner] Delete trips without route Ids"""
         data = {
             'route_id': ''
         }
@@ -157,6 +161,7 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
         self.assertFalse(response)
 
     def test_delete_old_scheduled_trips_delete(self):
+        """[NYC Subway cleaner] Delete old scheduled trips that haven't started"""
         cleaner = gtfsupdater._NycSubwayGtfsCleaner()
         cleaner.data = {
             'timestamp': datetime.datetime.fromtimestamp(1000)
@@ -171,6 +176,7 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
         self.assertFalse(response)
 
     def test_delete_old_scheduled_trips_started(self):
+        """[NYC Subway cleaner] Don't delete scheduled trips that have started"""
         cleaner = gtfsupdater._NycSubwayGtfsCleaner()
         cleaner.data = {
             'timestamp': datetime.datetime.fromtimestamp(1000)
@@ -185,6 +191,7 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
         self.assertTrue(response)
 
     def test_delete_old_scheduled_trips_not_old(self):
+        """[NYC Subway cleaner] Don't delete scheduled trips that aren't old"""
         cleaner = gtfsupdater._NycSubwayGtfsCleaner()
         cleaner.data = {
             'timestamp': datetime.datetime.fromtimestamp(1000)
@@ -197,3 +204,20 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
         response = cleaner.delete_old_scheduled_trips(trip_data)
 
         self.assertTrue(response)
+
+    def test_transform_stop_ids(self):
+        """[NYC Subway cleaner] Tranform stop IDs in stop time updates"""
+        stop_event = {
+            'stop_id': 'ABCN'
+        }
+        expected_output = {
+            'stop_id': 'ABC',
+            'direction': 'N',
+            'future': True
+        }
+
+        response = gtfsupdater._NycSubwayGtfsCleaner.transform_stop_ids(
+            stop_event, {})
+
+        self.assertTrue(response)
+        self.assertDictEqual(stop_event, expected_output)

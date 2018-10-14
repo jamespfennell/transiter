@@ -19,6 +19,7 @@ class TestGetRequests(unittest.TestCase):
 
     @mock.patch('transiter.endpoints.responsemanager.jsonutil')
     def test_content(self, jsonutil):
+        """[Response manager] Get request"""
         jsonutil.convert_for_http = mock_convert_for_http
         @responsemanager.http_get_response
         def response():
@@ -34,6 +35,7 @@ class TestPostRequests(unittest.TestCase):
 
     @mock.patch('transiter.endpoints.responsemanager.jsonutil')
     def test_content(self, jsonutil):
+        """[Response manager] Post request"""
         jsonutil.convert_for_http = mock_convert_for_http
         @responsemanager.http_get_response
         def response():
@@ -47,6 +49,7 @@ class TestPostRequests(unittest.TestCase):
 class TestPutRequests(unittest.TestCase):
 
     def test_put(self):
+        """[Response manager] Put request with changes"""
         @responsemanager.http_put_response
         def response():
             return True
@@ -58,6 +61,7 @@ class TestPutRequests(unittest.TestCase):
         self.assertEqual(http_code, responsemanager.HTTP_201_CREATED)
 
     def test_not_put(self):
+        """[Response manager] Put request with no changes"""
         @responsemanager.http_put_response
         def response():
             return False
@@ -71,6 +75,7 @@ class TestPutRequests(unittest.TestCase):
 class TestDeleteRequests(unittest.TestCase):
 
     def test_delete(self):
+        """[Response manager] Delete request"""
         @responsemanager.http_delete_response
         def response():
             return None
@@ -91,6 +96,7 @@ class TestExceptionHandling(unittest.TestCase):
         ]
 
     def test_handled_exceptions(self):
+        """[Response manager] Entity not found error response"""
         for response_decorator in self._response_dectorators():
             @response_decorator
             def response():
@@ -102,6 +108,7 @@ class TestExceptionHandling(unittest.TestCase):
             self.assertEqual(http_code, responsemanager.HTTP_404_NOT_FOUND)
 
     def test_unhandled_exception(self):
+        """[Response manager] Unhandled exception response"""
         # TODO(enable this test)
         return
         for response_decorator in self._response_dectorators():

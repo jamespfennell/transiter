@@ -11,6 +11,7 @@ class TestGtfsRealtimeExtension(unittest.TestCase):
 
     @mock.patch('transiter.utils.gtfsutil.importlib')
     def test_gtfs_realtime_extension(self, importlib):
+        """[Read GTFS Realtime] Feed extension activation"""
         gtfs_realtime_extension = gtfsutil.GtfsRealtimeExtension(
             self.PB_MODULE, self.BASE_MODULE)
 
@@ -45,11 +46,13 @@ class TestReadGtfsRealtime(unittest.TestCase):
         self.patch2.stop()
 
     def test_read_gtfs_realtime(self):
+        """[Read GTFS Realtime] Read basic feed subtask scheduling"""
         actual_response = gtfsutil.read_gtfs_realtime(self.RAW_CONTENT)
 
         self.assertEqual(actual_response, self.PARSED_CONTENT)
 
     def test_read_gtfs_realtime_with_extension(self):
+        """[Read GTFS Realtime] Read feed with extension subtask scheduling"""
         extension = mock.MagicMock()
 
         actual_response = gtfsutil.read_gtfs_realtime(self.RAW_CONTENT, extension)
@@ -73,6 +76,7 @@ class TestReadProtobufMessage(unittest.TestCase):
     CONGESTION_TWO_INT = gtfs.VehiclePosition.CongestionLevel.Value(CONGESTION_TWO)
 
     def test_read_protobuf_message(self):
+        """[Read GTFS Realtime] Read protobuf message"""
         root = gtfs.FeedMessage()
         header = root.header
         header.gtfs_realtime_version = self.GTFS_REALTIME_VERSION
@@ -139,6 +143,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
 
     def test_transform_feed_metadata(self):
+        """[GTFS Realtime transformer] Transform feed metadata"""
         raw_data = {
             'header': {
                 'timestamp': self.FEED_UPDATE_TIMESTAMP,
@@ -157,6 +162,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             expected_transformed_metadata, transformer._transformed_metadata)
 
     def test_group_trip_entities(self):
+        """[GTFS Realtime transformer] Group trip entities"""
         trip_dict = {'trip_id': self.TRIP_ID}
         trip = mock.MagicMock()
         trip.__getitem__.side_effect = trip_dict.__getitem__
@@ -195,6 +201,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                              transformer._trip_id_to_raw_entities)
 
     def test_transform_trip_base_data(self):
+        """[GTFS Realtime transformer] Transform trip base data"""
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
@@ -231,6 +238,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         self.assertSetEqual(transformer._feed_route_ids, set(self.ROUTE_ID))
 
     def test_transform_trip_base_data_with_vehicle(self):
+        """[GTFS Realtime transformer] Transform trip base data with vehicle"""
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
@@ -273,6 +281,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         self.assertSetEqual(transformer._feed_route_ids, set(self.ROUTE_ID))
 
     def test_transform_trip_stop_events_short_circuit(self):
+        """[GTFS Realtime transformer] Transform trip base data with no stops"""
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
@@ -291,6 +300,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             expected_transformed_entity, transformer._trip_id_to_transformed_entity)
 
     def test_transform_trip_stop_events(self):
+        """[GTFS Realtime transformer] Transform trip stop events"""
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
@@ -345,6 +355,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             expected_transformed_entity, transformer._trip_id_to_transformed_entity)
 
     def test_update_stop_event_indices(self):
+        """[GTFS Realtime transformer] Update stop event indices"""
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_transformed_entity = {
             self.TRIP_ID: {
@@ -375,7 +386,8 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         self.assertDictEqual(
             expected_updated_entity, transformer._trip_id_to_transformed_entity)
 
-    def test_collect_transformed_metadata(self):
+    def test_collect_transformed_data(self):
+        """[GTFS Realtime transformer] Collect transformed data"""
         trip = mock.MagicMock()
         feed_time = mock.MagicMock()
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
@@ -398,6 +410,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         self.assertDictEqual(expected_data, actual_data)
 
     def test_transform(self):
+        """[GTFS Realtime transformer] Transform process subtask scheduling"""
         expected_data = mock.MagicMock()
         transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._transform_feed_metadata = mock.MagicMock()
@@ -421,7 +434,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         transformer._collect_transformed_data.assert_called_once_with()
 
     def test_start_to_finish_parse(self):
-
+        """[GTFS Realtime transformer] Full transformation test"""
         input = {
             'header': {
                 'gtfs_realtime_version': self.GTFS_REALTIME_VERSION,

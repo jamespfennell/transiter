@@ -32,6 +32,7 @@ class TestTripService(unittest.TestCase):
 
     @mock.patch('transiter.services.tripservice.trip_dao')
     def test_list_all_in_route(self, trip_dao):
+        """[Trip service] List all trips in a route"""
         expected = [self.TRIP_ONE_REPR, self.TRIP_TWO_REPR]
         trip_dao.list_all_in_route.return_value = [self.trip_one,
                                                    self.trip_two]
@@ -47,6 +48,7 @@ class TestTripService(unittest.TestCase):
 
     @mock.patch('transiter.services.tripservice.trip_dao')
     def test_get_in_route_by_id(self, trip_dao):
+        """[Trip service] Get a specific trip in a route"""
         expected = {
             'stop_events': [{
                 'stop': self.STOP_REPR,

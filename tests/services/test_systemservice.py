@@ -25,6 +25,7 @@ class TestSystemService(unittest.TestCase):
 
     @mock.patch('transiter.services.systemservice.system_dao')
     def test_list_all(self, system_dao):
+        """[System service] List all installed systems"""
         expected = [self.SYSTEM_ONE_REPR, self.SYSTEM_TWO_REPR]
         system_dao.list_all.return_value = [
             self.system_1,
@@ -39,6 +40,7 @@ class TestSystemService(unittest.TestCase):
 
     @mock.patch('transiter.services.systemservice.system_dao')
     def test_get_by_id(self, system_dao):
+        """[System service] Get a specific system"""
         child_entities_dict = {
             'stops': self.SYSTEM_ONE_NUM_STOPS,
             'stations': self.SYSTEM_ONE_NUM_STATIONS,
@@ -72,6 +74,7 @@ class TestSystemService(unittest.TestCase):
     @mock.patch('transiter.services.systemservice._import_static_data')
     @mock.patch('transiter.services.systemservice.system_dao')
     def test_install_success(self, system_dao, _import_static_data):
+        """[System service] Successfully install a system"""
         new_system = mock.MagicMock()
         system_dao.get_by_id.return_value = None
         system_dao.create.return_value = new_system
@@ -86,6 +89,7 @@ class TestSystemService(unittest.TestCase):
 
     @mock.patch('transiter.services.systemservice.system_dao')
     def test_install_already_exists(self, system_dao):
+        """[System service] Fail to install because system id already taken"""
         system_dao.get_by_id.return_value = self.system_1
 
         actual = systemservice.install(self.SYSTEM_ONE_ID)
@@ -95,6 +99,7 @@ class TestSystemService(unittest.TestCase):
 
     @mock.patch('transiter.services.systemservice.system_dao')
     def test_delete_success(self, system_dao):
+        """[System service] Successfully delete a system"""
         system_dao.delete_by_id.return_value = True
 
         actual = systemservice.delete_by_id(self.SYSTEM_ONE_ID)
@@ -104,6 +109,7 @@ class TestSystemService(unittest.TestCase):
 
     @mock.patch('transiter.services.systemservice.system_dao')
     def test_delete_failure(self, system_dao):
+        """[System service] Fail to delete a nonexistent system"""
         system_dao.delete_by_id.return_value = False
 
         self.assertRaises(exceptions.IdNotFoundError,

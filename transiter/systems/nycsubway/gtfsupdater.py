@@ -14,37 +14,12 @@ Need to activate the DB entities
 """
 
 import datetime
-import json
 import time
 
 import pytz
 
 from transiter.database import syncutil
-
-
-def jsonify(data):
-    return json.dumps(data, indent=2, sort_keys=True, separators=(',', ': '), default=json_serial)
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-
-    if isinstance(obj, (datetime.date, datetime.datetime)):
-        return obj.isoformat()
-    raise TypeError ("Type %s not serializable" % type(obj))
-
-
 from ...utils import gtfsutil
-
-
-def compare_dicts(dict_a, dict_b):
-    def to_string(d):
-        return jsonify(d)
-    a = to_string(dict_a)
-    b = to_string(dict_b)
-    if a == b:
-        return True
-    print(a)
-    print(b)
-    return False
 
 
 def update(feed, system, content):
@@ -92,6 +67,11 @@ def merge_in_nyc_subway_extension_data(data):
             del stop_time_update['nyct_stop_time_update']
 
     return data
+
+
+def clean_nyc_subway_gtfs_feed(data):
+    nyc_subway_gtfs_cleaner = _NycSubwayGtfsCleaner()
+    return nyc_subway_gtfs_cleaner.clean(data)
 
 
 class _NycSubwayGtfsCleaner:
@@ -183,6 +163,7 @@ class _NycSubwayGtfsCleaner:
                 trip['stop_events'].pop(0)
         return True
 
+    # TODO: remove
     @staticmethod
     def invert_e_train_direction_in_trip(trip):
         if trip['route_id'] == 'E':
@@ -199,16 +180,12 @@ class _NycSubwayGtfsCleaner:
         })
         return True
 
+    # TODO: remove
     @staticmethod
     def invert_e_train_direction_in_stop_event(stop_event, trip):
         if trip['route_id'] == 'E':
             stop_event['direction'] = invert_direction(stop_event['direction'])
         return True
-
-
-def clean_nyc_subway_gtfs_feed(data):
-    nyc_subway_gtfs_cleaner = _NycSubwayGtfsCleaner()
-    return nyc_subway_gtfs_cleaner.clean(data)
 
 
 # TODO: move this into the single cleaner that calls it
