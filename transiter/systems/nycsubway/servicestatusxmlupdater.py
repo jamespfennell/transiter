@@ -1,83 +1,103 @@
-import xml.etree.ElementTree as ET
-import json
-from ...database import connection
-from ...database import syncutil
-from ...database import models
-def jsonify(data):
-    return json.dumps(data, indent=4, separators=(',', ': '))
+import datetime
+import re
+from xml.etree import ElementTree
+
+from transiter.database import models
+from transiter.database import syncutil
+from transiter.database.accessobjects import RouteDao
+from transiter.database.accessobjects import RouteStatusDao
+
+route_dao = RouteDao()
+route_status_dao = RouteStatusDao()
 
 
-def update(feed, service, content):
-    feed_messages = parse(content)
+def update(feed, system, content):
 
-    session = connection.get_session()
-    routes = {route.route_id: route for route in session.query(models.Route)}
-
-    for message in feed_messages.values():
-        message['routes'] = [routes[route_id] for route_id in message['route_ids']]
-        print(message['routes'])
-        del message['route_ids']
-    db_messages = set(session.query(models.StatusMessage))
-    # What to do about routes? Could manually add them
-    # to the JSON - yes
-    syncutil.sync(models.StatusMessage, db_messages, feed_messages.values(), ['message_id'])
-
+    parser = ServiceStatusXmlParser(content)
+    data = parser.parse()
+    db_messages = route_status_dao.get_all_in_system(system.system_id)
+    route_id_to_route = {route.route_id: route
+                         for route in route_dao.list_all_in_system(system.system_id)}
+    for status in data:
+        status['routes'] = [route_id_to_route[route_id]
+                            for route_id in status['route_ids']]
+        del status['route_ids']
+    syncutil.sync(models.RouteStatus, db_messages, data, ['status_id'])
     return True
 
 
-def parse(content):
+class ServiceStatusXmlParser:
 
-    month_index_to_name = ['Jan', 'Feb', 'Mar',
-        'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
-        'Oct', 'Nov', 'Dec']
-    try:
-        root = ET.fromstring(content)
-    except Exception as e:
-        print('Invalid XML file.')
-        print(e)
-        return False
+    NAMESPACE = '{http://www.siri.org.uk/siri}'
 
+    def __init__(self, raw_xml):
+        self._raw_xml = raw_xml
 
-
-    namespace = '{http://www.siri.org.uk/siri}'
-    feed_time = root[0][0].text
-
-
-    for situations in root.iter(namespace + 'Situations'):
-        new_messages = {}
+    def parse(self):
+        data = []
+        root = ElementTree.fromstring(self._raw_xml)
+        situations = self._find_descendent_element(root, 'Situations')
         for situation in situations:
+            xml_tag_to_dict_key = {
+                'status_id': 'SituationNumber',
+                'status_type': 'ReasonName',
+                'status_priority': 'MessagePriority',
+                'message_title': 'ReasonName',
+                'message_content': 'Description',
+                'creation_time': 'CreationTime'
+            }
+            situation_data = {
+                dict_key: self._get_content_in_child_element(situation, xml_tag)
+                for dict_key, xml_tag in xml_tag_to_dict_key.items()
+            }
+            situation_data['status_priority'] = int(situation_data['status_priority'])
 
-            message_time = situation.find(namespace + 'CreationTime').text
-            year = int(message_time[0:4])
-            month = int(message_time[5:7])
-            day = int(message_time[8:10])
-            hour = int(message_time[11:13])
-            minute = int(message_time[14:16])
-            message_data = {}
+            publication_window = self._find_child_element(
+                situation, 'PublicationWindow')
+            situation_data['start_time'] = self._get_content_in_child_element(
+                publication_window, 'StartTime')
+            situation_data['end_time'] = self._get_content_in_child_element(
+                publication_window, 'EndTime')
 
-            message_data['message_id'] = situation.find(namespace + 'SituationNumber').text.strip()
-            if situation.find(namespace + 'Planned').text.strip() != 'true':
-                message_data['time_posted'] = "Posted {:s} {:d} {:d} at {:02d}:{:02d}.".format(month_index_to_name[month-1], day, year, hour, minute)
-            else:
-                message_data['time_posted'] = "Posted {:s} {:d} {:d}.".format(month_index_to_name[month-1], day, year, hour, minute)
+            for key in ('creation_time', 'end_time', 'start_time'):
+                situation_data[key] = self._time_string_to_datetime(situation_data[key])
 
-            message_data['message'] = situation.find(namespace + 'Description').text
-            message_data['message_type'] = situation.find(namespace + 'ReasonName').text
-            message_data['priority'] = situation.find(namespace + 'MessagePriority').text
+            affected_routes = []
+            for route_string in self._get_content_in_descendent_elements(
+                    situation, 'LineRef'):
+                index = route_string.rfind('_')
+                affected_routes.append(route_string[index+1:])
+            situation_data['route_ids'] = affected_routes
 
-            affected_routes = set()
-            for route in situation.find(namespace + 'Affects').iter(namespace + 'LineRef'):
-                route_id = route.text.strip()[-1]
-                if route_id == 'I':
-                    route_id = 'SI'
-                affected_routes.add(route_id)
-            """
-            for route in affected_routes:
-                if route == 'I':
-                    message_data['route_id'] = 'SI'
-                else:
-                    message_data['route_id'] = route
-            """
-            message_data['route_ids'] = list(affected_routes)
-            new_messages[message_data['message_id']] = message_data
-    return new_messages
+            data.append(situation_data)
+        return data
+
+    @classmethod
+    def _get_content_in_child_element(cls, element, tag):
+        child_element = cls._find_child_element(element, tag)
+        if child_element is None:
+            return None
+        return child_element.text.strip()
+
+    @classmethod
+    def _find_child_element(cls, element, tag):
+        return element.find(cls.NAMESPACE + tag)
+
+    @classmethod
+    def _find_descendent_element(cls, element, tag):
+        for descendent in element.iter(cls.NAMESPACE + tag):
+            return descendent
+
+    @classmethod
+    def _get_content_in_descendent_elements(cls, element, tag):
+        for descendent in element.iter(cls.NAMESPACE + tag):
+            yield descendent.text.strip()
+
+    @staticmethod
+    def _time_string_to_datetime(time_string):
+        if time_string is None:
+            return None
+        # First remove any microseconds
+        time_string = re.sub('\.[0-9]+', '', time_string)
+        return datetime.datetime.fromisoformat(time_string)
+

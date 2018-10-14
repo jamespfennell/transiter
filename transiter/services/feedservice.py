@@ -122,6 +122,8 @@ def execute_feed_update(feed_update):
     feed_update.raw_data_hash = m.hexdigest()
     print(time.time())
 
+    """
+
     last_successful_update = feed_dao.get_last_successful_update(feed.id)
     print(time.time())
     if last_successful_update is not None and \
@@ -129,10 +131,13 @@ def execute_feed_update(feed_update):
         feed_update.status = 'SUCCESS_NOT_NEEDED'
         return
     print(time.time())
+    """
 
     try:
         update_function(feed, feed.system, content)
         feed_update.status = 'SUCCESS_UPDATED'
     except Exception:
+        print('Could not parse feed')
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
         raise
+

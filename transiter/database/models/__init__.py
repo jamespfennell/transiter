@@ -12,6 +12,8 @@ from .stopevent import StopEvent
 from .system import System
 from .trip import Trip
 
+# TO BE RENAMED
+from .statusmessage import RouteStatus
 # TO BE DELETED
 from .statusmessage import StatusMessage
 from .routelistentry import RouteListEntry

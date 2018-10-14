@@ -2,10 +2,10 @@
 
 ## Main development thread
 
-Bug: I'm transforming IS_ASSIGNED to a status, but then overwriting that status in vehicle
+Bug: I'm transforming IS_ASSIGNED to a status, 
+    but then overwriting that status in vehicle...this is an NYC subway specific
+    problem at least
 
-1. Continue C2 by 
-    - Finish the syncutil.sync test
 1. C9
 1. F3
 1. F4
@@ -79,6 +79,7 @@ Can duplication be avoided in the flask app?
 ### Existing code clean up
 - C2: Continue cleaning up sync util:
     - See if the syncuti.synctrips can be refactored
+        - maybe place it in a tripsupdaterutil
     - Write tests for it
     - Write more tests for the gtfs cleaner to get full coverage
     - Merge in the functions at the end into the cleaner
@@ -107,7 +108,12 @@ Can duplication be avoided in the flask app?
     https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
 
 
-   - NOTE: It is important not to test things that are just part of the basic functionality of SQLAlchemy, as SQLAlchemy already comes with a large collection of well-written tests. For example, we wouldn’t want to test a simple insert, select, delete, or update statement, as those are tested within the SQLAlchemy project itself. Instead, look to test things that your code manipulates that could affect how the SQLAlchemy statement is run or the results returned by it.
+   - NOTE: It is important not to test things that are just part of the basic functionality of SQLAlchemy, 
+   as SQLAlchemy already comes with a large collection of well-written tests. 
+   For example, we wouldn’t want to test a simple insert, select, delete, or 
+   update statement, as those are tested within the SQLAlchemy project itself. 
+   Instead, look to test things that your code manipulates that could affect 
+   how the SQLAlchemy statement is run or the results returned by it.
 
 
 

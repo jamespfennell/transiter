@@ -27,7 +27,11 @@ if(__name__=='__main__'):
 import requests
 import json
 
+requests.post('http://localhost:5000/systems/nycsubway/feeds/ServiceStatus/')
 
+
+
+exit()
 
 def compare_responses(rtr_s, transiter_s):
     right = 0

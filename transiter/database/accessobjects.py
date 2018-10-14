@@ -4,6 +4,7 @@ from . import models
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import func
 
+from .models.statusmessage import route_status_routes
 
 class _Query:
 
@@ -150,6 +151,19 @@ DirectionNameDao = _dao_factory(schema_entity=models.DirectionName,
                              id_field='id',
                              order_field='id',
                              base_dao=_BaseEntityDao)
+
+
+class RouteStatusDao:
+
+    @staticmethod
+    def get_all_in_system(system_id):
+        session = connection.get_session()
+        query = session.query(models.RouteStatus)\
+            .join(models.Route, models.RouteStatus.routes)\
+            .join(models.System, models.Route.system)\
+            .filter(models.System.system_id == system_id)
+        for row in query:
+            yield row
 
 class SystemDao(_SystemDao):
 

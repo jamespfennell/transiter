@@ -1,4 +1,9 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><Siri xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns="http://www.siri.org.uk/siri" xmlns:ns4="http://datex2.eu/schema/1_0/1_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt"><ServiceDelivery><ResponseTimestamp>2018-09-13T20:51:24.5539640-04:00</ResponseTimestamp><SituationExchangeDelivery><ResponseTimestamp>2018-09-13T20:51:24.5539640-04:00</ResponseTimestamp><Status>true</Status><Situations>
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<Siri xmlns:ns2="http://www.ifopt.org.uk/acsb" xmlns="http://www.siri.org.uk/siri" xmlns:ns4="http://datex2.eu/schema/1_0/1_0" xmlns:ns3="http://www.ifopt.org.uk/ifopt">
+  <ServiceDelivery>
+    <ResponseTimestamp>2018-09-13T20:51:24.5539640-04:00</ResponseTimestamp>
+    <SituationExchangeDelivery><ResponseTimestamp>2018-09-13T20:51:24.5539640-04:00</ResponseTimestamp>
+    <Status>true</Status><Situations>
   <PtSituationElement>
     <CreationTime>2018-09-13T20:44:27.453-04:00</CreationTime>
     <SituationNumber>
