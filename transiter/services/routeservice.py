@@ -45,7 +45,7 @@ def get_in_system_by_id(system_id, route_id):
     response.update({
         'service_status': _construct_status(route),
         'service_status_messages':
-            [message.short_repr() for message in route.status_messages],
+            [message.short_repr() for message in route.route_statuses],
         'stops': []
         })
     current_stop_ids = list(route_dao.get_active_stop_ids(route.id))
@@ -68,10 +68,10 @@ def _construct_status(route):
     """
     status = None
     priority = -100000
-    for message in route.status_messages:
-        if message.priority > priority:
-            status = message.message_type
-            priority = message.priority
+    for message in route.route_statuses:
+        if message.status_priority > priority:
+            status = message.status_type
+            priority = message.status_priority
     if status is None:
         status = 'Good Service'
     return status

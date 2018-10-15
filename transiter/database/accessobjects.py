@@ -4,7 +4,6 @@ from . import models
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import func
 
-from .models.statusmessage import route_status_routes
 
 class _Query:
 

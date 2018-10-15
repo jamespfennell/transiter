@@ -4,8 +4,10 @@ from .feed import Feed
 from .feedupdate import FeedUpdate
 #from .message import Message
 from .route import Route
+from .routestatus import RouteStatus
 #from .servicepattern import ServicePattern
-#from .servicepatternentry import ServicePatternEntry
+#from .servicepatternedge import ServicePatternEdge
+#from .servicepatternvertex import ServicePatternVertex
 from .station import Station
 from .stop import Stop
 from .stopevent import StopEvent
@@ -13,9 +15,7 @@ from .system import System
 from .trip import Trip
 
 # TO BE RENAMED
-from .statusmessage import RouteStatus
 # TO BE DELETED
-from .statusmessage import StatusMessage
 from .routelistentry import RouteListEntry
 
 

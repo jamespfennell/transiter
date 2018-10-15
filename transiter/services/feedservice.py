@@ -5,6 +5,8 @@ import time
 import requests
 import hashlib
 
+from transiter.scheduler import client
+#client.refresh_jobs()
 
 feed_dao = FeedDao()
 feed_update_dao = FeedUpdateDao()
@@ -60,7 +62,7 @@ def create_feed_update(system_id, feed_id):
     feed_update.status = 'SCHEDULED'
 
     # TODO make this asynchronous
-    execute_feed_update(feed_update)
+    _execute_feed_update(feed_update)
     #print(time.time())
     return {
         'href': 'NI'
@@ -81,7 +83,7 @@ def list_updates_in_feed(system_id, feed_id):
     return response
 
 
-def execute_feed_update(feed_update):
+def _execute_feed_update(feed_update):
 
     feed_update.status = 'IN_PROGRESS'
     #return {'created': 'tre'}
