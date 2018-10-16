@@ -82,7 +82,8 @@ class _NycSubwayGtfsCleaner:
             self.fix_route_ids,
             self.delete_old_scheduled_trips,
             self.delete_first_stop_event_slow_updating_trips,
-            self.invert_e_train_direction_in_trip
+            self.invert_e_train_direction_in_trip,
+            self.delete_trips_with_route_id_ss
         ]
         self.stop_event_cleaners = [
             self.transform_stop_ids,
@@ -96,10 +97,10 @@ class _NycSubwayGtfsCleaner:
         for index, trip in enumerate(data.get('trips', [])):
             result = True
             for trip_cleaner in self.trip_cleaners:
-                result = result and trip_cleaner(trip)
+                result = (result and trip_cleaner(trip))
                 if not result:
                     trips_to_delete.add(index)
-                break
+                    break
             if not result:
                 continue
 
@@ -185,6 +186,12 @@ class _NycSubwayGtfsCleaner:
     def invert_e_train_direction_in_stop_event(stop_event, trip):
         if trip['route_id'] == 'E':
             stop_event['direction'] = invert_direction(stop_event['direction'])
+        return True
+
+    @staticmethod
+    def delete_trips_with_route_id_ss(trip):
+        if trip['route_id'] == 'SS':
+            return False
         return True
 
 

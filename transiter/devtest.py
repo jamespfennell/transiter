@@ -4,7 +4,7 @@ from .services import systemservice
 from .utils import jsonutil
 from .services import exceptions
 
-
+from transiter.scheduler import client
 #print(jsonify(systemservice.get('nycsubway')))
 
 """
@@ -27,8 +27,7 @@ if(__name__=='__main__'):
 import requests
 import json
 
-requests.post('http://localhost:5000/systems/nycsubway/feeds/ServiceStatus/')
-
+client.refresh_jobs()
 
 
 exit()

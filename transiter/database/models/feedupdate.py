@@ -32,6 +32,7 @@ class FeedUpdate(Base):
         return {
             'id': self.id,
             'status': self.status,
+            'raw_data_hash': self.raw_data_hash,
             'last_action_time': self.last_action_time
         }
 

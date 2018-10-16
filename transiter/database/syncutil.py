@@ -92,6 +92,10 @@ def sync_trips(data):
     trip_id_to_feed_stop_events = {trip['trip_id']: trip['stop_events'] for trip in data['trips']}
     trips_to_persist = []
     for trip in data['trips']:
+        if trip['route_id'] not in route_id_to_route_pri_key:
+            print('Unknown route {}; known ids: {}'.format(trip['route_id'],
+                                                           ', '.join(route_id_to_route_pri_key.keys())))
+            continue
         trip['route_pri_key'] = route_id_to_route_pri_key[trip['route_id']]
         del trip['route_id']
         del trip['stop_events']

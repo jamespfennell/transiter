@@ -27,7 +27,10 @@ def read_gtfs_realtime(content, extension=None):
     if extension is not None:
         extension.activate()
     gtfs_feed = gtfs_realtime_pb2.FeedMessage()
-    gtfs_feed.ParseFromString(content)
+    try:
+        gtfs_feed.ParseFromString(content)
+    except DecodeError as e:
+        raise Exception(e)
     return _read_protobuf_message(gtfs_feed)
 
 

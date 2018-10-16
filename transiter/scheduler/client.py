@@ -4,5 +4,14 @@ that makes the connection, and hits the correct function in the server
 
 """
 
+import rpyc
+
+
 def refresh_jobs():
-    pass
+    try:
+        conn = rpyc.connect('localhost', 12345)
+        return conn.root.refresh_jobs()
+    except ConnectionRefusedError:
+        print('Could not connect to the RPyC scheduler service')
+    return False
+

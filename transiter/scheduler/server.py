@@ -1,13 +1,23 @@
 from transiter.database.accessobjects import FeedDao
-feed_dao = FeedDao
+from transiter.services import feedservice
+import rpyc
+from rpyc.utils.server import ThreadedServer
+from apscheduler.schedulers.background import BackgroundScheduler
+
+
+feed_dao = FeedDao()
 
 
 class AutoUpdater:
-    def __init__(self, feed_pri_key, frequency):
-        self.feed_pri_key = feed_pri_key
+    def __init__(self, feed, frequency):
+        self.feed_pri_key = feed.id
         self.frequency = frequency
         self.job = None
-        # Start the job
+        scheduler.add_job(
+            feedservice.create_feed_update,
+            'interval',
+            seconds=5,
+            args=[feed.system.system_id, feed.feed_id])
 
     def set_frequency(self, frequency):
         if frequency == self.frequency:
@@ -34,27 +44,26 @@ def refresh_jobs():
         if auto_updater is not None:
             auto_updater.set_frequency(frequency)
         else:
-            auto_updater = AutoUpdater(feed.id, frequency)
+            auto_updater = AutoUpdater(feed, frequency)
             feed_pri_key_to_auto_updater[feed.id] = auto_updater
-        stale_feed_pri_keys.remove(feed.id)
+        stale_feed_pri_keys.discard(feed.id)
 
     for feed_pri_key in stale_feed_pri_keys:
         del feed_pri_key_to_auto_updater[feed_pri_key]
 
-
-"""
-Store the current autoupdate settings with references to the
-    relevant jobs
-Have a refresh_jobs() functions
-This consults the database -> Pull in all the feeds and sees
-which ones have autoupdaters
-Sees if any jobs have been added or changed
-If so it reschedules these and updates its internal store
+    print(feed_pri_key_to_auto_updater)
+    return True
 
 
+class JobsService(rpyc.Service):
 
-We can just use a memory scheduler as this server handles the persistence
+    def exposed_refresh_jobs(self):
+        refresh_jobs()
 
-from transiter import feedservice
-feedservice.create_feed_update(system_id, feed_id)
-"""
+
+if __name__ == "__main__":
+    scheduler = BackgroundScheduler()
+    scheduler.start()
+    refresh_jobs()
+    server = ThreadedServer(JobsService, port = 12345)
+    server.start()

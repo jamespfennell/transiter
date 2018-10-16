@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import json
+import time
 
 """
 class ContainerTypeError(Exception):
@@ -22,7 +23,7 @@ def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
 
     if isinstance(obj, (datetime, date)):
-        return obj.timestamp() #.isoformat()
+        return (obj.timestamp() - time.time())/60#.isoformat()
     raise TypeError ("Type %s not serializable" % type(obj))
 
 """

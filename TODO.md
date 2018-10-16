@@ -2,7 +2,6 @@
 
 ## Main development thread
 
-
 1. C9
 1. F6
 
@@ -25,8 +24,20 @@ if only the consumer app is deployed.
     can automatically update the feeds
     https://apscheduler.readthedocs.io/en/latest/userguide.html
     
+    
+- Should probably have a more generic Jobs scheme:
+    - Updating feeds
+    - Updating system static data
+    - Calculating route frequencies
+    - Calculating route service patterns (if enabled)
+    - Calculating the feed health (and deleting old entries)
+        - Generating FeedHealthReport types
+    
 #### F8: Implement href tags using an endpoint util
 Can duplication be avoided in the flask app?
+
+
+#### F11: Add logging
 
 ### Existing code clean up
 - C2: Continue cleaning up sync util:
@@ -51,11 +62,13 @@ Can duplication be avoided in the flask app?
     - Might be tricky to coordinate stop time update merging -> may need to 
         delete the stop events from the object first
     - Also need the XML Parser to have a convert to models step
+  
 
 - C11:
 Bug: I'm transforming IS_ASSIGNED to a status, 
     but then overwriting that status in vehicle...this is an NYC subway specific
-    problem at least and only relevent for trips without a vehicle entity
+    problem at least and only relevant for trips without a vehicle entity
+    Potentially it's fine, just make sure
     
 ### Testing
 

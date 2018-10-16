@@ -63,6 +63,7 @@ def create_feed_update(system_id, feed_id):
 
     # TODO make this asynchronous
     _execute_feed_update(feed_update)
+
     #print(time.time())
     return {
         'href': 'NI'
@@ -118,28 +119,26 @@ def _execute_feed_update(feed_update):
     request = requests.get(feed.url)
     content = request.content
 
-    print(time.time())
+    #print(time.time())
     m = hashlib.md5()
     m.update(content)
     feed_update.raw_data_hash = m.hexdigest()
-    print(time.time())
-
-    """
+    #print(time.time())
 
     last_successful_update = feed_dao.get_last_successful_update(feed.id)
-    print(time.time())
+    #print(time.time())
     if last_successful_update is not None and \
             last_successful_update.raw_data_hash == feed_update.raw_data_hash:
         feed_update.status = 'SUCCESS_NOT_NEEDED'
         return
-    print(time.time())
-    """
+    #print(time.time())
+
 
     try:
         update_function(feed, feed.system, content)
         feed_update.status = 'SUCCESS_UPDATED'
     except Exception:
-        print('Could not parse feed')
+        print('Could not parse feed {}'.format(feed.feed_id))
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
-        raise
+        #raise
 
