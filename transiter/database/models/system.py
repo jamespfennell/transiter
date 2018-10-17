@@ -25,5 +25,4 @@ class System(Base):
     def short_repr(self):
         return {
             'system_id': self.system_id,
-            'href': 'NI'
         }

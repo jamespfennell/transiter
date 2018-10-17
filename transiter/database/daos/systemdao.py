@@ -17,7 +17,7 @@ class _SystemDao(_BaseSystemDao):
             .filter(Model.system_id == system_id)
         return query.one()[0]
 
-    def count_stations_in_system(system_id):
+    def count_stations_in_system(self, system_id):
         return 0
 
     def count_stops_in_system(cls, system_id):

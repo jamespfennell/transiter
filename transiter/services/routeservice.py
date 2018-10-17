@@ -1,5 +1,5 @@
 from transiter.database.daos import route_dao
-
+from transiter.utils import linksutil
 
 def list_all_in_system(system_id):
     """
@@ -23,7 +23,8 @@ def list_all_in_system(system_id):
     for route in route_dao.list_all_in_system(system_id):
         route_response = route.short_repr()
         route_response.update({
-            'service_status': _construct_status(route)
+            'service_status': _construct_status(route),
+            'href': linksutil.RouteEntityLink(route)
         })
         response.append(route_response)
     return response
@@ -51,7 +52,8 @@ def get_in_system_by_id(system_id, route_id):
         stop_response = entry.stop.short_repr()
         stop_response.update({
             'current_service': stop_response['stop_id'] in current_stop_ids,
-            'index': index
+            'index': index,
+            'href': linksutil.StopEntityLink(entry.stop)
         })
         response['stops'].append(stop_response)
     return response

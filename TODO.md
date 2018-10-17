@@ -2,7 +2,16 @@
 
 ## Main development thread
 
-1. F6
+1. Continue working on the url feature
+    - Add urls everywhere
+    - Put all the logic in the hrefutil
+    - Rename the hrefutil to the linksutil
+1. Go through all of the API endpoints and implement anything that's
+    not implemented
+    - usual_service
+    - location
+    - origin/terminus for trips
+    - etc.
 
 
 
@@ -19,11 +28,7 @@ Think about how in deployments the admin app would be used
 if only the consumer app is deployed.
 
 #### F6: Feed autoupdaters
-- Use APScheduler (Advanced Python Scheduler) to create runnables that
-    can automatically update the feeds
-    https://apscheduler.readthedocs.io/en/latest/userguide.html
-    
-    
+- Rename it Jobs Executor   
 - Should probably have a more generic Jobs scheme:
     - Updating feeds
     - Updating system static data
@@ -68,22 +73,8 @@ Bug: I'm transforming IS_ASSIGNED to a status,
     Potentially it's fine, just make sure
 - C12:
     investigate testing the daos
-### Testing
-
- - Write unit tests for everything for the service layer and document the responses
-    - aim for 100% test coverage, to be safe.
-  - This incudes adding DB tests, for the daos
-    - Testing with sqlalchemy:
-    https://www.oreilly.com/library/view/essential-sqlalchemy-2nd/9781491916544/ch04.html
-
-   - NOTE: It is important not to test things that are just part of the basic functionality of SQLAlchemy, 
-   as SQLAlchemy already comes with a large collection of well-written tests. 
-   For example, we wouldn’t want to test a simple insert, select, delete, or 
-   update statement, as those are tested within the SQLAlchemy project itself. 
-   Instead, look to test things that your code manipulates that could affect 
-   how the SQLAlchemy statement is run or the results returned by it.
-
-
+- C13:
+    problem with the xml update - like a race condition when the routes change?
 
 ## Version 0.2
 
@@ -94,6 +85,8 @@ YAML. Or maybe an option to read it remotely
 
 Or maybe have multiple csv file and infer the type from the headers
  
+Have a priority on the direction names 
+
 
 #### F4: Write the Feed Health Code
 How to delete old entries?
@@ -132,8 +125,10 @@ sort algorithm for generating routes lists.
     - If it's not, what happens? 
     Maybe use the sync util carefully to allow updates
 - Implement the stations endpoints.
-- How does one make stations?
+- How does a user/admin make stations?
 - System wide trip endpoints
+- Have a generic get paremater that decides how times are to be read -
+    timestamp, diff from now, human readable
 
 
     

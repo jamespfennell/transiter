@@ -6,7 +6,7 @@ from ..utils import routelistutil
 import csv
 import os
 from ..utils import jsonutil
-
+from transiter.utils import linksutil
 
 @connection.unit_of_work
 def list_all():
@@ -14,7 +14,15 @@ def list_all():
     List all installed systems.
     :return: A list of short representation of systems
     """
-    return [system.short_repr() for system in system_dao.list_all()]
+    response = []
+    for system in system_dao.list_all():
+        system_response = system.short_repr()
+        system_response.update({
+            'href': linksutil.SystemEntityLink(system)
+        })
+        response.append(system_response)
+    return response
+    [system.short_repr() for system in system_dao.list_all()]
 
 
 @connection.unit_of_work
@@ -26,7 +34,7 @@ def get_by_id(system_id):
     response.update({
         "stops": {
             "count": system_dao.count_stops_in_system(system_id),
-            "href": "NI"
+            "href": linksutil.StopsInSystemIndexLink(system)
         },
         "stations": {
             "count": system_dao.count_stations_in_system(system_id),
@@ -34,11 +42,11 @@ def get_by_id(system_id):
         },
         "routes": {
             "count": system_dao.count_routes_in_system(system_id),
-            "href": "NI"
+            "href": linksutil.RoutesInSystemIndexLink(system)
         },
         "feeds": {
             "count": system_dao.count_feeds_in_system(system_id),
-            "href": "NI"
+            "href": linksutil.FeedsInSystemIndexLink(system)
         }
     })
     return response

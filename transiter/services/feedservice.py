@@ -4,6 +4,7 @@ import time
 import requests
 import hashlib
 from transiter.database.daos import feed_dao, feed_update_dao
+from transiter.utils import linksutil
 
 from transiter.scheduler import client
 #client.refresh_jobs()
@@ -17,7 +18,7 @@ def list_all_in_system(system_id):
     for feed in feed_dao.list_all_in_system(system_id):
         feed_response = {
             'feed_id': feed.feed_id,
-            'href': 'NI',
+            'href': linksutil.FeedEntityLink(feed),
             'last_update_time': 'NI',
             'health': {
                 'status': 'NI'

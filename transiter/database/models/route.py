@@ -38,7 +38,6 @@ class Route(Base):
     def short_repr(self):
         return {
             'route_id': self.route_id,
-            'href': 'NI'
         }
 
     def long_repr(self, verbose=False):

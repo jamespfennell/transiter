@@ -1,12 +1,16 @@
 from transiter.database.daos import stop_dao, stop_event_dao
-
+from transiter.utils import linksutil
 
 def list_all_in_system(system_id):
 
     response = []
 
     for stop in stop_dao.list_all_in_system(system_id):
-        response.append(stop.short_repr())
+        stop_response = stop.short_repr()
+        stop_response.update({
+            'href': linksutil.StopEntityLink(stop)
+        })
+        response.append(stop_response)
     return response
 
 def google_maps_url(location):
@@ -110,6 +114,7 @@ def get_in_system_by_id(system_id, stop_id):
         trip_response['route'] = stop_event.trip.route.short_repr()
         trip_response['origin'] = 'NI'
         trip_response['terminus'] = 'NI'
+        trip_response['href'] = linksutil.TripEntityLink(stop_event.trip)
         stop_event_response['trip'] = trip_response
         stop_event_responses.append(stop_event_response)
     response['stop_events'] = stop_event_responses

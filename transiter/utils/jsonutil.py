@@ -2,6 +2,11 @@ from datetime import date, datetime
 import json
 import time
 
+import flask
+
+from transiter.utils import linksutil
+from transiter.database import models
+
 """
 class ContainerTypeError(Exception):
     pass
@@ -24,7 +29,39 @@ def json_serial(obj):
 
     if isinstance(obj, (datetime, date)):
         return (obj.timestamp() - time.time())/60#.isoformat()
+
+    if isinstance(obj, linksutil.Link):
+        return obj.url()
+
     raise TypeError ("Type %s not serializable" % type(obj))
+
+
+
+
+
+def route_to_url(route):
+    return flask.url_for(
+        'route_endpoints.get_in_system_by_id',
+        system_id=route.system_id,
+        route_id=route.route_id, _external=True)
+
+def stop_to_url(stop):
+    return flask.url_for(
+        'stop_endpoints.get_in_system_by_id',
+        system_id=stop.system_id,
+        stop_id=stop.stop_id, _external=True)
+
+entity_type_to_href_generator = {
+    models.Route: route_to_url,
+    models.Stop: stop_to_url,
+}
+
+def entity_href_to_url(entity_href):
+
+    entity = entity_href.entity
+    if type(entity) in entity_type_to_href_generator:
+        return entity_type_to_href_generator[type(entity)](entity)
+    return 'Not implemented'
 
 """
 

@@ -1,5 +1,5 @@
 from transiter.database.daos import trip_dao
-
+from transiter.utils import linksutil
 
 def list_all_in_route(system_id, route_id):
     """
@@ -36,7 +36,7 @@ def list_all_in_route(system_id, route_id):
                 "usual_service": "NI",
                 "href": "NI"
             },
-            'href': 'NI',
+            'href': linksutil.TripEntityLink(trip),
         })
         response.append(trip_response)
     return response
@@ -70,5 +70,6 @@ def get_in_route_by_id(system_id, route_id, trip_id):
     for stop_event in trip.stop_events:
         stop_event_response = stop_event.short_repr()
         stop_event_response['stop'] = stop_event.stop.short_repr()
+        stop_event_response['stop']['href'] = linksutil.StopEntityLink(stop_event.stop)
         trip_response['stop_events'].append(stop_event_response)
     return trip_response

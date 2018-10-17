@@ -6,7 +6,7 @@ from .responsemanager import http_get_response
 stop_endpoints = Blueprint('stop_endpoints', __name__)
 
 
-@stop_endpoints.route('/')
+@stop_endpoints.route('')
 @http_get_response
 def list_all_in_system(system_id):
     """List all stops for a specific system
@@ -34,7 +34,7 @@ def list_all_in_system(system_id):
     return stopservice.list_all_in_system(system_id)
 
 
-@stop_endpoints.route('/<stop_id>/')
+@stop_endpoints.route('/<stop_id>')
 @http_get_response
 def get_in_system_by_id(system_id, stop_id):
     """Retrieve a specific stop in a specific system.

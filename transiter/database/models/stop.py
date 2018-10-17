@@ -28,5 +28,4 @@ class Stop(Base):
             'name': self.name,
             'location': 'NI',
             'usual_service': 'NI',
-            'href': 'NI'
         }
