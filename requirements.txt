@@ -25,6 +25,7 @@ pyparsing==2.2.1
 pytz==2018.5
 rednose==1.3.0
 requests==2.19.1
+rpyc==4.0.2
 six==1.11.0
 snowballstemmer==1.2.1
 Sphinx==1.8.0
