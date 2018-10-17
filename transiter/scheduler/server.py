@@ -1,11 +1,8 @@
-from transiter.database.accessobjects import FeedDao
+from transiter.database.daos import feed_dao
 from transiter.services import feedservice
 import rpyc
 from rpyc.utils.server import ThreadedServer
 from apscheduler.schedulers.background import BackgroundScheduler
-
-
-feed_dao = FeedDao()
 
 
 class AutoUpdater:
@@ -33,7 +30,7 @@ feed_pri_key_to_auto_updater = {}
 
 
 def refresh_jobs():
-
+    # TODO: go through the feed service. Maybe list all with autoupdaters
     feeds = feed_dao.list_all()
     stale_feed_pri_keys = set(feed_pri_key_to_auto_updater.keys())
     for feed in feeds:

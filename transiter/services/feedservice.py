@@ -1,15 +1,12 @@
-from ..database.accessobjects import FeedDao, FeedUpdateDao
 from ..database import connection
 import importlib
 import time
 import requests
 import hashlib
+from transiter.database.daos import feed_dao, feed_update_dao
 
 from transiter.scheduler import client
 #client.refresh_jobs()
-
-feed_dao = FeedDao()
-feed_update_dao = FeedUpdateDao()
 
 
 @connection.unit_of_work

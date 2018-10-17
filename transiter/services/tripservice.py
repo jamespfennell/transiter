@@ -1,6 +1,4 @@
-from transiter.database.accessobjects import TripDao
-
-trip_dao = TripDao()
+from transiter.database.daos import trip_dao
 
 
 def list_all_in_route(system_id, route_id):

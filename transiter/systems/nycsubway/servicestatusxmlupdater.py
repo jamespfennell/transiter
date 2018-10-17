@@ -4,11 +4,7 @@ from xml.etree import ElementTree
 
 from transiter.database import models
 from transiter.database import syncutil
-from transiter.database.accessobjects import RouteDao
-from transiter.database.accessobjects import RouteStatusDao
-
-route_dao = RouteDao()
-route_status_dao = RouteStatusDao()
+from transiter.database.daos import route_dao, route_status_dao
 
 
 def update(feed, system, content):

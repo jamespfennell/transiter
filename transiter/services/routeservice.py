@@ -1,6 +1,4 @@
-from ..database.accessobjects import RouteDao
-
-route_dao = RouteDao()
+from transiter.database.daos import route_dao
 
 
 def list_all_in_system(system_id):

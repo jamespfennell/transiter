@@ -2,7 +2,6 @@
 
 ## Main development thread
 
-1. C9
 1. F6
 
 
@@ -55,8 +54,6 @@ Can duplication be avoided in the flask app?
     look at lazy
 - C8: Add uniqueness and not null conditions to the schema
     where possible. Also add good indices.
-- C9: split the daos into separate modules and initialize them
-    in the modules. Write tests for these? Might have to touch sql.. :/
 - C10: the sync util should use non-persisted models and then session.merge()
     - This means the GTFS util should output models and not JSON
     - Might be tricky to coordinate stop time update merging -> may need to 
@@ -69,7 +66,8 @@ Bug: I'm transforming IS_ASSIGNED to a status,
     but then overwriting that status in vehicle...this is an NYC subway specific
     problem at least and only relevant for trips without a vehicle entity
     Potentially it's fine, just make sure
-    
+- C12:
+    investigate testing the daos
 ### Testing
 
  - Write unit tests for everything for the service layer and document the responses

@@ -1,7 +1,5 @@
-from ..database import accessobjects
+from transiter.database.daos import stop_dao, stop_event_dao
 
-stop_dao = accessobjects.StopDao()
-stop_event_dao = accessobjects.StopEventDao()
 
 def list_all_in_system(system_id):
 

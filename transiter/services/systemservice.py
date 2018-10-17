@@ -1,18 +1,12 @@
 from ..database import connection
 from ..database import models
-from ..database import accessobjects
+from transiter.database.daos import direction_name_dao, feed_dao, route_dao, stop_dao, station_dao, system_dao
 from . import exceptions
 from ..utils import routelistutil
 import csv
 import os
 from ..utils import jsonutil
 
-system_dao = accessobjects.SystemDao()
-route_dao = accessobjects.RouteDao()
-stop_dao = accessobjects.StopDao()
-station_dao = accessobjects.StationDao()
-feed_dao = accessobjects.FeedDao()
-direction_name_dao = accessobjects.DirectionNameDao()
 
 @connection.unit_of_work
 def list_all():
