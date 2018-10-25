@@ -48,11 +48,14 @@ def get_in_system_by_id(system_id, route_id):
         'stops': []
         })
     current_stop_ids = list(route_dao.get_active_stop_ids(route.id))
-    for index, entry in enumerate(route.list_entries):
+
+    default_service_pattern = route.default_service_pattern
+
+    for entry in default_service_pattern.vertices:
         stop_response = entry.stop.short_repr()
         stop_response.update({
             'current_service': stop_response['stop_id'] in current_stop_ids,
-            'index': index,
+            'position': entry.position,
             'href': linksutil.StopEntityLink(entry.stop)
         })
         response['stops'].append(stop_response)

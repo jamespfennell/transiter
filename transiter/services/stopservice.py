@@ -1,4 +1,4 @@
-from transiter.database.daos import stop_dao, stop_event_dao
+from transiter.database.daos import stop_dao, stop_event_dao, service_pattern_dao
 from transiter.utils import linksutil
 
 def list_all_in_system(system_id):
@@ -51,7 +51,10 @@ def get_in_system_by_id(system_id, stop_id):
     # TODO make this more robust for stops without direction names
     stop = stop_dao.get_in_system_by_id(system_id, stop_id)
     response = stop.short_repr()
-
+    response.update({
+        'usual_routes': service_pattern_dao.get_default_trips_at_stops(
+            [stop_id])[stop_id]
+    })
     direction_names_matcher = DirectionNamesMatcher()
     count = {}
     route_ids_so_far = {}
@@ -112,6 +115,7 @@ def get_in_system_by_id(system_id, stop_id):
         stop_event_response.update(stop_event.short_repr())
         trip_response = stop_event.trip.long_repr()
         trip_response['route'] = stop_event.trip.route.short_repr()
+        trip_response['route']['href'] = linksutil.RouteEntityLink(stop_event.trip.route)
         trip_response['origin'] = 'NI'
         trip_response['terminus'] = 'NI'
         trip_response['href'] = linksutil.TripEntityLink(stop_event.trip)
@@ -125,8 +129,13 @@ def get_in_system_by_id(system_id, stop_id):
     for sibling_stop in stop.station.stops:
         if sibling_stop.stop_id == stop_id:
             continue
+        child_response = sibling_stop.short_repr()
+        child_response.update({
+            'usual_routes': service_pattern_dao.get_default_trips_at_stops(
+                [sibling_stop.stop_id])[sibling_stop.stop_id]
+        })
         station_response['child_stops'].append(
-            sibling_stop.short_repr()
+            child_response
         )
     # TODO use a Get parameter to specify a depth
     station_response['child_stations'] = []

@@ -14,3 +14,12 @@ class RouteListEntry(Base):
 
     stop = relationship("Stop") #, back_populates="direction_names")
     route = relationship("Route")#, back_populates="list_entries")
+
+"""
+
+SELECT stops.stop_id, routes.route_id 
+FROM routes
+INNER JOIN route_list_entries ON routes.id=route_list_entries.route_pri_key
+INNER JOIN stops ON stops.id=route_list_entries.stop_pri_key
+WHERE stops.stop_id = 'G14';
+"""

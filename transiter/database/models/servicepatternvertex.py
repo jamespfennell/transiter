@@ -13,12 +13,7 @@ class ServicePatternVertex(Base):
     service_pattern_pri_key = Column(Integer,
                                      ForeignKey('service_patterns.id'))
 
-    #stop = Relationship
-    #service_pattern = Relationship
-    pass
-    """
+    stop = relationship("Stop")
+    service_pattern = relationship("ServicePattern",
+                                   back_populates='vertices')
 
-    service_pattern_pri_key
-    stop_pri_key
-    position =
-    """

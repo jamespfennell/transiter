@@ -11,9 +11,10 @@ class ServicePattern(Base):
     route_pri_key = Column(Integer, ForeignKey('routes.id'))
     name = Column(String)
 
-    #route = relationship("Route",
-    #                     back_populates='service_patterns')
+    route = relationship("Route",
+                         foreign_keys=[route_pri_key])
     vertices = relationship("ServicePatternVertex",
                             back_populates='service_pattern',
+                            order_by="ServicePatternVertex.position",
                             cascade='all, delete-orphan')
     # edges=? How can we delete them

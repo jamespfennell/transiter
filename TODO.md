@@ -2,16 +2,74 @@
 
 ## Main development thread
 
-1. Continue working on the url feature
-    - Add urls everywhere
-    - Put all the logic in the hrefutil
-    - Rename the hrefutil to the linksutil
+RENAME tables to singular -> easy
+Maybe the ORM mapping consistent in refering to object vs table
+Good time to rename stopevent -> stoptimeupdate
+
+1. Edit the system service to use the output of the gtfs static util
+1. Then so back to the service pattern manager and write a function
+    generate_service_patterns_from_gtfs_static_trips(trips, settings)
 1. Go through all of the API endpoints and implement anything that's
     not implemented
-    - usual_service
-    - location
-    - origin/terminus for trips
-    - etc.
+    - usual_service -> need service patterns for this
+        because the route entry doesn't give the usual service
+    - location, import from system service into location column
+    - origin/terminus for trips 
+        -> terminus should be dynamic
+        -> origin a nullable foreign stop pri key
+
+
+
+
+
+SELECT 
+    MIN(stop_events.arrival_time) as first_arrival_time,
+    MAX(stop_events.arrival_time) as last_arrival_time,
+    COUNT(*) as number_of_trips,
+    stop_events.stop_pri_key
+FROM routes
+INNER JOIN trips
+    ON trips.route_pri_key = routes.id
+INNER JOIN stop_events 
+    ON stop_events.id = (
+        SELECT id 
+        FROM stop_events
+        WHERE trip_pri_key = trips.id
+        ORDER BY arrival_time DESC
+        LIMIT 1
+    )
+WHERE routes.route_id = '1'
+GROUP BY stop_events.stop_pri_key;
+
+
+
+
+
+Other solution: group by trip to get the max, and then join back in the
+    row to get the stop
+
+
+SELECT stops.stop_id, routes.route_id
+FROM stops
+INNER JOIN service_pattern_vertices
+    ON stops.id = service_pattern_vertices.stop_pri_key
+INNER JOIN service_patterns
+    ON service_pattern_vertices.service_pattern_pri_key = service_patterns.id
+INNER JOIN routes
+    ON routes.default_service_pattern_pri_key = service_patterns.id
+WHERE stops.stop_id IN ('635', 'L03');
+
+
+
+CREATE INDEX index_name_trip_arrival_time
+ON stop_events (trip_pri_key, arrival_time);
+
+
+
+CREATE INDEX index_name_trip_arrival_time_two_mundo
+ON trips (route_pri_key);
+
+
 
 
 
@@ -27,21 +85,24 @@
 Think about how in deployments the admin app would be used
 if only the consumer app is deployed.
 
-#### F6: Feed autoupdaters
-- Rename it Jobs Executor   
-- Should probably have a more generic Jobs scheme:
-    - Updating feeds
-    - Updating system static data
-    - Calculating route frequencies
-    - Calculating route service patterns (if enabled)
-    - Calculating the feed health (and deleting old entries)
-        - Generating FeedHealthReport types
-    
-#### F8: Implement href tags using an endpoint util
-Can duplication be avoided in the flask app?
+What happens to the links if the endpoint is not in the app
+
+#### F5: Service Patterns
+- Implement the DB layout
+    - When loading static GTFS data, have a system for
+        detecting nights/weekends/days/rush hours etc
+        possibly using regex
+    - Then have multiple route entries for each line.
+    - But have a special route entries for the 'usual route'?
+    - regular pattern / default pattern / dynamic pattern
+    - Make ServicePatternEdge table
+    - routelistutil -> servicepatternutil
+   
 
 
 #### F11: Add logging
+
+
 
 ### Existing code clean up
 - C2: Continue cleaning up sync util:
@@ -74,7 +135,14 @@ Bug: I'm transforming IS_ASSIGNED to a status,
 - C12:
     investigate testing the daos
 - C13:
-    problem with the xml update - like a race condition when the routes change?
+    problem with the xml update - like a race condition when the message change?
+
+
+
+
+---I THINK IT WOULD BE GOOD TO HAVE MORE THAN 90% TESTING COVERAGE
+BEFORE VERSION 0.2---NOW OR NEVER!
+
 
 ## Version 0.2
 
@@ -93,19 +161,16 @@ How to delete old entries?
 Just delete old entries when updating?
 Yes - have the time a configuration parameter
 
-#### F5: Service Patterns
-- Implement the DB layout
-    - When loading static GTFS data, have a system for
-        detecting nights/weekends/days/rush hours etc
-        possibly using regex
-    - Then have multiple route entries for each line.
-    - But have a special route entries for the 'usual route'?
-    - Take into consideration the 'usual routes' at a specifc
-        stop, may be different. Though plan is to store
-        these separate anyway...
-    - Make ServicePatternEdge table
-    - routelistutil -> servicepatternutil
-   
+#### F6: Feed autoupdaters
+- Rename it Jobs Executor   
+- Should probably have a more generic Jobs scheme:
+    - Updating feeds
+    - Updating system static data
+    - Calculating route frequencies
+    - Calculating route service patterns (if enabled)
+    - Calculating the feed health (and deleting old entries)
+        - Generating FeedHealthReport types
+    
 #### F7: Add a verbose option to route and stop GET endpoints
 
 #### F9: Add terminus abbr feature for NYC Subway
@@ -129,6 +194,7 @@ sort algorithm for generating routes lists.
 - System wide trip endpoints
 - Have a generic get paremater that decides how times are to be read -
     timestamp, diff from now, human readable
+- Support for trip schedules
 
 
     

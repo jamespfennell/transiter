@@ -2,11 +2,13 @@ from ..database import connection
 from ..database import models
 from transiter.database.daos import direction_name_dao, feed_dao, route_dao, stop_dao, station_dao, system_dao
 from . import exceptions
+from transiter.utils import gtfsstaticutil
 from ..utils import routelistutil
 import csv
 import os
 from ..utils import jsonutil
 from transiter.utils import linksutil
+from transiter.utils import servicepatternmanager
 
 @connection.unit_of_work
 def list_all():
@@ -89,6 +91,15 @@ def _import_static_data(system):
     custom_data_dir = os.path.join(system_base_dir, 'customdata')
     print(agency_data_dir)
 
+    gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
+    gtfs_static_parser.parse_from_directory(agency_data_dir)
+
+    trip_id_to_trip = gtfs_static_parser.trip_id_to_trip
+    for trip in trip_id_to_trip.values():
+        print(trip.stop_ids)
+        break
+    exit()
+
 
     routes_data_file = os.path.join(agency_data_dir, 'routes.txt')
     routes_by_route_id = {}
@@ -145,6 +156,12 @@ def _import_static_data(system):
         station_set.clear()
 
     stop_times_data_file = os.path.join(agency_data_dir, 'stop_times.txt')
+    servicepatternmanager.generate_service_patterns_from_gtfs_static_data(
+        system,
+        stop_times_data_file,
+        routes_by_route_id,
+        stops_by_stop_id)
+    """
     route_lists = routelistutil.construct_route_lists_from_stop_times_file(
         system,
         stop_times_data_file
@@ -161,6 +178,7 @@ def _import_static_data(system):
             route_list_entry.stop = stops_by_stop_id[stop_id]
             route_list_entry.position = position
             position += 1
+    """
 
     # The following two data imports are definitely custom logic, though
     # custom to the program rather than the NYC subway
