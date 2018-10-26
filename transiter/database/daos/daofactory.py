@@ -52,9 +52,10 @@ class _BaseEntityDao:
         query.add_id_condition(entity_id)
         return query.one()
 
-    def create(self):
+    def create(self, entity=None):
         session = connection.get_session()
-        entity = self._DbObj()
+        if entity is None:
+            entity = self._DbObj()
         session.add(entity)
         return entity
 

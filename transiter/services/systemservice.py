@@ -94,73 +94,36 @@ def _import_static_data(system):
     gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
     gtfs_static_parser.parse_from_directory(agency_data_dir)
 
-    trip_id_to_trip = gtfs_static_parser.trip_id_to_trip
-    for trip in trip_id_to_trip.values():
-        print(trip.stop_ids)
-        break
-    exit()
-
-
-    routes_data_file = os.path.join(agency_data_dir, 'routes.txt')
-    routes_by_route_id = {}
-    for row in _read_csv_file(routes_data_file):
-        route = route_dao.create()
-        route.route_id=row['route_id']
-        route.color = row['route_color']
-        route.timetable_url = row['route_url']
-        route.short_name = row['route_short_name']
-        route.long_name = row['route_long_name']
-        route.description = row['route_desc']
+    for route in gtfs_static_parser.route_id_to_route.values():
         route.system = system
-        routes_by_route_id[route.route_id] = route
 
-    stops_data_file = os.path.join(agency_data_dir, 'stops.txt')
     station_sets_by_stop_id = {}
-    stops_by_stop_id = {}
-    for row in _read_csv_file(stops_data_file):
-        # Note, this may be NYC subway specific logic: if so extract the
-        # it to the NYC subway module
-        stop_id = row['stop_id']
-        if stop_id[-1] == 'N' or stop_id[-1] == 'S':
-            continue
-
-        stop = stop_dao.create()
-        stop.stop_id=row['stop_id']
-        stop.name = row['stop_name']
-        stop.longitude = row['stop_lon']
-        stop.lattitude = row['stop_lat']
+    for stop in gtfs_static_parser.stop_id_to_stop.values():
         stop.system = system
-        station_sets_by_stop_id[stop_id] = {stop_id}
-        stops_by_stop_id[stop_id] = stop
+        station_sets_by_stop_id[stop.stop_id] = {stop.stop_id}
 
-    transfers_data_file = os.path.join(agency_data_dir, 'transfers.txt')
-    for row in _read_csv_file(transfers_data_file):
-        stop_id_1 = row['from_stop_id']
-        stop_id_2 = row['to_stop_id']
-        if stop_id_1 == stop_id_2:
-            continue
-
+    for (stop_id_1, stop_id_2) in gtfs_static_parser.transfer_tuples:
         updated_station_set = station_sets_by_stop_id[stop_id_1].union(
             station_sets_by_stop_id[stop_id_2])
         for stop_id in updated_station_set:
             station_sets_by_stop_id[stop_id] = updated_station_set
 
     for station_set in station_sets_by_stop_id.values():
+        # TODO: option to make this 1 also so stations only multistop
         if len(station_set) == 0:
             continue
-
-        station = station_dao.create()
+        station = models.Station()
         for stop_id in station_set:
-            stops_by_stop_id[stop_id].station = station
+            gtfs_static_parser.stop_id_to_stop[stop_id].station = station
         station.system = system
         station_set.clear()
 
-    stop_times_data_file = os.path.join(agency_data_dir, 'stop_times.txt')
-    servicepatternmanager.generate_service_patterns_from_gtfs_static_data(
-        system,
-        stop_times_data_file,
-        routes_by_route_id,
-        stops_by_stop_id)
+    servicepatternmanager.construct_service_patterns_from_static_trips(
+        gtfs_static_parser.route_id_to_route,
+        gtfs_static_parser.stop_id_to_stop,
+        gtfs_static_parser.trip_id_to_trip.values(),
+        None
+    )
     """
     route_lists = routelistutil.construct_route_lists_from_stop_times_file(
         system,
@@ -194,23 +157,13 @@ def _import_static_data(system):
         north.name = row['north_direction_name']
         north.track = None
         north.direction = 'N'
-        north.stop = stops_by_stop_id[stop_id]
+        north.stop = gtfs_static_parser.stop_id_to_stop[stop_id]
 
         south = direction_name_dao.create()
         south.name = row['south_direction_name']
         south.track = None
         south.direction = 'S'
-        south.stop = stops_by_stop_id[stop_id]
-
-
-
-
-
-
-
-
-
-
+        south.stop = gtfs_static_parser.stop_id_to_stop[stop_id]
 
     direction_name_exceptions_data_file = os.path.join(
         custom_data_dir,
@@ -222,7 +175,7 @@ def _import_static_data(system):
         direction.name = row['name']
         direction.track = row['track']
         direction.direction = row['direction']
-        direction.stop = stops_by_stop_id[row['stop_id']]
+        direction.stop = gtfs_static_parser.stop_id_to_stop[row['stop_id']]
 
     feeds_data_file = os.path.join(custom_data_dir, 'feeds.csv')
     for row in _read_csv_file(feeds_data_file):

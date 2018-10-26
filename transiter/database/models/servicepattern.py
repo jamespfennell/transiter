@@ -12,7 +12,8 @@ class ServicePattern(Base):
     name = Column(String)
 
     route = relationship("Route",
-                         foreign_keys=[route_pri_key])
+                         foreign_keys=[route_pri_key],
+                         back_populates='service_patterns')
     vertices = relationship("ServicePatternVertex",
                             back_populates='service_pattern',
                             order_by="ServicePatternVertex.position",

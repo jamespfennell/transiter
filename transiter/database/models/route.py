@@ -24,9 +24,9 @@ class Route(Base):
     trips = relationship("Trip",
                          back_populates="route",
                          cascade="all, delete-orphan")
-    list_entries = relationship("RouteListEntry",
+    service_patterns = relationship("ServicePattern",
                                 back_populates="route",
-                                order_by="RouteListEntry.position",
+                                primaryjoin='ServicePattern.route_pri_key==Route.id',
                                 cascade="all, delete-orphan")
 
     route_statuses = relationship('RouteStatus',

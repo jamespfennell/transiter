@@ -14,7 +14,7 @@ class _GtfsStaticService:
             self.__setattr__(day, None)
 
 
-class GtfsStaticTrip:
+class StaticTrip:
 
     def __init__(self):
         self.route_id = None
@@ -24,6 +24,10 @@ class GtfsStaticTrip:
         self.stop_ids = []
         self.start_time = None
         self.end_time = None
+
+    def reverse(self):
+        self.direction_id = not self.direction_id
+        self.stop_ids.reverse()
 
 
 class GtfsStaticParser:
@@ -108,7 +112,7 @@ class GtfsStaticParser:
             service = self._service_id_to_service.get(service_id, None)
             if service is None:
                 continue
-            trip = GtfsStaticTrip()
+            trip = StaticTrip()
             trip.route_id = row['route_id']
             trip.direction_id = row['direction_id']
             for day in days:

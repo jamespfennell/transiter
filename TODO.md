@@ -6,9 +6,13 @@ RENAME tables to singular -> easy
 Maybe the ORM mapping consistent in refering to object vs table
 Good time to rename stopevent -> stoptimeupdate
 
-1. Edit the system service to use the output of the gtfs static util
-1. Then so back to the service pattern manager and write a function
-    generate_service_patterns_from_gtfs_static_trips(trips, settings)
+
+1. Bring in the YAML config
+1. Right the matcher generator function
+1. Apply the matching generator
+1. Revamp directions names:
+    1. In direction names, use stop alias rather than direction? Or also direction_id
+    1. introduce a priority system to rules matching
 1. Go through all of the API endpoints and implement anything that's
     not implemented
     - usual_service -> need service patterns for this
@@ -89,14 +93,7 @@ What happens to the links if the endpoint is not in the app
 
 #### F5: Service Patterns
 - Implement the DB layout
-    - When loading static GTFS data, have a system for
-        detecting nights/weekends/days/rush hours etc
-        possibly using regex
-    - Then have multiple route entries for each line.
-    - But have a special route entries for the 'usual route'?
-    - regular pattern / default pattern / dynamic pattern
     - Make ServicePatternEdge table
-    - routelistutil -> servicepatternutil
    
 
 
