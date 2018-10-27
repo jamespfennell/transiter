@@ -13,7 +13,7 @@ class Stop(Base):
     system_id = Column(String, ForeignKey("systems.system_id"), index=True)
     name = Column(String)
     longitude = Column(Numeric(precision=9, scale=6))
-    lattitude = Column(Numeric(precision=9, scale=6))
+    latitude = Column(Numeric(precision=9, scale=6))
 
     system = relationship("System")
     station = relationship("Station", back_populates="stops")

@@ -8,9 +8,11 @@ class TestRouteService(unittest.TestCase):
 
     SYSTEM_ID = '1'
     ROUTE_ONE_ID = '3'
+    ROUTE_ONE_HREF = '30'
     ROUTE_ONE_REPR = {'route_id': ROUTE_ONE_ID}
     ROUTE_ONE_STATUS = 'Bad'
     ROUTE_TWO_STATUS = 'Good'
+    ROUTE_TWO_HREF = '40'
     ROUTE_TWO_REPR = {'route_id': '4'}
     STOP_REPR = {'stop_id': '5'}
     STOP_EVENT_REPR = {'track': 'Track Two'}
@@ -47,15 +49,26 @@ class TestRouteService(unittest.TestCase):
         else:
             self.fail('Unwanted interaction with _construct_status')
 
+    @mock.patch('transiter.services.routeservice.linksutil')
     @mock.patch('transiter.services.routeservice._construct_status')
     @mock.patch('transiter.services.routeservice.route_dao')
-    def test_list_all_in_system(self, route_dao, _construct_status):
+    def test_list_all_in_system(self, route_dao, _construct_status, linksutil):
         """[Route service] Listing all routes in a system"""
+
+        def RouteEntityLink(system):
+            if system == self.route_one:
+                return self.ROUTE_ONE_HREF
+            if system == self.route_two:
+                return self.ROUTE_TWO_HREF
+        linksutil.RouteEntityLink.side_effect = RouteEntityLink
+
         expected = [{
             'service_status': self.ROUTE_ONE_STATUS,
+            'href': self.ROUTE_ONE_HREF,
             **self.ROUTE_ONE_REPR
         },{
             'service_status': self.ROUTE_TWO_STATUS,
+            'href': self.ROUTE_TWO_HREF,
             **self.ROUTE_TWO_REPR
         }]
         route_dao.list_all_in_system.return_value = [self.route_one,

@@ -10,14 +10,25 @@ Step 3: for each route, pass each RawTrip through the matchers for that route
 
 from transiter.utils import graphutils
 from transiter.database import models
+"""
+SELECT stops.* 
+FROM stops
+INNER JOIN service_pattern_vertices sp_v ON sp_v.stop_pri_key = stops.id
+INNER JOIN service_patterns sp ON sp_v.service_pattern_pri_key = sp.id
+INNER JOIN routes ON sp.id = routes.regular_service_pattern_pri_key
+WHERE  routes.route_id = 'A'
+ORDER BY sp_v.position;
+"""
 
-# Todo just input the gtfsparser
-def construct_service_patterns_from_static_trips(
-        route_id_to_route,
-        stop_id_to_stop,
-        trips,
+
+# Todo just input the gtfsparser and rename construct_sps_from_gtfs_static_data
+def construct_sps_from_gtfs_static_data(
+        gtfs_static_parser,
         route_sp_settings=None,
         general_sp_settings=None):
+    route_id_to_route = gtfs_static_parser.route_id_to_route,
+    stop_id_to_stop = gtfs_static_parser.stop_id_to_stop,
+    trips = gtfs_static_parser.trip_id_to_trip.values(),
 
     if route_sp_settings is None:
         route_sp_settings = []
@@ -26,10 +37,20 @@ def construct_service_patterns_from_static_trips(
         route_id: set() for route_id in route_id_to_route.keys()}
     for trip in trips:
         if trip.direction_id:
+            if trip.route_id == 'A':
+                print('Reverse; end is ', trip.stop_ids[-4:])
+                print(trip.direction_id)
             trip.reverse()
+        else:
+            if trip.route_id == 'A':
+                print('Not to reverse; start is ', trip.stop_ids[:4])
+
         route_id_to_trips[trip.route_id].add(trip)
 
     for route_id, trips in route_id_to_trips.items():
+        #if route_id != 'A':
+        #    continue
+        print(route_id)
         route = route_id_to_route.get(route_id, None)
         if route is None:
             continue
@@ -44,9 +65,10 @@ def construct_service_patterns_from_static_trips(
                 sp_trips = _filter_trips_by_conditions(trips, threshold, conditions)
             else:
                 sp_trips = trips
-            print(route_id)
-            print(len(trips))
-            print(len(sp_trips))
+
+            #if name == 'weekday_day' and route_id == 'A':
+            #    for t in sp_trips:
+            #        print(t.stop_ids)
 
             service_pattern = _construct_for_static_trips(sp_trips, stop_id_to_stop)
             service_pattern.name = name
@@ -57,9 +79,17 @@ def construct_service_patterns_from_static_trips(
                 route.regular_service_pattern = service_pattern
 
 
+def _construct_sp_from_stop_id_lists(stop_id_lists, stop_id_to_stop):
+    sorted_graph = _path_lists_to_sorted_graph(stop_id_lists)
+    service_pattern = _sorted_graph_to_service_pattern(sorted_graph, stop_id_to_stop)
+    return service_pattern
+
+
 def _construct_for_static_trips(trips, stop_id_to_stop):
     path_lists = set()
     for trip in trips:
+        if len(trip.stop_ids) == 0:
+            continue
         path_lists.add(tuple(trip.stop_ids))
     sorted_graph = _path_lists_to_sorted_graph(path_lists)
     service_pattern = _sorted_graph_to_service_pattern(sorted_graph, stop_id_to_stop)
@@ -97,21 +127,20 @@ def _path_lists_to_sorted_graph(path_lists):
 
 def _filter_trips_by_conditions(trips, threshold, matching_conditions):
     trip_matcher = _TripMatcher(matching_conditions)
-    stop_ids_to_trip = {}
-    stop_ids_to_count = {}
-    total_count = len(trips)
+    stop_ids_to_trips = {}
+    total_count = 0
     for trip in trips:
         if not trip_matcher.match(trip):
             continue
+        total_count += 1
         stop_ids = tuple(trip.stop_ids)
-        stop_ids_to_trip.setdefault(stop_ids, trip)
-        stop_ids_to_count.setdefault(stop_ids, 0)
-        stop_ids_to_count[stop_ids] += 1
+        stop_ids_to_trips.setdefault(stop_ids, [])
+        stop_ids_to_trips[stop_ids].append(trip)
 
     filtered_trips = []
-    for stop_ids, count in stop_ids_to_count.items():
-        if count >= threshold * total_count:
-            filtered_trips.append(stop_ids_to_trip[stop_ids])
+    for stop_ids, grouped_trips in stop_ids_to_trips.items():
+        if len(grouped_trips) >= threshold * total_count:
+            filtered_trips += grouped_trips
     return filtered_trips
 
 

@@ -3,6 +3,8 @@ from unittest import mock
 from transiter.utils import servicepatternmanager
 from transiter.utils import gtfsstaticutil
 
+import itertools
+
 
 class TestTripsFilter(unittest.TestCase):
     @mock.patch('transiter.utils.servicepatternmanager._TripMatcher')
@@ -19,7 +21,7 @@ class TestTripsFilter(unittest.TestCase):
             good_trips + bad_trips + ugly_trips, 0.2, None
         )
 
-        self.assertListEqual(actual_trips, [good_trips[0]])
+        self.assertListEqual(actual_trips, good_trips)
 
     @staticmethod
     def _dummy_match(trip):

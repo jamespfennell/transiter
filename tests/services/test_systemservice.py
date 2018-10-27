@@ -8,9 +8,11 @@ from transiter.services import exceptions
 class TestSystemService(unittest.TestCase):
 
     SYSTEM_ONE_ID = '1'
-    SYSTEM_ONE_REPR = {'system_id': SYSTEM_ONE_ID}
+    SYSTEM_ONE_HREF = '3'
+    SYSTEM_ONE_REPR = {'system_id': SYSTEM_ONE_ID, 'href': SYSTEM_ONE_HREF}
     SYSTEM_TWO_ID = '2'
-    SYSTEM_TWO_REPR = {'system_id': SYSTEM_TWO_ID}
+    SYSTEM_TWO_HREF = '4'
+    SYSTEM_TWO_REPR = {'system_id': SYSTEM_TWO_ID, 'href': SYSTEM_TWO_HREF}
     SYSTEM_ONE_NUM_STOPS = 20
     SYSTEM_ONE_NUM_STATIONS = 21
     SYSTEM_ONE_NUM_ROUTES = 22
@@ -23,9 +25,18 @@ class TestSystemService(unittest.TestCase):
         cls.system_2 = mock.MagicMock()
         cls.system_2.short_repr.return_value = cls.SYSTEM_TWO_REPR.copy()
 
+    @mock.patch('transiter.services.systemservice.linksutil')
     @mock.patch('transiter.services.systemservice.system_dao')
-    def test_list_all(self, system_dao):
+    def test_list_all(self, system_dao, linksutil):
         """[System service] List all installed systems"""
+
+        def SystemEntityLink(system):
+            if system == self.system_1:
+                return self.SYSTEM_ONE_HREF
+            if system == self.system_2:
+                return self.SYSTEM_TWO_HREF
+        linksutil.SystemEntityLink.side_effect = SystemEntityLink
+
         expected = [self.SYSTEM_ONE_REPR, self.SYSTEM_TWO_REPR]
         system_dao.list_all.return_value = [
             self.system_1,
@@ -38,9 +49,17 @@ class TestSystemService(unittest.TestCase):
         self.system_1.short_repr.assert_called_once()
         self.system_2.short_repr.assert_called_once()
 
+    @mock.patch('transiter.services.systemservice.linksutil')
     @mock.patch('transiter.services.systemservice.system_dao')
-    def test_get_by_id(self, system_dao):
+    def test_get_by_id(self, system_dao, linksutil):
         """[System service] Get a specific system"""
+
+        hrefs_dict = {
+            'stops': 'href1',
+            'stations': 'NI',
+            'routes': 'href3',
+            'feeds': 'href4'
+        }
         child_entities_dict = {
             'stops': self.SYSTEM_ONE_NUM_STOPS,
             'stations': self.SYSTEM_ONE_NUM_STATIONS,
@@ -50,7 +69,7 @@ class TestSystemService(unittest.TestCase):
         expected = {
             name: {
                 'count': count,
-                'href': 'NI'
+                'href': hrefs_dict[name]
             } for (name, count) in child_entities_dict.items()
         }
         expected.update(**self.SYSTEM_ONE_REPR)
@@ -61,8 +80,13 @@ class TestSystemService(unittest.TestCase):
         system_dao.count_routes_in_system.return_value = self.SYSTEM_ONE_NUM_ROUTES
         system_dao.count_feeds_in_system.return_value = self.SYSTEM_ONE_NUM_FEEDS
 
+        linksutil.StopsInSystemIndexLink.return_value = hrefs_dict['stops']
+        linksutil.RoutesInSystemIndexLink.return_value = hrefs_dict['routes']
+        linksutil.FeedsInSystemIndexLink.return_value = hrefs_dict['feeds']
+
         actual = systemservice.get_by_id(self.SYSTEM_ONE_ID)
 
+        self.maxDiff = None
         self.assertDictEqual(actual, expected)
         system_dao.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
         self.system_1.short_repr.assert_called_once()

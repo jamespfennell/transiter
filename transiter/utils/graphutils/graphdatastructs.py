@@ -97,6 +97,10 @@ class DirectedGraph():
         """
 
     def is_path(self):
+        if len(self.sources) == 0:
+            print('Big problem')
+            return True
+
         if len(self.sources) > 1:
             return False
         vertex = next(iter(self.sources))
@@ -108,6 +112,8 @@ class DirectedGraph():
 
 
     def cast_to_path(self):
+        if len(self.sources) == 0:
+            return DirectedPath([])
         if len(self.sources) > 1:
             raise NotCastableAsAPathError()
         vertex = next(iter(self.sources))
@@ -118,6 +124,22 @@ class DirectedGraph():
             vertex = next(iter(vertex.next))
             label_list.append(vertex.label)
         return DirectedPath(label_list)
+
+    def __eq__(self, other):
+        label_to_this_vs = {v.label: v for v in self.vertices()}
+        label_to_other_vs = {v.label: v for v in self.vertices()}
+
+        for label, this_vs in label_to_this_vs.items():
+            other_vs = label_to_other_vs.get(label, None)
+            if other_vs is None:
+                return False
+            if len(this_vs.prev - other_vs.prev) != 0:
+                return False
+            if len(this_vs.next - other_vs.next) != 0:
+                return False
+            del label_to_other_vs[label]
+
+        return len(label_to_other_vs) == 0
 
 
 

@@ -34,7 +34,7 @@ class _ServicePatternDao(_BaseServicePatternDao):
         INNER JOIN service_patterns
             ON service_pattern_vertices.service_pattern_pri_key = service_patterns.id
         INNER JOIN routes
-            ON routes.default_service_pattern_pri_key = service_patterns.id
+            ON routes.regular_service_pattern_pri_key = service_patterns.id
         WHERE stops.stop_id IN :stop_ids;
         """
         session = self.get_session()

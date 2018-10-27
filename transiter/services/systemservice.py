@@ -126,18 +126,39 @@ def _import_static_data(system):
             "conditions": {
                 "weekday": True,
                 "starts_later_than": 7,
-                "starts_earlier_than": 19
+                "ends_earlier_than": 19
             }
         },
         {
-           "name": "all_times",
+            "name": "weekend",
+            "threshold": 0.1,
+            "conditions": {
+                "weekend": True,
+                "starts_later_than": 7,
+                "ends_earlier_than": 19
+            }
+        },
+        {
+            "name": "weekday_night",
+            "threshold": 0.1,
+            "conditions": {
+                "weekday": True,
+                "starts_later_than": 0,
+                "ends_earlier_than": 6
+            }
+        },
+        {
+           "name": "at_some_time",
            "default": True,
-       }
+        }
     ]
-    servicepatternmanager.construct_service_patterns_from_static_trips(
-        gtfs_static_parser.route_id_to_route,
-        gtfs_static_parser.stop_id_to_stop,
-        gtfs_static_parser.trip_id_to_trip.values(),
+
+    dynamic_route_sp_settings = {
+        "active": True,
+        "name": "current_service"
+    }
+    servicepatternmanager.construct_sps_from_gtfs_static_data(
+        gtfs_static_parser,
         route_sp_settings
     )
     """

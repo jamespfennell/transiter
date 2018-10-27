@@ -114,7 +114,7 @@ class GtfsStaticParser:
                 continue
             trip = StaticTrip()
             trip.route_id = row['route_id']
-            trip.direction_id = row['direction_id']
+            trip.direction_id = (row['direction_id'] == '0')
             for day in days:
                 trip.__setattr__(day, getattr(service, day))
             self.trip_id_to_trip[row['trip_id']] = trip

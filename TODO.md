@@ -103,6 +103,7 @@ What happens to the links if the endpoint is not in the app
 #### F11: Add logging
 
 
+Get parameter to show all service patterns at a stop
 
 ### Existing code clean up
 - C2: Continue cleaning up sync util:
