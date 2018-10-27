@@ -5,12 +5,15 @@
 RENAME tables to singular -> easy
 Maybe the ORM mapping consistent in refering to object vs table
 Good time to rename stopevent -> stoptimeupdate
+Move pri_key to pk
+trip_id to id?
 
 
 1. Bring in the YAML config
 1. Right the matcher generator function
 1. Apply the matching generator
 1. Revamp directions names:
+    1. Direction name rules
     1. In direction names, use stop alias rather than direction? Or also direction_id
     1. introduce a priority system to rules matching
 1. Go through all of the API endpoints and implement anything that's

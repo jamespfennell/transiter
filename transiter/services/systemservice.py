@@ -118,11 +118,27 @@ def _import_static_data(system):
         station.system = system
         station_set.clear()
 
+    route_sp_settings = [
+        {
+            "name": "weekday_day",
+            "regular": True,
+            "threshold": 0.1,
+            "conditions": {
+                "weekday": True,
+                "starts_later_than": 7,
+                "starts_earlier_than": 19
+            }
+        },
+        {
+           "name": "all_times",
+           "default": True,
+       }
+    ]
     servicepatternmanager.construct_service_patterns_from_static_trips(
         gtfs_static_parser.route_id_to_route,
         gtfs_static_parser.stop_id_to_stop,
         gtfs_static_parser.trip_id_to_trip.values(),
-        None
+        route_sp_settings
     )
     """
     route_lists = routelistutil.construct_route_lists_from_stop_times_file(
