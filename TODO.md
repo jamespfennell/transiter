@@ -6,28 +6,28 @@ RENAME tables to singular -> easy
 Maybe the ORM mapping consistent in refering to object vs table
 Good time to rename stopevent -> stoptimeupdate
 Move pri_key to pk
-trip_id to id?
+trip_id to id? yes
 
 
 1. Bring in the YAML config
-1. Right the matcher generator function
-1. Apply the matching generator
 1. Revamp directions names:
     1. Direction name rules
     1. In direction names, use stop alias rather than direction? Or also direction_id
     1. introduce a priority system to rules matching
 1. Go through all of the API endpoints and implement anything that's
     not implemented
-    - usual_service -> need service patterns for this
-        because the route entry doesn't give the usual service
+    - usual_service 
     - location, import from system service into location column
     - origin/terminus for trips 
         -> terminus should be dynamic
         -> origin a nullable foreign stop pri key
+        
+     - frequencies, see next
 
 
 
-
+1. For the frequencies, this is the SQL: or one version, may be a faster version...:
+needs indices
 
 SELECT 
     MIN(stop_events.arrival_time) as first_arrival_time,
@@ -52,34 +52,6 @@ GROUP BY stop_events.stop_pri_key;
 
 
 
-Other solution: group by trip to get the max, and then join back in the
-    row to get the stop
-
-
-SELECT stops.stop_id, routes.route_id
-FROM stops
-INNER JOIN service_pattern_vertices
-    ON stops.id = service_pattern_vertices.stop_pri_key
-INNER JOIN service_patterns
-    ON service_pattern_vertices.service_pattern_pri_key = service_patterns.id
-INNER JOIN routes
-    ON routes.default_service_pattern_pri_key = service_patterns.id
-WHERE stops.stop_id IN ('635', 'L03');
-
-
-
-CREATE INDEX index_name_trip_arrival_time
-ON stop_events (trip_pri_key, arrival_time);
-
-
-
-CREATE INDEX index_name_trip_arrival_time_two_mundo
-ON trips (route_pri_key);
-
-
-
-
-
 ## Version 0.1
     
 ### Features
@@ -94,16 +66,10 @@ if only the consumer app is deployed.
 
 What happens to the links if the endpoint is not in the app
 
-#### F5: Service Patterns
-- Implement the DB layout
-    - Make ServicePatternEdge table
-   
-
 
 #### F11: Add logging
 
 
-Get parameter to show all service patterns at a stop
 
 ### Existing code clean up
 - C2: Continue cleaning up sync util:
@@ -136,7 +102,7 @@ Bug: I'm transforming IS_ASSIGNED to a status,
 - C12:
     investigate testing the daos
 - C13:
-    problem with the xml update - like a race condition when the message change?
+    problem with the xml update - like a race condition when the message changes?
 
 
 
@@ -181,10 +147,9 @@ Yes - have the time a configuration parameter
 #### F10: Refactor the NYC Subway code into its own package
    
 ### Features
-- Service pattern endpoints 
+- Service pattern endpoints and the edges table
 - write the optimized topological 
-sort algorithm for generating routes lists.
-    (Also, better name than route lists?)
+sort algorithm for generating service patterns
 - Make a system to download the latest GTFS static data 
     from the transit agency
     and check if it's up to date.
@@ -192,10 +157,11 @@ sort algorithm for generating routes lists.
     Maybe use the sync util carefully to allow updates
 - Implement the stations endpoints.
 - How does a user/admin make stations?
-- System wide trip endpoints
+- System wide trip endpoints?
 - Have a generic get paremater that decides how times are to be read -
     timestamp, diff from now, human readable
-- Support for trip schedules
+- Support for trip schedules/general gtfs static data
+- Get parameter to show all service patterns at a stop
 
 
     

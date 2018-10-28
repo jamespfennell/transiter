@@ -13,10 +13,12 @@ def list_all_in_system(system_id):
         response.append(stop_response)
     return response
 
+"""
 def google_maps_url(location):
 
     return 'https://www.google.com/maps/search/?api=1&query={}+Station+near+{},{}'.format(
         str.replace(location.name, ' ', '+'), location.lattitude, location.longitude)
+"""
 
 
 class DirectionNamesMatcher:

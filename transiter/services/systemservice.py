@@ -3,7 +3,6 @@ from ..database import models
 from transiter.database.daos import direction_name_dao, feed_dao, route_dao, stop_dao, station_dao, system_dao
 from . import exceptions
 from transiter.utils import gtfsstaticutil
-from ..utils import routelistutil
 import csv
 import os
 from ..utils import jsonutil
@@ -24,7 +23,6 @@ def list_all():
         })
         response.append(system_response)
     return response
-    [system.short_repr() for system in system_dao.list_all()]
 
 
 @connection.unit_of_work
