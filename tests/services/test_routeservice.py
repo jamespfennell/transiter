@@ -119,6 +119,8 @@ class TestRouteService(unittest.TestCase):
     def test_get_in_system_by_id(self, route_dao, _construct_status):
         """[Route service] Getting a specific route in a system"""
         route_dao.get_in_system_by_id.return_value = self.route_one
+        sp_vertex = mock.MagicMock()
+        self.route_one.default_service_pattern.vertices = [sp_vertex]
 
         actual = routeservice.get_in_system_by_id(
             self.SYSTEM_ID,
