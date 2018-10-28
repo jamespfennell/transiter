@@ -16,14 +16,11 @@ def list_all_in_system(system_id):
     response = []
 
     for feed in feed_dao.list_all_in_system(system_id):
-        feed_response = {
-            'feed_id': feed.feed_id,
+        feed_response = feed.short_repr()
+        feed_response.update({
             'href': linksutil.FeedEntityLink(feed),
-            'last_update_time': 'NI',
-            'health': {
-                'status': 'NI'
-            }
-        }
+            'last_update': 'NI',
+        })
         response.append(feed_response)
     return response
 
@@ -32,21 +29,21 @@ def list_all_in_system(system_id):
 def get_in_system_by_id(system_id, feed_id):
 
     feed = feed_dao.get_in_system_by_id(system_id, feed_id)
-    response = {
-        'feed_id': feed.feed_id,
-        'last_update_time': 'NI',
-        'health': {
-            'status': 'NI',
-            'score': 'NI',
-            "update_types": [
-                {
-                    "status": "NI",
-                    "failure_message": 'NI',
-                    "fraction": 'NI'
-                },
-            ]
-        }
-        }
+    response = feed.short_repr()
+    response.update({
+        'last_update': 'NI',
+        #'health': {
+        #    'status': 'NI',
+        #    'score': 'NI',
+        #    "update_types": [
+        #        {
+        #            "status": "NI",
+        #            "failure_message": 'NI',
+        #            "fraction": 'NI'
+        #        },
+        #    ]
+        #}
+    })
     return response
 
 
@@ -70,34 +67,30 @@ def create_feed_update(system_id, feed_id):
 
 @connection.unit_of_work
 def list_updates_in_feed(system_id, feed_id):
-
+    # TODO optimize this to only be one query?
     feed = feed_dao.get_in_system_by_id(system_id, feed_id)
-    session = feed_update_dao.get_session()
-    query = session.query(feed_update_dao._DbObj).filter(
-        feed_update_dao._DbObj.feed_pri_key==feed.id
-    ).order_by(feed_update_dao._DbObj.last_action_time.desc())
     response = []
-    for feed_update in query:
+    for feed_update in feed_update_dao.list_updates_in_feed(feed):
         response.append(feed_update.short_repr())
     return response
 
 
 def _execute_feed_update(feed_update):
-
     feed_update.status = 'IN_PROGRESS'
-    #return {'created': 'tre'}
 
+    # TODO is this really necessary? Does it slow things down?
     importlib.invalidate_caches()
     feed = feed_update.feed
     # TODO Need to more flexible with these - maybe alpha numberic
-    # Or maybe a separate system_dir_name
     # TODO These checks should also exist when installing
+    """
     if not feed.system.system_id.isalnum():
         raise IllegalSystemName
     if not feed.parser_module.isalpha():
         raise IllegalModuleName
     if not feed.parser_function.isalpha():
         raise IllegalFunctionName
+    """
     module_path = '...systems.{}.{}'.format(
         feed.system.system_id,
         feed.parser_module
@@ -105,38 +98,24 @@ def _execute_feed_update(feed_update):
     module = importlib.import_module(module_path, __name__)
     update_function = getattr(module, feed.parser_function)
 
-
-    if feed.feed_id == 'ServiceStatus':
-        filename = 'ServiceStatusSubway.xml'
-    else:
-        filename = 'l2.gtfs'
-
-    #with open('./transiter/{}'.format(filename), 'rb') as f:
-    #    content = f.read()
-    #print(feed.url)
     request = requests.get(feed.url)
     content = request.content
 
-    #print(time.time())
     m = hashlib.md5()
     m.update(content)
     feed_update.raw_data_hash = m.hexdigest()
-    #print(time.time())
 
     last_successful_update = feed_dao.get_last_successful_update(feed.id)
-    #print(time.time())
     if last_successful_update is not None and \
             last_successful_update.raw_data_hash == feed_update.raw_data_hash:
         feed_update.status = 'SUCCESS_NOT_NEEDED'
         return
-    #print(time.time())
-
 
     try:
         update_function(feed, feed.system, content)
         feed_update.status = 'SUCCESS_UPDATED'
     except Exception:
-        print('Could not parse feed {}'.format(feed.feed_id))
+        #print('Could not parse feed {}'.format(feed.feed_id))
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
-        #raise
+
 

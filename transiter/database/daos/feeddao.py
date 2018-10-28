@@ -23,3 +23,24 @@ class _FeedDao(_BaseFeedDao):
 
 
 feed_dao = _FeedDao()
+
+
+_BaseFeedUpdateDao = daofactory._dao_factory(
+    schema_entity=models.FeedUpdate,
+    id_field='id',
+    order_field='id',
+    base_dao=daofactory._BaseEntityDao)
+
+
+class _FeedUpdateDao(_BaseFeedUpdateDao):
+
+    def list_updates_in_feed(self, feed):
+        session = self.get_session()
+        query = session.query(models.FeedUpdate).filter(
+            models.FeedUpdate.feed_pri_key == feed.id
+        ).order_by(models.FeedUpdate.last_action_time.desc())
+        for feed_update in query:
+            yield feed_update
+
+
+feed_update_dao = _FeedUpdateDao()

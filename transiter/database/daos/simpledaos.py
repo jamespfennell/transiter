@@ -11,15 +11,6 @@ _DirectionNameDao = daofactory._dao_factory(
 direction_name_dao = _DirectionNameDao()
 
 
-_FeedUpdateDao = daofactory._dao_factory(
-    schema_entity=models.FeedUpdate,
-    id_field='id',
-    order_field='id',
-    base_dao=daofactory._BaseEntityDao)
-
-feed_update_dao = _FeedUpdateDao()
-
-
 _StationDao = daofactory._dao_factory(
     schema_entity=models.Station,
     id_field='id',

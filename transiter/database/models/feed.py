@@ -18,3 +18,8 @@ class Feed(Base):
     # TODO: or just run another sql query and get the most recent
     system = relationship("System", back_populates="feeds")
     updates = relationship("FeedUpdate", back_populates="feed", cascade="all, delete-orphan")
+
+    def short_repr(self):
+        return {
+            'feed_id': self.feed_id,
+        }
