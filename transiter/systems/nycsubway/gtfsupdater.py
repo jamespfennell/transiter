@@ -25,13 +25,20 @@ from ...utils import gtfsutil
 def update(feed, system, content):
     if len(content) == 0:
         return False
+    print('HEre1')
     nyc_subway_gtfs_extension = gtfsutil.GtfsRealtimeExtension(
         '..nyc_subway_pb2', __name__)
     feed_data = gtfsutil.read_gtfs_realtime(content, nyc_subway_gtfs_extension)
+    print('HEre2')
     feed_data = merge_in_nyc_subway_extension_data(feed_data)
+    print('HEre3')
     feed_data = gtfsutil.transform_to_transiter_structure(feed_data)
+    print('HEre4')
+    print(feed_data)
     feed_data = clean_nyc_subway_gtfs_feed(feed_data)
+    print('HEre5')
     syncutil.sync_trips(feed_data)
+    print('HEre6')
 
 
 def merge_in_nyc_subway_extension_data(data):
@@ -49,7 +56,13 @@ def merge_in_nyc_subway_extension_data(data):
 
         nyct_trip_data = trip['nyct_trip_descriptor']
         trip['train_id'] = nyct_trip_data.get('train_id', None)
-        trip['direction'] = nyct_trip_data.get('direction', None)
+
+        direction = nyct_trip_data.get('direction', None)
+        if direction is None:
+            trip['direction_id'] = None
+        else:
+            trip['direction_id'] = (direction == 'SOUTH')
+
         if nyct_trip_data.get('is_assigned', False):
             trip['status'] = 'RUNNING'
         else:
@@ -86,7 +99,7 @@ class _NycSubwayGtfsCleaner:
             self.delete_trips_with_route_id_ss
         ]
         self.stop_event_cleaners = [
-            self.transform_stop_ids,
+            #self.transform_stop_ids,
             self.invert_e_train_direction_in_stop_event,
         ]
         self.data = None
@@ -119,11 +132,15 @@ class _NycSubwayGtfsCleaner:
     @staticmethod
     def transform_trip_data(trip):
         try:
+            if trip['direction_id']:
+                direction = 'S'
+            else:
+                direction = 'N'
             trip_uid = generate_trip_uid(
                 trip['trip_id'],
                 trip['start_date'],
                 trip['route_id'],
-                trip['direction'][0]
+                direction
                 )
             # TODO: the start time here should conform to the GTFS realtime spec instead of being a timestamp
             start_time = generate_trip_start_time(

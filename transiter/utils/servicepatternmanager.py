@@ -26,9 +26,9 @@ def construct_sps_from_gtfs_static_data(
         gtfs_static_parser,
         route_sp_settings=None,
         general_sp_settings=None):
-    route_id_to_route = gtfs_static_parser.route_id_to_route,
-    stop_id_to_stop = gtfs_static_parser.stop_id_to_stop,
-    trips = gtfs_static_parser.trip_id_to_trip.values(),
+    route_id_to_route = gtfs_static_parser.route_id_to_route
+    stop_id_to_stop = gtfs_static_parser.stop_id_to_stop
+    trips = gtfs_static_parser.trip_id_to_trip.values()
 
     if route_sp_settings is None:
         route_sp_settings = []
@@ -37,20 +37,11 @@ def construct_sps_from_gtfs_static_data(
         route_id: set() for route_id in route_id_to_route.keys()}
     for trip in trips:
         if trip.direction_id:
-            if trip.route_id == 'A':
-                print('Reverse; end is ', trip.stop_ids[-4:])
-                print(trip.direction_id)
             trip.reverse()
-        else:
-            if trip.route_id == 'A':
-                print('Not to reverse; start is ', trip.stop_ids[:4])
 
         route_id_to_trips[trip.route_id].add(trip)
 
     for route_id, trips in route_id_to_trips.items():
-        #if route_id != 'A':
-        #    continue
-        print(route_id)
         route = route_id_to_route.get(route_id, None)
         if route is None:
             continue
@@ -65,10 +56,6 @@ def construct_sps_from_gtfs_static_data(
                 sp_trips = _filter_trips_by_conditions(trips, threshold, conditions)
             else:
                 sp_trips = trips
-
-            #if name == 'weekday_day' and route_id == 'A':
-            #    for t in sp_trips:
-            #        print(t.stop_ids)
 
             service_pattern = _construct_for_static_trips(sp_trips, stop_id_to_stop)
             service_pattern.name = name

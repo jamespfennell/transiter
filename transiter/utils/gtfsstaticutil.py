@@ -86,7 +86,7 @@ class GtfsStaticParser:
                 self._stop_id_alias_to_stop_id[
                     stop_alias.stop_id_alias] = stop_alias.stop_id
                 self.stop_id_alias_to_stop_alias[
-                    stop_alias.stop_id_alias] = StopAlias
+                    stop_alias.stop_id_alias] = stop_alias
                 continue
             stop = Stop()
             stop.stop_id = row['stop_id']

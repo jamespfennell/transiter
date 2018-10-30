@@ -116,6 +116,15 @@ def _import_static_data(system):
         station.system = system
         station_set.clear()
 
+    for stop_alias in gtfs_static_parser.stop_id_alias_to_stop_alias.values():
+        stop_id = stop_alias.stop_id
+        stop = gtfs_static_parser.stop_id_to_stop[stop_id]
+        # TODO: if we backpopulate stop_aliases in stop, then we can get rid of this
+        session = feed_dao.get_session()
+        session.add(stop_alias)
+        stop_alias.stop = stop
+
+
     route_sp_settings = [
         {
             "name": "weekday_day",
@@ -159,24 +168,35 @@ def _import_static_data(system):
         gtfs_static_parser,
         route_sp_settings
     )
-    """
-    route_lists = routelistutil.construct_route_lists_from_stop_times_file(
-        system,
-        stop_times_data_file
-    )
-    for (route_id, route_list) in route_lists.items():
-        route = routes_by_route_id[route_id]
-        position = 0
-        for stop_id in route_list:
-            # TODO put this in a DAO when ServicePattern is a thing
-            route_list_entry = models.RouteListEntry()
-            session = connection.get_session()
-            session.add(route_list_entry)
-            route_list_entry.route = route
-            route_list_entry.stop = stops_by_stop_id[stop_id]
-            route_list_entry.position = position
-            position += 1
-    """
+
+
+    direction_name_rules_yaml = [
+        'direction_name_rules_with_track.csv',
+        #'direction_name_rules_with_stop_alias.csv',
+        'direction_name_rules_basic.csv'
+    ]
+
+    priority = 0
+    for direction_name_rules_file_path in direction_name_rules_yaml:
+        full_path = os.path.join(custom_data_dir, direction_name_rules_file_path)
+        with open(full_path) as csv_file:
+            csv_reader = csv.DictReader(csv_file)
+            for row in csv_reader:
+                stop_id = row['stop_id']
+                stop = gtfs_static_parser.stop_id_to_stop.get(stop_id, None)
+                if stop is None:
+                    continue
+                direction_id = row.get('direction_id', None)
+                if direction_id is not None:
+                    direction_id = (direction_id == '0')
+                direction_name_rule = models.DirectionNameRule()
+                direction_name_rule.stop = stop
+                direction_name_rule.priority = priority
+                direction_name_rule.direction_id = direction_id
+                direction_name_rule.track = row.get('track', None)
+                direction_name_rule.stop_id_alias = row.get('stop_id_alias', None)
+                direction_name_rule.name = row['direction_name']
+                priority += 1
 
     # The following two data imports are definitely custom logic, though
     # custom to the program rather than the NYC subway

@@ -19,6 +19,7 @@ class StopEvent(Base):
     # TODO rename? or is this a GTFS realtime name?
     sequence_index = Column(Integer, nullable=False)
     track = Column(String)
+    stop_id_alias = Column(String)
 
     stop = relationship("Stop", back_populates="stop_events")
     trip = relationship("Trip", back_populates="stop_events")

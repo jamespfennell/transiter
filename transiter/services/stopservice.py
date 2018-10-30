@@ -21,31 +21,43 @@ def google_maps_url(location):
 """
 
 
-class DirectionNamesMatcher:
-    def __init__(self):
-        self._directory = {None: {}}
 
-    def match_stop_event(self, stop_event):
-        track = stop_event.track
-        direction = stop_event.direction
-        #print(self._directory)
-        #print(direction)
-        if track in self._directory and direction in self._directory[track]:
-            return self._directory[track][direction]
+class DirectionNameMatcher:
+    def __init__(self, rules):
+        self._rules = rules
+        self._cache = {}
 
-        if direction in self._directory[None]:
-            return self._directory[None][direction]
+    def all_names(self):
+        for rule in self._rules:
+            yield rule.name
+        yield 'CNM!'
 
-        print('Unknown direction name for track={}, direction={}'.format(track, direction))
-        print(self._directory)
-        return direction
+    def match(self, stop, stop_event):
+        cache_key = (
+            stop.id,
+            stop_event.trip.direction_id,
+            stop_event.track,
+            stop_event.stop_id_alias)
+        print(cache_key)
+        if cache_key not in self._cache:
+            for rule in self._rules:
+                print(rule.stop_pk, rule.direction_id, rule.track, rule.stop_id_alias)
+                if rule.stop_pk != cache_key[0]:
+                    continue
+                if rule.direction_id is not None and rule.direction_id != cache_key[1]:
+                    continue
+                if rule.track is not None and rule.track != cache_key[2]:
+                    continue
+                if rule.stop_id_alias is not None and rule.stop_id_alias != cache_key[3]:
+                    continue
+                self._cache[cache_key] = rule.name
+                break
 
+        if cache_key not in self._cache:
+            self._cache[cache_key] = 'CNM!'
 
-    def add_direction_name(self, direction_name):
-        track = direction_name.track
-        direction = direction_name.direction
-        self._directory.setdefault(track, {})
-        self._directory[track][direction] = direction_name.name
+        return self._cache[cache_key]
+
 
 import time
 def get_in_system_by_id(system_id, stop_id):
@@ -57,23 +69,24 @@ def get_in_system_by_id(system_id, stop_id):
         'usual_routes': service_pattern_dao.get_default_trips_at_stops(
             [stop_id])[stop_id]
     })
-    direction_names_matcher = DirectionNamesMatcher()
-    count = {}
-    route_ids_so_far = {}
+    direction_name_rules = stop.direction_name_rules
+    direction_name_matcher = DirectionNameMatcher(direction_name_rules)
+    count = {None: 0}
+    route_ids_so_far = {None: set()}
     direction_names_response = []
-    for direction_name in stop.direction_names:
-        direction_names_matcher.add_direction_name(direction_name)
-        direction_names_response.append(direction_name.name)
-        count[direction_name.name] = 0
-        route_ids_so_far[direction_name.name] = set()
+    for direction_name in direction_name_matcher.all_names():
+        direction_names_response.append(direction_name)
+        count[direction_name] = 0
+        route_ids_so_far[direction_name] = set()
     response['direction_names'] = direction_names_response
 
     # TODO(use relationship instead and join)
     stop_events = stop_event_dao.get_by_stop_pri_key(stop.id)
+    #print(len(list(stop_events)))
     stop_event_responses = []
     for stop_event in stop_events:
 
-        direction_name = direction_names_matcher.match_stop_event(stop_event)
+        direction_name = direction_name_matcher.match(stop, stop_event)
         #print(direction_name)
         if stop_event.departure_time is None:
             this_time = stop_event.arrival_time.timestamp()

@@ -114,7 +114,8 @@ def _execute_feed_update(feed_update):
     try:
         update_function(feed, feed.system, content)
         feed_update.status = 'SUCCESS_UPDATED'
-    except Exception:
+    except IndexError:
+        #Exception:
         #print('Could not parse feed {}'.format(feed.feed_id))
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
 

@@ -9,7 +9,9 @@ class Trip(Base):
     id = Column(Integer, primary_key=True)
     trip_id = Column(String, index=True)
     route_pri_key = Column(Integer, ForeignKey("routes.id"), nullable=False)
+    # TODO: rename to direction_id and make boolean
     direction = Column(String)
+    direction_id = Column(Boolean)
     start_time = Column(TIMESTAMP(timezone=True))
     # TODO: remove
     is_assigned = Column(Boolean)

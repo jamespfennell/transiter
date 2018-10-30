@@ -56,9 +56,9 @@ def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_
 def sync_trips(data):
 
 
-    #print('Beginning the mega query')
+    print('Beginning the mega query')
 
-
+    print(data)
 
     session = connection.get_session()
 
@@ -103,6 +103,7 @@ def sync_trips(data):
         #print(jsonutil.convert_for_http(trip))
 
     persisted_trips = sync(models.Trip, db_trips, trips_to_persist, ['trip_id'])
+    print('Here 5.6')
 
     stop_ids = set()
     for trip in persisted_trips:
@@ -110,6 +111,14 @@ def sync_trips(data):
                          for stop_event
                          in trip_id_to_feed_stop_events[trip.trip_id]])
 
+    # First pull in the stop aliases
+    query = session.query(models.StopAlias.stop_id_alias, models.StopAlias.stop_id) \
+        .filter(models.StopAlias.stop_id_alias.in_(stop_ids)) \
+        .all()
+    stop_id_alias_to_stop_id = {stop_id_alias: stop_id for (stop_id_alias, stop_id) in query}
+
+    # Now pull in the stops
+    stop_ids.update(stop_id_alias_to_stop_id.values())
     query = session.query(models.Stop.stop_id, models.Stop.id) \
         .filter(models.Stop.stop_id.in_(stop_ids)) \
         .all()
@@ -124,10 +133,16 @@ def sync_trips(data):
         for index, stop_event in enumerate(stop_events):
             stop_id = stop_event['stop_id']
             if stop_id not in stop_id_to_stop_pri_key:
-                buggy_indices.add(index)
-                unknown_stop_ids.add(stop_id)
-                continue
-            stop_event['stop_pri_key'] = stop_id_to_stop_pri_key[stop_event['stop_id']]
+                if stop_id not in stop_id_alias_to_stop_id:
+                    buggy_indices.add(index)
+                    unknown_stop_ids.add(stop_id)
+                    # print('Buggy: {}'.format(stop_id))
+                    continue
+                stop_event['stop_id_alias'] = stop_id
+                stop_id = stop_id_alias_to_stop_id[stop_id]
+
+            stop_event['future'] = True
+            stop_event['stop_pri_key'] = stop_id_to_stop_pri_key[stop_id]
             stop_event['trip_pri_key'] = trip.id
             del stop_event['stop_id']
 

@@ -1,5 +1,6 @@
 from .base import Base
 from .directionname import DirectionName
+from .directionnamerule import DirectionNameRule
 from .feed import Feed
 from .feedupdate import FeedUpdate
 #from .message import Message
@@ -15,9 +16,6 @@ from .stopalias import StopAlias
 from .system import System
 from .trip import Trip
 
-# TO BE RENAMED
-# TO BE DELETED
-from .routelistentry import RouteListEntry
 
 
 

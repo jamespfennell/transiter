@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -17,6 +17,11 @@ class Stop(Base):
 
     system = relationship("System")
     station = relationship("Station", back_populates="stops")
+    direction_name_rules = relationship(
+        "DirectionNameRule",
+        back_populates="stop",
+        cascade="all, delete-orphan",
+        order_by='DirectionNameRule.priority')
     direction_names = relationship("DirectionName", back_populates="stop",
                                    cascade="all, delete-orphan")
     stop_events = relationship("StopEvent", back_populates="stop",
@@ -26,6 +31,7 @@ class Stop(Base):
         "ServicePatternVertex",
         back_populates="stop",
         cascade="all, delete-orphan")
+    __table_args__ = (UniqueConstraint('system_id', 'stop_id'), )
 
     def short_repr(self, verbose=False):
         return {

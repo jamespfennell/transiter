@@ -2,32 +2,15 @@
 
 ## Main development thread
 
-RENAME tables to singular -> easy
-Maybe the ORM mapping consistent in refering to object vs table
-Good time to rename stopevent -> stoptimeupdate
-Move pri_key to pk
-trip_id to id? yes
-
+Next 3 steps, then v0.1 feature complete:
 
 1. Bring in the YAML config
 1. Revamp directions names:
-    1. Direction name rules
-    1. In direction names, use stop alias rather than direction? Or also direction_id
-    1. introduce a priority system to rules matching
-1. Go through all of the API endpoints and implement anything that's
-    not implemented
-    - usual_service 
-    - location, import from system service into location column
-    - origin/terminus for trips 
-        -> terminus should be dynamic
-        -> origin a nullable foreign stop pri key
-        
-     - frequencies, see next
-
-
-
+    1. Use new direction_name_rule in stop service. Write tests first!
+    1. Check that the J switch works after making the alias file
 1. For the frequencies, this is the SQL: or one version, may be a faster version...:
 needs indices
+1. Do the permission validation stuff
 
 SELECT 
     MIN(stop_events.arrival_time) as first_arrival_time,
@@ -48,6 +31,26 @@ INNER JOIN stop_events
 WHERE routes.route_id = '1'
 GROUP BY stop_events.stop_pri_key;
 
+1. Then get the test coverage up. With good test
+    coverage can then do the DB renaming plan easily as failures
+    will be detected
+    
+1. Go through all of the API endpoints and implement anything that's
+    not implemented
+    - usual_service 
+    - location, import from system service into location column
+    - origin/terminus for trips 
+        -> terminus should be dynamic
+        -> origin a nullable foreign stop pri key
+        
+     - frequencies, see next
+
+
+RENAME tables to singular -> easy
+Maybe the ORM mapping consistent in refering to object vs table
+Good time to rename stopevent -> stoptimeupdate
+Move pri_key to pk
+trip_id to id? yes
 
 
 
@@ -56,16 +59,15 @@ GROUP BY stop_events.stop_pri_key;
     
 ### Features
 
-#### F1: Have three separate Flask apps
-1. Consumer app
-2. Only GET endpoints app
-3. All endpoints app
+#### F1: Have a way to enforce blocking proxy requests using a HTTP header
+Then only need one flask app
+Can configure how the blocking works using a permissionsvalidator
+module and providing it with a level:
+- USER_READ
+- ADMIN_READ
+- ADMIN_WRITE
 
-Think about how in deployments the admin app would be used
-if only the consumer app is deployed.
-
-What happens to the links if the endpoint is not in the app
-
+X-Transiter-AllowedMethods: UserRead | AdminRead | All
 
 #### F11: Add logging
 
@@ -112,15 +114,6 @@ BEFORE VERSION 0.2---NOW OR NEVER!
 
 
 ## Version 0.2
-
-
-#### F2: Use YAML for configuring individual systems
-Probably deprecate direction_name_exceptions.csv and put that in the
-YAML. Or maybe an option to read it remotely
-
-Or maybe have multiple csv file and infer the type from the headers
- 
-Have a priority on the direction names 
 
 
 #### F4: Write the Feed Health Code
