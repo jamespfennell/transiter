@@ -30,5 +30,6 @@ class StopEvent(Base):
             'departure_time': self.departure_time,
             'track': self.track,
             'sequence_index': self.sequence_index,
+            'stop_id_alias': self.stop_id_alias,
             'status': 'NI'
         }

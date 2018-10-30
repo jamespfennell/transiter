@@ -28,9 +28,7 @@ class DirectionNameMatcher:
         self._cache = {}
 
     def all_names(self):
-        for rule in self._rules:
-            yield rule.name
-        yield 'CNM!'
+        return {rule.name for rule in self._rules}
 
     def match(self, stop, stop_event):
         cache_key = (

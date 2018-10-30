@@ -172,7 +172,7 @@ def _import_static_data(system):
 
     direction_name_rules_yaml = [
         'direction_name_rules_with_track.csv',
-        #'direction_name_rules_with_stop_alias.csv',
+        'direction_name_rules_with_stop_id_alias.csv',
         'direction_name_rules_basic.csv'
     ]
 
@@ -182,6 +182,7 @@ def _import_static_data(system):
         with open(full_path) as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
+                # TODO: allow either stop_id or stop_id alias
                 stop_id = row['stop_id']
                 stop = gtfs_static_parser.stop_id_to_stop.get(stop_id, None)
                 if stop is None:

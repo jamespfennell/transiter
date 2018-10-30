@@ -6,7 +6,6 @@ Next 3 steps, then v0.1 feature complete:
 
 1. Bring in the YAML config
 1. Revamp directions names:
-    1. Use new direction_name_rule in stop service. Write tests first!
     1. Check that the J switch works after making the alias file
 1. For the frequencies, this is the SQL: or one version, may be a faster version...:
 needs indices

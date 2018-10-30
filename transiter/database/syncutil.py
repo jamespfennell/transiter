@@ -56,9 +56,6 @@ def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_
 def sync_trips(data):
 
 
-    print('Beginning the mega query')
-
-    print(data)
 
     session = connection.get_session()
 
@@ -103,7 +100,6 @@ def sync_trips(data):
         #print(jsonutil.convert_for_http(trip))
 
     persisted_trips = sync(models.Trip, db_trips, trips_to_persist, ['trip_id'])
-    print('Here 5.6')
 
     stop_ids = set()
     for trip in persisted_trips:

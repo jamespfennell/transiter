@@ -25,20 +25,13 @@ from ...utils import gtfsutil
 def update(feed, system, content):
     if len(content) == 0:
         return False
-    print('HEre1')
     nyc_subway_gtfs_extension = gtfsutil.GtfsRealtimeExtension(
         '..nyc_subway_pb2', __name__)
     feed_data = gtfsutil.read_gtfs_realtime(content, nyc_subway_gtfs_extension)
-    print('HEre2')
     feed_data = merge_in_nyc_subway_extension_data(feed_data)
-    print('HEre3')
     feed_data = gtfsutil.transform_to_transiter_structure(feed_data)
-    print('HEre4')
-    print(feed_data)
     feed_data = clean_nyc_subway_gtfs_feed(feed_data)
-    print('HEre5')
     syncutil.sync_trips(feed_data)
-    print('HEre6')
 
 
 def merge_in_nyc_subway_extension_data(data):
@@ -101,6 +94,7 @@ class _NycSubwayGtfsCleaner:
         self.stop_event_cleaners = [
             #self.transform_stop_ids,
             self.invert_e_train_direction_in_stop_event,
+            self.invert_j_train_direction_in_bushwick
         ]
         self.data = None
 
@@ -196,6 +190,22 @@ class _NycSubwayGtfsCleaner:
             'direction': direction,
             'future': True,
         })
+        return True
+
+    # TODO: only apply this in the JZ feed
+    @staticmethod
+    def invert_j_train_direction_in_bushwick(stop_event, trip):
+        if trip['route_id'] != 'J' and trip['route_id'] != 'Z':
+            return True
+        stop_id_alias = stop_event.get('stop_id', None)
+        if stop_id_alias[:3] not in {'M12', }:
+            return True
+        print(stop_id_alias)
+        if stop_id_alias[3:] == 'N':
+            direction = 'S'
+        else:
+            direction = 'N'
+        stop_event['stop_id'] = stop_id_alias[:3] + direction
         return True
 
     # TODO: remove
