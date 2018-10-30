@@ -8,6 +8,7 @@ import os
 from ..utils import jsonutil
 from transiter.utils import linksutil
 from transiter.utils import servicepatternmanager
+import yaml
 
 @connection.unit_of_work
 def list_all():
@@ -80,6 +81,10 @@ def _read_csv_file(file_path):
 
 
 def _import_static_data(system):
+
+
+
+
     system_base_dir = os.path.join(
         os.path.dirname(__file__),
         '../systems',
@@ -88,6 +93,9 @@ def _import_static_data(system):
     agency_data_dir = os.path.join(system_base_dir, 'agencydata')
     custom_data_dir = os.path.join(system_base_dir, 'customdata')
     print(agency_data_dir)
+
+    config_file_path = os.path.join(system_base_dir, 'config.yaml')
+    system_config = SystemConfig(config_file_path)
 
     gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
     gtfs_static_parser.parse_from_directory(agency_data_dir)
@@ -119,65 +127,17 @@ def _import_static_data(system):
     for stop_alias in gtfs_static_parser.stop_id_alias_to_stop_alias.values():
         stop_id = stop_alias.stop_id
         stop = gtfs_static_parser.stop_id_to_stop[stop_id]
-        # TODO: if we backpopulate stop_aliases in stop, then we can get rid of this
-        session = feed_dao.get_session()
-        session.add(stop_alias)
         stop_alias.stop = stop
 
-
-    route_sp_settings = [
-        {
-            "name": "weekday_day",
-            "regular": True,
-            "threshold": 0.1,
-            "conditions": {
-                "weekday": True,
-                "starts_later_than": 7,
-                "ends_earlier_than": 19
-            }
-        },
-        {
-            "name": "weekend",
-            "threshold": 0.1,
-            "conditions": {
-                "weekend": True,
-                "starts_later_than": 7,
-                "ends_earlier_than": 19
-            }
-        },
-        {
-            "name": "weekday_night",
-            "threshold": 0.1,
-            "conditions": {
-                "weekday": True,
-                "starts_later_than": 0,
-                "ends_earlier_than": 6
-            }
-        },
-        {
-           "name": "at_some_time",
-           "default": True,
-        }
-    ]
-
-    dynamic_route_sp_settings = {
-        "active": True,
-        "name": "current_service"
-    }
     servicepatternmanager.construct_sps_from_gtfs_static_data(
         gtfs_static_parser,
-        route_sp_settings
+        system_config.static_route_sps,
+        system_config.static_other_sps,
     )
 
-
-    direction_name_rules_yaml = [
-        'direction_name_rules_with_track.csv',
-        'direction_name_rules_with_stop_id_alias.csv',
-        'direction_name_rules_basic.csv'
-    ]
-
+    direction_name_rules_files = system_config.direction_name_rules_files
     priority = 0
-    for direction_name_rules_file_path in direction_name_rules_yaml:
+    for direction_name_rules_file_path in direction_name_rules_files:
         full_path = os.path.join(custom_data_dir, direction_name_rules_file_path)
         with open(full_path) as csv_file:
             csv_reader = csv.DictReader(csv_file)
@@ -199,45 +159,27 @@ def _import_static_data(system):
                 direction_name_rule.name = row['direction_name']
                 priority += 1
 
-    # The following two data imports are definitely custom logic, though
-    # custom to the program rather than the NYC subway
-    # Default other option: N=north, S=south ;)
-    # Also direction name exceptions is a bad name
-    direction_names_data_file = os.path.join(
-        custom_data_dir,
-        'direction_names.csv'
-        )
-    for row in _read_csv_file(direction_names_data_file):
-        stop_id = row['stop_id']
-        north = direction_name_dao.create()
-        north.name = row['north_direction_name']
-        north.track = None
-        north.direction = 'N'
-        north.stop = gtfs_static_parser.stop_id_to_stop[stop_id]
-
-        south = direction_name_dao.create()
-        south.name = row['south_direction_name']
-        south.track = None
-        south.direction = 'S'
-        south.stop = gtfs_static_parser.stop_id_to_stop[stop_id]
-
-    direction_name_exceptions_data_file = os.path.join(
-        custom_data_dir,
-        'direction_name_exceptions.csv'
-        )
-    for row in _read_csv_file(direction_name_exceptions_data_file):
-        direction = direction_name_dao.create()
-
-        direction.name = row['name']
-        direction.track = row['track']
-        direction.direction = row['direction']
-        direction.stop = gtfs_static_parser.stop_id_to_stop[row['stop_id']]
-
-    feeds_data_file = os.path.join(custom_data_dir, 'feeds.csv')
-    for row in _read_csv_file(feeds_data_file):
+    for feed_config in system_config.feeds:
         feed = feed_dao.create()
         feed.system = system
-        feed.feed_id = row['feed_id']
-        feed.url = row['url']
-        feed.parser_module = row['parser_module']
-        feed.parser_function = row['parser_function']
+        feed.feed_id = feed_config['name']
+        feed.url = feed_config['url']
+        feed.parser_module = feed_config['parser_module']
+        feed.parser_function = feed_config['parser_function']
+
+
+class SystemConfig:
+
+    def __init__(self, config_file_path):
+        with open(config_file_path, 'r') as f:
+            self.config = yaml.load(f)
+        self.feeds = self.config.get('feeds', None)
+        self.static_route_sps = self.config.get(
+            'static_route_service_patterns', [])
+        self.static_other_sps = self.config.get(
+            'static_other_service_patterns', [])
+        self.realtime_route_sps = self.config.get(
+            'realtime_route_service_patterns',
+            {'enabled': False})
+        self.direction_name_rules_files = self.config.get(
+            'direction_name_rules_files', [])

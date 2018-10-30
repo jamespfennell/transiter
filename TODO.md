@@ -2,12 +2,9 @@
 
 ## Main development thread
 
-Next 3 steps, then v0.1 feature complete:
+Next 1 step, then v0.1 feature complete:
 
 1. Bring in the YAML config
-1. For the frequencies, this is the SQL: or one version, may be a faster version...:
-needs indices
-1. Do the permission validation stuff
 
 1. Then get the test coverage up. With good test
     coverage can then do the DB renaming plan easily as failures
@@ -32,20 +29,13 @@ trip_id to id? yes
 
 
 
+A full service test suite that hit every endpoint would be really really nice :)
+
+
 
 ## Version 0.1
     
 ### Features
-
-#### F1: Have a way to enforce blocking proxy requests using a HTTP header
-Then only need one flask app
-Can configure how the blocking works using a permissionsvalidator
-module and providing it with a level:
-- USER_READ
-- ADMIN_READ
-- ADMIN_WRITE
-
-X-Transiter-AllowedMethods: UserRead | AdminRead | All
 
 #### F11: Add logging
 
@@ -79,6 +69,8 @@ Bug: I'm transforming IS_ASSIGNED to a status,
     but then overwriting that status in vehicle...this is an NYC subway specific
     problem at least and only relevant for trips without a vehicle entity
     Potentially it's fine, just make sure
+    
+    Maybe we can map it to an actual GTFS status though
 - C12:
     investigate testing the daos
 - C13:

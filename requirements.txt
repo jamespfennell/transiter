@@ -26,6 +26,7 @@ psycopg2-binary==2.7.5
 Pygments==2.2.0
 pyparsing==2.2.1
 pytz==2018.5
+PyYAML==3.13
 rednose==1.3.0
 requests==2.20.0
 rpyc==4.0.2

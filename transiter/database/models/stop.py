@@ -33,6 +33,11 @@ class Stop(Base):
         cascade="all, delete-orphan")
     __table_args__ = (UniqueConstraint('system_id', 'stop_id'), )
 
+    stop_aliases = relationship(
+        "StopAlias",
+        back_populates="stop",
+        cascade="all, delete-orphan")
+
     def short_repr(self, verbose=False):
         return {
             'stop_id': self.stop_id,

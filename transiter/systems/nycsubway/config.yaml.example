@@ -1,0 +1,92 @@
+feeds:
+
+  - name: ServiceStatus
+    url: http://web.mta.info/status/ServiceStatusSubway.xml
+    parser_module: servicestatusxmlupdater
+    parser_function: update
+
+  - name: L
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=2
+    parser_module: gtfsupdater
+    parser_function: update
+
+  - name: 123456
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=1
+    parser_module: gtfsupdater
+    parser_function: update
+
+  - name: ACE
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=26
+    parser_module: gtfsupdater
+    parser_function: update
+
+  - name: BDFM
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=21
+    parser_module: gtfsupdater
+    parser_function: update
+
+  - name: G
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=31
+    parser_module: gtfsupdater
+    parser_function: update
+
+  - name: NQRW
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=16
+    parser_module: gtfsupdater
+    parser_function: update
+
+  - name: JZ
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=36
+    parser_module: gtfsupdater
+    parser_function: update
+
+  - name: 7
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=51
+    parser_module: gtfsupdater
+    parser_function: update
+
+  - name: SIR
+    url: http://datamine.mta.info/mta_esi.php?key={nyc_transit_api_key}&feed_id=11
+    parser_module: gtfsupdater
+    parser_function: update
+
+
+static_route_service_patterns:
+
+  - name: weekday_day
+    regular: True
+    threshold: 0.1
+    conditions:
+      weekday: True
+      starts_later_than: 7
+      ends_earlier_than: 19
+
+  - name: weekday_night
+    threshold: 0.1
+    conditions:
+      weekday: True
+      starts_later_than: 0
+      ends_earlier_than: 6
+
+  - name: weekend
+    threshold: 0.1
+    conditions:
+      weekend: True
+      starts_later_than: 7
+      ends_earlier_than: 19
+
+  - name: at_some_time
+    default: true
+
+
+realtime_route_service_patterns:
+
+  enabled: true
+  name: current_service
+
+
+direction_name_rules_files:
+
+  - direction_name_rules_with_track.csv
+  - direction_name_rules_with_stop_id_alias.csv
+  - direction_name_rules_basic.csv

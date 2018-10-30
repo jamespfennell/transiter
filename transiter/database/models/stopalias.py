@@ -12,7 +12,7 @@ class StopAlias(Base):
     stop_id = Column(String)
     stop_id_alias = Column(String)
 
-    stop = relationship("Stop")
+    stop = relationship("Stop", back_populates="stop_aliases")
 
 
     __table_args__ = (
