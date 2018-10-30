@@ -7,7 +7,7 @@ from transiter.systems.nycsubway import gtfsupdater
 class TestMergeInExtensionData(unittest.TestCase):
 
     TRAIN_ID = "Train ID"
-    DIRECTION = 'Direction'
+    DIRECTION_ID = False
     ACTUAL_TRACK = '1'
     SCHEDULED_TRACK = '2'
     STATUS_RUNNING = 'RUNNING'
@@ -19,7 +19,7 @@ class TestMergeInExtensionData(unittest.TestCase):
 
         nyct_trip_descriptor_dict = {
             'train_id': self.TRAIN_ID,
-            'direction': self.DIRECTION,
+            'direction': 'NORTH',
             'is_assigned': True
         }
         nyct_trip_descriptor = mock.MagicMock()
@@ -59,7 +59,7 @@ class TestMergeInExtensionData(unittest.TestCase):
                     'trip_update': {
                         'trip': {
                             'train_id': self.TRAIN_ID,
-                            'direction': self.DIRECTION,
+                            'direction_id': self.DIRECTION_ID,
                             'status': self.STATUS_RUNNING
                         },
                         'stop_time_update': [
@@ -84,7 +84,7 @@ class TestMergeInExtensionData(unittest.TestCase):
 
         nyct_trip_descriptor_dict = {
             'train_id': self.TRAIN_ID,
-            'direction': self.DIRECTION,
+            'direction': 'NORTH',
             'is_assigned': False
         }
         nyct_trip_descriptor = mock.MagicMock()
@@ -119,7 +119,7 @@ class TestMergeInExtensionData(unittest.TestCase):
                     'vehicle': {
                         'trip': {
                             'train_id': self.TRAIN_ID,
-                            'direction': self.DIRECTION,
+                            'direction_id': self.DIRECTION_ID,
                             'status': self.STATUS_SCHEDULED
                         },
                     }

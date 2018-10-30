@@ -36,7 +36,7 @@ class Trip(Base):
     def long_repr(self):
         return {
             'trip_id': self.trip_id,
-            'direction': self.direction,
+            'direction_id': self.direction_id,
             'start_time': self.start_time,
             'last_update_time': self.last_update_time,
             'feed_update_time': self.feed_update_time,

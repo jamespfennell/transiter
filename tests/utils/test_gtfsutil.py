@@ -135,6 +135,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     START_DATE = '26031990'
     TRAIN_ID = 'Train ID'
     TRIP_DIRECTION = 'North'
+    TRIP_DIRECTION_ID = True
     CURRENT_STATUS = 'Stopped'
     CURRENT_STOP_SEQUENCE = 14
 
@@ -210,7 +211,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                     'route_id': self.ROUTE_ID,
                     'start_date': self.START_DATE,
                     'train_id': self.TRAIN_ID,
-                    'direction': self.TRIP_DIRECTION,
+                    'direction_id': self.TRIP_DIRECTION_ID,
                 }
             }
         }
@@ -222,7 +223,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                 'route_id': self.ROUTE_ID,
                 'start_date': self.START_DATE,
                 'train_id': self.TRAIN_ID,
-                'direction': self.TRIP_DIRECTION,
+                'direction_id': self.TRIP_DIRECTION_ID,
                 'current_status': None,
                 'current_stop_sequence': 0,
                 'last_update_time': None,
@@ -247,7 +248,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                     'route_id': self.ROUTE_ID,
                     'start_date': self.START_DATE,
                     'train_id': self.TRAIN_ID,
-                    'direction': self.TRIP_DIRECTION,
+                    'direction_id': self.TRIP_DIRECTION_ID,
                 },
                 'vehicle': {
                     'timestamp': self.TRIP_UPDATE_TIMESTAMP,
@@ -264,7 +265,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                 'route_id': self.ROUTE_ID,
                 'start_date': self.START_DATE,
                 'train_id': self.TRAIN_ID,
-                'direction': self.TRIP_DIRECTION,
+                'direction_id': self.TRIP_DIRECTION_ID,
                 'last_update_time': self.timestamp_to_datetime(
                     self.TRIP_UPDATE_TIMESTAMP),
                 'current_status': self.CURRENT_STATUS,
@@ -501,7 +502,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                     "start_date": "20180915",
                     "current_stop_sequence": 16,
                     "current_status": 2,
-                    'direction': None,
+                    'direction_id': None,
                     'feed_update_time': self.timestamp_to_datetime(
                         self.FEED_UPDATE_TIMESTAMP),
                     'last_update_time': self.timestamp_to_datetime(
