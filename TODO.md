@@ -5,30 +5,9 @@
 Next 3 steps, then v0.1 feature complete:
 
 1. Bring in the YAML config
-1. Revamp directions names:
-    1. Check that the J switch works after making the alias file
 1. For the frequencies, this is the SQL: or one version, may be a faster version...:
 needs indices
 1. Do the permission validation stuff
-
-SELECT 
-    MIN(stop_events.arrival_time) as first_arrival_time,
-    MAX(stop_events.arrival_time) as last_arrival_time,
-    COUNT(*) as number_of_trips,
-    stop_events.stop_pri_key
-FROM routes
-INNER JOIN trips
-    ON trips.route_pri_key = routes.id
-INNER JOIN stop_events 
-    ON stop_events.id = (
-        SELECT id 
-        FROM stop_events
-        WHERE trip_pri_key = trips.id
-        ORDER BY arrival_time DESC
-        LIMIT 1
-    )
-WHERE routes.route_id = '1'
-GROUP BY stop_events.stop_pri_key;
 
 1. Then get the test coverage up. With good test
     coverage can then do the DB renaming plan easily as failures

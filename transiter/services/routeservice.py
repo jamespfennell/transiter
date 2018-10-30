@@ -42,6 +42,7 @@ def get_in_system_by_id(system_id, route_id):
     route = route_dao.get_in_system_by_id(system_id, route_id)
     response = route.long_repr()
     response.update({
+        'frequency': _construct_frequency(route),
         'service_status': _construct_status(route),
         'service_status_messages':
             [message.short_repr() for message in route.route_statuses],
@@ -60,6 +61,23 @@ def get_in_system_by_id(system_id, route_id):
         })
         response['stops'].append(stop_response)
     return response
+
+
+def _construct_frequency(route):
+    terminus_data = route_dao.get_terminus_data(route.id)
+    total_count = 0
+    total_seconds = 0
+    for (earliest_time, latest_time, count, x) in terminus_data:
+        if count <= 2:
+            continue
+        total_count += count
+        total_seconds += (latest_time.timestamp()-earliest_time.timestamp())*count/(count-1)
+        #print(total_count, total_seconds)
+    if total_count == 0:
+        return None
+    else:
+        return (total_seconds/total_count)/60
+
 
 
 def _construct_status(route):

@@ -61,7 +61,6 @@ class Route(Base):
     def long_repr(self, verbose=False):
         repr = {
             'route_id': self.route_id,
-            'frequency': 'NI', #self.frequency
         }
         #'color': self.color,
         #'long_name': route.long_name,

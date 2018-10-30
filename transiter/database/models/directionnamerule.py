@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 
 from .base import Base
 
-#TODO allow route to feature in the direction name rule
+# TODO allow route to feature in the direction name rule?
 
 class DirectionNameRule(Base):
     __tablename__ = 'direction_name_rule'

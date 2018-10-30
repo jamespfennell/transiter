@@ -1,4 +1,4 @@
-from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, TIMESTAMP, Index, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -33,3 +33,7 @@ class StopEvent(Base):
             'stop_id_alias': self.stop_id_alias,
             'status': 'NI'
         }
+
+
+Index('myindex', StopEvent.trip_pri_key, StopEvent.arrival_time)
+
