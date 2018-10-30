@@ -5,6 +5,7 @@ from .base import Base
 
 # TODO allow route to feature in the direction name rule?
 
+
 class DirectionNameRule(Base):
     __tablename__ = 'direction_name_rule'
 

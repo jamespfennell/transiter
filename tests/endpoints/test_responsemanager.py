@@ -1,6 +1,6 @@
 import unittest
 import unittest.mock as mock
-from transiter.endpoints import responsemanager
+from transiter.endpoints import responsemanager, permissionsvalidator
 from transiter.services import exceptions
 
 RAW_RESPONSE = {'key': 'value'}
@@ -95,17 +95,35 @@ class TestExceptionHandling(unittest.TestCase):
             responsemanager.http_delete_response
         ]
 
-    def test_handled_exceptions(self):
-        """[Response manager] Entity not found error response"""
+    def _test_handled_exception(self, exception, expected_http_code):
         for response_decorator in self._response_dectorators():
             @response_decorator
             def response():
-                raise exceptions.IdNotFoundError
+                raise exception
 
             content, http_code, __ = response()
 
             self.assertEqual(content, '')
-            self.assertEqual(http_code, responsemanager.HTTP_404_NOT_FOUND)
+            self.assertEqual(http_code, expected_http_code)
+        return True
+
+    def test_id_not_found(self):
+        """[Response manager] Entity not found error response"""
+        self._test_handled_exception(
+            exceptions.IdNotFoundError,
+            responsemanager.HTTP_404_NOT_FOUND)
+
+    def test_permission_denied(self):
+        """[Response manager] Access denied error response"""
+        self._test_handled_exception(
+            permissionsvalidator.AccessDenied,
+            responsemanager.HTTP_403_FORBIDDEN)
+
+    def test_unknown_permission_level(self):
+        """[Response manager] Unknown permission level error response"""
+        self._test_handled_exception(
+            permissionsvalidator.UnknownPermissionsLevelInRequest,
+            responsemanager.HTTP_400_BAD_REQUEST)
 
     def test_unhandled_exception(self):
         """[Response manager] Unhandled exception response"""

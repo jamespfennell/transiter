@@ -2,13 +2,13 @@ from flask import request
 
 
 class UnknownPermissionsLevelInRequest(Exception):
-    def __init__(self, request_level):
+    def __init__(self, request_level=None):
         self.message = 'Unknown request level in HTTP request "{}".'.format(
             request_level)
 
 
 class UnknownPermissionsLevelInMethod(Exception):
-    def __init__(self, request_level):
+    def __init__(self, request_level=None):
         self.message = 'Unknown request level in method "{}".'.format(
             request_level)
 
@@ -23,7 +23,7 @@ def validate_permissions(method_level):
         'AdminRead': 1,
         'UserRead': 2
     }
-    request_level = request.headers.get('X-Transiter-AllowedMethods', 'UserRead')
+    request_level = request.headers.get('X-Transiter-AllowedMethods', 'All')
     if request_level not in level_to_code.keys():
         raise UnknownPermissionsLevelInRequest(request_level)
     if method_level not in level_to_code.keys():

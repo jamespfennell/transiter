@@ -22,6 +22,10 @@ class _TestEndpoints(unittest.TestCase):
     JSON_NO_RESPONSE = ''
 
     def setUp(self):
+        pv_patcher = mock.patch('transiter.endpoints.feedendpoints.permissionsvalidator')
+        self.pv = pv_patcher.start()
+        self.addCleanup(pv_patcher.stop)
+
         patcher = mock.patch('transiter.endpoints.responsemanager.jsonutil')
         self.jsonutil = patcher.start()
         self.addCleanup(patcher.stop)

@@ -2,6 +2,7 @@ from flask import Blueprint
 from ..services import feedservice
 from .responsemanager import http_get_response, http_post_response, http_put_response
 import time
+from transiter.endpoints import permissionsvalidator
 feed_endpoints = Blueprint('feed_endpoints', __name__)
 
 
@@ -29,6 +30,7 @@ def list_all_in_system(system_id):
             },
         ]
     """
+    permissionsvalidator.validate_permissions('AdminRead')
     return feedservice.list_all_in_system(system_id)
 
 
@@ -72,6 +74,7 @@ def get_in_system_by_id(system_id, feed_id):
             }
         }
     """
+    permissionsvalidator.validate_permissions('AdminRead')
     return feedservice.get_in_system_by_id(system_id, feed_id)
 
 
@@ -93,6 +96,7 @@ def create_feed_update(system_id, feed_id):
             "href": "https://transiter.io/systems/nycsubway/feeds/123456/updates/9873"
         }
     """
+    permissionsvalidator.validate_permissions('All')
     return feedservice.create_feed_update(system_id, feed_id)
 
 
@@ -123,6 +127,7 @@ def list_updates_in_feed(system_id, feed_id):
             },
         ]
     """
+    permissionsvalidator.validate_permissions('AdminRead')
     return feedservice.list_updates_in_feed(system_id, feed_id)
 
 
@@ -149,6 +154,7 @@ def get_update_in_feed(system_id, feed_id, feed_update_id):
             "update_time": 19585335345
         }
     """
+    permissionsvalidator.validate_permissions('AdminRead')
     raise NotImplementedError
 
 
@@ -172,8 +178,8 @@ def get_autoupdater_for_feed(system_id, feed_id):
             "frequency": 2
         }
     """
+    permissionsvalidator.validate_permissions('AdminRead')
     raise NotImplementedError
-
 
 
 @feed_endpoints.route('/<feed_id>/autoupdater', methods=['PUT'])
@@ -196,6 +202,5 @@ def configure_autoupdater_for_feed(system_id, feed_id):
             "frequency": 2
         }
     """
+    permissionsvalidator.validate_permissions('All')
     raise NotImplementedError
-
-
