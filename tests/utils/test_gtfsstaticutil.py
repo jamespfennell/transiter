@@ -63,7 +63,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
             {'1': route}
         )
 
-    def test_parse_stops(self):
+    def test_parse_stops_with_alias(self):
         """[GTFS static util] Parse stops, stop alias case"""
 
         data = {
@@ -217,7 +217,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
             gtfs_static_parser.trip_id_to_trip,
             {'7': trip})
 
-    def test_parse_stop_times_unknown_stop(self):
+    def test_parse_stop_times_unknown_trip(self):
         """[GTFS static util] Parse stop time, unknown trip case"""
         data = {
             'trip_id': '1',
@@ -235,8 +235,8 @@ class TestGtfsStaticUtil(unittest.TestCase):
 
         gtfs_static_parser._transform_times.assert_not_called()
 
-    def test_parse_stop_times_unknown_trip(self):
-        """[GTFS static util] Parse stop time, unknown trip case"""
+    def test_parse_stop_times_unknown_stop(self):
+        """[GTFS static util] Parse stop time, unknown stop case"""
         data = {
             'trip_id': '1',
             'stop_id': '2'

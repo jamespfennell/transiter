@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, UniqueConstraint, ForeignKey, Numeric, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 
 class StopAlias(Base):
@@ -21,3 +21,7 @@ class StopAlias(Base):
             ('stops.system_id', 'stops.stop_id')),
         UniqueConstraint('system_id', 'stop_id_alias')
     )
+
+
+    def __eq__(self, other):
+        return model_eq(self, other)
