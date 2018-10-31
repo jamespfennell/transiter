@@ -17,10 +17,10 @@ def mock_convert_for_http(data):
 
 class TestGetRequests(unittest.TestCase):
 
-    @mock.patch('transiter.endpoints.responsemanager.jsonutil')
-    def test_content(self, jsonutil):
+    @mock.patch('transiter.endpoints.responsemanager.convert_to_json')
+    def test_content(self, convert_to_json):
         """[Response manager] Get request"""
-        jsonutil.convert_for_http = mock_convert_for_http
+        convert_to_json.side_effect = mock_convert_for_http
         @responsemanager.http_get_response
         def response():
             return RAW_RESPONSE
@@ -33,10 +33,10 @@ class TestGetRequests(unittest.TestCase):
 
 class TestPostRequests(unittest.TestCase):
 
-    @mock.patch('transiter.endpoints.responsemanager.jsonutil')
-    def test_content(self, jsonutil):
+    @mock.patch('transiter.endpoints.responsemanager.convert_to_json')
+    def test_content(self, convert_to_json):
         """[Response manager] Post request"""
-        jsonutil.convert_for_http = mock_convert_for_http
+        convert_to_json.side_effect = mock_convert_for_http
         @responsemanager.http_get_response
         def response():
             return RAW_RESPONSE

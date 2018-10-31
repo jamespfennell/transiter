@@ -1,7 +1,6 @@
 from .services import routeservice
 from .services import stopservice
 from .services import systemservice
-from .utils import jsonutil
 from .services import exceptions
 
 from transiter.scheduler import client

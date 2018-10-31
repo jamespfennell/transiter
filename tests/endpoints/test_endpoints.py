@@ -26,8 +26,8 @@ class _TestEndpoints(unittest.TestCase):
         self.pv = pv_patcher.start()
         self.addCleanup(pv_patcher.stop)
 
-        patcher = mock.patch('transiter.endpoints.responsemanager.jsonutil')
-        self.jsonutil = patcher.start()
+        patcher = mock.patch('transiter.endpoints.responsemanager.convert_to_json')
+        self.convert_to_json = patcher.start()
         self.addCleanup(patcher.stop)
 
     def _test_endpoint(self, endpoint_function, service_function, args,
@@ -35,13 +35,14 @@ class _TestEndpoints(unittest.TestCase):
 
         service_function.return_value = service_response
         if endpoint_response != '':
-            self.jsonutil.convert_for_http.return_value = endpoint_response
+            self.convert_to_json.return_value = endpoint_response
+            #self.jsonutil.convert_for_http.return_value = endpoint_response
 
         (actual, __, __) = endpoint_function(*args)
 
         self.assertEqual(actual, endpoint_response)
         if endpoint_response != '':
-            self.jsonutil.convert_for_http.assert_called_once_with(
+            self.convert_to_json.assert_called_once_with(
                 service_response)
         service_function.assert_called_once_with(*args)
 

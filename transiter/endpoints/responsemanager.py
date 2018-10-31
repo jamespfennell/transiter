@@ -1,6 +1,8 @@
-
-from ..utils import jsonutil
+from datetime import date, datetime
+import json
+import time
 from decorator import decorator
+from transiter.utils import linksutil
 from ..services import exceptions
 from flask import Response
 from transiter.endpoints import permissionsvalidator
@@ -38,11 +40,11 @@ def _process_request(callback, func, *args, **kw):
 
 
 def _post_process_post(result):
-    return jsonutil.convert_for_http(result), HTTP_201_CREATED
+    return convert_to_json(result), HTTP_201_CREATED
 
 
 def _post_process_get(result):
-    return jsonutil.convert_for_http(result), HTTP_200_OK
+    return convert_to_json(result), HTTP_200_OK
 
 
 def _post_process_put(result):
@@ -78,4 +80,17 @@ def http_delete_response(func, *args, **kw):
     return _process_request(_post_process_delete, func, *args, **kw)
 
 
+def convert_to_json(data):
+    return json.dumps(data, indent=4, separators=(',', ': '), default=json_serial)
 
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, (datetime, date)):
+        return (obj.timestamp() - time.time())/60#.isoformat()
+
+    if isinstance(obj, linksutil.Link):
+        return obj.url()
+
+    raise TypeError("Type %s not serializable" % type(obj))

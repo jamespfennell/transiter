@@ -5,7 +5,6 @@ from . import exceptions
 from transiter.utils import gtfsstaticutil
 import csv
 import os
-from ..utils import jsonutil
 from transiter.utils import linksutil
 from transiter.utils import servicepatternmanager
 import yaml

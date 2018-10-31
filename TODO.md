@@ -4,22 +4,31 @@
 
 Next 1 step, then v0.1 feature complete:
 
-1. Bring in the YAML config
 
-1. Then get the test coverage up. With good test
+1. Full unittest coverage for 
+   - jsonutil
+   - linksutil
+   - NYC transit GTFS updater
+   - gtfsstaticutil
+   - servicepatternmanager
+   - flaskapp (rename to app?)
+   - RPYC client
+   
+2. Move devtest to the testing directory as rtrconsistencytest
+3. Move rebuild.py out of the package
+4. Delete __main__.py?
+
+
+1. With good test
     coverage can then do the DB renaming plan easily as failures
     will be detected
     
 1. Go through all of the API endpoints and implement anything that's
     not implemented
-    - usual_service 
     - location, import from system service into location column
     - origin/terminus for trips 
         -> terminus should be dynamic
         -> origin a nullable foreign stop pri key
-        
-     - frequencies, see next
-
 
 RENAME tables to singular -> easy
 Maybe the ORM mapping consistent in refering to object vs table
