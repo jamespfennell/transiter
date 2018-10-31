@@ -6,7 +6,6 @@ Next 1 step, then v0.1 feature complete:
 
 
 1. Full unittest coverage for 
-   - linksutil
    - NYC transit GTFS updater
    - gtfsstaticutil
    - servicepatternmanager

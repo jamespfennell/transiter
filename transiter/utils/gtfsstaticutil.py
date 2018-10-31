@@ -50,7 +50,6 @@ class GtfsStaticParser:
         self.transfer_tuples = []
 
     def parse_from_directory(self, path):
-
         self._base_path = path
         self._parse_routes()
         self._parse_stops()
@@ -58,9 +57,6 @@ class GtfsStaticParser:
         self._parse_trips()
         self._parse_stop_times()
         self._parse_transfers()
-
-    def parse_from_zip(self):
-        raise NotImplementedError
 
     def _parse_routes(self):
         routes_file_path = os.path.join(

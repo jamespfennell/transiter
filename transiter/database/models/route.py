@@ -1,7 +1,7 @@
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 
 class Route(Base):
@@ -67,3 +67,6 @@ class Route(Base):
         #'description': route.description,
         #'timetable_url': route.timetable_url,
         return repr
+
+    def __eq__(self, other):
+        return model_eq(self, other)
