@@ -6,7 +6,7 @@ from transiter.database import models
 
 class TestGtfsStaticUtil(unittest.TestCase):
 
-    def parse_from_directory(self):
+    def test_parse_from_directory(self):
         """[GTFS static util] Parse from directory"""
 
         directory = 'Dir'
@@ -62,6 +62,88 @@ class TestGtfsStaticUtil(unittest.TestCase):
             gtfs_static_parser.route_id_to_route,
             {'1': route}
         )
+
+    def test_parse_services(self):
+        """[GTFS static util] Parse services"""
+        service_id = 'service!'
+        data = {
+            'service_id': service_id,
+            'monday': '1',
+            'tuesday': '0',
+            'wednesday': '0',
+            'thursday': '1',
+            'friday': '0',
+            'saturday': '0',
+            'sunday': '1'
+        }
+        service = gtfsstaticutil._GtfsStaticService()
+        service.monday = True
+        service.tuesday = False
+        service.wednesday = False
+        service.thursday = True
+        service.friday = False
+        service.saturday = False
+        service.sunday = True
+
+        def csv_iterator(file_path):
+            yield data
+
+        gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
+        gtfs_static_parser._base_path = ''
+        gtfs_static_parser._csv_iterator = csv_iterator
+
+        gtfs_static_parser._parse_services()
+
+        self.assertEqual(
+            gtfs_static_parser._service_id_to_service,
+            {service_id: service}
+        )
+
+    def test_parse_transfers(self):
+        """[GTFS static util] Parse transfers"""
+        stop_id_1 = 'service!'
+        stop_id_2 = 'MySecond'
+        data = {
+            'from_stop_id': stop_id_1,
+            'to_stop_id': stop_id_2
+        }
+
+        def csv_iterator(file_path):
+            yield data
+
+        gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
+        gtfs_static_parser._base_path = ''
+        gtfs_static_parser._csv_iterator = csv_iterator
+
+        gtfs_static_parser._parse_transfers()
+
+        self.assertEqual(
+            gtfs_static_parser.transfer_tuples,
+            [(stop_id_1, stop_id_2)]
+        )
+
+    def test_parse_transfers_same_stop(self):
+        """[GTFS static util] Parse transfers"""
+        stop_id_1 = 'service!'
+        data = {
+            'from_stop_id': stop_id_1,
+            'to_stop_id': stop_id_1
+        }
+
+        def csv_iterator(file_path):
+            yield data
+
+        gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
+        gtfs_static_parser._base_path = ''
+        gtfs_static_parser._csv_iterator = csv_iterator
+
+        gtfs_static_parser._parse_transfers()
+
+        self.assertEqual(
+            gtfs_static_parser.transfer_tuples,
+            []
+        )
+
 
     def test_transform_times(self):
         """[GTFS static util] Transform GTFS static formatted times"""

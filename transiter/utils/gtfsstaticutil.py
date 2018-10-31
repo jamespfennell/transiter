@@ -13,6 +13,12 @@ class _GtfsStaticService:
         for day in days:
             self.__setattr__(day, None)
 
+    def __eq__(self, other):
+        for day in days:
+            if getattr(self, day) != getattr(other, day):
+                return False
+        return True
+
 
 class StaticTrip:
 
