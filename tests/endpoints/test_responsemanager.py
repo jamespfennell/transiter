@@ -2,6 +2,8 @@ import unittest
 import unittest.mock as mock
 from transiter.endpoints import responsemanager, permissionsvalidator
 from transiter.services import exceptions
+from transiter.utils import linksutil
+import datetime
 
 RAW_RESPONSE = {'key': 'value'}
 JSON_RESPONSE = 'JsonResponse'
@@ -45,6 +47,7 @@ class TestPostRequests(unittest.TestCase):
 
         self.assertEqual(content, JSON_RESPONSE)
         self.assertEqual(http_code, responsemanager.HTTP_200_OK)
+
 
 class TestPutRequests(unittest.TestCase):
 
@@ -138,3 +141,40 @@ class TestExceptionHandling(unittest.TestCase):
 
             self.assertEqual(content, '')
             self.assertEqual(http_code, responsemanager.HTTP_500_SERVER_ERROR)
+
+
+class TestJsonConversion(unittest.TestCase):
+
+    LINK = 'Link'
+    TIMESTAMP = 300
+
+
+    @mock.patch('transiter.endpoints.responsemanager.time')
+    def test_datetime(self, time):
+        time.time.return_value = 0
+        fake_datetime = datetime.datetime(2018, 10, 30, 0, 0, 0)
+        expected = responsemanager.convert_to_json(fake_datetime.timestamp()/60)
+        actual = responsemanager.convert_to_json(fake_datetime)
+        self.assertEqual(actual, expected)
+
+    def test_link(self):
+        class FakeLink(linksutil.Link):
+            def __init__(self):
+                pass
+            def url(inner):
+                return self.LINK
+
+        fake_link = FakeLink()
+        actual = responsemanager.convert_to_json(fake_link)
+        expected = responsemanager.convert_to_json(self.LINK)
+        self.assertEqual(actual, expected)
+
+    def test_unknown_object(self):
+        class RandomClass:
+            def __init__(self):
+                pass
+
+        random_object = RandomClass()
+        self.assertRaises(TypeError, responsemanager.convert_to_json, random_object)
+
+
