@@ -35,6 +35,19 @@ class StaticTrip:
         self.direction_id = not self.direction_id
         self.stop_ids.reverse()
 
+    def __eq__(self, other):
+        for day in days:
+            if getattr(self, day) != getattr(other, day):
+                return False
+        return (
+            self.route_id == other.route_id and
+            self.direction_id == other.direction_id and
+            self.start_time == other.start_time and
+            self.end_time == other.end_time and
+            self.stop_ids == other.stop_ids
+        )
+
+
 
 class GtfsStaticParser:
 
@@ -85,6 +98,7 @@ class GtfsStaticParser:
                 stop_alias = StopAlias()
                 stop_alias.stop_id = row['parent_station']
                 stop_alias.stop_id_alias = row['stop_id']
+                # TODO: get rid of this
                 self._stop_id_alias_to_stop_id[
                     stop_alias.stop_id_alias] = stop_alias.stop_id
                 self.stop_id_alias_to_stop_alias[

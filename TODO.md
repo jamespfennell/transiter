@@ -6,9 +6,9 @@ Next 1 step, then v0.1 feature complete:
 
 
 1. Full unittest coverage for 
-   - NYC transit GTFS updater
-   - gtfsstaticutil
+   - continue for gtfsstaticutil
    - servicepatternmanager
+   - NYC transit GTFS updater
    - flaskapp (rename to app?)
    - RPYC client
    
@@ -39,6 +39,8 @@ trip_id to id? yes
 A full service test suite that hit every endpoint would be really really nice :)
 
 
+
+Add env variables to system config
 
 ## Version 0.1
     

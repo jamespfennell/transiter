@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 
 class Stop(Base):
@@ -44,3 +44,6 @@ class Stop(Base):
             'name': self.name,
             'location': 'NI',
         }
+
+    def __eq__(self, other):
+        return model_eq(self, other)
