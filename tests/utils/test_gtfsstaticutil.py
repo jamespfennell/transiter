@@ -256,7 +256,6 @@ class TestGtfsStaticUtil(unittest.TestCase):
         gtfs_static_parser._parse_stop_times()
 
         self.assertEqual(trip, post_trip)
-
         gtfs_static_parser._transform_times.assert_not_called()
 
     def test_parse_stop_times_no_start_time(self):

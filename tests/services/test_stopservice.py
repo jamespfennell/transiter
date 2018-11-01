@@ -2,6 +2,70 @@ import unittest
 import unittest.mock as mock
 
 from transiter.services import stopservice
+from transiter.database import models
+
+
+class TestDirectionNamesMatcher(unittest.TestCase):
+
+    STOP_PK = 1
+    DIRECTION_NAME = 'Direction Name'
+
+    def setUp(self):
+        self.stop = models.Stop()
+        self.stop.id = self.STOP_PK
+
+        self.stop_event = models.StopEvent()
+        self.stop_event.track = None
+        self.stop_event.stop_id_alias = None
+        self.stop_event.trip = models.Trip()
+        self.stop_event.trip.direction_id = None
+
+        # Note: having the rule as a mock allows us to test interactions
+        self.rule = models.DirectionNameRule()
+        self.rule.stop_pk = self.STOP_PK
+        self.rule.direction_id = None
+        self.rule.track = None
+        self.rule.stop_id_alias = None
+        self.rule.name = self.DIRECTION_NAME
+
+    def test_no_matching_stop_pk(self):
+        self.rule.stop_pk = 2
+        dnm = stopservice.DirectionNameMatcher([self.rule])
+
+        direction_name = dnm.match(self.stop, self.stop_event)
+
+        self.assertEqual(direction_name, None)
+
+    def test_no_matching_direction_id(self):
+        self.rule.direction_id = True
+        dnm = stopservice.DirectionNameMatcher([self.rule])
+
+        direction_name = dnm.match(self.stop, self.stop_event)
+
+        self.assertEqual(direction_name, None)
+
+    def test_no_matching_track(self):
+        self.rule.track = 'Track'
+        dnm = stopservice.DirectionNameMatcher([self.rule])
+
+        direction_name = dnm.match(self.stop, self.stop_event)
+
+        self.assertEqual(direction_name, None)
+
+    def test_no_matching_stop_id_alias(self):
+        self.rule.stop_id_alias = 'StopIdAlias'
+        dnm = stopservice.DirectionNameMatcher([self.rule])
+
+        direction_name = dnm.match(self.stop, self.stop_event)
+
+        self.assertEqual(direction_name, None)
+
+    def test_match(self):
+        dnm = stopservice.DirectionNameMatcher([self.rule])
+
+        direction_name = dnm.match(self.stop, self.stop_event)
+
+        self.assertEqual(direction_name, self.DIRECTION_NAME)
 
 
 class TestStopService(unittest.TestCase):

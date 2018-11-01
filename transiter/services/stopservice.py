@@ -36,10 +36,8 @@ class DirectionNameMatcher:
             stop_event.trip.direction_id,
             stop_event.track,
             stop_event.stop_id_alias)
-        print(cache_key)
         if cache_key not in self._cache:
             for rule in self._rules:
-                print(rule.stop_pk, rule.direction_id, rule.track, rule.stop_id_alias)
                 if rule.stop_pk != cache_key[0]:
                     continue
                 if rule.direction_id is not None and rule.direction_id != cache_key[1]:
@@ -52,7 +50,7 @@ class DirectionNameMatcher:
                 break
 
         if cache_key not in self._cache:
-            self._cache[cache_key] = 'CNM!'
+            self._cache[cache_key] = None
 
         return self._cache[cache_key]
 

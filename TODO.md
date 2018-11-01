@@ -6,9 +6,9 @@ Next 1 step, then v0.1 feature complete:
 
 
 1. Full unittest coverage for 
-   - continue for gtfsstaticutil
    - servicepatternmanager
    - NYC transit GTFS updater
+   - scheduler client
    - flaskapp (rename to app?)
    - RPYC client
    
