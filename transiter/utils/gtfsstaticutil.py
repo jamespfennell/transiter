@@ -35,6 +35,14 @@ class StaticTrip:
         self.direction_id = not self.direction_id
         self.stop_ids.reverse()
 
+    def __hash__(self):
+        return hash((
+            self.route_id,
+            self.direction_id,
+            self.start_time,
+            self.end_time,
+            tuple(self.stop_ids)
+        ))
     def __eq__(self, other):
         for day in days:
             if getattr(self, day) != getattr(other, day):

@@ -1,3 +1,5 @@
+services:
+  - postgresql
 language: python
 sudo: required
 dist: xenial

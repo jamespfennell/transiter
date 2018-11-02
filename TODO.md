@@ -8,9 +8,14 @@ Next 1 step, then v0.1 feature complete:
 1. Full unittest coverage for 
    - servicepatternmanager
    - NYC transit GTFS updater
-   - scheduler client
    - flaskapp (rename to app?)
    - RPYC client
+   - stop service (needs refactoring to take the filtering out)
+   - system service (ie., import)
+   - syncutil
+   - figure out how to the test the daos
+   
+After these it's basically just edge cases
    
 2. Move devtest to the testing directory as rtrconsistencytest
 3. Move rebuild.py out of the package
