@@ -8,9 +8,11 @@ _BaseServicePatternDao = daofactory._dao_factory(
     order_field='id',
     base_dao=daofactory._BaseEntityDao)
 
+# TODO: is a service pattern dao really needed?
 
 class _ServicePatternDao(_BaseServicePatternDao):
 
+    """
     def create_vertex(self):
         vertex = models.ServicePatternVertex()
         session = self.get_session()
@@ -23,7 +25,11 @@ class _ServicePatternDao(_BaseServicePatternDao):
         session = self.get_session()
         session.add(route_list_entry)
         return route_list_entry
-
+    """
+    # TODO this should be either by stop_pk or also include system
+    # TODO should this return route objects? Question of efficiency
+    # TODO can we by default only return some columns of the route objects?
+    # I.e., load other lazily, and then just get enough to construct the href
     def get_default_trips_at_stops(self, stop_ids):
         response = {stop_id: [] for stop_id in stop_ids}
         query = """

@@ -47,3 +47,21 @@ INSERT INTO route_status_routes (route_status_pri_key, route_pri_key) VALUES
     (:route_status_one_pk, :route_one_pk),
     (:route_status_one_pk, :route_two_pk),
     (:route_status_two_pk, :route_two_pk);
+
+INSERT INTO service_patterns (id, route_pri_key) VALUES
+    (:service_pattern_one_pk, :route_one_pk),
+    (:service_pattern_two_pk, :route_two_pk);
+
+INSERT INTO service_pattern_vertices (service_pattern_pri_key, stop_pri_key) VALUES
+    (:service_pattern_one_pk, :stop_one_pk),
+    (:service_pattern_one_pk, :stop_two_pk),
+    (:service_pattern_two_pk, :stop_two_pk),
+    (:service_pattern_two_pk, :stop_three_pk);
+
+UPDATE routes
+    SET regular_service_pattern_pri_key = :service_pattern_one_pk
+    WHERE id = :route_one_pk;
+
+UPDATE routes
+    SET regular_service_pattern_pri_key = :service_pattern_two_pk
+    WHERE id = :route_two_pk;

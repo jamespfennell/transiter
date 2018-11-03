@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from transiter.database import creator
 from transiter.database import connection
-from transiter.database.daos import route_dao, feed_update_dao, stop_event_dao
+from transiter.database.daos import route_dao, feed_update_dao, stop_event_dao, service_pattern_dao
 from transiter.database.daos import system_dao, trip_dao, feed_dao, route_status_dao
 from transiter.database import models
 import os
@@ -51,6 +51,9 @@ class TestDbConstants:
     ROUTE_STATUS_ONE_MESSAGE = '82'
     ROUTE_STATUS_TWO_PK = 83
     ROUTE_STATUS_TWO_MESSAGE = '84'
+
+    SERVICE_PATTERN_ONE_PK = 91
+    SERVICE_PATTERN_TWO_PK = 92
 
     EARLIEST_TERMINAL_TIME = '2018-11-02 10:00:30'
     MIDDLE_TERMINAL_TIME = '2018-11-02 11:00:20'
@@ -100,10 +103,12 @@ class TestDaos(unittest.TestCase, TestDbConstants):
         self.route_one = models.Route()
         self.route_one.route_id = self.ROUTE_ONE_ID
         self.route_one.system_id = self.SYSTEM_ONE_ID
+        self.route_one.regular_service_pattern_pri_key = self.SERVICE_PATTERN_ONE_PK
 
         self.route_two = models.Route()
         self.route_two.route_id = self.ROUTE_TWO_ID
         self.route_two.system_id = self.SYSTEM_ONE_ID
+        self.route_two.regular_service_pattern_pri_key = self.SERVICE_PATTERN_TWO_PK
 
         self.route_three = models.Route()
         self.route_three.route_id = self.ROUTE_THREE_ID
@@ -298,7 +303,19 @@ class TestDaos(unittest.TestCase, TestDbConstants):
             [self.ROUTE_STATUS_ONE_PK, self.ROUTE_STATUS_TWO_PK],
             [route_status.id for route_status in data])
 
+    def test__service_pattern_dao__get_default_trips_at_stops(self):
+        actual = service_pattern_dao.get_default_trips_at_stops(
+            [self.STOP_ONE_ID, self.STOP_TWO_ID, self.STOP_THREE_ID, self.STOP_FOUR_ID]
+        )
 
+        expected = {
+            self.STOP_ONE_ID: [self.ROUTE_ONE_ID],
+            self.STOP_TWO_ID: [self.ROUTE_ONE_ID, self.ROUTE_TWO_ID],
+            self.STOP_THREE_ID: [self.ROUTE_TWO_ID],
+            self.STOP_FOUR_ID: []
+        }
+
+        self.assertDictEqual(expected, actual)
 
 
     def _compare_datetime_to_str(self, dt, st):
