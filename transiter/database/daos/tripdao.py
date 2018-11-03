@@ -1,6 +1,7 @@
 from transiter.database.daos import daofactory
 from transiter.database import models
 
+from sqlalchemy.orm.exc import NoResultFound
 
 _BaseTripDao = daofactory._dao_factory(
     schema_entity=models.Trip,
@@ -27,7 +28,10 @@ class _TripDao(_BaseTripDao):
             .filter(models.Route.system_id == system_id)\
             .filter(models.Route.route_id == route_id)\
             .filter(models.Trip.trip_id == trip_id)
-        return query.one()
+        try:
+            return query.one()
+        except NoResultFound:
+            return None
 
 
 trip_dao = _TripDao()

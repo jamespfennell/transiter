@@ -5,11 +5,10 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from transiter.database import creator
 from transiter.database import connection
 from transiter.database.daos import route_dao
-from transiter.database.daos import system_dao
+from transiter.database.daos import system_dao, trip_dao
 from transiter.database import models
 import os
 
-from transiter.services import systemservice
 
 class TestDaos(unittest.TestCase):
 
@@ -17,8 +16,14 @@ class TestDaos(unittest.TestCase):
     SYSTEM_TWO_ID = '2'
     SYSTEM_THREE_ID = '3'
     SYSTEM_THREE_NAME = '4'
+
     ROUTE_ONE_ID = '11'
-    ROUTE_TWO_ID = '12'
+    ROUTE_ONE_PK = 12
+    ROUTE_TWO_ID = '13'
+    ROUTE_TWO_PK = 14
+
+    TRIP_ONE_ID = '21'
+    TRIP_TWO_ID = '22'
 
     @classmethod
     def setUpClass(cls):
@@ -40,10 +45,12 @@ class TestDaos(unittest.TestCase):
             'system_one_id': cls.SYSTEM_ONE_ID,
             'system_two_id': cls.SYSTEM_TWO_ID,
             'route_one_id': cls.ROUTE_ONE_ID,
-            'route_two_id': cls.ROUTE_TWO_ID
+            'route_one_pk': cls.ROUTE_ONE_PK,
+            'route_two_id': cls.ROUTE_TWO_ID,
+            'route_two_pk': cls.ROUTE_TWO_PK,
+            'trip_one_id': cls.TRIP_ONE_ID,
+            'trip_two_id': cls.TRIP_TWO_ID,
         }
-        session = connection.Session()
-        #session.execute(query, parameters)
         cls._execute(query, parameters)
         connection.Session().commit()
         connection.Session.remove()
@@ -67,6 +74,14 @@ class TestDaos(unittest.TestCase):
         self.route_two.route_id = self.ROUTE_TWO_ID
         self.route_two.system_id = self.SYSTEM_ONE_ID
 
+        self.trip_one = models.Trip()
+        self.trip_one.trip_id = self.TRIP_ONE_ID
+        self.trip_one.route_pri_key = self.ROUTE_ONE_PK
+
+        self.trip_two = models.Trip()
+        self.trip_two.trip_id = self.TRIP_TWO_ID
+        self.trip_two.route_pri_key = self.ROUTE_ONE_PK
+
         self.session = connection.Session()
 
     def tearDown(self):
@@ -84,6 +99,11 @@ class TestDaos(unittest.TestCase):
 
         self.assertEqual(self.system_one, db_system)
 
+    def test__base_entity_dao__get_by_id__no_result(self):
+        db_system = system_dao.get_by_id(self.SYSTEM_THREE_ID)
+
+        self.assertEqual(None, db_system)
+
     def test__base_entity_dao__create(self):
         db_system = system_dao.create()
         db_system.system_id = self.SYSTEM_THREE_ID
@@ -98,7 +118,7 @@ class TestDaos(unittest.TestCase):
         self.assertEqual(row[1], self.SYSTEM_THREE_NAME)
 
     def test__base_entity_dao__delete(self):
-        system_dao.delete_by_id(self.SYSTEM_ONE_ID)
+        response = system_dao.delete_by_id(self.SYSTEM_ONE_ID)
         self.session.flush()
 
         query = "SELECT system_id, name FROM systems WHERE system_id=:system_id"
@@ -106,6 +126,12 @@ class TestDaos(unittest.TestCase):
         row = result.fetchone()
 
         self.assertEqual(row, None)
+        self.assertEqual(response, True)
+
+    def test__base_entity_dao__delete__none_to_delete(self):
+        response = system_dao.delete_by_id(self.SYSTEM_THREE_ID)
+
+        self.assertEqual(response, False)
 
     def test__system_child_entity_dao__get_in_system_by_id(self):
         db_route = route_dao.get_in_system_by_id(
@@ -119,7 +145,31 @@ class TestDaos(unittest.TestCase):
         self.assertListEqual(
             [self.route_one, self.route_two], list(db_routes))
 
+    def test__trip_dao__list_all_in_route(self):
+        db_trips = trip_dao.list_all_in_route(
+            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID)
 
+        self.assertEqual(
+            [self.trip_one, self.trip_two],
+            list(db_trips))
+
+    def test__trip_dao__list_all_in_route__no_trips(self):
+        db_trips = trip_dao.list_all_in_route(
+            self.SYSTEM_ONE_ID, self.ROUTE_TWO_ID)
+
+        self.assertEqual([], list(db_trips))
+
+    def test__trip_dao__get_in_route_by_id(self):
+        db_trip = trip_dao.get_in_route_by_id(
+            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID, self.TRIP_ONE_ID)
+
+        self.assertEqual(self.trip_one, db_trip)
+
+    def test__trip_dao__get_in_route_by_id__no_trip(self):
+        db_trip = trip_dao.get_in_route_by_id(
+            self.SYSTEM_ONE_ID, self.ROUTE_TWO_ID, self.TRIP_ONE_ID)
+
+        self.assertEqual(None, db_trip)
 
     @classmethod
     def tearDownClass(cls):

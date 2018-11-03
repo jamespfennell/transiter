@@ -1,7 +1,7 @@
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 class Trip(Base):
     __tablename__ = 'trips'
@@ -43,3 +43,6 @@ class Trip(Base):
             'status': self.current_status,
             'train_id': self.train_id
         }
+
+    def __eq__(self, other):
+        return model_eq(self, other)
