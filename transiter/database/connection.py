@@ -5,7 +5,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 
 
-engine = create_engine("postgres://james@/realtimerail")
+engine = create_engine("postgres://postgres@/realtimerail")
 session_factory = sessionmaker(bind=engine)
 Session = scoped_session(session_factory)
 
