@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 
 class System(Base):
@@ -26,3 +26,6 @@ class System(Base):
         return {
             'system_id': self.system_id,
         }
+
+    def __eq__(self, other):
+        return model_eq(self, other)
