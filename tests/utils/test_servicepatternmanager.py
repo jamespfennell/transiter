@@ -2,7 +2,8 @@ import unittest
 from unittest import mock
 from transiter.utils import servicepatternmanager
 from transiter.utils import gtfsstaticutil
-
+from transiter.utils import graphutils
+from transiter.database import models
 import itertools
 
 
@@ -33,6 +34,35 @@ class TestServicePatternManager(unittest.TestCase):
 
         graphutils.graphdatastructs.DirectedPath.assert_called_once_with(path_list)
 
+    def test_sorted_graph_to_service_pattern(self):
+        """[Service pattern manager] Sorted graph to service pattern"""
+        label_one = '1'
+        label_two = '2'
+        path_list = [label_one, label_two]
+        graph = graphutils.graphdatastructs.DirectedPath(path_list)
+
+        stop_one = mock.MagicMock()
+        stop_two = mock.MagicMock()
+        label_to_stop = {
+            label_one: stop_one,
+            label_two: stop_two
+        }
+
+        expected_sp = models.ServicePattern()
+        v_one = models.ServicePatternVertex()
+        v_one.stop = stop_one
+        v_one.service_pattern = expected_sp
+        v_one.position = 0
+        v_two = models.ServicePatternVertex()
+        v_two.stop = stop_two
+        v_two.service_pattern = expected_sp
+        v_two.position = 1
+
+        actual_sp = servicepatternmanager._sorted_graph_to_service_pattern(
+            graph, label_to_stop)
+
+        self.assertEqual(expected_sp, actual_sp)
+        self.assertEqual(expected_sp.vertices, actual_sp.vertices)
 
     @mock.patch('transiter.utils.servicepatternmanager.graphutils')
     def test_path_lists_to_sorted_graph__stiches_to_path(self, graphutils):

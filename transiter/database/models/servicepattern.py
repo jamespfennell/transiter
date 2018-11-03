@@ -1,7 +1,7 @@
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 
 class ServicePattern(Base):
@@ -19,3 +19,6 @@ class ServicePattern(Base):
                             order_by="ServicePatternVertex.position",
                             cascade='all, delete-orphan')
     # edges=? How can we delete them
+
+    def __eq__(self, other):
+        return model_eq(self, other)

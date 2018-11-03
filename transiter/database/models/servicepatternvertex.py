@@ -1,7 +1,7 @@
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 
 class ServicePatternVertex(Base):
@@ -17,3 +17,5 @@ class ServicePatternVertex(Base):
     service_pattern = relationship("ServicePattern",
                                    back_populates='vertices')
 
+    def __eq__(self, other):
+        return model_eq(self, other)

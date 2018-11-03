@@ -41,6 +41,8 @@ def construct_sps_from_gtfs_static_data(
 
         route_id_to_trips[trip.route_id].add(trip)
 
+    # TODO: invert the for loops here for an easy optimization
+    # Better: split off a new method construct from trips and settings
     for route_id, trips in route_id_to_trips.items():
         route = route_id_to_route.get(route_id, None)
         if route is None:
