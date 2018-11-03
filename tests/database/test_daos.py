@@ -114,6 +114,8 @@ class TestDaos(unittest.TestCase, TestDbConstants):
         self.route_three.route_id = self.ROUTE_THREE_ID
         self.route_three.system_id = self.SYSTEM_ONE_ID
 
+        self.assertNotEqual(self.route_one, self.route_two)
+
         self.trip_one = models.Trip()
         self.trip_one.trip_id = self.TRIP_ONE_ID
         self.trip_one.route_pri_key = self.ROUTE_ONE_PK

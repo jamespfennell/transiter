@@ -3,11 +3,10 @@ from .directionname import DirectionName
 from .directionnamerule import DirectionNameRule
 from .feed import Feed
 from .feedupdate import FeedUpdate
-#from .message import Message
 from .route import Route
 from .routestatus import RouteStatus
 from .servicepattern import ServicePattern
-#from .servicepatternedge import ServicePatternEdge
+from .servicepatternedge import ServicePatternEdge
 from .servicepatternvertex import ServicePatternVertex
 from .station import Station
 from .stop import Stop

@@ -13,7 +13,6 @@ Next 1 step, then v0.1 feature complete:
    - stop service (needs refactoring to take the filtering out)
    - system service (ie., import)
    - syncutil
-   - figure out how to the test the daos
    
 After these it's basically just edge cases
    
