@@ -13,7 +13,12 @@ Next 1 step, then v0.1 feature complete:
    - system service (ie., import)
    - syncutil
    
-After these it's basically just edge cases
+After these it's basically just edge cases...and the model reprs?
+Should refactor these repr out of the models and into the new model they
+    all inherit from
+    
+SHORT_REPR_LIST = ['pk']
+SHORT_REPR_DICT = {'route_id': 'id'}
    
 2. Move devtest to the testing directory as rtrconsistencytest
 3. Move rebuild.py out of the package

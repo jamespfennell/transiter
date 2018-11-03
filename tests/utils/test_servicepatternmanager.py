@@ -6,6 +6,109 @@ from transiter.utils import gtfsstaticutil
 import itertools
 
 
+class TestServicePatternManager(unittest.TestCase):
+    @mock.patch('transiter.utils.servicepatternmanager.graphutils')
+    def test_path_lists_to_sorted_graph__empty_list(self, graphutils):
+        """[Service pattern manager] Empty path list to sorted graph"""
+        graph = mock.MagicMock()
+        graphutils.graphdatastructs.DirectedPath.return_value = graph
+
+        actual = servicepatternmanager._path_lists_to_sorted_graph([])
+
+        self.assertEqual(graph, actual)
+
+        graphutils.graphdatastructs.DirectedPath.assert_called_once_with([])
+
+    @mock.patch('transiter.utils.servicepatternmanager.graphutils')
+    def test_path_lists_to_sorted_graph__single_list(self, graphutils):
+        """[Service pattern manager] Single path list to sorted graph"""
+        path_list = mock.MagicMock()
+        path_lists = [path_list]
+        graph = mock.MagicMock()
+        graphutils.graphdatastructs.DirectedPath.return_value = graph
+
+        actual = servicepatternmanager._path_lists_to_sorted_graph(path_lists)
+
+        self.assertEqual(graph, actual)
+
+        graphutils.graphdatastructs.DirectedPath.assert_called_once_with(path_list)
+
+
+    @mock.patch('transiter.utils.servicepatternmanager.graphutils')
+    def test_path_lists_to_sorted_graph__stiches_to_path(self, graphutils):
+        """[Service pattern manager] Two path lists to sorted graph, just from stitching"""
+        path_list_one = mock.MagicMock()
+        path_list_two = mock.MagicMock()
+        path_lists = [path_list_one, path_list_two]
+
+        directed_path_one = mock.MagicMock()
+        directed_path_two = mock.MagicMock()
+
+        def DirectedPath(path_list):
+            if path_list == path_list_one:
+                return directed_path_one
+            if path_list == path_list_two:
+                return directed_path_two
+            raise AttributeError
+
+        graphutils.graphdatastructs.DirectedPath.side_effect = DirectedPath
+
+        graph = mock.MagicMock()
+        graphutils.pathstitcher.stitch.return_value = graph
+        graph.is_path.return_value = True
+        final_graph = mock.MagicMock()
+        graph.cast_to_path.return_value = final_graph
+
+        actual = servicepatternmanager._path_lists_to_sorted_graph(path_lists)
+
+        self.assertEqual(final_graph, actual)
+
+        graphutils.graphdatastructs.DirectedPath.assert_any_call(path_list_two)
+        graphutils.graphdatastructs.DirectedPath.assert_any_call(path_list_one)
+        graphutils.pathstitcher.stitch.assert_called_once_with([directed_path_one, directed_path_two])
+        graph.is_path.assert_called_once_with()
+        graph.cast_to_path.assert_called_once_with()
+        graphutils.topologicalsort.sort.assert_not_called()
+
+
+    @mock.patch('transiter.utils.servicepatternmanager.graphutils')
+    def test_path_lists_to_sorted_graph__topological_sort(self, graphutils):
+        """[Service pattern manager] Two path lists to sorted graph, from top sort"""
+        path_list_one = mock.MagicMock()
+        path_list_two = mock.MagicMock()
+        path_lists = [path_list_one, path_list_two]
+
+        directed_path_one = mock.MagicMock()
+        directed_path_two = mock.MagicMock()
+
+        def DirectedPath(path_list):
+            if path_list == path_list_one:
+                return directed_path_one
+            if path_list == path_list_two:
+                return directed_path_two
+            raise AttributeError
+
+        graphutils.graphdatastructs.DirectedPath.side_effect = DirectedPath
+
+        graph = mock.MagicMock()
+        graphutils.pathstitcher.stitch.return_value = graph
+        graph.is_path.return_value = False
+        final_graph = mock.MagicMock()
+        graphutils.topologicalsort.sort.return_value = final_graph
+
+        actual = servicepatternmanager._path_lists_to_sorted_graph(path_lists)
+
+        self.assertEqual(final_graph, actual)
+
+        graphutils.graphdatastructs.DirectedPath.assert_any_call(path_list_two)
+        graphutils.graphdatastructs.DirectedPath.assert_any_call(path_list_one)
+        graphutils.pathstitcher.stitch.assert_called_once_with([directed_path_one, directed_path_two])
+        graph.is_path.assert_called_once_with()
+        graph.cast_to_path.assert_not_called()
+        graphutils.topologicalsort.sort.assert_called_with(graph)
+
+
+
 class TestTripsFilter(unittest.TestCase):
     @mock.patch('transiter.utils.servicepatternmanager._TripMatcher')
     def test_filter_trips_by_conditions(self, _TripMatcher):
