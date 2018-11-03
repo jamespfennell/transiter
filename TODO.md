@@ -9,7 +9,6 @@ Next 1 step, then v0.1 feature complete:
    - servicepatternmanager
    - NYC transit GTFS updater
    - flaskapp (rename to app?)
-   - RPYC client
    - stop service (needs refactoring to take the filtering out)
    - system service (ie., import)
    - syncutil
