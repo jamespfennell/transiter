@@ -11,8 +11,8 @@ def model_eq(model_one, model_two):
             continue
         if getattr(model_one, column) != getattr(model_two, column):
             print('fail')
-            print('-' + getattr(model_one, column) + '-')
-            print('-' + getattr(model_two, column) + '-')
+            print('-' + str(getattr(model_one, column)) + '-')
+            print('-' + str(getattr(model_two, column)) + '-')
             return False
     return True
 

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import text
 
 from .base import Base, model_eq
 
@@ -20,6 +21,7 @@ class Trip(Base):
     feed_update_time = Column(TIMESTAMP(timezone=True))
     # TODO: rename status
     current_status = Column(String)
+    # This is redundant -> can be inferred from stop events
     current_stop_sequence = Column(Integer)
 
     route = relationship("Route", back_populates="trips")

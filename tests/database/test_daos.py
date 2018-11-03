@@ -10,7 +10,7 @@ from transiter.database import models
 import os
 
 
-class TestDaos(unittest.TestCase):
+class TestDbConstants:
 
     SYSTEM_ONE_ID = '1'
     SYSTEM_TWO_ID = '2'
@@ -21,9 +21,33 @@ class TestDaos(unittest.TestCase):
     ROUTE_ONE_PK = 12
     ROUTE_TWO_ID = '13'
     ROUTE_TWO_PK = 14
+    ROUTE_THREE_ID = '15'
+    ROUTE_THREE_PK = 16
 
     TRIP_ONE_ID = '21'
-    TRIP_TWO_ID = '22'
+    TRIP_ONE_PK = 22
+    TRIP_TWO_ID = '23'
+    TRIP_TWO_PK = 24
+    TRIP_THREE_ID = '25'
+    TRIP_THREE_PK = 26
+
+    STOP_ONE_ID = '41'
+    STOP_ONE_PK = 42
+    STOP_TWO_ID = '43'
+    STOP_TWO_PK = 44
+    STOP_THREE_ID = '45'
+    STOP_THREE_PK = 46
+    STOP_FOUR_ID = '47'
+    STOP_FOUR_PK = 48
+    STOP_FIVE_ID = '49'
+    STOP_FIVE_PK = 50
+
+    EARLIEST_TERMINAL_TIME = '2018-11-02 10:00:30'
+    MIDDLE_TERMINAL_TIME = '2018-11-02 11:00:20'
+    LATEST_TERMINAL_TIME = '2018-11-02 12:00:10'
+
+
+class TestDaos(unittest.TestCase, TestDbConstants):
 
     @classmethod
     def setUpClass(cls):
@@ -41,16 +65,9 @@ class TestDaos(unittest.TestCase):
             query = text(f.read())
             print(query)
 
-        parameters = {
-            'system_one_id': cls.SYSTEM_ONE_ID,
-            'system_two_id': cls.SYSTEM_TWO_ID,
-            'route_one_id': cls.ROUTE_ONE_ID,
-            'route_one_pk': cls.ROUTE_ONE_PK,
-            'route_two_id': cls.ROUTE_TWO_ID,
-            'route_two_pk': cls.ROUTE_TWO_PK,
-            'trip_one_id': cls.TRIP_ONE_ID,
-            'trip_two_id': cls.TRIP_TWO_ID,
-        }
+        parameters = {}
+        for key, value in TestDbConstants.__dict__.items():
+            parameters[key.lower()] = value
         cls._execute(query, parameters)
         connection.Session().commit()
         connection.Session.remove()
@@ -74,13 +91,24 @@ class TestDaos(unittest.TestCase):
         self.route_two.route_id = self.ROUTE_TWO_ID
         self.route_two.system_id = self.SYSTEM_ONE_ID
 
+        self.route_three = models.Route()
+        self.route_three.route_id = self.ROUTE_THREE_ID
+        self.route_three.system_id = self.SYSTEM_ONE_ID
+
         self.trip_one = models.Trip()
         self.trip_one.trip_id = self.TRIP_ONE_ID
         self.trip_one.route_pri_key = self.ROUTE_ONE_PK
+        self.trip_one.current_status = ''
 
         self.trip_two = models.Trip()
         self.trip_two.trip_id = self.TRIP_TWO_ID
         self.trip_two.route_pri_key = self.ROUTE_ONE_PK
+        self.trip_two.current_status = ''
+
+        self.trip_three = models.Trip()
+        self.trip_three.trip_id = self.TRIP_THREE_ID
+        self.trip_three.route_pri_key = self.ROUTE_ONE_PK
+        self.trip_three.current_status = ''
 
         self.session = connection.Session()
 
@@ -143,33 +171,57 @@ class TestDaos(unittest.TestCase):
         db_routes = route_dao.list_all_in_system(self.SYSTEM_ONE_ID)
 
         self.assertListEqual(
-            [self.route_one, self.route_two], list(db_routes))
+            [self.route_one, self.route_two, self.route_three],
+            list(db_routes))
 
     def test__trip_dao__list_all_in_route(self):
         db_trips = trip_dao.list_all_in_route(
             self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID)
 
         self.assertEqual(
-            [self.trip_one, self.trip_two],
+            [self.trip_one, self.trip_two, self.trip_three],
             list(db_trips))
 
     def test__trip_dao__list_all_in_route__no_trips(self):
         db_trips = trip_dao.list_all_in_route(
-            self.SYSTEM_ONE_ID, self.ROUTE_TWO_ID)
+            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID)
 
         self.assertEqual([], list(db_trips))
 
     def test__trip_dao__get_in_route_by_id(self):
         db_trip = trip_dao.get_in_route_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID, self.TRIP_ONE_ID)
+            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID, self.TRIP_TWO_ID)
 
-        self.assertEqual(self.trip_one, db_trip)
+        self.assertEqual(self.trip_two, db_trip)
 
     def test__trip_dao__get_in_route_by_id__no_trip(self):
         db_trip = trip_dao.get_in_route_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_TWO_ID, self.TRIP_ONE_ID)
+            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID, self.TRIP_ONE_ID)
 
         self.assertEqual(None, db_trip)
+
+    def test__route_dao__get_active_stop_ids(self):
+        db_stop_ids = route_dao.get_active_stop_ids(self.ROUTE_ONE_PK)
+
+        self.assertListEqual(
+            [self.STOP_ONE_ID, self.STOP_TWO_ID, self.STOP_THREE_ID, self.STOP_FOUR_ID],
+            list(db_stop_ids))
+
+    def test__route_dao__get_active_stop_ids__no_stops(self):
+        db_stop_ids = route_dao.get_active_stop_ids(self.ROUTE_THREE_PK)
+
+        self.assertEqual([], list(db_stop_ids))
+
+    def test__route_dao__get_terminus_data(self):
+        data = list(route_dao.get_terminus_data(self.ROUTE_ONE_PK))
+
+        self.assertEqual(len(data), 1)
+
+        row = data[0]
+        self.assertEqual(str(row[0])[:-6], self.EARLIEST_TERMINAL_TIME)
+        self.assertEqual(str(row[1])[:-6], self.LATEST_TERMINAL_TIME)
+        self.assertEqual(row[2], 3)
+        self.assertEqual(row[3], self.STOP_FOUR_PK)
 
     @classmethod
     def tearDownClass(cls):

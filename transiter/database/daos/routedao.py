@@ -14,6 +14,7 @@ class RouteDao(_BaseRouteDao):
         session = self.get_session()
         query = (
             session.query(models.Stop.stop_id)
+            .distinct()
             .join(models.StopEvent, models.Stop.id == models.StopEvent.stop_pri_key)
             .join(models.Trip, models.Trip.id == models.StopEvent.trip_pri_key)
             .join(models.Route, models.Trip.route_pri_key == models.Route.id)

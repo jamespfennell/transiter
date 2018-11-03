@@ -1,6 +1,6 @@
 from sqlalchemy import Column, TIMESTAMP, Index, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.sql import text
 from .base import Base
 
 
@@ -12,7 +12,7 @@ class StopEvent(Base):
     stop_pri_key = Column(Integer, ForeignKey('stops.id'), nullable=False)
     trip_pri_key = Column(Integer, ForeignKey('trips.id'), nullable=False)
     # TODO rename to status and make a string
-    future = Column(Boolean)
+    future = Column(Boolean, server_default=text('true'))
     arrival_time = Column(TIMESTAMP(timezone=True))
     departure_time = Column(TIMESTAMP(timezone=True))
     last_update_time = Column(TIMESTAMP(timezone=True))
