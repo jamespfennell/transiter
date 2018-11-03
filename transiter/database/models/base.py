@@ -10,7 +10,7 @@ def model_eq(model_one, model_two):
         if column == 'id':
             continue
         if getattr(model_one, column) != getattr(model_two, column):
-            print('fail')
+            print(column)
             print('-' + str(getattr(model_one, column)) + '-')
             print('-' + str(getattr(model_two, column)) + '-')
             return False

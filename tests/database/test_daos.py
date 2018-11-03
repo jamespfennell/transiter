@@ -4,8 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from transiter.database import creator
 from transiter.database import connection
-from transiter.database.daos import route_dao
-from transiter.database.daos import system_dao, trip_dao
+from transiter.database.daos import route_dao, feed_update_dao, stop_event_dao
+from transiter.database.daos import system_dao, trip_dao, feed_dao, route_status_dao
 from transiter.database import models
 import os
 
@@ -42,17 +42,29 @@ class TestDbConstants:
     STOP_FIVE_ID = '49'
     STOP_FIVE_PK = 50
 
+    FEED_ONE_ID = '71'
+    FEED_ONE_PK = 72
+    FEED_TWO_ID = '73'
+    FEED_TWO_PK = 74
+
+    ROUTE_STATUS_ONE_PK = 81
+    ROUTE_STATUS_ONE_MESSAGE = '82'
+    ROUTE_STATUS_TWO_PK = 83
+    ROUTE_STATUS_TWO_MESSAGE = '84'
+
     EARLIEST_TERMINAL_TIME = '2018-11-02 10:00:30'
     MIDDLE_TERMINAL_TIME = '2018-11-02 11:00:20'
     LATEST_TERMINAL_TIME = '2018-11-02 12:00:10'
+
+    LATEST_FEED_UPDATE_TIME = '2018-11-03 11:00:00'
 
 
 class TestDaos(unittest.TestCase, TestDbConstants):
 
     @classmethod
     def setUpClass(cls):
-        test_db_name = 'transiter_test_db'
-        creator.create_database(test_db_name)
+        test_db_name = 'transiter_test_db_2'
+        creator.create_database(test_db_name, user='postgres')
 
         connection.engine = create_engine("postgres://postgres@/{}".format(test_db_name))
         connection.session_factory = sessionmaker(bind=connection.engine)
@@ -67,6 +79,8 @@ class TestDaos(unittest.TestCase, TestDbConstants):
 
         parameters = {}
         for key, value in TestDbConstants.__dict__.items():
+            if key[0] == '_':
+                continue
             parameters[key.lower()] = value
         cls._execute(query, parameters)
         connection.Session().commit()
@@ -146,11 +160,11 @@ class TestDaos(unittest.TestCase, TestDbConstants):
         self.assertEqual(row[1], self.SYSTEM_THREE_NAME)
 
     def test__base_entity_dao__delete(self):
-        response = system_dao.delete_by_id(self.SYSTEM_ONE_ID)
+        response = system_dao.delete_by_id(self.SYSTEM_TWO_ID)
         self.session.flush()
 
         query = "SELECT system_id, name FROM systems WHERE system_id=:system_id"
-        result = self._execute(query, {'system_id': self.SYSTEM_ONE_ID})
+        result = self._execute(query, {'system_id': self.SYSTEM_TWO_ID})
         row = result.fetchone()
 
         self.assertEqual(row, None)
@@ -215,13 +229,80 @@ class TestDaos(unittest.TestCase, TestDbConstants):
     def test__route_dao__get_terminus_data(self):
         data = list(route_dao.get_terminus_data(self.ROUTE_ONE_PK))
 
-        self.assertEqual(len(data), 1)
+        self.assertEqual(1, len(data))
 
         row = data[0]
-        self.assertEqual(str(row[0])[:-6], self.EARLIEST_TERMINAL_TIME)
-        self.assertEqual(str(row[1])[:-6], self.LATEST_TERMINAL_TIME)
+        # This is a bit hacky. It chops off the timezone component of the result
+        # TODO Should find a more robust way of doing this
+        self._compare_datetime_to_str(row[0], self.EARLIEST_TERMINAL_TIME)
+        self._compare_datetime_to_str(row[1], self.LATEST_TERMINAL_TIME)
         self.assertEqual(row[2], 3)
         self.assertEqual(row[3], self.STOP_FOUR_PK)
+
+    def test__feed_dao__get_last_successful_update(self):
+        db_feed_update = feed_dao.get_last_successful_update(self.FEED_ONE_PK)
+
+        self._compare_datetime_to_str(
+            db_feed_update.last_action_time,
+            self.LATEST_FEED_UPDATE_TIME)
+        db_feed_update.last_action_time = None
+
+        feed_update = models.FeedUpdate()
+        feed_update.feed_pri_key = self.FEED_ONE_PK
+        feed_update.status = 'SUCCESS_UPDATED'
+
+        self.assertEqual(feed_update, db_feed_update)
+
+    def test__feed_dao__list_updates_in_feed(self):
+        feed = feed_dao.get_by_id(self.FEED_ONE_ID)
+        data = list(feed_update_dao.list_updates_in_feed(feed))
+        self.assertEqual(3, len(data))
+        self.assertEqual(
+            ['SUCCESS_UPDATED', 'SUCCESS_UPDATED', 'FAILURE_COULD_NOT_PARSE'],
+            [feed_update.status for feed_update in data]
+        )
+
+    def test__system_dao__count_stations_in_system(self):
+        count = system_dao.count_stations_in_system(self.SYSTEM_ONE_ID)
+
+        self.assertEqual(0, count)
+
+    def test__system_dao__count_stops_in_system(self):
+        count = system_dao.count_stops_in_system(self.SYSTEM_ONE_ID)
+
+        self.assertEqual(5, count)
+
+    def test__system_dao__count_routes_in_system(self):
+        count = system_dao.count_routes_in_system(self.SYSTEM_ONE_ID)
+
+        self.assertEqual(3, count)
+
+    def test__system_dao__count_feeds_in_system(self):
+        count = system_dao.count_feeds_in_system(self.SYSTEM_ONE_ID)
+
+        self.assertEqual(2, count)
+
+    def test__stop_event_dao__get_by_stop_pri_key(self):
+        data = list(stop_event_dao.get_by_stop_pri_key(self.STOP_FOUR_PK))
+
+        self.assertEqual(3, len(data))
+        self.assertEqual(
+            [self.TRIP_ONE_PK, self.TRIP_TWO_PK, self.TRIP_THREE_PK],
+            [stop_event.trip_pri_key for stop_event in data]
+        )
+
+    def test__route_status_dao__get_all_in_system(self):
+        data = route_status_dao.get_all_in_system(self.SYSTEM_ONE_ID)
+
+        self.assertListEqual(
+            [self.ROUTE_STATUS_ONE_PK, self.ROUTE_STATUS_TWO_PK],
+            [route_status.id for route_status in data])
+
+
+
+
+    def _compare_datetime_to_str(self, dt, st):
+        self.assertEqual(str(dt)[:-6], st)
 
     @classmethod
     def tearDownClass(cls):

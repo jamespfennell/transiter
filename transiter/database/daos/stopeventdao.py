@@ -8,7 +8,7 @@ _BaseStopEventDao = daofactory._dao_factory(
     order_field='id',
     base_dao=daofactory._BaseEntityDao)
 
-
+# TODO This should be in the stop dao
 class _StopEventDao(_BaseStopEventDao):
 
     def get_by_stop_pri_key(self, stop_pri_key):

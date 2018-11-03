@@ -2,7 +2,7 @@ from sqlalchemy import Column, TIMESTAMP, Index, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import functions as sql_functions
 
-from .base import Base
+from .base import Base, model_eq
 
 
 class FeedUpdate(Base):
@@ -44,6 +44,8 @@ class FeedUpdate(Base):
             'last_action_time': self.last_action_time
         }
 
+    def __eq__(self, other):
+        return model_eq(self, other)
 
 Index('feed_updates_ordered_for_feed_idx',
       FeedUpdate.feed_pri_key,

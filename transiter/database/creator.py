@@ -4,8 +4,8 @@ import sqlalchemy
 
 
 
-def create_database(db_name='realtimerail'):
-    engine = sqlalchemy.create_engine("postgres://postgres@/postgres")
+def create_database(db_name='realtimerail', user='james'):
+    engine = sqlalchemy.create_engine("postgres://{}@/postgres".format(user))
     conn = engine.connect()
     try:
         conn.execute("commit")

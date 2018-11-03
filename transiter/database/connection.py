@@ -19,6 +19,8 @@ def get_session():
 # Fail hard if a nested write session is attempted
 @decorator
 def unit_of_work(func, *args, **kw):
+    # First establish the DB connection, if it doesnt' exits
+    # if engine is None:
     session = Session()
     try:
         result = func(*args, **kw)

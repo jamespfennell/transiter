@@ -9,6 +9,9 @@ _BaseFeedDao = daofactory._dao_factory(
     base_dao=daofactory._SystemChildEntityDao)
 
 
+# TODO: why are these DAOs different?
+
+
 class _FeedDao(_BaseFeedDao):
 
     def get_last_successful_update(self, feed_pri_key):
@@ -33,7 +36,8 @@ _BaseFeedUpdateDao = daofactory._dao_factory(
 
 
 class _FeedUpdateDao(_BaseFeedUpdateDao):
-
+    # TODO input should be a feed id
+    # TODO is this needed? Can a relationship be used instead?
     def list_updates_in_feed(self, feed):
         session = self.get_session()
         query = session.query(models.FeedUpdate).filter(

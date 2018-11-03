@@ -1,7 +1,7 @@
 from transiter.database.daos import daofactory
 from transiter.database import models
 
-
+# TODO put in the route dao or system dao ... or a relationship?
 class _RouteStatusDao(daofactory._BaseEntityDao):
 
     def get_all_in_system(self, system_id):
