@@ -1,5 +1,6 @@
 from transiter.database import connection
 from transiter.database import models
+from transiter.database.daos import route_dao, trip_dao, stop_dao
 
 
 def delete_from_db(session, entity):
@@ -52,121 +53,125 @@ def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_
     return list(id_to_db_entity.values())
 
 
+def _persist_trips(system_id, route_ids, new_trips):
 
-def sync_trips(data):
+    route_id_to_route_pk = route_dao.get_id_to_pk_map(system_id, route_ids)
+    route_ids = route_id_to_route_pk.keys()
 
+    old_trips = trip_dao.list_all_in_routes_by_pk(
+        list(route_id_to_route_pk.values()))
 
-
-    session = connection.get_session()
-
-    # TODO: why do I have all() here?
-    # TODO: filter on transit system
-    query = session.query(models.Route.route_id, models.Route.id) \
-        .filter(models.Route.route_id.in_(data['route_ids'])) \
-        .all()
-    route_id_to_route_pri_key = {route_id: route_pri_key for (route_id, route_pri_key) in query}
-
-    # TODO Investigate breaking this up into two queries
-    # Should be easy as can find the stop events using the trip_pri_keys?
-    query = session.query(
-        models.Trip, models.StopEvent) \
-        .filter(models.Trip.route_pri_key.in_(route_id_to_route_pri_key.values())) \
-        .filter(models.Trip.id == models.StopEvent.trip_pri_key) \
-        .filter(models.StopEvent.future == True) \
-        .all()
-
-
-    db_trips = set()
-    trip_id_to_db_stop_events = {}
-    for (trip, stop_event) in query:
-        db_trips.add(trip)
-        if trip.trip_id not in trip_id_to_db_stop_events:
-            trip_id_to_db_stop_events[trip.trip_id] = set()
-        trip_id_to_db_stop_events[trip.trip_id].add(stop_event)
-
-
-
-    trip_id_to_feed_stop_events = {trip['trip_id']: trip['stop_events'] for trip in data['trips']}
-    trips_to_persist = []
-    for trip in data['trips']:
-        if trip['route_id'] not in route_id_to_route_pri_key:
-            print('Unknown route {}; known ids: {}'.format(trip['route_id'],
-                                                           ', '.join(route_id_to_route_pri_key.keys())))
+    new_trips_to_persist = []
+    for new_trip in new_trips:
+        if new_trip['route_id'] not in route_ids:
+            # TODO: log this
+            # print('Unknown route {}; known ids: {}'.format(
+            #    trip['route_id'], ', '.join(route_ids)))
             continue
-        trip['route_pri_key'] = route_id_to_route_pri_key[trip['route_id']]
-        del trip['route_id']
-        del trip['stop_events']
-        trips_to_persist.append(trip)
-        #print(jsonutil.convert_for_http(trip))
+        new_trip['route_pri_key'] = route_id_to_route_pk[new_trip['route_id']]
+        del new_trip['route_id']
+        del new_trip['stop_events']
+        new_trips_to_persist.append(new_trip)
 
-    persisted_trips = sync(models.Trip, db_trips, trips_to_persist, ['trip_id'])
+    persisted_trips = sync(
+        models.Trip,
+        old_trips,
+        new_trips_to_persist,
+        ['route_pri_key', 'trip_id'])
+    return persisted_trips
+
+
+def _persist_stop_events(trip_pk, old_stop_events, new_stop_events,
+                         stop_id_alias_to_stop_id, stop_id_to_stop_pk):
+    unknown_stop_ids = set()
+    buggy_indices = set()
+    min_stop_sequence = None
+    for index, stop_event in enumerate(new_stop_events):
+
+        stop_id = stop_event['stop_id']
+        if stop_id not in stop_id_to_stop_pk:
+            if stop_id not in stop_id_alias_to_stop_id:
+                buggy_indices.add(index)
+                unknown_stop_ids.add(stop_id)
+                continue
+            stop_event['stop_id_alias'] = stop_id
+            stop_id = stop_id_alias_to_stop_id[stop_id]
+
+        stop_event['future'] = True
+        stop_event['stop_pri_key'] = stop_id_to_stop_pk[stop_id]
+        stop_event['trip_pri_key'] = trip_pk
+        del stop_event['stop_id']
+
+        this_stop_sequence = stop_event.get('stop_sequence')
+        if min_stop_sequence is None or min_stop_sequence > this_stop_sequence:
+            min_stop_sequence = this_stop_sequence
+
+    for index in buggy_indices:
+        new_stop_events[index] = None
+
+    archive_function = archive_function_factory(min_stop_sequence)
+
+    sync(
+        models.StopEvent,
+        old_stop_events,
+        new_stop_events,
+        ['stop_pri_key'],
+        delete_function=archive_function
+    )
+
+    return unknown_stop_ids
+
+
+#def sync_trips(system_id, route_ids, feed_trips)
+def sync_trips(data, system_id='nycsubway'):
+
+    # NOTE: the _persist_trips method detaches the stop_events from the feed
+    # trips so it is necessary to save the stop_events before invoking it.
+    trip_key_to_feed_stop_events = {
+        (trip['route_id'], trip['trip_id']): trip['stop_events']
+        for trip in data['trips']
+    }
+    persisted_trips = _persist_trips(system_id, data['route_ids'], data['trips'])
+
+    trip_pk_to_feed_stop_events = {}
+    for trip in persisted_trips:
+        key = (trip.route_id, trip.trip_id)
+        assert key in trip_key_to_feed_stop_events
+        trip_pk_to_feed_stop_events[trip.id] = trip_key_to_feed_stop_events[key]
+
+    trip_pk_to_db_stop_events = trip_dao.get_trip_pk_to_future_stop_events_map(
+        [trip.id for trip in persisted_trips])
 
     stop_ids = set()
     for trip in persisted_trips:
-        stop_ids.update([stop_event['stop_id']
-                         for stop_event
-                         in trip_id_to_feed_stop_events[trip.trip_id]])
-
-    # First pull in the stop aliases
-    query = session.query(models.StopAlias.stop_id_alias, models.StopAlias.stop_id) \
-        .filter(models.StopAlias.stop_id_alias.in_(stop_ids)) \
-        .all()
-    stop_id_alias_to_stop_id = {stop_id_alias: stop_id for (stop_id_alias, stop_id) in query}
-
-    # Now pull in the stops
+        stop_ids.update(
+            [stop_event['stop_id'] for stop_event
+                in trip_pk_to_feed_stop_events[trip.id]])
+    stop_id_alias_to_stop_id = stop_dao.get_stop_id_alias_to_stop_id_map(
+        system_id, stop_ids)
     stop_ids.update(stop_id_alias_to_stop_id.values())
-    query = session.query(models.Stop.stop_id, models.Stop.id) \
-        .filter(models.Stop.stop_id.in_(stop_ids)) \
-        .all()
-    stop_id_to_stop_pri_key = {stop_id: stop_pri_key for (stop_id, stop_pri_key) in query}
+    stop_id_to_stop_pri_key = stop_dao.get_id_to_pk_map(system_id, stop_ids)
 
-    unknown_stop_ids = set()
+    all_unknown_stop_ids = set()
     for trip in persisted_trips:
-        stop_events = trip_id_to_feed_stop_events[trip.trip_id]
-        db_stop_events = trip_id_to_db_stop_events.get(trip.trip_id, [])
+        unknown_stop_ids = _persist_stop_events(
+            trip.id,
+            trip_pk_to_feed_stop_events[trip.id],
+            trip_pk_to_db_stop_events.get(trip.id, []),
+            stop_id_alias_to_stop_id,
+            stop_id_to_stop_pri_key
+        )
+        all_unknown_stop_ids.update(unknown_stop_ids)
 
-        buggy_indices = set()
-        for index, stop_event in enumerate(stop_events):
-            stop_id = stop_event['stop_id']
-            if stop_id not in stop_id_to_stop_pri_key:
-                if stop_id not in stop_id_alias_to_stop_id:
-                    buggy_indices.add(index)
-                    unknown_stop_ids.add(stop_id)
-                    # print('Buggy: {}'.format(stop_id))
-                    continue
-                stop_event['stop_id_alias'] = stop_id
-                stop_id = stop_id_alias_to_stop_id[stop_id]
-
-            stop_event['future'] = True
-            stop_event['stop_pri_key'] = stop_id_to_stop_pri_key[stop_id]
-            stop_event['trip_pri_key'] = trip.id
-            del stop_event['stop_id']
-
-        for index in buggy_indices:
-            stop_events[index] = None
-
-        archive_function = archive_function_factory(trip.current_stop_sequence)
-
-        sync(models.StopEvent, db_stop_events, stop_events,
-                      ['stop_pri_key'],
-                      delete_function=archive_function)
-
-
-        #print('Updated trip {}'.format(trip.trip_id))
-        #print(trip.trip_id)
-        #print(db_stop_events)
-        #print(jsonify(trip_id_to_stop_events[trip.trip_id]))
-
-        #break;
-    #print([t1, t2, t3])
-    #print('4.5 {}'.format(time.time()))
+    """
+    TODO: log this
     if len(unknown_stop_ids) > 0:
         print('During parsing found {} unknown stop_ids: {}'.format(len(unknown_stop_ids), ', '.join(unknown_stop_ids)))
+    """
 
 
 def archive_function_factory(cutoff):
     def archive_function(session, stop_event):
-        #print(stop_event)
         if cutoff is not None and stop_event.sequence_index < cutoff:
             stop_event.future = False
         else:

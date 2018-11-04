@@ -10,6 +10,20 @@ _BaseRouteDao = daofactory._dao_factory(
 
 
 class RouteDao(_BaseRouteDao):
+
+    def get_id_to_pk_map(self, system_id, route_ids):
+        # TODO: need to input the transit system
+        id_to_pk = {route_id: None for route_id in route_ids}
+        session = self.get_session()
+        query = (
+            session.query(models.Route.route_id, models.Route.id)
+            .filter(models.Route.route_id.in_(route_ids))
+            .all()
+        )
+        for (id_, pk) in query:
+            id_to_pk[id_] = pk
+        return id_to_pk
+
     def get_active_stop_ids(self, route_pri_key):
         session = self.get_session()
         query = (

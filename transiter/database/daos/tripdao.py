@@ -33,5 +33,29 @@ class _TripDao(_BaseTripDao):
         except NoResultFound:
             return None
 
+    def list_all_in_routes_by_pk(self, route_pks):
+        session = self.get_session()
+        query = (
+            session.query(models.Trip)
+            .filter(models.Trip.route_pri_key.in_(route_pks))
+        )
+        for row in query:
+            yield row
+
+    def get_trip_pk_to_future_stop_events_map(self, trip_pks):
+        session = self.get_session()
+        query = (
+            session.query(models.StopEvent)
+            .filter(models.StopEvent.trip_pri_key.in_(trip_pks))
+            .filter(models.StopEvent.future == True)
+            .order_by(models.StopEvent.sequence_index)
+            .all()
+        )
+        result = {trip_pk: [] for trip_pk in trip_pks}
+        for row in query:
+            result[row.trip_pri_key].append(row)
+        return result
+
+
 
 trip_dao = _TripDao()

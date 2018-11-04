@@ -6,10 +6,6 @@ Next 1 step, then v0.1 feature complete:
 
 
 1. Full unittest coverage for 
-   - servicepatternmanager
-   
-   Then
-
    - syncutil - refactor and test
    
    - NYC transit GTFS updater
@@ -26,10 +22,6 @@ Should refactor these repr out of the models and into the new model they
 SHORT_REPR_LIST = ['pk']
 SHORT_REPR_DICT = {'route_id': 'id'}
    
-2. Move devtest to the testing directory as rtrconsistencytest
-3. Move rebuild.py out of the package
-4. Delete __main__.py?
-
 
 1. With good test
     coverage can then do the DB renaming plan easily as failures

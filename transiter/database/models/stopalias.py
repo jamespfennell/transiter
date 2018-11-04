@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 
 from .base import Base, model_eq
 
+# TODO: should this be StopIdAlias? I think so
 
 class StopAlias(Base):
     __tablename__ = 'stop_alias'

@@ -5,7 +5,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from transiter.database import creator
 from transiter.database import connection
 from transiter.database.daos import route_dao, feed_update_dao, stop_event_dao, service_pattern_dao
-from transiter.database.daos import system_dao, trip_dao, feed_dao, route_status_dao
+from transiter.database.daos import system_dao, trip_dao, feed_dao, route_status_dao, stop_dao
 from transiter.database import models
 import os
 
@@ -54,6 +54,9 @@ class TestDbConstants:
 
     SERVICE_PATTERN_ONE_PK = 91
     SERVICE_PATTERN_TWO_PK = 92
+
+    STOP_ID_ALIAS_ONE = '101'
+    STOP_ID_ALIAS_TWO = '102'
 
     EARLIEST_TERMINAL_TIME = '2018-11-02 10:00:30'
     MIDDLE_TERMINAL_TIME = '2018-11-02 11:00:20'
@@ -221,6 +224,51 @@ class TestDaos(unittest.TestCase, TestDbConstants):
 
         self.assertEqual(None, db_trip)
 
+    def test__trip_dao__list_all_in_routes_by_pk(self):
+        expected = [self.trip_one, self.trip_two, self.trip_three]
+
+        actual = list(trip_dao.list_all_in_routes_by_pk(
+            [self.ROUTE_ONE_PK]
+        ))
+
+        self.assertListEqual(expected, actual)
+
+    def test__trip_dao__list_all_in_routes_by_pk__no_trips(self):
+        expected = []
+
+        actual = list(trip_dao.list_all_in_routes_by_pk(
+            [self.ROUTE_TWO_PK, self.ROUTE_THREE_PK]
+        ))
+
+        self.assertListEqual(expected, actual)
+
+    def test_get_trip_pk_to_future_stop_events_map(self):
+        trip_pks_to_stop_pks = {
+            self.TRIP_ONE_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK],
+            self.TRIP_TWO_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_FOUR_PK],
+            self.TRIP_THREE_PK: [self.STOP_ONE_PK, self.STOP_FOUR_PK],
+        }
+
+        data = trip_dao.get_trip_pk_to_future_stop_events_map(
+            trip_pks_to_stop_pks.keys()
+        )
+
+        for trip_pk, stop_events in data.items():
+            stop_pks = [stop_event.stop_pri_key for stop_event in stop_events]
+            self.assertEqual(trip_pks_to_stop_pks[trip_pk], stop_pks)
+
+    def test__route_dao__get_id_to_pk_map(self):
+        expected = {
+            self.ROUTE_ONE_ID: self.ROUTE_ONE_PK,
+            self.ROUTE_TWO_ID: self.ROUTE_TWO_PK,
+            self.ROUTE_THREE_ID: self.ROUTE_THREE_PK,
+            'unknown': None,
+        }
+
+        actual = route_dao.get_id_to_pk_map(self.SYSTEM_ONE_ID, expected.keys())
+
+        self.assertEqual(expected, actual)
+
     def test__route_dao__get_active_stop_ids(self):
         db_stop_ids = route_dao.get_active_stop_ids(self.ROUTE_ONE_PK)
 
@@ -319,6 +367,28 @@ class TestDaos(unittest.TestCase, TestDbConstants):
 
         self.assertDictEqual(expected, actual)
 
+    def test__stop_dao__get_stop_id_alias_to_stop_id_map(self):
+        expected = {
+            self.STOP_ID_ALIAS_ONE: self.STOP_ONE_ID,
+            self.STOP_ID_ALIAS_TWO: self.STOP_TWO_ID,
+            'unknown': None,
+        }
+
+        actual = stop_dao.get_stop_id_alias_to_stop_id_map(
+            self.SYSTEM_ONE_ID, expected.keys())
+
+        self.assertDictEqual(expected, actual)
+
+    def test__stop_dao__get_id_to_pk_map(self):
+        expected = {
+            self.STOP_ONE_ID: self.STOP_ONE_PK,
+            self.STOP_TWO_ID: self.STOP_TWO_PK,
+            'unknown': None,
+        }
+
+        actual = stop_dao.get_id_to_pk_map(self.SYSTEM_ONE_ID, expected.keys())
+
+        self.assertDictEqual(expected, actual)
 
     def _compare_datetime_to_str(self, dt, st):
         self.assertEqual(str(dt)[:-6], st)

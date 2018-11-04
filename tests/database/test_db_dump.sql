@@ -19,6 +19,10 @@ INSERT INTO stops (id, stop_id, system_id) VALUES
     (:stop_four_pk,  :stop_four_id,  :system_one_id),
     (:stop_five_pk,  :stop_five_id,  :system_one_id);
 
+INSERT INTO stop_alias (stop_id_alias, stop_id, system_id) VALUES
+    (:stop_id_alias_one, :stop_one_id, :system_one_id),
+    (:stop_id_alias_two, :stop_two_id, :system_one_id);
+
 INSERT INTO stop_events (trip_pri_key, stop_pri_key, sequence_index, arrival_time) VALUES
     (:trip_one_pk,   :stop_one_pk,   1, '2018-11-02 10:00:00'),
     (:trip_one_pk,   :stop_two_pk,   2, '2018-11-02 10:00:10'),
