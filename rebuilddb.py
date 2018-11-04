@@ -1,5 +1,5 @@
-from .database import creator
-from .services import systemservice
+from transiter.database import creator
+from transiter.services import systemservice
 
 
 if __name__ == '__main__':

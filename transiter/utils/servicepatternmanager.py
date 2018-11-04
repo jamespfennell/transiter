@@ -35,17 +35,17 @@ def construct_sps_from_gtfs_static_data(
     route_id_to_trips = {
         route_id: set() for route_id in route_id_to_route.keys()}
     for trip in trips:
+        # TODO: what happens if this is not set?
         if trip.direction_id:
             trip.reverse()
 
-        route_id_to_trips[trip.route_id].add(trip)
+        if trip.route_id in route_id_to_trips:
+            route_id_to_trips[trip.route_id].add(trip)
 
     # TODO: invert the for loops here for an easy optimization
     # Better: split off a new method construct from trips and settings
     for route_id, trips in route_id_to_trips.items():
-        route = route_id_to_route.get(route_id, None)
-        if route is None:
-            continue
+        route = route_id_to_route[route_id]
         for sp_setting in route_sp_settings:
             name = sp_setting.get('name', None)
             default = sp_setting.get('default', False)
@@ -67,6 +67,7 @@ def construct_sps_from_gtfs_static_data(
                 route.regular_service_pattern = service_pattern
 
 
+# TODO rename this method
 def _construct_for_static_trips(trips, stop_id_to_stop):
     path_lists = set()
     for trip in trips:

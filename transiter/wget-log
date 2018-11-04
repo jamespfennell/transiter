@@ -1,11 +1,0 @@
---2018-09-15 13:17:07--  http://datamine.mta.info/mta_esi.php?key=18f496b0ab3ae1fbb1aa471e63377ce4
-Resolving datamine.mta.info (datamine.mta.info)... 50.17.212.33, 54.243.220.126
-Connecting to datamine.mta.info (datamine.mta.info)|50.17.212.33|:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: unspecified [application/force-download]
-Saving to: ‘l2.gtfs’
-
-l2.gtfs                                                [<=>                                                                                                            ]       0  --.-KB/s               l2.gtfs                                                [ <=>                                                                                                           ]  98.11K  --.-KB/s    in 0.05s   
-
-2018-09-15 13:17:08 (1.79 MB/s) - ‘l2.gtfs’ saved [100460]
-

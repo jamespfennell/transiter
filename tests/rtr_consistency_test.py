@@ -1,7 +1,7 @@
-from .services import routeservice
-from .services import stopservice
-from .services import systemservice
-from .services import exceptions
+from transiter.services import routeservice
+from transiter.services import stopservice
+from transiter.services import systemservice
+from transiter.services import exceptions
 
 from transiter.scheduler import client
 #print(jsonify(systemservice.get('nycsubway')))

@@ -8,6 +8,20 @@ import itertools
 
 
 class TestServicePatternManager(unittest.TestCase):
+    def setUp(self):
+
+        self.trip_one = gtfsstaticutil.StaticTrip()
+        self.trip_one.stop_ids = []
+        self.trip_one.route_id = 'C'
+        self.trip_two = gtfsstaticutil.StaticTrip()
+        self.trip_two.stop_ids = ['1', '2']
+        self.trip_two.route_id = 'A'
+        self.trip_two.direction_id = False
+        self.trip_three = gtfsstaticutil.StaticTrip()
+        self.trip_three.stop_ids = ['3', '4']
+        self.trip_three.route_id = 'A'
+        self.trip_three.direction_id = True
+
     @mock.patch('transiter.utils.servicepatternmanager.graphutils')
     def test_path_lists_to_sorted_graph__empty_list(self, graphutils):
         """[Service pattern manager] Empty path list to sorted graph"""
@@ -140,13 +154,7 @@ class TestServicePatternManager(unittest.TestCase):
     @mock.patch('transiter.utils.servicepatternmanager._path_lists_to_sorted_graph')
     @mock.patch('transiter.utils.servicepatternmanager._sorted_graph_to_service_pattern')
     def test_construct_for_static_trips(self, _sg_to_sp, _pls_to_sg):
-        trip_one = gtfsstaticutil.StaticTrip()
-        trip_one.stop_ids = []
-        trip_two = gtfsstaticutil.StaticTrip()
-        trip_two.stop_ids = ['1', '2']
-        trip_three = gtfsstaticutil.StaticTrip()
-        trip_three.stop_ids = ['3', '4']
-        trips = [trip_one, trip_two, trip_three]
+        trips = [self.trip_one, self.trip_two, self.trip_three]
 
         stop_id_to_stop = mock.MagicMock()
 
@@ -164,8 +172,43 @@ class TestServicePatternManager(unittest.TestCase):
         _sg_to_sp.assert_called_once_with(sorted_graph, stop_id_to_stop)
 
 
-    def test_construct_sps_from_gtfa_static_date(self):
-        pass
+    @mock.patch('transiter.utils.servicepatternmanager._filter_trips_by_conditions')
+    @mock.patch('transiter.utils.servicepatternmanager._construct_for_static_trips')
+    def test_construct_sps_from_gtfs_static_date(self, _filter_trips, _construct):
+
+        gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
+        route = mock.MagicMock()
+        gtfs_static_parser.route_id_to_route = {
+            'A': route
+        }
+        gtfs_static_parser.trip_id_to_trip = {
+            '1': self.trip_one,
+            '2': self.trip_two,
+            '3': self.trip_three,
+        }
+        gtfs_static_parser.stop_id_to_stop = mock.MagicMock()
+
+        conditions = mock.MagicMock()
+        route_sp_settings = [
+            {
+                'name': 'Name 1',
+                'default': True,
+            },
+            {
+                'name': 'Name 2',
+                'regular': True,
+                'conditions': conditions
+            }
+        ]
+
+        servicepatternmanager.construct_sps_from_gtfs_static_data(
+            gtfs_static_parser, route_sp_settings)
+
+        self.assertEqual(self.trip_two.stop_ids, ['1', '2'])
+        self.assertEqual(self.trip_three.stop_ids, ['4', '3'])
+        # TODO add more assertions here
+        # Test the names were copied over
+        # Test that the right trips were used to construct by filtering in one
 
 class TestTripsFilter(unittest.TestCase):
     @mock.patch('transiter.utils.servicepatternmanager._TripMatcher')
