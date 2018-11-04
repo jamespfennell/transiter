@@ -21,7 +21,6 @@ ORDER BY sp_v.position;
 """
 
 
-# Todo just input the gtfsparser and rename construct_sps_from_gtfs_static_data
 def construct_sps_from_gtfs_static_data(
         gtfs_static_parser,
         route_sp_settings=None,
@@ -66,12 +65,6 @@ def construct_sps_from_gtfs_static_data(
                 route.default_service_pattern = service_pattern
             if regular:
                 route.regular_service_pattern = service_pattern
-
-
-def _construct_sp_from_stop_id_lists(stop_id_lists, stop_id_to_stop):
-    sorted_graph = _path_lists_to_sorted_graph(stop_id_lists)
-    service_pattern = _sorted_graph_to_service_pattern(sorted_graph, stop_id_to_stop)
-    return service_pattern
 
 
 def _construct_for_static_trips(trips, stop_id_to_stop):
@@ -227,79 +220,4 @@ class _TripMatcher:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-yaml = """
-
-route_service_patterns:
-
-   - name: weekday_night
-     usual: true
-     threshold: 0.05
-     conditions:
-       weekday: true
-       one_of:
-         starts_earlier_than: 7
-         starts_later_than: 20
-         
-   - name: weekday_day
-     usual: true
-     threshold: 0.05
-     conditions:
-       weekday: true
-       starts_later_than: 7
-       starts_earlier_than: 20
-         
-         
-         
-route_service_patterns:
- - weekday_night:
-   - usual: true
-   - threshold: 0.05
-   - conditions:
-     - weekday 
-     - one_of:
-       - starts_earlier_than: 7
-       - starts_later_than: 20
-route_service_patterns:
- - weekday_night:
-   - usual: true
-   - threshold: 0.05
-   - conditions:
-     - weekday 
-     - one_of:
-       - starts_earlier_than: 7
-       - starts_later_than: 20
-   
-    - weekday_day:
-        - weekday
-        - starts_later_than: 7
-        - starts_earlier_than: 20
-    - weekend:
-        - weekend
-    - all_times:
-        - default: true
-        
-        
-        or ends_earlier_than
-            -7
-        -starts_later_than
-            -21
-"""
-
-"""
-route_id: L
-
-all_times_matcher = ServicePatternTripsMatcher('all_times', 0.05, all_times)
-
-"""
 

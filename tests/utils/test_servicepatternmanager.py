@@ -137,7 +137,35 @@ class TestServicePatternManager(unittest.TestCase):
         graph.cast_to_path.assert_not_called()
         graphutils.topologicalsort.sort.assert_called_with(graph)
 
+    @mock.patch('transiter.utils.servicepatternmanager._path_lists_to_sorted_graph')
+    @mock.patch('transiter.utils.servicepatternmanager._sorted_graph_to_service_pattern')
+    def test_construct_for_static_trips(self, _sg_to_sp, _pls_to_sg):
+        trip_one = gtfsstaticutil.StaticTrip()
+        trip_one.stop_ids = []
+        trip_two = gtfsstaticutil.StaticTrip()
+        trip_two.stop_ids = ['1', '2']
+        trip_three = gtfsstaticutil.StaticTrip()
+        trip_three.stop_ids = ['3', '4']
+        trips = [trip_one, trip_two, trip_three]
 
+        stop_id_to_stop = mock.MagicMock()
+
+        sorted_graph = mock.MagicMock()
+        _pls_to_sg.return_value = sorted_graph
+        service_pattern = mock.MagicMock()
+        _sg_to_sp.return_value = service_pattern
+
+        actual = servicepatternmanager._construct_for_static_trips(
+            trips, stop_id_to_stop)
+
+        self.assertEqual(service_pattern, actual)
+
+        _pls_to_sg.assert_called_once_with({('1', '2'), ('3', '4')})
+        _sg_to_sp.assert_called_once_with(sorted_graph, stop_id_to_stop)
+
+
+    def test_construct_sps_from_gtfa_static_date(self):
+        pass
 
 class TestTripsFilter(unittest.TestCase):
     @mock.patch('transiter.utils.servicepatternmanager._TripMatcher')
