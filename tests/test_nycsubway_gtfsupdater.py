@@ -365,8 +365,78 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
 
         self.assertEqual(trip, trip_copy)
 
+    def test_generate_trip_start_time(self):
+        second = 30
+        minute = 23
+        hour = 3
+        day = 13
+        month = 2
+        year = 2017
+        start_date = '{:04d}{:02d}{:02d}'.format(year, month, day)
+        trip_id = '{:06d}_IGNORED'.format(((hour*3600+minute*60+second)*10)//6)
+        expected = gtfsupdater.eastern.localize(
+            datetime.datetime(year, month, day, hour, minute, second)
+        )
 
-class TesGtfsRealtimeCleaner(unittest.TestCase):
+        actual = gtfsupdater.generate_trip_start_time(trip_id, start_date)
+
+        self.assertEqual(expected, actual)
+
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.generate_trip_start_time')
+    def test_generate_trip_uid(self, generate_trip_start_time):
+        trip_id = mock.MagicMock()
+        start_date = mock.MagicMock()
+        route_id = 'A'
+        direction = 'B'
+        start_timestamp = 12345
+        dt = mock.MagicMock()
+        dt.timestamp.return_value = start_timestamp
+        generate_trip_start_time.return_value = dt
+
+        expected = '{}{}{}'.format(route_id, direction, start_timestamp)
+
+        actual = gtfsupdater.generate_trip_uid(
+            trip_id, start_date, route_id, direction)
+
+        self.assertEqual(expected, actual)
+
+        generate_trip_start_time.assert_called_once_with(trip_id, start_date)
+        dt.timestamp.assert_called_once_with()
+
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.generate_trip_uid')
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.generate_trip_start_time')
+    def test_transform_trip_data(self, generate_trip_start_time, generate_trip_uid):
+        trip_id = mock.MagicMock()
+        start_date = mock.MagicMock()
+        route_id = mock.MagicMock()
+        new_trip_id = mock.MagicMock()
+        start_time = mock.MagicMock()
+        trip = {
+            'direction_id': True,
+            'trip_id': trip_id,
+            'start_date': start_date,
+            'route_id': route_id
+        }
+        expected_trip = {
+            'direction_id': True,
+            'trip_id': new_trip_id,
+            'start_date': start_date,
+            'start_time': start_time,
+            'route_id': route_id
+        }
+
+        generate_trip_start_time.return_value = start_time
+        generate_trip_uid.return_value = new_trip_id
+
+        trip['start_time'] = start_time
+        trip['trip_id'] = new_trip_id
+
+        gtfsupdater._NycSubwayGtfsCleaner.transform_trip_data(trip)
+
+        self.assertDictEqual(expected_trip, trip)
+
+
+class TestGtfsRealtimeCleaner(unittest.TestCase):
 
     def test_clean_all_good(self):
         """[GTFS Realtime cleaner] All good"""

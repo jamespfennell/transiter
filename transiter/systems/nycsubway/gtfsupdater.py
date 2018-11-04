@@ -204,13 +204,15 @@ def timestamp_to_datetime(timestamp):
 # TODO: move this into the single cleaner that calls it
 eastern = pytz.timezone('US/Eastern')
 def generate_trip_start_time(trip_id, start_date):
-    seconds_since_midnight = (int(trip_id[:trip_id.find('_')])//100)*60
+    # TODO: double check the following hocus pocus
+    seconds_since_midnight = (int(trip_id[:trip_id.find('_')])//10)*6
     second = seconds_since_midnight % 60
-    minute = (seconds_since_midnight // 60)%60
+    minute = (seconds_since_midnight // 60) % 60
     hour = (seconds_since_midnight // 3600)
     year = int(start_date[0:4])
     month = int(start_date[4:6])
     day = int(start_date[6:8])
+    print(year, month, day, hour, minute, second)
     return eastern.localize(datetime.datetime(year, month, day, hour, minute, second))
 
 # TODO: move this into the single cleaner that calls it
