@@ -6,9 +6,9 @@ Next 1 step, then v0.1 feature complete:
 
 
 1. Full unittest coverage for 
-   - syncutil - refactor and test
    
    - NYC transit GTFS updater
+   
    - flaskapp (rename to app?)
    - stop service (needs refactoring to take the filtering out)
    - system service (ie., import)
@@ -19,7 +19,7 @@ Should refactor these repr out of the models and into the new model they
     -> then can do an easy test of the behaviour
     -> also test the equality/inequality and take that test out of dao test setup
     
-SHORT_REPR_LIST = ['pk']
+SHORT_REPR_SET = {'pk'}
 SHORT_REPR_DICT = {'route_id': 'id'}
    
 

@@ -88,12 +88,9 @@ class _NycSubwayGtfsCleaner:
             self.fix_route_ids,
             self.delete_old_scheduled_trips,
             self.delete_first_stop_event_slow_updating_trips,
-            self.invert_e_train_direction_in_trip,
             self.delete_trips_with_route_id_ss
         ]
         self.stop_event_cleaners = [
-            #self.transform_stop_ids,
-            self.invert_e_train_direction_in_stop_event,
             self.invert_j_train_direction_in_bushwick
         ]
         self.data = None
@@ -162,34 +159,19 @@ class _NycSubwayGtfsCleaner:
     @staticmethod
     def delete_first_stop_event_slow_updating_trips(trip):
         if len(trip['stop_events'])>1:
+            if trip['last_update_time'] is None:
+                return True
             first_stop_time = trip['stop_events'][0]['arrival_time']
             if first_stop_time is None:
                 first_stop_time = trip['stop_events'][0]['departure_time']
-            if trip['last_update_time'] is None:
-                return True
             if first_stop_time > trip['last_update_time']:
                 return True
+            # TODO: make this the feed time -> should be deterministic
             current_time = timestamp_to_datetime(int(time.time()))
             seconds_since_update = (current_time - trip['last_update_time']).total_seconds()
+            print(seconds_since_update)
             if seconds_since_update > 15:
                 trip['stop_events'].pop(0)
-        return True
-
-    # TODO: remove
-    @staticmethod
-    def invert_e_train_direction_in_trip(trip):
-        if trip['route_id'] == 'E':
-            trip['direction'] = invert_direction(trip['direction'])
-        return True
-
-    @staticmethod
-    def transform_stop_ids(stop_event, trip):
-        direction = stop_event['stop_id'][3:4]
-        stop_event.update({
-            'stop_id': stop_event['stop_id'][0:3],
-            'direction': direction,
-            'future': True,
-        })
         return True
 
     # TODO: only apply this in the JZ feed
@@ -206,13 +188,6 @@ class _NycSubwayGtfsCleaner:
         else:
             direction = 'N'
         stop_event['stop_id'] = stop_id_alias[:3] + direction
-        return True
-
-    # TODO: remove
-    @staticmethod
-    def invert_e_train_direction_in_stop_event(stop_event, trip):
-        if trip['route_id'] == 'E':
-            stop_event['direction'] = invert_direction(stop_event['direction'])
         return True
 
     @staticmethod
@@ -243,10 +218,4 @@ def generate_trip_uid(trip_id, start_date, route_id, direction):
     return route_id + direction + str(int(generate_trip_start_time(trip_id, start_date).timestamp()))
 
 
-# TODO: fix this up. Maybe move to the constants section somehow?
-def invert_direction(direction):
-    if direction == 'N':
-        return 'S'
-    else:
-        return 'N'
 

@@ -1,7 +1,9 @@
+import copy
 import datetime
 import unittest
 from unittest import mock
 from transiter.systems.nycsubway import gtfsupdater
+from transiter.database import models
 
 
 class TestMergeInExtensionData(unittest.TestCase):
@@ -205,19 +207,223 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
 
         self.assertTrue(response)
 
-    def test_transform_stop_ids(self):
-        """[NYC Subway cleaner] Tranform stop IDs in stop time updates"""
-        stop_event = {
-            'stop_id': 'ABCN'
-        }
-        expected_output = {
-            'stop_id': 'ABC',
-            'direction': 'N',
-            'future': True
-        }
+    def test_invert_j_train_direction_in_bushwick(self):
+        """[NYC Subway cleaner] Invert J train direction in Bushwick N->S"""
 
-        response = gtfsupdater._NycSubwayGtfsCleaner.transform_stop_ids(
-            stop_event, {})
+        stop_event = {'stop_id': 'M12N'}
+        trip = {'route_id': 'J'}
+
+        gtfsupdater._NycSubwayGtfsCleaner.invert_j_train_direction_in_bushwick(
+            stop_event, trip)
+
+        self.assertEqual(stop_event['stop_id'], 'M12S')
+
+    def test_invert_j_train_direction_in_bushwick_two(self):
+        """[NYC Subway cleaner] Invert J train direction in Bushwick S->N"""
+
+        stop_event = {'stop_id': 'M12S'}
+        trip = {'route_id': 'J'}
+
+        gtfsupdater._NycSubwayGtfsCleaner.invert_j_train_direction_in_bushwick(
+            stop_event, trip)
+
+        self.assertEqual(stop_event['stop_id'], 'M12N')
+
+    def test_invert_j_train_direction_in_bushwick_irrelevant_stop(self):
+        """[NYC Subway cleaner] Invert J train direction in Bushwick, irrelevant stop"""
+
+        stop_event = {'stop_id': 'M20N'}
+        trip = {'route_id': 'J'}
+
+        gtfsupdater._NycSubwayGtfsCleaner.invert_j_train_direction_in_bushwick(
+            stop_event, trip)
+
+        self.assertEqual(stop_event['stop_id'], 'M20N')
+
+    def test_invert_j_train_direction_in_bushwick_irrelevant_route(self):
+        """[NYC Subway cleaner] Invert J train direction in Bushwick, irrelevant route"""
+
+        stop_event = {'stop_id': 'M12N'}
+        trip = {'route_id': 'A'}
+
+        gtfsupdater._NycSubwayGtfsCleaner.invert_j_train_direction_in_bushwick(
+            stop_event, trip)
+
+        self.assertEqual(stop_event['stop_id'], 'M12N')
+
+    def test_delete_trips_with_route_id_ss(self):
+        """[NYC Subway cleaner] Delete trips with route_id=SS"""
+
+        trip = {'route_id': 'SS'}
+
+        response = gtfsupdater._NycSubwayGtfsCleaner.delete_trips_with_route_id_ss(trip)
+
+        self.assertFalse(response)
+
+    def test_delete_trips_with_route_id_ss_no_delete(self):
+        """[NYC Subway cleaner] Delete trips with route_id=SS - no delete case"""
+
+        trip = {'route_id': 'SI'}
+
+        response = gtfsupdater._NycSubwayGtfsCleaner.delete_trips_with_route_id_ss(trip)
 
         self.assertTrue(response)
-        self.assertDictEqual(stop_event, expected_output)
+
+    def test_delete_first_stop_event_slow_updating_trips__one_stop_id(self):
+        """[NYC Subway cleaner] Delete slow updating trips - one stop case"""
+        trip = {
+            'stop_events': ['A']
+        }
+        trip_copy = copy.deepcopy(trip)
+
+        gtfsupdater._NycSubwayGtfsCleaner.delete_first_stop_event_slow_updating_trips(
+            trip)
+
+        self.assertEqual(trip, trip_copy)
+
+    def test_delete_first_stop_event_slow_updating_trips__no_update_time(self):
+        """[NYC Subway cleaner] Delete slow updating trips - no update time"""
+        trip = {
+            'last_update_time': None,
+            'stop_events': [1, 2]
+        }
+        trip_copy = copy.deepcopy(trip)
+
+        gtfsupdater._NycSubwayGtfsCleaner.delete_first_stop_event_slow_updating_trips(
+            trip)
+
+        self.assertEqual(trip, trip_copy)
+
+    DATETIME_1 = datetime.datetime(2018, 11, 5, 13, 0, 0)
+    DATETIME_2 = datetime.datetime(2018, 11, 5, 13, 0, 10)
+    DATETIME_3 = datetime.datetime(2018, 11, 5, 13, 0, 20)
+    DATETIME_4 = datetime.datetime(2018, 11, 5, 13, 0, 30)
+
+    def test_delete_first_stop_event_slow_updating_trips__first_stop_in_the_future(
+            self):
+        """[NYC Subway cleaner] Delete slow updating trips - first stop in the future"""
+        trip = {
+            'last_update_time': self.DATETIME_1,
+            'stop_events': [
+                {
+                    'arrival_time': None,
+                    'departure_time': self.DATETIME_4
+                },
+                'Second'
+            ]
+        }
+        trip_copy = copy.deepcopy(trip)
+
+        gtfsupdater._NycSubwayGtfsCleaner.delete_first_stop_event_slow_updating_trips(
+            trip)
+
+        self.assertEqual(trip, trip_copy)
+
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.timestamp_to_datetime')
+    def test_delete_first_stop_event_slow_updating_trips__updated_recently(
+            self, timestamp_to_datetime):
+        """[NYC Subway cleaner] Delete slow updating trips - first stop in the future"""
+        trip = {
+            'last_update_time': self.DATETIME_1,
+            'stop_events': [
+                {
+                    'arrival_time': None,
+                    'departure_time': self.DATETIME_4
+                },
+                'Second'
+            ]
+        }
+        trip_copy = copy.deepcopy(trip)
+        timestamp_to_datetime.return_value = self.DATETIME_2
+
+        gtfsupdater._NycSubwayGtfsCleaner.delete_first_stop_event_slow_updating_trips(
+            trip)
+
+        self.assertEqual(trip, trip_copy)
+
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.timestamp_to_datetime')
+    def test_delete_first_stop_event_slow_updating_trips__stale(
+            self, timestamp_to_datetime):
+        """[NYC Subway cleaner] Delete slow updating trips - stale data"""
+        trip = {
+            'last_update_time': self.DATETIME_2,
+            'stop_events': [
+                {
+                    'arrival_time': self.DATETIME_1,
+                    'departure_time': self.DATETIME_1
+                },
+                'Second'
+            ]
+        }
+        trip_copy = copy.deepcopy(trip)
+        timestamp_to_datetime.return_value = self.DATETIME_4
+
+        gtfsupdater._NycSubwayGtfsCleaner.delete_first_stop_event_slow_updating_trips(
+            trip)
+
+        trip_copy['stop_events'].pop(0)
+
+        self.assertEqual(trip, trip_copy)
+
+
+class TesGtfsRealtimeCleaner(unittest.TestCase):
+
+    def test_clean_all_good(self):
+        """[GTFS Realtime cleaner] All good"""
+        gtfs_cleaner = gtfsupdater._NycSubwayGtfsCleaner()
+
+        trip_cleaners = [mock.MagicMock() for __ in range(3)]
+        gtfs_cleaner.trip_cleaners = trip_cleaners
+        for cleaner in trip_cleaners:
+            cleaner.return_value = True
+        stop_event_cleaners = [mock.MagicMock() for __ in range(3)]
+        gtfs_cleaner.stop_event_cleaners = stop_event_cleaners
+
+        stop_event = mock.MagicMock()
+        trip = {
+            'stop_events': [
+                stop_event
+            ]
+        }
+        data = {'trips': [trip]}
+        old_data = copy.deepcopy(data)
+
+        gtfs_cleaner.clean(data)
+
+        self.assertDictEqual(old_data, data)
+        for cleaner in trip_cleaners:
+            cleaner.assert_called_once_with(trip)
+        for cleaner in stop_event_cleaners:
+            cleaner.assert_called_once_with(stop_event, trip)
+
+    def test_clean_buggy_trip(self):
+        """[GTFS Realtime cleaner] Buggy trip"""
+        gtfs_cleaner = gtfsupdater._NycSubwayGtfsCleaner()
+
+        trip_cleaners = [mock.MagicMock() for __ in range(3)]
+        gtfs_cleaner.trip_cleaners = trip_cleaners
+        for cleaner in trip_cleaners:
+            cleaner.return_value = True
+        trip_cleaners[1].return_value = False
+        stop_event_cleaners = [mock.MagicMock() for __ in range(3)]
+        gtfs_cleaner.stop_event_cleaners = stop_event_cleaners
+
+        stop_event = mock.MagicMock()
+        trip = {
+            'stop_events': [
+                stop_event
+            ]
+        }
+        data = {'trips': [trip]}
+        expected_data = {'trips': []}
+
+        gtfs_cleaner.clean(data)
+
+        self.assertDictEqual(expected_data, data)
+        trip_cleaners[0].assert_called_once_with(trip)
+        trip_cleaners[1].assert_called_once_with(trip)
+        trip_cleaners[2].assert_not_called()
+        for cleaner in stop_event_cleaners:
+            cleaner.assert_not_called()
+
+
