@@ -56,6 +56,50 @@ class DirectionNameMatcher:
 
 
 import time
+
+
+class StopEventFilter:
+
+    def __init__(self):
+        self._count = {}
+        self._route_ids_so_far = {}
+        pass
+
+    def _add_direction_name(self, direction_name):
+        if direction_name in self._count:
+            return
+        self._count[direction_name] = 0
+        self._route_ids_so_far[direction_name] = set()
+
+    def exclude(self, stop_event, direction_name):
+        self._add_direction_name(direction_name)
+
+        if stop_event.departure_time is None:
+            this_time = stop_event.arrival_time.timestamp()
+        else:
+            this_time = stop_event.departure_time.timestamp()
+
+        self._count[direction_name] += 1
+        # If this prediction should already have passed
+        # TODO rethink this
+        if this_time < time.time():
+            return True
+
+        # Rules for whether to append or not go here
+        # If any of these condition are met the stop event will be appended
+        # If there are less that 4 trip in this direction so far
+        condition1 = (self._count[direction_name] <= 4)
+        # If this trip is coming within 5 minutes
+        condition2 = (this_time - time.time() <= 600)
+        # If not trips of this route have been added so far
+        condition3 = (stop_event.trip.route.route_id not in self._route_ids_so_far[direction_name])
+
+        self._route_ids_so_far[direction_name] \
+            .add(stop_event.trip.route.route_id)
+        return (not (condition1 or condition2 or condition3))
+
+
+
 def get_in_system_by_id(system_id, stop_id):
 
     # TODO make this more robust for stops without direction names
@@ -65,59 +109,20 @@ def get_in_system_by_id(system_id, stop_id):
         'usual_routes': service_pattern_dao.get_default_trips_at_stops(
             [stop_id])[stop_id]
     })
-    direction_name_rules = stop.direction_name_rules
-    direction_name_matcher = DirectionNameMatcher(direction_name_rules)
-    count = {None: 0}
-    route_ids_so_far = {None: set()}
-    direction_names_response = []
-    for direction_name in direction_name_matcher.all_names():
-        direction_names_response.append(direction_name)
-        count[direction_name] = 0
-        route_ids_so_far[direction_name] = set()
-    response['direction_names'] = direction_names_response
+    stop_event_filter = StopEventFilter()
+    direction_name_matcher = DirectionNameMatcher(stop.direction_name_rules)
+    response['direction_names'] = list(direction_name_matcher.all_names())
 
-    # TODO(use relationship instead and join)
+    # TODO(use relationship instead and join?)
     stop_events = stop_event_dao.get_by_stop_pri_key(stop.id)
     #print(len(list(stop_events)))
     stop_event_responses = []
     for stop_event in stop_events:
 
         direction_name = direction_name_matcher.match(stop, stop_event)
-        #print(direction_name)
-        if stop_event.departure_time is None:
-            this_time = stop_event.arrival_time.timestamp()
-        else:
-            this_time = stop_event.departure_time.timestamp()
 
-        count[direction_name] += 1
-        # If this prediction should already have passed
-        # TODO rethink this
-        if this_time < time.time():
+        if stop_event_filter.exclude(stop_event, direction_name):
             continue
-
-        # Rules for whether to append or not go here
-        # If any of these condition are met the stop event will be appended
-        # If there are less that 4 trip in this direction so far
-        condition1 = (count[direction_name] <= 4)
-        # If this trip is coming within 5 minutes
-        condition2 = (this_time - time.time() <= 600)
-        # If not trips of this route have been added so far
-        condition3 = (stop_event.trip.route.route_id not in route_ids_so_far[direction_name])
-        #print(count)
-        #print('Considering {}'.format(stop_event.trip.trip_id))
-        #print([condition1, condition2, condition3])
-        if not (condition1 or condition2 or condition3):
-            #print('Skipping {}'.format(stop_event.trip.trip_id))
-            continue
-
-
-
-
-        route_ids_so_far[direction_name]\
-            .add(stop_event.trip.route.route_id)
-
-
-
 
 
         stop_event_response = {
@@ -132,6 +137,7 @@ def get_in_system_by_id(system_id, stop_id):
         trip_response['href'] = linksutil.TripEntityLink(stop_event.trip)
         stop_event_response['trip'] = trip_response
         stop_event_responses.append(stop_event_response)
+
     response['stop_events'] = stop_event_responses
     station_response = stop.station.short_repr()
     station_response['system'] = 'NI'

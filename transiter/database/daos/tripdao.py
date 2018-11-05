@@ -12,6 +12,16 @@ _BaseTripDao = daofactory._dao_factory(
 
 class _TripDao(_BaseTripDao):
 
+    def list_all_in_routes(self, system_id, route_ids):
+        session = self.get_session()
+        query = session.query(models.Trip) \
+            .join(models.Route, models.Route.id == models.Trip.route_pri_key) \
+            .filter(models.Route.system_id == system_id) \
+            .filter(models.Route.route_id.in_(route_ids))
+        for row in query:
+            yield row
+
+    # TODO: make this call the one above
     def list_all_in_route(self, system_id, route_id):
         session = self.get_session()
         query = session.query(models.Trip) \
@@ -33,6 +43,7 @@ class _TripDao(_BaseTripDao):
         except NoResultFound:
             return None
 
+    # TODO: remove
     def list_all_in_routes_by_pk(self, route_pks):
         session = self.get_session()
         query = (

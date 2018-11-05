@@ -98,33 +98,52 @@ class TestTripSync(unittest.TestCase):
     TRIP_TWO_ID = '13'
     TRIP_TWO_PK = 14
 
-    @mock.patch('transiter.database.syncutil.sync')
-    @mock.patch('transiter.database.syncutil.trip_dao')
     @mock.patch('transiter.database.syncutil.route_dao')
-    def test_persist_trips(self, route_dao, trip_dao, sync):
+    def test_transform_trips(self, route_dao):
+        stop_events = mock.MagicMock()
         new_trips = [
             {
                 'route_id': self.ROUTE_ONE_ID,
-                'stop_events': mock.MagicMock()
+                'stop_events': stop_events,
+                'trip_id': self.TRIP_ONE_ID
             },
             {
                 'route_id': self.ROUTE_TWO_ID
             }
         ]
-        new_trips_to_persist = [
+        expected_trips_to_persist = [
             {
-                'route_pri_key': self.ROUTE_ONE_PK
+                'route_pri_key': self.ROUTE_ONE_PK,
+                'trip_id': self.TRIP_ONE_ID
             }
         ]
+        expected_trip_key_to_stop_events = {
+            (self.ROUTE_ONE_PK, self.TRIP_ONE_ID): stop_events
+        }
 
         route_id_to_route_pk = {
             self.ROUTE_ONE_ID: self.ROUTE_ONE_PK
         }
         route_dao.get_id_to_pk_map.return_value = route_id_to_route_pk
 
-        old_trips = mock.MagicMock()
-        trip_dao.list_all_in_routes_by_pk.return_value = old_trips
+        (actual_trips_to_persist, trip_key_to_stop_events) = syncutil._transform_trips(
+            self.SYSTEM_ID,
+            [self.ROUTE_ONE_ID, self.ROUTE_TWO_ID],
+            new_trips
+        )
 
+        self.assertEqual(expected_trips_to_persist, actual_trips_to_persist)
+        self.assertEqual(expected_trip_key_to_stop_events, trip_key_to_stop_events)
+
+        route_dao.get_id_to_pk_map.assert_called_once_with(
+            self.SYSTEM_ID, [self.ROUTE_ONE_ID, self.ROUTE_TWO_ID])
+
+    @mock.patch('transiter.database.syncutil.sync')
+    @mock.patch('transiter.database.syncutil.trip_dao')
+    def test_persist_trips(self, trip_dao, sync):
+        new_trips = mock.MagicMock()
+        old_trips = mock.MagicMock()
+        trip_dao.list_all_in_routes.return_value = old_trips
         persisted_trips = mock.MagicMock()
         sync.return_value = persisted_trips
 
@@ -135,48 +154,41 @@ class TestTripSync(unittest.TestCase):
         )
 
         self.assertEqual(persisted_trips, actual)
-        self.assertFalse('stop_events' in new_trips[0])
 
-        route_dao.get_id_to_pk_map.assert_called_once_with(
+        trip_dao.list_all_in_routes.assert_called_once_with(
             self.SYSTEM_ID, [self.ROUTE_ONE_ID, self.ROUTE_TWO_ID])
-        trip_dao.list_all_in_routes_by_pk.assert_called_once_with(
-            [self.ROUTE_ONE_PK])
         sync.assert_called_once_with(
             models.Trip,
             old_trips,
-            new_trips_to_persist,
+            new_trips,
             ['route_pri_key', 'trip_id']
         )
 
-    @mock.patch('transiter.database.syncutil.sync')
-    @mock.patch('transiter.database.syncutil.archive_function_factory')
-    def test_persist_stop_events(self, archive_function_factory, sync):
-        old_stop_events = mock.MagicMock()
+    def test_transform_stop_events(self):
         new_stop_events = [
             {
                 'stop_id': self.STOP_THREE_ID,
-                'stop_sequence': 3,
+                'sequence_index': 3,
             },
             {
                 'stop_id': self.STOP_ONE_ID,
-                'stop_sequence': 4,
+                'sequence_index': 4,
             },
             {
                 'stop_id': self.STOP_TWO_ID_ALIAS,
-                'stop_sequence': 5,
+                'sequence_index': 5,
             },
         ]
         new_stop_events_post = [
-            None,
             {
                 'stop_pri_key': self.STOP_ONE_PK,
-                'stop_sequence': 4,
+                'sequence_index': 4,
                 'future': True,
                 'trip_pri_key': self.TRIP_PK
             },
             {
                 'stop_pri_key': self.STOP_TWO_PK,
-                'stop_sequence': 5,
+                'sequence_index': 5,
                 'future': True,
                 'trip_pri_key': self.TRIP_PK,
                 'stop_id_alias': self.STOP_TWO_ID_ALIAS
@@ -189,18 +201,47 @@ class TestTripSync(unittest.TestCase):
             self.STOP_ONE_ID: self.STOP_ONE_PK,
             self.STOP_TWO_ID: self.STOP_TWO_PK
         }
-        archive_function = mock.MagicMock()
-        archive_function_factory.return_value = archive_function
 
-        result = syncutil._persist_stop_events(
+        (actual_stop_events, unknown_stop_ids) = syncutil._transform_stop_events(
             self.TRIP_PK,
-            old_stop_events,
             new_stop_events,
             stop_id_alias_to_stop_id,
             stop_id_to_stop_pk
         )
 
-        self.assertSetEqual({self.STOP_THREE_ID}, result)
+        self.assertEqual(new_stop_events_post, actual_stop_events)
+        self.assertSetEqual({self.STOP_THREE_ID}, unknown_stop_ids)
+
+    @mock.patch('transiter.database.syncutil.sync')
+    @mock.patch('transiter.database.syncutil.archive_function_factory')
+    def test_persist_stop_events(self, archive_function_factory, sync):
+        old_stop_events = mock.MagicMock()
+        new_stop_events_post = [
+            {
+                'stop_pri_key': self.STOP_ONE_PK,
+                'sequence_index': 4,
+                'future': True,
+                'trip_pri_key': self.TRIP_PK
+            },
+            {
+                'stop_pri_key': self.STOP_TWO_PK,
+                'sequence_index': 5,
+                'future': True,
+                'trip_pri_key': self.TRIP_PK,
+                'stop_id_alias': self.STOP_TWO_ID_ALIAS
+            },
+        ]
+        archive_function = mock.MagicMock()
+        archive_function_factory.return_value = archive_function
+        persisted_stop_events = mock.MagicMock()
+        sync.return_value = persisted_stop_events
+
+        result = syncutil._persist_stop_events(
+            old_stop_events,
+            new_stop_events_post,
+        )
+
+        self.assertEqual(persisted_stop_events, result)
 
         archive_function_factory.assert_called_once_with(4)
         sync.assert_called_once_with(
@@ -211,11 +252,14 @@ class TestTripSync(unittest.TestCase):
             delete_function=archive_function
         )
 
+    @mock.patch('transiter.database.syncutil._transform_trips')
+    @mock.patch('transiter.database.syncutil._transform_stop_events')
     @mock.patch('transiter.database.syncutil._persist_trips')
     @mock.patch('transiter.database.syncutil._persist_stop_events')
     @mock.patch('transiter.database.syncutil.trip_dao')
     @mock.patch('transiter.database.syncutil.stop_dao')
-    def test_sync_trips(self, stop_dao, trip_dao, _persist_stop_events, _persist_trips):
+    def test_sync_trips(self, stop_dao, trip_dao, _persist_stop_events,
+                        _persist_trips, _transform_stop_events, _transform_trips):
         stop_events_one = [
             {
                 'stop_id': self.STOP_ONE_ID,
@@ -232,7 +276,13 @@ class TestTripSync(unittest.TestCase):
                 'stop_id': self.STOP_TWO_ID_ALIAS,
             }
         ]
-        trips = [
+        raw_trips = mock.MagicMock()
+        data = {
+            'route_ids': [self.ROUTE_ONE_ID, self.ROUTE_TWO_ID],
+            'trips': raw_trips
+        }
+
+        new_trips = [
             {
                 'route_id': self.ROUTE_ONE_ID,
                 'trip_id': self.TRIP_ONE_ID,
@@ -244,10 +294,11 @@ class TestTripSync(unittest.TestCase):
                 'stop_events': stop_events_two
             }
         ]
-        data = {
-            'route_ids': [self.ROUTE_ONE_ID, self.ROUTE_TWO_ID],
-            'trips': trips
+        trip_key_to_feed_stop_events = {
+            (self.ROUTE_ONE_PK, self.TRIP_ONE_ID): stop_events_one,
+            (self.ROUTE_ONE_PK, self.TRIP_TWO_ID): stop_events_two,
         }
+        _transform_trips.return_value = (new_trips, trip_key_to_feed_stop_events)
 
         db_trip_data = [mock.MagicMock()]
         trip_pk_to_db_stop_events = {
@@ -259,44 +310,53 @@ class TestTripSync(unittest.TestCase):
         pt_one = mock.MagicMock()
         pt_one.id = self.TRIP_ONE_PK
         pt_one.trip_id = self.TRIP_ONE_ID
-        pt_one.route_id = self.ROUTE_ONE_ID
+        pt_one.route_pri_key = self.ROUTE_ONE_PK
         pt_two = mock.MagicMock()
         pt_two.id = self.TRIP_TWO_PK
         pt_two.trip_id = self.TRIP_TWO_ID
-        pt_two.route_id = self.ROUTE_ONE_ID
-        persisted_trips = [pt_one, pt_two]
-        _persist_trips.return_value = persisted_trips
+        pt_two.route_pri_key = self.ROUTE_ONE_PK
+        _persist_trips.return_value = [pt_one, pt_two]
 
         stop_id_alias_to_stop_id = {self.STOP_TWO_ID_ALIAS: self.STOP_TWO_ID}
         stop_dao.get_stop_id_alias_to_stop_id_map.return_value = stop_id_alias_to_stop_id
         stop_id_to_stop_pk = mock.MagicMock()
         stop_dao.get_id_to_pk_map.return_value = stop_id_to_stop_pk
 
+        stop_events_to_persist = mock.MagicMock()
+        _transform_stop_events.return_value = (stop_events_to_persist, 'A')
+
         syncutil.sync_trips(data, self.SYSTEM_ID)
 
+        _transform_trips.assert_called_once_with(
+            self.SYSTEM_ID, data['route_ids'], raw_trips)
         _persist_trips.assert_called_once_with(
-            self.SYSTEM_ID,
-            data['route_ids'],
-            trips)
+            self.SYSTEM_ID, data['route_ids'], new_trips)
         trip_dao.get_trip_pk_to_future_stop_events_map.assert_called_once_with(
             [self.TRIP_ONE_PK, self.TRIP_TWO_PK])
         stop_dao.get_stop_id_alias_to_stop_id_map.assert_called_once_with(
             self.SYSTEM_ID,
             {self.STOP_THREE_ID, self.STOP_ONE_ID, self.STOP_TWO_ID_ALIAS, self.STOP_TWO_ID})
-        stop_dao.get_id_to_pk_map()
-        _persist_stop_events.assert_any_call(
+
+        _transform_stop_events.assert_any_call(
             self.TRIP_ONE_PK,
             stop_events_one,
-            db_trip_data,
             stop_id_alias_to_stop_id,
             stop_id_to_stop_pk
         )
-        _persist_stop_events.assert_any_call(
+        _transform_stop_events.assert_any_call(
             self.TRIP_TWO_PK,
             stop_events_two,
-            [],
             stop_id_alias_to_stop_id,
             stop_id_to_stop_pk
+        )
+        self.assertEqual(2, _transform_stop_events.call_count)
+        _persist_stop_events.assert_any_call(
+            db_trip_data,
+            stop_events_to_persist
+        )
+        _persist_stop_events.assert_any_call(
+            [],
+            stop_events_to_persist
         )
         self.assertEqual(2, _persist_stop_events.call_count)
 

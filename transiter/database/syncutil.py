@@ -17,8 +17,12 @@ def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_
     keys: list of keys
     """
 
+
     id_to_db_entity = {}
     for db_entity in db_entities:
+        print('here')
+        print(db_entity)
+
         id = tuple(getattr(db_entity, key) for key in keys)
         id_to_db_entity[id] = db_entity
 
@@ -53,45 +57,46 @@ def sync(DbObject, db_entities, new_entities, keys, delete_function=delete_from_
     return list(id_to_db_entity.values())
 
 
-def _persist_trips(system_id, route_ids, new_trips):
+def _transform_trips(system_id, route_ids, new_trips):
 
     route_id_to_route_pk = route_dao.get_id_to_pk_map(system_id, route_ids)
     route_ids = route_id_to_route_pk.keys()
 
-    old_trips = trip_dao.list_all_in_routes_by_pk(
-        list(route_id_to_route_pk.values()))
-
     new_trips_to_persist = []
+    trip_key_to_stop_events = {}
     for new_trip in new_trips:
         if new_trip['route_id'] not in route_ids:
             # TODO: log this
-            # print('Unknown route {}; known ids: {}'.format(
-            #    trip['route_id'], ', '.join(route_ids)))
             continue
-        new_trip['route_pri_key'] = route_id_to_route_pk[new_trip['route_id']]
+        route_pk = route_id_to_route_pk[new_trip['route_id']]
+        new_trip['route_pri_key'] = route_pk
+        trip_key_to_stop_events[(route_pk, new_trip['trip_id'])] = new_trip['stop_events']
         del new_trip['route_id']
         del new_trip['stop_events']
         new_trips_to_persist.append(new_trip)
 
-    persisted_trips = sync(
+    return new_trips_to_persist, trip_key_to_stop_events
+
+
+def _persist_trips(system_id, route_ids, new_trips):
+    old_trips = trip_dao.list_all_in_routes(system_id, route_ids)
+    return sync(
         models.Trip,
         old_trips,
-        new_trips_to_persist,
-        ['route_pri_key', 'trip_id'])
-    return persisted_trips
+        new_trips,
+        ['route_pri_key', 'trip_id']
+    )
 
 
-def _persist_stop_events(trip_pk, old_stop_events, new_stop_events,
-                         stop_id_alias_to_stop_id, stop_id_to_stop_pk):
+def _transform_stop_events(trip_pk, feed_stop_events,
+                           stop_id_alias_to_stop_id, stop_id_to_stop_pk):
+    stop_events_to_persist = []
     unknown_stop_ids = set()
-    buggy_indices = set()
-    min_stop_sequence = None
-    for index, stop_event in enumerate(new_stop_events):
-
+    for feed_stop_event in feed_stop_events:
+        stop_event = {key: value for (key, value) in feed_stop_event.items()}
         stop_id = stop_event['stop_id']
-        if stop_id not in stop_id_to_stop_pk:
-            if stop_id not in stop_id_alias_to_stop_id:
-                buggy_indices.add(index)
+        if stop_id_to_stop_pk.get(stop_id, None) is None:
+            if stop_id_alias_to_stop_id.get(stop_id, None) is None:
                 unknown_stop_ids.add(stop_id)
                 continue
             stop_event['stop_id_alias'] = stop_id
@@ -102,16 +107,19 @@ def _persist_stop_events(trip_pk, old_stop_events, new_stop_events,
         stop_event['trip_pri_key'] = trip_pk
         del stop_event['stop_id']
 
-        this_stop_sequence = stop_event.get('stop_sequence')
-        if min_stop_sequence is None or min_stop_sequence > this_stop_sequence:
-            min_stop_sequence = this_stop_sequence
+        stop_events_to_persist.append(stop_event)
 
-    for index in buggy_indices:
-        new_stop_events[index] = None
+    return stop_events_to_persist, unknown_stop_ids
 
+
+def _persist_stop_events(old_stop_events, new_stop_events):
+
+    min_stop_sequence = None
+    if len(new_stop_events) > 0:
+        min_stop_sequence = new_stop_events[0]['sequence_index']
     archive_function = archive_function_factory(min_stop_sequence)
 
-    sync(
+    return sync(
         models.StopEvent,
         old_stop_events,
         new_stop_events,
@@ -119,34 +127,22 @@ def _persist_stop_events(trip_pk, old_stop_events, new_stop_events,
         delete_function=archive_function
     )
 
-    return unknown_stop_ids
-
 
 #def sync_trips(system_id, route_ids, feed_trips)
 def sync_trips(data, system_id='nycsubway'):
 
-    # NOTE: the _persist_trips method detaches the stop_events from the feed
-    # trips so it is necessary to save the stop_events before invoking it.
-    trip_key_to_feed_stop_events = {
-        (trip['route_id'], trip['trip_id']): trip['stop_events']
-        for trip in data['trips']
-    }
-    persisted_trips = _persist_trips(system_id, data['route_ids'], data['trips'])
-
-    trip_pk_to_feed_stop_events = {}
-    for trip in persisted_trips:
-        key = (trip.route_id, trip.trip_id)
-        assert key in trip_key_to_feed_stop_events
-        trip_pk_to_feed_stop_events[trip.id] = trip_key_to_feed_stop_events[key]
+    (new_trips, trip_key_to_feed_stop_events) = _transform_trips(
+        system_id, data['route_ids'], data['trips'])
+    persisted_trips = _persist_trips(
+        system_id, data['route_ids'], new_trips)
 
     trip_pk_to_db_stop_events = trip_dao.get_trip_pk_to_future_stop_events_map(
         [trip.id for trip in persisted_trips])
 
     stop_ids = set()
-    for trip in persisted_trips:
-        stop_ids.update(
-            [stop_event['stop_id'] for stop_event
-                in trip_pk_to_feed_stop_events[trip.id]])
+    for feed_stop_events in trip_key_to_feed_stop_events.values():
+        for feed_stop_event in feed_stop_events:
+            stop_ids.add(feed_stop_event['stop_id'])
     stop_id_alias_to_stop_id = stop_dao.get_stop_id_alias_to_stop_id_map(
         system_id, stop_ids)
     stop_ids.update(stop_id_alias_to_stop_id.values())
@@ -154,12 +150,15 @@ def sync_trips(data, system_id='nycsubway'):
 
     all_unknown_stop_ids = set()
     for trip in persisted_trips:
-        unknown_stop_ids = _persist_stop_events(
+        (stop_events_to_persist, unknown_stop_ids) = _transform_stop_events(
             trip.id,
-            trip_pk_to_feed_stop_events[trip.id],
-            trip_pk_to_db_stop_events.get(trip.id, []),
+            trip_key_to_feed_stop_events[(trip.route_pri_key, trip.trip_id)],
             stop_id_alias_to_stop_id,
             stop_id_to_stop_pri_key
+        )
+        _persist_stop_events(
+            trip_pk_to_db_stop_events.get(trip.id, []),
+            stop_events_to_persist
         )
         all_unknown_stop_ids.update(unknown_stop_ids)
 

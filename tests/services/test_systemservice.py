@@ -302,7 +302,7 @@ class TestImportStaticData(unittest.TestCase):
 
     @mock.patch('transiter.services.systemservice.open')
     @mock.patch('transiter.services.systemservice.csv')
-    def test_import_static_data__feeds(self, csv, open):
+    def test_import_static_data__direction_names(self, csv, open):
         stop_one = models.Stop()
         stop_one.stop_id = self.STOP_ONE_ID
         self.gtfs_static_parser.stop_id_to_stop = {
