@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, UniqueConstraint, ForeignKey, Numeric, ForeignKeyConstraint
+from sqlalchemy import Column, Integer, String, UniqueConstraint, ForeignKeyConstraint
 from sqlalchemy.orm import relationship
 
-from .base import Base, model_eq
+from .base import Base
+
 
 # TODO: should this be StopIdAlias? I think so
 

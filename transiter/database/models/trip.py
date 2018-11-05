@@ -1,8 +1,8 @@
-from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, TIMESTAMP, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import text
 
-from .base import Base, model_eq
+from .base import Base
+
 
 class Trip(Base):
     __tablename__ = 'trips'

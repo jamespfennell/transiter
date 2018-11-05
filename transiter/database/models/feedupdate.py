@@ -2,7 +2,7 @@ from sqlalchemy import Column, TIMESTAMP, Index, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import functions as sql_functions
 
-from .base import Base, model_eq
+from .base import Base
 
 
 class FeedUpdate(Base):

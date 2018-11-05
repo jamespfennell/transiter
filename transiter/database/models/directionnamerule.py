@@ -1,7 +1,8 @@
-from sqlalchemy import Index, Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
+from sqlalchemy import Index, Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
-from .base import Base, model_eq
+from .base import Base
+
 
 # TODO allow route to feature in the direction name rule?
 

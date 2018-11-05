@@ -1,5 +1,5 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import inspect
+from sqlalchemy.ext.declarative import declarative_base
 
 
 class _BasicModel:
@@ -37,17 +37,5 @@ class _BasicModel:
 
 
 Base = declarative_base(cls=_BasicModel)
-
-
-def model_eq(model_one, model_two):
-    for column in inspect(type(model_one)).columns.keys():
-        if column == 'id':
-            continue
-        if getattr(model_one, column) != getattr(model_two, column):
-            print(column)
-            print('-' + str(getattr(model_one, column)) + '-')
-            print('-' + str(getattr(model_two, column)) + '-')
-            return False
-    return True
 
 

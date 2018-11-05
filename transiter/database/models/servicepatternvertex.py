@@ -1,7 +1,7 @@
-from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
-from .base import Base, model_eq
+from .base import Base
 
 
 class ServicePatternVertex(Base):
