@@ -547,3 +547,11 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         self.maxDiff = None
         self.assertDictEqual(actual_output, expected_output)
 
+    def test_timestamp_to_datetime_edge_case_1(self):
+        actual = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime(None)
+        self.assertEqual(None, actual)
+
+    def test_timestamp_to_datetime_edge_case_2(self):
+        actual = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime(0)
+        self.assertEqual(None, actual)
+

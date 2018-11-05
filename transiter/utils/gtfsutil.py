@@ -102,11 +102,12 @@ class _GtfsRealtimeToTransiterTransformer:
 
     def _group_trip_entities(self):
         for entity in self._raw_data['entity']:
+            main_entity_key = None
             if 'trip_update' in entity:
                 main_entity_key = 'trip_update'
             elif 'vehicle' in entity:
                 main_entity_key = 'vehicle'
-            else:
+            if main_entity_key is None:
                 continue
             trip_entity = entity[main_entity_key]['trip']
             trip_id = trip_entity['trip_id']
