@@ -1,6 +1,7 @@
 import unittest.mock as mock
 import unittest
 
+from transiter.endpoints import flaskapp
 from transiter.endpoints import tripendpoints
 from transiter.endpoints import systemendpoints
 from transiter.endpoints import routeendpoints
@@ -192,4 +193,18 @@ class TestSystemEndpoints(_TestEndpoints):
         self._test_no_response_endpoint(systemendpoints.delete_by_id,
                                         systemservice.delete_by_id,
                                         (self.SYSTEM_ID))
+
+
+
+class TestFlaskApp(unittest.TestCase):
+
+    def test_root(self):
+        expected_code = 200
+        (__, actual_code, __) = flaskapp.root()
+        self.assertEqual(expected_code, actual_code)
+
+    def test_about(self):
+        expected_code = 200
+        (__, actual_code, __) = flaskapp.about()
+        self.assertEqual(expected_code, actual_code)
 

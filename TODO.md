@@ -20,6 +20,7 @@ SHORT_REPR_SET = {'pk'}
 SHORT_REPR_DICT = {'route_id': 'id'}
    
 1. Refactoring:
+    1. endpoints -> http
     1. DB rename:
         RENAME tables to singular -> easy
         Maybe the ORM mapping consistent in refering to object vs table

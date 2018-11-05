@@ -1,10 +1,10 @@
 from flask import Flask
-from .endpoints.systemendpoints import system_endpoints
-from .endpoints.routeendpoints import route_endpoints
-from .endpoints.stopendpoints import stop_endpoints
-from .endpoints.tripendpoints import trip_endpoints
-from .endpoints.feedendpoints import feed_endpoints
-from .endpoints.responsemanager import http_get_response
+from transiter.endpoints.systemendpoints import system_endpoints
+from transiter.endpoints.routeendpoints import route_endpoints
+from transiter.endpoints.stopendpoints import stop_endpoints
+from transiter.endpoints.tripendpoints import trip_endpoints
+from transiter.endpoints.feedendpoints import feed_endpoints
+from transiter.endpoints.responsemanager import http_get_response
 
 app = Flask(__name__)
 app.register_blueprint(feed_endpoints, url_prefix='/systems/<system_id>/feeds')
