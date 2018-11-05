@@ -5,19 +5,9 @@
 Next 1 step, then v0.1 feature complete:
 
 
-1. Full unittest coverage for 
    
-   - flaskapp (rename to app?)
-   - stop service (needs refactoring to take the filtering out)
-   
-After these it's basically just edge cases...and the model reprs?
-Should refactor these repr out of the models and into the new model they
-    all inherit from
-    -> then can do an easy test of the behaviour
-    -> also test the equality/inequality and take that test out of dao test setup
+After these it's basically just edge cases...
     
-SHORT_REPR_SET = {'pk'}
-SHORT_REPR_DICT = {'route_id': 'id'}
    
 1. Refactoring:
     1. endpoints -> http
@@ -30,7 +20,6 @@ SHORT_REPR_DICT = {'route_id': 'id'}
         stopalias -> stopidalias
     1. Move subway package out
     1. Move models to the main root dir
-        - have them inherit from a model with __eq__ and short_repr and long_repr
     1. New data access layer setup
     1. Use models as input to the sync utils 
         - C10: the sync util should use non-persisted models and then session.merge()

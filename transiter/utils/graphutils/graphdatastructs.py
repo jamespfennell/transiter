@@ -1,3 +1,4 @@
+# TODO: what about circle graphs? These appear as empty graphs
 
 class DirectedPath():
 
@@ -13,6 +14,7 @@ class DirectedPath():
     def edges(self):
         for i in range(len(self._vertices)-1):
             yield (self._vertices[i], self._vertices[i+1])
+
     def first(self):
         return self._vertices[0]
 
@@ -98,7 +100,6 @@ class DirectedGraph():
 
     def is_path(self):
         if len(self.sources) == 0:
-            print('Big problem')
             return True
 
         if len(self.sources) > 1:
@@ -127,7 +128,7 @@ class DirectedGraph():
 
     def __eq__(self, other):
         label_to_this_vs = {v.label: v for v in self.vertices()}
-        label_to_other_vs = {v.label: v for v in self.vertices()}
+        label_to_other_vs = {v.label: v for v in other.vertices()}
 
         for label, this_vs in label_to_this_vs.items():
             other_vs = label_to_other_vs.get(label, None)
