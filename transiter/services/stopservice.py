@@ -21,8 +21,7 @@ def google_maps_url(location):
 """
 
 
-
-class DirectionNameMatcher:
+class _DirectionNameMatcher:
     def __init__(self, rules):
         self._rules = rules
         self._cache = {}
@@ -58,7 +57,7 @@ class DirectionNameMatcher:
 import time
 
 
-class StopEventFilter:
+class _StopEventFilter:
 
     def __init__(self):
         self._count = {}
@@ -99,64 +98,64 @@ class StopEventFilter:
         return (not (condition1 or condition2 or condition3))
 
 
-
 def get_in_system_by_id(system_id, stop_id):
 
+    # TODO: make the service pattern dao retrieve by pk
+    # TODO: make a default_trip_at_stop function
     # TODO make this more robust for stops without direction names
     stop = stop_dao.get_in_system_by_id(system_id, stop_id)
-    response = stop.short_repr()
-    response.update({
+    stop_event_filter = _StopEventFilter()
+    direction_name_matcher = _DirectionNameMatcher(stop.direction_name_rules)
+    response = {
+        **stop.short_repr(),
         'usual_routes': service_pattern_dao.get_default_trips_at_stops(
-            [stop_id])[stop_id]
-    })
-    stop_event_filter = StopEventFilter()
-    direction_name_matcher = DirectionNameMatcher(stop.direction_name_rules)
-    response['direction_names'] = list(direction_name_matcher.all_names())
+            [stop_id])[stop_id],
+        'direction_names': list(direction_name_matcher.all_names()),
+        'stop_events': []
+    }
 
-    # TODO(use relationship instead and join?)
     stop_events = stop_event_dao.get_by_stop_pri_key(stop.id)
-    #print(len(list(stop_events)))
-    stop_event_responses = []
     for stop_event in stop_events:
-
         direction_name = direction_name_matcher.match(stop, stop_event)
-
         if stop_event_filter.exclude(stop_event, direction_name):
             continue
-
-
         stop_event_response = {
-            'direction_name': direction_name
+            'direction_name': direction_name,
+            **(stop_event.short_repr()),
+            'trip': {
+                **(stop_event.trip.long_repr()),
+                'route': {
+                    **(stop_event.trip.route.short_repr()),
+                    'href': linksutil.RouteEntityLink(stop_event.trip.route),
+                },
+                'href': linksutil.TripEntityLink(stop_event.trip),
+            }
         }
-        stop_event_response.update(stop_event.short_repr())
-        trip_response = stop_event.trip.long_repr()
-        trip_response['route'] = stop_event.trip.route.short_repr()
-        trip_response['route']['href'] = linksutil.RouteEntityLink(stop_event.trip.route)
-        trip_response['origin'] = 'NI'
-        trip_response['terminus'] = 'NI'
-        trip_response['href'] = linksutil.TripEntityLink(stop_event.trip)
-        stop_event_response['trip'] = trip_response
-        stop_event_responses.append(stop_event_response)
-
-    response['stop_events'] = stop_event_responses
-    station_response = stop.station.short_repr()
-    station_response['system'] = 'NI'
-    station_response['href'] = 'NI'
-    station_response['child_stops'] = []
-    for sibling_stop in stop.station.stops:
-        if sibling_stop.stop_id == stop_id:
-            continue
-        child_response = sibling_stop.short_repr()
-        child_response.update({
-            'usual_routes': service_pattern_dao.get_default_trips_at_stops(
-                [sibling_stop.stop_id])[sibling_stop.stop_id]
-        })
-        station_response['child_stops'].append(
-            child_response
-        )
-    # TODO use a Get parameter to specify a depth
-    station_response['child_stations'] = []
-    station_response['parent_station'] = None
-    response['parent_station'] = station_response
+        response['stop_events'].append(stop_event_response)
 
     return response
+
+
+"""
+station_response = stop.station.short_repr()
+station_response['system'] = 'NI'
+station_response['href'] = 'NI'
+station_response['child_stops'] = []
+for sibling_stop in stop.station.stops:
+    if sibling_stop.stop_id == stop_id:
+        continue
+    child_response = sibling_stop.short_repr()
+    child_response.update({
+        'usual_routes': service_pattern_dao.get_default_trips_at_stops(
+            [sibling_stop.stop_id])[sibling_stop.stop_id]
+    })
+    station_response['child_stops'].append(
+        child_response
+    )
+# TODO use a Get parameter to specify a depth
+station_response['child_stations'] = []
+station_response['parent_station'] = None
+# TODO enable parent station
+#response['parent_station'] = station_response
+"""
+

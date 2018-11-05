@@ -38,7 +38,7 @@ SHORT_REPR_DICT = {'route_id': 'id'}
                 delete the stop events from the object first
             - Also need the XML Parser to have a convert to models step
             
-    
+  
 1. Go through all of the API endpoints and implement anything that's
     not implemented
     - location, import from system service into location column
@@ -69,6 +69,8 @@ Add env variables to system config
     - Just adding .join(Model.attribute) loads it I think?
     https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html
     look at lazy
+    
+    For example, when getting stop events get the trip as well
 - C8: Add uniqueness and not null conditions to the schema
     where possible. Also add good indices.
   
