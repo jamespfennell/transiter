@@ -60,6 +60,7 @@ class TestSync(unittest.TestCase):
                 'id': self.ID_TWO,
                 'key': self.NEW_VALUE_TWO
             },
+            None,
             {
                 'id': self.ID_THREE,
                 'key': self.NEW_VALUE_THREE
@@ -72,12 +73,20 @@ class TestSync(unittest.TestCase):
         self.assertListEqual(actual_new_db_entities, expected_new_db_entities)
         self.assertSetEqual(self._deleted_entities, {old_one})
         # NOTE: Unittest's assertSetEqual uses set.difference() which does
-        # note use the obj.__eq__ method, so sets containing objects with the
+        # not use the obj.__eq__ method, so sets containing objects with the
         # the same data fail the assertion
         self.assertListEqual(list(self._new_entities), [new_three])
 
     def _session_add(self, entity):
         self._new_entities.add(entity)
+
+    def test_delete_from_db(self):
+        session = mock.MagicMock()
+        entity = mock.MagicMock()
+
+        syncutil.delete_from_db(session, entity)
+
+        session.delete.assert_called_once_with(entity)
 
 
 class TestTripSync(unittest.TestCase):

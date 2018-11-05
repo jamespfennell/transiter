@@ -43,16 +43,6 @@ class _TripDao(_BaseTripDao):
         except NoResultFound:
             return None
 
-    # TODO: remove
-    def list_all_in_routes_by_pk(self, route_pks):
-        session = self.get_session()
-        query = (
-            session.query(models.Trip)
-            .filter(models.Trip.route_pri_key.in_(route_pks))
-        )
-        for row in query:
-            yield row
-
     def get_trip_pk_to_future_stop_events_map(self, trip_pks):
         session = self.get_session()
         query = (

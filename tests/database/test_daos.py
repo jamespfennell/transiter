@@ -224,20 +224,20 @@ class TestDaos(unittest.TestCase, TestDbConstants):
 
         self.assertEqual(None, db_trip)
 
-    def test__trip_dao__list_all_in_routes_by_pk(self):
+    def test__trip_dao__list_all_in_routes(self):
         expected = [self.trip_one, self.trip_two, self.trip_three]
 
-        actual = list(trip_dao.list_all_in_routes_by_pk(
-            [self.ROUTE_ONE_PK]
+        actual = list(trip_dao.list_all_in_routes(
+            self.SYSTEM_ONE_ID, [self.ROUTE_ONE_ID]
         ))
 
         self.assertListEqual(expected, actual)
 
-    def test__trip_dao__list_all_in_routes_by_pk__no_trips(self):
+    def test__trip_dao__list_all_in_routes__no_trips(self):
         expected = []
 
-        actual = list(trip_dao.list_all_in_routes_by_pk(
-            [self.ROUTE_TWO_PK, self.ROUTE_THREE_PK]
+        actual = list(trip_dao.list_all_in_routes(
+            self.SYSTEM_ONE_ID, [self.ROUTE_TWO_ID, self.ROUTE_THREE_ID]
         ))
 
         self.assertListEqual(expected, actual)

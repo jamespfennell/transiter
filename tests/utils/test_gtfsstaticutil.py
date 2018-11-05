@@ -6,6 +6,20 @@ from transiter.database import models
 
 class TestGtfsStaticUtil(unittest.TestCase):
 
+    def test_gtfs_static_service_not_equal(self):
+        service_one = gtfsstaticutil._GtfsStaticService()
+        service_one.monday = True
+        service_two = gtfsstaticutil._GtfsStaticService()
+        service_two.monday = False
+        self.assertNotEqual(service_one, service_two)
+
+    def test_static_trip_not_equal(self):
+        service_one = gtfsstaticutil.StaticTrip()
+        service_one.monday = True
+        service_two = gtfsstaticutil.StaticTrip()
+        service_two.monday = False
+        self.assertNotEqual(service_one, service_two)
+
     def test_parse_from_directory(self):
         """[GTFS static util] Parse from directory"""
 

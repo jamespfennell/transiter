@@ -86,7 +86,6 @@ class TestStopEventFilter(unittest.TestCase):
         self.stop_event.trip.route_id = self.ROUTE_ID
 
     def test_add_direction_name(self):
-
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
 
         self.assertDictEqual(
@@ -98,8 +97,18 @@ class TestStopEventFilter(unittest.TestCase):
             {self.DIRECTION_NAME: set()}
         )
 
+    def test_add_direction_name_already_added(self):
+        self.stop_event_filter._count[self.DIRECTION_NAME] = 50
+        self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
+
+        self.assertDictEqual(
+            self.stop_event_filter._count,
+            {self.DIRECTION_NAME: 50}
+        )
+
     @mock.patch('transiter.services.stopservice.time')
     def test_exclude_time_passed(self, time):
+        self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
         time.time.return_value = self.DATETIME_TWO.timestamp()
 
         exclude = self.stop_event_filter.exclude(
@@ -108,7 +117,8 @@ class TestStopEventFilter(unittest.TestCase):
         self.assertTrue(exclude)
 
     @mock.patch('transiter.services.stopservice.time')
-    def exclude_route_not_there_yet(self, time):
+    def test_exclude_route_not_there_yet(self, time):
+        self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
         self.stop_event_filter._count[self.DIRECTION_NAME] = 100
         time.time.return_value = self.DATETIME_ONE.timestamp()
 

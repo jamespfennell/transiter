@@ -1,13 +1,16 @@
-from ..database import connection
-from ..database import models
-from transiter.database.daos import direction_name_dao, feed_dao, route_dao, stop_dao, station_dao, system_dao
-from . import exceptions
-from transiter.utils import gtfsstaticutil
 import csv
 import os
+
+import yaml
+
+from transiter.database.daos import system_dao
+from transiter.utils import gtfsstaticutil
 from transiter.utils import linksutil
 from transiter.utils import servicepatternmanager
-import yaml
+from . import exceptions
+from ..database import connection
+from ..database import models
+
 
 @connection.unit_of_work
 def list_all():

@@ -50,6 +50,17 @@ class TestSystemService(unittest.TestCase):
         self.system_1.short_repr.assert_called_once()
         self.system_2.short_repr.assert_called_once()
 
+    @mock.patch('transiter.services.systemservice.system_dao')
+    def test_get_by_id_no_such_system(self, system_dao):
+        """[System service] Get a non-existent system"""
+        system_dao.get_by_id.return_value = None
+
+        self.assertRaises(
+            exceptions.IdNotFoundError,
+            systemservice.get_by_id,
+            self.SYSTEM_ONE_ID
+        )
+
     @mock.patch('transiter.services.systemservice.linksutil')
     @mock.patch('transiter.services.systemservice.system_dao')
     def test_get_by_id(self, system_dao, linksutil):
