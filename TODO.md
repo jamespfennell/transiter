@@ -7,8 +7,6 @@ Next 1 step, then v0.1 feature complete:
 
 1. Full unittest coverage for 
    
-   - NYC transit GTFS updater
-   
    - flaskapp (rename to app?)
    - stop service (needs refactoring to take the filtering out)
    - system service (ie., import)
@@ -22,10 +20,23 @@ Should refactor these repr out of the models and into the new model they
 SHORT_REPR_SET = {'pk'}
 SHORT_REPR_DICT = {'route_id': 'id'}
    
-
-1. With good test
-    coverage can then do the DB renaming plan easily as failures
-    will be detected
+1. Refactoring:
+    1. DB rename:
+        RENAME tables to singular -> easy
+        Maybe the ORM mapping consistent in refering to object vs table
+        Good time to rename stopevent -> stoptimeupdate
+        Move pri_key to pk
+        trip_id to id? yes
+    1. Move subway package out
+    1. Move models to the main root dir
+    1. New data access layer setup
+    1. Use models as input to the sync utils 
+        - C10: the sync util should use non-persisted models and then session.merge()
+            - This means the GTFS util should output models and not JSON
+            - Might be tricky to coordinate stop time update merging -> may need to 
+                delete the stop events from the object first
+            - Also need the XML Parser to have a convert to models step
+            
     
 1. Go through all of the API endpoints and implement anything that's
     not implemented
@@ -33,12 +44,6 @@ SHORT_REPR_DICT = {'route_id': 'id'}
     - origin/terminus for trips 
         -> terminus should be dynamic
         -> origin a nullable foreign stop pri key
-
-RENAME tables to singular -> easy
-Maybe the ORM mapping consistent in refering to object vs table
-Good time to rename stopevent -> stoptimeupdate
-Move pri_key to pk
-trip_id to id? yes
 
 
 
@@ -57,13 +62,6 @@ Add env variables to system config
 
 
 ### Existing code clean up
-- C2: Continue cleaning up sync util:
-    - See if the syncuti.synctrips can be refactored
-        - maybe place it in a tripsupdaterutil
-    - Write tests for it
-    - Write more tests for the gtfs cleaner to get full coverage
-    - Merge in the functions at the end into the cleaner
-    - Write the cleaner that switches the directions on the J or M train
 - C6: Optimize the SQL ALchemy config
     - especially with joins
     - figure out what the cascades are doing
@@ -72,11 +70,6 @@ Add env variables to system config
     look at lazy
 - C8: Add uniqueness and not null conditions to the schema
     where possible. Also add good indices.
-- C10: the sync util should use non-persisted models and then session.merge()
-    - This means the GTFS util should output models and not JSON
-    - Might be tricky to coordinate stop time update merging -> may need to 
-        delete the stop events from the object first
-    - Also need the XML Parser to have a convert to models step
   
 
 - C11:
@@ -86,8 +79,6 @@ Bug: I'm transforming IS_ASSIGNED to a status,
     Potentially it's fine, just make sure
     
     Maybe we can map it to an actual GTFS status though
-- C12:
-    investigate testing the daos
 - C13:
     problem with the xml update - like a race condition when the message changes?
 

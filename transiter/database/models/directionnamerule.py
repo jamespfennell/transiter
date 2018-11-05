@@ -1,7 +1,7 @@
 from sqlalchemy import Index, Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 # TODO allow route to feature in the direction name rule?
 
@@ -20,6 +20,8 @@ class DirectionNameRule(Base):
 
     stop = relationship("Stop", back_populates="direction_name_rules")
 
+    def __eq__(self, other):
+        return model_eq(self, other)
 
 Index('direction_name_rule_stop_pk_priority_idx',
       DirectionNameRule.stop_pk,

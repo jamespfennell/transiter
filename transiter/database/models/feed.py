@@ -1,7 +1,7 @@
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, Float, Boolean, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, model_eq
 
 
 class Feed(Base):
@@ -23,3 +23,6 @@ class Feed(Base):
         return {
             'feed_id': self.feed_id,
         }
+
+    def __eq__(self, other):
+        return model_eq(self, other)

@@ -72,18 +72,7 @@ def delete_by_id(system_id):
     return True
 
 
-
-def _read_csv_file(file_path):
-    with open(file_path, mode='r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        yield from csv_reader
-
-
 def _import_static_data(system):
-
-
-
-
     system_base_dir = os.path.join(
         os.path.dirname(__file__),
         '../systems',
@@ -91,7 +80,6 @@ def _import_static_data(system):
         )
     agency_data_dir = os.path.join(system_base_dir, 'agencydata')
     custom_data_dir = os.path.join(system_base_dir, 'customdata')
-    print(agency_data_dir)
 
     config_file_path = os.path.join(system_base_dir, 'config.yaml')
     system_config = SystemConfig(config_file_path)
@@ -115,6 +103,7 @@ def _import_static_data(system):
 
     for station_set in station_sets_by_stop_id.values():
         # TODO: option to make this 1 also so stations only multistop
+        # NOTE this is 0 when a station has already been added
         if len(station_set) == 0:
             continue
         station = models.Station()
@@ -159,7 +148,7 @@ def _import_static_data(system):
                 priority += 1
 
     for feed_config in system_config.feeds:
-        feed = feed_dao.create()
+        feed = models.Feed()
         feed.system = system
         feed.feed_id = feed_config['name']
         feed.url = feed_config['url']

@@ -3,7 +3,7 @@ import unittest.mock as mock
 
 from transiter.services import systemservice
 from transiter.services import exceptions
-
+from transiter.database import models
 
 class TestSystemService(unittest.TestCase):
 
@@ -17,6 +17,7 @@ class TestSystemService(unittest.TestCase):
     SYSTEM_ONE_NUM_STATIONS = 21
     SYSTEM_ONE_NUM_ROUTES = 22
     SYSTEM_ONE_NUM_FEEDS = 23
+    FILE_NAME = '24'
 
     @classmethod
     def setUp(cls):
@@ -142,3 +143,207 @@ class TestSystemService(unittest.TestCase):
 
         system_dao.delete_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
 
+    @mock.patch('transiter.services.systemservice.open')
+    @mock.patch('transiter.services.systemservice.yaml')
+    def test_system_config(self, yaml, open):
+        yaml_file = mock.MagicMock()
+        open.return_value = ContextManager(yaml_file)
+
+        feeds = mock.MagicMock()
+        static_route_service_patterns = mock.MagicMock()
+        static_other_service_patterns = mock.MagicMock()
+        realtime_route_service_patterns = mock.MagicMock()
+        direction_name_rules_files = mock.MagicMock()
+
+        yaml.load.return_value = {
+            'feeds': feeds,
+            'static_route_service_patterns': static_route_service_patterns,
+            'static_other_service_patterns': static_other_service_patterns,
+            'realtime_route_service_patterns': realtime_route_service_patterns,
+            'direction_name_rules_files': direction_name_rules_files
+        }
+
+        system_config = systemservice.SystemConfig(self.FILE_NAME)
+
+        self.assertEqual(system_config.feeds, feeds)
+        open.assert_called_once_with(self.FILE_NAME, 'r')
+        yaml.load.assert_called_once_with(yaml_file)
+
+
+class TestImportStaticData(unittest.TestCase):
+
+    SYSTEM_ID = '1'
+    STOP_ONE_ID = '2'
+    STOP_TWO_ID = '3'
+    STOP_ONE_ID_ALIAS = '4'
+    FEED_NAME = '10'
+    FEED_URL = '11'
+    FEED_PARSER_MODULE = '12'
+    FEED_PARSER_FUNCTION = '13'
+
+    def _quick_mock(self, name):
+        cache_name = '_quick_mock_cache_{}'.format(name)
+        self.__setattr__(cache_name, mock.patch(
+            'transiter.services.systemservice.{}'.format(name)))
+        mocked = getattr(self, cache_name).start()
+        self.addCleanup(getattr(self, cache_name).stop)
+        return mocked
+
+    def setUp(self):
+        self._quick_mock('servicepatternmanager')
+
+        GtfsStaticParser = self._quick_mock('gtfsstaticutil.GtfsStaticParser')
+        self.gtfs_static_parser = mock.MagicMock()
+        GtfsStaticParser.return_value = self.gtfs_static_parser
+
+        self.gtfs_static_parser.route_id_to_route = {}
+        self.gtfs_static_parser.stop_id_to_stop = {}
+        self.gtfs_static_parser.transfer_tuples = []
+        self.gtfs_static_parser.stop_id_alias_to_stop_alias = {}
+
+        SystemConfig = self._quick_mock('SystemConfig')
+        self.system_config = mock.MagicMock()
+        SystemConfig.return_value = self.system_config
+        self.system_config.direction_name_rules_files = []
+        self.system_config.feeds = []
+
+        self.system = models.System()
+        self.system.system_id = self.SYSTEM_ID
+
+    def test_import_static_data__routes(self):
+        route = models.Route()
+        self.gtfs_static_parser.route_id_to_route = {'route': route}
+
+        systemservice._import_static_data(self.system)
+
+        self.assertEqual(route.system, self.system)
+
+    def test_import_static_data__stops(self):
+
+        stop_one = models.Stop()
+        stop_one.stop_id = self.STOP_ONE_ID
+        stop_two = models.Stop()
+        stop_two.stop_id = self.STOP_TWO_ID
+        self.gtfs_static_parser.stop_id_to_stop = {
+            self.STOP_ONE_ID: stop_one,
+            self.STOP_TWO_ID: stop_two
+        }
+
+        systemservice._import_static_data(self.system)
+
+        self.assertEqual(stop_one.system, self.system)
+        self.assertEqual(stop_two.system, self.system)
+        self.assertEqual(2, len(self.system.stations))
+        self.assertEqual([stop_one], stop_one.station.stops)
+        self.assertEqual([stop_two], stop_two.station.stops)
+
+    def test_import_static_data__stops_with_transfer(self):
+
+        stop_one = models.Stop()
+        stop_one.stop_id = self.STOP_ONE_ID
+        stop_two = models.Stop()
+        stop_two.stop_id = self.STOP_TWO_ID
+        self.gtfs_static_parser.stop_id_to_stop = {
+            self.STOP_ONE_ID: stop_one,
+            self.STOP_TWO_ID: stop_two
+        }
+
+        self.gtfs_static_parser.transfer_tuples = [
+            (self.STOP_ONE_ID, self.STOP_TWO_ID)]
+
+        systemservice._import_static_data(self.system)
+
+        self.assertEqual(stop_one.system, self.system)
+        self.assertEqual(stop_two.system, self.system)
+        self.assertEqual(1, len(self.system.stations))
+        self.assertDictEqual(
+            self.gtfs_static_parser.stop_id_to_stop,
+            {stop.stop_id: stop for stop in stop_one.station.stops})
+
+    def test_import_static_data__stop_alias(self):
+
+        stop_one = models.Stop()
+        stop_one.stop_id = self.STOP_ONE_ID
+        self.gtfs_static_parser.stop_id_to_stop = {
+            self.STOP_ONE_ID: stop_one,
+        }
+
+        stop_one_id_alias = models.StopAlias()
+        stop_one_id_alias.stop_id = self.STOP_ONE_ID
+        stop_one_id_alias.stop_id_alias = self.STOP_ONE_ID_ALIAS
+        self.gtfs_static_parser.stop_id_alias_to_stop_alias = {
+            self.STOP_ONE_ID_ALIAS: stop_one_id_alias
+        }
+
+        systemservice._import_static_data(self.system)
+
+        self.assertEqual([stop_one_id_alias], stop_one.stop_aliases)
+
+    def test_import_static_data__feeds(self):
+        feed_config = [{
+            'name': self.FEED_NAME,
+            'url': self.FEED_URL,
+            'parser_module': self.FEED_PARSER_MODULE,
+            'parser_function': self.FEED_PARSER_FUNCTION
+        }]
+        self.system_config.feeds = feed_config
+        feed = models.Feed()
+        feed.feed_id = self.FEED_NAME
+        feed.url = self.FEED_URL
+        feed.parser_module = self.FEED_PARSER_MODULE
+        feed.parser_function = self.FEED_PARSER_FUNCTION
+
+        systemservice._import_static_data(self.system)
+
+        self.assertEqual([feed], self.system.feeds)
+
+    FILE_NAME = '20'
+    DIRECTION_NAME = '21'
+
+    @mock.patch('transiter.services.systemservice.open')
+    @mock.patch('transiter.services.systemservice.csv')
+    def test_import_static_data__feeds(self, csv, open):
+        stop_one = models.Stop()
+        stop_one.stop_id = self.STOP_ONE_ID
+        self.gtfs_static_parser.stop_id_to_stop = {
+            self.STOP_ONE_ID: stop_one,
+        }
+
+        self.system_config.direction_name_rules_files = [self.FILE_NAME]
+        csv_file = mock.MagicMock()
+
+        open.return_value = ContextManager(csv_file)
+        csv.DictReader.return_value = [
+            {
+                'stop_id': self.STOP_ONE_ID,
+                'direction_id': '0',
+                'direction_name': self.DIRECTION_NAME
+            },
+            {
+                'stop_id': self.STOP_TWO_ID
+            }
+        ]
+
+        direction_name_rule = models.DirectionNameRule()
+        direction_name_rule.priority = 0
+        direction_name_rule.direction_id = True
+        direction_name_rule.track = None
+        direction_name_rule.stop_id_alias = None
+        direction_name_rule.name = self.DIRECTION_NAME
+
+        systemservice._import_static_data(self.system)
+
+        self.assertEqual([direction_name_rule], stop_one.direction_name_rules)
+
+
+
+# TODO: put this in shared test module
+class ContextManager(object):
+    def __init__(self, dummy_resource=None):
+        self.dummy_resource = dummy_resource
+
+    def __enter__(self):
+        return self.dummy_resource
+
+    def __exit__(self, *args):
+        pass
