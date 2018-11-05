@@ -14,8 +14,6 @@ class Station(Base):
     system = relationship("System", back_populates="stations")
     stops = relationship("Stop", back_populates="station", cascade="all, delete-orphan")
 
-    def short_repr(self):
-        return {
-            'station_id': self.id,
-            'name': self.name
-        }
+    _short_repr_list = ['name']
+    _short_repr_dict = {'station_id': 'id'}
+

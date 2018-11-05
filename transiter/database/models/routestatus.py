@@ -19,15 +19,14 @@ class RouteStatus(Base):
 
     routes = relationship("Route", secondary="route_status_routes")
 
-    def short_repr(self):
-        return {
-            'status_type': self.status_type,
-            'message_title': self.message_title,
-            'message_content': self.message_content,
-            'start_time': self.start_time,
-            'end_time': self.end_time,
-            'creation_time': self.creation_time,
-        }
+    _short_repr_list = [
+        'status_type',
+        'message_title',
+        'message_content',
+        'start_time',
+        'end_time',
+        'creation_time',
+    ]
 
 
 route_status_routes = Table(

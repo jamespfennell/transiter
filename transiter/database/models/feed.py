@@ -19,10 +19,5 @@ class Feed(Base):
     system = relationship("System", back_populates="feeds")
     updates = relationship("FeedUpdate", back_populates="feed", cascade="all, delete-orphan")
 
-    def short_repr(self):
-        return {
-            'feed_id': self.feed_id,
-        }
+    _short_repr_list = ['feed_id']
 
-    def __eq__(self, other):
-        return model_eq(self, other)

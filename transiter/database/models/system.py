@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 
-from .base import Base, model_eq
+from .base import Base
 
 
 class System(Base):
@@ -22,10 +22,4 @@ class System(Base):
                          back_populates="system",
                          cascade="all, delete-orphan")
 
-    def short_repr(self):
-        return {
-            'system_id': self.system_id,
-        }
-
-    def __eq__(self, other):
-        return model_eq(self, other)
+    _short_repr_list = ['system_id']

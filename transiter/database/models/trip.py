@@ -30,21 +30,14 @@ class Trip(Base):
                                order_by="StopEvent.sequence_index",
                                cascade="all, delete-orphan")
 
-    def short_repr(self):
-        return {
-            'trip_id': self.trip_id
-        }
+    _short_repr_list = ['trip_id']
+    _long_repr_list = [
+        'trip_id',
+        'direction_id',
+        'start_time',
+        'last_update_time',
+        'feed_update_time',
+        'status',
+        'train_id'
+    ]
 
-    def long_repr(self):
-        return {
-            'trip_id': self.trip_id,
-            'direction_id': self.direction_id,
-            'start_time': self.start_time,
-            'last_update_time': self.last_update_time,
-            'feed_update_time': self.feed_update_time,
-            'status': self.current_status,
-            'train_id': self.train_id
-        }
-
-    def __eq__(self, other):
-        return model_eq(self, other)

@@ -53,20 +53,7 @@ class Route(Base):
         post_update=True,
         foreign_keys=[dynamic_service_pattern_pri_key])
 
-    def short_repr(self):
-        return {
-            'route_id': self.route_id,
-        }
+    _short_repr_list = ['route_id']
+    # TODO: put more stuff in here like color
+    _long_repr_list = ['route_id']
 
-    def long_repr(self, verbose=False):
-        repr = {
-            'route_id': self.route_id,
-        }
-        #'color': self.color,
-        #'long_name': route.long_name,
-        #'description': route.description,
-        #'timetable_url': route.timetable_url,
-        return repr
-
-    def __eq__(self, other):
-        return model_eq(self, other)

@@ -24,15 +24,8 @@ class StopEvent(Base):
     stop = relationship("Stop", back_populates="stop_events")
     trip = relationship("Trip", back_populates="stop_events")
 
-    def short_repr(self):
-        return {
-            'arrival_time': self.arrival_time,
-            'departure_time': self.departure_time,
-            'track': self.track,
-            'sequence_index': self.sequence_index,
-            'stop_id_alias': self.stop_id_alias,
-            'status': 'NI'
-        }
+    _short_repr_list = [
+        'arrival_time', 'departure_time', 'track', 'sequence_index', 'stop_id_alias']
 
 
 Index('myindex', StopEvent.trip_pri_key, StopEvent.arrival_time)

@@ -20,8 +20,6 @@ class DirectionNameRule(Base):
 
     stop = relationship("Stop", back_populates="direction_name_rules")
 
-    def __eq__(self, other):
-        return model_eq(self, other)
 
 Index('direction_name_rule_stop_pk_priority_idx',
       DirectionNameRule.stop_pk,

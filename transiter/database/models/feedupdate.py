@@ -28,24 +28,9 @@ class FeedUpdate(Base):
 
     feed = relationship("Feed", back_populates="updates")
 
-    def short_repr(self):
-        return {
-            'id': self.id,
-            'status': self.status,
-            'raw_data_hash': self.raw_data_hash,
-            'last_action_time': self.last_action_time
-        }
+    _short_repr_list = ['id', 'status', 'raw_data_hash', 'last_action_time']
+    _long_repr_list = ['id', 'status', 'raw_data_hash', 'last_action_time']
 
-    def long_repr(self):
-        return {
-            'id': self.id,
-            'status': self.status,
-            'raw_data_hash': self.raw_data_hash,
-            'last_action_time': self.last_action_time
-        }
-
-    def __eq__(self, other):
-        return model_eq(self, other)
 
 Index('feed_updates_ordered_for_feed_idx',
       FeedUpdate.feed_pri_key,

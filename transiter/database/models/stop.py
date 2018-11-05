@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from .base import Base, model_eq
+from .base import Base
 
 
 class Stop(Base):
@@ -38,12 +38,4 @@ class Stop(Base):
         back_populates="stop",
         cascade="all, delete-orphan")
 
-    def short_repr(self, verbose=False):
-        return {
-            'stop_id': self.stop_id,
-            'name': self.name,
-            'location': 'NI',
-        }
-
-    def __eq__(self, other):
-        return model_eq(self, other)
+    _short_repr_list = ['stop_id', 'name']

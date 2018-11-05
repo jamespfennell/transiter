@@ -15,7 +15,6 @@ class StopAlias(Base):
 
     stop = relationship("Stop", back_populates="stop_aliases")
 
-
     __table_args__ = (
         ForeignKeyConstraint(
             ('system_id', 'stop_id'),
@@ -23,6 +22,3 @@ class StopAlias(Base):
         UniqueConstraint('system_id', 'stop_id_alias')
     )
 
-
-    def __eq__(self, other):
-        return model_eq(self, other)

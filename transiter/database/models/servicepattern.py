@@ -20,5 +20,3 @@ class ServicePattern(Base):
                             cascade='all, delete-orphan')
     # edges=? How can we delete them
 
-    def __eq__(self, other):
-        return model_eq(self, other)

@@ -17,5 +17,3 @@ class ServicePatternVertex(Base):
     service_pattern = relationship("ServicePattern",
                                    back_populates='vertices')
 
-    def __eq__(self, other):
-        return model_eq(self, other)
