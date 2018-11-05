@@ -140,6 +140,12 @@ class TestRouteService(unittest.TestCase):
                 datetime.datetime(2018, 1, 1, 10, 30, 0),
                 5,
                 'not used'
+            ],
+            [
+                datetime.datetime(2018, 1, 1, 10, 0, 0),
+                datetime.datetime(2019, 1, 1, 10, 30, 0),
+                1,
+                'not used'
             ]
         ]
         route_dao.get_terminus_data.return_value = terminus_data
