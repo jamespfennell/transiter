@@ -67,7 +67,7 @@ def _construct_frequency(route):
     terminus_data = route_dao.get_terminus_data(route.id)
     total_count = 0
     total_seconds = 0
-    for (earliest_time, latest_time, count, x) in terminus_data:
+    for (earliest_time, latest_time, count, __) in terminus_data:
         if count <= 2:
             continue
         total_count += count

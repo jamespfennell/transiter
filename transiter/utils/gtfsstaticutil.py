@@ -159,6 +159,7 @@ class GtfsStaticParser:
             elif pre_stop_id in self._stop_id_alias_to_stop_id:
                 stop_id = self._stop_id_alias_to_stop_id[pre_stop_id]
             else:
+                print('Test')
                 continue
 
             if trip.start_time is None:

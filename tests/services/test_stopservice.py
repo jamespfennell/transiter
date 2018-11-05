@@ -29,6 +29,11 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.rule.stop_id_alias = None
         self.rule.name = self.DIRECTION_NAME
 
+    def test_all_names(self):
+        dnm = stopservice._DirectionNameMatcher([self.rule])
+
+        self.assertEqual({self.DIRECTION_NAME}, dnm.all_names())
+
     def test_no_matching_stop_pk(self):
         self.rule.stop_pk = 2
         dnm = stopservice._DirectionNameMatcher([self.rule])
@@ -121,6 +126,7 @@ class TestStopEventFilter(unittest.TestCase):
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
         self.stop_event_filter._count[self.DIRECTION_NAME] = 100
         time.time.return_value = self.DATETIME_ONE.timestamp()
+        self.stop_event.departure_time = self.DATETIME_ONE
 
         exclude = self.stop_event_filter.exclude(
             self.stop_event, self.DIRECTION_NAME)

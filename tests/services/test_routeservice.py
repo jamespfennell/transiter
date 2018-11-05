@@ -2,7 +2,7 @@ import unittest.mock as mock
 import unittest
 import itertools
 from transiter.services import routeservice
-
+import datetime
 
 class TestRouteService(unittest.TestCase):
 
@@ -131,5 +131,23 @@ class TestRouteService(unittest.TestCase):
             self.SYSTEM_ID,
             self.ROUTE_ONE_ID)
 
+
+    @mock.patch('transiter.services.routeservice.route_dao')
+    def test_construct_frequency(self, route_dao):
+        terminus_data = [
+            [
+                datetime.datetime(2018, 1, 1, 10, 0, 0),
+                datetime.datetime(2018, 1, 1, 10, 30, 0),
+                5,
+                'not used'
+            ]
+        ]
+        route_dao.get_terminus_data.return_value = terminus_data
+
+        expected_frequency = 7.5
+
+        actual_frequency = routeservice._construct_frequency(self.route_one)
+
+        self.assertEqual(expected_frequency, actual_frequency)
 
 

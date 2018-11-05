@@ -3,6 +3,7 @@ from unittest import mock
 from google.transit import gtfs_realtime_pb2 as gtfs
 from transiter.utils import gtfsutil
 
+from google.protobuf.message import DecodeError
 
 class TestGtfsRealtimeExtension(unittest.TestCase):
 
@@ -29,7 +30,7 @@ class TestReadGtfsRealtime(unittest.TestCase):
     def setUp(self):
         self.gtfs_feed = mock.MagicMock()
 
-        self. patch1 = mock.patch('transiter.utils.gtfsutil.gtfs_realtime_pb2')
+        self.patch1 = mock.patch('transiter.utils.gtfsutil.gtfs_realtime_pb2')
         self.gtfs_realtime_pb2 = self.patch1.start()
         self.gtfs_realtime_pb2.FeedMessage.return_value = self.gtfs_feed
 
@@ -42,14 +43,24 @@ class TestReadGtfsRealtime(unittest.TestCase):
         self.gtfs_feed.ParseFromString.assert_called_once_with(self.RAW_CONTENT)
         self.patch1.stop()
 
-        self._read_protobuf_message.assert_called_once_with(self.gtfs_feed)
         self.patch2.stop()
+
+    def test_read_gtfs_realtime_parse_error(self):
+        """[Read GTFS Realtime] GTFS realtime parse error"""
+        self.gtfs_feed.ParseFromString.side_effect = DecodeError
+
+        self.assertRaises(
+            Exception,
+            gtfsutil.read_gtfs_realtime,
+            self.RAW_CONTENT
+        )
 
     def test_read_gtfs_realtime(self):
         """[Read GTFS Realtime] Read basic feed subtask scheduling"""
         actual_response = gtfsutil.read_gtfs_realtime(self.RAW_CONTENT)
 
         self.assertEqual(actual_response, self.PARSED_CONTENT)
+        self._read_protobuf_message.assert_called_once_with(self.gtfs_feed)
 
     def test_read_gtfs_realtime_with_extension(self):
         """[Read GTFS Realtime] Read feed with extension subtask scheduling"""
@@ -60,6 +71,7 @@ class TestReadGtfsRealtime(unittest.TestCase):
         self.assertEqual(actual_response, self.PARSED_CONTENT)
 
         extension.activate.assert_called_once_with()
+        self._read_protobuf_message.assert_called_once_with(self.gtfs_feed)
 
 
 class TestReadProtobufMessage(unittest.TestCase):

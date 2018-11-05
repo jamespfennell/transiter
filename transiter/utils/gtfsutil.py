@@ -30,6 +30,7 @@ def read_gtfs_realtime(content, extension=None):
     try:
         gtfs_feed.ParseFromString(content)
     except DecodeError as e:
+        # TODO: make this a more specific (feed) service exception
         raise Exception(e)
     return _read_protobuf_message(gtfs_feed)
 
