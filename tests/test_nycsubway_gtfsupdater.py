@@ -6,6 +6,48 @@ from transiter.systems.nycsubway import gtfsupdater
 from transiter.database import models
 
 
+class TestUpdate(unittest.TestCase):
+
+    def test_update__no_content_edge_case(self):
+        actual = gtfsupdater.update(None, None, '')
+
+        self.assertFalse(actual)
+
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.syncutil')
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater._NycSubwayGtfsCleaner')
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.merge_in_nyc_subway_extension_data')
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.gtfsutil')
+    def test_update__full(self, gtfsutil, merge_in_nyc_subway_extension_data,
+                          _NycSubwayGtfsCleaner, syncutil):
+
+        content = 'ABC'
+
+        nyc_subway_gtfs_extension = mock.MagicMock()
+        gtfsutil.GtfsRealtimeExtension.return_value = nyc_subway_gtfs_extension
+        nyc_subway_gtfs_cleaner = mock.MagicMock()
+        _NycSubwayGtfsCleaner.return_value = nyc_subway_gtfs_cleaner
+
+        data_one = mock.MagicMock()
+        data_two = mock.MagicMock()
+        data_three = mock.MagicMock()
+        data_four = mock.MagicMock()
+
+        gtfsutil.read_gtfs_realtime.return_value = data_one
+        merge_in_nyc_subway_extension_data.return_value = data_two
+        gtfsutil.transform_to_transiter_structure.return_value = data_three
+        nyc_subway_gtfs_cleaner.clean.return_value = data_four
+
+        gtfsupdater.update(None, None, content)
+
+        gtfsutil.GtfsRealtimeExtension.assert_called_once()
+        gtfsutil.read_gtfs_realtime.assert_called_once_with(content, nyc_subway_gtfs_extension)
+        merge_in_nyc_subway_extension_data.assert_called_once_with(data_one)
+        gtfsutil.transform_to_transiter_structure.assert_called_once_with(data_two)
+        nyc_subway_gtfs_cleaner.clean.assert_called_once_with(data_three)
+        syncutil.sync_trips.assert_called_once_with(data_four)
+
+
+
 class TestMergeInExtensionData(unittest.TestCase):
 
     TRAIN_ID = "Train ID"
@@ -86,7 +128,7 @@ class TestMergeInExtensionData(unittest.TestCase):
 
         nyct_trip_descriptor_dict = {
             'train_id': self.TRAIN_ID,
-            'direction': 'NORTH',
+            'direction': None,
             'is_assigned': False
         }
         nyct_trip_descriptor = mock.MagicMock()
@@ -121,7 +163,7 @@ class TestMergeInExtensionData(unittest.TestCase):
                     'vehicle': {
                         'trip': {
                             'train_id': self.TRAIN_ID,
-                            'direction_id': self.DIRECTION_ID,
+                            'direction_id': None,
                             'status': self.STATUS_SCHEDULED
                         },
                     }
@@ -319,9 +361,9 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
 
         self.assertEqual(trip, trip_copy)
 
-    @mock.patch('transiter.systems.nycsubway.gtfsupdater.timestamp_to_datetime')
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.datetime')
     def test_delete_first_stop_event_slow_updating_trips__updated_recently(
-            self, timestamp_to_datetime):
+            self, datetime):
         """[NYC Subway cleaner] Delete slow updating trips - first stop in the future"""
         trip = {
             'last_update_time': self.DATETIME_1,
@@ -334,16 +376,16 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
             ]
         }
         trip_copy = copy.deepcopy(trip)
-        timestamp_to_datetime.return_value = self.DATETIME_2
+        datetime.datetime.fromtimestamp.return_value = self.DATETIME_2
 
         gtfsupdater._NycSubwayGtfsCleaner.delete_first_stop_event_slow_updating_trips(
             trip)
 
         self.assertEqual(trip, trip_copy)
 
-    @mock.patch('transiter.systems.nycsubway.gtfsupdater.timestamp_to_datetime')
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.datetime')
     def test_delete_first_stop_event_slow_updating_trips__stale(
-            self, timestamp_to_datetime):
+            self, datetime):
         """[NYC Subway cleaner] Delete slow updating trips - stale data"""
         trip = {
             'last_update_time': self.DATETIME_2,
@@ -356,7 +398,7 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
             ]
         }
         trip_copy = copy.deepcopy(trip)
-        timestamp_to_datetime.return_value = self.DATETIME_4
+        datetime.datetime.fromtimestamp.return_value = self.DATETIME_4
 
         gtfsupdater._NycSubwayGtfsCleaner.delete_first_stop_event_slow_updating_trips(
             trip)
@@ -431,10 +473,25 @@ class TestNycSubwayGtfsCleaner(unittest.TestCase):
         trip['start_time'] = start_time
         trip['trip_id'] = new_trip_id
 
-        gtfsupdater._NycSubwayGtfsCleaner.transform_trip_data(trip)
+        actual = gtfsupdater._NycSubwayGtfsCleaner.transform_trip_data(trip)
 
+        self.assertTrue(actual)
         self.assertDictEqual(expected_trip, trip)
 
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.generate_trip_uid')
+    @mock.patch('transiter.systems.nycsubway.gtfsupdater.generate_trip_start_time')
+    def test_transform_trip_data__fails(self, generate_trip_start_time, generate_trip_uid):
+        trip = {
+            'direction_id': False,
+            'trip_id': None,
+            'start_date': None,
+            'route_id': None,
+        }
+        generate_trip_uid.side_effect = Exception
+
+        actual = gtfsupdater._NycSubwayGtfsCleaner.transform_trip_data(trip)
+
+        self.assertFalse(actual)
 
 class TestGtfsRealtimeCleaner(unittest.TestCase):
 

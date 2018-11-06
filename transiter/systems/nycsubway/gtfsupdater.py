@@ -30,7 +30,8 @@ def update(feed, system, content):
     feed_data = gtfsutil.read_gtfs_realtime(content, nyc_subway_gtfs_extension)
     feed_data = merge_in_nyc_subway_extension_data(feed_data)
     feed_data = gtfsutil.transform_to_transiter_structure(feed_data)
-    feed_data = clean_nyc_subway_gtfs_feed(feed_data)
+    nyc_subway_gtfs_cleaner = _NycSubwayGtfsCleaner()
+    feed_data = nyc_subway_gtfs_cleaner.clean(feed_data)
     syncutil.sync_trips(feed_data)
 
 
@@ -39,12 +40,13 @@ def merge_in_nyc_subway_extension_data(data):
 
     for entity in data['entity']:
         stop_time_updates = []
+        trip = None
         if 'trip_update' in entity:
             trip = entity['trip_update']['trip']
             stop_time_updates = entity['trip_update']['stop_time_update']
         elif 'vehicle' in entity:
             trip = entity['vehicle']['trip']
-        else:
+        if trip is None:
             continue
 
         nyct_trip_data = trip['nyct_trip_descriptor']
@@ -73,11 +75,6 @@ def merge_in_nyc_subway_extension_data(data):
             del stop_time_update['nyct_stop_time_update']
 
     return data
-
-
-def clean_nyc_subway_gtfs_feed(data):
-    nyc_subway_gtfs_cleaner = _NycSubwayGtfsCleaner()
-    return nyc_subway_gtfs_cleaner.clean(data)
 
 
 class _NycSubwayGtfsCleaner:
@@ -167,7 +164,9 @@ class _NycSubwayGtfsCleaner:
             if first_stop_time > trip['last_update_time']:
                 return True
             # TODO: make this the feed time -> should be deterministic
-            current_time = timestamp_to_datetime(int(time.time()))
+            current_time = datetime.datetime.fromtimestamp(
+                int(time.time()), datetime.timezone.utc)
+            #current_time = timestamp_to_datetime(int(time.time()))
             seconds_since_update = (current_time - trip['last_update_time']).total_seconds()
             print(seconds_since_update)
             if seconds_since_update > 15:
@@ -196,10 +195,6 @@ class _NycSubwayGtfsCleaner:
             return False
         return True
 
-
-# TODO: move this into the single cleaner that calls it
-def timestamp_to_datetime(timestamp):
-    return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
 
 # TODO: move this into the single cleaner that calls it
 eastern = pytz.timezone('US/Eastern')

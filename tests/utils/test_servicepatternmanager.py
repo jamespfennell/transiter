@@ -244,25 +244,29 @@ class TestTripMatcher(unittest.TestCase):
         self.early_weekday_trip = self._create_trip({
             'start_time': 6,
             'end_time': 8,
-            'monday': True
+            'monday': True,
+            'route_id': 'A'
         })
 
         self.mid_weekday_trip = self._create_trip({
             'start_time': 12,
             'end_time': 14,
-            'tuesday': True
+            'tuesday': True,
+            'route_id': 'A'
         })
 
         self.late_weekday_trip = self._create_trip({
             'start_time': 22,
             'end_time': 23,
-            'wednesday': True
+            'wednesday': True,
+            'route_id': 'B'
         })
 
         self.early_weekend_trip = self._create_trip({
             'start_time': 6,
             'end_time': 8,
-            'sunday': True
+            'sunday': True,
+            'route_id': 'C'
         })
 
         self.trips = [
@@ -321,6 +325,51 @@ class TestTripMatcher(unittest.TestCase):
         matched_trips = self._trip_matcher_runner(raw_conds, self.trips)
 
         self.assertListEqual(matched_trips, expected_trips)
+
+    def test_five(self):
+        raw_conds = {
+            "all_of": {
+                "ends_earlier_than": 11,
+                "weekday": True,
+            }
+        }
+        expected_trips = [self.early_weekday_trip]
+
+        matched_trips = self._trip_matcher_runner(raw_conds, self.trips)
+
+        self.assertListEqual(matched_trips, expected_trips)
+
+    def test_six(self):
+        raw_conds = {
+            "weekend": True
+        }
+        expected_trips = [self.early_weekend_trip]
+
+        matched_trips = self._trip_matcher_runner(raw_conds, self.trips)
+
+        self.assertListEqual(matched_trips, expected_trips)
+
+    def test_seven(self):
+        raw_conds = {
+            'route_id': 'A'
+        }
+        expected_trips = [self.early_weekday_trip, self.mid_weekday_trip]
+
+        matched_trips = self._trip_matcher_runner(raw_conds, self.trips)
+
+        self.assertListEqual(matched_trips, expected_trips)
+
+    def test_eight(self):
+        raw_conds = {
+            'unknown_condition': True
+        }
+
+        self.assertRaises(
+            NotImplementedError,
+            self._trip_matcher_runner,
+            raw_conds,
+            self.trips)
+
 
     @staticmethod
     def _trip_matcher_runner(raw_conds, trips):

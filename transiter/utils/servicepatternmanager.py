@@ -20,17 +20,13 @@ WHERE  routes.route_id = 'A'
 ORDER BY sp_v.position;
 """
 
-
 def construct_sps_from_gtfs_static_data(
         gtfs_static_parser,
-        route_sp_settings=None,
+        route_sp_settings=[],
         general_sp_settings=None):
     route_id_to_route = gtfs_static_parser.route_id_to_route
     stop_id_to_stop = gtfs_static_parser.stop_id_to_stop
     trips = gtfs_static_parser.trip_id_to_trip.values()
-
-    if route_sp_settings is None:
-        route_sp_settings = []
 
     route_id_to_trips = {
         route_id: set() for route_id in route_id_to_route.keys()}
@@ -167,6 +163,10 @@ class _TripMatcher:
             return cls.order_factory('end_time', value, True)
         if key == 'ends_later_than':
             return cls.order_factory('end_time', value, False)
+        if key == 'route_id':
+            if isinstance(value, str):
+                return cls.equality_factory('route_id', value)
+        # TODO: make this a more specific error
         raise NotImplementedError
 
     @staticmethod

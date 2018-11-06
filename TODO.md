@@ -5,6 +5,10 @@
 Next 1 step, then v0.1 feature complete:
 
 1. Deal with the final edge cases.
+    -servicepatternmanager - some of the trip matching cases
+                            - and a tiny edge case
+    - gtfsupdater - the update function + two edges cases
+    
 Investigate coveralls bug in if/else/elif
 Travis CI doesn't seem to see it
    
