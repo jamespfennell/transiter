@@ -1,7 +1,8 @@
 .PHONY: docs test
 
 test:
-	nosetests --with-coverage --cover-package=transiter --rednose -v tests
+	rm .coverage
+	nosetests --with-coverage --cover-package=transiter --rednose -v tests/unittests
 
 reset-db:
 	python rebuilddb.py

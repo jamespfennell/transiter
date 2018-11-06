@@ -141,33 +141,43 @@ class _TripMatcher:
             conditions.append(cls._convert_raw_condition(key, value))
         return conditions
 
+    _logical_operators = None
+    _key_to_function = None
+    _key_to_extra_args = None
+
     @classmethod
     def _convert_raw_condition(cls, key, value):
-        print(key, value)
-        # TODO Can the following switch like statements be converted to a dict?
-        if key == 'one_of':
-            return cls.one_of_factory(cls._convert_raw_conditions(value))
-        if key == 'all_of':
-            return cls.all_of_factory(cls._convert_raw_conditions(value))
-        if key == 'none_of':
-            return cls.none_of_factory(cls._convert_raw_conditions(value))
-        if key == 'weekday':
-            return cls.weekday
-        if key == 'weekend':
-            return cls.weekend
-        if key == 'starts_earlier_than':
-            return cls.order_factory('start_time', value, True)
-        if key == 'starts_later_than':
-            return cls.order_factory('start_time', value, False)
-        if key == 'ends_earlier_than':
-            return cls.order_factory('end_time', value, True)
-        if key == 'ends_later_than':
-            return cls.order_factory('end_time', value, False)
-        if key == 'route_id':
-            if isinstance(value, str):
-                return cls.equality_factory('route_id', value)
-        # TODO: make this a more specific error
-        raise NotImplementedError
+        # Having these variables as class variables that are populated on the
+        # first run is basically a form of caching
+        if cls._logical_operators is None:
+            cls._logical_operators = {'one_of', 'all_of', 'none_of'}
+            cls._key_to_function = {
+                'one_of': cls.one_of_factory,
+                'all_of': cls.all_of_factory,
+                'none_of': cls.none_of_factory,
+                'starts_earlier_than': cls.order_factory,
+                'starts_later_than': cls.order_factory,
+                'ends_earlier_than': cls.order_factory,
+                'ends_later_than': cls.order_factory,
+                'route_id': cls.equality_factory,
+                'weekend': cls.weekend_factory,
+                'weekday': cls.weekday_factory,
+            }
+            cls._key_to_extra_args = {
+                'starts_earlier_than': ('start_time', True),
+                'starts_later_than': ('start_time', False),
+                'ends_earlier_than': ('end_time', True),
+                'ends_later_than': ('end_time', False),
+                'route_id': ('route_id',),
+            }
+        if key in cls._logical_operators:
+            value = cls._convert_raw_conditions(value)
+        try:
+            func = cls._key_to_function[key]
+        except KeyError:
+            raise NotImplementedError
+        extra_args = cls._key_to_extra_args.get(key, ())
+        return func(value, *extra_args)
 
     @staticmethod
     def one_of_factory(conditions):
@@ -197,26 +207,34 @@ class _TripMatcher:
         return all_of
 
     @staticmethod
-    def order_factory(trip_attr, value, less_than=True):
+    def order_factory(value, trip_attr, less_than=True):
         def order(trip):
             return (getattr(trip, trip_attr) < value) == less_than
         return order
 
     @staticmethod
-    def equality_factory(trip_attr, value):
+    def equality_factory(value, trip_attr):
         def equality(trip):
             return getattr(trip, trip_attr) == value
+
+        def contains(trip):
+            return getattr(trip, trip_attr) in value
+
+        if isinstance(value, list):
+            return contains
         return equality
 
     @staticmethod
-    def weekday(trip):
-        weekday_cond = trip.monday or trip.tuesday or trip.wednesday or trip.thursday or trip.friday
-        weekend_cond = not (trip.saturday or trip.sunday)
-        return weekday_cond and weekend_cond
+    def weekday_factory(value):
+        def weekday(trip):
+            weekday_cond = trip.monday or trip.tuesday or trip.wednesday or trip.thursday or trip.friday
+            weekend_cond = not (trip.saturday or trip.sunday)
+            return (weekday_cond and weekend_cond) == value
+        return weekday
 
     @classmethod
-    def weekend(cls, trip):
-        return not cls.weekday(trip)
+    def weekend_factory(cls, value):
+        return cls.weekday_factory(not value)
 
 
 

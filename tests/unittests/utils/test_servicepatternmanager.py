@@ -361,6 +361,16 @@ class TestTripMatcher(unittest.TestCase):
 
     def test_eight(self):
         raw_conds = {
+            'route_id': ['B', 'C']
+        }
+        expected_trips = [self.late_weekday_trip, self.early_weekend_trip]
+
+        matched_trips = self._trip_matcher_runner(raw_conds, self.trips)
+
+        self.assertListEqual(matched_trips, expected_trips)
+
+    def test_nine(self):
+        raw_conds = {
             'unknown_condition': True
         }
 
