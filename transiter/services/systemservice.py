@@ -1,6 +1,6 @@
 import csv
 import os
-
+import importlib
 import yaml
 
 from transiter.database.daos import system_dao
@@ -56,12 +56,13 @@ def get_by_id(system_id):
 
 
 @connection.unit_of_work
-def install(system_id):
+def install(system_id, package='transiter_nycsubway'):
     if system_dao.get_by_id(system_id) is not None:
         return False
 
     system = system_dao.create()
     system.system_id = system_id
+    system.package = package
 
     _import_static_data(system)
     return True
@@ -76,11 +77,9 @@ def delete_by_id(system_id):
 
 
 def _import_static_data(system):
-    system_base_dir = os.path.join(
-        os.path.dirname(__file__),
-        '../systems',
-        system.system_id
-        )
+
+    package = importlib.import_module(system.package)
+    system_base_dir = os.path.dirname(package.__file__)
     agency_data_dir = os.path.join(system_base_dir, 'agencydata')
     custom_data_dir = os.path.join(system_base_dir, 'customdata')
 

@@ -180,9 +180,11 @@ class TestSystemEndpoints(_TestEndpoints):
                                      systemservice.get_by_id,
                                      (self.SYSTEM_ID))
 
+    @mock.patch('transiter.endpoints.systemendpoints.inputvalidator')
     @mock.patch('transiter.endpoints.systemendpoints.systemservice')
-    def test_install(self, systemservice):
+    def test_install(self, systemservice, inputvalidator):
         """[System endpoints] Install a system"""
+        inputvalidator.validate_post_data.return_value = {}
         self._test_no_response_endpoint(systemendpoints.install,
                                         systemservice.install,
                                         (self.SYSTEM_ID))

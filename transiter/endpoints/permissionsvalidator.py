@@ -17,6 +17,7 @@ class AccessDenied(Exception):
     pass
 
 
+# Rename to validate
 def validate_permissions(method_level):
     level_to_code = {
         'All': 0,

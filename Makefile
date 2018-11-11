@@ -1,4 +1,16 @@
 .PHONY: docs test
+.ONESHELL:
+
+webtest:
+	python tests/webtest/feedserver.py &
+	export TRANSITER_DB_NAME=transiter_web_test
+	sleep 3
+	python rebuilddb.py
+	python -m transiter.endpoints.flaskapp &
+	sleep 3
+	kill $(lsof -t -i:5000)
+	kill $(lsof -t -i:5001)
+
 
 test:
 	rm .coverage

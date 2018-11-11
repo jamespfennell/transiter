@@ -1,11 +1,11 @@
 from decorator import decorator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+import os
 
+db_name = os.environ.get('TRANSITER_DB_NAME', 'realtimerail')
 
-
-
-engine = create_engine("postgres://postgres@/realtimerail")
+engine = create_engine("postgres://postgres@/{}".format(db_name))
 session_factory = sessionmaker(bind=engine)
 Session = scoped_session(session_factory)
 

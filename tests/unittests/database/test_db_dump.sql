@@ -1,6 +1,6 @@
-INSERT INTO systems (system_id) VALUES
-    (:system_one_id),
-    (:system_two_id);
+INSERT INTO systems (system_id, package) VALUES
+    (:system_one_id, :system_one_package),
+    (:system_two_id, :system_two_package);
 
 INSERT INTO routes (id, route_id, system_id) VALUES
     (:route_one_pk,   :route_one_id,   :system_one_id),

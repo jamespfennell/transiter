@@ -3,7 +3,8 @@ import json
 import time
 from decorator import decorator
 from transiter.utils import linksutil
-from ..services import exceptions
+from ..services import exceptions as serviceexceptions
+from transiter.endpoints import exceptions as httpexceptions
 from flask import Response
 from transiter.endpoints import permissionsvalidator
 
@@ -19,11 +20,19 @@ HTTP_404_NOT_FOUND = 404
 HTTP_500_SERVER_ERROR = 500
 HTTP_501_NOT_IMPLEMENTED = 501
 
+CONTENT_TYPE_JSON = {'Content-Type': 'application/json'}
+
+
+def create_error_response(msg, status_code):
+    json = '{{"error_message": "{}"}}'.format(msg)
+    return json, status_code, CONTENT_TYPE_JSON
+
 
 def _process_request(callback, func, *args, **kw):
+    # TODO: make this a dict
     try:
         result = func(*args, **kw)
-    except exceptions.IdNotFoundError:
+    except serviceexceptions.IdNotFoundError:
         return '', HTTP_404_NOT_FOUND, ''
     except NotImplementedError:
         return '', HTTP_501_NOT_IMPLEMENTED, ''
@@ -31,12 +40,18 @@ def _process_request(callback, func, *args, **kw):
         return '', HTTP_403_FORBIDDEN, ''
     except permissionsvalidator.UnknownPermissionsLevelInRequest:
         return '', HTTP_400_BAD_REQUEST, ''
+    except httpexceptions.InvalidJson:
+        return create_error_response('Request payload was not valid JSON.', HTTP_400_BAD_REQUEST)
+    except httpexceptions.UnexpectedArgument as e:
+        return create_error_response(str(e), HTTP_400_BAD_REQUEST)
+    except httpexceptions.MissingArgument as e:
+        return create_error_response(str(e), HTTP_400_BAD_REQUEST)
     #except Exception as e:
     #    print(e)
     #    return str(e), HTTP_500_SERVER_ERROR, ''
 
     (content, code) = callback(result)
-    return content, code, {'Content-Type': 'application/json'}
+    return content, code, CONTENT_TYPE_JSON
 
 
 def _post_process_post(result):

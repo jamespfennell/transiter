@@ -1,6 +1,7 @@
 from flask import Blueprint
 from ..services import systemservice
 from .responsemanager import http_get_response, http_delete_response, http_put_response
+from transiter.endpoints import inputvalidator
 
 system_endpoints = Blueprint('system_endpoints', __name__)
 
@@ -28,7 +29,7 @@ def list_all():
     return systemservice.list_all()
 
 
-@system_endpoints.route('/<system_id>/', methods=['GET'])
+@system_endpoints.route('/<system_id>', methods=['GET'])
 @http_get_response
 def get_by_id(system_id):
     """Retrieve a specific system
@@ -66,7 +67,7 @@ def get_by_id(system_id):
     return systemservice.get_by_id(system_id)
 
 
-@system_endpoints.route('/<system_id>/', methods=['PUT'])
+@system_endpoints.route('/<system_id>', methods=['PUT'])
 @http_put_response
 def install(system_id):
     """Install a system
@@ -80,10 +81,11 @@ def install(system_id):
     :status 200: the system's data was found on disk and the system was installed
     :status 404: data for such a system was not found
     """
-    return systemservice.install(system_id)
+    data = inputvalidator.validate_post_data(['package', ], [])
+    return systemservice.install(system_id, **data)
 
 
-@system_endpoints.route('/<system_id>/', methods=['DELETE'])
+@system_endpoints.route('/<system_id>', methods=['DELETE'])
 @http_delete_response
 def delete_by_id(system_id):
     """Uninstall a system

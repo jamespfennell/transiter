@@ -10,6 +10,7 @@ class System(Base):
     id = Column(Integer, primary_key=True)
     system_id = Column(String, unique=True)
     name = Column(String, nullable=True)
+    package = Column(String, nullable=False)
     directory_hash = Column(String, nullable=True)
 
     routes = relationship("Route",

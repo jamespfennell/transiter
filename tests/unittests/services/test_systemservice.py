@@ -202,6 +202,10 @@ class TestImportStaticData(unittest.TestCase):
 
     def setUp(self):
         self._quick_mock('servicepatternmanager')
+        importlib = self._quick_mock('importlib')
+        package = mock.MagicMock()
+        importlib.import_module.return_value = package
+        package.__file__ = ''
 
         GtfsStaticParser = self._quick_mock('gtfsstaticutil.GtfsStaticParser')
         self.gtfs_static_parser = mock.MagicMock()

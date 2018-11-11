@@ -16,6 +16,9 @@ class TestDbConstants:
     SYSTEM_TWO_ID = '2'
     SYSTEM_THREE_ID = '3'
     SYSTEM_THREE_NAME = '4'
+    SYSTEM_ONE_PACKAGE = '5'
+    SYSTEM_TWO_PACKAGE = '6'
+    SYSTEM_THREE_PACKAGE = '7'
 
     ROUTE_ONE_ID = '11'
     ROUTE_ONE_PK = 12
@@ -99,9 +102,11 @@ class TestDaos(unittest.TestCase, TestDbConstants):
     def setUp(self):
         self.system_one = models.System()
         self.system_one.system_id = self.SYSTEM_ONE_ID
+        self.system_one.package = self.SYSTEM_ONE_PACKAGE
 
         self.system_two = models.System()
         self.system_two.system_id = self.SYSTEM_TWO_ID
+        self.system_two.package = self.SYSTEM_TWO_PACKAGE
 
         self.route_one = models.Route()
         self.route_one.route_id = self.ROUTE_ONE_ID
@@ -160,6 +165,7 @@ class TestDaos(unittest.TestCase, TestDbConstants):
         db_system = system_dao.create()
         db_system.system_id = self.SYSTEM_THREE_ID
         db_system.name = self.SYSTEM_THREE_NAME
+        db_system.package = self.SYSTEM_THREE_PACKAGE
         self.session.flush()
 
         query = "SELECT system_id, name FROM systems WHERE system_id=:system_id"
