@@ -209,16 +209,25 @@ class _TripMatcher:
     @staticmethod
     def order_factory(value, trip_attr, less_than=True):
         def order(trip):
-            return (getattr(trip, trip_attr) < value) == less_than
+            attr = getattr(trip, trip_attr)
+            if attr is None:
+                return False
+            return (attr < value) == less_than
         return order
 
     @staticmethod
     def equality_factory(value, trip_attr):
         def equality(trip):
-            return getattr(trip, trip_attr) == value
+            attr = getattr(trip, trip_attr)
+            if attr is None:
+                return False
+            return attr == value
 
         def contains(trip):
-            return getattr(trip, trip_attr) in value
+            attr = getattr(trip, trip_attr)
+            if attr is None:
+                return False
+            return attr in value
 
         if isinstance(value, list):
             return contains

@@ -91,11 +91,11 @@ class GtfsStaticParser:
         for row in self._csv_iterator(routes_file_path):
             route = Route()
             route.route_id = row['route_id']
-            route.color = row['route_color']
-            route.timetable_url = row['route_url']
-            route.short_name = row['route_short_name']
-            route.long_name = row['route_long_name']
-            route.description = row['route_desc']
+            route.color = row.get('route_color')
+            route.timetable_url = row.get('route_url')
+            route.short_name = row.get('route_short_name')
+            route.long_name = row.get('route_long_name')
+            route.description = row.get('route_desc')
             self.route_id_to_route[route.route_id] = route
 
     def _parse_stops(self):
@@ -172,6 +172,8 @@ class GtfsStaticParser:
     def _parse_transfers(self):
         transfers_file_path = os.path.join(
             self._base_path, self.TRANSFERS_FILE_NAME)
+        if not os.path.exists(transfers_file_path):
+            return
         for row in self._csv_iterator(transfers_file_path):
             stop_id_1 = row['from_stop_id']
             stop_id_2 = row['to_stop_id']

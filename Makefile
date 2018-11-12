@@ -1,20 +1,14 @@
 .PHONY: docs test
-.ONESHELL:
+.ONESHELL: integration-test
 
-webtest:
-	python tests/webtest/feedserver.py &
-	export TRANSITER_DB_NAME=transiter_web_test
-	sleep 3
-	python rebuilddb.py
-	python -m transiter.endpoints.flaskapp &
-	sleep 3
-	kill $(lsof -t -i:5000)
-	kill $(lsof -t -i:5001)
+integration-test:
+	python -m unittest discover tests/integrationtest
 
-
-test:
-	rm .coverage
+unit-tests:
+	rm -f .coverage
 	nosetests --with-coverage --cover-package=transiter --rednose -v tests/unittests
+
+test: unit-tests integration-test
 
 reset-db:
 	python rebuilddb.py

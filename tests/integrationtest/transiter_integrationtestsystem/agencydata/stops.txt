@@ -15,8 +15,8 @@ stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station
 1ES,Elderberry St. Station,0,0,0,1E
 1EN,Elderbetty St. Station,0,0,0,1E
 1F,Fig Ave. Station,0,0,1,
-1FS,Fig Ave. Station,0,0,0,2A
-1FN,Fig Ave. Station,0,0,0,2A
+1FS,Fig Ave. Station,0,0,0,1F
+1FN,Fig Ave. Station,0,0,0,1F
 1G,Guanabana St. Station,0,0,1,
 1GS,Guanabana St. Station,0,0,0,1G
 1GN,Guanabana St. Station,0,0,0,1G

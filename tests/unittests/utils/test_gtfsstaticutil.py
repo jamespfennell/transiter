@@ -332,8 +332,10 @@ class TestGtfsStaticUtil(unittest.TestCase):
         self.assertEqual(trip, post_trip)
         gtfs_static_parser._transform_times.assert_called_once_with('4')
 
-    def test_parse_transfers(self):
+    @mock.patch('transiter.utils.gtfsstaticutil.os')
+    def test_parse_transfers(self, os):
         """[GTFS static util] Parse transfers"""
+        os.path.exists.return_value = True
         stop_id_1 = 'service!'
         stop_id_2 = 'MySecond'
         data = {

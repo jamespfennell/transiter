@@ -1,3 +1,9 @@
+gtfs_static_data:
+  local: gtfsstaticdata
+
+
+
+
 feeds:
 
   - name: GtfsRealtimeFeed
@@ -40,5 +46,4 @@ realtime_route_service_patterns:
   name: current_service
 
 
-direction_name_rules_files:
 
