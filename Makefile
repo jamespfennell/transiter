@@ -8,7 +8,7 @@ unit-tests:
 	rm -f .coverage
 	nosetests --with-coverage --cover-package=transiter --rednose -v tests/unittests
 
-test: unit-tests integration-test
+test: unit-tests
 
 reset-db:
 	python rebuilddb.py
