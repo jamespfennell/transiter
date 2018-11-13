@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey, Index
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -9,7 +9,7 @@ class ServicePatternVertex(Base):
 
     id = Column(Integer, primary_key=True)
     stop_pri_key = Column(Integer, ForeignKey('stops.id'))
-    position = Column(Integer, index=True)
+    position = Column(Integer)
     service_pattern_pri_key = Column(Integer,
                                      ForeignKey('service_patterns.id'))
 
@@ -17,3 +17,7 @@ class ServicePatternVertex(Base):
     service_pattern = relationship("ServicePattern",
                                    back_populates='vertices')
 
+
+Index('service_pattern_vertex_sp_position',
+      ServicePatternVertex.service_pattern_pri_key,
+      ServicePatternVertex.position)

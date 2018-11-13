@@ -21,9 +21,11 @@ class Route(Base):
 
     system = relationship("System",
                           back_populates="routes")
+
     trips = relationship("Trip",
                          back_populates="route",
                          cascade="all, delete-orphan")
+
     service_patterns = relationship("ServicePattern",
                                 back_populates="route",
                                 primaryjoin='ServicePattern.route_pri_key==Route.id',

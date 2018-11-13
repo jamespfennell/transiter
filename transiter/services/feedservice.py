@@ -91,11 +91,11 @@ def _execute_feed_update(feed_update):
     if not feed.parser_function.isalpha():
         raise IllegalFunctionName
     """
-    module_path = '...systems.{}.{}'.format(
-        feed.system.system_id,
+    module_path = '{}.{}'.format(
+        feed.system.package,
         feed.parser_module
         )
-    module = importlib.import_module(module_path, __name__)
+    module = importlib.import_module(module_path)
     update_function = getattr(module, feed.parser_function)
 
     request = requests.get(feed.url)

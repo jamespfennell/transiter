@@ -2,13 +2,6 @@ from transiter.database.daos import daofactory
 from transiter.database import models
 
 
-_DirectionNameDao = daofactory._dao_factory(
-    schema_entity=models.DirectionName,
-    id_field='id',
-    order_field='id',
-    base_dao=daofactory._BaseEntityDao)
-
-direction_name_dao = _DirectionNameDao()
 
 
 _StationDao = daofactory._dao_factory(

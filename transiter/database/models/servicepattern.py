@@ -8,7 +8,7 @@ class ServicePattern(Base):
     __tablename__ = 'service_patterns'
 
     id = Column(Integer, primary_key=True)
-    route_pri_key = Column(Integer, ForeignKey('routes.id'))
+    route_pri_key = Column(Integer, ForeignKey('routes.id'), index=True)
     name = Column(String)
 
     route = relationship("Route",

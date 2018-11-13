@@ -5,19 +5,20 @@ from sqlalchemy.sql import text
 from .base import Base
 
 
+# TODO: rename StopTimeUpdate
 class StopEvent(Base):
     __tablename__ = 'stop_events'
 
     id = Column(Integer, primary_key=True)
     direction = Column(String)
-    stop_pri_key = Column(Integer, ForeignKey('stops.id'), nullable=False)
-    trip_pri_key = Column(Integer, ForeignKey('trips.id'), nullable=False)
+    stop_pri_key = Column(Integer, ForeignKey('stops.id'), nullable=False)#, index=True)
+    trip_pri_key = Column(Integer, ForeignKey('trips.id'), nullable=False)#, index=True)
     # TODO rename to status and make a string
     future = Column(Boolean, server_default=text('true'))
     arrival_time = Column(TIMESTAMP(timezone=True))
     departure_time = Column(TIMESTAMP(timezone=True))
     last_update_time = Column(TIMESTAMP(timezone=True))
-    # TODO rename? or is this a GTFS realtime name?
+    # TODO rename to stop_sequence
     sequence_index = Column(Integer, nullable=False)
     track = Column(String)
     stop_id_alias = Column(String)

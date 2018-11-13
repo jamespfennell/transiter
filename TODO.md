@@ -2,8 +2,13 @@
 
 ## Main development thread
 
-For the service test, need to fix how systems are imported
-
+1. 
+    Need some GTFS realtime data now
+    Write an abstract class with a to_gtfs_realtime method
+    Then can compares Transiter responses to that
+    
+    How about just a list of trips,stops, which then get converted based
+        on the 'current time'
    
 1. Refactoring:
     1. endpoints -> http

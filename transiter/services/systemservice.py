@@ -1,6 +1,7 @@
 import csv
 import os
 import importlib
+import time
 import yaml
 
 from transiter.database.daos import system_dao
@@ -70,6 +71,28 @@ def install(system_id, package='transiter_nycsubway'):
 
 @connection.unit_of_work
 def delete_by_id(system_id):
+
+    system = system_dao.get_by_id(system_id)
+    session = system_dao.get_session()
+
+    """
+    print(time.time())
+    print('Routes')
+    for route in system.routes:
+        session.delete(route)
+    session.commit()
+    print(time.time())
+    print('Stops')
+    for stop in system.stations:
+        session.delete(stop)
+    session.commit()
+    print(time.time())
+    print('Rest')
+    #session.delete(system)
+
+    return True
+    """
+
     deleted = system_dao.delete_by_id(system_id)
     if not deleted:
         raise exceptions.IdNotFoundError
@@ -153,7 +176,7 @@ def _import_static_data(system):
         feed = models.Feed()
         feed.system = system
         feed.feed_id = feed_config['name']
-        feed.url = feed_config['url']
+        feed.url = feed_config['url'].format(**system_config.env_vars)
         feed.parser_module = feed_config['parser_module']
         feed.parser_function = feed_config['parser_function']
 
@@ -173,3 +196,9 @@ class SystemConfig:
             {'enabled': False})
         self.direction_name_rules_files = self.config.get(
             'direction_name_rules_files', [])
+
+        self.env_vars = {}
+        env_vars_config = self.config.get('environment_variables', {})
+        for key, value in env_vars_config.items():
+            self.env_vars[key] = os.environ.get(value, None)
+

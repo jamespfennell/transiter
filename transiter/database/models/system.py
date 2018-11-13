@@ -16,9 +16,11 @@ class System(Base):
     routes = relationship("Route",
                           back_populates="system",
                           cascade="all, delete-orphan")
+
     stations = relationship("Station",
                             back_populates="system",
                             cascade="all, delete-orphan")
+
     feeds = relationship("Feed",
                          back_populates="system",
                          cascade="all, delete-orphan")

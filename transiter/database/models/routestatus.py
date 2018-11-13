@@ -32,5 +32,5 @@ class RouteStatus(Base):
 route_status_routes = Table(
     'route_status_routes', Base.metadata,
     Column('route_status_pri_key', Integer, ForeignKey("route_status.id")),
-    Column('route_pri_key', Integer, ForeignKey("routes.id"))
+    Column('route_pri_key', Integer, ForeignKey("routes.id"), index=True)
 )

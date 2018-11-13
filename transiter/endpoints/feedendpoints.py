@@ -34,7 +34,7 @@ def list_all_in_system(system_id):
     return feedservice.list_all_in_system(system_id)
 
 
-@feed_endpoints.route('/<feed_id>/')
+@feed_endpoints.route('/<feed_id>')
 @http_get_response
 def get_in_system_by_id(system_id, feed_id):
     """Retrieve a specific feed
@@ -78,7 +78,7 @@ def get_in_system_by_id(system_id, feed_id):
     return feedservice.get_in_system_by_id(system_id, feed_id)
 
 
-@feed_endpoints.route('/<feed_id>/', methods=['POST'])
+@feed_endpoints.route('/<feed_id>', methods=['POST'])
 @http_post_response
 def create_feed_update(system_id, feed_id):
     """Create a new feed update

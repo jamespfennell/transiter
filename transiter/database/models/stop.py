@@ -22,8 +22,6 @@ class Stop(Base):
         back_populates="stop",
         cascade="all, delete-orphan",
         order_by='DirectionNameRule.priority')
-    direction_names = relationship("DirectionName", back_populates="stop",
-                                   cascade="all, delete-orphan")
     stop_events = relationship("StopEvent", back_populates="stop",
         cascade="all, delete-orphan")
 
@@ -31,6 +29,7 @@ class Stop(Base):
         "ServicePatternVertex",
         back_populates="stop",
         cascade="all, delete-orphan")
+
     __table_args__ = (UniqueConstraint('system_id', 'stop_id'), )
 
     stop_aliases = relationship(
