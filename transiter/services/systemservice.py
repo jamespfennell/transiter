@@ -22,6 +22,7 @@ def list_all():
     response = []
     for system in system_dao.list_all():
         system_response = system.short_repr()
+        print(system_response)
         system_response.update({
             'href': linksutil.SystemEntityLink(system)
         })
@@ -62,7 +63,7 @@ def install(system_id, package='transiter_nycsubway'):
         return False
 
     system = system_dao.create()
-    system.system_id = system_id
+    system.id = system_id
     system.package = package
 
     _import_static_data(system)
@@ -118,7 +119,7 @@ def _import_static_data(system):
     station_sets_by_stop_id = {}
     for stop in gtfs_static_parser.stop_id_to_stop.values():
         stop.system = system
-        station_sets_by_stop_id[stop.stop_id] = {stop.stop_id}
+        station_sets_by_stop_id[stop.id] = {stop.id}
 
     for (stop_id_1, stop_id_2) in gtfs_static_parser.transfer_tuples:
         updated_station_set = station_sets_by_stop_id[stop_id_1].union(
@@ -175,7 +176,7 @@ def _import_static_data(system):
     for feed_config in system_config.feeds:
         feed = models.Feed()
         feed.system = system
-        feed.feed_id = feed_config['name']
+        feed.id = feed_config['name']
         feed.url = feed_config['url'].format(**system_config.env_vars)
         feed.parser_module = feed_config['parser_module']
         feed.parser_function = feed_config['parser_function']

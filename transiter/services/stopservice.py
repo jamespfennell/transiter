@@ -114,7 +114,7 @@ def get_in_system_by_id(system_id, stop_id):
         'stop_events': []
     }
 
-    stop_events = stop_event_dao.get_by_stop_pri_key(stop.id)
+    stop_events = stop_event_dao.get_by_stop_pri_key(stop.pk)
     for stop_event in stop_events:
         direction_name = direction_name_matcher.match(stop, stop_event)
         if stop_event_filter.exclude(stop_event, direction_name):

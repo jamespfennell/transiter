@@ -6,7 +6,7 @@ from transiter.endpoints import inputvalidator
 system_endpoints = Blueprint('system_endpoints', __name__)
 
 
-@system_endpoints.route('/')
+@system_endpoints.route('')
 @http_get_response
 def list_all():
     """List all systems

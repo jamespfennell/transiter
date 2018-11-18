@@ -90,13 +90,13 @@ class GtfsStaticParser:
             self._base_path, self.ROUTES_FILE_NAME)
         for row in self._csv_iterator(routes_file_path):
             route = Route()
-            route.route_id = row['route_id']
+            route.id = row['route_id']
             route.color = row.get('route_color')
             route.timetable_url = row.get('route_url')
             route.short_name = row.get('route_short_name')
             route.long_name = row.get('route_long_name')
             route.description = row.get('route_desc')
-            self.route_id_to_route[route.route_id] = route
+            self.route_id_to_route[route.id] = route
 
     def _parse_stops(self):
         stops_file_path = os.path.join(
@@ -113,11 +113,11 @@ class GtfsStaticParser:
                     stop_alias.stop_id_alias] = stop_alias
                 continue
             stop = Stop()
-            stop.stop_id = row['stop_id']
+            stop.id = row['stop_id']
             stop.name = row['stop_name']
             stop.longitude = row['stop_lon']
             stop.latitude = row['stop_lat']
-            self.stop_id_to_stop[stop.stop_id] = stop
+            self.stop_id_to_stop[stop.id] = stop
 
     def _parse_services(self):
         calendar_file_path = os.path.join(

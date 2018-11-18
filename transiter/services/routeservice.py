@@ -48,14 +48,14 @@ def get_in_system_by_id(system_id, route_id):
             [message.short_repr() for message in route.route_statuses],
         'stops': []
         })
-    current_stop_ids = list(route_dao.get_active_stop_ids(route.id))
+    current_stop_ids = list(route_dao.get_active_stop_ids(route.pk))
 
     default_service_pattern = route.default_service_pattern
 
     for entry in default_service_pattern.vertices:
         stop_response = entry.stop.short_repr()
         stop_response.update({
-            'current_service': stop_response['stop_id'] in current_stop_ids,
+            'current_service': stop_response['id'] in current_stop_ids,
             'position': entry.position,
             'href': linksutil.StopEntityLink(entry.stop)
         })
@@ -64,7 +64,7 @@ def get_in_system_by_id(system_id, route_id):
 
 
 def _construct_frequency(route):
-    terminus_data = route_dao.get_terminus_data(route.id)
+    terminus_data = route_dao.get_terminus_data(route.pk)
     total_count = 0
     total_seconds = 0
     for (earliest_time, latest_time, count, __) in terminus_data:

@@ -49,7 +49,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_010_get_stop_ids(self):
         stops_response = self._get('systems/testsystem/stops')
-        actual_stop_ids = set([stop['stop_id'] for stop in stops_response])
+        actual_stop_ids = set([stop['id'] for stop in stops_response])
         self.assertEqual(self.STOP_IDS, actual_stop_ids)
 
     def test_011_count_feeds(self):
@@ -59,7 +59,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_011_get_feed_ids(self):
         feeds_response = self._get('systems/testsystem/feeds')
-        actual_feed_ids = set([feed['feed_id'] for feed in feeds_response])
+        actual_feed_ids = set([feed['id'] for feed in feeds_response])
         self.assertEqual(self.FEED_IDS, actual_feed_ids)
 
     def test_011_count_routes(self):
@@ -69,7 +69,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_011_get_route_ids(self):
         routes_response = self._get('systems/testsystem/routes')
-        actual_route_ids = set([route['route_id'] for route in routes_response])
+        actual_route_ids = set([route['id'] for route in routes_response])
         self.assertEqual(self.ROUTE_IDS, actual_route_ids)
 
     def test_012_all_stops_have_no_trips(self):
@@ -85,7 +85,7 @@ class IntegrationTest(unittest.TestCase):
     def test_014_route_usual_stops(self):
         for route_id, usual_stops in self.ROUTE_ID_TO_USUAL_ROUTE.items():
             route_response = self._get('systems/testsystem/routes/{}'.format(route_id))
-            actual_stops = [stop['stop_id'] for stop in route_response['stops']]
+            actual_stops = [stop['id'] for stop in route_response['stops']]
             self.assertListEqual(usual_stops, actual_stops)
 
     def test_014_no_service_in_routes(self):

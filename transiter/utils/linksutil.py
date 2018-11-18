@@ -19,7 +19,7 @@ class FeedEntityLink(Link):
         self.endpoint = 'feed_endpoints.get_in_system_by_id'
         self.kwargs = {
             'system_id': feed.system_id,
-            'feed_id': feed.feed_id
+            'feed_id': feed.id
         }
 
 
@@ -28,7 +28,7 @@ class FeedsInSystemIndexLink(Link):
     def __init__(self, system):
         self.endpoint = 'feed_endpoints.list_all_in_system'
         self.kwargs = {
-            'system_id': system.system_id
+            'system_id': system.id
         }
 
 
@@ -38,7 +38,7 @@ class StopEntityLink(Link):
         self.endpoint = 'stop_endpoints.get_in_system_by_id'
         self.kwargs = {
             'system_id': stop.system_id,
-            'stop_id': stop.stop_id
+            'stop_id': stop.id
         }
 
 
@@ -47,7 +47,7 @@ class StopsInSystemIndexLink(Link):
     def __init__(self, system):
         self.endpoint = 'stop_endpoints.list_all_in_system'
         self.kwargs = {
-            'system_id': system.system_id
+            'system_id': system.id
         }
 
 
@@ -56,7 +56,7 @@ class SystemEntityLink(Link):
     def __init__(self, system):
         self.endpoint = 'system_endpoints.get_by_id'
         self.kwargs = {
-            'system_id': system.system_id,
+            'system_id': system.id,
         }
 
 
@@ -66,7 +66,7 @@ class RouteEntityLink(Link):
         self.endpoint = 'route_endpoints.get_in_system_by_id'
         self.kwargs = {
             'system_id': route.system_id,
-            'route_id': route.route_id
+            'route_id': route.id
         }
 
 
@@ -75,7 +75,7 @@ class RoutesInSystemIndexLink(Link):
     def __init__(self, system):
         self.endpoint = 'route_endpoints.list_all_in_system'
         self.kwargs = {
-            'system_id': system.system_id
+            'system_id': system.id
         }
 
 
@@ -85,7 +85,7 @@ class TripEntityLink(Link):
         self.endpoint = 'trip_endpoints.get_in_route_by_id'
         self.kwargs = {
             'system_id': trip.route.system_id,
-            'route_id': trip.route.route_id,
-            'trip_id': trip.trip_id
+            'route_id': trip.route.id,
+            'trip_id': trip.id
         }
 
