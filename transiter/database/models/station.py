@@ -5,16 +5,22 @@ from .base import Base
 
 
 class Station(Base):
-    __tablename__ = "stations"
+    __tablename__ = 'station'
 
-    id = Column(Integer, primary_key=True)
+    pk = Column(Integer, primary_key=True)
+    system_id = Column(String, ForeignKey('system.id'), index=True)
+
     borough = Column(String)
     name = Column(String)
-    system_id = Column(String, ForeignKey("systems.system_id"), index=True)
 
-    system = relationship("System", back_populates="stations")
-    stops = relationship("Stop", back_populates="station", cascade="all, delete-orphan")
+    system = relationship(
+        'System',
+        back_populates='stations')
+    stops = relationship(
+        'Stop',
+        back_populates='station',
+        cascade='all, delete-orphan')
 
     _short_repr_list = ['name']
-    _short_repr_dict = {'station_id': 'id'}
+    _short_repr_dict = {'id': 'pk'}
 

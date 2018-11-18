@@ -5,19 +5,21 @@ from .base import Base
 
 
 class ServicePatternVertex(Base):
-    __tablename__ = 'service_pattern_vertices'
+    __tablename__ = 'service_pattern_vertex'
 
-    id = Column(Integer, primary_key=True)
-    stop_pri_key = Column(Integer, ForeignKey('stops.id'))
+    pk = Column(Integer, primary_key=True)
+    stop_pk = Column(Integer, ForeignKey('stop.pk'))
+    service_pattern_pk = Column(Integer, ForeignKey('service_pattern.pk'))
+
     position = Column(Integer)
-    service_pattern_pri_key = Column(Integer,
-                                     ForeignKey('service_patterns.id'))
 
-    stop = relationship("Stop")
-    service_pattern = relationship("ServicePattern",
-                                   back_populates='vertices')
+    stop = relationship(
+        'Stop')
+    service_pattern = relationship(
+        'ServicePattern',
+        back_populates='vertices')
 
 
 Index('service_pattern_vertex_sp_position',
-      ServicePatternVertex.service_pattern_pri_key,
+      ServicePatternVertex.service_pattern_pk,
       ServicePatternVertex.position)

@@ -6,10 +6,11 @@ from .base import Base
 
 
 class FeedUpdate(Base):
-    __tablename__ = 'feed_updates'
+    __tablename__ = 'feed_update'
 
-    id = Column(Integer, primary_key=True)
-    feed_pri_key = Column(Integer, ForeignKey("feeds.id"))
+    pk = Column(Integer, primary_key=True)
+    feed_pk = Column(Integer, ForeignKey('feed.pk'))
+
     status = Column(String)
     # SCHEDULED,
     # IN_PROGRESS,
@@ -26,18 +27,15 @@ class FeedUpdate(Base):
                               onupdate=sql_functions.current_timestamp(),
                               index=True)
 
-    feed = relationship("Feed", back_populates="updates")
+    feed = relationship(
+        'Feed',
+        back_populates='updates')
 
     _short_repr_list = ['id', 'status', 'raw_data_hash', 'last_action_time']
     _long_repr_list = ['id', 'status', 'raw_data_hash', 'last_action_time']
 
 
-Index('feed_updates_ordered_for_feed_idx',
-      FeedUpdate.feed_pri_key,
-      FeedUpdate.last_action_time)
-
 Index('feed_updates_last_successful_idx',
-      FeedUpdate.feed_pri_key,
+      FeedUpdate.feed_pk,
       FeedUpdate.last_action_time,
       FeedUpdate.status)
-

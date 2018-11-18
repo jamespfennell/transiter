@@ -15,7 +15,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.stop = models.Stop()
         self.stop.id = self.STOP_PK
 
-        self.stop_event = models.StopEvent()
+        self.stop_event = models.StopTimeUpdate()
         self.stop_event.track = None
         self.stop_event.stop_id_alias = None
         self.stop_event.trip = models.Trip()
@@ -84,7 +84,7 @@ class TestStopEventFilter(unittest.TestCase):
     def setUp(self):
 
         self.stop_event_filter = stopservice._StopEventFilter()
-        self.stop_event = models.StopEvent()
+        self.stop_event = models.StopTimeUpdate()
         self.stop_event.arrival_time = self.DATETIME_ONE
         self.stop_event.trip = models.Trip()
         self.stop_event.trip.route = models.Route()

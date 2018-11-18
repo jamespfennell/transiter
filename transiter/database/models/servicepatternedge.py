@@ -4,21 +4,11 @@ from .base import Base
 
 
 class ServicePatternEdge(Base):
-    __tablename__ = 'service_pattern_edges'
+    __tablename__ = 'service_pattern_edge'
 
-    id = Column(Integer, primary_key=True)
-    source_vertex_pri_key = Column(Integer,
-                                   ForeignKey('service_pattern_vertices.id'))
-    target_vertex_pri_key = Column(Integer,
-                                   ForeignKey('service_pattern_vertices.id'))
+    pk = Column(Integer, primary_key=True)
+    source_pk = Column(Integer, ForeignKey('service_pattern_vertex.pk'))
+    target_pk = Column(Integer, ForeignKey('service_pattern_vertex.pk'))
 
-    #source_vertex = Relationship
-    #target_vertex = Relationship
-    pass
-    """
-
-    id = Column(Integer, primary_key=True)
-    service_pattern_pri_key
-    stop_pri_key
-    position =
-    """
+    #source = Relationship
+    #target = Relationship

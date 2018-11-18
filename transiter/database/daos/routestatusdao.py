@@ -9,7 +9,7 @@ class _RouteStatusDao(daofactory._BaseEntityDao):
         query = session.query(models.RouteStatus)\
             .join(models.Route, models.RouteStatus.routes)\
             .join(models.System, models.Route.system)\
-            .filter(models.System.system_id == system_id)
+            .filter(models.System.id == system_id)
         for row in query:
             yield row
 

@@ -6,7 +6,7 @@ class _BasicModel:
 
     def __eq__(self, other):
         for column in inspect(type(self)).columns.keys():
-            if column == 'id':
+            if column == 'pk':
                 continue
             if getattr(self, column) != getattr(other, column):
                 print('Values for attribute "{}" don\'t match!'.format(

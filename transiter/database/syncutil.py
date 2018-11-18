@@ -120,7 +120,7 @@ def _persist_stop_events(old_stop_events, new_stop_events):
     archive_function = archive_function_factory(min_stop_sequence)
 
     return sync(
-        models.StopEvent,
+        models.StopTimeUpdate,
         old_stop_events,
         new_stop_events,
         ['stop_pri_key'],

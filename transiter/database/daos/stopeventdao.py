@@ -3,18 +3,18 @@ from transiter.database import models
 
 
 _BaseStopEventDao = daofactory._dao_factory(
-    schema_entity=models.StopEvent,
-    id_field='id',
-    order_field='id',
+    schema_entity=models.StopTimeUpdate,
+    id_field='pk',
+    order_field='pk',
     base_dao=daofactory._BaseEntityDao)
 
 # TODO This should be in the stop dao
 class _StopEventDao(_BaseStopEventDao):
 
-    def get_by_stop_pri_key(self, stop_pri_key):
+    def get_by_stop_pri_key(self, stop_pk):
         session = self.get_session()
         query = session.query(self._DbObj)\
-            .filter(self._DbObj.stop_pri_key==stop_pri_key) \
+            .filter(self._DbObj.stop_pk==stop_pk) \
             .filter(self._DbObj.future == True)\
             .order_by(self._DbObj.departure_time)\
             .order_by(self._DbObj.arrival_time)

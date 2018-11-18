@@ -4,8 +4,8 @@ from sqlalchemy import func
 
 _BaseSystemDao = daofactory._dao_factory(
     schema_entity=models.System,
-    id_field='system_id',
-    order_field='system_id',
+    id_field='id',
+    order_field='id',
     base_dao=daofactory._BaseEntityDao)
 
 
@@ -13,7 +13,7 @@ class _SystemDao(_BaseSystemDao):
 
     def _count_child_entity_in_system(self, system_id, Model):
         session = self.get_session()
-        query = session.query(func.count(Model.id)) \
+        query = session.query(func.count(Model.pk)) \
             .filter(Model.system_id == system_id)
         return query.one()[0]
 

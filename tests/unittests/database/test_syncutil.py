@@ -254,7 +254,7 @@ class TestTripSync(unittest.TestCase):
 
         archive_function_factory.assert_called_once_with(4)
         sync.assert_called_once_with(
-            models.StopEvent,
+            models.StopTimeUpdate,
             old_stop_events,
             new_stop_events_post,
             ['stop_pri_key'],
@@ -373,10 +373,10 @@ class TestTripSync(unittest.TestCase):
         archive_function = syncutil.archive_function_factory(3)
 
         session = mock.MagicMock()
-        stop_event_one = models.StopEvent()
+        stop_event_one = models.StopTimeUpdate()
         stop_event_one.sequence_index = 2
         stop_event_one.future = True
-        stop_event_two = models.StopEvent()
+        stop_event_two = models.StopTimeUpdate()
         stop_event_two.sequence_index = 4
         stop_event_two.future = True
 

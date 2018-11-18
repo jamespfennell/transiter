@@ -91,10 +91,10 @@ class _StopEventFilter:
         # If this trip is coming within 5 minutes
         condition2 = (this_time - time.time() <= 600)
         # If not trips of this route have been added so far
-        condition3 = (stop_event.trip.route.route_id not in self._route_ids_so_far[direction_name])
+        condition3 = (stop_event.trip.route.id not in self._route_ids_so_far[direction_name])
 
         self._route_ids_so_far[direction_name] \
-            .add(stop_event.trip.route.route_id)
+            .add(stop_event.trip.route.id)
         return (not (condition1 or condition2 or condition3))
 
 

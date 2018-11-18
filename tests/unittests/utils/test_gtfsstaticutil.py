@@ -88,7 +88,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
             'parent_station': '5',
             'location_type': '0',
         }
-        stop_alias = models.StopAlias()
+        stop_alias = models.StopIdAlias()
         stop_alias.stop_id = '5'
         stop_alias.stop_id_alias = '1'
 

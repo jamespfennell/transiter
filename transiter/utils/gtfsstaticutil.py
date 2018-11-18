@@ -2,7 +2,7 @@ import csv
 import os
 # Mode: GTFS stations are Transiter stops
 
-from transiter.database.models import Route, Stop, StopAlias
+from transiter.database.models import Route, Stop, StopIdAlias
 
 days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
         'sunday']
@@ -43,6 +43,7 @@ class StaticTrip:
             self.end_time,
             tuple(self.stop_ids)
         ))
+
     def __eq__(self, other):
         for day in days:
             if getattr(self, day) != getattr(other, day):
@@ -54,7 +55,6 @@ class StaticTrip:
             self.end_time == other.end_time and
             self.stop_ids == other.stop_ids
         )
-
 
 
 class GtfsStaticParser:
@@ -103,7 +103,7 @@ class GtfsStaticParser:
             self._base_path, self.STOPS_FILE_NAME)
         for row in self._csv_iterator(stops_file_path):
             if row['location_type'] == '0':
-                stop_alias = StopAlias()
+                stop_alias = StopIdAlias()
                 stop_alias.stop_id = row['parent_station']
                 stop_alias.stop_id_alias = row['stop_id']
                 # TODO: get rid of this

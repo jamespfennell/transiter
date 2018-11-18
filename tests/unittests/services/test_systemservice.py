@@ -283,7 +283,7 @@ class TestImportStaticData(unittest.TestCase):
             self.STOP_ONE_ID: stop_one,
         }
 
-        stop_one_id_alias = models.StopAlias()
+        stop_one_id_alias = models.StopIdAlias()
         stop_one_id_alias.stop_id = self.STOP_ONE_ID
         stop_one_id_alias.stop_id_alias = self.STOP_ONE_ID_ALIAS
         self.gtfs_static_parser.stop_id_alias_to_stop_alias = {
@@ -292,7 +292,7 @@ class TestImportStaticData(unittest.TestCase):
 
         systemservice._import_static_data(self.system)
 
-        self.assertEqual([stop_one_id_alias], stop_one.stop_aliases)
+        self.assertEqual([stop_one_id_alias], stop_one.stop_id_aliases)
 
     def test_import_static_data__feeds(self):
         feed_config = [{

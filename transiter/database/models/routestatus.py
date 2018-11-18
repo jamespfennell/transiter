@@ -7,7 +7,8 @@ from .base import Base
 class RouteStatus(Base):
     __tablename__ = 'route_status'
 
-    id = Column(Integer, primary_key=True)
+    pk = Column(Integer, primary_key=True)
+
     status_id = Column(String)
     status_type = Column(String)
     status_priority = Column(Integer)
@@ -17,7 +18,9 @@ class RouteStatus(Base):
     end_time = Column(TIMESTAMP(timezone=True))
     creation_time = Column(TIMESTAMP(timezone=True))
 
-    routes = relationship("Route", secondary="route_status_routes")
+    routes = relationship(
+        'Route',
+        secondary='route_status_route')
 
     _short_repr_list = [
         'status_type',
@@ -29,8 +32,9 @@ class RouteStatus(Base):
     ]
 
 
-route_status_routes = Table(
-    'route_status_routes', Base.metadata,
-    Column('route_status_pri_key', Integer, ForeignKey("route_status.id")),
-    Column('route_pri_key', Integer, ForeignKey("routes.id"), index=True)
+route_status_route = Table(
+    'route_status_route',
+    Base.metadata,
+    Column('route_status_pk', Integer, ForeignKey('route_status.pk')),
+    Column('route_pk', Integer, ForeignKey('route.pk'), index=True)
 )

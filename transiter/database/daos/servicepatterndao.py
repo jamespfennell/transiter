@@ -4,8 +4,8 @@ from transiter.database import models
 
 _BaseServicePatternDao = daofactory._dao_factory(
     schema_entity=models.ServicePattern,
-    id_field='id',
-    order_field='id',
+    id_field='pk',
+    order_field='pk',
     base_dao=daofactory._BaseEntityDao)
 
 # TODO: is a service pattern dao really needed?
@@ -33,15 +33,15 @@ class _ServicePatternDao(_BaseServicePatternDao):
     def get_default_trips_at_stops(self, stop_ids):
         response = {stop_id: [] for stop_id in stop_ids}
         query = """
-        SELECT stops.stop_id, routes.route_id
-        FROM stops
-        INNER JOIN service_pattern_vertices
-            ON stops.id = service_pattern_vertices.stop_pri_key
-        INNER JOIN service_patterns
-            ON service_pattern_vertices.service_pattern_pri_key = service_patterns.id
-        INNER JOIN routes
-            ON routes.regular_service_pattern_pri_key = service_patterns.id
-        WHERE stops.stop_id IN :stop_ids;
+        SELECT stop.id, route.id
+        FROM stop
+        INNER JOIN service_pattern_vertex
+            ON stop.pk = service_pattern_vertex.stop_pk
+        INNER JOIN service_pattern
+            ON service_pattern_vertex.service_pattern_pk = service_pattern.pk
+        INNER JOIN route
+            ON route.regular_service_pattern_pk = service_pattern.pk
+        WHERE stop.id IN :stop_ids;
         """
         session = self.get_session()
         result = session.execute(query, {'stop_ids': tuple(stop_ids)})
