@@ -201,5 +201,7 @@ class SystemConfig:
         self.env_vars = {}
         env_vars_config = self.config.get('environment_variables', {})
         for key, value in env_vars_config.items():
+            if value not in os.environ:
+                print('Warning: missing env var {}'.format(value))
             self.env_vars[key] = os.environ.get(value, None)
 

@@ -56,7 +56,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
             'route_desc': '6'
         }
         route = models.Route()
-        route.route_id = '1'
+        route.id = '1'
         route.color = '2'
         route.timetable_url = '3'
         route.short_name = '4'
@@ -123,7 +123,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
             'location_type': '1',
         }
         stop = models.Stop()
-        stop.stop_id = '1'
+        stop.id = '1'
         stop.name = '2'
         stop.longitude = '3'
         stop.latitude = '4'

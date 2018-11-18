@@ -99,13 +99,15 @@ def _execute_feed_update(feed_update):
     update_function = getattr(module, feed.parser_function)
 
     request = requests.get(feed.url)
+    # TODO: raise for status here to catch HTTP errors
     content = request.content
 
     m = hashlib.md5()
     m.update(content)
+    print(m.hexdigest())
     feed_update.raw_data_hash = m.hexdigest()
 
-    last_successful_update = feed_dao.get_last_successful_update(feed.id)
+    last_successful_update = feed_dao.get_last_successful_update(feed.pk)
     if last_successful_update is not None and \
             last_successful_update.raw_data_hash == feed_update.raw_data_hash:
         feed_update.status = 'SUCCESS_NOT_NEEDED'
@@ -115,7 +117,8 @@ def _execute_feed_update(feed_update):
         update_function(feed, feed.system, content)
         feed_update.status = 'SUCCESS_UPDATED'
     except Exception:
-        print('Could not parse feed {}'.format(feed.feed_id))
+        print('Could not parse feed {}'.format(feed.id))
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
+        #raise
 
 

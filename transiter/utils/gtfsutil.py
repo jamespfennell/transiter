@@ -121,8 +121,8 @@ class _GtfsRealtimeToTransiterTransformer:
             trip_data = self._trip_id_to_transformed_entity.get(trip_id, {})
             trip = entity['trip']
             trip_data.update({
-                'trip_id' : trip_id,
-                'route_id' : trip['route_id'],
+                'id': trip_id,
+                'route_id': trip['route_id'],
                 'start_date': trip.get('start_date', None),
                 'train_id': trip.get('train_id', None),
                 'direction_id': trip.get('direction_id', None),
@@ -175,7 +175,7 @@ class _GtfsRealtimeToTransiterTransformer:
             index = entity['current_stop_sequence']
             for stop_event in entity['stop_events']:
                 index += 1
-                stop_event['sequence_index'] = index
+                stop_event['stop_sequence'] = index
 
     def _collect_transformed_data(self):
         transformed_data = self._transformed_metadata

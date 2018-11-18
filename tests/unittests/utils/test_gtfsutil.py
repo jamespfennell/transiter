@@ -231,7 +231,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
         expected_transformed_base_data = {
             self.TRIP_ID: {
-                'trip_id': self.TRIP_ID,
+                'id': self.TRIP_ID,
                 'route_id': self.ROUTE_ID,
                 'start_date': self.START_DATE,
                 'train_id': self.TRAIN_ID,
@@ -273,7 +273,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
         expected_transformed_base_data = {
             self.TRIP_ID: {
-                'trip_id': self.TRIP_ID,
+                'id': self.TRIP_ID,
                 'route_id': self.ROUTE_ID,
                 'start_date': self.START_DATE,
                 'train_id': self.TRAIN_ID,
@@ -385,10 +385,10 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                 'current_stop_sequence': 5,
                 'stop_events': [
                     {
-                        'sequence_index': 6,
+                        'stop_sequence': 6,
                     },
                     {
-                        'sequence_index': 7,
+                        'stop_sequence': 7,
                     }
                 ]
             }
@@ -508,7 +508,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             ],
             "trips": [
                 {
-                    "trip_id": "trip_id",
+                    "id": "trip_id",
                     'train_id': None,
                     "route_id": "4",
                     "start_date": "20180915",
@@ -522,7 +522,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                     "stop_events": [
                         {
                             "stop_id": self.STOP_ONE_ID,
-                            "sequence_index": 17,
+                            "stop_sequence": 17,
                             "arrival_time": self.timestamp_to_datetime(
                                 self.STOP_ONE_ARR_TIMESTAMP),
                             "departure_time": self.timestamp_to_datetime(
@@ -531,7 +531,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                         },
                         {
                             "stop_id": self.STOP_TWO_ID,
-                            "sequence_index": 18,
+                            "stop_sequence": 18,
                             "arrival_time": self.timestamp_to_datetime(
                                 self.STOP_TWO_ARR_TIMESTAMP),
                             "departure_time": None,

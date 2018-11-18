@@ -6,7 +6,7 @@ from transiter.endpoints import permissionsvalidator
 feed_endpoints = Blueprint('feed_endpoints', __name__)
 
 
-@feed_endpoints.route('/')
+@feed_endpoints.route('')
 @http_get_response
 def list_all_in_system(system_id):
     """List all feeds for a specific system

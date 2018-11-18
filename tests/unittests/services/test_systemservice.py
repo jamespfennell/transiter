@@ -118,7 +118,7 @@ class TestSystemService(unittest.TestCase):
         actual = systemservice.install(self.SYSTEM_ONE_ID)
 
         self.assertEqual(actual, True)
-        self.assertEqual(new_system.system_id, self.SYSTEM_ONE_ID)
+        self.assertEqual(new_system.id, self.SYSTEM_ONE_ID)
         system_dao.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
         system_dao.create.assert_called_once_with()
         _import_static_data.assert_called_once_with(new_system)
@@ -236,9 +236,9 @@ class TestImportStaticData(unittest.TestCase):
     def test_import_static_data__stops(self):
 
         stop_one = models.Stop()
-        stop_one.stop_id = self.STOP_ONE_ID
+        stop_one.id = self.STOP_ONE_ID
         stop_two = models.Stop()
-        stop_two.stop_id = self.STOP_TWO_ID
+        stop_two.id = self.STOP_TWO_ID
         self.gtfs_static_parser.stop_id_to_stop = {
             self.STOP_ONE_ID: stop_one,
             self.STOP_TWO_ID: stop_two
@@ -255,9 +255,9 @@ class TestImportStaticData(unittest.TestCase):
     def test_import_static_data__stops_with_transfer(self):
 
         stop_one = models.Stop()
-        stop_one.stop_id = self.STOP_ONE_ID
+        stop_one.id = self.STOP_ONE_ID
         stop_two = models.Stop()
-        stop_two.stop_id = self.STOP_TWO_ID
+        stop_two.id = self.STOP_TWO_ID
         self.gtfs_static_parser.stop_id_to_stop = {
             self.STOP_ONE_ID: stop_one,
             self.STOP_TWO_ID: stop_two
@@ -273,12 +273,12 @@ class TestImportStaticData(unittest.TestCase):
         self.assertEqual(1, len(self.system.stations))
         self.assertDictEqual(
             self.gtfs_static_parser.stop_id_to_stop,
-            {stop.stop_id: stop for stop in stop_one.station.stops})
+            {stop.id: stop for stop in stop_one.station.stops})
 
     def test_import_static_data__stop_alias(self):
 
         stop_one = models.Stop()
-        stop_one.stop_id = self.STOP_ONE_ID
+        stop_one.id = self.STOP_ONE_ID
         self.gtfs_static_parser.stop_id_to_stop = {
             self.STOP_ONE_ID: stop_one,
         }
@@ -303,7 +303,7 @@ class TestImportStaticData(unittest.TestCase):
         }]
         self.system_config.feeds = feed_config
         feed = models.Feed()
-        feed.feed_id = self.FEED_NAME
+        feed.id = self.FEED_NAME
         feed.url = self.FEED_URL
         feed.parser_module = self.FEED_PARSER_MODULE
         feed.parser_function = self.FEED_PARSER_FUNCTION
@@ -319,7 +319,7 @@ class TestImportStaticData(unittest.TestCase):
     @mock.patch('transiter.services.systemservice.csv')
     def test_import_static_data__direction_names(self, csv, open):
         stop_one = models.Stop()
-        stop_one.stop_id = self.STOP_ONE_ID
+        stop_one.id = self.STOP_ONE_ID
         self.gtfs_static_parser.stop_id_to_stop = {
             self.STOP_ONE_ID: stop_one,
         }

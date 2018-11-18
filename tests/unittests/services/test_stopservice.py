@@ -13,7 +13,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
 
     def setUp(self):
         self.stop = models.Stop()
-        self.stop.id = self.STOP_PK
+        self.stop.pk = self.STOP_PK
 
         self.stop_event = models.StopTimeUpdate()
         self.stop_event.track = None

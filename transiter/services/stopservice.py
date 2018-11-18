@@ -31,7 +31,7 @@ class _DirectionNameMatcher:
 
     def match(self, stop, stop_event):
         cache_key = (
-            stop.id,
+            stop.pk,
             stop_event.trip.direction_id,
             stop_event.track,
             stop_event.stop_id_alias)

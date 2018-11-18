@@ -31,8 +31,10 @@ class FeedUpdate(Base):
         'Feed',
         back_populates='updates')
 
-    _short_repr_list = ['id', 'status', 'raw_data_hash', 'last_action_time']
-    _long_repr_list = ['id', 'status', 'raw_data_hash', 'last_action_time']
+    _short_repr_dict = {'id': 'pk'}
+    _short_repr_list = ['status', 'raw_data_hash', 'last_action_time']
+    _long_repr_dict = {'id': 'pk'}
+    _long_repr_list = ['status', 'raw_data_hash', 'last_action_time']
 
 
 Index('feed_updates_last_successful_idx',

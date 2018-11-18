@@ -34,14 +34,14 @@ class Trip(Base):
         order_by='StopTimeUpdate.stop_sequence',
         cascade='all, delete-orphan')
 
-    _short_repr_list = ['trip_id']
+    _short_repr_list = ['id']
     _long_repr_list = [
-        'trip_id',
+        'id',
         'direction_id',
         'start_time',
         'last_update_time',
         'feed_update_time',
-        'status',
+        'current_status',
         'train_id'
     ]
 

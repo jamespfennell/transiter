@@ -114,7 +114,7 @@ class TestTripSync(unittest.TestCase):
             {
                 'route_id': self.ROUTE_ONE_ID,
                 'stop_events': stop_events,
-                'trip_id': self.TRIP_ONE_ID
+                'id': self.TRIP_ONE_ID
             },
             {
                 'route_id': self.ROUTE_TWO_ID
@@ -122,8 +122,8 @@ class TestTripSync(unittest.TestCase):
         ]
         expected_trips_to_persist = [
             {
-                'route_pri_key': self.ROUTE_ONE_PK,
-                'trip_id': self.TRIP_ONE_ID
+                'route_pk': self.ROUTE_ONE_PK,
+                'id': self.TRIP_ONE_ID
             }
         ]
         expected_trip_key_to_stop_events = {
@@ -170,36 +170,36 @@ class TestTripSync(unittest.TestCase):
             models.Trip,
             old_trips,
             new_trips,
-            ['route_pri_key', 'trip_id']
+            ['route_pk', 'id']
         )
 
     def test_transform_stop_events(self):
         new_stop_events = [
             {
                 'stop_id': self.STOP_THREE_ID,
-                'sequence_index': 3,
+                'stop_sequence': 3,
             },
             {
                 'stop_id': self.STOP_ONE_ID,
-                'sequence_index': 4,
+                'stop_sequence': 4,
             },
             {
                 'stop_id': self.STOP_TWO_ID_ALIAS,
-                'sequence_index': 5,
+                'stop_sequence': 5,
             },
         ]
         new_stop_events_post = [
             {
-                'stop_pri_key': self.STOP_ONE_PK,
-                'sequence_index': 4,
+                'stop_pk': self.STOP_ONE_PK,
+                'stop_sequence': 4,
                 'future': True,
-                'trip_pri_key': self.TRIP_PK
+                'trip_pk': self.TRIP_PK
             },
             {
-                'stop_pri_key': self.STOP_TWO_PK,
-                'sequence_index': 5,
+                'stop_pk': self.STOP_TWO_PK,
+                'stop_sequence': 5,
                 'future': True,
-                'trip_pri_key': self.TRIP_PK,
+                'trip_pk': self.TRIP_PK,
                 'stop_id_alias': self.STOP_TWO_ID_ALIAS
             },
         ]
@@ -227,16 +227,16 @@ class TestTripSync(unittest.TestCase):
         old_stop_events = mock.MagicMock()
         new_stop_events_post = [
             {
-                'stop_pri_key': self.STOP_ONE_PK,
-                'sequence_index': 4,
+                'stop_pk': self.STOP_ONE_PK,
+                'stop_sequence': 4,
                 'future': True,
-                'trip_pri_key': self.TRIP_PK
+                'trip_pk': self.TRIP_PK
             },
             {
-                'stop_pri_key': self.STOP_TWO_PK,
-                'sequence_index': 5,
+                'stop_pk': self.STOP_TWO_PK,
+                'stop_sequence': 5,
                 'future': True,
-                'trip_pri_key': self.TRIP_PK,
+                'trip_pk': self.TRIP_PK,
                 'stop_id_alias': self.STOP_TWO_ID_ALIAS
             },
         ]
@@ -257,7 +257,7 @@ class TestTripSync(unittest.TestCase):
             models.StopTimeUpdate,
             old_stop_events,
             new_stop_events_post,
-            ['stop_pri_key'],
+            ['stop_pk'],
             delete_function=archive_function
         )
 
@@ -294,12 +294,12 @@ class TestTripSync(unittest.TestCase):
         new_trips = [
             {
                 'route_id': self.ROUTE_ONE_ID,
-                'trip_id': self.TRIP_ONE_ID,
+                'id': self.TRIP_ONE_ID,
                 'stop_events': stop_events_one
             },
             {
                 'route_id': self.ROUTE_ONE_ID,
-                'trip_id': self.TRIP_TWO_ID,
+                'id': self.TRIP_TWO_ID,
                 'stop_events': stop_events_two
             }
         ]
@@ -317,13 +317,13 @@ class TestTripSync(unittest.TestCase):
             trip_pk_to_db_stop_events)
 
         pt_one = mock.MagicMock()
-        pt_one.id = self.TRIP_ONE_PK
-        pt_one.trip_id = self.TRIP_ONE_ID
-        pt_one.route_pri_key = self.ROUTE_ONE_PK
+        pt_one.pk = self.TRIP_ONE_PK
+        pt_one.id = self.TRIP_ONE_ID
+        pt_one.route_pk = self.ROUTE_ONE_PK
         pt_two = mock.MagicMock()
-        pt_two.id = self.TRIP_TWO_PK
-        pt_two.trip_id = self.TRIP_TWO_ID
-        pt_two.route_pri_key = self.ROUTE_ONE_PK
+        pt_two.pk = self.TRIP_TWO_PK
+        pt_two.id = self.TRIP_TWO_ID
+        pt_two.route_pk = self.ROUTE_ONE_PK
         _persist_trips.return_value = [pt_one, pt_two]
 
         stop_id_alias_to_stop_id = {self.STOP_TWO_ID_ALIAS: self.STOP_TWO_ID}
@@ -374,10 +374,10 @@ class TestTripSync(unittest.TestCase):
 
         session = mock.MagicMock()
         stop_event_one = models.StopTimeUpdate()
-        stop_event_one.sequence_index = 2
+        stop_event_one.stop_sequence = 2
         stop_event_one.future = True
         stop_event_two = models.StopTimeUpdate()
-        stop_event_two.sequence_index = 4
+        stop_event_two.stop_sequence = 4
         stop_event_two.future = True
 
         archive_function(session, stop_event_one)

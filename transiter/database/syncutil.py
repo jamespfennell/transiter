@@ -69,8 +69,8 @@ def _transform_trips(system_id, route_ids, new_trips):
             # TODO: log this
             continue
         route_pk = route_id_to_route_pk[new_trip['route_id']]
-        new_trip['route_pri_key'] = route_pk
-        trip_key_to_stop_events[(route_pk, new_trip['trip_id'])] = new_trip['stop_events']
+        new_trip['route_pk'] = route_pk
+        trip_key_to_stop_events[(route_pk, new_trip['id'])] = new_trip['stop_events']
         del new_trip['route_id']
         del new_trip['stop_events']
         new_trips_to_persist.append(new_trip)
@@ -84,7 +84,7 @@ def _persist_trips(system_id, route_ids, new_trips):
         models.Trip,
         old_trips,
         new_trips,
-        ['route_pri_key', 'trip_id']
+        ['route_pk', 'id']
     )
 
 
@@ -103,8 +103,8 @@ def _transform_stop_events(trip_pk, feed_stop_events,
             stop_id = stop_id_alias_to_stop_id[stop_id]
 
         stop_event['future'] = True
-        stop_event['stop_pri_key'] = stop_id_to_stop_pk[stop_id]
-        stop_event['trip_pri_key'] = trip_pk
+        stop_event['stop_pk'] = stop_id_to_stop_pk[stop_id]
+        stop_event['trip_pk'] = trip_pk
         del stop_event['stop_id']
 
         stop_events_to_persist.append(stop_event)
@@ -116,14 +116,14 @@ def _persist_stop_events(old_stop_events, new_stop_events):
 
     min_stop_sequence = None
     if len(new_stop_events) > 0:
-        min_stop_sequence = new_stop_events[0]['sequence_index']
+        min_stop_sequence = new_stop_events[0]['stop_sequence']
     archive_function = archive_function_factory(min_stop_sequence)
 
     return sync(
         models.StopTimeUpdate,
         old_stop_events,
         new_stop_events,
-        ['stop_pri_key'],
+        ['stop_pk'],
         delete_function=archive_function
     )
 
@@ -137,7 +137,7 @@ def sync_trips(data, system_id='nycsubway'):
         system_id, data['route_ids'], new_trips)
 
     trip_pk_to_db_stop_events = trip_dao.get_trip_pk_to_future_stop_events_map(
-        [trip.id for trip in persisted_trips])
+        [trip.pk for trip in persisted_trips])
 
     stop_ids = set()
     for feed_stop_events in trip_key_to_feed_stop_events.values():
@@ -151,13 +151,13 @@ def sync_trips(data, system_id='nycsubway'):
     all_unknown_stop_ids = set()
     for trip in persisted_trips:
         (stop_events_to_persist, unknown_stop_ids) = _transform_stop_events(
-            trip.id,
-            trip_key_to_feed_stop_events[(trip.route_pri_key, trip.trip_id)],
+            trip.pk,
+            trip_key_to_feed_stop_events[(trip.route_pk, trip.id)],
             stop_id_alias_to_stop_id,
             stop_id_to_stop_pri_key
         )
         _persist_stop_events(
-            trip_pk_to_db_stop_events.get(trip.id, []),
+            trip_pk_to_db_stop_events.get(trip.pk, []),
             stop_events_to_persist
         )
         all_unknown_stop_ids.update(unknown_stop_ids)
@@ -171,7 +171,7 @@ def sync_trips(data, system_id='nycsubway'):
 
 def archive_function_factory(cutoff):
     def archive_function(session, stop_event):
-        if cutoff is not None and stop_event.sequence_index < cutoff:
+        if cutoff is not None and stop_event.stop_sequence < cutoff:
             stop_event.future = False
         else:
             session.delete(stop_event)
