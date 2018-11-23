@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Numeric, UniqueConstraint
+from sqlalchemy.orm import relationship, backref
 
 from .base import Base
 
@@ -10,14 +10,24 @@ class Stop(Base):
     pk = Column(Integer, primary_key=True)
     id = Column(String)
     system_id = Column(String, ForeignKey('system.id'))
+    parent_stop_pk = Column(Integer, ForeignKey('stop.pk'), index=True)
+    #TODO: remove station_pk and station relationship, make stops instead
     station_pk = Column(Integer, ForeignKey('station.pk'), index=True)
 
     name = Column(String)
     longitude = Column(Numeric(precision=9, scale=6))
     latitude = Column(Numeric(precision=9, scale=6))
+    is_station = Column(Boolean)
 
     system = relationship(
         'System')
+    # NOTE: this relationship is a little tricky and this definition follows
+    # https://docs.sqlalchemy.org/en/latest/_modules/examples/adjacency_list/adjacency_list.html
+    child_stops = relationship(
+        'Stop',
+        cascade='all, delete-orphan',
+        backref=backref('parent_stop', remote_side=pk),
+    )
     station = relationship(
         'Station',
         back_populates='stops')

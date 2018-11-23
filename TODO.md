@@ -2,8 +2,9 @@
 
 ## Main development thread
 
+1. Get the NYC package set up with automatic testing and CI :/
 1. 
-    Need some GTFS realtime data now
+    Need some GTFS realtime data now for integration test
     Write an abstract class with a to_gtfs_realtime method
     Then can compares Transiter responses to that
     
@@ -12,16 +13,9 @@
    
 1. Refactoring:
     1. endpoints -> http
-    1. DB rename:
-        RENAME tables to singular -> easy
-        Maybe the ORM mapping consistent in refering to object vs table
-        Good time to rename stopevent -> stoptimeupdate
-        Move pri_key to pk
-        trip_id to id? yes
-        stopalias -> stopidalias
-    1. Move subway package out
     1. Move models to the main root dir
     1. New data access layer setup
+        -> Should not be too hard, mostly moving things around
     1. Use models as input to the sync utils 
         - C10: the sync util should use non-persisted models and then session.merge()
             - This means the GTFS util should output models and not JSON
@@ -43,7 +37,6 @@ A full service test suite that hit every endpoint would be really really nice :)
 
 
 Pull back in some of the NYC subway code that was removed
-Add env variables to system config
 
 ## Version 0.1
     

@@ -100,6 +100,35 @@ def delete_by_id(system_id):
     return True
 
 
+def _lift_stop_properties(parent_stop, child_stops):
+
+    parent_stop.latitude = sum(float(child_stop.latitude) for child_stop in child_stops)/len(child_stops)
+    parent_stop.longitude = sum(float(child_stop.longitude) for child_stop in child_stops)/len(child_stops)
+
+    if parent_stop.id is None:
+        child_stop_ids = [child_stop.id for child_stop in child_stops]
+        parent_stop.id = '-'.join(sorted(child_stop_ids))
+
+    if parent_stop.name is None:
+        child_stop_names = {child_stop.name: 0 for child_stop in child_stops}
+        for child_stop in child_stops:
+            child_stop_names[child_stop.name] += 1
+        max_freq = max(child_stop_names.values())
+        most_frequent_names = set()
+        for child_stop_name, freq in child_stop_names.items():
+            if freq == max_freq:
+                most_frequent_names.add(child_stop_name)
+
+        for name in most_frequent_names.copy():
+            remove = False
+            for other_name in most_frequent_names:
+                if name != other_name and name in other_name:
+                    remove = True
+            if remove:
+                most_frequent_names.remove(name)
+        parent_stop.name = ' / '.join(sorted(most_frequent_names))
+
+
 def _import_static_data(system):
 
     package = importlib.import_module(system.package)
@@ -130,12 +159,16 @@ def _import_static_data(system):
     for station_set in station_sets_by_stop_id.values():
         # TODO: option to make this 1 also so stations only multistop
         # NOTE this is 0 when a station has already been added
-        if len(station_set) == 0:
+        if len(station_set) <= 1:
             continue
-        station = models.Station()
-        for stop_id in station_set:
-            gtfs_static_parser.stop_id_to_stop[stop_id].station = station
-        station.system = system
+        parent_stop = models.Stop()
+        child_stops = [gtfs_static_parser.stop_id_to_stop[stop_id] for stop_id in station_set]
+        for child_stop in child_stops:
+            child_stop.parent_stop = parent_stop
+        _lift_stop_properties(parent_stop, child_stops)
+        parent_stop.is_station = True
+        parent_stop.system = system
+
         station_set.clear()
 
     for stop_alias in gtfs_static_parser.stop_id_alias_to_stop_alias.values():
