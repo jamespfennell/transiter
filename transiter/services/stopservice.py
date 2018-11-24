@@ -98,28 +98,59 @@ class _StopEventFilter:
         return (not (condition1 or condition2 or condition3))
 
 
+def _get_stop_descendants(stop):
+    descendants = [child_stop for child_stop in stop.child_stops]
+    for child_stop in stop.child_stops:
+        descendants.extend(_get_stop_descendants(child_stop))
+    return descendants
+
+
+def _get_stop_ancestors(stop):
+    if stop.parent_stop is None:
+        return []
+    ancestors = [stop.parent_stop]
+    for child_stop in stop.parent_stop.child_stops:
+        if stop.id == child_stop.id:
+            continue
+        ancestors.append(child_stop)
+    ancestors.extend(_get_stop_ancestors(stop.parent_stop))
+    return ancestors
+
+
 def get_in_system_by_id(system_id, stop_id):
 
     # TODO: make the service pattern dao retrieve by pk
-    # TODO: make a default_trip_at_stop function
+    # TODO: make a default_trip_at_stop function????
     # TODO make this more robust for stops without direction names
     stop = stop_dao.get_in_system_by_id(system_id, stop_id)
+
+    descendants = _get_stop_descendants(stop)
+    direction_name_rules = stop.direction_name_rules
+    for descendant in descendants:
+        direction_name_rules.extend(descendant.direction_name_rules)
+    all_stop_pks = {stop.pk}
+    all_stop_pks.update(stop.pk for stop in descendants)
+
+    total_stop_pks = [stop_pk for stop_pk in all_stop_pks]
+    total_stop_pks.extend([s.pk for s in _get_stop_ancestors(stop)])
+    default_routes = service_pattern_dao.get_default_trips_at_stops(total_stop_pks)
+
     stop_event_filter = _StopEventFilter()
-    direction_name_matcher = _DirectionNameMatcher(stop.direction_name_rules)
+    direction_name_matcher = _DirectionNameMatcher(direction_name_rules)
     response = {
         **stop.short_repr(),
-        'usual_routes': service_pattern_dao.get_default_trips_at_stops(
-            [stop_id])[stop_id],
+        'usual_routes': default_routes[stop.pk],
         'direction_names': list(direction_name_matcher.all_names()),
         'stop_events': []
     }
 
-    stop_events = stop_event_dao.get_by_stop_pri_key(stop.pk)
+    stop_events = stop_event_dao.get_by_stop_pks(all_stop_pks)
     for stop_event in stop_events:
         direction_name = direction_name_matcher.match(stop, stop_event)
         if stop_event_filter.exclude(stop_event, direction_name):
             continue
         stop_event_response = {
+            'stop_id': stop_event.stop.id,
             'direction_name': direction_name,
             **(stop_event.short_repr()),
             'trip': {
@@ -133,8 +164,43 @@ def get_in_system_by_id(system_id, stop_id):
         }
         response['stop_events'].append(stop_event_response)
 
+    response['child_stops'] = _child_stops_repr(stop, default_routes)
+    response['parent_stop'] = _parent_stop_repr(stop, default_routes)
+
     return response
 
+
+def _child_stops_repr(stop, default_routes):
+    repr = []
+    for child_stop in stop.child_stops:
+        repr.append({
+            **child_stop.short_repr(),
+            'usual_routes': default_routes[child_stop.pk],
+            'href': linksutil.StopEntityLink(child_stop),
+            'child_stops': _child_stops_repr(child_stop, default_routes)
+        })
+    return repr
+
+
+def _parent_stop_repr(stop, default_routes):
+    if stop.parent_stop is None:
+        return None
+    repr = {
+        **stop.parent_stop.short_repr(),
+        'usual_routes': default_routes[stop.parent_stop.pk],
+        'href': linksutil.StopEntityLink(stop.parent_stop),
+        'child_stops': [],
+        'parent_stop': _parent_stop_repr(stop.parent_stop, default_routes)
+    }
+    for child_stop in stop.parent_stop.child_stops:
+        if stop.id == child_stop.id:
+            continue
+        repr['child_stops'].append({
+            **child_stop.short_repr(),
+            'usual_routes': default_routes[child_stop.pk],
+            'href': linksutil.StopEntityLink(child_stop)
+        })
+    return repr
 
 """
 station_response = stop.station.short_repr()

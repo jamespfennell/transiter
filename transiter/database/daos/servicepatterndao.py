@@ -26,14 +26,16 @@ class _ServicePatternDao(_BaseServicePatternDao):
         session.add(route_list_entry)
         return route_list_entry
     """
-    # TODO this should be either by stop_pk or also include system
-    # TODO should this return route objects? Question of efficiency
+    # TODO turn this into a sql alchemy query and load route models containing
+    # only the route_id and system_id as these are the only ones needed for
+    # linksutil
     # TODO can we by default only return some columns of the route objects?
     # I.e., load other lazily, and then just get enough to construct the href
-    def get_default_trips_at_stops(self, stop_ids):
-        response = {stop_id: [] for stop_id in stop_ids}
+    # https://docs.sqlalchemy.org/en/latest/orm/loading_columns.html
+    def get_default_trips_at_stops(self, stop_pks):
+        response = {stop_pk: [] for stop_pk in stop_pks}
         query = """
-        SELECT stop.id, route.id
+        SELECT stop.pk, route.id
         FROM stop
         INNER JOIN service_pattern_vertex
             ON stop.pk = service_pattern_vertex.stop_pk
@@ -41,15 +43,16 @@ class _ServicePatternDao(_BaseServicePatternDao):
             ON service_pattern_vertex.service_pattern_pk = service_pattern.pk
         INNER JOIN route
             ON route.regular_service_pattern_pk = service_pattern.pk
-        WHERE stop.id IN :stop_ids;
+        WHERE stop.pk IN :stop_pks;
         """
         session = self.get_session()
-        result = session.execute(query, {'stop_ids': tuple(stop_ids)})
+        result = session.execute(query, {'stop_pks': tuple(stop_pks)})
 
-        for (stop_id, route_id) in result:
-            response[stop_id].append(route_id)
-
+        for (stop_pk, route_id) in result:
+            response[stop_pk].append(route_id)
+        print(response)
         return response
+
 
 """
 def get_by_stop_pri_key(self, stop_pri_key):

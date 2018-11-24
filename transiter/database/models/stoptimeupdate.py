@@ -29,8 +29,7 @@ class StopTimeUpdate(Base):
         'Trip',
         back_populates='stop_events')
 
-    _short_repr_list = [
-        'arrival_time', 'departure_time', 'track', 'stop_sequence', 'stop_id_alias']
+    _short_repr_list = ['arrival_time', 'departure_time', 'track', 'stop_sequence']
 
 
 Index('stop_time_update_trip_idx', StopTimeUpdate.trip_pk, StopTimeUpdate.arrival_time)

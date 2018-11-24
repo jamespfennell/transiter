@@ -96,7 +96,7 @@ def http_delete_response(func, *args, **kw):
 
 
 def convert_to_json(data):
-    return json.dumps(data, indent=4, separators=(',', ': '), default=json_serial)
+    return json.dumps(data, indent=2, separators=(',', ': '), default=json_serial)
 
 
 def json_serial(obj):
