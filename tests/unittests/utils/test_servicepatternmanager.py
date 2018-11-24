@@ -164,7 +164,7 @@ class TestServicePatternManager(unittest.TestCase):
         _sg_to_sp.return_value = service_pattern
 
         actual = servicepatternmanager._construct_for_static_trips(
-            trips, stop_id_to_stop)
+            trips, stop_id_to_stop, {})
 
         self.assertEqual(service_pattern, actual)
 

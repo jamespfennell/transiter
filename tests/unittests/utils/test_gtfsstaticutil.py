@@ -92,14 +92,14 @@ class TestGtfsStaticUtil(unittest.TestCase):
         stop_alias.stop_id = '5'
         stop_alias.stop_id_alias = '1'
 
-        def csv_iterator(file_path):
+        def csv_iterator(__):
             yield data
 
         gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
         gtfs_static_parser._base_path = ''
         gtfs_static_parser._csv_iterator = csv_iterator
 
-        gtfs_static_parser._parse_stops()
+        gtfs_static_parser._parse_stops(stop_id_alias_mode=True)
 
         self.assertEqual(gtfs_static_parser.stop_id_to_stop, {})
         self.assertEqual(
@@ -127,6 +127,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
         stop.name = '2'
         stop.longitude = '3'
         stop.latitude = '4'
+        stop.is_station = True
 
         def csv_iterator(file_path):
             yield data

@@ -8,7 +8,11 @@ class IntegrationTest(unittest.TestCase):
 
     TRANSITER_URL = 'http://localhost:5000/'
 
-    STOP_IDS = {'1A', '1B', '1C', '1D', '1E', '1F', '1G'}
+    STOP_IDS = {
+        '1A', '1B', '1C', '1D', '1E', '1F', '1G',
+        '1AS', '1BS', '1CS', '1DS', '1ES', '1FS', '1GS',
+        '1AN', '1BN', '1CN', '1DN', '1EN', '1FN', '1GN',
+    }
     ROUTE_IDS = {'A', 'B'}
     FEED_IDS = {'GtfsRealtimeFeed'}
     STOP_ID_TO_USUAL_ROUTES = {

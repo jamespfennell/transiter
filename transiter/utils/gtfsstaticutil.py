@@ -98,11 +98,26 @@ class GtfsStaticParser:
             route.description = row.get('route_desc')
             self.route_id_to_route[route.id] = route
 
-    def _parse_stops(self):
+    def _parse_stops(self, stop_id_alias_mode=False):
         stops_file_path = os.path.join(
             self._base_path, self.STOPS_FILE_NAME)
         for row in self._csv_iterator(stops_file_path):
-            if row['location_type'] == '0':
+            stop = Stop()
+            stop.id = row['stop_id']
+            stop.name = row['stop_name']
+            stop.longitude = row['stop_lon']
+            stop.latitude = row['stop_lat']
+
+            if row['location_type'] == '1':
+                stop.is_station = True
+                stop.parent_stop_id = None
+                self.stop_id_to_stop[stop.id] = stop
+            if row['location_type'] != '0':
+                continue
+            if stop_id_alias_mode:
+                # TODO: get rid of stop alias mode?
+                # Have a parent_stop_id
+
                 stop_alias = StopIdAlias()
                 stop_alias.stop_id = row['parent_station']
                 stop_alias.stop_id_alias = row['stop_id']
@@ -112,12 +127,10 @@ class GtfsStaticParser:
                 self.stop_id_alias_to_stop_alias[
                     stop_alias.stop_id_alias] = stop_alias
                 continue
-            stop = Stop()
-            stop.id = row['stop_id']
-            stop.name = row['stop_name']
-            stop.longitude = row['stop_lon']
-            stop.latitude = row['stop_lat']
+            stop.is_station = False
+            stop.parent_stop_id = row.get('parent_station', None)
             self.stop_id_to_stop[stop.id] = stop
+
 
     def _parse_services(self):
         calendar_file_path = os.path.join(

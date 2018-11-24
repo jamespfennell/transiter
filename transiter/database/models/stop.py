@@ -20,7 +20,8 @@ class Stop(Base):
     is_station = Column(Boolean)
 
     system = relationship(
-        'System')
+        'System',
+        back_populates='stops')
     # NOTE: this relationship is a little tricky and this definition follows
     # https://docs.sqlalchemy.org/en/latest/_modules/examples/adjacency_list/adjacency_list.html
     child_stops = relationship(
@@ -28,9 +29,6 @@ class Stop(Base):
         cascade='all, delete-orphan',
         backref=backref('parent_stop', remote_side=pk),
     )
-    station = relationship(
-        'Station',
-        back_populates='stops')
     direction_name_rules = relationship(
         'DirectionNameRule',
         back_populates='stop',

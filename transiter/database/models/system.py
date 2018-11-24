@@ -18,8 +18,8 @@ class System(Base):
         'Route',
         back_populates='system',
         cascade='all, delete-orphan')
-    stations = relationship(
-        'Station',
+    stops = relationship(
+        'Stop',
         back_populates='system',
         cascade='all, delete-orphan')
     feeds = relationship(

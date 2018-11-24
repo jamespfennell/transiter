@@ -68,13 +68,11 @@ class TestSystemService(unittest.TestCase):
 
         hrefs_dict = {
             'stops': 'href1',
-            'stations': 'NI',
             'routes': 'href3',
             'feeds': 'href4'
         }
         child_entities_dict = {
             'stops': self.SYSTEM_ONE_NUM_STOPS,
-            'stations': self.SYSTEM_ONE_NUM_STATIONS,
             'routes': self.SYSTEM_ONE_NUM_ROUTES,
             'feeds': self.SYSTEM_ONE_NUM_FEEDS
         }
@@ -88,7 +86,6 @@ class TestSystemService(unittest.TestCase):
 
         system_dao.get_by_id.return_value = self.system_1
         system_dao.count_stops_in_system.return_value = self.SYSTEM_ONE_NUM_STOPS
-        system_dao.count_stations_in_system.return_value = self.SYSTEM_ONE_NUM_STATIONS
         system_dao.count_routes_in_system.return_value = self.SYSTEM_ONE_NUM_ROUTES
         system_dao.count_feeds_in_system.return_value = self.SYSTEM_ONE_NUM_FEEDS
 
@@ -103,7 +100,6 @@ class TestSystemService(unittest.TestCase):
         system_dao.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
         self.system_1.short_repr.assert_called_once()
         system_dao.count_stops_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
-        system_dao.count_stations_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
         system_dao.count_routes_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
         system_dao.count_feeds_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
 
@@ -237,8 +233,10 @@ class TestImportStaticData(unittest.TestCase):
 
         stop_one = models.Stop()
         stop_one.id = self.STOP_ONE_ID
+        stop_one.parent_stop_id = None
         stop_two = models.Stop()
         stop_two.id = self.STOP_TWO_ID
+        stop_two.parent_stop_id = None
         self.gtfs_static_parser.stop_id_to_stop = {
             self.STOP_ONE_ID: stop_one,
             self.STOP_TWO_ID: stop_two
@@ -248,16 +246,17 @@ class TestImportStaticData(unittest.TestCase):
 
         self.assertEqual(stop_one.system, self.system)
         self.assertEqual(stop_two.system, self.system)
-        self.assertEqual(2, len(self.system.stations))
-        self.assertEqual([stop_one], stop_one.station.stops)
-        self.assertEqual([stop_two], stop_two.station.stops)
+        self.assertEqual(2, len(self.system.stops))
 
-    def test_import_static_data__stops_with_transfer(self):
+    @mock.patch('transiter.services.systemservice._lift_stop_properties')
+    def test_import_static_data__stops_with_transfer(self, __):
 
         stop_one = models.Stop()
         stop_one.id = self.STOP_ONE_ID
+        stop_one.parent_stop_id = None
         stop_two = models.Stop()
         stop_two.id = self.STOP_TWO_ID
+        stop_two.parent_stop_id = None
         self.gtfs_static_parser.stop_id_to_stop = {
             self.STOP_ONE_ID: stop_one,
             self.STOP_TWO_ID: stop_two
@@ -270,29 +269,10 @@ class TestImportStaticData(unittest.TestCase):
 
         self.assertEqual(stop_one.system, self.system)
         self.assertEqual(stop_two.system, self.system)
-        self.assertEqual(1, len(self.system.stations))
+        self.assertEqual(3, len(self.system.stops))
         self.assertDictEqual(
             self.gtfs_static_parser.stop_id_to_stop,
-            {stop.id: stop for stop in stop_one.station.stops})
-
-    def test_import_static_data__stop_alias(self):
-
-        stop_one = models.Stop()
-        stop_one.id = self.STOP_ONE_ID
-        self.gtfs_static_parser.stop_id_to_stop = {
-            self.STOP_ONE_ID: stop_one,
-        }
-
-        stop_one_id_alias = models.StopIdAlias()
-        stop_one_id_alias.stop_id = self.STOP_ONE_ID
-        stop_one_id_alias.stop_id_alias = self.STOP_ONE_ID_ALIAS
-        self.gtfs_static_parser.stop_id_alias_to_stop_alias = {
-            self.STOP_ONE_ID_ALIAS: stop_one_id_alias
-        }
-
-        systemservice._import_static_data(self.system)
-
-        self.assertEqual([stop_one_id_alias], stop_one.stop_id_aliases)
+            {stop.id: stop for stop in stop_one.parent_stop.child_stops})
 
     def test_import_static_data__feeds(self):
         feed_config = [{
@@ -320,6 +300,7 @@ class TestImportStaticData(unittest.TestCase):
     def test_import_static_data__direction_names(self, csv, open):
         stop_one = models.Stop()
         stop_one.id = self.STOP_ONE_ID
+        stop_one.parent_stop_id = None
         self.gtfs_static_parser.stop_id_to_stop = {
             self.STOP_ONE_ID: stop_one,
         }

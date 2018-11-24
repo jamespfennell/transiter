@@ -41,10 +41,6 @@ def get_by_id(system_id):
             "count": system_dao.count_stops_in_system(system_id),
             "href": linksutil.StopsInSystemIndexLink(system)
         },
-        "stations": {
-            "count": system_dao.count_stations_in_system(system_id),
-            "href": "NI"
-        },
         "routes": {
             "count": system_dao.count_routes_in_system(system_id),
             "href": linksutil.RoutesInSystemIndexLink(system)
@@ -145,10 +141,19 @@ def _import_static_data(system):
     for route in gtfs_static_parser.route_id_to_route.values():
         route.system = system
 
+    # next 3 bits: Construct larger stations using transfers.txt
+    # TODO: make a separate method
     station_sets_by_stop_id = {}
     for stop in gtfs_static_parser.stop_id_to_stop.values():
         stop.system = system
-        station_sets_by_stop_id[stop.id] = {stop.id}
+        if not stop.is_station:
+            parent_stop = gtfs_static_parser.stop_id_to_stop.get(stop.parent_stop_id, None)
+            if parent_stop is None:
+                stop.is_station = True
+            else:
+                stop.parent_stop = parent_stop
+        if stop.is_station:
+            station_sets_by_stop_id[stop.id] = {stop.id}
 
     for (stop_id_1, stop_id_2) in gtfs_static_parser.transfer_tuples:
         updated_station_set = station_sets_by_stop_id[stop_id_1].union(
@@ -157,8 +162,6 @@ def _import_static_data(system):
             station_sets_by_stop_id[stop_id] = updated_station_set
 
     for station_set in station_sets_by_stop_id.values():
-        # TODO: option to make this 1 also so stations only multistop
-        # NOTE this is 0 when a station has already been added
         if len(station_set) <= 1:
             continue
         parent_stop = models.Stop()

@@ -28,6 +28,13 @@ def construct_sps_from_gtfs_static_data(
     stop_id_to_stop = gtfs_static_parser.stop_id_to_stop
     trips = gtfs_static_parser.trip_id_to_trip.values()
 
+    # Transform the trips ids
+    stop_id_to_station_stop_id = {}
+    for stop in stop_id_to_stop.values():
+        if not stop.is_station:
+            stop_id_to_station_stop_id[stop.id] = stop.parent_stop_id
+    # print(stop_id_to_station_stop_id)
+
     route_id_to_trips = {
         route_id: set() for route_id in route_id_to_route.keys()}
     for trip in trips:
@@ -54,7 +61,8 @@ def construct_sps_from_gtfs_static_data(
             else:
                 sp_trips = trips
 
-            service_pattern = _construct_for_static_trips(sp_trips, stop_id_to_stop)
+            service_pattern = _construct_for_static_trips(
+                sp_trips, stop_id_to_stop, stop_id_to_station_stop_id)
             service_pattern.name = name
             service_pattern.route = route
             if default:
@@ -64,12 +72,13 @@ def construct_sps_from_gtfs_static_data(
 
 
 # TODO rename this method
-def _construct_for_static_trips(trips, stop_id_to_stop):
+def _construct_for_static_trips(trips, stop_id_to_stop, stop_id_to_station_stop_id):
     path_lists = set()
     for trip in trips:
         if len(trip.stop_ids) == 0:
             continue
-        path_lists.add(tuple(trip.stop_ids))
+        station_stop_ids = [stop_id_to_station_stop_id.get(stop_id, stop_id) for stop_id in trip.stop_ids]
+        path_lists.add(tuple(station_stop_ids))
     sorted_graph = _path_lists_to_sorted_graph(path_lists)
     service_pattern = _sorted_graph_to_service_pattern(sorted_graph, stop_id_to_stop)
     return service_pattern

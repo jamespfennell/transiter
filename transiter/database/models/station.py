@@ -14,12 +14,9 @@ class Station(Base):
     name = Column(String)
 
     system = relationship(
-        'System',
-        back_populates='stations')
+        'System')
     stops = relationship(
-        'Stop',
-        back_populates='station',
-        cascade='all, delete-orphan')
+        'Stop')
 
     _short_repr_list = ['name']
     _short_repr_dict = {'id': 'pk'}
