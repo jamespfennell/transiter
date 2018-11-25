@@ -1,13 +1,13 @@
 import unittest
 import unittest.mock as mock
-from transiter.endpoints import permissionsvalidator
+from transiter.http import permissionsvalidator
 
 
 class TestValidatePermissions(unittest.TestCase):
 
     def setUp(self):
         self.flask_patch = mock.patch(
-            'transiter.endpoints.permissionsvalidator.request')
+            'transiter.http.permissionsvalidator.request')
         self.request = self.flask_patch.start()
         self.addCleanup(self.flask_patch.stop)
         self.headers = self.request.headers

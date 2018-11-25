@@ -132,7 +132,7 @@ def startup_http_services():
     print('Launching dummy feed server')
     launch_flask_app('tests/integrationtest/feedserver.py')
     print('Launching Transiter server')
-    launch_flask_app('transiter/endpoints/flaskapp.py')
+    launch_flask_app('transiter/http/flaskapp.py')
     """
     try:
     """

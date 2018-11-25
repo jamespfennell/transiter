@@ -1,7 +1,7 @@
 from flask import Blueprint
 from ..services import systemservice
 from .responsemanager import http_get_response, http_delete_response, http_put_response
-from transiter.endpoints import inputvalidator
+from transiter.http import inputvalidator
 
 system_endpoints = Blueprint('system_endpoints', __name__)
 

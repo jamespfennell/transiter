@@ -4,9 +4,9 @@ import time
 from decorator import decorator
 from transiter.utils import linksutil
 from ..services import exceptions as serviceexceptions
-from transiter.endpoints import exceptions as httpexceptions
+from transiter.http import exceptions as httpexceptions
 from flask import Response
-from transiter.endpoints import permissionsvalidator
+from transiter.http import permissionsvalidator
 
 
 # Todo: put these in a class

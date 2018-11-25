@@ -6,7 +6,7 @@
 
 
 
-1. Fix the direction names csv file, and the broken tests
+1. Fix the direction names csv file
 
 1. Refactoring:
     1. endpoints -> http

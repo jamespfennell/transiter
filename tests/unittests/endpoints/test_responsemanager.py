@@ -1,6 +1,6 @@
 import unittest
 import unittest.mock as mock
-from transiter.endpoints import responsemanager, permissionsvalidator
+from transiter.http import responsemanager, permissionsvalidator
 from transiter.services import exceptions
 from transiter.utils import linksutil
 import datetime
@@ -19,7 +19,7 @@ def mock_convert_for_http(data):
 
 class TestGetRequests(unittest.TestCase):
 
-    @mock.patch('transiter.endpoints.responsemanager.convert_to_json')
+    @mock.patch('transiter.http.responsemanager.convert_to_json')
     def test_content(self, convert_to_json):
         """[Response manager] Get request"""
         convert_to_json.side_effect = mock_convert_for_http
@@ -35,7 +35,7 @@ class TestGetRequests(unittest.TestCase):
 
 class TestPostRequests(unittest.TestCase):
 
-    @mock.patch('transiter.endpoints.responsemanager.convert_to_json')
+    @mock.patch('transiter.http.responsemanager.convert_to_json')
     def test_content(self, convert_to_json):
         """[Response manager] Post request"""
         convert_to_json.side_effect = mock_convert_for_http
@@ -149,7 +149,7 @@ class TestJsonConversion(unittest.TestCase):
     TIMESTAMP = 300
 
 
-    @mock.patch('transiter.endpoints.responsemanager.time')
+    @mock.patch('transiter.http.responsemanager.time')
     def test_datetime(self, time):
         time.time.return_value = 0
         fake_datetime = datetime.datetime(2018, 10, 30, 0, 0, 0)

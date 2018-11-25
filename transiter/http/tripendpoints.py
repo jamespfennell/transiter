@@ -1,7 +1,7 @@
 from flask import Blueprint
 
 from transiter.services import tripservice
-from transiter.endpoints.responsemanager import http_get_response
+from transiter.http.responsemanager import http_get_response
 
 trip_endpoints = Blueprint('trip_endpoints', __name__)
 

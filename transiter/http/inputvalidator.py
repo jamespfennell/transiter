@@ -1,5 +1,5 @@
 from flask import request
-from transiter.endpoints import exceptions
+from transiter.http import exceptions
 
 
 def validate_post_data(required_fields, optional_fields):
