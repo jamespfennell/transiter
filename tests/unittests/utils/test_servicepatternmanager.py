@@ -3,8 +3,7 @@ from unittest import mock
 from transiter.utils import servicepatternmanager
 from transiter.utils import gtfsstaticutil
 from transiter.utils import graphutils
-from transiter.database import models
-import itertools
+from transiter import models
 
 
 class TestServicePatternManager(unittest.TestCase):

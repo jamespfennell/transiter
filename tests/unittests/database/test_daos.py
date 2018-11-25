@@ -4,9 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from transiter.database import creator
 from transiter.database import connection
-from transiter.database.daos import route_dao, feed_update_dao, stop_event_dao, service_pattern_dao
+from transiter.database.daos import route_dao, feed_update_dao, stop_event_dao
 from transiter.database.daos import system_dao, trip_dao, feed_dao, route_status_dao, stop_dao
-from transiter.database import models
+from transiter import models
 import os
 
 

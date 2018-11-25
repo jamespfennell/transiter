@@ -3,7 +3,8 @@ import unittest.mock as mock
 
 from transiter.services import systemservice
 from transiter.services import exceptions
-from transiter.database import models
+from transiter import models
+
 
 class TestSystemService(unittest.TestCase):
 

@@ -1,6 +1,5 @@
 from transiter.database.daos import daofactory
-from transiter.database import models
-
+from transiter import models
 
 _BaseFeedDao = daofactory._dao_factory(
     schema_entity=models.Feed,
@@ -17,7 +16,7 @@ class _FeedDao(_BaseFeedDao):
     def get_last_successful_update(self, feed_pri_key):
         session = self.get_session()
         query = session.query(models.FeedUpdate)\
-            .filter(models.FeedUpdate.feed_pk==feed_pri_key)\
+            .filter(models.FeedUpdate.feed_pk == feed_pri_key)\
             .order_by(models.FeedUpdate.last_action_time.desc())\
             .filter(models.FeedUpdate.status == 'SUCCESS_UPDATED')\
             .limit(1)

@@ -1,5 +1,5 @@
 from transiter.database.daos import daofactory
-from transiter.database import models
+from transiter import models
 from sqlalchemy import func
 
 _BaseSystemDao = daofactory._dao_factory(

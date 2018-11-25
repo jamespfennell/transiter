@@ -1,7 +1,6 @@
 import csv
 import os
 import importlib
-import time
 import yaml
 
 from transiter.database.daos import system_dao
@@ -10,7 +9,7 @@ from transiter.utils import linksutil
 from transiter.utils import servicepatternmanager
 from . import exceptions
 from ..database import connection
-from ..database import models
+from transiter import models
 
 
 @connection.unit_of_work

@@ -1,4 +1,3 @@
-from transiter.database import models
 import flask
 
 

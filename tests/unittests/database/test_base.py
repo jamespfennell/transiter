@@ -1,5 +1,5 @@
 import unittest
-from transiter.database.models import base
+from transiter.models import base
 from sqlalchemy import Column, String, Integer
 
 

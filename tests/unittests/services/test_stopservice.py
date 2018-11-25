@@ -3,7 +3,7 @@ import unittest.mock as mock
 
 import datetime
 from transiter.services import stopservice
-from transiter.database import models
+from transiter import models
 
 
 class TestDirectionNamesMatcher(unittest.TestCase):

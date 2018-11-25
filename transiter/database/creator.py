@@ -1,4 +1,4 @@
-from . import models
+from transiter import models
 from . import connection
 import sqlalchemy
 

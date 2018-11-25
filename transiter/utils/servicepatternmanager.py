@@ -9,7 +9,8 @@ Step 3: for each route, pass each RawTrip through the matchers for that route
 """
 
 from transiter.utils import graphutils
-from transiter.database import models
+from transiter import models
+
 """
 SELECT stops.* 
 FROM stops

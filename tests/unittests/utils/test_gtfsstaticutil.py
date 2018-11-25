@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 from transiter.utils import gtfsstaticutil
-from transiter.database import models
+from transiter import models
 
 
 class TestGtfsStaticUtil(unittest.TestCase):

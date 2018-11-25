@@ -1,5 +1,5 @@
 from transiter.database import connection
-from transiter.database import models
+from transiter import models
 from transiter.database.daos import route_dao, trip_dao, stop_dao
 
 

@@ -1,6 +1,5 @@
 from transiter.database.daos import daofactory
-from transiter.database import models
-
+from transiter import models
 
 _BaseRouteDao = daofactory._dao_factory(
     schema_entity=models.Route,

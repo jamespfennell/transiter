@@ -2,7 +2,8 @@ import unittest
 from unittest import mock
 
 from transiter.database import syncutil
-from transiter.database import models
+from transiter import models
+
 
 class TestSync(unittest.TestCase):
 

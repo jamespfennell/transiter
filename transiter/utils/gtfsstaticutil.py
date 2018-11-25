@@ -2,7 +2,7 @@ import csv
 import os
 # Mode: GTFS stations are Transiter stops
 
-from transiter.database.models import Route, Stop
+from transiter.models import Route, Stop
 
 days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
         'sunday']
