@@ -162,7 +162,8 @@ class TestStopService(unittest.TestCase):
         self.stop_dao = self._quick_mock('stop_dao')
 
         self.stop_one = mock.MagicMock()
-        self.stop_one.id = self.STOP_ONE_PK
+        self.stop_one.pk = self.STOP_ONE_PK
+        self.stop_one.id = self.STOP_ONE_ID
         self.stop_one.short_repr.return_value = self.STOP_ONE_REPR
         self.stop_dao.list_all_in_system.return_value = [
             self.stop_one]
@@ -193,17 +194,20 @@ class TestStopService(unittest.TestCase):
     def test_get_in_system_by_id(self, _DirectionNameMatcher, _StopEventFilter,
                                  stop_event_dao, service_pattern_dao):
 
+        self.stop_one.parent_stop = None
+        self.stop_one.child_stops = []
         self.stop_dao.get_in_system_by_id.return_value = self.stop_one
         service_pattern_dao.get_default_trips_at_stops.return_value = {
-            self.STOP_ONE_ID: self.DEFAULT_TRIPS
+            self.STOP_ONE_PK: self.DEFAULT_TRIPS
         }
 
         stop_event_one = mock.MagicMock()
         stop_event_two = mock.MagicMock()
+        stop_event_two.stop = self.stop_one
         stop_event_two.short_repr.return_value = self.STOP_EVENT_REPR
         stop_event_two.trip.long_repr.return_value = self.TRIP_REPR
         stop_event_two.trip.route.short_repr.return_value = self.ROUTE_REPR
-        stop_event_dao.get_by_stop_pri_key.return_value = [stop_event_one, stop_event_two]
+        stop_event_dao.get_by_stop_pks.return_value = [stop_event_one, stop_event_two]
 
         direction_name_matcher = mock.MagicMock()
         _DirectionNameMatcher.return_value = direction_name_matcher
@@ -221,6 +225,7 @@ class TestStopService(unittest.TestCase):
             'stop_events': [
                 {
                     'direction_name': self.ALL_DIRECTION_NAMES[1],
+                    'stop_id': self.STOP_ONE_ID,
                     **self.STOP_EVENT_REPR,
                     'trip': {
                         **self.TRIP_REPR,
@@ -231,7 +236,9 @@ class TestStopService(unittest.TestCase):
                         'href': self.TRIP_HREF
                     }
                 }
-            ]
+            ],
+            'child_stops': [],
+            'parent_stop': None
         }
 
 
