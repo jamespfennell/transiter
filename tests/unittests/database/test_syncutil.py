@@ -326,8 +326,7 @@ class TestTripSync(unittest.TestCase):
         pt_two.route_pk = self.ROUTE_ONE_PK
         _persist_trips.return_value = [pt_one, pt_two]
 
-        stop_id_alias_to_stop_id = {self.STOP_TWO_ID_ALIAS: self.STOP_TWO_ID}
-        stop_dao.get_stop_id_alias_to_stop_id_map.return_value = stop_id_alias_to_stop_id
+        stop_id_alias_to_stop_id = {}
         stop_id_to_stop_pk = mock.MagicMock()
         stop_dao.get_id_to_pk_map.return_value = stop_id_to_stop_pk
 
@@ -342,9 +341,6 @@ class TestTripSync(unittest.TestCase):
             self.SYSTEM_ID, data['route_ids'], new_trips)
         trip_dao.get_trip_pk_to_future_stop_events_map.assert_called_once_with(
             [self.TRIP_ONE_PK, self.TRIP_TWO_PK])
-        stop_dao.get_stop_id_alias_to_stop_id_map.assert_called_once_with(
-            self.SYSTEM_ID,
-            {self.STOP_THREE_ID, self.STOP_ONE_ID, self.STOP_TWO_ID_ALIAS, self.STOP_TWO_ID})
 
         _transform_stop_events.assert_any_call(
             self.TRIP_ONE_PK,

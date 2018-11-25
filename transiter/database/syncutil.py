@@ -143,8 +143,8 @@ def sync_trips(data, system_id='nycsubway'):
     for feed_stop_events in trip_key_to_feed_stop_events.values():
         for feed_stop_event in feed_stop_events:
             stop_ids.add(feed_stop_event['stop_id'])
-    stop_id_alias_to_stop_id = stop_dao.get_stop_id_alias_to_stop_id_map(
-        system_id, stop_ids)
+    # TODO remove alias
+    stop_id_alias_to_stop_id = {}
     stop_ids.update(stop_id_alias_to_stop_id.values())
     stop_id_to_stop_pri_key = stop_dao.get_id_to_pk_map(system_id, stop_ids)
 

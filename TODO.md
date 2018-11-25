@@ -9,9 +9,6 @@
 1. Fix the direction names csv file
 
 1. Refactoring:
-    1. endpoints -> http
-    1. gtfsutil -> gtfsrealtimeutil
-    1. Delete station and stop_id_alias
     1. Move models to the main root dir
     1. New data access layer setup
         - Should not be too hard, mostly moving things around

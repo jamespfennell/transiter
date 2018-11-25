@@ -376,18 +376,6 @@ class TestDaos(unittest.TestCase, TestDbConstants):
         self.assertDictEqual(expected, actual)
     """
 
-    def test__stop_dao__get_stop_id_alias_to_stop_id_map(self):
-        expected = {
-            self.STOP_ID_ALIAS_ONE: self.STOP_ONE_ID,
-            self.STOP_ID_ALIAS_TWO: self.STOP_TWO_ID,
-            'unknown': None,
-        }
-
-        actual = stop_dao.get_stop_id_alias_to_stop_id_map(
-            self.SYSTEM_ONE_ID, expected.keys())
-
-        self.assertDictEqual(expected, actual)
-
     def test__stop_dao__get_id_to_pk_map(self):
         expected = {
             self.STOP_ONE_ID: self.STOP_ONE_PK,

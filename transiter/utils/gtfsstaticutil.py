@@ -2,7 +2,7 @@ import csv
 import os
 # Mode: GTFS stations are Transiter stops
 
-from transiter.database.models import Route, Stop, StopIdAlias
+from transiter.database.models import Route, Stop
 
 days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
         'sunday']
@@ -113,19 +113,6 @@ class GtfsStaticParser:
                 stop.parent_stop_id = None
                 self.stop_id_to_stop[stop.id] = stop
             if row['location_type'] != '0':
-                continue
-            if stop_id_alias_mode:
-                # TODO: get rid of stop alias mode?
-                # Have a parent_stop_id
-
-                stop_alias = StopIdAlias()
-                stop_alias.stop_id = row['parent_station']
-                stop_alias.stop_id_alias = row['stop_id']
-                # TODO: get rid of this
-                self._stop_id_alias_to_stop_id[
-                    stop_alias.stop_id_alias] = stop_alias.stop_id
-                self.stop_id_alias_to_stop_alias[
-                    stop_alias.stop_id_alias] = stop_alias
                 continue
             stop.is_station = False
             stop.parent_stop_id = row.get('parent_station', None)

@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 from google.transit import gtfs_realtime_pb2 as gtfs
-from transiter.utils import gtfsutil
+from transiter.utils import gtfsrealtimeutil
 
 from google.protobuf.message import DecodeError
 
@@ -10,10 +10,10 @@ class TestGtfsRealtimeExtension(unittest.TestCase):
     PB_MODULE = 'Module One'
     BASE_MODULE = 'Module Two'
 
-    @mock.patch('transiter.utils.gtfsutil.importlib')
+    @mock.patch('transiter.utils.gtfsrealtimeutil.importlib')
     def test_gtfs_realtime_extension(self, importlib):
         """[Read GTFS Realtime] Feed extension activation"""
-        gtfs_realtime_extension = gtfsutil.GtfsRealtimeExtension(
+        gtfs_realtime_extension = gtfsrealtimeutil.GtfsRealtimeExtension(
             self.PB_MODULE, self.BASE_MODULE)
 
         gtfs_realtime_extension.activate()
@@ -30,11 +30,11 @@ class TestReadGtfsRealtime(unittest.TestCase):
     def setUp(self):
         self.gtfs_feed = mock.MagicMock()
 
-        self.patch1 = mock.patch('transiter.utils.gtfsutil.gtfs_realtime_pb2')
+        self.patch1 = mock.patch('transiter.utils.gtfsrealtimeutil.gtfs_realtime_pb2')
         self.gtfs_realtime_pb2 = self.patch1.start()
         self.gtfs_realtime_pb2.FeedMessage.return_value = self.gtfs_feed
 
-        self.patch2 = mock.patch('transiter.utils.gtfsutil._read_protobuf_message')
+        self.patch2 = mock.patch('transiter.utils.gtfsrealtimeutil._read_protobuf_message')
         self._read_protobuf_message = self.patch2.start()
         self._read_protobuf_message.return_value = self.PARSED_CONTENT
 
@@ -51,13 +51,13 @@ class TestReadGtfsRealtime(unittest.TestCase):
 
         self.assertRaises(
             Exception,
-            gtfsutil.read_gtfs_realtime,
+            gtfsrealtimeutil.read_gtfs_realtime,
             self.RAW_CONTENT
         )
 
     def test_read_gtfs_realtime(self):
         """[Read GTFS Realtime] Read basic feed subtask scheduling"""
-        actual_response = gtfsutil.read_gtfs_realtime(self.RAW_CONTENT)
+        actual_response = gtfsrealtimeutil.read_gtfs_realtime(self.RAW_CONTENT)
 
         self.assertEqual(actual_response, self.PARSED_CONTENT)
         self._read_protobuf_message.assert_called_once_with(self.gtfs_feed)
@@ -66,7 +66,7 @@ class TestReadGtfsRealtime(unittest.TestCase):
         """[Read GTFS Realtime] Read feed with extension subtask scheduling"""
         extension = mock.MagicMock()
 
-        actual_response = gtfsutil.read_gtfs_realtime(self.RAW_CONTENT, extension)
+        actual_response = gtfsrealtimeutil.read_gtfs_realtime(self.RAW_CONTENT, extension)
 
         self.assertEqual(actual_response, self.PARSED_CONTENT)
 
@@ -123,7 +123,7 @@ class TestReadProtobufMessage(unittest.TestCase):
             ]
         }
 
-        actual_data = gtfsutil._read_protobuf_message(root)
+        actual_data = gtfsrealtimeutil._read_protobuf_message(root)
 
         self.assertDictEqual(actual_data, expected_data)
 
@@ -153,7 +153,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
     def setUp(self):
         self.timestamp_to_datetime \
-            = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
+            = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
 
     def test_transform_feed_metadata(self):
         """[GTFS Realtime transformer] Transform feed metadata"""
@@ -167,7 +167,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         expected_transformed_metadata = {
             'timestamp': self.timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
         }
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(raw_data)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(raw_data)
 
         transformer._transform_feed_metadata()
 
@@ -207,7 +207,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             }
         }
 
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(raw_data)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(raw_data)
         transformer._group_trip_entities()
 
         self.assertDictEqual(expected_raw_entities,
@@ -215,7 +215,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
     def test_transform_trip_base_data(self):
         """[GTFS Realtime transformer] Transform trip base data"""
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
                 'trip': {
@@ -252,7 +252,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
     def test_transform_trip_base_data_with_vehicle(self):
         """[GTFS Realtime transformer] Transform trip base data with vehicle"""
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
                 'trip': {
@@ -295,7 +295,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
     def test_transform_trip_stop_events_short_circuit(self):
         """[GTFS Realtime transformer] Transform trip base data with no stops"""
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
                 'trip': 'Data'
@@ -314,7 +314,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
     def test_transform_trip_stop_events(self):
         """[GTFS Realtime transformer] Transform trip stop events"""
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
                 'trip': 'Data',
@@ -369,7 +369,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
     def test_update_stop_event_indices(self):
         """[GTFS Realtime transformer] Update stop event indices"""
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_transformed_entity = {
             self.TRIP_ID: {
                 'current_stop_sequence': 5,
@@ -403,7 +403,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         """[GTFS Realtime transformer] Collect transformed data"""
         trip = mock.MagicMock()
         feed_time = mock.MagicMock()
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._trip_id_to_transformed_entity = {
             self.TRIP_ID: trip
         }
@@ -425,7 +425,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     def test_transform(self):
         """[GTFS Realtime transformer] Transform process subtask scheduling"""
         expected_data = mock.MagicMock()
-        transformer = gtfsutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
         transformer._transform_feed_metadata = mock.MagicMock()
         transformer._group_trip_entities = mock.MagicMock()
         transformer._transform_trip_base_data = mock.MagicMock()
@@ -500,7 +500,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         }
 
         timestamp_to_datetime \
-            = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
+            = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
         expected_output = {
             "timestamp": timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP),
             "route_ids": [
@@ -542,16 +542,16 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             ]
         }
 
-        actual_output = gtfsutil.transform_to_transiter_structure(input)
+        actual_output = gtfsrealtimeutil.transform_to_transiter_structure(input)
 
         self.maxDiff = None
         self.assertDictEqual(actual_output, expected_output)
 
     def test_timestamp_to_datetime_edge_case_1(self):
-        actual = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime(None)
+        actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime(None)
         self.assertEqual(None, actual)
 
     def test_timestamp_to_datetime_edge_case_2(self):
-        actual = gtfsutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime(0)
+        actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime(0)
         self.assertEqual(None, actual)
 

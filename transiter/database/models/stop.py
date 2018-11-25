@@ -11,8 +11,6 @@ class Stop(Base):
     id = Column(String)
     system_id = Column(String, ForeignKey('system.id'))
     parent_stop_pk = Column(Integer, ForeignKey('stop.pk'), index=True)
-    #TODO: remove station_pk and station relationship, make stops instead
-    station_pk = Column(Integer, ForeignKey('station.pk'), index=True)
 
     name = Column(String)
     longitude = Column(Numeric(precision=9, scale=6))
@@ -40,10 +38,6 @@ class Stop(Base):
         cascade='all, delete-orphan')
     service_pattern_vertices = relationship(
         'ServicePatternVertex',
-        back_populates='stop',
-        cascade='all, delete-orphan')
-    stop_id_aliases = relationship(
-        'StopIdAlias',
         back_populates='stop',
         cascade='all, delete-orphan')
 

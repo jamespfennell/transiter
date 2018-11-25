@@ -77,40 +77,6 @@ class TestGtfsStaticUtil(unittest.TestCase):
             {'1': route}
         )
 
-    def test_parse_stops_with_alias(self):
-        """[GTFS static util] Parse stops, stop alias case"""
-
-        data = {
-            'stop_id': '1',
-            'stop_name': '2',
-            'stop_lon': '3',
-            'stop_lat': '4',
-            'parent_station': '5',
-            'location_type': '0',
-        }
-        stop_alias = models.StopIdAlias()
-        stop_alias.stop_id = '5'
-        stop_alias.stop_id_alias = '1'
-
-        def csv_iterator(__):
-            yield data
-
-        gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
-        gtfs_static_parser._base_path = ''
-        gtfs_static_parser._csv_iterator = csv_iterator
-
-        gtfs_static_parser._parse_stops(stop_id_alias_mode=True)
-
-        self.assertEqual(gtfs_static_parser.stop_id_to_stop, {})
-        self.assertEqual(
-            gtfs_static_parser.stop_id_alias_to_stop_alias,
-            {'1': stop_alias}
-        )
-        self.assertEqual(
-            gtfs_static_parser._stop_id_alias_to_stop_id,
-            {'1': '5'}
-        )
-
     def test_parse_stops(self):
         """[GTFS static util] Parse stops, full stop case"""
 

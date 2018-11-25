@@ -7,9 +7,7 @@ from .routestatus import RouteStatus
 from .servicepattern import ServicePattern
 from .servicepatternedge import ServicePatternEdge
 from .servicepatternvertex import ServicePatternVertex
-from .station import Station
 from .stop import Stop
-from .stopidalias import StopIdAlias
 from .stoptimeupdate import StopTimeUpdate
 from .system import System
 from .trip import Trip
