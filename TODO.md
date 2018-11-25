@@ -4,31 +4,22 @@
 
 
 
-
-
-1. Fix the direction names csv file
-
 1. Refactoring:
-    1. Move models to the main root dir
     1. New data access layer setup
         - Should not be too hard, mostly moving things around
         - merge connection and creator into database.py
+        
     1. Use models as input to the sync utils 
         - C10: the sync util should use non-persisted models and then session.merge()
             - This means the GTFS util should output models and not JSON
             - Might be tricky to coordinate stop time update merging -> may need to 
                 delete the stop events from the object first
+                ...or just change the cascades to not merge.
             - Also need the XML Parser to have a convert to models step
   
 1. Go through all of the API endpoints and implement anything that's
     not implemented and make sure the docs are right
-    - location, import from system service into location column? Or delete this field?
-    - origin/terminus for trips 
-        -> terminus should be dynamic
-        -> origin should also just dynamic -> the first stop event
-            should be nullable
 
-1. Get the NYC package set up with automatic testing and CI (how to pull in transiter?)
 1. 
     Need some GTFS realtime data now for integration test
     Write an abstract class with a to_gtfs_realtime method
@@ -37,9 +28,10 @@
     How about just a list of trips,stops, which then get converted based
         on the 'current time'
 
-1. Pull back in some of the NYC subway code that was removed into gtfs realtimeutil
+1. Pull back in some of the NYC subway code that was removed into gtfsrealtimeutil
 
 1. Add logging
+
 1. Existing code clean up
     - C6: Optimize the SQL ALchemy config
         - especially with joins
@@ -48,9 +40,7 @@
         https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html
         look at lazy
         
-        For example, when getting stop events get the trip as well
-    - C8: Add uniqueness and not null conditions to the schema
-        where possible. Also add good indices.
+        For example, when getting stop events get the trip and stop as well
       
     - C11:
     Bug: I'm transforming IS_ASSIGNED to a status, 
@@ -60,7 +50,7 @@
         
         Maybe we can map it to an actual GTFS status though
     - C13:
-    problem with the xml update - like a race condition when the message changes?
+        problem with the xml update - like a race condition when the message changes?
 
 
 
@@ -71,6 +61,7 @@ BEFORE VERSION 0.2---NOW OR NEVER!
 
 ## Version 0.2
 
+origin/terminus for trips - should not be in the DB but may be useful in some endpoints like stop
 
 #### F4: Write the Feed Health Code
 How to delete old entries?

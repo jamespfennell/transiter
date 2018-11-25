@@ -13,7 +13,6 @@ class DirectionNameRule(Base):
     priority = Column(Integer)
     direction_id = Column(Boolean)
     track = Column(String)
-    stop_id_alias = Column(String)
     name = Column(String)
 
     stop = relationship(

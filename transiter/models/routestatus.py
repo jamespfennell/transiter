@@ -20,7 +20,8 @@ class RouteStatus(Base):
 
     routes = relationship(
         'Route',
-        secondary='route_status_route')
+        secondary='route_status_route',
+        back_populates='route_statuses')
 
     _short_repr_list = [
         'status_type',

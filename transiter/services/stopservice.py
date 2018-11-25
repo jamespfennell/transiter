@@ -25,25 +25,29 @@ class _DirectionNameMatcher:
     def __init__(self, rules):
         self._rules = rules
         self._cache = {}
+        for rule in self._rules:
+            print((rule.stop_pk, rule.direction_id, rule.track, rule.name))
 
     def all_names(self):
         return {rule.name for rule in self._rules}
 
-    def match(self, stop, stop_event):
+    def match(self, stop_event):
+        #print(self._rules)
+        #print(self._cache)
+        stop = stop_event.stop
+        #print(stop.pk)
         cache_key = (
             stop.pk,
             stop_event.trip.direction_id,
-            stop_event.track,
-            stop_event.stop_id_alias)
+            stop_event.track)
         if cache_key not in self._cache:
             for rule in self._rules:
+                #print((rule.stop_pk, rule.direction_id, rule.track, rule.name))
                 if rule.stop_pk != cache_key[0]:
                     continue
                 if rule.direction_id is not None and rule.direction_id != cache_key[1]:
                     continue
                 if rule.track is not None and rule.track != cache_key[2]:
-                    continue
-                if rule.stop_id_alias is not None and rule.stop_id_alias != cache_key[3]:
                     continue
                 self._cache[cache_key] = rule.name
                 break
@@ -125,7 +129,8 @@ def get_in_system_by_id(system_id, stop_id):
     stop = stop_dao.get_in_system_by_id(system_id, stop_id)
 
     descendants = _get_stop_descendants(stop)
-    direction_name_rules = stop.direction_name_rules
+    direction_name_rules = []
+    direction_name_rules.extend(stop.direction_name_rules)
     for descendant in descendants:
         direction_name_rules.extend(descendant.direction_name_rules)
     all_stop_pks = {stop.pk}
@@ -146,7 +151,7 @@ def get_in_system_by_id(system_id, stop_id):
 
     stop_events = stop_event_dao.get_by_stop_pks(all_stop_pks)
     for stop_event in stop_events:
-        direction_name = direction_name_matcher.match(stop, stop_event)
+        direction_name = direction_name_matcher.match(stop_event)
         if stop_event_filter.exclude(stop_event, direction_name):
             continue
         stop_event_response = {
