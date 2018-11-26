@@ -20,13 +20,13 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.stop_event.stop_id_alias = None
         self.stop_event.trip = models.Trip()
         self.stop_event.trip.direction_id = None
+        self.stop_event.stop = self.stop
 
         # Note: having the rule as a mock allows us to test interactions
         self.rule = models.DirectionNameRule()
         self.rule.stop_pk = self.STOP_PK
         self.rule.direction_id = None
         self.rule.track = None
-        self.rule.stop_id_alias = None
         self.rule.name = self.DIRECTION_NAME
 
     def test_all_names(self):
@@ -38,7 +38,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.rule.stop_pk = 2
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
-        direction_name = dnm.match(self.stop, self.stop_event)
+        direction_name = dnm.match(self.stop_event)
 
         self.assertEqual(direction_name, None)
 
@@ -46,7 +46,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.rule.direction_id = True
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
-        direction_name = dnm.match(self.stop, self.stop_event)
+        direction_name = dnm.match(self.stop_event)
 
         self.assertEqual(direction_name, None)
 
@@ -54,22 +54,14 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.rule.track = 'Track'
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
-        direction_name = dnm.match(self.stop, self.stop_event)
-
-        self.assertEqual(direction_name, None)
-
-    def test_no_matching_stop_id_alias(self):
-        self.rule.stop_id_alias = 'StopIdAlias'
-        dnm = stopservice._DirectionNameMatcher([self.rule])
-
-        direction_name = dnm.match(self.stop, self.stop_event)
+        direction_name = dnm.match(self.stop_event)
 
         self.assertEqual(direction_name, None)
 
     def test_match(self):
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
-        direction_name = dnm.match(self.stop, self.stop_event)
+        direction_name = dnm.match(self.stop_event)
 
         self.assertEqual(direction_name, self.DIRECTION_NAME)
 
