@@ -3,6 +3,7 @@ import importlib
 import time
 from google.transit import gtfs_realtime_pb2
 from google.protobuf.message import DecodeError
+from transiter import models
 
 
 class GtfsRealtimeExtension:
@@ -81,6 +82,7 @@ class _GtfsRealtimeToTransiterTransformer:
         self._raw_data = raw_data
         self._trip_id_to_raw_entities = {}
         self._trip_id_to_transformed_entity = {}
+        self._trip_id_to_trip_model = {}
         self._transformed_metadata = None
         self._feed_route_ids = set()
         self._feed_time = None
@@ -109,8 +111,10 @@ class _GtfsRealtimeToTransiterTransformer:
                 main_entity_key = 'vehicle'
             if main_entity_key is None:
                 continue
-            trip_entity = entity[main_entity_key]['trip']
-            trip_id = trip_entity['trip_id']
+            trip_entity = entity.get(main_entity_key, {}).get('trip', {})
+            trip_id = trip_entity.get('trip_id', None)
+            if trip_id is None:
+                continue
             self._trip_id_to_raw_entities.setdefault(trip_id, {})
             self._trip_id_to_raw_entities[trip_id]['trip'] = trip_entity
             self._trip_id_to_raw_entities[trip_id][main_entity_key] \
@@ -118,6 +122,26 @@ class _GtfsRealtimeToTransiterTransformer:
 
     def _transform_trip_base_data(self):
         for trip_id, entity in self._trip_id_to_raw_entities.items():
+            trip_data = entity.get('trip', {})
+
+            trip = models.Trip()
+            trip.id = trip_id
+            trip.route_id = trip_data.get('route_id', None)
+            trip.direction_id = trip_data.get('direction_id', None)
+            # TODO convert this to a timestamp and then in the subway code
+            # add the extra time to it
+            trip.start_time = trip_data.get('start_date', None)
+            # TODO should be vehicle_id and go in the vehicle section
+            trip.train_id = trip_data.get('train_id', None)
+
+            vehicle_data = entity.get('vehicle', {})
+            trip.last_update_time = self._timestamp_to_datetime(
+                vehicle_data.get('timestamp', None))
+            trip.current_status = vehicle_data.get('current_status', None)
+            trip.current_stop_sequence = vehicle_data.get('current_stop_sequence', None)
+            self._trip_id_to_trip_model[trip_id] = trip
+            self._feed_route_ids.add(trip.route_id)
+
             trip_data = self._trip_id_to_transformed_entity.get(trip_id, {})
             trip = entity['trip']
             trip_data.update({
@@ -145,22 +169,37 @@ class _GtfsRealtimeToTransiterTransformer:
             self._trip_id_to_transformed_entity[trip_id] = trip_data
 
     def _transform_trip_stop_events(self):
-        for trip_id, entity in self._trip_id_to_raw_entities.items():
+        for trip_id, trip in self._trip_id_to_trip_model.items():
+            entity = self._trip_id_to_raw_entities[trip_id]
+
             trip_update = entity.get('trip_update', None)
             trip_data = self._trip_id_to_transformed_entity.get(trip_id, {})
             trip_data['stop_events'] = []
+            trip.stop_events = []
+
+
+
             if trip_update is None:
                 self._trip_id_to_transformed_entity[trip_id] = trip_data
                 continue
-            for stop_time_update in trip_update['stop_time_update']:
+            for stop_time_update_data in trip_update['stop_time_update']:
+                stop_time_update = models.StopTimeUpdate()
+                stop_time_update.stop_id = stop_time_update_data['stop_id']
+                stop_time_update.track = stop_time_update_data.get('track', None)
+                stop_time_update.arrival_time = (
+                    stop_time_update_data.get('arrival_time', {}).get('time', None))
+                stop_time_update.departure_time = (
+                    stop_time_update_data.get('departure_time', {}).get('time', None))
+                trip.stop_events.append(stop_time_update)
+
                 stop_event_data = {
-                    'stop_id': stop_time_update['stop_id'],
-                    'track': stop_time_update.get('track', None),
+                    'stop_id': stop_time_update_data['stop_id'],
+                    'track': stop_time_update_data.get('track', None),
                     'arrival_time': None,
                     'departure_time': None
                 }
                 for time_type in ('arrival', 'departure'):
-                    time_entity = stop_time_update.get(time_type, None)
+                    time_entity = stop_time_update_data.get(time_type, None)
                     if time_entity is None:
                         continue
                     timestamp = time_entity.get('time', 0)
@@ -171,17 +210,23 @@ class _GtfsRealtimeToTransiterTransformer:
             self._trip_id_to_transformed_entity[trip_id] = trip_data
 
     def _update_stop_event_indices(self):
-        for trip_id, entity in self._trip_id_to_transformed_entity.items():
+        for trip_id, trip in self._trip_id_to_trip_model.items():
+            entity = self._trip_id_to_transformed_entity[trip_id]
             index = entity['current_stop_sequence']
             for stop_event in entity['stop_events']:
                 index += 1
                 stop_event['stop_sequence'] = index
+            index = trip.current_stop_sequence
+            for stop_time_update in trip.stop_events:
+                stop_time_update.stop_sequence = index
+                index += 1
 
     def _collect_transformed_data(self):
         transformed_data = self._transformed_metadata
         transformed_data.update({
             'route_ids': list(self._feed_route_ids),
-            'trips': list(self._trip_id_to_transformed_entity.values())
+            'trips': list(self._trip_id_to_transformed_entity.values()),
+            #'trip': list(self._trip_id_to_trip_model.values())
         })
         return transformed_data
 

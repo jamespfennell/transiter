@@ -2,6 +2,7 @@ import unittest
 from unittest import mock
 from google.transit import gtfs_realtime_pb2 as gtfs
 from transiter.utils import gtfsrealtimeutil
+from transiter import models
 
 from google.protobuf.message import DecodeError
 
@@ -177,22 +178,15 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     def test_group_trip_entities(self):
         """[GTFS Realtime transformer] Group trip entities"""
         trip_dict = {'trip_id': self.TRIP_ID}
-        trip = mock.MagicMock()
-        trip.__getitem__.side_effect = trip_dict.__getitem__
-
-        entity_dict = {'trip': trip}
-        trip_update = mock.MagicMock()
-        trip_update.__getitem__.side_effect = entity_dict.__getitem__
-        vehicle = mock.MagicMock()
-        vehicle.__getitem__.side_effect = entity_dict.__getitem__
+        entity_dict = {'trip': trip_dict}
 
         raw_data = {
             'entity': [
                 {
-                    'trip_update': trip_update
+                    'trip_update': entity_dict
                 },
                 {
-                    'vehicle': vehicle
+                    'vehicle': entity_dict
                 },
                 {
                     'unknown': 'unknown'
@@ -201,9 +195,9 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         }
         expected_raw_entities = {
             self.TRIP_ID: {
-                'trip': trip,
-                'trip_update': trip_update,
-                'vehicle': vehicle
+                'trip': trip_dict,
+                'trip_update': entity_dict,
+                'vehicle': entity_dict,
             }
         }
 
@@ -296,6 +290,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     def test_transform_trip_stop_events_short_circuit(self):
         """[GTFS Realtime transformer] Transform trip base data with no stops"""
         transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_trip_model = {self.TRIP_ID: models.Trip()}
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
                 'trip': 'Data'
@@ -315,6 +310,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     def test_transform_trip_stop_events(self):
         """[GTFS Realtime transformer] Transform trip stop events"""
         transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_trip_model = {self.TRIP_ID: models.Trip()}
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
                 'trip': 'Data',
@@ -370,6 +366,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     def test_update_stop_event_indices(self):
         """[GTFS Realtime transformer] Update stop event indices"""
         transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
+        transformer._trip_id_to_trip_model = {self.TRIP_ID: models.Trip()}
         transformer._trip_id_to_transformed_entity = {
             self.TRIP_ID: {
                 'current_stop_sequence': 5,
