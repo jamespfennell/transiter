@@ -16,6 +16,9 @@ class _BasicModel:
                 return False
         return True
 
+    def __hash__(self):
+        return 0
+
     def short_repr(self):
         return self._repr('_short_repr_list', '_short_repr_dict')
 

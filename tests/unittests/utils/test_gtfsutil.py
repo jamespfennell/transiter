@@ -154,7 +154,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
     def setUp(self):
         self.timestamp_to_datetime \
-            = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
+            = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer("")._timestamp_to_datetime
 
     def test_transform_feed_metadata(self):
         """[GTFS Realtime transformer] Transform feed metadata"""
@@ -419,30 +419,6 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
         self.assertDictEqual(expected_data, actual_data)
 
-    def test_transform(self):
-        """[GTFS Realtime transformer] Transform process subtask scheduling"""
-        expected_data = mock.MagicMock()
-        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
-        transformer._transform_feed_metadata = mock.MagicMock()
-        transformer._group_trip_entities = mock.MagicMock()
-        transformer._transform_trip_base_data = mock.MagicMock()
-        transformer._transform_trip_stop_events = mock.MagicMock()
-        transformer._update_stop_event_indices = mock.MagicMock()
-        transformer._collect_transformed_data = mock.MagicMock()
-        transformer._collect_transformed_data.return_value = expected_data
-
-        actual_data = transformer.transform()
-
-        self.assertEqual(expected_data, actual_data)
-
-        transformer._transform_feed_metadata.assert_called_once_with()
-        transformer._group_trip_entities.assert_called_once_with()
-        transformer._transform_trip_base_data.assert_called_once_with()
-        transformer._transform_trip_stop_events.assert_called_once_with()
-        transformer._update_stop_event_indices.assert_called_once_with()
-        transformer._collect_transformed_data.assert_called_once_with()
-        transformer._collect_transformed_data.assert_called_once_with()
-
     def test_start_to_finish_parse(self):
         """[GTFS Realtime transformer] Full transformation test"""
         input = {
@@ -497,58 +473,48 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         }
 
         timestamp_to_datetime \
-            = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime
-        expected_output = {
-            "timestamp": timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP),
-            "route_ids": [
-                "4"
-            ],
-            "trips": [
-                {
-                    "id": "trip_id",
-                    'train_id': None,
-                    "route_id": "4",
-                    "start_date": "20180915",
-                    "current_stop_sequence": 16,
-                    "current_status": 2,
-                    'direction_id': None,
-                    'feed_update_time': self.timestamp_to_datetime(
-                        self.FEED_UPDATE_TIMESTAMP),
-                    'last_update_time': self.timestamp_to_datetime(
-                        self.TRIP_UPDATE_TIMESTAMP),
-                    "stop_events": [
-                        {
-                            "stop_id": self.STOP_ONE_ID,
-                            "stop_sequence": 17,
-                            "arrival_time": self.timestamp_to_datetime(
-                                self.STOP_ONE_ARR_TIMESTAMP),
-                            "departure_time": self.timestamp_to_datetime(
-                                self.STOP_ONE_DEP_TIMESTAMP),
-                            'track': None
-                        },
-                        {
-                            "stop_id": self.STOP_TWO_ID,
-                            "stop_sequence": 18,
-                            "arrival_time": self.timestamp_to_datetime(
-                                self.STOP_TWO_ARR_TIMESTAMP),
-                            "departure_time": None,
-                            'track': None
-                        }
-                    ]
-                }
-            ]
-        }
+            = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer("")._timestamp_to_datetime
+        trip = models.Trip()
+        trip.id = "trip_id"
+        trip.train_id = None
+        trip.route_id = "4"
+        trip.start_time = "20180915"
+        trip.current_status = 2
+        trip.current_stop_sequence = 16
+        trip.direction_id = None
+        #trip.feed_update_time = self.timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
+        trip.last_update_time = self.timestamp_to_datetime(self.TRIP_UPDATE_TIMESTAMP)
 
-        actual_output = gtfsrealtimeutil.transform_to_transiter_structure(input)
+        stu_1 = models.StopTimeUpdate()
+        stu_1.stop_id = self.STOP_ONE_ID
+        stu_1.stop_sequence = 17
+        stu_1.arrival_time = self.timestamp_to_datetime(self.STOP_ONE_ARR_TIMESTAMP)
+        stu_1.departure_time = self.timestamp_to_datetime(self.STOP_ONE_DEP_TIMESTAMP)
+        stu_1.track = None
+
+        stu_2 = models.StopTimeUpdate()
+        stu_2.stop_id = self.STOP_ONE_ID
+        stu_2.stop_sequence = 18
+        stu_1.arrival_time = self.timestamp_to_datetime(self.STOP_TWO_ARR_TIMESTAMP)
+        stu_1.departure_time = None
+        stu_2.track = None
+
+        trip.stop_events = [stu_1, stu_2]
+
+        expected_feed_time = timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
+
+        (actual_feed_time, actual_routes, actual_trips) = gtfsrealtimeutil.transform_to_transiter_structure(input)
 
         self.maxDiff = None
-        self.assertDictEqual(actual_output, expected_output)
+        self.assertEqual(actual_feed_time, expected_feed_time)
+        self.assertSetEqual({"4", }, actual_routes)
+        self.assertEqual([trip, ], actual_trips)
 
     def test_timestamp_to_datetime_edge_case_1(self):
-        actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime(None)
+        actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer("")._timestamp_to_datetime(None)
         self.assertEqual(None, actual)
 
     def test_timestamp_to_datetime_edge_case_2(self):
-        actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer._timestamp_to_datetime(0)
+        actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer("")._timestamp_to_datetime(0)
         self.assertEqual(None, actual)
 

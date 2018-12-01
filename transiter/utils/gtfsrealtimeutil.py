@@ -4,6 +4,7 @@ import time
 from google.transit import gtfs_realtime_pb2
 from google.protobuf.message import DecodeError
 from transiter import models
+import pytz
 
 
 class GtfsRealtimeExtension:
@@ -16,7 +17,7 @@ class GtfsRealtimeExtension:
         importlib.import_module(self._pb_module, self._base_module)
 
 
-# Rename pb2_to_json
+# TODO Rename pb2_to_json
 def read_gtfs_realtime(content, extension=None):
     """
     Convert a binary GTFS Realtime feed from protobuf format to a JSON-like
@@ -71,14 +72,14 @@ def _read_protobuf_message(message):
     return d
 
 
-def transform_to_transiter_structure(data):
-    transformer = _GtfsRealtimeToTransiterTransformer(data)
+def transform_to_transiter_structure(data, timezone_str=None):
+    transformer = _GtfsRealtimeToTransiterTransformer(data, timezone_str)
     return transformer.transform()
 
 
 class _GtfsRealtimeToTransiterTransformer:
 
-    def __init__(self, raw_data):
+    def __init__(self, raw_data, timezone_str=None):
         self._raw_data = raw_data
         self._trip_id_to_raw_entities = {}
         self._trip_id_to_transformed_entity = {}
@@ -86,6 +87,11 @@ class _GtfsRealtimeToTransiterTransformer:
         self._transformed_metadata = None
         self._feed_route_ids = set()
         self._feed_time = None
+        if timezone_str is None:
+            self._timezone = None
+        else:
+            # Todo: what if this doesn't work?
+            self._timezone = pytz.timezone(timezone_str)
 
     def transform(self):
         self._transform_feed_metadata()
@@ -93,7 +99,9 @@ class _GtfsRealtimeToTransiterTransformer:
         self._transform_trip_base_data()
         self._transform_trip_stop_events()
         self._update_stop_event_indices()
-        return self._collect_transformed_data()
+        return (self._feed_time,
+                self._feed_route_ids,
+                list(self._trip_id_to_trip_model.values()))
 
     def _transform_feed_metadata(self):
         self._feed_time = self._timestamp_to_datetime(
@@ -226,13 +234,14 @@ class _GtfsRealtimeToTransiterTransformer:
         transformed_data.update({
             'route_ids': list(self._feed_route_ids),
             'trips': list(self._trip_id_to_transformed_entity.values()),
-            #'trip': list(self._trip_id_to_trip_model.values())
         })
         return transformed_data
 
-    @staticmethod
-    def _timestamp_to_datetime(timestamp):
+    def _timestamp_to_datetime(self, timestamp):
         if timestamp is None or timestamp == 0:
             return None
-        return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
+        if self._timezone is None:
+            return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
+        else:
+            return self._timezone.localize(datetime.datetime.fromtimestamp(timestamp))
 

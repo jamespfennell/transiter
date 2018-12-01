@@ -4,6 +4,40 @@
 
 
 
+- Copy the relevent NYC subway unit tests over to the new models
+    and ensure they're working
+    
+- Then write syncutil.copy_pks tripupdater.sync_trips
+- Smoke test it's working
+
+
+
+
+dataaccess/
+    database.py
+    syncutil.py
+    feeddataaccess.py
+    ...
+http/
+    endpoints/
+services/
+    update/
+        updatemanager.py <- both system and feed call this
+            execute_feed_update
+            update_system
+        gtfsstaticreader.py
+        gtfsrealtimereader.py
+        tripupdater.py
+    servicepattern/
+        servicepatternmanager.py
+        graph/
+            pathstitcher.py
+general/
+    linksutil.py
+    exceptions.py
+    
+taskserver/
+    
 1. Refactoring:
     1. New data access layer setup
         - Should not be too hard, mostly moving things around
@@ -15,7 +49,6 @@
             - Might be tricky to coordinate stop time update merging -> may need to 
                 delete the stop events from the object first
                 ...or just change the cascades to not merge.
-            - Also need the XML Parser to have a convert to models step
   
 1. Go through all of the API endpoints and implement anything that's
     not implemented and make sure the docs are right
@@ -27,8 +60,6 @@
     
     How about just a list of trips,stops, which then get converted based
         on the 'current time'
-
-1. Pull back in some of the NYC subway code that was removed into gtfsrealtimeutil
 
 1. Add logging
 
@@ -51,6 +82,7 @@
         Maybe we can map it to an actual GTFS status though
     - C13:
         problem with the xml update - like a race condition when the message changes?
+        Need this to also do models now
 
 
 
@@ -67,6 +99,10 @@ origin/terminus for trips - should not be in the DB but may be useful in some en
 How to delete old entries?
 Just delete old entries when updating?
 Yes - have the time a configuration parameter
+
+Do we need feed health to be like this?
+Can we just delete old feed updates when updating
+and generate reports dynamically? 
 
 #### F6: Feed autoupdaters
 - Rename it Jobs Executor   
@@ -90,8 +126,10 @@ sort algorithm for generating service patterns
     and check if it's up to date.
     - If it's not, what happens? 
     Maybe use the sync util carefully to allow updates
-- How does a user/admin make stops? Admin service for
+- How does a user/admin make stops? 
+    - Admin service for
        finding stops based on geolocation
+    - post and delete methods
 - System wide trip endpoints? For trips that have no route
 - Have a generic get paremater that decides how times are to be read -
     timestamp, diff from now, human readable
