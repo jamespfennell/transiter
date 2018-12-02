@@ -4,11 +4,9 @@
 
 
 
-- Copy the relevent NYC subway unit tests over to the new models
-    and ensure they're working
-    
-- Then write syncutil.copy_pks tripupdater.sync_trips
 - Smoke test it's working
+- Then fix tests and clean out old code
+- Fix and file a bug ticket with sql alchemy?
 
 
 

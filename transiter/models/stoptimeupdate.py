@@ -18,6 +18,7 @@ class StopTimeUpdate(Base):
     arrival_time = Column(TIMESTAMP(timezone=True))
     departure_time = Column(TIMESTAMP(timezone=True))
     last_update_time = Column(TIMESTAMP(timezone=True))
+    # TODO add a unique constraint on stop_sequence, trip_pk
     stop_sequence = Column(Integer, nullable=False)
     track = Column(String)
     stop_id_alias = Column(String)

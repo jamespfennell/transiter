@@ -14,7 +14,8 @@ class Trip(Base):
     direction_id = Column(Boolean)
     start_time = Column(TIMESTAMP(timezone=True))
 
-
+    route_id = None
+    stop_id = None
 
 
 

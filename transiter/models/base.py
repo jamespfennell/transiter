@@ -16,8 +16,10 @@ class _BasicModel:
                 return False
         return True
 
+    # Hack to get around a bug/design problem in SQL alchemy
+    # Should not be relied on!
     def __hash__(self):
-        return 0
+        return id(self)
 
     def short_repr(self):
         return self._repr('_short_repr_list', '_short_repr_dict')

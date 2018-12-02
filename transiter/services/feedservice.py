@@ -114,11 +114,11 @@ def _execute_feed_update(feed_update):
         return
 
     try:
-        update_function(feed, feed.system, content)
+        update_function(feed, content)
         feed_update.status = 'SUCCESS_UPDATED'
     except Exception:
         print('Could not parse feed {}'.format(feed.id))
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
-        #raise
+        raise
 
 

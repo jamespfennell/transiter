@@ -499,7 +499,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         stu_1.departure_time = None
         stu_2.track = None
 
-        trip.stop_events = [stu_1, stu_2]
+        trip.stop_events.extend([stu_1, stu_2])
 
         expected_feed_time = timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
 
@@ -517,4 +517,5 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     def test_timestamp_to_datetime_edge_case_2(self):
         actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer("")._timestamp_to_datetime(0)
         self.assertEqual(None, actual)
+
 

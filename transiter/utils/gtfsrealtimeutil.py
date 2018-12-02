@@ -136,9 +136,13 @@ class _GtfsRealtimeToTransiterTransformer:
             trip.id = trip_id
             trip.route_id = trip_data.get('route_id', None)
             trip.direction_id = trip_data.get('direction_id', None)
-            # TODO convert this to a timestamp and then in the subway code
-            # add the extra time to it
-            trip.start_time = trip_data.get('start_date', None)
+            start_date_str = trip_data.get('start_date', None)
+            if start_date_str is not None:
+                start_dt = datetime.datetime(
+                    year=int(start_date_str[0:4]),
+                    month=int(start_date_str[4:6]),
+                    day=int(start_date_str[6:8]))
+                trip.start_time = self._localize_datetime(start_dt)
             # TODO should be vehicle_id and go in the vehicle section
             trip.train_id = trip_data.get('train_id', None)
 
@@ -146,7 +150,7 @@ class _GtfsRealtimeToTransiterTransformer:
             trip.last_update_time = self._timestamp_to_datetime(
                 vehicle_data.get('timestamp', None))
             trip.current_status = vehicle_data.get('current_status', None)
-            trip.current_stop_sequence = vehicle_data.get('current_stop_sequence', None)
+            trip.current_stop_sequence = vehicle_data.get('current_stop_sequence', 0)
             self._trip_id_to_trip_model[trip_id] = trip
             self._feed_route_ids.add(trip.route_id)
 
@@ -195,9 +199,10 @@ class _GtfsRealtimeToTransiterTransformer:
                 stop_time_update.stop_id = stop_time_update_data['stop_id']
                 stop_time_update.track = stop_time_update_data.get('track', None)
                 stop_time_update.arrival_time = (
-                    stop_time_update_data.get('arrival_time', {}).get('time', None))
-                stop_time_update.departure_time = (
-                    stop_time_update_data.get('departure_time', {}).get('time', None))
+                    self._timestamp_to_datetime(
+                        stop_time_update_data.get('arrival', {}).get('time', None)))
+                stop_time_update.departure_time = self._timestamp_to_datetime(
+                    stop_time_update_data.get('departure', {}).get('time', None))
                 trip.stop_events.append(stop_time_update)
 
                 stop_event_data = {
@@ -240,8 +245,10 @@ class _GtfsRealtimeToTransiterTransformer:
     def _timestamp_to_datetime(self, timestamp):
         if timestamp is None or timestamp == 0:
             return None
-        if self._timezone is None:
-            return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
-        else:
-            return self._timezone.localize(datetime.datetime.fromtimestamp(timestamp))
+        return self._localize_datetime(
+            datetime.datetime.fromtimestamp(timestamp))
 
+    def _localize_datetime(self, dt):
+        if self._timezone is None:
+            return dt
+        return self._timezone.localize(dt)

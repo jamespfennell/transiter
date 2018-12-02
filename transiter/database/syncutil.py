@@ -3,6 +3,34 @@ from transiter import models
 from transiter.database.daos import route_dao, trip_dao, stop_dao
 
 
+def copy_pks(source_models, target_models, id_keys, pk_key='pk'):
+    # In this function we use dictionaries to gain the efficiency of sets
+    # but without relying on a hash function being defined for the models
+    new_models = {}
+    updated_models = {}
+
+    def model_id(model):
+        return tuple(getattr(model, id_key) for id_key in id_keys)
+
+    id_to_source_model = {model_id(model): model for model in source_models}
+
+    for target_model in target_models:
+        id_ = tuple(getattr(target_model, id_key) for id_key in id_keys)
+        source_model = id_to_source_model.get(id_, None)
+        if source_model is None:
+            new_models[id_] = target_model
+        else:
+            source_model.__setattr__(pk_key, getattr(target_model, pk_key))
+            updated_models[id_] = (source_model, target_model)
+            del id_to_source_model[id_]
+
+    return (
+        new_models.values(),
+        updated_models.values(),
+        id_to_source_model.values()
+    )
+
+
 def delete_from_db(session, entity):
     session.delete(entity)
 
