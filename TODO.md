@@ -5,17 +5,21 @@
 
 
 
-- Continue working on the integration test by writing the actual test part
-- Fix the unittests, check the code coverage, and then write unit tests
+- Continue working on the integration test by writing the test assertions
+- Check the code coverage, and then write unit tests
     for the methods missing them
 - Fix the NYC subway config file
-- Fix unit tests
 
 
-dataaccess/
+data/
     database.py
-    syncutil.py
-    feeddataaccess.py
+    genericmethods.py
+    feeddata.py
+    routedata.py
+    stopdata.py
+    tripdata.py
+    systemdata.py
+    servicepatterndata.py
     ...
 http/
     endpoints/
@@ -116,12 +120,12 @@ sort algorithm for generating service patterns
     from the transit agency
     and check if it's up to date.
     - If it's not, what happens? 
-    Maybe use the sync util carefully to allow updates
+    Maybe use the sync util carefully to allow updates <- just use a feed with
+        default gtfsstatic parser
 - How does a user/admin make stops? 
     - Admin service for
        finding stops based on geolocation
     - post and delete methods
-- System wide trip endpoints? For trips that have no route
 - Have a generic get paremater that decides how times are to be read -
     timestamp, diff from now, human readable
 - Support for trip schedules/general gtfs static data
