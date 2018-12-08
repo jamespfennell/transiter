@@ -30,7 +30,8 @@ class TestFeedService(unittest.TestCase):
         self.feed_one = mock.MagicMock()
         self.feed_one.short_repr.return_value = self.FEED_ONE_REPR
         self.feed_one_href = mock.MagicMock()
-        self.feed_one.parser_function = 'custom_function'
+        self.feed_one.parser = 'custom'
+        self.feed_one.custom_function = 'custom_function'
         self.feed_dao.list_all_in_system.return_value = [
             self.feed_one]
         self.feed_dao.get_in_system_by_id.return_value = self.feed_one

@@ -6,6 +6,8 @@ import hashlib
 from transiter.database.daos import feed_dao, feed_update_dao
 from transiter.utils import linksutil
 
+from transiter.utils import gtfsrealtimeutil
+from transiter.services.update import tripupdater
 from transiter.scheduler import client
 #client.refresh_jobs()
 
@@ -78,25 +80,36 @@ def list_updates_in_feed(system_id, feed_id):
 def _execute_feed_update(feed_update):
     feed_update.status = 'IN_PROGRESS'
 
-    # TODO is this really necessary? Does it slow things down?
-    importlib.invalidate_caches()
     feed = feed_update.feed
-    # TODO Need to more flexible with these - maybe alpha numberic
-    # TODO These checks should also exist when installing
-    """
-    if not feed.system.system_id.isalnum():
-        raise IllegalSystemName
-    if not feed.parser_module.isalpha():
-        raise IllegalModuleName
-    if not feed.parser_function.isalpha():
-        raise IllegalFunctionName
-    """
-    module_path = '{}.{}'.format(
-        feed.system.package,
-        feed.parser_module
-        )
-    module = importlib.import_module(module_path)
-    update_function = getattr(module, feed.parser_function)
+    if feed.parser == 'custom':
+        # TODO is this really necessary? Does it slow things down?
+        importlib.invalidate_caches()
+        # TODO Need to more flexible with these - maybe alpha numberic
+        # TODO These checks should also exist when installing
+        """
+        if not feed.system.system_id.isalnum():
+            raise IllegalSystemName
+        if not feed.parser_module.isalpha():
+            raise IllegalModuleName
+        if not feed.parser_function.isalpha():
+            raise IllegalFunctionName
+        """
+        module_path = '{}.{}'.format(
+            feed.system.package,
+            feed.custom_module
+            )
+        module = importlib.import_module(module_path)
+        update_function = getattr(module, feed.custom_function)
+    elif feed.parser == 'gtfsrealtime':
+        update_function = _gtfs_realtime_parser
+    else:
+        raise Exception('Unknown feed parser')
+
+
+
+
+
+
 
     request = requests.get(feed.url)
     # TODO: raise for status here to catch HTTP errors
@@ -119,6 +132,12 @@ def _execute_feed_update(feed_update):
     except Exception:
         print('Could not parse feed {}'.format(feed.id))
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
-        raise
 
 
+# TODO: move to GTFS realtime util? Or updatemanager.py?
+def _gtfs_realtime_parser(feed, content):
+
+    gtfs_data = gtfsrealtimeutil.read_gtfs_realtime(content)
+    (__, __, trips) = gtfsrealtimeutil.transform_to_transiter_structure(
+        gtfs_data, 'America/New_York')
+    tripupdater.sync_trips(feed.system, None, trips)

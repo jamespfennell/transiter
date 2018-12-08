@@ -28,6 +28,7 @@ class TestTripService(unittest.TestCase):
         stop_event = mock.MagicMock()
         stop_event.short_repr.return_value = cls.STOP_EVENT_REPR
         stop_event.stop = stop
+        stop_event.future = True
         cls.trip_one.stop_events = [stop_event]
 
     @mock.patch('transiter.services.tripservice.trip_dao')
@@ -52,6 +53,7 @@ class TestTripService(unittest.TestCase):
         expected = {
             'stop_events': [{
                 'stop': self.STOP_REPR,
+                'future': True,
                 **self.STOP_EVENT_REPR
             }],
             **self.TRIP_ONE_REPR

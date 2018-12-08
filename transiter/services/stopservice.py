@@ -85,8 +85,8 @@ class _StopEventFilter:
         self._count[direction_name] += 1
         # If this prediction should already have passed
         # TODO rethink this
-        if this_time < time.time():
-            return True
+        #if this_time < time.time():
+        #    return True
 
         # Rules for whether to append or not go here
         # If any of these condition are met the stop event will be appended

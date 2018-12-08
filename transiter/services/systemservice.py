@@ -213,8 +213,10 @@ def _import_static_data(system):
         feed.system = system
         feed.id = feed_config['name']
         feed.url = feed_config['url'].format(**system_config.env_vars)
-        feed.parser_module = feed_config['parser_module']
-        feed.parser_function = feed_config['parser_function']
+        feed.parser = feed_config['parser']
+        if feed.parser == 'custom':
+            feed.custom_module = feed_config['custom_parser']['module']
+            feed.custom_function = feed_config['custom_parser']['function']
 
 
 class SystemConfig:

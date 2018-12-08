@@ -3,7 +3,7 @@ from unittest import mock
 from google.transit import gtfs_realtime_pb2 as gtfs
 from transiter.utils import gtfsrealtimeutil
 from transiter import models
-
+import datetime
 from google.protobuf.message import DecodeError
 
 class TestGtfsRealtimeExtension(unittest.TestCase):
@@ -145,7 +145,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     ENTITY_2_ID = '2'
     TRIP_ID = "Trip 1"
     ROUTE_ID = 'L'
-    START_DATE = '26031990'
+    START_DATE = '19900326'
     TRAIN_ID = 'Train ID'
     TRIP_DIRECTION = 'North'
     TRIP_DIRECTION_ID = True
@@ -223,25 +223,25 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         }
         transformer._feed_time = self.FEED_UPDATE_TIMESTAMP
 
+        trip = models.Trip()
+        trip.id = self.TRIP_ID
+        trip.route_id = self.ROUTE_ID
+        trip.start_time = datetime.datetime(year=1990, month=3, day=26)
+        trip.train_id = self.TRAIN_ID
+        trip.direction_id = self.TRIP_DIRECTION_ID
+        trip.current_status = None
+        trip.current_stop_sequence = 0
+        trip.last_update_time = None
+        trip.feed_update_time = None
         expected_transformed_base_data = {
-            self.TRIP_ID: {
-                'id': self.TRIP_ID,
-                'route_id': self.ROUTE_ID,
-                'start_date': self.START_DATE,
-                'train_id': self.TRAIN_ID,
-                'direction_id': self.TRIP_DIRECTION_ID,
-                'current_status': None,
-                'current_stop_sequence': 0,
-                'last_update_time': None,
-                'feed_update_time': self.FEED_UPDATE_TIMESTAMP
-            }
+            self.TRIP_ID: trip
         }
 
         transformer._transform_trip_base_data()
 
         self.assertDictEqual(
             expected_transformed_base_data,
-            transformer._trip_id_to_transformed_entity)
+            transformer._trip_id_to_trip_model)
         self.assertSetEqual(transformer._feed_route_ids, set(self.ROUTE_ID))
 
     def test_transform_trip_base_data_with_vehicle(self):
@@ -265,52 +265,47 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         }
         transformer._feed_time = self.FEED_UPDATE_TIMESTAMP
 
+        trip = models.Trip()
+        trip.id = self.TRIP_ID
+        trip.route_id = self.ROUTE_ID
+        trip.start_time = datetime.datetime(year=1990, month=3, day=26)
+        trip.train_id = self.TRAIN_ID
+        trip.direction_id = self.TRIP_DIRECTION_ID
+        trip.current_status = self.CURRENT_STATUS
+        trip.current_stop_sequence = self.CURRENT_STOP_SEQUENCE
+        trip.last_update_time = self.timestamp_to_datetime(self.TRIP_UPDATE_TIMESTAMP)
+        trip.feed_update_time = None
         expected_transformed_base_data = {
-            self.TRIP_ID: {
-                'id': self.TRIP_ID,
-                'route_id': self.ROUTE_ID,
-                'start_date': self.START_DATE,
-                'train_id': self.TRAIN_ID,
-                'direction_id': self.TRIP_DIRECTION_ID,
-                'last_update_time': self.timestamp_to_datetime(
-                    self.TRIP_UPDATE_TIMESTAMP),
-                'current_status': self.CURRENT_STATUS,
-                'current_stop_sequence': self.CURRENT_STOP_SEQUENCE,
-                'feed_update_time': self.FEED_UPDATE_TIMESTAMP
-            }
+            self.TRIP_ID: trip
         }
 
         transformer._transform_trip_base_data()
 
         self.assertDictEqual(
             expected_transformed_base_data,
-            transformer._trip_id_to_transformed_entity)
+            transformer._trip_id_to_trip_model)
         self.assertSetEqual(transformer._feed_route_ids, set(self.ROUTE_ID))
 
     def test_transform_trip_stop_events_short_circuit(self):
         """[GTFS Realtime transformer] Transform trip base data with no stops"""
         transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
-        transformer._trip_id_to_trip_model = {self.TRIP_ID: models.Trip()}
+        trip = models.Trip()
+        transformer._trip_id_to_trip_model = {self.TRIP_ID: trip}
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
                 'trip': 'Data'
             }
         }
-        expected_transformed_entity = {
-            self.TRIP_ID: {
-                'stop_events': []
-            }
-        }
 
         transformer._transform_trip_stop_events()
 
-        self.assertDictEqual(
-            expected_transformed_entity, transformer._trip_id_to_transformed_entity)
+        self.assertEqual([], trip.stop_events)
 
     def test_transform_trip_stop_events(self):
         """[GTFS Realtime transformer] Transform trip stop events"""
         transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
-        transformer._trip_id_to_trip_model = {self.TRIP_ID: models.Trip()}
+        trip = models.Trip()
+        transformer._trip_id_to_trip_model = {self.TRIP_ID: trip}
         transformer._trip_id_to_raw_entities = {
             self.TRIP_ID: {
                 'trip': 'Data',
@@ -335,89 +330,38 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                 }
             }
         }
-        expected_transformed_entity = {
-            self.TRIP_ID: {
-                'stop_events': [
-                    {
-                        "stop_id": self.STOP_ONE_ID,
-                        "arrival_time": self.timestamp_to_datetime(
-                            self.STOP_ONE_ARR_TIMESTAMP),
-                        "departure_time": self.timestamp_to_datetime(
-                            self.STOP_ONE_DEP_TIMESTAMP),
-                        'track': None
-                    },
-                    {
-                        "stop_id": self.STOP_TWO_ID,
-                        "arrival_time": self.timestamp_to_datetime(
-                            self.STOP_TWO_ARR_TIMESTAMP),
-                        "departure_time": None,
-                        'track': None
-                    }
-                ]
-            }
-        }
+
+        stu_1 = models.StopTimeUpdate()
+        stu_1.stop_id = self.STOP_ONE_ID
+        stu_1.arrival_time = self.timestamp_to_datetime(
+            self.STOP_ONE_ARR_TIMESTAMP)
+        stu_1.departure_time = self.timestamp_to_datetime(
+            self.STOP_ONE_DEP_TIMESTAMP)
+        stu_1.track: None
+
+        stu_2 = models.StopTimeUpdate()
+        stu_2.stop_id = self.STOP_TWO_ID
+        stu_2.arrival_time = self.timestamp_to_datetime(
+            self.STOP_TWO_ARR_TIMESTAMP)
+        stu_2.departure_time = None
+        stu_2.track = None
 
         transformer._transform_trip_stop_events()
 
         self.maxDiff = None
-        self.assertDictEqual(
-            expected_transformed_entity, transformer._trip_id_to_transformed_entity)
+        self.assertEqual([stu_1, stu_2], trip.stop_events)
 
     def test_update_stop_event_indices(self):
         """[GTFS Realtime transformer] Update stop event indices"""
         transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
-        transformer._trip_id_to_trip_model = {self.TRIP_ID: models.Trip()}
-        transformer._trip_id_to_transformed_entity = {
-            self.TRIP_ID: {
-                'current_stop_sequence': 5,
-                'stop_events': [
-                    {},
-                    {}
-                ]
-            }
-        }
-
-        expected_updated_entity = {
-            self.TRIP_ID: {
-                'current_stop_sequence': 5,
-                'stop_events': [
-                    {
-                        'stop_sequence': 6,
-                    },
-                    {
-                        'stop_sequence': 7,
-                    }
-                ]
-            }
-        }
+        trip = models.Trip()
+        trip.current_stop_sequence = 15
+        trip.stop_events = [models.StopTimeUpdate(), models.StopTimeUpdate()]
+        transformer._trip_id_to_trip_model = {self.TRIP_ID: trip}
 
         transformer._update_stop_event_indices()
 
-        self.assertDictEqual(
-            expected_updated_entity, transformer._trip_id_to_transformed_entity)
-
-    def test_collect_transformed_data(self):
-        """[GTFS Realtime transformer] Collect transformed data"""
-        trip = mock.MagicMock()
-        feed_time = mock.MagicMock()
-        transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
-        transformer._trip_id_to_transformed_entity = {
-            self.TRIP_ID: trip
-        }
-        transformer._transformed_metadata = {
-            'timestamp': feed_time
-        }
-        transformer._feed_route_ids = set(self.ROUTE_ID)
-
-        expected_data = {
-            'timestamp': feed_time,
-            'trips': [trip],
-            'route_ids': [self.ROUTE_ID]
-        }
-
-        actual_data = transformer._collect_transformed_data()
-
-        self.assertDictEqual(expected_data, actual_data)
+        self.assertEqual([15, 16], [stu.stop_sequence for stu in trip.stop_events])
 
     def test_start_to_finish_parse(self):
         """[GTFS Realtime transformer] Full transformation test"""
@@ -478,7 +422,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         trip.id = "trip_id"
         trip.train_id = None
         trip.route_id = "4"
-        trip.start_time = "20180915"
+        trip.start_time = datetime.datetime(year=2018, month=9, day=15)
         trip.current_status = 2
         trip.current_stop_sequence = 16
         trip.direction_id = None

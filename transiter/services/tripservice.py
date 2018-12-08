@@ -69,6 +69,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
     trip_response['stop_events'] = []
     for stop_event in trip.stop_events:
         stop_event_response = stop_event.short_repr()
+        stop_event_response['future'] = stop_event.future
         stop_event_response['stop'] = stop_event.stop.short_repr()
         stop_event_response['stop']['href'] = linksutil.StopEntityLink(stop_event.stop)
         trip_response['stop_events'].append(stop_event_response)

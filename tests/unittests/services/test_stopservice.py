@@ -104,16 +104,6 @@ class TestStopEventFilter(unittest.TestCase):
         )
 
     @mock.patch('transiter.services.stopservice.time')
-    def test_exclude_time_passed(self, time):
-        self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
-        time.time.return_value = self.DATETIME_TWO.timestamp()
-
-        exclude = self.stop_event_filter.exclude(
-            self.stop_event, self.DIRECTION_NAME)
-
-        self.assertTrue(exclude)
-
-    @mock.patch('transiter.services.stopservice.time')
     def test_exclude_route_not_there_yet(self, time):
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
         self.stop_event_filter._count[self.DIRECTION_NAME] = 100

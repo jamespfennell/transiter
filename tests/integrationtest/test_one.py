@@ -1,8 +1,10 @@
 import subprocess
 import time
 import requests
+import json
 import unittest
 
+import gtfsrealtimegenerator
 
 class IntegrationTest(unittest.TestCase):
 
@@ -14,7 +16,7 @@ class IntegrationTest(unittest.TestCase):
         '1AN', '1BN', '1CN', '1DN', '1EN', '1FN', '1GN',
     }
     ROUTE_IDS = {'A', 'B'}
-    FEED_IDS = {'GtfsRealtimeFeed'}
+    FEED_IDS = ['GtfsRealtimeFeed']
     STOP_ID_TO_USUAL_ROUTES = {
         '1A': ['A'],
         '1B': [],
@@ -46,6 +48,7 @@ class IntegrationTest(unittest.TestCase):
         response = self._put('systems/testsystem', json=payload)
         response.raise_for_status()
 
+    """
     def test_010_count_stops(self):
         system_response = self._get('systems/testsystem')
         stops_count = system_response['stops']['count']
@@ -105,7 +108,120 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual([], feed_update_response)
 
 
+    def test_050_feed_update(self):
+        trip_1_stops = {
+            '1AS': 300,
+            '1BS': 600,
+            '1CS': 800,
+            '1DS': 900,
+            '1ES': 1800,
+            '1FS': 2500,
+        }
 
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(0,[
+            gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
+        ])
+
+        self._perform_feed_update_test(feed_1)
+
+    def test_055_feed_update(self):
+        trip_1_stops = {
+            '1AS': 300,
+            '1BS': 600,
+            '1CS': 800,
+            '1DS': 900,
+            '1ES': 1800,
+            '1FS': 2500,
+            '1GS': 3000,
+        }
+
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(850, [
+            gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
+        ])
+
+        self._perform_feed_update_test(feed_1)
+
+    def test_060_feed_update(self):
+        trip_1_stops = {
+            '1AS': 300,
+            '1BS': 600,
+            '1CS': 800,
+            '1DS': 900,
+            '1ES': 1800,
+            '1GS': 2500,
+            '1FS': 3000,
+        }
+
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(850, [
+            gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
+        ])
+
+        self._perform_feed_update_test(feed_1)
+
+    def test_065_feed_update(self):
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(850, [])
+
+        self._perform_feed_update_test(feed_1)
+    """
+
+    def _perform_feed_update_test(self, feed_1):
+        requests.put('http://localhost:5001', data=feed_1.build_feed())
+
+        self._post('systems/testsystem/feeds/{}'.format(self.FEED_IDS[0]))
+
+        all_stop_data = feed_1.stop_data()
+        for stop_id, stop_data in all_stop_data.items():
+
+            actual_stop_data = []
+            response = self._get('systems/testsystem/stops/{}'.format(stop_id))
+            for stu in response['stop_events']:
+                actual_stop_data.append({
+                    'trip_id': stu['trip']['id'],
+                    'route_id': stu['trip']['route']['id'],
+                    'arrival_time': stu['arrival_time'],
+                    'departure_time': stu['departure_time']
+                })
+
+            self.assertListEqual(stop_data, actual_stop_data)
+
+        prev_stop_ids = set(all_stop_data.keys())
+
+        for stop_id in self.STOP_IDS:
+            if len(stop_id) <= 2:
+                continue
+            if stop_id in prev_stop_ids:
+                continue
+            response = self._get('systems/testsystem/stops/{}'.format(stop_id))
+            self.assertEqual([], response['stop_events'])
+
+    def test_080_feed_update_trips(self):
+        trip_1_stops = {
+            '1AS': 300,
+            '1BS': 600,
+            '1CS': 800,
+            '1DS': 900,
+            '1ES': 1800,
+            '1GS': 2500,
+            '1FS': 3000,
+        }
+
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(0, [
+            gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
+        ])
+        requests.put('http://localhost:5001', data=feed_1.build_feed())
+        self._post('systems/testsystem/feeds/{}'.format(self.FEED_IDS[0]))
+
+        trip_data = self._get('systems/testsystem/routes/A/trips/trip_1')
+        print(json.dumps(trip_data, indent=4, sort_keys=True))
+        feed_2 = gtfsrealtimegenerator.GtfsRealtimeFeed(850, [
+            gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
+        ])
+        requests.put('http://localhost:5001', data=feed_2.build_feed())
+        self._post('systems/testsystem/feeds/{}'.format(self.FEED_IDS[0]))
+
+        trip_data = self._get('systems/testsystem/routes/A/trips/trip_1')
+        print(json.dumps(trip_data, indent=4, sort_keys=True))
+        # Also test other 'leaf' stops
 
     #Test service patterns
 
@@ -117,13 +233,17 @@ class IntegrationTest(unittest.TestCase):
 
     @classmethod
     def _get(cls, endpoint):
-        response =  requests.get('{}{}'.format(cls.TRANSITER_URL, endpoint))
+        response = requests.get('{}{}'.format(cls.TRANSITER_URL, endpoint))
         response.raise_for_status()
         return response.json()
 
     @classmethod
     def _put(cls, endpoint, json=None):
         return requests.put('{}{}'.format(cls.TRANSITER_URL, endpoint), json=json)
+
+    @classmethod
+    def _post(cls, endpoint):
+        return requests.post('{}{}'.format(cls.TRANSITER_URL, endpoint))
 
 
 def startup_http_services():

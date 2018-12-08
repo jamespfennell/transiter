@@ -30,10 +30,14 @@ class TripDataCleaner:
 
 def sync_trips(system, route_ids, trips):
 
-    route_id_to_pk = route_dao.get_id_to_pk_map(system.id, route_ids)
-    print(route_id_to_pk)
-    print(route_ids)
-    print('# trips: {}'.format(len(trips)))
+    if route_ids is None:
+        # TODO: make more efficient, perhaps make the dao method
+        # get_id_to_pk_map 2nd arg optional
+        route_id_to_pk = {
+            route.id: route.pk for route in route_dao.list_all_in_system(system.id)
+        }
+    else:
+        route_id_to_pk = route_dao.get_id_to_pk_map(system.id, route_ids)
     route_pk_to_trips_dict = {route_pk: {} for route_pk in route_id_to_pk.values()}
     all_stop_ids = set()
     for trip in trips:
@@ -49,6 +53,18 @@ def sync_trips(system, route_ids, trips):
         sync_trips_in_route(route_pk, trips_dict.values(), stop_id_to_pk)
 
 
+# This method essentially performs a session.merge operation
+# on the Trips. There are two considerations which require additional logic:
+#
+# - SQL Alchemy merges by identifying Trips with the same pk. In the GTFS only
+#   world there are no (globally unique) pks, only (route specific
+#   unique) ids. So we first, for every Trip, have to find
+#   the pk corresponding to that trip in the DB, if it exists.
+#
+# - We want to merge in the StopTimeUpdates as well, but we want to keep
+#   historical StopTimeUpdates and mark them as passed. After we merge in a Trip
+#   its new StopTimeUpdates will be merged in, via the cascade; we then have
+#   to manually put the historical StopTimeUpdates back in.
 def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
     print('Number of trips in route: {}'.format(len(trips)))
     for trip in trips:
@@ -57,35 +73,40 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
             stu.stop_pk = stop_id_to_pk[stu.stop_id]
 
     existing_trips = trip_dao.list_all_in_route_by_pk(route_pk)
-    (new_trips, updated_trip_tuples, old_trips) = syncutil.copy_pks(
+    (old_trips, updated_trip_tuples, new_trips) = syncutil.copy_pks(
         existing_trips, trips, ('id', ))
-
-    for updated_trip, existing_trip in updated_trip_tuples:
-
-
-        historical_stus = existing_trip.stop_events[:updated_trip.current_stop_sequence]
-        for historical_stu in historical_stus:
-            if historical_stu.future:
-                historical_stu.future = False
-
-        existing_stus = existing_trip.stop_events[updated_trip.current_stop_sequence:]
-        (new_stus, __, __) = syncutil.copy_pks(
-            existing_stus,
-            updated_trip.stop_events,
-            ('stop_sequence', ))
-        for new_stu in new_stus:
-            new_stu.trip = updated_trip
-
-
-        updated_trip.stop_events.extend(historical_stus)
-
-    for old_trip in old_trips:
-        old_trip.route_pk = None
 
     # TODO: don't get the session from the dao, get from the database
     session = route_dao.get_session()
+    for updated_trip, existing_trip in updated_trip_tuples:
+
+        existing_past_stus = []
+        existing_future_stus = []
+        for existing_stu in existing_trip.stop_events:
+            if existing_stu.stop_sequence < updated_trip.current_stop_sequence:
+                # updated_trip.stop_events.append(existing_stu)
+                existing_past_stus.append(existing_stu)
+
+                if existing_stu.future:
+                    existing_stu.future = False
+            else:
+                existing_future_stus.append(existing_stu)
+
+        syncutil.copy_pks(
+            existing_future_stus,
+            updated_trip.stop_events,
+            ('stop_sequence', ))
+
+        persisted_trip = session.merge(updated_trip)
+        persisted_trip.stop_events.extend(existing_past_stus)
+
+    for old_trip in old_trips:
+        session.delete(old_trip)
+
     #for new_trip in new_trips:
     #    session.add(new_trip)
-    for updated_trip in trips:
-        session.merge(updated_trip)
+    for new_trip in new_trips:
+        persisted_trip = session.add(new_trip)
+
+        #persisted_trip.extend(existing_past_stus)
 

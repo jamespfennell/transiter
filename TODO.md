@@ -4,11 +4,12 @@
 
 
 
-- Smoke test it's working
-- Then fix tests and clean out old code
-- Fix and file a bug ticket with sql alchemy?
 
-
+- Continue working on the integration test by writing the actual test part
+- Fix the unittests, check the code coverage, and then write unit tests
+    for the methods missing them
+- Fix the NYC subway config file
+- Fix unit tests
 
 
 dataaccess/
@@ -41,35 +42,22 @@ taskserver/
         - Should not be too hard, mostly moving things around
         - merge connection and creator into database.py
         
-    1. Use models as input to the sync utils 
-        - C10: the sync util should use non-persisted models and then session.merge()
-            - This means the GTFS util should output models and not JSON
-            - Might be tricky to coordinate stop time update merging -> may need to 
-                delete the stop events from the object first
-                ...or just change the cascades to not merge.
   
 1. Go through all of the API endpoints and implement anything that's
     not implemented and make sure the docs are right
-
-1. 
-    Need some GTFS realtime data now for integration test
-    Write an abstract class with a to_gtfs_realtime method
-    Then can compares Transiter responses to that
-    
-    How about just a list of trips,stops, which then get converted based
-        on the 'current time'
 
 1. Add logging
 
 1. Existing code clean up
     - C6: Optimize the SQL ALchemy config
-        - especially with joins
-        - figure out what the cascades are doing
+        - especially with joins/lazy loading
         - Just adding .join(Model.attribute) loads it I think?
         https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html
         look at lazy
         
         For example, when getting stop events get the trip and stop as well
+        
+        cascade = None
       
     - C11:
     Bug: I'm transforming IS_ASSIGNED to a status, 
@@ -88,6 +76,11 @@ taskserver/
 ---I THINK IT WOULD BE GOOD TO HAVE MORE THAN 90% TESTING COVERAGE
 BEFORE VERSION 0.2---NOW OR NEVER!
 
+
+- All TODOs in the code and here are to me made as issues on github and 
+removed here before v1!
+
+- Fix and file a bug ticket with sql alchemy?
 
 ## Version 0.2
 

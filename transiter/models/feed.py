@@ -12,8 +12,9 @@ class Feed(Base):
     system_id = Column(String, ForeignKey('system.id'))
 
     url = Column(String)
-    parser_module = Column(String)
-    parser_function = Column(String)
+    parser = Column(String)
+    custom_module = Column(String)
+    custom_function = Column(String)
     auto_updater_enabled = Column(Boolean)
     auto_updater_frequency = Column(Integer)
 

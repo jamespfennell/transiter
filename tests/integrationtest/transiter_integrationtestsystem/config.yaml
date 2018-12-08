@@ -7,9 +7,8 @@ gtfs_static_data:
 feeds:
 
   - name: GtfsRealtimeFeed
-    url: http://localhost:5051
-    parser_module: gtfsupdater
-    parser_function: update
+    url: http://localhost:5001
+    parser: gtfsrealtime
 
 
 static_route_service_patterns:

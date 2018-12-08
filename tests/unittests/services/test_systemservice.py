@@ -279,15 +279,19 @@ class TestImportStaticData(unittest.TestCase):
         feed_config = [{
             'name': self.FEED_NAME,
             'url': self.FEED_URL,
-            'parser_module': self.FEED_PARSER_MODULE,
-            'parser_function': self.FEED_PARSER_FUNCTION
+            'parser': 'custom',
+            'custom_parser': {
+                'module': self.FEED_PARSER_MODULE,
+                'function': self.FEED_PARSER_FUNCTION
+            }
         }]
         self.system_config.feeds = feed_config
         feed = models.Feed()
         feed.id = self.FEED_NAME
         feed.url = self.FEED_URL
-        feed.parser_module = self.FEED_PARSER_MODULE
-        feed.parser_function = self.FEED_PARSER_FUNCTION
+        feed.parser = 'custom'
+        feed.custom_module = self.FEED_PARSER_MODULE
+        feed.custom_function = self.FEED_PARSER_FUNCTION
 
         systemservice._import_static_data(self.system)
 

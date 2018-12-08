@@ -40,7 +40,8 @@ class Trip(Base):
 
     route = relationship(
         'Route',
-        back_populates='trips')
+        back_populates='trips',
+        cascade=None)
     # TODO: rename stop_time_updates
     stop_events = relationship(
         'StopTimeUpdate',
@@ -59,7 +60,7 @@ class Trip(Base):
         'train_id'
     ]
 
-
+# TODO: this should be a unique constraint
 Index('get_trip_in_route_idx',
       Trip.route_pk,
       Trip.id)

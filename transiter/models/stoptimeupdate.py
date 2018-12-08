@@ -13,7 +13,6 @@ class StopTimeUpdate(Base):
     trip_pk = Column(Integer, ForeignKey('trip.pk'), nullable=False)
 
     direction = Column(String)
-    # TODO rename to status and make a string
     future = Column(Boolean, server_default=text('true'))
     arrival_time = Column(TIMESTAMP(timezone=True))
     departure_time = Column(TIMESTAMP(timezone=True))
@@ -23,12 +22,16 @@ class StopTimeUpdate(Base):
     track = Column(String)
     stop_id_alias = Column(String)
 
+    stop_id = None
+
     stop = relationship(
         'Stop',
-        back_populates='stop_events')
+        back_populates='stop_events',
+        cascade=None)
     trip = relationship(
         'Trip',
-        back_populates='stop_events')
+        back_populates='stop_events',
+        cascade=None)
 
     _short_repr_list = ['arrival_time', 'departure_time', 'track', 'stop_sequence']
 

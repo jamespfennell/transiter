@@ -20,14 +20,14 @@ def copy_pks(source_models, target_models, id_keys, pk_key='pk'):
         if source_model is None:
             new_models[id_] = target_model
         else:
-            source_model.__setattr__(pk_key, getattr(target_model, pk_key))
-            updated_models[id_] = (source_model, target_model)
+            target_model.__setattr__(pk_key, getattr(source_model, pk_key))
+            updated_models[id_] = (target_model, source_model)
             del id_to_source_model[id_]
 
     return (
-        new_models.values(),
+        id_to_source_model.values(),
         updated_models.values(),
-        id_to_source_model.values()
+        new_models.values(),
     )
 
 

@@ -37,14 +37,15 @@ def get_feed():
 
 @app.route('/', methods=['PUT'])
 def put_feed():
-    feed.set_content(request.form.get('data', None))
-    feed.set_status(request.form.get('status', 200))
+    feed.set_content(request.data)
+    feed.set_status(200)
     return ''
 
 
 @app.route('/', methods=['DELETE'])
 def delete_feed():
     feed.set_content(None)
+    feed.set_status(404)
     return ''
 
 
