@@ -4,8 +4,6 @@
 
 
 
-
-- Continue working on the integration test by writing the test assertions
 - Check the code coverage, and then write unit tests
     for the methods missing them
 - Fix the NYC subway config file
@@ -133,3 +131,14 @@ sort algorithm for generating service patterns
 
 
     
+- Integration test:
+    write three separate test runs:
+        - gtfs static import 
+        - gtfs realtime import (stops)
+        - gtfs realtime import (trips)
+        
+Last 2 only run if first succeeeds
+clean it up in general
+
+
+

@@ -38,10 +38,10 @@ class GtfsRealtimeFeed:
             trip_descr.trip_id = trip.trip_id
             trip_descr.route_id = trip.route_id
 
-            num_ignored_trips = 0
+            num_ignored_stops = 0
             for stop_id, time in trip.stops_dict.items():
                 if time < self.feed_time:
-                    num_ignored_trips += 1
+                    num_ignored_stops += 1
                     continue
 
                 stu = trip_update.stop_time_update.add()
@@ -53,7 +53,8 @@ class GtfsRealtimeFeed:
             trip_descr = vehicle_position.trip
             trip_descr.trip_id = trip.trip_id
             trip_descr.route_id = trip.route_id
-            vehicle_position.current_stop_sequence = num_ignored_trips
+            vehicle_position.current_stop_sequence = num_ignored_stops
+            trip.current_stop_sequence = num_ignored_stops
         #gtfs_realtime_pb2._FEEDHEADER_INCREMENTALITY
         #print(feed_message)
         return feed_message.SerializeToString()
@@ -73,6 +74,24 @@ class GtfsRealtimeFeed:
                     'departure_time': time + 15
                 })
         return stop_data
+
+    def trip_data(self):
+
+        trip_data = {}
+        stop_sequences = {}
+        for trip in self.feed_trips:
+            stop_sequences[trip.trip_id] = trip.current_stop_sequence
+            for stop_id, time in trip.stops_dict.items():
+                if time < self.feed_time:
+                    continue
+                trip_data.setdefault(trip.trip_id, [])
+                trip_data[trip.trip_id].append({
+                    'stop_id': stop_id,
+                    'route_id': trip.route_id,
+                    'arrival_time': time,
+                    'departure_time': time + 15
+                })
+        return (stop_sequences, trip_data)
 
 """
 

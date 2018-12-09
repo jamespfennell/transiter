@@ -48,7 +48,6 @@ class IntegrationTest(unittest.TestCase):
         response = self._put('systems/testsystem', json=payload)
         response.raise_for_status()
 
-    """
     def test_010_count_stops(self):
         system_response = self._get('systems/testsystem')
         stops_count = system_response['stops']['count']
@@ -67,7 +66,7 @@ class IntegrationTest(unittest.TestCase):
     def test_011_get_feed_ids(self):
         feeds_response = self._get('systems/testsystem/feeds')
         actual_feed_ids = set([feed['id'] for feed in feeds_response])
-        self.assertEqual(self.FEED_IDS, actual_feed_ids)
+        self.assertSetEqual(set(self.FEED_IDS), actual_feed_ids)
 
     def test_011_count_routes(self):
         system_response = self._get('systems/testsystem')
@@ -122,7 +121,7 @@ class IntegrationTest(unittest.TestCase):
             gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
         ])
 
-        self._perform_feed_update_test(feed_1)
+        self._perform_feed_update_stop_test(feed_1)
 
     def test_055_feed_update(self):
         trip_1_stops = {
@@ -139,7 +138,7 @@ class IntegrationTest(unittest.TestCase):
             gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
         ])
 
-        self._perform_feed_update_test(feed_1)
+        self._perform_feed_update_stop_test(feed_1)
 
     def test_060_feed_update(self):
         trip_1_stops = {
@@ -156,15 +155,14 @@ class IntegrationTest(unittest.TestCase):
             gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
         ])
 
-        self._perform_feed_update_test(feed_1)
+        self._perform_feed_update_stop_test(feed_1)
 
     def test_065_feed_update(self):
         feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(850, [])
 
-        self._perform_feed_update_test(feed_1)
-    """
+        self._perform_feed_update_stop_test(feed_1)
 
-    def _perform_feed_update_test(self, feed_1):
+    def _perform_feed_update_stop_test(self, feed_1):
         requests.put('http://localhost:5001', data=feed_1.build_feed())
 
         self._post('systems/testsystem/feeds/{}'.format(self.FEED_IDS[0]))
@@ -208,20 +206,70 @@ class IntegrationTest(unittest.TestCase):
         feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(0, [
             gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
         ])
-        requests.put('http://localhost:5001', data=feed_1.build_feed())
-        self._post('systems/testsystem/feeds/{}'.format(self.FEED_IDS[0]))
-
-        trip_data = self._get('systems/testsystem/routes/A/trips/trip_1')
-        print(json.dumps(trip_data, indent=4, sort_keys=True))
         feed_2 = gtfsrealtimegenerator.GtfsRealtimeFeed(850, [
             gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
         ])
-        requests.put('http://localhost:5001', data=feed_2.build_feed())
-        self._post('systems/testsystem/feeds/{}'.format(self.FEED_IDS[0]))
+        self._perform_feed_update_trip_test([feed_1, feed_2])
 
-        trip_data = self._get('systems/testsystem/routes/A/trips/trip_1')
-        print(json.dumps(trip_data, indent=4, sort_keys=True))
-        # Also test other 'leaf' stops
+    def _perform_feed_update_trip_test(self, feeds):
+
+        for feed in feeds:
+            requests.put('http://localhost:5001', data=feed.build_feed())
+            self._post('systems/testsystem/feeds/{}'.format(self.FEED_IDS[0]))
+
+        all_sss = []
+        all_trips = set()
+        all_trip_data = []
+        for feed in feeds:
+            (stop_sequences, trip_data) = feed.trip_data()
+            all_sss.append(stop_sequences)
+            all_trip_data.append(trip_data)
+            all_trips.update(stop_sequences.keys())
+
+        trip_to_expected_data = {trip_id: [] for trip_id in all_trips}
+        trip_to_num_passed = {trip_id: 0 for trip_id in all_trips}
+        for index, trip_data in enumerate(all_trip_data):
+            for trip_id in all_trips:
+                if trip_id not in trip_data:
+                    trip_to_expected_data[trip_id] = []
+                    trip_to_num_passed[trip_id] = 0
+                    continue
+                current_stop_sequence = all_sss[index][trip_id]
+                diff = len(trip_to_expected_data[trip_id]) - current_stop_sequence
+                if diff < 0:
+                    trip_to_expected_data[trip_id] += [None]*(-diff)
+                else:
+                    trip_to_expected_data[trip_id] = trip_to_expected_data[trip_id][:current_stop_sequence]
+
+                trip_to_num_passed[trip_id] = len(trip_to_expected_data[trip_id])
+
+                future_stops = [stop['stop_id'] for stop in trip_data[trip_id]]
+                trip_to_expected_data[trip_id] += future_stops
+
+        for trip_id in all_trips:
+
+            expected_stop_list = []
+            num_passed = trip_to_num_passed[trip_id]
+            for index, stop_data in enumerate(trip_to_expected_data[trip_id]):
+                if stop_data is None:
+                    continue
+                expected_stop_list.append(
+                    (stop_data, index >= num_passed)
+                )
+
+            actual_data = self._get('systems/testsystem/routes/A/trips/{}'.format(trip_id))
+
+            actual_stop_list = []
+            for stop_data in actual_data['stop_events']:
+                #print(stop_data)
+                actual_stop_list.append(
+                    (stop_data['stop']['id'], stop_data['future'])
+                )
+
+            self.assertEqual(expected_stop_list, actual_stop_list)
+
+
+
 
     #Test service patterns
 

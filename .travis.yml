@@ -10,5 +10,6 @@ install:
 # command to run tests
 script:
   - make test
+  - make integration-test
 after_success:
   - coveralls
