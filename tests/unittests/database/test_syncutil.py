@@ -33,6 +33,24 @@ class TestSync(unittest.TestCase):
         def __repr__(self):
             return str(self)
 
+    def test_copy_pks(self):
+
+        new_model = self.MockDbModel('1')
+        updated_model_new = self.MockDbModel('2')
+        updated_model_old = self.MockDbModel('2')
+        updated_model_old.pk = 2
+        old_model = self.MockDbModel('3')
+        old_model.pk = 3
+
+        (old_models, updated_model_tuples, new_models) = syncutil.copy_pks(
+            [updated_model_old, old_model], [new_model, updated_model_new],
+            ('id', )
+        )
+
+        self.assertEqual([old_model], old_models)
+        self.assertEqual([new_model], new_models)
+        self.assertEqual([(updated_model_old, updated_model_new)], updated_model_tuples)
+
     @mock.patch('transiter.database.syncutil.connection')
     def test_sync(self, connection):
         """[Database sync] Sync data"""

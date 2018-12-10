@@ -25,9 +25,9 @@ def copy_pks(source_models, target_models, id_keys, pk_key='pk'):
             del id_to_source_model[id_]
 
     return (
-        id_to_source_model.values(),
-        updated_models.values(),
-        new_models.values(),
+        list(id_to_source_model.values()),
+        list(updated_models.values()),
+        list(new_models.values()),
     )
 
 

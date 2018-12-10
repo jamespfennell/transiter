@@ -43,6 +43,7 @@ taskserver/
     1. New data access layer setup
         - Should not be too hard, mostly moving things around
         - merge connection and creator into database.py
+    1. Use the new data access layer to fix Travis issues
         
   
 1. Go through all of the API endpoints and implement anything that's
