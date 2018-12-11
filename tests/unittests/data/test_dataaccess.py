@@ -12,7 +12,7 @@ from transiter.database.daos import system_dao, trip_dao, feed_dao, route_status
 from transiter import models
 
 
-from transiter.data import database, routedata
+from transiter.data import database, routedata, servicepatterndata, stopdata
 
 
 class TestDbConstants:
@@ -203,6 +203,48 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
 
         self.assertEqual([], list(db_stop_ids))
 
+    #
+    #   STOP DATA
+    #
+
+    def test__stopdata__get_id_to_pk_map_in_system(self):
+        expected = {
+            self.STOP_ONE_ID: self.STOP_ONE_PK,
+            self.STOP_TWO_ID: self.STOP_TWO_PK,
+            'unknown': None,
+        }
+
+        actual = stopdata.get_id_to_pk_map_in_system(self.SYSTEM_ONE_ID, expected.keys())
+
+        self.assertDictEqual(expected, actual)
+
+    def test__stopdata__list_stop_time_updates_at_stops(self):
+        data = list(stopdata.list_stop_time_updates_at_stops([self.STOP_FOUR_PK]))
+
+        self.assertEqual(3, len(data))
+        self.assertEqual(
+            [self.TRIP_ONE_PK, self.TRIP_TWO_PK, self.TRIP_THREE_PK],
+            [stop_event.trip_pk for stop_event in data]
+        )
+
+    #
+    #   SERVICE PATTERN DATA
+    #
+
+    def test__servicepatterndata__get_default_trips_at_stops_map(self):
+        actual = servicepatterndata.get_default_routes_at_stops_map(
+            [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK]
+        )
+
+        expected = {
+            self.STOP_ONE_PK: [self.route_one],
+            self.STOP_TWO_PK: [self.route_one, self.route_two],
+            self.STOP_THREE_PK: [self.route_two],
+            self.STOP_FOUR_PK: []
+        }
+
+        self.assertDictEqual(expected, actual)
+
     """
     def test__base_entity_dao__list_all(self):
         db_system = system_dao.list_all()
@@ -362,14 +404,6 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
 
         self.assertEqual(2, count)
 
-    def test__stop_event_dao__get_by_stop_pri_key(self):
-        data = list(stop_event_dao.get_by_stop_pri_key(self.STOP_FOUR_PK))
-
-        self.assertEqual(3, len(data))
-        self.assertEqual(
-            [self.TRIP_ONE_PK, self.TRIP_TWO_PK, self.TRIP_THREE_PK],
-            [stop_event.trip_pk for stop_event in data]
-        )
 
     def test__route_status_dao__get_all_in_system(self):
         data = route_status_dao.get_all_in_system(self.SYSTEM_ONE_ID)
@@ -393,16 +427,6 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
 
         self.assertDictEqual(expected, actual)
 
-    def test__stop_dao__get_id_to_pk_map(self):
-        expected = {
-            self.STOP_ONE_ID: self.STOP_ONE_PK,
-            self.STOP_TWO_ID: self.STOP_TWO_PK,
-            'unknown': None,
-        }
-
-        actual = stop_dao.get_id_to_pk_map(self.SYSTEM_ONE_ID, expected.keys())
-
-        self.assertDictEqual(expected, actual)
     """
 
     def _compare_datetime_to_str(self, dt, st):

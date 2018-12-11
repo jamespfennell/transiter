@@ -141,7 +141,7 @@ class TestStopService(unittest.TestCase):
 
     def setUp(self):
         self.linksutil = self._quick_mock('linksutil')
-        self.stop_dao = self._quick_mock('stop_dao')
+        self.stop_dao = self._quick_mock('stopdata')
 
         self.stop_one = mock.MagicMock()
         self.stop_one.pk = self.STOP_ONE_PK
@@ -153,6 +153,12 @@ class TestStopService(unittest.TestCase):
         self.linksutil.StopEntityLink.return_value = self.STOP_ONE_HREF
         self.linksutil.RouteEntityLink.return_value = self.ROUTE_HREF
         self.linksutil.TripEntityLink.return_value = self.TRIP_HREF
+
+        self.usual_routes = []
+        for route_id in self.DEFAULT_TRIPS:
+            route = models.Route()
+            route.id = route_id
+            self.usual_routes.append(route)
 
     def test_list_all_in_system(self):
         expected = [
@@ -169,18 +175,17 @@ class TestStopService(unittest.TestCase):
         self.linksutil.StopEntityLink.assert_called_once_with(self.stop_one)
         self.stop_dao.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
 
-    @mock.patch('transiter.services.stopservice.service_pattern_dao')
-    @mock.patch('transiter.services.stopservice.stop_event_dao')
+    @mock.patch('transiter.services.stopservice.servicepatterndata')
     @mock.patch('transiter.services.stopservice._StopEventFilter')
     @mock.patch('transiter.services.stopservice._DirectionNameMatcher')
     def test_get_in_system_by_id(self, _DirectionNameMatcher, _StopEventFilter,
-                                 stop_event_dao, service_pattern_dao):
+                                 service_pattern_dao):
 
         self.stop_one.parent_stop = None
         self.stop_one.child_stops = []
         self.stop_dao.get_in_system_by_id.return_value = self.stop_one
-        service_pattern_dao.get_default_trips_at_stops.return_value = {
-            self.STOP_ONE_PK: self.DEFAULT_TRIPS
+        service_pattern_dao.get_default_routes_at_stops_map.return_value = {
+            self.STOP_ONE_PK: self.usual_routes
         }
 
         stop_event_one = mock.MagicMock()
@@ -189,7 +194,7 @@ class TestStopService(unittest.TestCase):
         stop_event_two.short_repr.return_value = self.STOP_EVENT_REPR
         stop_event_two.trip.long_repr.return_value = self.TRIP_REPR
         stop_event_two.trip.route.short_repr.return_value = self.ROUTE_REPR
-        stop_event_dao.get_by_stop_pks.return_value = [stop_event_one, stop_event_two]
+        self.stop_dao.list_stop_time_updates_at_stops.return_value = [stop_event_one, stop_event_two]
 
         direction_name_matcher = mock.MagicMock()
         _DirectionNameMatcher.return_value = direction_name_matcher

@@ -14,9 +14,9 @@ def get_in_system_by_id(system_id, route_id):
     )
 
 
-def get_id_to_pk_map_in_system(system_id, ids):
+def get_id_to_pk_map_in_system(system_id, route_ids):
     return genericmethods.get_id_to_pk_map(
-        models.Route, system_id, ids
+        models.Route, system_id, route_ids
     )
 
 

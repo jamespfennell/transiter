@@ -1,24 +1,19 @@
-from transiter.database.daos import stop_dao, stop_event_dao, service_pattern_dao
+from transiter.data import database, stopdata, servicepatterndata
 from transiter.utils import linksutil
 
+
+@database.unit_of_work
 def list_all_in_system(system_id):
 
     response = []
 
-    for stop in stop_dao.list_all_in_system(system_id):
+    for stop in stopdata.list_all_in_system(system_id):
         stop_response = stop.short_repr()
         stop_response.update({
             'href': linksutil.StopEntityLink(stop)
         })
         response.append(stop_response)
     return response
-
-"""
-def google_maps_url(location):
-
-    return 'https://www.google.com/maps/search/?api=1&query={}+Station+near+{},{}'.format(
-        str.replace(location.name, ' ', '+'), location.lattitude, location.longitude)
-"""
 
 
 class _DirectionNameMatcher:
@@ -121,12 +116,13 @@ def _get_stop_ancestors(stop):
     return ancestors
 
 
+@database.unit_of_work
 def get_in_system_by_id(system_id, stop_id):
 
     # TODO: make the service pattern dao retrieve by pk
     # TODO: make a default_trip_at_stop function????
     # TODO make this more robust for stops without direction names
-    stop = stop_dao.get_in_system_by_id(system_id, stop_id)
+    stop = stopdata.get_in_system_by_id(system_id, stop_id)
 
     descendants = _get_stop_descendants(stop)
     direction_name_rules = []
@@ -138,7 +134,12 @@ def get_in_system_by_id(system_id, stop_id):
 
     total_stop_pks = [stop_pk for stop_pk in all_stop_pks]
     total_stop_pks.extend([s.pk for s in _get_stop_ancestors(stop)])
-    default_routes = service_pattern_dao.get_default_trips_at_stops(total_stop_pks)
+    default_routes_map = servicepatterndata.get_default_routes_at_stops_map(total_stop_pks)
+    #default_routes = service_pattern_dao.get_default_trips_at_stops(total_stop_pks)
+    default_routes = {}
+    for stop_pk in total_stop_pks:
+        default_routes[stop_pk] = [route.id for route in default_routes_map[stop_pk]]
+    #default_routes = {stop_pk: default_routes_map[stop_pk].id for stop_pk in total_stop_pks}
 
     stop_event_filter = _StopEventFilter()
     direction_name_matcher = _DirectionNameMatcher(direction_name_rules)
@@ -149,7 +150,7 @@ def get_in_system_by_id(system_id, stop_id):
         'stop_events': []
     }
 
-    stop_events = stop_event_dao.get_by_stop_pks(all_stop_pks)
+    stop_events = stopdata.list_stop_time_updates_at_stops(all_stop_pks)
     for stop_event in stop_events:
         direction_name = direction_name_matcher.match(stop_event)
         if stop_event_filter.exclude(stop_event, direction_name):
@@ -206,27 +207,4 @@ def _parent_stop_repr(stop, default_routes):
             'href': linksutil.StopEntityLink(child_stop)
         })
     return repr
-
-"""
-station_response = stop.station.short_repr()
-station_response['system'] = 'NI'
-station_response['href'] = 'NI'
-station_response['child_stops'] = []
-for sibling_stop in stop.station.stops:
-    if sibling_stop.stop_id == stop_id:
-        continue
-    child_response = sibling_stop.short_repr()
-    child_response.update({
-        'usual_routes': service_pattern_dao.get_default_trips_at_stops(
-            [sibling_stop.stop_id])[sibling_stop.stop_id]
-    })
-    station_response['child_stops'].append(
-        child_response
-    )
-# TODO use a Get parameter to specify a depth
-station_response['child_stations'] = []
-station_response['parent_station'] = None
-# TODO enable parent station
-#response['parent_station'] = station_response
-"""
 

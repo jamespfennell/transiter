@@ -263,43 +263,6 @@ class TestDaos(unittest.TestCase, TestDbConstants):
             stop_pks = [stop_event.stop_pk for stop_event in stop_events]
             self.assertEqual(trip_pks_to_stop_pks[trip_pk], stop_pks)
 
-    def test__route_dao__get_id_to_pk_map(self):
-        expected = {
-            self.ROUTE_ONE_ID: self.ROUTE_ONE_PK,
-            self.ROUTE_TWO_ID: self.ROUTE_TWO_PK,
-            self.ROUTE_THREE_ID: self.ROUTE_THREE_PK,
-            'unknown': None,
-        }
-
-        actual = route_dao.get_id_to_pk_map(self.SYSTEM_ONE_ID, expected.keys())
-
-        self.assertEqual(expected, actual)
-
-    def test__route_dao__get_active_stop_ids(self):
-        db_stop_ids = route_dao.get_active_stop_ids(self.ROUTE_ONE_PK)
-
-        self.assertListEqual(
-            [self.STOP_ONE_ID, self.STOP_TWO_ID, self.STOP_THREE_ID, self.STOP_FOUR_ID],
-            list(db_stop_ids))
-
-    def test__route_dao__get_active_stop_ids__no_stops(self):
-        db_stop_ids = route_dao.get_active_stop_ids(self.ROUTE_THREE_PK)
-
-        self.assertEqual([], list(db_stop_ids))
-
-    def test__route_dao__get_terminus_data(self):
-        data = list(route_dao.get_terminus_data(self.ROUTE_ONE_PK))
-
-        self.assertEqual(1, len(data))
-
-        row = data[0]
-        # This is a bit hacky. It chops off the timezone component of the result
-        # TODO Should find a more robust way of doing this
-        self._compare_datetime_to_str(row[0], self.EARLIEST_TERMINAL_TIME)
-        self._compare_datetime_to_str(row[1], self.LATEST_TERMINAL_TIME)
-        self.assertEqual(row[2], 3)
-        self.assertEqual(row[3], self.STOP_FOUR_PK)
-
     def test__feed_dao__get_last_successful_update(self):
         db_feed_update = feed_dao.get_last_successful_update(self.FEED_ONE_PK)
 
@@ -375,17 +338,6 @@ class TestDaos(unittest.TestCase, TestDbConstants):
 
         self.assertDictEqual(expected, actual)
     """
-
-    def test__stop_dao__get_id_to_pk_map(self):
-        expected = {
-            self.STOP_ONE_ID: self.STOP_ONE_PK,
-            self.STOP_TWO_ID: self.STOP_TWO_PK,
-            'unknown': None,
-        }
-
-        actual = stop_dao.get_id_to_pk_map(self.SYSTEM_ONE_ID, expected.keys())
-
-        self.assertDictEqual(expected, actual)
 
     def _compare_datetime_to_str(self, dt, st):
         self.assertEqual(str(dt)[:-6], st)
