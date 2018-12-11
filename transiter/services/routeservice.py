@@ -1,6 +1,8 @@
-from transiter.database.daos import route_dao
+from transiter.data import database, routedata
 from transiter.utils import linksutil
 
+
+@database.unit_of_work
 def list_all_in_system(system_id):
     """
     Get representations for all routes in a system.
@@ -20,7 +22,7 @@ def list_all_in_system(system_id):
 
     """
     response = []
-    for route in route_dao.list_all_in_system(system_id):
+    for route in routedata.list_all_in_system(system_id):
         route_response = route.short_repr()
         route_response.update({
             'service_status': _construct_status(route),
@@ -30,6 +32,7 @@ def list_all_in_system(system_id):
     return response
 
 
+@database.unit_of_work
 def get_in_system_by_id(system_id, route_id):
     """
     Get a representation for a route in the system
@@ -39,7 +42,7 @@ def get_in_system_by_id(system_id, route_id):
     """
     # TODO: have verbose option
 
-    route = route_dao.get_in_system_by_id(system_id, route_id)
+    route = routedata.get_in_system_by_id(system_id, route_id)
     response = route.long_repr()
     response.update({
         'frequency': _construct_frequency(route),
@@ -48,7 +51,7 @@ def get_in_system_by_id(system_id, route_id):
             [message.short_repr() for message in route.route_statuses],
         'stops': []
         })
-    current_stop_ids = list(route_dao.get_active_stop_ids(route.pk))
+    current_stop_ids = list(routedata.list_active_stop_ids(route.pk))
 
     default_service_pattern = route.default_service_pattern
 
@@ -64,7 +67,7 @@ def get_in_system_by_id(system_id, route_id):
 
 
 def _construct_frequency(route):
-    terminus_data = route_dao.get_terminus_data(route.pk)
+    terminus_data = routedata.list_terminus_data(route.pk)
     total_count = 0
     total_seconds = 0
     for (earliest_time, latest_time, count, __) in terminus_data:
@@ -77,7 +80,6 @@ def _construct_frequency(route):
         return None
     else:
         return (total_seconds/total_count)/60
-
 
 
 def _construct_status(route):
