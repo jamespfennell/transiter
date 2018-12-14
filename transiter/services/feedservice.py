@@ -12,12 +12,15 @@ from transiter.scheduler import client
 #client.refresh_jobs()
 
 
-@connection.unit_of_work
+from transiter.data import database
+from transiter.data.dams import feeddam
+
+@database.unit_of_work
 def list_all_in_system(system_id):
 
     response = []
 
-    for feed in feed_dao.list_all_in_system(system_id):
+    for feed in feeddam.list_all_in_system(system_id):
         feed_response = feed.short_repr()
         feed_response.update({
             'href': linksutil.FeedEntityLink(feed),
@@ -27,10 +30,10 @@ def list_all_in_system(system_id):
     return response
 
 
-@connection.unit_of_work
+@database.unit_of_work
 def get_in_system_by_id(system_id, feed_id):
 
-    feed = feed_dao.get_in_system_by_id(system_id, feed_id)
+    feed = feeddam.get_in_system_by_id(system_id, feed_id)
     response = feed.short_repr()
     response.update({
         'last_update': 'NI',
@@ -67,12 +70,12 @@ def create_feed_update(system_id, feed_id):
     }
 
 
-@connection.unit_of_work
+@database.unit_of_work
 def list_updates_in_feed(system_id, feed_id):
-    # TODO optimize this to only be one query?
-    feed = feed_dao.get_in_system_by_id(system_id, feed_id)
+    # TODO optimize this to only be one query? yes yes
+    feed = feeddam.get_in_system_by_id(system_id, feed_id)
     response = []
-    for feed_update in feed_update_dao.list_updates_in_feed(feed):
+    for feed_update in feeddam.list_updates_in_feed(feed):
         response.append(feed_update.short_repr())
     return response
 

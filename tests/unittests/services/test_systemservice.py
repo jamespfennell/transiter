@@ -105,7 +105,7 @@ class TestSystemService(unittest.TestCase):
         system_dao.count_feeds_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
 
     @mock.patch('transiter.services.systemservice._import_static_data')
-    @mock.patch('transiter.services.systemservice.system_dao')
+    @mock.patch('transiter.services.systemservice.systemdam')
     def test_install_success(self, system_dao, _import_static_data):
         """[System service] Successfully install a system"""
         new_system = mock.MagicMock()
@@ -120,7 +120,7 @@ class TestSystemService(unittest.TestCase):
         system_dao.create.assert_called_once_with()
         _import_static_data.assert_called_once_with(new_system)
 
-    @mock.patch('transiter.services.systemservice.system_dao')
+    @mock.patch('transiter.services.systemservice.systemdam')
     def test_install_already_exists(self, system_dao):
         """[System service] Fail to install because system id already taken"""
         system_dao.get_by_id.return_value = self.system_1
@@ -130,7 +130,7 @@ class TestSystemService(unittest.TestCase):
         self.assertEqual(actual, False)
         system_dao.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
 
-    @mock.patch('transiter.services.systemservice.system_dao')
+    @mock.patch('transiter.services.systemservice.systemdam')
     def test_delete_success(self, system_dao):
         """[System service] Successfully delete a system"""
         system_dao.delete_by_id.return_value = True
@@ -140,7 +140,7 @@ class TestSystemService(unittest.TestCase):
         self.assertEqual(actual, True)
         system_dao.delete_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
 
-    @mock.patch('transiter.services.systemservice.system_dao')
+    @mock.patch('transiter.services.systemservice.systemdam')
     def test_delete_failure(self, system_dao):
         """[System service] Fail to delete a nonexistent system"""
         system_dao.delete_by_id.return_value = False

@@ -2,6 +2,14 @@ from transiter.data import database
 from transiter import models
 
 
+def create(DbObject: models.Base, entity=None):
+    session = database.get_session()
+    if entity is None:
+        entity = DbObject()
+    session.add(entity)
+    return entity
+
+
 def list_all(DbObject: models.Base, order_by_field=None):
     session = database.get_session()
     query = session.query(DbObject)

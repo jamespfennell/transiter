@@ -24,7 +24,7 @@ class TestFeedService(unittest.TestCase):
         self.hashlib = self._quick_mock('hashlib')
         self.requests = self._quick_mock('requests')
         self.linksutil = self._quick_mock('linksutil')
-        self.feed_dao = self._quick_mock('feed_dao')
+        self.feed_dao = self._quick_mock('feeddam')
         self.feed_update_dao = self._quick_mock('feed_update_dao')
 
         self.feed_one = mock.MagicMock()
@@ -38,7 +38,7 @@ class TestFeedService(unittest.TestCase):
 
         self.feed_update_one = mock.MagicMock()
         self.feed_update_one.short_repr.return_value = self.FEED_UPDATE_ONE_REPR
-        self.feed_update_dao.list_updates_in_feed.return_value = [
+        self.feed_dao.list_updates_in_feed.return_value = [
             self.feed_update_one]
         self.feed_update_two = mock.MagicMock()
         self.feed_update_two.feed = self.feed_one
@@ -59,6 +59,7 @@ class TestFeedService(unittest.TestCase):
 
 
     def test_list_all_in_system(self):
+        """[Feed service] List all in system"""
         expected = [
             {
                 'href': self.feed_one_href,
@@ -117,7 +118,7 @@ class TestFeedService(unittest.TestCase):
         self.assertListEqual(actual, expected)
         self.feed_dao.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID, self.FEED_ONE_ID)
-        self.feed_update_dao.list_updates_in_feed.assert_called_once_with(
+        self.feed_dao.list_updates_in_feed.assert_called_once_with(
             self.feed_one)
 
     def test_execute_feed_update_success(self):

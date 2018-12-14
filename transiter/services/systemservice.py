@@ -3,7 +3,6 @@ import os
 import importlib
 import yaml
 
-from transiter.database.daos import system_dao
 from transiter.data import database
 from transiter.data.dams import systemdam
 from transiter.utils import gtfsstaticutil
@@ -54,12 +53,12 @@ def get_by_id(system_id):
     return response
 
 
-@connection.unit_of_work
+@database.unit_of_work
 def install(system_id, package='transiter_nycsubway'):
-    if system_dao.get_by_id(system_id) is not None:
+    if systemdam.get_by_id(system_id) is not None:
         return False
 
-    system = system_dao.create()
+    system = systemdam.create()
     system.id = system_id
     system.package = package
 
@@ -67,11 +66,8 @@ def install(system_id, package='transiter_nycsubway'):
     return True
 
 
-@connection.unit_of_work
+@database.unit_of_work
 def delete_by_id(system_id):
-
-    system = system_dao.get_by_id(system_id)
-    session = system_dao.get_session()
 
     """
     print(time.time())
@@ -91,7 +87,7 @@ def delete_by_id(system_id):
     return True
     """
 
-    deleted = system_dao.delete_by_id(system_id)
+    deleted = systemdam.delete_by_id(system_id)
     if not deleted:
         raise exceptions.IdNotFoundError
     return True

@@ -6,7 +6,7 @@ from transiter import models
 
 
 from transiter.data import database
-from transiter.data.dams import tripdam, systemdam, routedam, stopdam, servicepatterndam
+from transiter.data.dams import feeddam, tripdam, systemdam, routedam, stopdam, servicepatterndam
 
 
 class TestDbConstants:
@@ -320,26 +320,26 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         count = systemdam.count_feeds_in_system(self.SYSTEM_ONE_ID)
 
         self.assertEqual(2, count)
-    """
+
     def test__base_entity_dao__list_all(self):
-        db_system = system_dao.list_all()
+        db_system = systemdam.list_all()
 
         self.assertListEqual(
             [self.system_one, self.system_two],
             list(db_system))
 
     def test__base_entity_dao__get_by_id(self):
-        db_system = system_dao.get_by_id(self.SYSTEM_ONE_ID)
+        db_system = systemdam.get_by_id(self.SYSTEM_ONE_ID)
 
         self.assertEqual(self.system_one, db_system)
 
     def test__base_entity_dao__get_by_id__no_result(self):
-        db_system = system_dao.get_by_id(self.SYSTEM_THREE_ID)
+        db_system = systemdam.get_by_id(self.SYSTEM_THREE_ID)
 
         self.assertEqual(None, db_system)
 
     def test__base_entity_dao__create(self):
-        db_system = system_dao.create()
+        db_system = systemdam.create()
         db_system.id = self.SYSTEM_THREE_ID
         db_system.name = self.SYSTEM_THREE_NAME
         db_system.package = self.SYSTEM_THREE_PACKAGE
@@ -353,7 +353,7 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         self.assertEqual(row[1], self.SYSTEM_THREE_NAME)
 
     def test__base_entity_dao__delete(self):
-        response = system_dao.delete_by_id(self.SYSTEM_TWO_ID)
+        response = systemdam.delete_by_id(self.SYSTEM_TWO_ID)
         self.session.flush()
 
         query = "SELECT id, name FROM system WHERE id=:system_id"
@@ -364,80 +364,18 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         self.assertEqual(response, True)
 
     def test__base_entity_dao__delete__none_to_delete(self):
-        response = system_dao.delete_by_id(self.SYSTEM_THREE_ID)
+        response = systemdam.delete_by_id(self.SYSTEM_THREE_ID)
 
         self.assertEqual(response, False)
 
-    def test__system_child_entity_dao__get_in_system_by_id(self):
-        db_route = route_dao.get_in_system_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID)
 
-        self.assertEqual(self.route_one, db_route)
-
-
-    def test__trip_dao__list_all_in_route(self):
-        db_trips = trip_dao.list_all_in_route(
-            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID)
-
-        self.assertEqual(
-            [self.trip_one, self.trip_two, self.trip_three],
-            list(db_trips))
-
-    def test__trip_dao__list_all_in_route__no_trips(self):
-        db_trips = trip_dao.list_all_in_route(
-            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID)
-
-        self.assertEqual([], list(db_trips))
-
-    def test__trip_dao__get_in_route_by_id(self):
-        db_trip = trip_dao.get_in_route_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID, self.TRIP_TWO_ID)
-
-        self.assertEqual(self.trip_two, db_trip)
-
-    def test__trip_dao__get_in_route_by_id__no_trip(self):
-        db_trip = trip_dao.get_in_route_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID, self.TRIP_ONE_ID)
-
-        self.assertEqual(None, db_trip)
-
-    def test__trip_dao__list_all_in_routes(self):
-        expected = [self.trip_one, self.trip_two, self.trip_three]
-
-        actual = list(trip_dao.list_all_in_routes(
-            self.SYSTEM_ONE_ID, [self.ROUTE_ONE_ID]
-        ))
-
-        self.assertListEqual(expected, actual)
-
-    def test__trip_dao__list_all_in_routes__no_trips(self):
-        expected = []
-
-        actual = list(trip_dao.list_all_in_routes(
-            self.SYSTEM_ONE_ID, [self.ROUTE_TWO_ID, self.ROUTE_THREE_ID]
-        ))
-
-        self.assertListEqual(expected, actual)
-
-    def test_get_trip_pk_to_future_stop_events_map(self):
-        trip_pks_to_stop_pks = {
-            self.TRIP_ONE_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK],
-            self.TRIP_TWO_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_FOUR_PK],
-            self.TRIP_THREE_PK: [self.STOP_ONE_PK, self.STOP_FOUR_PK],
-        }
-
-        data = trip_dao.get_trip_pk_to_future_stop_events_map(
-            trip_pks_to_stop_pks.keys()
-        )
-
-        for trip_pk, stop_events in data.items():
-            stop_pks = [stop_event.stop_pk for stop_event in stop_events]
-            self.assertEqual(trip_pks_to_stop_pks[trip_pk], stop_pks)
-
+    #
+    #   FEED DATA
+    #
 
 
     def test__feed_dao__get_last_successful_update(self):
-        db_feed_update = feed_dao.get_last_successful_update(self.FEED_ONE_PK)
+        db_feed_update = feeddam.get_last_successful_update(self.FEED_ONE_PK)
 
         self._compare_datetime_to_str(
             db_feed_update.last_action_time,
@@ -451,35 +389,15 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         self.assertEqual(feed_update, db_feed_update)
 
     def test__feed_dao__list_updates_in_feed(self):
-        feed = feed_dao.get_by_id(self.FEED_ONE_ID)
-        data = list(feed_update_dao.list_updates_in_feed(feed))
+        feed = feeddam.get_in_system_by_id(self.SYSTEM_ONE_ID, self.FEED_ONE_ID)
+        data = list(feeddam.list_updates_in_feed(feed))
         self.assertEqual(3, len(data))
         self.assertEqual(
             ['SUCCESS_UPDATED', 'SUCCESS_UPDATED', 'FAILURE_COULD_NOT_PARSE'],
             [feed_update.status for feed_update in data]
         )
 
-    def test__system_dao__count_stations_in_system(self):
-        count = system_dao.count_stations_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertEqual(0, count)
-
-    def test__system_dao__count_stops_in_system(self):
-        count = system_dao.count_stops_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertEqual(5, count)
-
-    def test__system_dao__count_routes_in_system(self):
-        count = system_dao.count_routes_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertEqual(3, count)
-
-    def test__system_dao__count_feeds_in_system(self):
-        count = system_dao.count_feeds_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertEqual(2, count)
-
-
+    """
     def test__route_status_dao__get_all_in_system(self):
         data = route_status_dao.get_all_in_system(self.SYSTEM_ONE_ID)
 
