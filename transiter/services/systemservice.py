@@ -9,7 +9,6 @@ from transiter.utils import gtfsstaticutil
 from transiter.utils import linksutil
 from transiter.utils import servicepatternmanager
 from . import exceptions
-from ..database import connection
 from transiter import models
 
 

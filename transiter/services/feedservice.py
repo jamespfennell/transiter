@@ -1,9 +1,7 @@
-from ..database import connection
 import importlib
 import time
 import requests
 import hashlib
-from transiter.database.daos import feed_dao, feed_update_dao
 from transiter.utils import linksutil
 
 from transiter.utils import gtfsrealtimeutil
@@ -52,12 +50,12 @@ def get_in_system_by_id(system_id, feed_id):
     return response
 
 
-@connection.unit_of_work
+@database.unit_of_work
 def create_feed_update(system_id, feed_id):
 
-    feed = feed_dao.get_in_system_by_id(system_id, feed_id)
+    feed = feeddam.get_in_system_by_id(system_id, feed_id)
     #print(feed.feed_id)
-    feed_update = feed_update_dao.create()
+    feed_update = feeddam.create_update()
     feed_update.feed = feed
     feed_update.status = 'SCHEDULED'
 
@@ -123,7 +121,7 @@ def _execute_feed_update(feed_update):
     print(m.hexdigest())
     feed_update.raw_data_hash = m.hexdigest()
 
-    last_successful_update = feed_dao.get_last_successful_update(feed.pk)
+    last_successful_update = feeddam.get_last_successful_update(feed.pk)
     if last_successful_update is not None and \
             last_successful_update.raw_data_hash == feed_update.raw_data_hash:
         feed_update.status = 'SUCCESS_NOT_NEEDED'

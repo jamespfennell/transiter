@@ -3,6 +3,10 @@ from transiter.data.dams import genericqueries
 from transiter import models
 
 
+def list_all():
+    yield from genericqueries.list_all(models.Feed)
+
+
 def list_all_in_system(system_id):
     yield from genericqueries.list_all_in_system(
         models.Feed, system_id, models.Feed.id

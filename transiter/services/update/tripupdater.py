@@ -1,5 +1,5 @@
-from transiter.database.daos import route_dao, stop_dao, trip_dao
-from transiter.database import syncutil
+from transiter.data.dams import routedam, stopdam, tripdam
+from transiter.data import database, syncutil
 
 
 class TripDataCleaner:
@@ -34,10 +34,10 @@ def sync_trips(system, route_ids, trips):
         # TODO: make more efficient, perhaps make the dao method
         # get_id_to_pk_map 2nd arg optional
         route_id_to_pk = {
-            route.id: route.pk for route in route_dao.list_all_in_system(system.id)
+            route.id: route.pk for route in routedam.list_all_in_system(system.id)
         }
     else:
-        route_id_to_pk = route_dao.get_id_to_pk_map(system.id, route_ids)
+        route_id_to_pk = routedam.get_id_to_pk_map_in_system(system.id, route_ids)
     route_pk_to_trips_dict = {route_pk: {} for route_pk in route_id_to_pk.values()}
     all_stop_ids = set()
     for trip in trips:
@@ -48,7 +48,7 @@ def sync_trips(system, route_ids, trips):
         for stu in trip.stop_events:
             all_stop_ids.add(stu.stop_id)
 
-    stop_id_to_pk = stop_dao.get_id_to_pk_map(system.id, all_stop_ids)
+    stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id, all_stop_ids)
     for route_pk, trips_dict in route_pk_to_trips_dict.items():
         sync_trips_in_route(route_pk, trips_dict.values(), stop_id_to_pk)
 
@@ -72,12 +72,11 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
         for stu in trip.stop_events:
             stu.stop_pk = stop_id_to_pk[stu.stop_id]
 
-    existing_trips = trip_dao.list_all_in_route_by_pk(route_pk)
+    existing_trips = tripdam.list_all_in_route_by_pk(route_pk)
     (old_trips, updated_trip_tuples, new_trips) = syncutil.copy_pks(
         existing_trips, trips, ('id', ))
 
-    # TODO: don't get the session from the dao, get from the database
-    session = route_dao.get_session()
+    session = database.get_session()
     for updated_trip, existing_trip in updated_trip_tuples:
 
         existing_past_stus = []

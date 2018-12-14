@@ -25,7 +25,6 @@ class TestFeedService(unittest.TestCase):
         self.requests = self._quick_mock('requests')
         self.linksutil = self._quick_mock('linksutil')
         self.feed_dao = self._quick_mock('feeddam')
-        self.feed_update_dao = self._quick_mock('feed_update_dao')
 
         self.feed_one = mock.MagicMock()
         self.feed_one.short_repr.return_value = self.FEED_ONE_REPR
@@ -92,7 +91,7 @@ class TestFeedService(unittest.TestCase):
     @mock.patch('transiter.services.feedservice._execute_feed_update')
     def test_create_feed_update(self, _execute_feed_update):
         feed_update = mock.MagicMock()
-        self.feed_update_dao.create.return_value = feed_update
+        self.feed_dao.create_update.return_value = feed_update
         expected = {
             'href': 'NI'
         }
@@ -105,7 +104,6 @@ class TestFeedService(unittest.TestCase):
 
         self.feed_dao.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID, self.FEED_ONE_ID)
-        self.feed_update_dao.create.assert_called_once_with()
         _execute_feed_update.assert_called_once_with(feed_update)
 
     def test_list_updates_in_feed(self):

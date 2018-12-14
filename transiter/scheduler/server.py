@@ -1,4 +1,4 @@
-from transiter.database.daos import feed_dao
+from transiter.data.dams import feeddam
 from transiter.services import feedservice
 import rpyc
 from rpyc.utils.server import ThreadedServer
@@ -30,8 +30,10 @@ feed_pri_key_to_auto_updater = {}
 
 
 def refresh_jobs():
-    # TODO: go through the feed service. Maybe list all with autoupdaters
-    feeds = feed_dao.list_all()
+    # TODO: NEED go through the feed service.
+    #  Maybe list all with autoupdaters
+    # This is not in UoW context
+    feeds = feeddam.list_all()
     stale_feed_pri_keys = set(feed_pri_key_to_auto_updater.keys())
     for feed in feeds:
         if not feed.auto_updater_enabled:
