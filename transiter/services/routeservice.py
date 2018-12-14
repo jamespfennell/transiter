@@ -1,4 +1,5 @@
-from transiter.data import database, routedata
+from transiter.data import database
+from transiter.data.dams import routedam
 from transiter.utils import linksutil
 
 
@@ -22,7 +23,7 @@ def list_all_in_system(system_id):
 
     """
     response = []
-    for route in routedata.list_all_in_system(system_id):
+    for route in routedam.list_all_in_system(system_id):
         route_response = route.short_repr()
         route_response.update({
             'service_status': _construct_status(route),
@@ -42,7 +43,7 @@ def get_in_system_by_id(system_id, route_id):
     """
     # TODO: have verbose option
 
-    route = routedata.get_in_system_by_id(system_id, route_id)
+    route = routedam.get_in_system_by_id(system_id, route_id)
     response = route.long_repr()
     response.update({
         'frequency': _construct_frequency(route),
@@ -51,7 +52,7 @@ def get_in_system_by_id(system_id, route_id):
             [message.short_repr() for message in route.route_statuses],
         'stops': []
         })
-    current_stop_ids = list(routedata.list_active_stop_ids(route.pk))
+    current_stop_ids = list(routedam.list_active_stop_ids(route.pk))
 
     default_service_pattern = route.default_service_pattern
 
@@ -67,7 +68,7 @@ def get_in_system_by_id(system_id, route_id):
 
 
 def _construct_frequency(route):
-    terminus_data = routedata.list_terminus_data(route.pk)
+    terminus_data = routedam.list_terminus_data(route.pk)
     total_count = 0
     total_seconds = 0
     for (earliest_time, latest_time, count, __) in terminus_data:

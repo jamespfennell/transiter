@@ -28,7 +28,7 @@ class TestSystemService(unittest.TestCase):
         cls.system_2.short_repr.return_value = cls.SYSTEM_TWO_REPR.copy()
 
     @mock.patch('transiter.services.systemservice.linksutil')
-    @mock.patch('transiter.services.systemservice.system_dao')
+    @mock.patch('transiter.services.systemservice.systemdam')
     def test_list_all(self, system_dao, linksutil):
         """[System service] List all installed systems"""
 
@@ -51,7 +51,7 @@ class TestSystemService(unittest.TestCase):
         self.system_1.short_repr.assert_called_once()
         self.system_2.short_repr.assert_called_once()
 
-    @mock.patch('transiter.services.systemservice.system_dao')
+    @mock.patch('transiter.services.systemservice.systemdam')
     def test_get_by_id_no_such_system(self, system_dao):
         """[System service] Get a non-existent system"""
         system_dao.get_by_id.return_value = None
@@ -63,7 +63,7 @@ class TestSystemService(unittest.TestCase):
         )
 
     @mock.patch('transiter.services.systemservice.linksutil')
-    @mock.patch('transiter.services.systemservice.system_dao')
+    @mock.patch('transiter.services.systemservice.systemdam')
     def test_get_by_id(self, system_dao, linksutil):
         """[System service] Get a specific system"""
 

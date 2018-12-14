@@ -1,18 +1,12 @@
 import unittest
 from sqlalchemy.sql import text
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
 import os
 
-
-from transiter.database import creator
-from transiter.database import connection
-from transiter.database.daos import route_dao, feed_update_dao, stop_event_dao
-from transiter.database.daos import system_dao, trip_dao, feed_dao, route_status_dao, stop_dao
 from transiter import models
 
 
-from transiter.data import database, routedata, servicepatterndata, stopdata
+from transiter.data import database
+from transiter.data.dams import tripdam, systemdam, routedam, stopdam, servicepatterndam
 
 
 class TestDbConstants:
@@ -153,14 +147,14 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
     #
 
     def test__routedata__list_all_in_system(self):
-        db_routes = routedata.list_all_in_system(self.SYSTEM_ONE_ID)
+        db_routes = routedam.list_all_in_system(self.SYSTEM_ONE_ID)
 
         self.assertListEqual(
             [self.route_one, self.route_two, self.route_three],
             list(db_routes))
 
     def test__routedata__get_in_system_by_id(self):
-        db_route = routedata.get_in_system_by_id(
+        db_route = routedam.get_in_system_by_id(
             self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID)
 
         self.assertEqual(self.route_one, db_route)
@@ -173,13 +167,13 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
             'unknown': None,
         }
 
-        actual = routedata.get_id_to_pk_map_in_system(
+        actual = routedam.get_id_to_pk_map_in_system(
             self.SYSTEM_ONE_ID, expected.keys())
 
         self.assertEqual(expected, actual)
 
     def test__routedata__list_terminus_data(self):
-        data = list(routedata.list_terminus_data(self.ROUTE_ONE_PK))
+        data = list(routedam.list_terminus_data(self.ROUTE_ONE_PK))
 
         self.assertEqual(1, len(data))
 
@@ -192,14 +186,14 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         self.assertEqual(row[3], self.STOP_FOUR_PK)
 
     def test__routedata__list_active_stop_ids(self):
-        db_stop_ids = routedata.list_active_stop_ids(self.ROUTE_ONE_PK)
+        db_stop_ids = routedam.list_active_stop_ids(self.ROUTE_ONE_PK)
 
         self.assertListEqual(
             [self.STOP_ONE_ID, self.STOP_TWO_ID, self.STOP_THREE_ID, self.STOP_FOUR_ID],
             list(db_stop_ids))
 
     def test__routedata__list_active_stop_ids__no_stops(self):
-        db_stop_ids = routedata.list_active_stop_ids(self.ROUTE_THREE_PK)
+        db_stop_ids = routedam.list_active_stop_ids(self.ROUTE_THREE_PK)
 
         self.assertEqual([], list(db_stop_ids))
 
@@ -214,12 +208,12 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
             'unknown': None,
         }
 
-        actual = stopdata.get_id_to_pk_map_in_system(self.SYSTEM_ONE_ID, expected.keys())
+        actual = stopdam.get_id_to_pk_map_in_system(self.SYSTEM_ONE_ID, expected.keys())
 
         self.assertDictEqual(expected, actual)
 
     def test__stopdata__list_stop_time_updates_at_stops(self):
-        data = list(stopdata.list_stop_time_updates_at_stops([self.STOP_FOUR_PK]))
+        data = list(stopdam.list_stop_time_updates_at_stops([self.STOP_FOUR_PK]))
 
         self.assertEqual(3, len(data))
         self.assertEqual(
@@ -232,7 +226,7 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
     #
 
     def test__servicepatterndata__get_default_trips_at_stops_map(self):
-        actual = servicepatterndata.get_default_routes_at_stops_map(
+        actual = servicepatterndam.get_default_routes_at_stops_map(
             [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK]
         )
 
@@ -245,6 +239,87 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
 
         self.assertDictEqual(expected, actual)
 
+    #
+    #   TRIP DATA
+    #
+
+    def test__trip_dao__list_all_in_route(self):
+        db_trips = tripdam.list_all_in_route(
+            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID)
+
+        self.assertEqual(
+            [self.trip_one, self.trip_two, self.trip_three],
+            list(db_trips))
+
+    def test__trip_dao__list_all_in_route__no_trips(self):
+        db_trips = tripdam.list_all_in_route(
+            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID)
+
+        self.assertEqual([], list(db_trips))
+
+    def test__trip_dao__get_in_route_by_id(self):
+        db_trip = tripdam.get_in_route_by_id(
+            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID, self.TRIP_TWO_ID)
+
+        self.assertEqual(self.trip_two, db_trip)
+
+    def test__trip_dao__get_in_route_by_id__no_trip(self):
+        db_trip = tripdam.get_in_route_by_id(
+            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID, self.TRIP_ONE_ID)
+
+        self.assertEqual(None, db_trip)
+
+    def test__trip_dao__list_all_in_routes(self):
+        expected = [self.trip_one, self.trip_two, self.trip_three]
+
+        actual = list(tripdam.list_all_in_routes(
+            self.SYSTEM_ONE_ID, [self.ROUTE_ONE_ID]
+        ))
+
+        self.assertListEqual(expected, actual)
+
+    def test__trip_dao__list_all_in_routes__no_trips(self):
+        expected = []
+
+        actual = list(tripdam.list_all_in_routes(
+            self.SYSTEM_ONE_ID, [self.ROUTE_TWO_ID, self.ROUTE_THREE_ID]
+        ))
+
+        self.assertListEqual(expected, actual)
+
+    def test_get_trip_pk_to_future_stop_events_map(self):
+        trip_pks_to_stop_pks = {
+            self.TRIP_ONE_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK],
+            self.TRIP_TWO_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_FOUR_PK],
+            self.TRIP_THREE_PK: [self.STOP_ONE_PK, self.STOP_FOUR_PK],
+        }
+
+        data = tripdam.get_trip_pk_to_future_stop_events_map(
+            trip_pks_to_stop_pks.keys()
+        )
+
+        for trip_pk, stop_events in data.items():
+            stop_pks = [stop_event.stop_pk for stop_event in stop_events]
+            self.assertEqual(trip_pks_to_stop_pks[trip_pk], stop_pks)
+
+    #
+    #   SYSTEM DATA
+    #
+
+    def test__system_dao__count_stops_in_system(self):
+        count = systemdam.count_stops_in_system(self.SYSTEM_ONE_ID)
+
+        self.assertEqual(5, count)
+
+    def test__system_dao__count_routes_in_system(self):
+        count = systemdam.count_routes_in_system(self.SYSTEM_ONE_ID)
+
+        self.assertEqual(3, count)
+
+    def test__system_dao__count_feeds_in_system(self):
+        count = systemdam.count_feeds_in_system(self.SYSTEM_ONE_ID)
+
+        self.assertEqual(2, count)
     """
     def test__base_entity_dao__list_all(self):
         db_system = system_dao.list_all()

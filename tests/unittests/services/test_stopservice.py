@@ -141,7 +141,7 @@ class TestStopService(unittest.TestCase):
 
     def setUp(self):
         self.linksutil = self._quick_mock('linksutil')
-        self.stop_dao = self._quick_mock('stopdata')
+        self.stop_dao = self._quick_mock('stopdam')
 
         self.stop_one = mock.MagicMock()
         self.stop_one.pk = self.STOP_ONE_PK
@@ -175,7 +175,7 @@ class TestStopService(unittest.TestCase):
         self.linksutil.StopEntityLink.assert_called_once_with(self.stop_one)
         self.stop_dao.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
 
-    @mock.patch('transiter.services.stopservice.servicepatterndata')
+    @mock.patch('transiter.services.stopservice.servicepatterndam')
     @mock.patch('transiter.services.stopservice._StopEventFilter')
     @mock.patch('transiter.services.stopservice._DirectionNameMatcher')
     def test_get_in_system_by_id(self, _DirectionNameMatcher, _StopEventFilter,

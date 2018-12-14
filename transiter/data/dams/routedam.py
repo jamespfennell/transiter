@@ -1,21 +1,22 @@
 from transiter import models
-from transiter.data import database, genericmethods
+from transiter.data import database
+from transiter.data.dams import genericqueries
 
 
 def list_all_in_system(system_id):
-    yield from genericmethods.list_all_in_system(
+    yield from genericqueries.list_all_in_system(
         models.Route, system_id, models.Route.id
     )
 
 
 def get_in_system_by_id(system_id, route_id):
-    return genericmethods.get_in_system_by_id(
+    return genericqueries.get_in_system_by_id(
         models.Route, system_id, route_id
     )
 
 
 def get_id_to_pk_map_in_system(system_id, route_ids):
-    return genericmethods.get_id_to_pk_map(
+    return genericqueries.get_id_to_pk_map(
         models.Route, system_id, route_ids
     )
 

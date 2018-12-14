@@ -204,65 +204,6 @@ class TestDaos(unittest.TestCase, TestDbConstants):
             [self.route_one, self.route_two, self.route_three],
             list(db_routes))
 
-    def test__trip_dao__list_all_in_route(self):
-        db_trips = trip_dao.list_all_in_route(
-            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID)
-
-        self.assertEqual(
-            [self.trip_one, self.trip_two, self.trip_three],
-            list(db_trips))
-
-    def test__trip_dao__list_all_in_route__no_trips(self):
-        db_trips = trip_dao.list_all_in_route(
-            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID)
-
-        self.assertEqual([], list(db_trips))
-
-    def test__trip_dao__get_in_route_by_id(self):
-        db_trip = trip_dao.get_in_route_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID, self.TRIP_TWO_ID)
-
-        self.assertEqual(self.trip_two, db_trip)
-
-    def test__trip_dao__get_in_route_by_id__no_trip(self):
-        db_trip = trip_dao.get_in_route_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID, self.TRIP_ONE_ID)
-
-        self.assertEqual(None, db_trip)
-
-    def test__trip_dao__list_all_in_routes(self):
-        expected = [self.trip_one, self.trip_two, self.trip_three]
-
-        actual = list(trip_dao.list_all_in_routes(
-            self.SYSTEM_ONE_ID, [self.ROUTE_ONE_ID]
-        ))
-
-        self.assertListEqual(expected, actual)
-
-    def test__trip_dao__list_all_in_routes__no_trips(self):
-        expected = []
-
-        actual = list(trip_dao.list_all_in_routes(
-            self.SYSTEM_ONE_ID, [self.ROUTE_TWO_ID, self.ROUTE_THREE_ID]
-        ))
-
-        self.assertListEqual(expected, actual)
-
-    def test_get_trip_pk_to_future_stop_events_map(self):
-        trip_pks_to_stop_pks = {
-            self.TRIP_ONE_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK],
-            self.TRIP_TWO_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_FOUR_PK],
-            self.TRIP_THREE_PK: [self.STOP_ONE_PK, self.STOP_FOUR_PK],
-        }
-
-        data = trip_dao.get_trip_pk_to_future_stop_events_map(
-            trip_pks_to_stop_pks.keys()
-        )
-
-        for trip_pk, stop_events in data.items():
-            stop_pks = [stop_event.stop_pk for stop_event in stop_events]
-            self.assertEqual(trip_pks_to_stop_pks[trip_pk], stop_pks)
-
     def test__feed_dao__get_last_successful_update(self):
         db_feed_update = feed_dao.get_last_successful_update(self.FEED_ONE_PK)
 
@@ -286,25 +227,6 @@ class TestDaos(unittest.TestCase, TestDbConstants):
             [feed_update.status for feed_update in data]
         )
 
-    def test__system_dao__count_stations_in_system(self):
-        count = system_dao.count_stations_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertEqual(0, count)
-
-    def test__system_dao__count_stops_in_system(self):
-        count = system_dao.count_stops_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertEqual(5, count)
-
-    def test__system_dao__count_routes_in_system(self):
-        count = system_dao.count_routes_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertEqual(3, count)
-
-    def test__system_dao__count_feeds_in_system(self):
-        count = system_dao.count_feeds_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertEqual(2, count)
 
     def test__stop_event_dao__get_by_stop_pri_key(self):
         data = list(stop_event_dao.get_by_stop_pri_key(self.STOP_FOUR_PK))

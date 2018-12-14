@@ -1,4 +1,5 @@
-from transiter.data import database, stopdata, servicepatterndata
+from transiter.data import database
+from transiter.data.dams import stopdam, servicepatterndam
 from transiter.utils import linksutil
 
 
@@ -7,7 +8,7 @@ def list_all_in_system(system_id):
 
     response = []
 
-    for stop in stopdata.list_all_in_system(system_id):
+    for stop in stopdam.list_all_in_system(system_id):
         stop_response = stop.short_repr()
         stop_response.update({
             'href': linksutil.StopEntityLink(stop)
@@ -122,7 +123,7 @@ def get_in_system_by_id(system_id, stop_id):
     # TODO: make the service pattern dao retrieve by pk
     # TODO: make a default_trip_at_stop function????
     # TODO make this more robust for stops without direction names
-    stop = stopdata.get_in_system_by_id(system_id, stop_id)
+    stop = stopdam.get_in_system_by_id(system_id, stop_id)
 
     descendants = _get_stop_descendants(stop)
     direction_name_rules = []
@@ -134,7 +135,7 @@ def get_in_system_by_id(system_id, stop_id):
 
     total_stop_pks = [stop_pk for stop_pk in all_stop_pks]
     total_stop_pks.extend([s.pk for s in _get_stop_ancestors(stop)])
-    default_routes_map = servicepatterndata.get_default_routes_at_stops_map(total_stop_pks)
+    default_routes_map = servicepatterndam.get_default_routes_at_stops_map(total_stop_pks)
     #default_routes = service_pattern_dao.get_default_trips_at_stops(total_stop_pks)
     default_routes = {}
     for stop_pk in total_stop_pks:
@@ -150,7 +151,7 @@ def get_in_system_by_id(system_id, stop_id):
         'stop_events': []
     }
 
-    stop_events = stopdata.list_stop_time_updates_at_stops(all_stop_pks)
+    stop_events = stopdam.list_stop_time_updates_at_stops(all_stop_pks)
     for stop_event in stop_events:
         direction_name = direction_name_matcher.match(stop_event)
         if stop_event_filter.exclude(stop_event, direction_name):

@@ -51,7 +51,7 @@ class TestRouteService(unittest.TestCase):
 
     @mock.patch('transiter.services.routeservice.linksutil')
     @mock.patch('transiter.services.routeservice._construct_status')
-    @mock.patch('transiter.services.routeservice.routedata')
+    @mock.patch('transiter.services.routeservice.routedam')
     def test_list_all_in_system(self, route_dao, _construct_status, linksutil):
         """[Route service] Listing all routes in a system"""
 
@@ -115,7 +115,7 @@ class TestRouteService(unittest.TestCase):
             self.assertEqual(actual, self.REALLY_BAD_STATUS)
 
     @mock.patch('transiter.services.routeservice._construct_status')
-    @mock.patch('transiter.services.routeservice.routedata')
+    @mock.patch('transiter.services.routeservice.routedam')
     def test_get_in_system_by_id(self, route_dao, _construct_status):
         """[Route service] Getting a specific route in a system"""
         route_dao.get_in_system_by_id.return_value = self.route_one
@@ -132,7 +132,7 @@ class TestRouteService(unittest.TestCase):
             self.ROUTE_ONE_ID)
 
 
-    @mock.patch('transiter.services.routeservice.routedata')
+    @mock.patch('transiter.services.routeservice.routedam')
     def test_construct_frequency(self, route_dao):
         terminus_data = [
             [

@@ -1,4 +1,4 @@
-from transiter.database.daos import trip_dao
+from transiter.data.dams import tripdam
 from transiter.utils import linksutil
 
 def list_all_in_route(system_id, route_id):
@@ -19,7 +19,7 @@ def list_all_in_route(system_id, route_id):
 
     """
     response = []
-    for trip in trip_dao.list_all_in_route(system_id, route_id):
+    for trip in tripdam.list_all_in_route(system_id, route_id):
         trip_response = trip.short_repr()
         trip_response.update({
             "origin": {
@@ -64,7 +64,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
             ...
         ]
     """
-    trip = trip_dao.get_in_route_by_id(system_id, route_id, trip_id)
+    trip = tripdam.get_in_route_by_id(system_id, route_id, trip_id)
     trip_response = trip.long_repr()
     trip_response['stop_events'] = []
     for stop_event in trip.stop_events:

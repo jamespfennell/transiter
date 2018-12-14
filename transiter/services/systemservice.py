@@ -4,6 +4,8 @@ import importlib
 import yaml
 
 from transiter.database.daos import system_dao
+from transiter.data import database
+from transiter.data.dams import systemdam
 from transiter.utils import gtfsstaticutil
 from transiter.utils import linksutil
 from transiter.utils import servicepatternmanager
@@ -12,14 +14,14 @@ from ..database import connection
 from transiter import models
 
 
-@connection.unit_of_work
+@database.unit_of_work
 def list_all():
     """
     List all installed systems.
     :return: A list of short representation of systems
     """
     response = []
-    for system in system_dao.list_all():
+    for system in systemdam.list_all():
         system_response = system.short_repr()
         print(system_response)
         system_response.update({
@@ -29,23 +31,23 @@ def list_all():
     return response
 
 
-@connection.unit_of_work
+@database.unit_of_work
 def get_by_id(system_id):
-    system = system_dao.get_by_id(system_id)
+    system = systemdam.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError
     response = system.short_repr()
     response.update({
         "stops": {
-            "count": system_dao.count_stops_in_system(system_id),
+            "count": systemdam.count_stops_in_system(system_id),
             "href": linksutil.StopsInSystemIndexLink(system)
         },
         "routes": {
-            "count": system_dao.count_routes_in_system(system_id),
+            "count": systemdam.count_routes_in_system(system_id),
             "href": linksutil.RoutesInSystemIndexLink(system)
         },
         "feeds": {
-            "count": system_dao.count_feeds_in_system(system_id),
+            "count": systemdam.count_feeds_in_system(system_id),
             "href": linksutil.FeedsInSystemIndexLink(system)
         }
     })
