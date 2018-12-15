@@ -1,13 +1,13 @@
 import unittest
 from unittest import mock
-from transiter.utils import linksutil
+from transiter.general import linksutil
 
 
 class TestLinks(unittest.TestCase):
 
     URL = 'Url'
 
-    @mock.patch('transiter.utils.linksutil.flask')
+    @mock.patch('transiter.general.linksutil.flask')
     def test_entity_links(self, flask):
         flask.url_for.return_value = self.URL
         model = mock.MagicMock()

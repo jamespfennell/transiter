@@ -1,7 +1,7 @@
 from flask import Blueprint
 
-from ..services import routeservice
-from .responsemanager import http_get_response
+from transiter.services import routeservice
+from transiter.http.responsemanager import http_get_response
 
 route_endpoints = Blueprint('route_endpoints', __name__)
 

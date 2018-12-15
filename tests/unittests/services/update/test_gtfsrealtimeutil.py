@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 from google.transit import gtfs_realtime_pb2 as gtfs
-from transiter.utils import gtfsrealtimeutil
+from transiter.services.update import gtfsrealtimeutil
 from transiter import models
 import datetime
 from google.protobuf.message import DecodeError
@@ -11,7 +11,7 @@ class TestGtfsRealtimeExtension(unittest.TestCase):
     PB_MODULE = 'Module One'
     BASE_MODULE = 'Module Two'
 
-    @mock.patch('transiter.utils.gtfsrealtimeutil.importlib')
+    @mock.patch('transiter.services.update.gtfsrealtimeutil.importlib')
     def test_gtfs_realtime_extension(self, importlib):
         """[Read GTFS Realtime] Feed extension activation"""
         gtfs_realtime_extension = gtfsrealtimeutil.GtfsRealtimeExtension(
@@ -31,11 +31,11 @@ class TestReadGtfsRealtime(unittest.TestCase):
     def setUp(self):
         self.gtfs_feed = mock.MagicMock()
 
-        self.patch1 = mock.patch('transiter.utils.gtfsrealtimeutil.gtfs_realtime_pb2')
+        self.patch1 = mock.patch('transiter.services.update.gtfsrealtimeutil.gtfs_realtime_pb2')
         self.gtfs_realtime_pb2 = self.patch1.start()
         self.gtfs_realtime_pb2.FeedMessage.return_value = self.gtfs_feed
 
-        self.patch2 = mock.patch('transiter.utils.gtfsrealtimeutil._read_protobuf_message')
+        self.patch2 = mock.patch('transiter.services.update.gtfsrealtimeutil._read_protobuf_message')
         self._read_protobuf_message = self.patch2.start()
         self._read_protobuf_message.return_value = self.PARSED_CONTENT
 

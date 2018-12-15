@@ -1,5 +1,5 @@
 import unittest
-from transiter.utils.graphutils import graphdatastructs
+from transiter.services.servicepattern.graphutils import graphdatastructs
 
 
 class TestGraphDataStructs(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestGraphDataStructs(unittest.TestCase):
 
     def test_cast_to_path_2(self):
         self.assertRaises(graphdatastructs.NotCastableAsAPathError,
-            self.graph_2.cast_to_path)
+                          self.graph_2.cast_to_path)
 
     def test_cast_to_path_3(self):
         self.assertRaises(graphdatastructs.NotCastableAsAPathError,

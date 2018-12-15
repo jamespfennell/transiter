@@ -3,7 +3,7 @@ from transiter.services import stopservice
 from transiter.services import systemservice
 from transiter.services import exceptions
 
-from transiter.scheduler import client
+from transiter.taskserver import client
 #print(jsonify(systemservice.get('nycsubway')))
 
 """
@@ -26,7 +26,7 @@ if(__name__=='__main__'):
 import requests
 import json
 
-client.refresh_jobs()
+client.refresh_tasks()
 
 
 exit()

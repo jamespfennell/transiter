@@ -1,6 +1,6 @@
 from transiter.data import database
 from transiter.data.dams import routedam
-from transiter.utils import linksutil
+from transiter.general import linksutil
 
 
 @database.unit_of_work

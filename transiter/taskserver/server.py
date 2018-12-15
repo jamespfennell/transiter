@@ -29,7 +29,7 @@ class AutoUpdater:
 feed_pri_key_to_auto_updater = {}
 
 
-def refresh_jobs():
+def refresh_tasks():
     # TODO: NEED go through the feed service.
     #  Maybe list all with autoupdaters
     # This is not in UoW context
@@ -54,15 +54,15 @@ def refresh_jobs():
     return True
 
 
-class JobsService(rpyc.Service):
+class TaskServer(rpyc.Service):
 
-    def exposed_refresh_jobs(self):
-        refresh_jobs()
+    def exposed_refresh_tasks(self):
+        refresh_tasks()
 
 
 if __name__ == "__main__":
     scheduler = BackgroundScheduler()
     scheduler.start()
-    refresh_jobs()
-    server = ThreadedServer(JobsService, port = 12345)
+    refresh_tasks()
+    server = ThreadedServer(TaskServer, port=12345)
     server.start()

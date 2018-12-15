@@ -2,11 +2,7 @@ import unittest.mock as mock
 import unittest
 
 from transiter.http import flaskapp
-from transiter.http import tripendpoints
-from transiter.http import systemendpoints
-from transiter.http import routeendpoints
-from transiter.http import stopendpoints
-from transiter.http import feedendpoints
+from transiter.http.endpoints import routeendpoints, stopendpoints, tripendpoints, systemendpoints, feedendpoints
 
 
 class _TestEndpoints(unittest.TestCase):
@@ -23,7 +19,7 @@ class _TestEndpoints(unittest.TestCase):
     JSON_NO_RESPONSE = ''
 
     def setUp(self):
-        pv_patcher = mock.patch('transiter.http.feedendpoints.permissionsvalidator')
+        pv_patcher = mock.patch('transiter.http.endpoints.feedendpoints.permissionsvalidator')
         self.pv = pv_patcher.start()
         self.addCleanup(pv_patcher.stop)
 
@@ -65,48 +61,48 @@ class _TestEndpoints(unittest.TestCase):
 
 class TestFeedEndpoints(_TestEndpoints):
 
-    @mock.patch('transiter.http.feedendpoints.feedservice')
+    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
     def test_list_all_in_system(self, feedservice):
         """[Feed endpoints] List all feeds in a system"""
         self._test_response_endpoint(feedendpoints.list_all_in_system,
                                      feedservice.list_all_in_system,
                                      (self.SYSTEM_ID))
 
-    @mock.patch('transiter.http.feedendpoints.feedservice')
+    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
     def test_get_in_system_by_id(self, feedservice):
         """[Feed endpoints] Get a specific feed in a system"""
         self._test_response_endpoint(feedendpoints.get_in_system_by_id,
                                      feedservice.get_in_system_by_id,
                                      (self.SYSTEM_ID, self.ROUTE_ID))
 
-    @mock.patch('transiter.http.feedendpoints.feedservice')
+    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
     def test_create_feed_update(self, feedservice):
         """[Feed endpoints] Create a new feed update for a specific feed"""
         self._test_response_endpoint(feedendpoints.create_feed_update,
                                      feedservice.create_feed_update,
                                      (self.SYSTEM_ID, self.FEED_ID))
 
-    @mock.patch('transiter.http.feedendpoints.feedservice')
+    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
     def test_list_updates_in_feed(self, feedservice):
         """[Feed endpoints] List all updates for a specific feed"""
         self._test_response_endpoint(feedendpoints.list_updates_in_feed,
                                      feedservice.list_updates_in_feed,
                                      (self.SYSTEM_ID, self.FEED_ID))
 
-    @mock.patch('transiter.http.feedendpoints.feedservice')
+    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
     def test_get_update_in_feed(self, feedservice):
         """[Feed endpoints] Get a specific feed update in a specific feed"""
         self._test_not_implemented_endpoint(feedendpoints.get_update_in_feed,
                                             (self.SYSTEM_ID, self.FEED_ID,
                                              self.FEED_UPDATE_ID))
 
-    @mock.patch('transiter.http.feedendpoints.feedservice')
+    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
     def test_get_autoupdater_for_feed(self, feedservice):
         """[Feed endpoints] Get the autoupdater config for a specific feed"""
         self._test_not_implemented_endpoint(feedendpoints.get_autoupdater_for_feed,
                                             (self.SYSTEM_ID, self.FEED_ID))
 
-    @mock.patch('transiter.http.feedendpoints.feedservice')
+    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
     def test_configure_autoupdater_for_feed(self, feedservice):
         """[Feed endpoints] Configure the autoupdater for a specific feed"""
         self._test_not_implemented_endpoint(
@@ -116,14 +112,14 @@ class TestFeedEndpoints(_TestEndpoints):
 
 class TestRouteEndpoints(_TestEndpoints):
 
-    @mock.patch('transiter.http.routeendpoints.routeservice')
+    @mock.patch('transiter.http.endpoints.routeendpoints.routeservice')
     def test_list_all_in_system(self, routeservice):
         """[Route endpoints] List all routes in a system"""
         self._test_response_endpoint(routeendpoints.list_all_in_system,
                                      routeservice.list_all_in_system,
                                      (self.SYSTEM_ID))
 
-    @mock.patch('transiter.http.routeendpoints.routeservice')
+    @mock.patch('transiter.http.endpoints.routeendpoints.routeservice')
     def test_get_in_system_by_id(self, routeservice):
         """[Route endpoints] Get a specific route in a system"""
         self._test_response_endpoint(routeendpoints.get_in_system_by_id,
@@ -133,14 +129,14 @@ class TestRouteEndpoints(_TestEndpoints):
 
 class TestStopEndpoints(_TestEndpoints):
 
-    @mock.patch('transiter.http.stopendpoints.stopservice')
+    @mock.patch('transiter.http.endpoints.stopendpoints.stopservice')
     def test_list_all_in_route(self, stopservice):
         """[Stop endpoints] List all stop in a system"""
         self._test_response_endpoint(stopendpoints.list_all_in_system,
                                      stopservice.list_all_in_system,
                                      (self.SYSTEM_ID))
 
-    @mock.patch('transiter.http.stopendpoints.stopservice')
+    @mock.patch('transiter.http.endpoints.stopendpoints.stopservice')
     def test_get_in_route_by_id(self, stopservice):
         """[Stop endpoints] Get a specific stop in a system"""
         self._test_response_endpoint(stopendpoints.get_in_system_by_id,
@@ -150,14 +146,14 @@ class TestStopEndpoints(_TestEndpoints):
 
 class TestTripEndpoints(_TestEndpoints):
 
-    @mock.patch('transiter.http.tripendpoints.tripservice')
+    @mock.patch('transiter.http.endpoints.tripendpoints.tripservice')
     def test_list_all_in_route(self, tripservice):
         """[Trip endpoints] List all trips in a route"""
         self._test_response_endpoint(tripendpoints.list_all_in_route,
                                      tripservice.list_all_in_route,
                                      (self.SYSTEM_ID, self.ROUTE_ID))
 
-    @mock.patch('transiter.http.tripendpoints.tripservice')
+    @mock.patch('transiter.http.endpoints.tripendpoints.tripservice')
     def test_get_in_route_by_id(self, tripservice):
         """[Trip endpoints] Get a specific trip in a route"""
         self._test_response_endpoint(tripendpoints.get_in_route_by_id,
@@ -167,21 +163,21 @@ class TestTripEndpoints(_TestEndpoints):
 
 class TestSystemEndpoints(_TestEndpoints):
 
-    @mock.patch('transiter.http.systemendpoints.systemservice')
+    @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
     def test_list_all(self, systemservice):
         """[System endpoints] List all systems installed"""
         self._test_response_endpoint(systemendpoints.list_all,
                                      systemservice.list_all)
 
-    @mock.patch('transiter.http.systemendpoints.systemservice')
+    @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
     def test_get_by_id(self, systemservice):
         """[System endpoints] Get a specific system"""
         self._test_response_endpoint(systemendpoints.get_by_id,
                                      systemservice.get_by_id,
                                      (self.SYSTEM_ID))
 
-    @mock.patch('transiter.http.systemendpoints.inputvalidator')
-    @mock.patch('transiter.http.systemendpoints.systemservice')
+    @mock.patch('transiter.http.endpoints.systemendpoints.inputvalidator')
+    @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
     def test_install(self, systemservice, inputvalidator):
         """[System endpoints] Install a system"""
         inputvalidator.validate_post_data.return_value = {}
@@ -189,7 +185,7 @@ class TestSystemEndpoints(_TestEndpoints):
                                         systemservice.install,
                                         (self.SYSTEM_ID))
 
-    @mock.patch('transiter.http.systemendpoints.systemservice')
+    @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
     def test_delete_by_id(self, systemservice):
         """[System endpoints] Uninstall a system"""
         self._test_no_response_endpoint(systemendpoints.delete_by_id,

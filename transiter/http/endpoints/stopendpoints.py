@@ -1,7 +1,7 @@
 from flask import Blueprint
 
-from ..services import stopservice
-from .responsemanager import http_get_response
+from transiter.services import stopservice
+from transiter.http.responsemanager import http_get_response
 
 stop_endpoints = Blueprint('stop_endpoints', __name__)
 

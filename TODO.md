@@ -10,14 +10,15 @@
 
 data/
     database.py
-    genericmethods.py
-    feeddata.py
-    routedata.py
-    stopdata.py
-    tripdata.py
-    systemdata.py
-    servicepatterndata.py
-    ...
+    syncutil.py
+    dams/
+        genericmethods.py
+        feeddata.py
+        routedata.py
+        stopdata.py
+        tripdata.py
+        systemdata.py
+        servicepatterndata.py
 http/
     endpoints/
 services/
@@ -39,29 +40,19 @@ general/
 taskserver/
     
 1. Refactoring:
-    1. New data access layer setup
-        - Should not be too hard, mostly moving things around
-        - merge connection and creator into database.py
     1. Use the new data access layer to fix Travis issues with the integration
         test
         
   
-1. Go through all of the API endpoints and implement anything that's
-    not implemented and make sure the docs are right
+1. Go through all of the API endpoints 
+    - make sure RTR can work
+            -origin/terminus for trips 
+            - should not be in the DB but may be useful in some endpoints like stop
+    - implement anything that's not implemented and
+    - make sure the docs are right
 
 1. Add logging
 
-1. Existing code clean up
-    - C6: Optimize the SQL ALchemy config
-        - especially with joins/lazy loading
-        - Just adding .join(Model.attribute) loads it I think?
-        https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html
-        look at lazy
-        
-        For example, when getting stop events get the trip and stop as well
-        
-        cascade = None
-      
     - C11:
     Bug: I'm transforming IS_ASSIGNED to a status, 
         but then overwriting that status in vehicle...this is an NYC subway specific
@@ -73,7 +64,7 @@ taskserver/
         problem with the xml update - like a race condition when the message changes?
         Need this to also do models now
 
-
+1. make sure the task server still works
 
 
 ---I THINK IT WOULD BE GOOD TO HAVE MORE THAN 90% TESTING COVERAGE
@@ -87,7 +78,17 @@ removed here before v1!
 
 ## Version 0.2
 
-origin/terminus for trips - should not be in the DB but may be useful in some endpoints like stop
+1. Existing code clean up
+    - C6: Optimize the SQL ALchemy config
+        - especially with joins/lazy loading
+        - Just adding .join(Model.attribute) loads it I think?
+        https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html
+        look at lazy
+        
+        For example, when getting stop events get the trip and stop as well
+        
+        cascade = None
+      
 
 #### F4: Write the Feed Health Code
 How to delete old entries?

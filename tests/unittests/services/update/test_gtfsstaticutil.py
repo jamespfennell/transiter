@@ -1,6 +1,6 @@
 import unittest
 from unittest import mock
-from transiter.utils import gtfsstaticutil
+from transiter.services.update import gtfsstaticutil
 from transiter import models
 
 
@@ -299,7 +299,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
         self.assertEqual(trip, post_trip)
         gtfs_static_parser._transform_times.assert_called_once_with('4')
 
-    @mock.patch('transiter.utils.gtfsstaticutil.os')
+    @mock.patch('transiter.services.update.gtfsstaticutil.os')
     def test_parse_transfers(self, os):
         """[GTFS static util] Parse transfers"""
         os.path.exists.return_value = True
@@ -356,7 +356,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
-    @mock.patch('transiter.utils.gtfsstaticutil.open')
+    @mock.patch('transiter.services.update.gtfsstaticutil.open')
     def test_csv_iterator(self, open_func):
         """[GTFS static util] CSV iterator"""
 

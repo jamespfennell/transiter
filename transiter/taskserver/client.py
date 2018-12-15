@@ -7,10 +7,10 @@ that makes the connection, and hits the correct function in the server
 import rpyc
 
 
-def refresh_jobs():
+def refresh_tasks():
     try:
         conn = rpyc.connect('localhost', 12345)
-        return conn.root.refresh_jobs()
+        return conn.root.refresh_tasks()
     except ConnectionRefusedError:
         print('Could not connect to the RPyC scheduler service')
     return False

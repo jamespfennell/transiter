@@ -1,6 +1,5 @@
 import unittest
-from transiter.utils.graphutils import graphdatastructs
-from transiter.utils.graphutils import pathstitcher
+from transiter.services.servicepattern.graphutils import graphdatastructs, pathstitcher
 
 
 class TestPathSticher(unittest.TestCase):

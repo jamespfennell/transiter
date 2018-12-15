@@ -1,5 +1,5 @@
 from transiter.data.dams import tripdam
-from transiter.utils import linksutil
+from transiter.general import linksutil
 
 def list_all_in_route(system_id, route_id):
     """

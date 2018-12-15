@@ -1,9 +1,9 @@
 from flask import Flask
-from transiter.http.systemendpoints import system_endpoints
-from transiter.http.routeendpoints import route_endpoints
-from transiter.http.stopendpoints import stop_endpoints
-from transiter.http.tripendpoints import trip_endpoints
-from transiter.http.feedendpoints import feed_endpoints
+from transiter.http.endpoints.systemendpoints import system_endpoints
+from transiter.http.endpoints.routeendpoints import route_endpoints
+from transiter.http.endpoints.stopendpoints import stop_endpoints
+from transiter.http.endpoints.tripendpoints import trip_endpoints
+from transiter.http.endpoints.feedendpoints import feed_endpoints
 from transiter.http.responsemanager import http_get_response
 
 app = Flask(__name__)

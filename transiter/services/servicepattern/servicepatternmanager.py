@@ -8,8 +8,8 @@ Step 3: for each route, pass each RawTrip through the matchers for that route
     that only takes the list of stops, we eliminate duplicates automatically!
 """
 
-from transiter.utils import graphutils
 from transiter import models
+from transiter.services.servicepattern import graphutils
 
 """
 SELECT stops.* 

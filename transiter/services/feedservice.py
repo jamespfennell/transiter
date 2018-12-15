@@ -1,12 +1,9 @@
 import importlib
-import time
 import requests
 import hashlib
-from transiter.utils import linksutil
+from transiter.general import linksutil
 
-from transiter.utils import gtfsrealtimeutil
-from transiter.services.update import tripupdater
-from transiter.scheduler import client
+from transiter.services.update import tripupdater, gtfsrealtimeutil
 #client.refresh_jobs()
 
 

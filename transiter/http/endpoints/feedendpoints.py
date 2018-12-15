@@ -1,6 +1,6 @@
 from flask import Blueprint
-from ..services import feedservice
-from .responsemanager import http_get_response, http_post_response, http_put_response
+from transiter.services import feedservice
+from transiter.http.responsemanager import http_get_response, http_post_response, http_put_response
 import time
 from transiter.http import permissionsvalidator
 feed_endpoints = Blueprint('feed_endpoints', __name__)

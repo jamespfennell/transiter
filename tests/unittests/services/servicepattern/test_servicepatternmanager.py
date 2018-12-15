@@ -1,8 +1,7 @@
 import unittest
 from unittest import mock
-from transiter.utils import servicepatternmanager
-from transiter.utils import gtfsstaticutil
-from transiter.utils import graphutils
+from transiter.services.servicepattern import servicepatternmanager
+from transiter.services.update import gtfsstaticutil
 from transiter import models
 
 
@@ -21,7 +20,7 @@ class TestServicePatternManager(unittest.TestCase):
         self.trip_three.route_id = 'A'
         self.trip_three.direction_id = True
 
-    @mock.patch('transiter.utils.servicepatternmanager.graphutils')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
     def test_path_lists_to_sorted_graph__empty_list(self, graphutils):
         """[Service pattern manager] Empty path list to sorted graph"""
         graph = mock.MagicMock()
@@ -33,7 +32,7 @@ class TestServicePatternManager(unittest.TestCase):
 
         graphutils.graphdatastructs.DirectedPath.assert_called_once_with([])
 
-    @mock.patch('transiter.utils.servicepatternmanager.graphutils')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
     def test_path_lists_to_sorted_graph__single_list(self, graphutils):
         """[Service pattern manager] Single path list to sorted graph"""
         path_list = mock.MagicMock()
@@ -52,7 +51,7 @@ class TestServicePatternManager(unittest.TestCase):
         label_one = '1'
         label_two = '2'
         path_list = [label_one, label_two]
-        graph = graphutils.graphdatastructs.DirectedPath(path_list)
+        graph = servicepatternmanager.graphutils.graphdatastructs.DirectedPath(path_list)
 
         stop_one = mock.MagicMock()
         stop_two = mock.MagicMock()
@@ -77,7 +76,7 @@ class TestServicePatternManager(unittest.TestCase):
         self.assertEqual(expected_sp, actual_sp)
         self.assertEqual(expected_sp.vertices, actual_sp.vertices)
 
-    @mock.patch('transiter.utils.servicepatternmanager.graphutils')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
     def test_path_lists_to_sorted_graph__stiches_to_path(self, graphutils):
         """[Service pattern manager] Two path lists to sorted graph, just from stitching"""
         path_list_one = mock.MagicMock()
@@ -114,7 +113,7 @@ class TestServicePatternManager(unittest.TestCase):
         graphutils.topologicalsort.sort.assert_not_called()
 
 
-    @mock.patch('transiter.utils.servicepatternmanager.graphutils')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
     def test_path_lists_to_sorted_graph__topological_sort(self, graphutils):
         """[Service pattern manager] Two path lists to sorted graph, from top sort"""
         path_list_one = mock.MagicMock()
@@ -150,8 +149,8 @@ class TestServicePatternManager(unittest.TestCase):
         graph.cast_to_path.assert_not_called()
         graphutils.topologicalsort.sort.assert_called_with(graph)
 
-    @mock.patch('transiter.utils.servicepatternmanager._path_lists_to_sorted_graph')
-    @mock.patch('transiter.utils.servicepatternmanager._sorted_graph_to_service_pattern')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager._path_lists_to_sorted_graph')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager._sorted_graph_to_service_pattern')
     def test_construct_for_static_trips(self, _sg_to_sp, _pls_to_sg):
         trips = [self.trip_one, self.trip_two, self.trip_three]
 
@@ -171,8 +170,8 @@ class TestServicePatternManager(unittest.TestCase):
         _sg_to_sp.assert_called_once_with(sorted_graph, stop_id_to_stop)
 
 
-    @mock.patch('transiter.utils.servicepatternmanager._filter_trips_by_conditions')
-    @mock.patch('transiter.utils.servicepatternmanager._construct_for_static_trips')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager._filter_trips_by_conditions')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager._construct_for_static_trips')
     def test_construct_sps_from_gtfs_static_date(self, _filter_trips, _construct):
 
         gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
@@ -210,7 +209,7 @@ class TestServicePatternManager(unittest.TestCase):
         # Test that the right trips were used to construct by filtering in one
 
 class TestTripsFilter(unittest.TestCase):
-    @mock.patch('transiter.utils.servicepatternmanager._TripMatcher')
+    @mock.patch('transiter.services.servicepattern.servicepatternmanager._TripMatcher')
     def test_filter_trips_by_conditions(self, _TripMatcher):
         trip_matcher = mock.MagicMock()
         _TripMatcher.return_value = trip_matcher
