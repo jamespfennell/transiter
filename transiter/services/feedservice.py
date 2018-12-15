@@ -4,11 +4,28 @@ import hashlib
 from transiter.general import linksutil
 
 from transiter.services.update import tripupdater, gtfsrealtimeutil
-#client.refresh_jobs()
-
 
 from transiter.data import database
 from transiter.data.dams import feeddam
+
+
+@database.unit_of_work
+def list_all_autoupdating():
+    """
+    List all autoupdating feeds. This method is designed for use by the task
+    server
+    :return:
+    """
+    response = []
+    for feed in feeddam.list_all_autoupdating():
+        response.append({
+            'pk': feed.pk,
+            'id': feed.id,
+            'system_id': feed.system.id,
+            'auto_updater_frequency': feed.auto_updater_frequency
+        })
+    return response
+
 
 @database.unit_of_work
 def list_all_in_system(system_id):
@@ -75,6 +92,7 @@ def list_updates_in_feed(system_id, feed_id):
     return response
 
 
+# TODO move to update manager
 def _execute_feed_update(feed_update):
     feed_update.status = 'IN_PROGRESS'
 

@@ -7,37 +7,6 @@
 - Check the code coverage, and then write unit tests
     for the methods missing them
 
-
-data/
-    database.py
-    syncutil.py
-    dams/
-        genericmethods.py
-        feeddata.py
-        routedata.py
-        stopdata.py
-        tripdata.py
-        systemdata.py
-        servicepatterndata.py
-http/
-    endpoints/
-services/
-    update/
-        updatemanager.py <- both system and feed call this
-            execute_feed_update
-            update_system
-        gtfsstaticreader.py
-        gtfsrealtimereader.py
-        tripupdater.py
-    servicepattern/
-        servicepatternmanager.py
-        graph/
-            pathstitcher.py
-general/
-    linksutil.py
-    exceptions.py
-    
-taskserver/
     
 1. Refactoring:
     1. Use the new data access layer to fix Travis issues with the integration
@@ -64,7 +33,7 @@ taskserver/
         problem with the xml update - like a race condition when the message changes?
         Need this to also do models now
 
-1. make sure the task server still works
+1. make sure the task server still works!
 
 
 ---I THINK IT WOULD BE GOOD TO HAVE MORE THAN 90% TESTING COVERAGE

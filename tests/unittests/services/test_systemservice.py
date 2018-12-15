@@ -2,7 +2,7 @@ import unittest
 import unittest.mock as mock
 
 from transiter.services import systemservice
-from transiter.services import exceptions
+from transiter.general import exceptions
 from transiter import models
 
 

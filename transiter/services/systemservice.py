@@ -6,9 +6,8 @@ import yaml
 from transiter.data import database
 from transiter.data.dams import systemdam
 from transiter.services.update import gtfsstaticutil
-from transiter.general import linksutil
+from transiter.general import linksutil, exceptions
 from transiter.services.servicepattern import servicepatternmanager
-from . import exceptions
 from transiter import models
 
 

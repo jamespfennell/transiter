@@ -4,11 +4,14 @@ language: python
 sudo: required
 dist: xenial
 python: "3.7"
+env:
+  - TRANSITER_DB_NAME=transiter_test_db TRANSITER_DB_USER=postgres
 install:
   - pip install -r requirements.txt
   - pip install coveralls
 # command to run tests
 script:
   - make test
+  - make integration-test
 after_success:
   - coveralls

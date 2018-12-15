@@ -1,7 +1,4 @@
 from transiter.services import routeservice
-from transiter.services import stopservice
-from transiter.services import systemservice
-from transiter.services import exceptions
 
 from transiter.taskserver import client
 #print(jsonify(systemservice.get('nycsubway')))

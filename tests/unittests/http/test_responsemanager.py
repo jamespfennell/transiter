@@ -1,8 +1,7 @@
 import unittest
 import unittest.mock as mock
 from transiter.http import responsemanager, permissionsvalidator
-from transiter.services import exceptions
-from transiter.general import linksutil
+from transiter.general import linksutil, exceptions
 import datetime
 
 RAW_RESPONSE = {'key': 'value'}

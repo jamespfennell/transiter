@@ -3,8 +3,14 @@ from transiter.data.dams import genericqueries
 from transiter import models
 
 
-def list_all():
-    yield from genericqueries.list_all(models.Feed)
+def list_all_autoupdating():
+    session = database.get_session()
+    query = (
+        session.query(models.Feed)
+        .filter(models.Feed.auto_updater_enabled)
+    )
+    for row in query:
+        yield row
 
 
 def list_all_in_system(system_id):

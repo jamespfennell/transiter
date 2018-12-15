@@ -1,25 +1,33 @@
-from transiter.data.dams import feeddam
+import apscheduler.schedulers.background
+import logging
+import rpyc.utils.server
+
 from transiter.services import feedservice
-import rpyc
-from rpyc.utils.server import ThreadedServer
-from apscheduler.schedulers.background import BackgroundScheduler
+
+logger = logging.getLogger('Transiter task server')
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+logger.addHandler(handler)
+formatter = logging.Formatter(
+        '[%(asctime)s] %(levelname)-8s %(message)s')
+handler.setFormatter(formatter)
 
 
 class AutoUpdater:
-    def __init__(self, feed, frequency):
-        self.feed_pri_key = feed.id
+    def __init__(self, feed_id, system_id, frequency):
         self.frequency = frequency
         self.job = None
         scheduler.add_job(
             feedservice.create_feed_update,
             'interval',
-            seconds=5,
-            args=[feed.system.system_id, feed.feed_id])
+            seconds=frequency,
+            args=[system_id, feed_id])
 
     def set_frequency(self, frequency):
         if frequency == self.frequency:
             return False
         # Adjust the job
+        return True
 
     def __del__(self):
         # Finish the job
@@ -30,39 +38,38 @@ feed_pri_key_to_auto_updater = {}
 
 
 def refresh_tasks():
-    # TODO: NEED go through the feed service.
-    #  Maybe list all with autoupdaters
-    # This is not in UoW context
-    feeds = feeddam.list_all()
+    feeds = feedservice.list_all_autoupdating()
     stale_feed_pri_keys = set(feed_pri_key_to_auto_updater.keys())
-    for feed in feeds:
-        if not feed.auto_updater_enabled:
-            continue
-        frequency = feed.auto_updater_frequency
-        auto_updater = feed_pri_key_to_auto_updater.get(feed.id, None)
+    for feed_data in feeds:
+        frequency = feed_data['auto_updater_frequency']
+        auto_updater = feed_pri_key_to_auto_updater.get(feed_data['pk'], None)
         if auto_updater is not None:
             auto_updater.set_frequency(frequency)
         else:
-            auto_updater = AutoUpdater(feed, frequency)
-            feed_pri_key_to_auto_updater[feed.id] = auto_updater
-        stale_feed_pri_keys.discard(feed.id)
+            auto_updater = AutoUpdater(
+                feed_data['system_id'],
+                feed_data['id'],
+                frequency)
+            feed_pri_key_to_auto_updater[feed_data['pk']] = auto_updater
+        stale_feed_pri_keys.discard(feed_data['pk'])
 
     for feed_pri_key in stale_feed_pri_keys:
         del feed_pri_key_to_auto_updater[feed_pri_key]
 
-    print(feed_pri_key_to_auto_updater)
     return True
 
 
 class TaskServer(rpyc.Service):
 
     def exposed_refresh_tasks(self):
-        refresh_tasks()
+        logger.info('Received external refresh tasks command')
+        return refresh_tasks()
 
 
 if __name__ == "__main__":
-    scheduler = BackgroundScheduler()
+    logger.info('Launching Transiter task server')
+    scheduler = apscheduler.schedulers.background.BackgroundScheduler()
     scheduler.start()
     refresh_tasks()
-    server = ThreadedServer(TaskServer, port=12345)
+    server = rpyc.utils.server.ThreadedServer(TaskServer, port=12345)
     server.start()

@@ -76,7 +76,8 @@ def create_database(silent=True):
 
 # TODO allow way to specify full config and load at this point
 db_name = os.environ.get('TRANSITER_DB_NAME', 'realtimerail')
-db_connection_params = DatabaseConnectionParameters(db_name, 'james')
+db_user = os.environ.get('TRANSITER_DB_USER', 'james')
+db_connection_params = DatabaseConnectionParameters(db_name, db_user)
 engine = None
 session_factory = None
 Session = None
