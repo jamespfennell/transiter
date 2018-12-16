@@ -1,18 +1,15 @@
 .PHONY: docs test
-.ONESHELL: integration-test
 
-integration-test:
+integration-tests:
 	cd tests/integrationtest; python setup.py develop
-	cd ../../
 	python -m unittest discover tests/integrationtest
 
 unit-tests:
+	pip install -r tests/unittests/requirements.txt
 	rm -f .coverage
 	nosetests --with-coverage --cover-package=transiter --rednose -v tests/unittests
 
-test: unit-tests
-
-reset-db:
+rebuild-db:
 	python rebuilddb.py
 
 reset-docs:
