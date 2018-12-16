@@ -4,13 +4,11 @@
 
 
 
-- Check the code coverage, and then write unit tests
-    for the methods missing them
 
+1. Make sure the task server still works!
     
-1. Refactoring:
-    1. Use the new data access layer to fix Travis issues with the integration
-        test
+1. Try to get the Travis integration test working
+    It's a problem of mapping timezones to and from the DB
         
   
 1. Go through all of the API endpoints 
@@ -19,8 +17,6 @@
             - should not be in the DB but may be useful in some endpoints like stop
     - implement anything that's not implemented and
     - make sure the docs are right
-
-1. Add logging
 
     - C11:
     Bug: I'm transforming IS_ASSIGNED to a status, 
@@ -33,7 +29,6 @@
         problem with the xml update - like a race condition when the message changes?
         Need this to also do models now
 
-1. make sure the task server still works!
 
 
 ---I THINK IT WOULD BE GOOD TO HAVE MORE THAN 90% TESTING COVERAGE
@@ -47,6 +42,11 @@ removed here before v1!
 
 ## Version 0.2
 
+1. Add logging
+
+- Check the code coverage, and then write unit tests
+    for the methods missing them
+    
 1. Existing code clean up
     - C6: Optimize the SQL ALchemy config
         - especially with joins/lazy loading

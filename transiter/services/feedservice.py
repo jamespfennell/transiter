@@ -142,6 +142,7 @@ def _execute_feed_update(feed_update):
     except Exception:
         print('Could not parse feed {}'.format(feed.id))
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
+        raise
 
 
 # TODO: move to GTFS realtime util? Or updatemanager.py?
@@ -149,5 +150,5 @@ def _gtfs_realtime_parser(feed, content):
 
     gtfs_data = gtfsrealtimeutil.read_gtfs_realtime(content)
     (__, __, trips) = gtfsrealtimeutil.transform_to_transiter_structure(
-        gtfs_data, 'America/Hawaii')
+        gtfs_data, 'America/Los_Angeles')
     tripupdater.sync_trips(feed.system, None, trips)
