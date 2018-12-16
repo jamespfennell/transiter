@@ -2,6 +2,7 @@
 .ONESHELL: integration-test
 
 integration-test:
+	cd tests/integrationtest; python setup.py develop
 	python -m unittest discover tests/integrationtest
 
 unit-tests:

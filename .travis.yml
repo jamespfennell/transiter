@@ -8,7 +8,7 @@ env:
   - TRANSITER_DB_NAME=transiter_test_db TRANSITER_DB_USER=postgres
 install:
   - pip install -r requirements.txt
-  - pip install coveralls
+  - python setup.py install
 # command to run tests
 script:
   - make test

@@ -295,6 +295,8 @@ class IntegrationTest(unittest.TestCase):
 
 
 def startup_http_services():
+    shutdown_http_services()
+    subprocess.call(['python', '--version'])
     print('(Re)building the Transiter DB')
     rebuild_db()
     print('Launching dummy feed server')
@@ -324,8 +326,12 @@ def launch_flask_app(location):
 
 
 def kill_process_on_port(port_number):
-    raw_pids = subprocess.check_output(
-        ['lsof', '-t', '-i:{}'.format(port_number)])
+    try:
+        raw_pids = subprocess.check_output(
+            ['lsof', '-t', '-i:{}'.format(port_number)])
+    except subprocess.CalledProcessError:
+        print('No process to kill on port {}'.format(port_number))
+        return
     pids = raw_pids.decode('utf-8').split()
     for pid in pids:
         subprocess.call(
