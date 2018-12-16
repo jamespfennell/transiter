@@ -24,3 +24,7 @@ run-debug-server:
 run-gunicorn-server:
 	gunicorn -w 4 -b 127.0.0.1:5000 transiter.endpoints.flaskapp:app
 
+
+clean:
+	rm -rf *.egg-info build dist .eggs .coverage
+	cd tests/integrationtest; rm -rf *.egg-info build dist .eggs
