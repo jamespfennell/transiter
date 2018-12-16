@@ -3,6 +3,7 @@
 
 integration-test:
 	cd tests/integrationtest; python setup.py develop
+	cd ../../
 	python -m unittest discover tests/integrationtest
 
 unit-tests:
