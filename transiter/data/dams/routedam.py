@@ -81,3 +81,14 @@ def list_terminus_data(route_pk):
     for row in result:
         yield row
 
+
+def list_all_route_statuses_in_system(system_id):
+    session = database.get_session()
+    query = (
+        session.query(models.RouteStatus)
+        .join(models.Route, models.RouteStatus.routes)
+        .join(models.System)
+        .filter(models.System.id == system_id)
+    )
+    for row in query:
+        yield row

@@ -2,11 +2,6 @@
 
 ## Main development thread
 
-    - C13:
-        problem with the xml update - like a race condition when the message changes?
-        Need this to also do models now
-
-
 
 1. Make sure the task server still works!
     

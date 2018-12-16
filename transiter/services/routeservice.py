@@ -93,9 +93,9 @@ def _construct_status(route):
     status = None
     priority = -100000
     for message in route.route_statuses:
-        if message.status_priority > priority:
-            status = message.status_type
-            priority = message.status_priority
+        if message.priority > priority:
+            status = message.type
+            priority = message.priority
     if status is None:
         status = 'Good Service'
     return status

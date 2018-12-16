@@ -8,23 +8,26 @@ class RouteStatus(Base):
     __tablename__ = 'route_status'
 
     pk = Column(Integer, primary_key=True)
+    id = Column(String)
 
-    status_id = Column(String)
-    status_type = Column(String)
-    status_priority = Column(Integer)
+    type = Column(String)
+    priority = Column(Integer)
     message_title = Column(String)
     message_content = Column(String)
     start_time = Column(TIMESTAMP(timezone=True))
     end_time = Column(TIMESTAMP(timezone=True))
     creation_time = Column(TIMESTAMP(timezone=True))
 
+    route_ids = set()
     routes = relationship(
         'Route',
         secondary='route_status_route',
-        back_populates='route_statuses')
+        back_populates='route_statuses',
+        cascade='none'
+    )
 
     _short_repr_list = [
-        'status_type',
+        'id',
         'message_title',
         'message_content',
         'start_time',

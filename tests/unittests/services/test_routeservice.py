@@ -95,16 +95,16 @@ class TestRouteService(unittest.TestCase):
         """[Route service] Constructing bad route status from multiple messages"""
 
         message_1 = mock.MagicMock()
-        message_1.status_priority = 1
-        message_1.status_type = self.OKAY_STATUS
+        message_1.priority = 1
+        message_1.type = self.OKAY_STATUS
 
         message_2 = mock.MagicMock()
-        message_2.status_priority = 2
-        message_2.status_type = self.BAD_STATUS
+        message_2.priority = 2
+        message_2.type = self.BAD_STATUS
 
         message_3 = mock.MagicMock()
-        message_3.status_priority = 4
-        message_3.status_type = self.REALLY_BAD_STATUS
+        message_3.priority = 4
+        message_3.type = self.REALLY_BAD_STATUS
 
         for messages in itertools.permutations([message_1, message_2, message_3]):
             route = mock.MagicMock()
