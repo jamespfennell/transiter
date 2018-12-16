@@ -142,7 +142,7 @@ def _execute_feed_update(feed_update):
     except Exception:
         print('Could not parse feed {}'.format(feed.id))
         feed_update.status = 'FAILURE_COULD_NOT_PARSE'
-        raise
+        #raise
 
 
 # TODO: move to GTFS realtime util? Or updatemanager.py?

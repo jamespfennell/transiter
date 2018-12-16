@@ -17,26 +17,10 @@ class Trip(Base):
     route_id = None
     stop_id = None
 
-
-
-
-
-    # TODO: remove, incorporate into status
-    is_assigned = Column(Boolean)
-    # TODO: rename vehicle_id...something similar in GTFS realtime?
-    train_id = Column(String)
-    # TODO: both of these should be foreign keyed to feed updates
+    vehicle_id = Column(String)
     last_update_time = Column(TIMESTAMP(timezone=True))
-    feed_update_time = Column(TIMESTAMP(timezone=True))
-
-    # last_feed_update_pk and last_feed_update relationship
-    # THis in both Trip and Vehicle
-
-    # These should go in Vehicle
-    agency_updated_at = Column(TIMESTAMP(timezone=True))
     current_status = Column(String)
     current_stop_sequence = Column(Integer)
-    # vehicle_id <- map the MTA's train ID onto this
 
     route = relationship(
         'Route',
@@ -55,9 +39,9 @@ class Trip(Base):
         'direction_id',
         'start_time',
         'last_update_time',
-        'feed_update_time',
         'current_status',
-        'train_id'
+        'current_stop_sequence',
+        'vehicle_id'
     ]
 
 # TODO: this should be a unique constraint

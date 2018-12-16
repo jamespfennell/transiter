@@ -112,18 +112,19 @@ class _GtfsRealtimeToTransiterTransformer:
     def _group_trip_entities(self):
 
         def attach_entity(entity_key, entity):
-            trip_entity = entity.get('trip', {})
-            trip_id = trip_entity.get('trip_id', None)
+            trip_descriptor = entity.get('trip', {})
+            trip_id = trip_descriptor.get('trip_id', None)
             if trip_id is None:
                 return
             self._trip_id_to_raw_entities.setdefault(trip_id, {})
-            self._trip_id_to_raw_entities[trip_id]['trip'] = trip_entity
+            self._trip_id_to_raw_entities[trip_id]['trip'] = trip_descriptor
             self._trip_id_to_raw_entities[trip_id][entity_key] = entity
 
         for main_entity in self._raw_data.get('entity', []):
             if 'trip_update' in main_entity:
                 attach_entity('trip_update', main_entity['trip_update'])
             if 'vehicle' in main_entity:
+                print('attaching vehicle')
                 attach_entity('vehicle', main_entity['vehicle'])
 
     def _transform_trip_base_data(self):
@@ -132,8 +133,6 @@ class _GtfsRealtimeToTransiterTransformer:
 
             trip = models.Trip()
             trip.id = trip_id
-            print(trip_id)
-            print('HERE')
             trip.route_id = trip_data.get('route_id', None)
             trip.direction_id = trip_data.get('direction_id', None)
             start_date_str = trip_data.get('start_date', None)
@@ -143,8 +142,13 @@ class _GtfsRealtimeToTransiterTransformer:
                     month=int(start_date_str[4:6]),
                     day=int(start_date_str[6:8]))
                 trip.start_time = self._localize_datetime(start_dt)
-            # TODO should be vehicle_id and go in the vehicle section
-            trip.train_id = trip_data.get('train_id', None)
+
+            trip.vehicle_id = (
+                entity
+                .get('trip_update', {})
+                .get('vehicle', {})
+                .get('id', None)
+            )
 
             vehicle_data = entity.get('vehicle', {})
             trip.last_update_time = self._timestamp_to_datetime(

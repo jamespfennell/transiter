@@ -98,10 +98,8 @@ def convert_to_json(data):
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
 
-    # TODO: options for time formatting
     if isinstance(obj, (datetime, date)):
         return obj.timestamp()
-        return (obj.timestamp() - time.time())/60#.isoformat()
 
     if isinstance(obj, linksutil.Link):
         return obj.url()

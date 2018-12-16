@@ -2,14 +2,14 @@
 
 ## Main development thread
 
+    - C13:
+        problem with the xml update - like a race condition when the message changes?
+        Need this to also do models now
 
 
 
 1. Make sure the task server still works!
     
-1. Try to get the Travis integration test working
-    It's a problem of mapping timezones to and from the DB
-        
   
 1. Go through all of the API endpoints 
     - make sure RTR can work
@@ -18,16 +18,6 @@
     - implement anything that's not implemented and
     - make sure the docs are right
 
-    - C11:
-    Bug: I'm transforming IS_ASSIGNED to a status, 
-        but then overwriting that status in vehicle...this is an NYC subway specific
-        problem at least and only relevant for trips without a vehicle entity
-        Potentially it's fine, just make sure
-        
-        Maybe we can map it to an actual GTFS status though
-    - C13:
-        problem with the xml update - like a race condition when the message changes?
-        Need this to also do models now
 
 
 
