@@ -247,7 +247,7 @@ class _GtfsRealtimeToTransiterTransformer:
         if timestamp is None or timestamp == 0:
             return None
         return self._localize_datetime(
-            datetime.datetime.fromtimestamp(timestamp))
+            datetime.datetime.utcfromtimestamp(timestamp))
 
     def _localize_datetime(self, dt):
         if self._timezone is None:
