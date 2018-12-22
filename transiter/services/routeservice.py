@@ -52,6 +52,7 @@ def get_in_system_by_id(system_id, route_id):
             [message.short_repr() for message in route.route_statuses],
         'stops': []
         })
+    # TODO: need to get the parents of these stop ids too
     current_stop_ids = list(routedam.list_active_stop_ids(route.pk))
 
     default_service_pattern = route.default_service_pattern

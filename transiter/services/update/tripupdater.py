@@ -66,11 +66,17 @@ def sync_trips(system, route_ids, trips):
 #   its new StopTimeUpdates will be merged in, via the cascade; we then have
 #   to manually put the historical StopTimeUpdates back in.
 def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
+    # TODO: STUS SHOULD  be assigned to trips via the stu not the trip to
+    # avoid SQL Alchemy bugs
     print('Number of trips in route: {}'.format(len(trips)))
     for trip in trips:
         trip.route_pk = route_pk
+        valid_stus = []
         for stu in trip.stop_events:
             stu.stop_pk = stop_id_to_pk[stu.stop_id]
+            if stu.stop_pk is not None:
+                valid_stus.append(stu)
+        trip.stop_events = valid_stus
 
     existing_trips = tripdam.list_all_in_route_by_pk(route_pk)
     (old_trips, updated_trip_tuples, new_trips) = syncutil.copy_pks(
@@ -97,6 +103,9 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
             ('stop_sequence', ))
 
         persisted_trip = session.merge(updated_trip)
+        # TODO: this is inefficient as it iterates over all
+        # existing trips and compares by stop_id. Perhaps add stop_events
+        # via the relationship in the stop_event?
         persisted_trip.stop_events.extend(existing_past_stus)
 
     for old_trip in old_trips:

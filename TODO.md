@@ -2,9 +2,7 @@
 
 ## Main development thread
 
-
 1. Make sure the task server still works!
-    
   
 1. Go through all of the API endpoints 
     - make sure RTR can work
@@ -12,18 +10,12 @@
             - should not be in the DB but may be useful in some endpoints like stop
     - implement anything that's not implemented and
     - make sure the docs are right
+    - fix the current service problem
 
-
-
-
----I THINK IT WOULD BE GOOD TO HAVE MORE THAN 90% TESTING COVERAGE
-BEFORE VERSION 0.2---NOW OR NEVER!
-
-
-- All TODOs in the code and here are to me made as issues on github and 
+1. All TODOs in the code and here are to me made as issues on github and 
 removed here before v1!
 
-- Fix and file a bug ticket with sql alchemy?
+1. Fix and file a bug ticket with sql alchemy?
 
 ## Version 0.2
 

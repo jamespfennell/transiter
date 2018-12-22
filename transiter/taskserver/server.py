@@ -39,6 +39,7 @@ feed_pri_key_to_auto_updater = {}
 
 def refresh_tasks():
     feeds = feedservice.list_all_autoupdating()
+    logger.info('Updating {} feed'.format(len(feeds)))
     stale_feed_pri_keys = set(feed_pri_key_to_auto_updater.keys())
     for feed_data in feeds:
         frequency = feed_data['auto_updater_frequency']
