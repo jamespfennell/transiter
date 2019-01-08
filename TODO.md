@@ -2,7 +2,8 @@
 
 ## Main development thread
 
-1. Make sure the task server still works!
+1. Ensure the task server is working
+    -> Need to clean up task updater
   
 1. Go through all of the API endpoints 
     - make sure RTR can work

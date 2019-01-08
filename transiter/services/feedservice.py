@@ -1,7 +1,7 @@
 import importlib
 import requests
 import hashlib
-from transiter.general import linksutil
+from transiter.general import linksutil, exceptions
 
 from transiter.services.update import tripupdater, gtfsrealtimeutil
 
@@ -68,6 +68,8 @@ def get_in_system_by_id(system_id, feed_id):
 def create_feed_update(system_id, feed_id):
 
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
+    if feed is None:
+        raise exceptions.IdNotFoundError
     #print(feed.feed_id)
     feed_update = feeddam.create_update()
     feed_update.feed = feed

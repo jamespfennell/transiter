@@ -66,14 +66,12 @@ def sync_trips(system, route_ids, trips):
 #   its new StopTimeUpdates will be merged in, via the cascade; we then have
 #   to manually put the historical StopTimeUpdates back in.
 def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
-    # TODO: STUS SHOULD  be assigned to trips via the stu not the trip to
-    # avoid SQL Alchemy bugs
     print('Number of trips in route: {}'.format(len(trips)))
     for trip in trips:
         trip.route_pk = route_pk
         valid_stus = []
         for stu in trip.stop_events:
-            stu.stop_pk = stop_id_to_pk[stu.stop_id]
+            stu.stop_pk = stop_id_to_pk.get(stu.stop_id, None)
             if stu.stop_pk is not None:
                 valid_stus.append(stu)
         trip.stop_events = valid_stus
@@ -85,36 +83,34 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
     session = database.get_session()
     for updated_trip, existing_trip in updated_trip_tuples:
 
-        existing_past_stus = []
-        existing_future_stus = []
+        index = 0
         for existing_stu in existing_trip.stop_events:
-            if existing_stu.stop_sequence < updated_trip.current_stop_sequence:
-                # updated_trip.stop_events.append(existing_stu)
-                existing_past_stus.append(existing_stu)
+            if existing_stu.stop_sequence >= updated_trip.current_stop_sequence:
+                break
+            existing_stu.future = False
+            index += 1
+        existing_future_stus = existing_trip.stop_events[index:]
 
-                if existing_stu.future:
-                    existing_stu.future = False
-            else:
-                existing_future_stus.append(existing_stu)
+        updated_future_stus = updated_trip.stop_events
+        (old_stus, updated_stu_tuples, new_stus) = syncutil.copy_pks(
+            existing_future_stus, updated_future_stus, ('stop_sequence', ))
 
-        syncutil.copy_pks(
-            existing_future_stus,
-            updated_trip.stop_events,
-            ('stop_sequence', ))
+        for new_stu in new_stus:
+            new_stu.trip = existing_trip
+            session.add(new_stu)
 
-        persisted_trip = session.merge(updated_trip)
-        # TODO: this is inefficient as it iterates over all
-        # existing trips and compares by stop_id. Perhaps add stop_events
-        # via the relationship in the stop_event?
-        persisted_trip.stop_events.extend(existing_past_stus)
+        for (updated_stu, __) in updated_stu_tuples:
+            session.merge(updated_stu)
+
+        for old_stu in old_stus:
+            session.delete(old_stu)
+
+        session.merge(updated_trip)
 
     for old_trip in old_trips:
         session.delete(old_trip)
 
-    #for new_trip in new_trips:
-    #    session.add(new_trip)
     for new_trip in new_trips:
-        persisted_trip = session.add(new_trip)
+        session.add(new_trip)
 
-        #persisted_trip.extend(existing_past_stus)
 

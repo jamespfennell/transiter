@@ -106,7 +106,6 @@ class IntegrationTest(unittest.TestCase):
                 'systems/testsystem/feeds/{}/updates'.format(feed_id))
             self.assertEqual([], feed_update_response)
 
-
     def test_050_feed_update(self):
         trip_1_stops = {
             '1AS': 300,
@@ -123,7 +122,55 @@ class IntegrationTest(unittest.TestCase):
 
         self._perform_feed_update_stop_test(feed_1)
 
-    def test_055_feed_update(self):
+    def test_051_feed_update(self):
+        trip_1_stops = {
+            '1AS': 200,
+            '1BS': 600,
+            '1CS': 800,
+            '1DS': 900,
+            '1ES': 1800,
+            '1FS': 2500,
+        }
+
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(0,[
+            gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
+        ])
+
+        self._perform_feed_update_stop_test(feed_1)
+
+    def test_052_feed_update(self):
+        trip_1_stops = {
+            '1AS': 200,
+            '1BS': 600,
+            '1CS': 800,
+            '1DS': 900,
+            '1ES': 1800,
+            '1FS': 2500,
+            '1GS': 2600,
+        }
+
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(0, [
+            gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
+        ])
+
+        self._perform_feed_update_stop_test(feed_1)
+
+    def test_053_feed_update(self):
+        trip_1_stops = {
+            '1AS': 200,
+            '1BS': 600,
+            '1CS': 800,
+            '1DS': 900,
+            '1ES': 1800,
+        }
+
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(300, [
+            gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
+        ])
+
+        self._perform_feed_update_stop_test(feed_1)
+
+    def test_054_feed_update(self):
         trip_1_stops = {
             '1AS': 300,
             '1BS': 600,
@@ -266,6 +313,7 @@ class IntegrationTest(unittest.TestCase):
                     (stop_data['stop']['id'], stop_data['future'])
                 )
 
+            print('Actual', actual_stop_list)
             self.assertEqual(expected_stop_list, actual_stop_list)
 
 

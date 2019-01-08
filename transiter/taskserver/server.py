@@ -14,7 +14,7 @@ handler.setFormatter(formatter)
 
 
 class AutoUpdater:
-    def __init__(self, feed_id, system_id, frequency):
+    def __init__(self, system_id, feed_id, frequency):
         self.frequency = frequency
         self.job = None
         scheduler.add_job(
