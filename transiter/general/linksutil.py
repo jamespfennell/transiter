@@ -30,6 +30,16 @@ class FeedEntityLink(Link):
         }
 
 
+class FeedEntityUpdatesLink(Link):
+    endpoint = 'feed_endpoints.list_updates_in_feed'
+
+    def __init__(self, feed):
+        self.kwargs = {
+            'system_id': feed.system_id,
+            'feed_id': feed.id
+        }
+
+
 class FeedsInSystemIndexLink(Link):
 
     def __init__(self, system):

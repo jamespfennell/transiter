@@ -31,7 +31,10 @@ handler.setFormatter(formatter)
 @app.route('/')
 @http_get_response
 def root():
-    """Basic entry info
+    """Provides links to the root resources.
+
+     This response is mostly to be consistent with the REST links
+     convention, and allows users to 'explore' the API.
 
     .. :quickref: Basic entry info
 
@@ -42,10 +45,10 @@ def root():
 
         {
             "about": {
-                "href": "https://transiter.io/about"
+                "href": "https://demo.transiter.io/about"
             },
             "systems": {
-                "href": "https://transiter.io/systems"
+                "href": "https://demo.transiter.io/systems"
             }
         }
     """
@@ -62,7 +65,11 @@ def root():
 @app.route('/about')
 @http_get_response
 def about():
-    """Get information about this Transiter instance.
+    """Get basic information about this Transiter instance.
+
+    As well as providing generic information like the Github link,
+    this endpoint returns the current version and Git commit hash, for
+    debugging purposes.
 
     .. :quickref: About; Information about this Transiter instance.
 
@@ -74,12 +81,11 @@ def about():
         {
             "name": "Transiter",
             "version": "0.1",
-            "source": {
-                "licence": {
-                    "name": "MIT Licence",
-                    "href": "https://github.com/jamespfennell/transiter/blob/master/LICENSE"
-                },
-                "href": "https://github.com/jamespfennell/transiter"
+            "commit": "f58cde22b4532dd493fc65c8fefe8aaba562e28e",
+            "href": "https://github.com/jamespfennell/transiter",
+            "licence": {
+                "name": "MIT Licence",
+                "href": "https://github.com/jamespfennell/transiter/blob/master/LICENSE"
             }
         }
     """

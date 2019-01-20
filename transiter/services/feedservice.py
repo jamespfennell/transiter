@@ -10,7 +10,6 @@ from transiter.data.dams import feeddam
 from transiter.general import linksutil, exceptions
 from transiter.services.update import tripupdater, gtfsrealtimeutil
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +40,6 @@ def list_all_in_system(system_id):
         feed_response = feed.short_repr()
         feed_response.update({
             'href': linksutil.FeedEntityLink(feed),
-            'last_update': 'NI',
         })
         response.append(feed_response)
     return response
@@ -51,21 +49,14 @@ def list_all_in_system(system_id):
 def get_in_system_by_id(system_id, feed_id):
 
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
-    response = feed.short_repr()
-    response.update({
-        'last_update': 'NI',
-        #'health': {
-        #    'status': 'NI',
-        #    'score': 'NI',
-        #    "update_types": [
-        #        {
-        #            "status": "NI",
-        #            "failure_message": 'NI',
-        #            "fraction": 'NI'
-        #        },
-        #    ]
-        #}
-    })
+    if feed is None:
+        raise exceptions.IdNotFoundError
+    response = {
+        **feed.short_repr(),
+        'updates': {
+            'href': linksutil.FeedEntityUpdatesLink(feed)
+        }
+    }
     return response
 
 
@@ -83,7 +74,7 @@ def create_feed_update(system_id, feed_id):
     _execute_feed_update(feed_update)
 
     return {
-        'href': 'NI'
+        **feed_update.long_repr()
     }
 
 
@@ -91,6 +82,8 @@ def create_feed_update(system_id, feed_id):
 def list_updates_in_feed(system_id, feed_id):
     # TODO optimize this to only be one query? yes yes
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
+    if feed is None:
+        raise exceptions.IdNotFoundError
     response = []
     for feed_update in feeddam.list_updates_in_feed(feed):
         response.append(feed_update.short_repr())
@@ -126,7 +119,7 @@ def _execute_feed_update(feed_update):
         logger.info(log_feed_id + 'Failed to download feed')
         logger.debug(log_feed_id + 'reason: ' + str(http_error))
         feed_update.status = 'FAILURE'
-        feed_update.status_reason = 'HTTP_DOWNLOAD_ERROR'
+        feed_update.explanation = 'HTTP_DOWNLOAD_ERROR'
         feed_update.status_message = str(http_error)
         return
     content = request.content
@@ -141,18 +134,18 @@ def _execute_feed_update(feed_update):
     if last_successful_update is not None and \
             last_successful_update.raw_data_hash == feed_update.raw_data_hash:
         feed_update.status = 'SUCCESS'
-        feed_update.reason = 'NOT_NEEDED'
+        feed_update.explanation = 'NOT_NEEDED'
         return
 
     try:
         update_function(feed, content)
         feed_update.status = 'SUCCESS'
-        feed_update.reason = 'UPDATED'
+        feed_update.explanation = 'UPDATED'
     except Exception:
         logger.info(log_feed_id + 'Failed to parse feed')
         logger.debug('Stack trace:\n' + str(traceback.format_exc()))
         feed_update.status = 'FAILURE'
-        feed_update.status_reason = 'PARSE_ERROR'
+        feed_update.explanation = 'PARSE_ERROR'
         feed_update.status_message = str(traceback.format_exc())
         #raise
 

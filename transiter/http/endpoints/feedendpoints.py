@@ -1,8 +1,9 @@
 from flask import Blueprint
-from transiter.services import feedservice
-from transiter.http.responsemanager import http_get_response, http_post_response, http_put_response
-import time
+
 from transiter.http import permissionsvalidator
+from transiter.http.responsemanager import http_get_response, http_post_response
+from transiter.services import feedservice
+
 feed_endpoints = Blueprint('feed_endpoints', __name__)
 
 
@@ -23,10 +24,6 @@ def list_all_in_system(system_id):
             {
                 "feed_id": "123456",
                 "href": "https://transiter.io/systems/nycsubway/feeds/123456",
-                "last_update_time": 67876543,
-                "health": {
-                    "status": "GOOD"
-                }
             },
         ]
     """
@@ -49,28 +46,9 @@ def get_in_system_by_id(system_id, feed_id):
     .. code-block:: json
 
         {
-            "feed_id": "123456",
-            "last_update_time": 67876543,
-            "health": {
-                "status": "GOOD",
-                "score": 0.8694,
-                "update_types": [
-                    {
-                        "status": "SUCCESS_UPDATED",
-                        "failure_message": null,
-                        "fraction": 0.2
-                    },
-                    {
-                        "status": "SUCCESS_NOTHING_TO_DO",
-                        "failure_message": null,
-                        "fraction": 0.6694
-                    },
-                    {
-                        "status": "FAILURE_COULD_NOT_PARSE",
-                        "failure_message": "Could not parse feed",
-                        "fraction": 0.1306
-                    }
-                ]
+            "id": "L",
+            "updates": {
+                "href": "https://demo.transitor.io/systems/nycsubway/feeds/L/updates"
             }
         }
     """
@@ -81,19 +59,27 @@ def get_in_system_by_id(system_id, feed_id):
 @feed_endpoints.route('/<feed_id>', methods=['POST'])
 @http_post_response
 def create_feed_update(system_id, feed_id):
-    """Create a new feed update
+    """Create a new feed update.
+
+    The response is identical to the feed update's response in thelist
+    updates reference
 
     .. :quickref: Feed; Create a new feed update
 
     :param system_id:
     :param feed_id:
     :status 201: created
+    :status 404: if the feed could not be found
     :return:
 
     .. code-block:: json
 
         {
-            "href": "https://transiter.io/systems/nycsubway/feeds/123456/updates/9873"
+            "id": 6,
+            "status": "SUCCESS",
+            "explanation": "UPDATED",
+            "raw_data_hash": "099ae3c5b72d6f2d8fc6eb4290a95776",
+            "last_action_time": 1548014018.17677
         }
     """
     permissionsvalidator.validate_permissions('All')
@@ -103,7 +89,10 @@ def create_feed_update(system_id, feed_id):
 @feed_endpoints.route('/<feed_id>/updates')
 @http_get_response
 def list_updates_in_feed(system_id, feed_id):
-    """List recent feed updates
+    """List recent feed updates.
+
+    The status can be either SUCCESS or FAILURE. The explanation is a further
+    code for why the status is such.
 
     .. :quickref: Feed; List recent feed updates
 
@@ -111,96 +100,29 @@ def list_updates_in_feed(system_id, feed_id):
 
     :param system_id:
     :param feed_id:
-    :status 200: created
-    :status 404: always
+    :status 200: if the feed exists
+    :status 404: if the feed does not exist
     :return:
 
     .. code-block:: json
 
         [
             {
-                "status": "FAILURE_COULD_NOT_PARSE",
-                "intitiated_by": "AUTO_UPDATER",
-                "failure_message": "Could not parse feed",
-                "raw_data_hash": "5fce76e37e4568afc7514e411fa64ae1283ec87d",
-                "update_time": 19585335345
+                "id": 3,
+                "status": "SUCCESS",
+                "explanation": "NOT_NEEDED",
+                "raw_data_hash": "dd1c428955aad6fb17712ec1e6449ba1",
+                "last_action_time": 1548013683.83237
             },
+            {
+                "id": 2,
+                "status": "SUCCESS",
+                "explanation": "UPDATED",
+                "raw_data_hash": "dd1c428955aad6fb17712ec1e6449ba1",
+                "last_action_time": 1548013682.624686
+            }
         ]
     """
     permissionsvalidator.validate_permissions('AdminRead')
     return feedservice.list_updates_in_feed(system_id, feed_id)
 
-
-@feed_endpoints.route('/<feed_id>/updates/<feed_update_id>', methods=['GET'])
-@http_get_response
-def get_update_in_feed(system_id, feed_id, feed_update_id):
-    """Retrieve a specific feed update
-
-    .. :quickref: Feed; Retrieve a specfic feed update
-
-    :param system_id:
-    :param feed_id:
-    :status 201: created
-    :status 404: always
-    :return:
-
-    .. code-block:: json
-
-        {
-            "status": "FAILURE_COULD_NOT_PARSE",
-            "intitiated_by": "AUTO_UPDATER",
-            "failure_message": "Could not parse feed",
-            "raw_data_hash": "5fce76e37e4568afc7514e411fa64ae1283ec87d",
-            "update_time": 19585335345
-        }
-    """
-    permissionsvalidator.validate_permissions('AdminRead')
-    raise NotImplementedError
-
-
-@feed_endpoints.route('/<feed_id>/autoupdater')
-@http_get_response
-def get_autoupdater_for_feed(system_id, feed_id):
-    """Retrieve the auto updater
-
-    .. :quickref: Feed; Retrieve the autoupdater
-
-    :param system_id:
-    :param feed_id:
-    :status 201: created
-    :status 404: always
-    :return:
-
-    .. code-block:: json
-
-        {
-            "active": true,
-            "frequency": 2
-        }
-    """
-    permissionsvalidator.validate_permissions('AdminRead')
-    raise NotImplementedError
-
-
-@feed_endpoints.route('/<feed_id>/autoupdater', methods=['PUT'])
-@http_put_response
-def configure_autoupdater_for_feed(system_id, feed_id):
-    """Configure the autoupdater
-
-    .. :quickref: Feed; Configure the autoupdater
-
-    :param system_id:
-    :param feed_id:
-    :status 201: created
-    :status 404: always
-    :return:
-
-    .. code-block:: json
-
-        {
-            "active": true,
-            "frequency": 2
-        }
-    """
-    permissionsvalidator.validate_permissions('All')
-    raise NotImplementedError

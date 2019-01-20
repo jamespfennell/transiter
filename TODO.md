@@ -4,17 +4,13 @@
 
 
 
-1. Figure out the child stop problem. 
-    Basically all stops encountered we want to 
-    replace by the parent station, if the present stop is not a station
-    
 1. Go through all of the API endpoints 
     - make sure RTR can work
-            -origin/terminus for trips 
-            - should not be in the DB but may be useful in some endpoints like stop
+        - fix the current service problem
+        - origin/terminus for trips 
+        - should not be in the DB but may be useful in some endpoints like stop
     - implement anything that's not implemented and
-    - make sure the docs are right (do they still compile?)
-    - fix the current service problem
+    - make sure the docs are right 
 
 1. All TODOs in the code and here are to me made as issues on github and 
 removed here before v1!

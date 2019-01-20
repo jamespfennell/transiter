@@ -61,9 +61,8 @@ class TestFeedService(unittest.TestCase):
         """[Feed service] List all in system"""
         expected = [
             {
+                **self.FEED_ONE_REPR,
                 'href': self.feed_one_href,
-                'last_update': 'NI',
-                **self.FEED_ONE_REPR
             }
         ]
 
@@ -76,11 +75,11 @@ class TestFeedService(unittest.TestCase):
 
     def test_get_in_system_by_id(self):
         expected = {
-            'last_update': 'NI',
-            **self.FEED_ONE_REPR
+            **self.FEED_ONE_REPR,
         }
 
         actual = feedservice.get_in_system_by_id(self.SYSTEM_ID, self.FEED_ONE_ID)
+        del actual['updates']
 
         self.assertDictEqual(actual, expected)
 
@@ -93,7 +92,6 @@ class TestFeedService(unittest.TestCase):
         feed_update = mock.MagicMock()
         self.feed_dao.create_update.return_value = feed_update
         expected = {
-            'href': 'NI'
         }
 
         actual = feedservice.create_feed_update(self.SYSTEM_ID, self.FEED_ONE_ID)

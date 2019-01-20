@@ -89,26 +89,6 @@ class TestFeedEndpoints(_TestEndpoints):
                                      feedservice.list_updates_in_feed,
                                      (self.SYSTEM_ID, self.FEED_ID))
 
-    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
-    def test_get_update_in_feed(self, feedservice):
-        """[Feed endpoints] Get a specific feed update in a specific feed"""
-        self._test_not_implemented_endpoint(feedendpoints.get_update_in_feed,
-                                            (self.SYSTEM_ID, self.FEED_ID,
-                                             self.FEED_UPDATE_ID))
-
-    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
-    def test_get_autoupdater_for_feed(self, feedservice):
-        """[Feed endpoints] Get the autoupdater config for a specific feed"""
-        self._test_not_implemented_endpoint(feedendpoints.get_autoupdater_for_feed,
-                                            (self.SYSTEM_ID, self.FEED_ID))
-
-    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
-    def test_configure_autoupdater_for_feed(self, feedservice):
-        """[Feed endpoints] Configure the autoupdater for a specific feed"""
-        self._test_not_implemented_endpoint(
-            feedendpoints.configure_autoupdater_for_feed,
-                                     (self.SYSTEM_ID, self.FEED_ID))
-
 
 class TestRouteEndpoints(_TestEndpoints):
 
