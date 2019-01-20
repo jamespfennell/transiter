@@ -13,14 +13,14 @@ Welcome to Transiter's documentation!
 
 Quick API
 =========
-.. qrefflask:: transiter.flaskapp:app
+.. qrefflask:: transiter.http.flaskapp:app
   :undoc-static:
 
 
 API
 ===
 
-.. autoflask:: transiter.flaskapp:app
+.. autoflask:: transiter.http.flaskapp:app
    :undoc-static:
 
 Indices and tables

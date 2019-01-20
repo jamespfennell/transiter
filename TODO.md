@@ -3,7 +3,6 @@
 ## Main development thread
 
 
-1. Fix failing unittests
 
 1. Figure out the child stop problem. 
     Basically all stops encountered we want to 

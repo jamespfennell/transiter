@@ -16,8 +16,7 @@ def list_all_in_route(system_id, route_id):
         [
             {
                 <fields in a short model.Trip representation>,
-            },
-            ...
+            }
         ]
 
     """
@@ -59,8 +58,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
                 'stop': {
                     <fields in a short model.Stop representation>
                 }
-            },
-            ...
+            }
         ]
     """
     trip = tripdam.get_in_route_by_id(system_id, route_id, trip_id)

@@ -57,7 +57,7 @@ def get_in_system_by_id(system_id, stop_id):
             "stop_id" : "L03",
             "location": "Brooklyn",
             "href": "(not implemented yet)",
-            "usual_service": ['L'],
+            "usual_service": ["L"],
             "direction_names" : ["West Side (8 Av)", "East Side and Brooklyn"],
             "stop_events" : [
                 {
@@ -94,7 +94,7 @@ def get_in_system_by_id(system_id, stop_id):
                     {
                         "stop_id" : "635",
                         "name": "14th st",
-                        'location' : 'NI',
+                        "location" : "NI",
                         "daytime_routes": ["4", "5", "6"],
                         "href": "https://transiter.io/systems/nycsubway/stops/602"
                     },
