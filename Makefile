@@ -5,7 +5,6 @@ integration-tests:
 	python -m unittest discover tests/integrationtest
 
 unit-tests:
-	pip install -r tests/unittests/requirements.txt
 	rm -f .coverage
 	nosetests --with-coverage --cover-package=transiter --rednose -v tests/unittests
 

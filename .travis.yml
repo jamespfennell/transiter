@@ -10,6 +10,7 @@ install:
   - python setup.py install
 # command to run tests
 script:
+  - pip install -r dev-requirements.txt
   - make integration-tests
   - make unit-tests
 after_success:
