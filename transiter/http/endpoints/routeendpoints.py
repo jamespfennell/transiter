@@ -22,9 +22,9 @@ def list_all_in_system(system_id):
 
         [
             {
-                "route_id": "F",
+                "id": "F",
                 "service_status" : "Planned Work",
-                "href": "https://transiter.io/systems/nycsubway/routes/F"
+                "href": "https://demo.transiter.io/systems/nycsubway/routes/F"
             },
         ]
 
@@ -49,26 +49,30 @@ def get_in_system_by_id(system_id, route_id):
     .. code-block:: json
 
         {
-            "route_id" : "F",
-            "frequency" : 6,
-            "service_status" : "Planned Work",
-            "service_status_messages" : [
+            "id": "A",
+            "frequency": null,
+            "service_status": "Planned Work",
+            "service_status_messages": [
                 {
-                    "type" : "Planned Work: Track Maintenance",
-                    "time_posted" : 136266526,
-                    "content" : "Downtown [B] [D] [F] [M] trains run at a slower speed."
+                    "id": "MTA NYCT_213185",
+                    "message_title": "Track replacement",
+                    "message_content": "10 PM Fri, Jan 18 to 5 AM Mon, Jan 21 Inwood-bound [A] trains make local stops at 23 St and 50 St in Manhattan",
+                    "start_time": 1547787600,
+                    "end_time": 1548046740,
+                    "creation_time": 1547787600
                 }
             ],
-            "stops" : [
+            "stops": [
                 {
-                    "index" : 0,
-                    "stop_id" : "F01",
-                    "current_service" : true,
-                    "borough" : "Queens",
-                    "name": "Jamaica - 179 St",
-                    "href": "https://transiter.io/systems/nycsubway/stops/F01"
+                    "id": "A02",
+                    "system_id": "nycsubway",
+                    "name": "Inwood - 207 St",
+                    "current_service": false,
+                    "position": 0,
+                    "href": "https://demo.transiter.io/systems/nycsubway/stops/A02"
                 },
             ]
         }
+
     """
     return routeservice.get_in_system_by_id(system_id, route_id)

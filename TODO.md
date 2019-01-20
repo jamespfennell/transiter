@@ -12,6 +12,13 @@
     - implement anything that's not implemented and
     - make sure the docs are right 
 
+
+1. Things needed for realtime rail:
+    1. Detect no service - routeservice#_constuct_status
+    1. Detect service at stations
+
+
+
 1. All TODOs in the code and here are to me made as issues on github and 
 removed here before v1!
 

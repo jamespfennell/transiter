@@ -1,6 +1,6 @@
 from transiter.data import database
-from transiter.data.dams import routedam
-from transiter.general import linksutil
+from transiter.data.dams import routedam, systemdam
+from transiter.general import linksutil, exceptions
 
 
 @database.unit_of_work
@@ -22,6 +22,9 @@ def list_all_in_system(system_id):
         ]
 
     """
+    system = systemdam.get_by_id(system_id)
+    if system is None:
+        raise exceptions.IdNotFoundError
     response = []
     for route in routedam.list_all_in_system(system_id):
         route_response = route.short_repr()
@@ -44,6 +47,8 @@ def get_in_system_by_id(system_id, route_id):
     # TODO: have verbose option
 
     route = routedam.get_in_system_by_id(system_id, route_id)
+    if route is None:
+        raise exceptions.IdNotFoundError
     response = route.long_repr()
     response.update({
         'frequency': _construct_frequency(route),
