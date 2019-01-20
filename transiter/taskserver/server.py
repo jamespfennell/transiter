@@ -1,15 +1,16 @@
-import apscheduler.schedulers.background
 import logging
+
+import apscheduler.schedulers.background
 import rpyc.utils.server
 
 from transiter.services import feedservice
 
-logger = logging.getLogger('Transiter task server')
-logger.setLevel(logging.INFO)
+logger = logging.getLogger('transiter')
+logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
 logger.addHandler(handler)
 formatter = logging.Formatter(
-        '[%(asctime)s] %(levelname)-8s %(message)s')
+        '%(asctime)s TS %(levelname)-5s [%(module)s] %(message)s')
 handler.setFormatter(formatter)
 
 
@@ -39,7 +40,7 @@ feed_pri_key_to_auto_updater = {}
 
 def refresh_tasks():
     feeds = feedservice.list_all_autoupdating()
-    logger.info('Updating {} feed'.format(len(feeds)))
+    logger.info('Initializing {} feed autoupdate tasks'.format(len(feeds)))
     stale_feed_pri_keys = set(feed_pri_key_to_auto_updater.keys())
     for feed_data in feeds:
         frequency = feed_data['auto_updater_frequency']

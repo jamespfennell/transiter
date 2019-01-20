@@ -2,21 +2,28 @@
 
 ## Main development thread
 
-1. Ensure the task server is working
-    -> Need to clean up task updater
-  
+
+1. Fix failing unittests
+
+1. Figure out the child stop problem. 
+    Basically all stops encountered we want to 
+    replace by the parent station, if the present stop is not a station
+    
 1. Go through all of the API endpoints 
     - make sure RTR can work
             -origin/terminus for trips 
             - should not be in the DB but may be useful in some endpoints like stop
     - implement anything that's not implemented and
-    - make sure the docs are right
+    - make sure the docs are right (do they still compile?)
     - fix the current service problem
 
 1. All TODOs in the code and here are to me made as issues on github and 
 removed here before v1!
 
-1. Fix and file a bug ticket with sql alchemy?
+1. Fix failing tests in NYC subway package 
+
+Bug: sometimes the __eq__ method of _BasicModel
+is called
 
 ## Version 0.2
 
@@ -50,8 +57,7 @@ and generate reports dynamically?
 - Rename it Jobs Executor   
 - Should probably have a more generic Jobs scheme:
     - Updating feeds
-    - Updating system static data
-    - Calculating route service patterns (if enabled)
+    - Calculating realtime route service patterns (if enabled)
     - Calculating the feed health (and deleting old entries)
         - Generating FeedHealthReport types
     

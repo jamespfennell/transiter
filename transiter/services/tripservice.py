@@ -1,6 +1,9 @@
+from transiter.data import database
 from transiter.data.dams import tripdam
-from transiter.general import linksutil
+from transiter.general import linksutil, exceptions
 
+
+@database.unit_of_work
 def list_all_in_route(system_id, route_id):
     """
     Get representations for all trips in a system.
@@ -19,29 +22,25 @@ def list_all_in_route(system_id, route_id):
 
     """
     response = []
-    for trip in tripdam.list_all_in_route(system_id, route_id):
-        trip_response = trip.short_repr()
-        trip_response.update({
-            "origin": {
-                "stop_id": "NI",
-                "name": "NI",
-                'location': 'NI',
-                "usual_service": "NI",
-                "href": "NI"
-            },
-            "terminus": {
-                "stop_id": "NI",
-                "name": "NI",
-                'location': 'NI',
-                "usual_service": "NI",
-                "href": "NI"
+    trips = list(tripdam.list_all_in_route(system_id, route_id))
+    trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
+        trip.pk for trip in trips
+    )
+    for trip in trips:
+        last_stop = trip_pk_to_last_stop.get(trip.pk)
+        trip_response = {
+            **trip.short_repr(),
+            "last_stop": {
+                **last_stop.short_repr(),
+                'href': linksutil.StopEntityLink(last_stop)
             },
             'href': linksutil.TripEntityLink(trip),
-        })
+        }
         response.append(trip_response)
     return response
 
 
+@database.unit_of_work
 def get_in_route_by_id(system_id, route_id, trip_id):
     """
     Get a representation for a trip in a system
@@ -65,12 +64,23 @@ def get_in_route_by_id(system_id, route_id, trip_id):
         ]
     """
     trip = tripdam.get_in_route_by_id(system_id, route_id, trip_id)
-    trip_response = trip.long_repr()
-    trip_response['stop_events'] = []
-    for stop_event in trip.stop_events:
-        stop_event_response = stop_event.short_repr()
-        stop_event_response['future'] = stop_event.future
-        stop_event_response['stop'] = stop_event.stop.short_repr()
-        stop_event_response['stop']['href'] = linksutil.StopEntityLink(stop_event.stop)
-        trip_response['stop_events'].append(stop_event_response)
+    if trip is None:
+        raise exceptions.IdNotFoundError
+    trip_response = {
+        **trip.long_repr(),
+        'route': {
+            **trip.route.short_repr(),
+            'href': linksutil.RouteEntityLink(trip.route)
+        },
+        'stop_events': [
+            {
+                **stu.short_repr(),
+                'stop': {
+                    **stu.stop.short_repr(),
+                    'href': linksutil.StopEntityLink(stu.stop)
+                }
+            }
+            for stu in trip.stop_events
+        ],
+    }
     return trip_response

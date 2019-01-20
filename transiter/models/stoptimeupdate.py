@@ -33,9 +33,9 @@ class StopTimeUpdate(Base):
         back_populates='stop_events',
         cascade=None)
 
-    _short_repr_list = ['arrival_time', 'departure_time', 'track', 'stop_sequence']
+    _short_repr_list = ['arrival_time', 'departure_time', 'track', 'future']
 
 
-Index('stop_time_update_trip_idx', StopTimeUpdate.trip_pk, StopTimeUpdate.arrival_time)
+Index('stop_time_update_trip_idx', StopTimeUpdate.trip_pk, StopTimeUpdate.stop_sequence)
 Index('stop_time_update_stop_idx', StopTimeUpdate.stop_pk, StopTimeUpdate.arrival_time)
 

@@ -4,7 +4,7 @@ import flask
 class Link:
 
     endpoint = None
-    kwargs = None
+    kwargs = {}
 
     def url(self):
         if self.endpoint is None or self.kwargs is None:
@@ -12,10 +12,18 @@ class Link:
         return flask.url_for(self.endpoint, _external=True, **self.kwargs)
 
 
+class AboutLink(Link):
+    endpoint = 'about'
+
+
+class SystemsIndexLink(Link):
+    endpoint = 'system_endpoints.list_all'
+
+
 class FeedEntityLink(Link):
+    endpoint = 'feed_endpoints.get_in_system_by_id'
 
     def __init__(self, feed):
-        self.endpoint = 'feed_endpoints.get_in_system_by_id'
         self.kwargs = {
             'system_id': feed.system_id,
             'feed_id': feed.id

@@ -66,7 +66,6 @@ def sync_trips(system, route_ids, trips):
 #   its new StopTimeUpdates will be merged in, via the cascade; we then have
 #   to manually put the historical StopTimeUpdates back in.
 def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
-    print('Number of trips in route: {}'.format(len(trips)))
     for trip in trips:
         trip.route_pk = route_pk
         valid_stus = []

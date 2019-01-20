@@ -1,5 +1,5 @@
 from transiter.data import database
-from transiter.data.dams import stopdam, servicepatterndam
+from transiter.data.dams import stopdam, servicepatterndam, tripdam
 from transiter.general import linksutil
 
 
@@ -151,11 +151,16 @@ def get_in_system_by_id(system_id, stop_id):
         'stop_events': []
     }
 
-    stop_events = stopdam.list_stop_time_updates_at_stops(all_stop_pks)
+    stop_events = list(stopdam.list_stop_time_updates_at_stops(all_stop_pks))
+    trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
+        stu.trip.pk for stu in stop_events
+    )
     for stop_event in stop_events:
         direction_name = direction_name_matcher.match(stop_event)
         if stop_event_filter.exclude(stop_event, direction_name):
             continue
+        trip = stop_event.trip
+        last_stop = trip_pk_to_last_stop.get(trip.pk)
         stop_event_response = {
             'stop_id': stop_event.stop.id,
             'direction_name': direction_name,
@@ -165,6 +170,9 @@ def get_in_system_by_id(system_id, stop_id):
                 'route': {
                     **(stop_event.trip.route.short_repr()),
                     'href': linksutil.RouteEntityLink(stop_event.trip.route),
+                },
+                'last_stop': {
+                    **last_stop.short_repr()
                 },
                 'href': linksutil.TripEntityLink(stop_event.trip),
             }

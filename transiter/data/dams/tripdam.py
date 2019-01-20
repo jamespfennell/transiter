@@ -1,6 +1,6 @@
 from transiter import models
 from transiter.data import database
-
+import sqlalchemy
 
 def list_all_in_route_by_pk(route_pk):
     session = database.get_session()
@@ -44,6 +44,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
         .one_or_none()
 
 
+# TODO: is this used anywhere?
 def get_trip_pk_to_future_stop_events_map(trip_pks):
     session = database.get_session()
     query = (
@@ -56,4 +57,31 @@ def get_trip_pk_to_future_stop_events_map(trip_pks):
     result = {trip_pk: [] for trip_pk in trip_pks}
     for row in query:
         result[row.trip_pk].append(row)
+    return result
+
+
+def get_trip_pk_to_last_stop_map(trip_pks):
+    session = database.get_session()
+
+    sub_query = (
+        session.query(
+            models.StopTimeUpdate.trip_pk,
+            sqlalchemy.func.max(models.StopTimeUpdate.stop_sequence)
+        )
+        .group_by(models.StopTimeUpdate.trip_pk)
+        .filter(models.StopTimeUpdate.trip_pk.in_(trip_pks))
+    )
+    query = (
+        session.query(models.StopTimeUpdate.trip_pk, models.Stop)
+        .filter(models.StopTimeUpdate.stop_pk == models.Stop.pk)
+        .filter(
+            sqlalchemy.tuple_(
+                models.StopTimeUpdate.trip_pk,
+                models.StopTimeUpdate.stop_sequence)
+            .in_(sub_query)
+        )
+    )
+    result = {trip_pk: None for trip_pk in trip_pks}
+    for row in query:
+        result[row[0]] = row[1]
     return result

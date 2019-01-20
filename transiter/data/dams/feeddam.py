@@ -30,7 +30,7 @@ def get_last_successful_update(feed_pri_key):
     query = session.query(models.FeedUpdate) \
         .filter(models.FeedUpdate.feed_pk == feed_pri_key) \
         .order_by(models.FeedUpdate.last_action_time.desc()) \
-        .filter(models.FeedUpdate.status == 'SUCCESS_UPDATED') \
+        .filter(models.FeedUpdate.status == 'SUCCESS') \
         .limit(1)
 
     return query.first()

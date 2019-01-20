@@ -124,7 +124,6 @@ class _GtfsRealtimeToTransiterTransformer:
             if 'trip_update' in main_entity:
                 attach_entity('trip_update', main_entity['trip_update'])
             if 'vehicle' in main_entity:
-                print('attaching vehicle')
                 attach_entity('vehicle', main_entity['vehicle'])
 
     def _transform_trip_base_data(self):
