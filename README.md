@@ -1,32 +1,41 @@
 
 # Transiter
 
-Transiter is a web service for distributing realtime transit information.
-Transiter consumes data from transit agencies
+Transiter is a webservice for accessing realtime transit data.
+Transiter consumes GTFS static and realtime data from transit agencies
     and provides intuitive
-    access to it through a simple REST API.
+    access to it through a HTTP REST API.
+An example of a request that can be made to a running Transiter instance is
+    "give me the next four trains that will stop at Union Square."
 
- - Instead of parsing feeds and extracting the tiny subset of data needed,
-    the data can be accessed through API endpoints like
-    "list the next ten trains stopping at World Trade Center."
-- Transiter can be configured to read realtime data in any format,
-    and comes GTFS Realtime support built in.
-- Transiter also consume GTFS Static data and integrates
-    this with realtime information.
-- Historical stop data for each trip is preserved, so more information
-    can be presented than is given in the (future data only)
-     realtime feeds.
+
+Transiter was designed to be the backend of transit time apps,
+    train arrival boards, and other pieces of technology that
+    display and use realtime transit data.
+The benefits of using Transiter, rather than working
+    with raw data feeds, include:
+
+- Integration of static data 
+    (station names, allowable free transfers, which routes regularly stop at the given station)
+    with realtime vehicle arrival data.
+    
+- Access to information indirectly present in the data feeds.
+    For example, Transiter will calculate the current frequency of each route
+    ("L trains running every 5 minutes").
+    Transiter can also use GTFS static data to automatically calculate
+    the ordered list of stops served by each route.
+    
 
 Transiter is currently in the initial development phase.
 Version 0.1 will be somewhere between a refactor and a total rewrite of the
 current backend of the [realtimerail.nyc web app](https://www.realtimerail.nyc).
 
-The [documentation for Transiter](https://transiter.readthedocs.io/en/latest/)
+The [documentation for Transiter](https://docs.transiter.io)
 is hosted on Read The Docs.
 
 ## Development indicators
 
 [![Build Status](https://travis-ci.org/jamespfennell/transiter.svg?branch=master)](https://travis-ci.org/jamespfennell/transiter)
-[![Documentation Status](https://readthedocs.org/projects/transiter/badge/?version=latest)](https://transiter.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/transiter/badge/?version=latest)](https://docs.transiter.io)
 [![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master&service=github)](https://coveralls.io/github/jamespfennell/transiter?branch=master) 
 
