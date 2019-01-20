@@ -55,5 +55,5 @@ class Route(Base):
         post_update=True,
         foreign_keys=[dynamic_service_pattern_pk])
 
-    _short_repr_list = ['id']
+    _short_repr_list = ['id', 'system_id']
     _long_repr_list = ['id']

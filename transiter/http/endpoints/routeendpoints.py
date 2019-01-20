@@ -23,6 +23,7 @@ def list_all_in_system(system_id):
         [
             {
                 "id": "F",
+                "system_id": "nycsubway",
                 "service_status" : "Planned Work",
                 "href": "https://demo.transiter.io/systems/nycsubway/routes/F"
             },
