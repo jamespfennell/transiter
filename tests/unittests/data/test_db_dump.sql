@@ -35,9 +35,9 @@ INSERT INTO feed (pk, id, system_id) VALUES
     (:feed_two_pk, :feed_two_id, :system_one_id);
 
 INSERT INTO feed_update (feed_pk, status, last_action_time) VALUES
-    (:feed_one_pk, 'SUCCESS_UPDATED',         '2018-11-03 10:00:00'),
-    (:feed_one_pk, 'SUCCESS_UPDATED',         :latest_feed_update_time),
-    (:feed_one_pk, 'FAILURE_COULD_NOT_PARSE', '2018-11-02 12:00:00');
+    (:feed_one_pk, 'SUCCESS',         '2018-11-03 10:00:00'),
+    (:feed_one_pk, 'SUCCESS',         :latest_feed_update_time),
+    (:feed_one_pk, 'FAILURE', '2018-11-02 12:00:00');
 
 INSERT INTO route_status (pk, message_title) VALUES
     (:route_status_one_pk, :route_status_one_message),

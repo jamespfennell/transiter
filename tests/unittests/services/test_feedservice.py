@@ -124,7 +124,7 @@ class TestFeedService(unittest.TestCase):
 
         feedservice._execute_feed_update(self.feed_update_two)
 
-        self.assertEqual(self.feed_update_two.status, 'SUCCESS_UPDATED')
+        self.assertEqual(self.feed_update_two.status, 'SUCCESS')
         self.module.custom_function.assert_called_once_with(
             self.feed_one, self.request.content)
 
@@ -133,7 +133,7 @@ class TestFeedService(unittest.TestCase):
 
         feedservice._execute_feed_update(self.feed_update_two)
 
-        self.assertEqual(self.feed_update_two.status, 'SUCCESS_NOT_NEEDED')
+        self.assertEqual(self.feed_update_two.status, 'SUCCESS')
         self.module.custom_function.assert_not_called()
 
     def test_execute_feed_update_failure(self):
@@ -142,6 +142,6 @@ class TestFeedService(unittest.TestCase):
 
         feedservice._execute_feed_update(self.feed_update_two)
 
-        self.assertEqual(self.feed_update_two.status, 'FAILURE_COULD_NOT_PARSE')
+        self.assertEqual(self.feed_update_two.status, 'FAILURE')
         self.module.custom_function.assert_called_once_with(
             self.feed_one, self.request.content)

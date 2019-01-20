@@ -142,6 +142,7 @@ class TestStopService(unittest.TestCase):
     def setUp(self):
         self.linksutil = self._quick_mock('linksutil')
         self.stop_dao = self._quick_mock('stopdam')
+        self.tripdam = self._quick_mock('tripdam')
 
         self.stop_one = mock.MagicMock()
         self.stop_one.pk = self.STOP_ONE_PK
@@ -220,6 +221,7 @@ class TestStopService(unittest.TestCase):
                             **self.ROUTE_REPR,
                             'href': self.ROUTE_HREF
                         },
+                        'last_stop': {},
                         'href': self.TRIP_HREF
                     }
                 }
@@ -227,7 +229,6 @@ class TestStopService(unittest.TestCase):
             'child_stops': [],
             'parent_stop': None
         }
-
 
         actual_response = stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)
 

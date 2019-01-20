@@ -193,10 +193,12 @@ class TestSystemEndpoints(_TestEndpoints):
                                         (self.SYSTEM_ID))
 
 
-
 class TestFlaskApp(unittest.TestCase):
 
-    def test_root(self):
+    @mock.patch('transiter.http.flaskapp.linksutil')
+    def test_root(self, linksutil):
+        linksutil.AboutLink.return_value = None
+        linksutil.SystemsIndexLink.return_value = None
         expected_code = 200
         (__, actual_code, __) = flaskapp.root()
         self.assertEqual(expected_code, actual_code)
