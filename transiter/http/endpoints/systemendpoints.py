@@ -49,10 +49,6 @@ def get_by_id(system_id):
                 "count": 40,
                 "href": "https://transiter.io/systems/nycsubway/stops"
             },
-            "stations": {
-                "count": 33,
-                "href": "(not implemented yet)"
-            },
             "routes": {
                 "count": 17,
                 "href": "https://transiter.io/systems/nycsubway/routes"
@@ -78,7 +74,7 @@ def install(system_id):
     must already be on disk before the resource is created.
 
     :param system_id: The system's ID
-    :status 200: the system's data was found on disk and the system was installed
+    :status 201: the system's data was found on disk and the system was installed
     :status 404: data for such a system was not found
     """
     data = inputvalidator.validate_post_data(['package', ], [])
@@ -93,7 +89,7 @@ def delete_by_id(system_id):
     .. :quickref: System; Delete a system
 
     :param system_id: The system's ID
-    :status 200: the system was uninstalled
+    :status 204: the system was uninstalled
     :status 404: a system with that ID does not exists
     """
     return systemservice.delete_by_id(system_id)

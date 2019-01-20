@@ -23,12 +23,12 @@ def list_all_in_route(system_id, route_id):
 
         [
             {
-                "id" : "LN1537314760",
+                "id" : "LN1548014340",
                 "last_stop": {
                     "id": "L20",
                     "system_id": "nycsubway",
                     "name": "Canarsie",
-                    "href": "..."
+                    "href": "https://demo.transiter.io/systems/nycsubway/routes/L/trips/LN1548014340"
                 }
             }
         ]
@@ -59,27 +59,30 @@ def get_in_route_by_id(system_id, route_id, trip_id):
     .. code-block:: json
 
         {
-            "trip_id" : "LN1537314960",
-            "direction": "NORTH",
-            "start_time": 100000000,
-            "last_update_time": 100000000,
-            "feed_update_time": 100000100,
-            "status": "RUNNING",
-            "train_id" : "0L 1956+RPY/8AV",
-            "stop_events" : [
+            "id": "LN1548014340",
+            "direction_id": false,
+            "start_time": 1548014340,
+            "last_update_time": 1548016342,
+            "current_status": "STOPPED_AT",
+            "current_stop_sequence": 22,
+            "vehicle_id": "0L 1459 RPY/8AV",
+            "route": {
+                "id": "L",
+                "system_id": "nycsubway",
+                "href": "https://demo.transiter.io/systems/nycsubway/routes/L"
+            },
+            "stop_events": [
                 {
+                    "arrival_time": 1548016371,
+                    "departure_time": 1548016386,
+                    "track": "2",
+                    "future": true,
                     "stop": {
-                        "stop_id": "F01",
-                        "name": "14th st",
-                        "location": "NI",
-                        "usual_service": ["4", "5", "6"],
-                        "href": "https://transiter.io/systems/nycsubway/stops/F01"
-                    },
-                    "arrival_time" : 1537316801,
-                    "departure_time" : 1537316816,
-                    "scheduled_track" : "2",
-                    "track" : "2",
-                    "status": "FUTURE"
+                        "id": "L02N",
+                        "system_id": "nycsubway",
+                        "name": "6 Av",
+                        "href": "https://demo.transiter.io/systems/nycsubway/stops/L02N"
+                    }
                 },
             ],
         }
