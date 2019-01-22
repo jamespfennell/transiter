@@ -2,6 +2,7 @@ from transiter import models
 from transiter.data import database
 from transiter.data.dams import genericqueries
 
+from sqlalchemy import orm
 
 def list_all_in_system(system_id):
     yield from genericqueries.list_all_in_system(
@@ -28,7 +29,31 @@ def list_active_stop_ids(route_pk):
     :param route_pk: the pk of the route
     :return: list of stop ids
     """
+
+
     session = database.get_session()
+
+    initial_query = (
+        session.query(
+            models.Stop.pk, models.Stop.parent_stop_pk)
+        .filter(models.Stop.id == 'L03N')
+        .cte(recursive=True))
+    recursion_query = (
+        session.query(models.Stop.pk, models.Stop.parent_stop_pk)
+        .join(initial_query, models.Stop.pk == initial_query.c.parent_stop_pk))
+
+    final_query = initial_query.union_all(recursion_query)
+
+    print(type(final_query.c))
+    q = (
+        session.query(models.Stop.id)
+        .join(final_query, models.Stop.pk == final_query.c.pk)
+    )
+    print(q)
+    for row in q.all():
+        print(row)
+
+
     query = (
         session.query(models.Stop.id)
         .distinct()
