@@ -22,6 +22,30 @@ def get_id_to_pk_map_in_system(system_id, route_ids):
     )
 
 
+def _expand_to_ancestors(initial_query):
+    """
+    Given an initial query that queries for models.Stop entities, this
+    function returns a CTE that contains the stop entities
+    matching the query and all of their ancestors.
+
+    For example:
+        query = session.query(models.Stop).filter(models.Stop.id == 'L03N')
+        expanded_cte = _expand_to_ancestors(query, session)
+        for row in session.query(expanded_cte.c.id):
+            print(row)
+
+    This prints L03N, L03, 635-L03-R20
+
+    :param initial_query:
+    :return:
+    """
+    starting_query = initial_query.cte(recursive=True)
+    recursion_query = (
+        orm.query.Query(models.Stop)
+        .join(starting_query, models.Stop.pk == starting_query.c.parent_stop_pk))
+    return starting_query.union_all(recursion_query)
+
+
 def list_active_stop_ids(route_pk):
     """
     List the stop ids at which trips corresponding to the given route are
@@ -29,40 +53,18 @@ def list_active_stop_ids(route_pk):
     :param route_pk: the pk of the route
     :return: list of stop ids
     """
-
-
     session = database.get_session()
 
-    initial_query = (
-        session.query(
-            models.Stop.pk, models.Stop.parent_stop_pk)
-        .filter(models.Stop.id == 'L03N')
-        .cte(recursive=True))
-    recursion_query = (
-        session.query(models.Stop.pk, models.Stop.parent_stop_pk)
-        .join(initial_query, models.Stop.pk == initial_query.c.parent_stop_pk))
-
-    final_query = initial_query.union_all(recursion_query)
-
-    print(type(final_query.c))
-    q = (
-        session.query(models.Stop.id)
-        .join(final_query, models.Stop.pk == final_query.c.pk)
-    )
-    print(q)
-    for row in q.all():
-        print(row)
-
-
     query = (
-        session.query(models.Stop.id)
+        session.query(models.Stop)
         .distinct()
         .join(models.StopTimeUpdate, models.Stop.pk == models.StopTimeUpdate.stop_pk)
         .join(models.Trip, models.Trip.pk == models.StopTimeUpdate.trip_pk)
         .join(models.Route, models.Trip.route_pk == models.Route.pk)
         .filter(models.Route.pk == route_pk)
     )
-    for row in query:
+    expanded_query = session.query(_expand_to_ancestors(query).c.id)
+    for row in expanded_query:
         yield row[0]
 
 

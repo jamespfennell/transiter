@@ -3,25 +3,10 @@
 ## Main development thread
  
  
- WITH RECURSIVE anon_1(pk) AS 
-(SELECT stop.pk AS pk, stop.parent_stop_pk as parent_stop_pk
-FROM stop 
-WHERE stop.id = 'L03N' 
-UNION ALL 
-    SELECT parent.pk, parent.parent_stop_pk AS pk 
-    FROM stop AS parent  
-    JOIN anon_1 AS child
-        ON parent.pk = child.parent_stop_pk)
-SELECT anon_1.pk AS anon_1_pk 
-FROM anon_1
-;
-
-
 1. Things needed for realtimerail:
     1. In the get trip endpoint, show the station instead of
         the stop
     1. Detect no service - in routeservice#_constuct_status
-    1. Detect current service at stations in get route endpoint
 
 
 1. All TODOs in the code and here are to me made as issues on github and 
