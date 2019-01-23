@@ -1,8 +1,10 @@
 from transiter import models
+from transiter.models.routestatus import route_status_route
 from transiter.data import database
 from transiter.data.dams import genericqueries
 
 from sqlalchemy import orm
+
 
 def list_all_in_system(system_id):
     yield from genericqueries.list_all_in_system(
@@ -119,3 +121,59 @@ def list_all_route_statuses_in_system(system_id):
     )
     for row in query:
         yield row
+
+
+def get_route_statuses(route_pks):
+    """
+
+    :param route_pks:
+    :return:
+    """
+    route_pks = tuple(route_pks)
+    print(route_pks)
+    route_pk_to_status_tuple = {route_pk: ('NONE', None) for route_pk in route_pks}
+    session = database.get_session()
+    query = """
+    SELECT route.pk, route_status.type
+    FROM route
+    LEFT JOIN route_status_route
+        ON route.pk = route_status_route.route_pk
+    LEFT JOIN route_status
+        ON route_status.pk = route_status_route.route_status_pk
+    WHERE ( 
+        route_status.pk = (
+            SELECT route_status.pk
+            FROM route_status_route AS inner_rsr
+            INNER JOIN route_status
+            ON route_status.pk = inner_rsr.route_status_pk
+            WHERE route_status_route.route_pk = inner_rsr.route_pk
+            ORDER BY 
+                route_status.priority DESC,
+                route_status.type ASC
+            LIMIT 1
+        ) 
+        OR 
+        route_status.pk IS NULL
+    )
+    AND EXISTS (
+        SELECT 1
+        FROM stop_time_update
+        INNER JOIN trip
+            ON trip.pk = stop_time_update.trip_pk
+        WHERE trip.route_pk = route.pk
+        LIMIT 1
+    )
+    AND
+        route.pk IN :route_pks;   
+    """
+
+    result = session.execute(query, {'route_pks': tuple(route_pks)})
+
+    for row in result:
+        print(row)
+        if row[1] is None:
+            route_pk_to_status_tuple[row[0]] = ('GOOD', None)
+        else:
+            route_pk_to_status_tuple[row[0]] = ('OTHER', row[1])
+
+    return route_pk_to_status_tuple

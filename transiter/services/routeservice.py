@@ -26,7 +26,11 @@ def list_all_in_system(system_id):
     if system is None:
         raise exceptions.IdNotFoundError
     response = []
-    for route in routedam.list_all_in_system(system_id):
+    routes = list(routedam.list_all_in_system(system_id))
+    s = routedam.get_route_statuses(route.pk for route in routes)
+    for k, v in s.items():
+        print(k, v)
+    for route in routes:
         route_response = route.short_repr()
         route_response.update({
             'service_status': _construct_status(route),

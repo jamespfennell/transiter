@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from .base import Base
 
 
+# TODO: this should be ServiceStatus
 class RouteStatus(Base):
     __tablename__ = 'route_status'
 

@@ -15,7 +15,7 @@ removed here before v1!
 1. Fix failing tests in NYC subway package 
 
 Bug: sometimes the __eq__ method of _BasicModel
-is called
+is called, seemingly when a trip is being deleted
 
 ## Version 0.2
 
