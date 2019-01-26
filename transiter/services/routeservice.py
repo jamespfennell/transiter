@@ -27,13 +27,11 @@ def list_all_in_system(system_id):
         raise exceptions.IdNotFoundError
     response = []
     routes = list(routedam.list_all_in_system(system_id))
-    s = routedam.get_route_statuses(route.pk for route in routes)
-    for k, v in s.items():
-        print(k, v)
+    route_statuses = routedam.list_route_statuses(route.pk for route in routes)
     for route in routes:
         route_response = route.short_repr()
         route_response.update({
-            'service_status': _construct_status(route),
+            'service_status': route_statuses[route.pk],
             'href': linksutil.RouteEntityLink(route)
         })
         response.append(route_response)
@@ -54,22 +52,26 @@ def get_in_system_by_id(system_id, route_id):
     if route is None:
         raise exceptions.IdNotFoundError
     response = route.long_repr()
+    route_status = routedam.list_route_statuses([route.pk]).get(route.pk)
+
+    frequency = routedam.calculate_frequency(route.pk)
+    if frequency is not None:
+        frequency = int(frequency/6)/10
     response.update({
-        'frequency': _construct_frequency(route),
-        'service_status': _construct_status(route),
+        'frequency': frequency,
+        'service_status': route_status,
         'service_status_messages':
             [message.short_repr() for message in route.route_statuses],
         'stops': []
         })
-    # TODO: need to get the parents of these stop ids too
-    current_stop_ids = list(routedam.list_active_stop_ids(route.pk))
+    active_stop_ids = list(routedam.list_active_stop_ids(route.pk))
 
     default_service_pattern = route.default_service_pattern
 
     for entry in default_service_pattern.vertices:
         stop_response = entry.stop.short_repr()
         stop_response.update({
-            'current_service': stop_response['id'] in current_stop_ids,
+            'current_service': stop_response['id'] in active_stop_ids,
             'position': entry.position,
             'href': linksutil.StopEntityLink(entry.stop)
         })
@@ -78,7 +80,7 @@ def get_in_system_by_id(system_id, route_id):
 
 
 def _construct_frequency(route):
-    terminus_data = routedam.list_terminus_data(route.pk)
+    terminus_data = routedam.calculate_frequency(route.pk)
     total_count = 0
     total_seconds = 0
     for (earliest_time, latest_time, count, __) in terminus_data:
@@ -90,22 +92,5 @@ def _construct_frequency(route):
     if total_count == 0:
         return None
     else:
-        return (total_seconds/total_count)/60
+        return int((total_seconds/total_count)/6)/10
 
-
-def _construct_status(route):
-    """
-    Constructs the status for a route. This is defined as the message type of
-    the highest priority message.
-    :param route: a model.Route object
-    :return: a string
-    """
-    status = None
-    priority = -100000
-    for message in route.route_statuses:
-        if message.priority > priority:
-            status = message.type
-            priority = message.priority
-    if status is None:
-        status = 'Good Service'
-    return status

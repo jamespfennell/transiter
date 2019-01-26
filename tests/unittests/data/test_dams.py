@@ -173,17 +173,9 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         self.assertEqual(expected, actual)
 
     def test__routedata__list_terminus_data(self):
-        data = list(routedam.list_terminus_data(self.ROUTE_ONE_PK))
+        data = routedam.calculate_frequency(self.ROUTE_ONE_PK)
 
-        self.assertEqual(1, len(data))
-
-        row = data[0]
-        # This is a bit hacky. It chops off the timezone component of the result
-        # TODO Should find a more robust way of doing this
-        self._compare_datetime_to_str(row[0], self.EARLIEST_TERMINAL_TIME)
-        self._compare_datetime_to_str(row[1], self.LATEST_TERMINAL_TIME)
-        self.assertEqual(row[2], 3)
-        self.assertEqual(row[3], self.STOP_FOUR_PK)
+        self.assertEqual(3596, int(data))
 
     def test__routedata__list_active_stop_ids(self):
         db_stop_ids = routedam.list_active_stop_ids(self.ROUTE_ONE_PK)
@@ -396,31 +388,6 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
             ['SUCCESS', 'SUCCESS', 'FAILURE'],
             [feed_update.status for feed_update in data]
         )
-
-    """
-    def test__route_status_dao__get_all_in_system(self):
-        data = route_status_dao.get_all_in_system(self.SYSTEM_ONE_ID)
-
-        self.assertListEqual(
-            [self.ROUTE_STATUS_ONE_PK, self.ROUTE_STATUS_TWO_PK],
-            [route_status.pk for route_status in data])
-
-    # TODO: re-enable test when refactoring
-    def test__service_pattern_dao__get_default_trips_at_stops(self):
-        actual = service_pattern_dao.get_default_trips_at_stops(
-            [self.STOP_ONE_ID, self.STOP_TWO_ID, self.STOP_THREE_ID, self.STOP_FOUR_ID]
-        )
-
-        expected = {
-            self.STOP_ONE_ID: [self.ROUTE_ONE_ID],
-            self.STOP_TWO_ID: [self.ROUTE_ONE_ID, self.ROUTE_TWO_ID],
-            self.STOP_THREE_ID: [self.ROUTE_TWO_ID],
-            self.STOP_FOUR_ID: []
-        }
-
-        self.assertDictEqual(expected, actual)
-
-    """
 
     def _compare_datetime_to_str(self, dt, st):
         self.assertEqual(str(dt)[:-6], st)

@@ -25,9 +25,11 @@ class TestRouteService(unittest.TestCase):
     def setUp(cls):
         cls.route_one = mock.MagicMock()
         cls.route_one.short_repr.return_value = cls.ROUTE_ONE_REPR.copy()
+        cls.route_one.pk = 500
         cls.route_one.short_repr.return_value = cls.ROUTE_ONE_REPR.copy()
 
         cls.route_two = mock.MagicMock()
+        cls.route_two.pk = 501
         cls.route_two.short_repr.return_value = cls.ROUTE_TWO_REPR
 
 
@@ -50,9 +52,8 @@ class TestRouteService(unittest.TestCase):
             self.fail('Unwanted interaction with _construct_status')
 
     @mock.patch('transiter.services.routeservice.linksutil')
-    @mock.patch('transiter.services.routeservice._construct_status')
     @mock.patch('transiter.services.routeservice.routedam')
-    def test_list_all_in_system(self, route_dao, _construct_status, linksutil):
+    def test_list_all_in_system(self, route_dao, linksutil):
         """[Route service] Listing all routes in a system"""
 
         def RouteEntityLink(system):
@@ -73,7 +74,10 @@ class TestRouteService(unittest.TestCase):
         }]
         route_dao.list_all_in_system.return_value = [self.route_one,
                                                      self.route_two]
-        _construct_status.side_effect = self._construct_status_mock
+        route_dao.list_route_statuses.return_value = {
+            500: self.ROUTE_ONE_STATUS,
+            501: self.ROUTE_TWO_STATUS,
+        }
 
         actual = routeservice.list_all_in_system(self.SYSTEM_ID)
 
@@ -82,41 +86,8 @@ class TestRouteService(unittest.TestCase):
         self.route_one.short_repr.assert_called_once()
         self.route_two.short_repr.assert_called_once()
 
-    def test_construct_status_good(self):
-        """[Route service] Constructing good route status from empty messages"""
-        route = mock.MagicMock()
-        route.route_statuses = []
-
-        actual = routeservice._construct_status(route)
-
-        self.assertEqual(actual, self.GOOD_STATUS)
-
-    def test_construct_status_bad(self):
-        """[Route service] Constructing bad route status from multiple messages"""
-
-        message_1 = mock.MagicMock()
-        message_1.priority = 1
-        message_1.type = self.OKAY_STATUS
-
-        message_2 = mock.MagicMock()
-        message_2.priority = 2
-        message_2.type = self.BAD_STATUS
-
-        message_3 = mock.MagicMock()
-        message_3.priority = 4
-        message_3.type = self.REALLY_BAD_STATUS
-
-        for messages in itertools.permutations([message_1, message_2, message_3]):
-            route = mock.MagicMock()
-            route.route_statuses = messages
-
-            actual = routeservice._construct_status(route)
-
-            self.assertEqual(actual, self.REALLY_BAD_STATUS)
-
-    @mock.patch('transiter.services.routeservice._construct_status')
     @mock.patch('transiter.services.routeservice.routedam')
-    def test_get_in_system_by_id(self, route_dao, _construct_status):
+    def test_get_in_system_by_id(self, route_dao):
         """[Route service] Getting a specific route in a system"""
         route_dao.get_in_system_by_id.return_value = self.route_one
         sp_vertex = mock.MagicMock()
@@ -132,28 +103,5 @@ class TestRouteService(unittest.TestCase):
             self.ROUTE_ONE_ID)
 
 
-    @mock.patch('transiter.services.routeservice.routedam')
-    def test_construct_frequency(self, route_dao):
-        terminus_data = [
-            [
-                datetime.datetime(2018, 1, 1, 10, 0, 0),
-                datetime.datetime(2018, 1, 1, 10, 30, 0),
-                5,
-                'not used'
-            ],
-            [
-                datetime.datetime(2018, 1, 1, 10, 0, 0),
-                datetime.datetime(2019, 1, 1, 10, 30, 0),
-                1,
-                'not used'
-            ]
-        ]
-        route_dao.list_terminus_data.return_value = terminus_data
-
-        expected_frequency = 7.5
-
-        actual_frequency = routeservice._construct_frequency(self.route_one)
-
-        self.assertEqual(expected_frequency, actual_frequency)
 
 

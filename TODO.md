@@ -1,12 +1,11 @@
 # Transiter TODO
 
 ## Main development thread
- 
- 
+
+
 1. Things needed for realtimerail:
     1. In the get trip endpoint, show the station instead of
         the stop
-    1. Detect no service - in routeservice#_constuct_status
 
 
 1. All TODOs in the code and here are to me made as issues on github and 

@@ -3,7 +3,7 @@ from .directionnamerule import DirectionNameRule
 from .feed import Feed
 from .feedupdate import FeedUpdate
 from .route import Route
-from .routestatus import RouteStatus
+from .routestatus import RouteStatus, route_status_route
 from .servicepattern import ServicePattern
 from .servicepatternedge import ServicePatternEdge
 from .servicepatternvertex import ServicePatternVertex
