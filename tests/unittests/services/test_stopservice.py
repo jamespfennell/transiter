@@ -210,7 +210,7 @@ class TestStopService(unittest.TestCase):
             **self.STOP_ONE_REPR,
             'usual_routes': self.DEFAULT_TRIPS,
             'direction_names': self.ALL_DIRECTION_NAMES,
-            'stop_events': [
+            'stop_time_updates': [
                 {
                     'direction_name': self.ALL_DIRECTION_NAMES[1],
                     'stop_id': self.STOP_ONE_ID,

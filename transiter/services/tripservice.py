@@ -73,7 +73,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
             **trip.route.short_repr(),
             'href': linksutil.RouteEntityLink(trip.route)
         },
-        'stop_events': [
+        'stop_time_updates': [
             {
                 **stu.short_repr(),
                 'stop': {

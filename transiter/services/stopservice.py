@@ -150,7 +150,7 @@ def get_in_system_by_id(system_id, stop_id):
         **stop.short_repr(),
         'usual_routes': default_routes[stop.pk],
         'direction_names': list(direction_name_matcher.all_names()),
-        'stop_events': []
+        'stop_time_updates': []
     }
 
     stop_events = list(stopdam.list_stop_time_updates_at_stops(all_stop_pks))
@@ -180,7 +180,7 @@ def get_in_system_by_id(system_id, stop_id):
                 'href': linksutil.TripEntityLink(stop_event.trip),
             }
         }
-        response['stop_events'].append(stop_event_response)
+        response['stop_time_updates'].append(stop_event_response)
 
     response['child_stops'] = _child_stops_repr(stop, default_routes)
     response['parent_stop'] = _parent_stop_repr(stop, default_routes)

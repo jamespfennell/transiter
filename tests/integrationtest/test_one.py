@@ -81,7 +81,7 @@ class IntegrationTest(unittest.TestCase):
     def test_012_all_stops_have_no_trips(self):
         for stop_id in self.STOP_IDS:
             stop_response = self._get('systems/testsystem/stops/{}'.format(stop_id))
-            self.assertEqual([], stop_response['stop_events'])
+            self.assertEqual([], stop_response['stop_time_updates'])
 
     def test_013_stop_usual_routes(self):
         for stop_id, usual_route in self.STOP_ID_TO_USUAL_ROUTES.items():
@@ -219,7 +219,7 @@ class IntegrationTest(unittest.TestCase):
 
             actual_stop_data = []
             response = self._get('systems/testsystem/stops/{}'.format(stop_id))
-            for stu in response['stop_events']:
+            for stu in response['stop_time_updates']:
                 actual_stop_data.append({
                     'trip_id': stu['trip']['id'],
                     'route_id': stu['trip']['route']['id'],
@@ -237,7 +237,7 @@ class IntegrationTest(unittest.TestCase):
             if stop_id in prev_stop_ids:
                 continue
             response = self._get('systems/testsystem/stops/{}'.format(stop_id))
-            self.assertEqual([], response['stop_events'])
+            self.assertEqual([], response['stop_time_updates'])
 
     def test_080_feed_update_trips(self):
         trip_1_stops = {
@@ -307,7 +307,7 @@ class IntegrationTest(unittest.TestCase):
             actual_data = self._get('systems/testsystem/routes/A/trips/{}'.format(trip_id))
 
             actual_stop_list = []
-            for stop_data in actual_data['stop_events']:
+            for stop_data in actual_data['stop_time_updates']:
                 #print(stop_data)
                 actual_stop_list.append(
                     (stop_data['stop']['id'], stop_data['future'])
