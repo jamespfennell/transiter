@@ -221,7 +221,7 @@ class TestStopService(unittest.TestCase):
                             **self.ROUTE_REPR,
                             'href': self.ROUTE_HREF
                         },
-                        'last_stop': {},
+                        'last_stop': {'href': '10'},
                         'href': self.TRIP_HREF
                     }
                 }

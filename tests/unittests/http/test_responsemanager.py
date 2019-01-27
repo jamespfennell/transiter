@@ -148,9 +148,7 @@ class TestJsonConversion(unittest.TestCase):
     TIMESTAMP = 300
 
 
-    @mock.patch('transiter.http.responsemanager.time')
-    def test_datetime(self, time):
-        time.time.return_value = 0
+    def test_datetime(self):
         fake_datetime = datetime.datetime(2018, 10, 30, 0, 0, 0)
         expected = responsemanager.convert_to_json(fake_datetime.timestamp())
         actual = responsemanager.convert_to_json(fake_datetime)
