@@ -1,6 +1,8 @@
+import sqlalchemy
+
 from transiter import models
 from transiter.data import database
-import sqlalchemy
+
 
 def list_all_in_route_by_pk(route_pk):
     session = database.get_session()

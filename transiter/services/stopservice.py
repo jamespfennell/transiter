@@ -1,6 +1,6 @@
 from transiter.data import database
 from transiter.data.dams import stopdam, servicepatterndam, tripdam
-from transiter.general import linksutil
+from transiter.general import linksutil, exceptions
 
 
 @database.unit_of_work
@@ -124,6 +124,8 @@ def get_in_system_by_id(system_id, stop_id):
     # TODO: make a default_trip_at_stop function????
     # TODO make this more robust for stops without direction names
     stop = stopdam.get_in_system_by_id(system_id, stop_id)
+    if stop is None:
+        raise exceptions.IdNotFoundError
 
     descendants = _get_stop_descendants(stop)
     direction_name_rules = []
@@ -172,7 +174,8 @@ def get_in_system_by_id(system_id, stop_id):
                     'href': linksutil.RouteEntityLink(stop_event.trip.route),
                 },
                 'last_stop': {
-                    **last_stop.short_repr()
+                    **last_stop.short_repr(),
+                    'href': linksutil.StopEntityLink(last_stop)
                 },
                 'href': linksutil.TripEntityLink(stop_event.trip),
             }

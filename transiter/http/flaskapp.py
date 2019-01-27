@@ -28,6 +28,11 @@ formatter = logging.Formatter(
 handler.setFormatter(formatter)
 
 
+@app.errorhandler(404)
+def page_not_found(__):
+    return '', 404
+
+
 @app.route('/')
 @http_get_response
 def root():

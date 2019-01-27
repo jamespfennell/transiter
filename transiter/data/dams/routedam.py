@@ -1,4 +1,3 @@
-from sqlalchemy import Integer
 import sqlalchemy.orm as orm
 import sqlalchemy.sql.expression as sql
 
@@ -73,18 +72,6 @@ def list_active_stop_ids(route_pk):
 
 
 def calculate_frequency(route_pk):
-    """
-    List terminus data for a route. A terminus is a stop at which a trip
-    corresponding to a given route is currently terminating at. For each such
-    stop, this method returns a 4 tuple:
-    1 The earliest arrival time of a terminating trip
-    2 The latest arrival time of a terminating trip
-    3 The number of terminating trips
-    4 The stop's pk
-
-    :param route_pk: the route's pk
-    :return: list of 4-tuples as described above
-    """
     session = database.get_session()
 
     route_stop_pks_stmt = (

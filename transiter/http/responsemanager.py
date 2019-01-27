@@ -1,7 +1,8 @@
-from datetime import date, datetime
 import json
-import time
+from datetime import date, datetime
+
 from decorator import decorator
+
 from transiter.general import linksutil, exceptions as httpexceptions, exceptions as serviceexceptions
 from transiter.http import permissionsvalidator
 
@@ -59,7 +60,7 @@ def _post_process_get(result):
 
 
 def _post_process_put(result):
-    # NOTE(fennell): put services return true if the resource was
+    # NOTE(fennell): PUT services return true if the resource was
     # created and false otherwise
     if result:
         return '', HTTP_201_CREATED

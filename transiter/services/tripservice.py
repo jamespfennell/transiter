@@ -31,6 +31,9 @@ def list_all_in_route(system_id, route_id):
             **trip.short_repr(),
             "last_stop": {
                 **last_stop.short_repr(),
+                'parent_stop': {
+                    **last_stop.parent_stop.short_repr()
+                },
                 'href': linksutil.StopEntityLink(last_stop)
             },
             'href': linksutil.TripEntityLink(trip),
@@ -75,6 +78,9 @@ def get_in_route_by_id(system_id, route_id, trip_id):
                 **stu.short_repr(),
                 'stop': {
                     **stu.stop.short_repr(),
+                    'parent_stop': {
+                        **stu.stop.parent_stop.short_repr(),
+                    },
                     'href': linksutil.StopEntityLink(stu.stop)
                 }
             }
