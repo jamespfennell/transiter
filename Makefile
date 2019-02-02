@@ -21,7 +21,7 @@ run-debug-server:
 	export FLASK_APP=transiter/http/flaskapp.py; export FLASK_DEBUG=1; python -m flask run
 
 run-gunicorn-server:
-	gunicorn -w 4 -b 127.0.0.1:5000 transiter.endpoints.flaskapp:app
+	gunicorn -w 4 -b 127.0.0.1:5000 transiter.http.flaskapp:app
 
 run-task-server:
 	python -m transiter.taskserver.server

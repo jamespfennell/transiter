@@ -94,7 +94,10 @@ def about():
             }
         }
     """
-    commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+    try:
+        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+    except:
+        commit_hash = 'Not available'
     return {
         "name": "Transiter",
         "version": "0.1",
