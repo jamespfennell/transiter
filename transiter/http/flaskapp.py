@@ -26,6 +26,7 @@ formatter = logging.Formatter(
         '%(asctime)s WS %(levelname)-5s [%(module)s] %(message)s')
 handler.setFormatter(formatter)
 
+
 @app.errorhandler(404)
 def page_not_found(__):
     return '', 404

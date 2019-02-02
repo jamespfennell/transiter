@@ -140,7 +140,7 @@ class _GtfsRealtimeToTransiterTransformer:
                     year=int(start_date_str[0:4]),
                     month=int(start_date_str[4:6]),
                     day=int(start_date_str[6:8]))
-                trip.start_time = self._localize_datetime(start_dt)
+                trip.start_time = self._localize_datetime(start_dt, naive=True)
 
             trip.vehicle_id = (
                 entity
@@ -191,7 +191,11 @@ class _GtfsRealtimeToTransiterTransformer:
         utc_dt = pytz.UTC.localize(utc_dt_naive)
         return self._localize_datetime(utc_dt)
 
-    def _localize_datetime(self, dt):
+    # TODO: figure this out!
+    def _localize_datetime(self, dt, naive=False):
         if self._timezone is None:
             return dt
-        return dt.astimezone(self._timezone)
+        if naive:
+            return self._timezone.localize(dt)
+        else:
+            return dt.astimezone(self._timezone)
