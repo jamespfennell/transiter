@@ -95,13 +95,13 @@ def about():
         }
     """
     try:
-        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
     except:
         commit_hash = 'Not available'
     return {
         "name": "Transiter",
         "version": "0.1",
-        "commit": commit_hash.decode('ascii').strip(),
+        "commit": commit_hash,
         "href": "https://github.com/jamespfennell/transiter",
         "licence": {
             "name": "MIT Licence",
