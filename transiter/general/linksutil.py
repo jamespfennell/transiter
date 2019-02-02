@@ -9,7 +9,11 @@ class Link:
     def url(self):
         if self.endpoint is None or self.kwargs is None:
             raise NotImplementedError
-        return flask.url_for(self.endpoint, _external=True, **self.kwargs)
+        http_root = flask.request.headers.get('X-Transiter-HTTP-Root', None)
+        if http_root is None:
+            return flask.url_for(self.endpoint, _external=True, **self.kwargs)
+        else:
+            return http_root + flask.url_for(self.endpoint, _external=False, **self.kwargs)
 
 
 class AboutLink(Link):

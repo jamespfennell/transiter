@@ -75,6 +75,7 @@ def create_database(silent=True):
 
 
 # TODO allow way to specify full config and load at this point
+# TODO: why is user postgres used above?
 db_name = os.environ.get('TRANSITER_DB_NAME', 'realtimerail')
 db_user = os.environ.get('TRANSITER_DB_USER', 'james')
 db_connection_params = DatabaseConnectionParameters(db_name, db_user)
