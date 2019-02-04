@@ -12,7 +12,6 @@ class StopTimeUpdate(Base):
     stop_pk = Column(Integer, ForeignKey('stop.pk'), nullable=False)
     trip_pk = Column(Integer, ForeignKey('trip.pk'), nullable=False)
 
-    #direction = Column(String)
     future = Column(Boolean, server_default=text('true'))
     arrival_time = Column(TIMESTAMP(timezone=True))
     departure_time = Column(TIMESTAMP(timezone=True))
@@ -20,18 +19,18 @@ class StopTimeUpdate(Base):
     # TODO add a unique constraint on stop_sequence, trip_pk
     stop_sequence = Column(Integer, nullable=False)
     track = Column(String)
-    #stop_id_alias = Column(String)
 
     stop_id = None
 
     stop = relationship(
         'Stop',
         back_populates='stop_events',
-        cascade="none")
+        cascade="")
     trip = relationship(
         'Trip',
         back_populates='stop_events',
-        cascade="none")
+        cascade='',
+        cascade_backrefs=False)
 
     _short_repr_list = ['arrival_time', 'departure_time', 'track', 'future']
 

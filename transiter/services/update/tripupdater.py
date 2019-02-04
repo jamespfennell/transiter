@@ -70,17 +70,15 @@ def sync_trips(system, route_ids, trips):
 #   to manually put the historical StopTimeUpdates back in.
 def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
     for trip in trips:
-        trip.route_pk = route_pk
-        valid_stus = []
+        #trip.route_pk = route_pk
+        #valid_stus = []
         for stu in trip.stop_events:
             stu.stop_pk = stop_id_to_pk.get(stu.stop_id, None)
-            if stu.stop_pk is not None:
-                valid_stus.append(stu)
-        #print('Setting stu')
-        #print(len(valid_stus), len(trip.stop_events))
-        #print('warning')
-        trip.stop_events = valid_stus
-        #print('Finished Setting stu')
+            #if stu.stop_pk is None:
+            #    stu.trip = None
+            #if stu.stop_pk is not None:
+            #    valid_stus.append(stu)
+        #trip.stop_events = valid_stus
 
     existing_trips = list(tripdam.list_all_in_route_by_pk(route_pk))
     (old_trips, updated_trip_tuples, new_trips) = syncutil.copy_pks(
@@ -89,18 +87,18 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
     session = database.get_session()
     for updated_trip, existing_trip in updated_trip_tuples:
 
-        t = time.time()
         index = 0
         for existing_stu in existing_trip.stop_events:
             if existing_stu.stop_sequence >= updated_trip.current_stop_sequence:
                 break
             existing_stu.future = False
             index += 1
-        #print('Considering sTUS')
         existing_future_stus = existing_trip.stop_events[index:]
-        #print('End Considering sTUS')
 
-        updated_future_stus = updated_trip.stop_events
+        updated_future_stus = []
+        for stu in updated_trip.stop_events:
+            if stu.stop_pk is not None:
+                updated_future_stus.append(stu)
         (old_stus, updated_stu_tuples, new_stus) = syncutil.copy_pks(
             existing_future_stus, updated_future_stus, ('stop_sequence', ))
 
@@ -120,7 +118,7 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
         for old_stu in old_stus:
             session.delete(old_stu)
 
-        existing_trip.route_pk = updated_trip.route_pk
+        existing_trip.route_pk = route_pk
         existing_trip.start_time = updated_trip.start_time
         existing_trip.direction_id = updated_trip.direction_id
         existing_trip.vehicle_id = updated_trip.vehicle_id
@@ -131,6 +129,10 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
         session.delete(old_trip)
 
     for new_trip in new_trips:
+        new_trip.route_pk = route_pk
         session.add(new_trip)
+        for stu in new_trip.stop_events:
+            if stu.stop_pk is not None:
+                session.add(stu)
 
 

@@ -1,5 +1,5 @@
 import sqlalchemy
-from sqlalchemy.orm import subqueryload
+from sqlalchemy.orm import subqueryload, selectinload, joinedload, defer
 
 from transiter import models
 from transiter.data import database
@@ -10,7 +10,7 @@ def list_all_in_route_by_pk(route_pk):
     query = (
         session.query(models.Trip)
         .filter(models.Trip.route_pk == route_pk)
-        .options(subqueryload(models.Trip.stop_events))
+        .options(selectinload(models.Trip.stop_events))
     )
     for row in query:
         yield row
