@@ -39,3 +39,16 @@ is hosted on Read The Docs.
 [![Documentation Status](https://readthedocs.org/projects/transiter/badge/?version=latest)](https://docs.transiter.io)
 [![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master&service=github)](https://coveralls.io/github/jamespfennell/transiter?branch=master) 
 
+## Deployment notes
+
+- Install Postgres 
+    - Create a user and allow them to create DBs
+    - Set the username and DB name through environment variables, default
+        to transiter/transiter.   
+    -Then initialize the DB - how! Should add a command
+    transiter-builddb.
+
+- Install gunicorn and use supervisor to run the gunicorn process
+    and the transiter-task process.
+ 
+- Install nginx and reverse proxy to Gunicorn (post config)

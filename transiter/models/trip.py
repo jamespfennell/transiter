@@ -25,7 +25,7 @@ class Trip(Base):
     route = relationship(
         'Route',
         back_populates='trips',
-        cascade=None)
+        cascade='')
     # TODO: rename stop_time_updates
     stop_events = relationship(
         'StopTimeUpdate',

@@ -27,6 +27,7 @@ class TripDataCleaner:
 
         return trips_to_keep
 
+import time
 
 def sync_trips(system, route_ids, trips):
 
@@ -49,7 +50,9 @@ def sync_trips(system, route_ids, trips):
             all_stop_ids.add(stu.stop_id)
 
     stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id, all_stop_ids)
+    index = 0
     for route_pk, trips_dict in route_pk_to_trips_dict.items():
+        index += 1
         sync_trips_in_route(route_pk, trips_dict.values(), stop_id_to_pk)
 
 
@@ -73,38 +76,56 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
             stu.stop_pk = stop_id_to_pk.get(stu.stop_id, None)
             if stu.stop_pk is not None:
                 valid_stus.append(stu)
+        #print('Setting stu')
+        #print(len(valid_stus), len(trip.stop_events))
+        #print('warning')
         trip.stop_events = valid_stus
+        #print('Finished Setting stu')
 
-    existing_trips = tripdam.list_all_in_route_by_pk(route_pk)
+    existing_trips = list(tripdam.list_all_in_route_by_pk(route_pk))
     (old_trips, updated_trip_tuples, new_trips) = syncutil.copy_pks(
         existing_trips, trips, ('id', ))
 
     session = database.get_session()
     for updated_trip, existing_trip in updated_trip_tuples:
 
+        t = time.time()
         index = 0
         for existing_stu in existing_trip.stop_events:
             if existing_stu.stop_sequence >= updated_trip.current_stop_sequence:
                 break
             existing_stu.future = False
             index += 1
+        #print('Considering sTUS')
         existing_future_stus = existing_trip.stop_events[index:]
+        #print('End Considering sTUS')
 
         updated_future_stus = updated_trip.stop_events
         (old_stus, updated_stu_tuples, new_stus) = syncutil.copy_pks(
             existing_future_stus, updated_future_stus, ('stop_sequence', ))
 
         for new_stu in new_stus:
-            new_stu.trip = existing_trip
+            new_stu.trip_pk = existing_trip.pk
             session.add(new_stu)
 
-        for (updated_stu, __) in updated_stu_tuples:
-            session.merge(updated_stu)
+        for (updated_stu, existing_stu) in updated_stu_tuples:
+            # The following manual code is meant as a speed-up to session.merge
+            existing_stu.arrival_time = updated_stu.arrival_time
+            existing_stu.departure_time = updated_stu.departure_time
+            existing_stu.track = updated_stu.track
+            existing_stu.future = True
+            existing_stu.last_update_time = updated_stu.last_update_time
+            existing_stu.stop_pk = updated_stu.stop_pk
 
         for old_stu in old_stus:
             session.delete(old_stu)
 
-        session.merge(updated_trip)
+        existing_trip.route_pk = updated_trip.route_pk
+        existing_trip.start_time = updated_trip.start_time
+        existing_trip.direction_id = updated_trip.direction_id
+        existing_trip.vehicle_id = updated_trip.vehicle_id
+        existing_trip.current_status = updated_trip.current_status
+        existing_trip.current_stop_sequence = updated_trip.current_stop_sequence
 
     for old_trip in old_trips:
         session.delete(old_trip)

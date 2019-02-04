@@ -69,7 +69,7 @@ def create_feed_update(system_id, feed_id):
     feed_update = feeddam.create_update()
     feed_update.feed = feed
     feed_update.status = 'SCHEDULED'
-
+    import time
     # TODO make this asynchronous
     _execute_feed_update(feed_update)
 
@@ -111,7 +111,6 @@ def _execute_feed_update(feed_update):
         update_function = _gtfs_realtime_parser
     else:
         raise ValueError('Unknown builtin feed parser {}'.format(feed.parser))
-
     try:
         request = requests.get(feed.url)
         request.raise_for_status()
