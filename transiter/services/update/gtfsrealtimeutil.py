@@ -87,6 +87,7 @@ class _GtfsRealtimeToTransiterTransformer:
         self._transformed_metadata = None
         self._feed_route_ids = set()
         self._feed_time = None
+        self._timestamp_to_datetime_cache = {}
         if timezone_str is None:
             self._timezone = None
         else:
@@ -163,9 +164,10 @@ class _GtfsRealtimeToTransiterTransformer:
             entity = self._trip_id_to_raw_entities[trip_id]
 
             trip_update = entity.get('trip_update', {})
-            trip.stop_events = []
+            stop_time_updates = []
 
             for stop_time_update_data in trip_update.get('stop_time_update', []):
+                t = time.time()
                 stop_time_update = models.StopTimeUpdate()
                 stop_time_update.stop_id = stop_time_update_data['stop_id']
                 stop_time_update.track = stop_time_update_data.get('track', None)
@@ -174,8 +176,8 @@ class _GtfsRealtimeToTransiterTransformer:
                         stop_time_update_data.get('arrival', {}).get('time', None)))
                 stop_time_update.departure_time = self._timestamp_to_datetime(
                     stop_time_update_data.get('departure', {}).get('time', None))
-                trip.stop_events.append(stop_time_update)
-            # self._trip_id_to_transformed_entity[trip_id] = trip_data
+                stop_time_updates.append(stop_time_update)
+            trip.stop_events = stop_time_updates
 
     def _update_stop_event_indices(self):
         for trip_id, trip in self._trip_id_to_trip_model.items():
@@ -188,9 +190,11 @@ class _GtfsRealtimeToTransiterTransformer:
     def _timestamp_to_datetime(self, timestamp):
         if timestamp is None or timestamp == 0:
             return None
-        utc_dt_naive = datetime.datetime.utcfromtimestamp(timestamp)
-        utc_dt = pytz.UTC.localize(utc_dt_naive)
-        return self._localize_datetime(utc_dt)
+        if timestamp not in self._timestamp_to_datetime_cache:
+            utc_dt_naive = datetime.datetime.utcfromtimestamp(timestamp)
+            utc_dt = pytz.UTC.localize(utc_dt_naive)
+            self._timestamp_to_datetime_cache[timestamp] = self._localize_datetime(utc_dt)
+        return self._timestamp_to_datetime_cache[timestamp]
 
     # TODO: figure this out!
     def _localize_datetime(self, dt, naive=False):

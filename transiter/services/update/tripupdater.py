@@ -1,6 +1,6 @@
 from transiter.data.dams import routedam, stopdam, tripdam
 from transiter.data import database, syncutil
-
+import warnings
 
 class TripDataCleaner:
 
@@ -70,17 +70,14 @@ def sync_trips(system, route_ids, trips):
 #   to manually put the historical StopTimeUpdates back in.
 def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
     for trip in trips:
-        #trip.route_pk = route_pk
-        #valid_stus = []
         for stu in trip.stop_events:
             stu.stop_pk = stop_id_to_pk.get(stu.stop_id, None)
-            #if stu.stop_pk is None:
-            #    stu.trip = None
-            #if stu.stop_pk is not None:
-            #    valid_stus.append(stu)
-        #trip.stop_events = valid_stus
 
-    existing_trips = list(tripdam.list_all_in_route_by_pk(route_pk))
+    # NOTE: this suppresses a SQL ALchemy warning that doesn't make any sense
+    # and seems to be a bug. Would be good to investigate.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        existing_trips = list(tripdam.list_all_in_route_by_pk(route_pk))
     (old_trips, updated_trip_tuples, new_trips) = syncutil.copy_pks(
         existing_trips, trips, ('id', ))
 
