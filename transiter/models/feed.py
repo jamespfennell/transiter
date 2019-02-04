@@ -16,6 +16,7 @@ class Feed(Base):
     custom_module = Column(String)
     custom_function = Column(String)
     auto_updater_enabled = Column(Boolean)
+    # TODO: rename auto_updater_period
     auto_updater_frequency = Column(Integer)
 
     system = relationship(

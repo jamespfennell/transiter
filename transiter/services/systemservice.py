@@ -187,7 +187,6 @@ def _import_static_data(system):
         with open(full_path) as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                # TODO: allow either stop_id or stop_id alias
                 stop_id = row['stop_id']
                 stop = gtfs_static_parser.stop_id_to_stop.get(stop_id, None)
                 if stop is None:
@@ -213,6 +212,8 @@ def _import_static_data(system):
         if feed.parser == 'custom':
             feed.custom_module = feed_config['custom_parser']['module']
             feed.custom_function = feed_config['custom_parser']['function']
+        feed.auto_updater_enabled = True
+        feed.auto_updater_frequency = 5
 
 
 class SystemConfig:
