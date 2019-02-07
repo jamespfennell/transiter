@@ -1,6 +1,8 @@
 from transiter.data import database
 from transiter.data.dams import genericqueries
 from transiter import models
+import datetime
+from sqlalchemy import func, sql
 
 
 def list_all_autoupdating():
@@ -47,3 +49,48 @@ def list_updates_in_feed(feed):
 
 def create_update():
     return genericqueries.create(models.FeedUpdate)
+
+
+def trim_feed_updates(minutes_before_now):
+    session = database.get_session()
+    query = (
+        sql.delete(models.FeedUpdate)
+        .where(
+            models.FeedUpdate.last_action_time <= (
+                datetime.datetime.now() - datetime.timedelta(minutes=minutes_before_now)
+            )
+        )
+    )
+    session.execute(query)
+
+
+def aggregate_feed_updates(minutes_before_now):
+    session = database.get_session()
+
+    query = (
+        sql.select([
+            models.Feed.system_id, models.Feed.id.label('feed_id'), models.FeedUpdate.status,
+            models.FeedUpdate.explanation, func.count().label('count'),
+            func.avg(models.FeedUpdate.execution_duration).label('avg_execution_duration')
+        ])
+        .select_from(sql.join(models.Feed, models.FeedUpdate))
+        .group_by(
+            models.Feed.system_id, models.Feed.id, models.FeedUpdate.status,
+            models.FeedUpdate.explanation
+        )
+        .where(
+            models.FeedUpdate.last_action_time <= (
+                datetime.datetime.now() - datetime.timedelta(minutes=minutes_before_now)
+            )
+        )
+        .order_by(
+            models.Feed.system_id, models.Feed.id, models.FeedUpdate.status
+        )
+    )
+    return session.execute(query)
+
+
+
+
+
+

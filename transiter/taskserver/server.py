@@ -1,9 +1,14 @@
 import logging
-
+import datetime
+import random
 import apscheduler.schedulers.background
 import rpyc.utils.server
 
 from transiter.services import feedservice
+
+#TODO: handle apscheduler warnings about feed updates
+#logger = logging.getLogger('apscheduler')
+#logger.setLevel(logging.DEBUG)
 
 logger = logging.getLogger('transiter')
 logger.setLevel(logging.DEBUG)
@@ -14,64 +19,101 @@ formatter = logging.Formatter(
 handler.setFormatter(formatter)
 
 
-class AutoUpdater:
-    def __init__(self, system_id, feed_id, frequency):
-        self.frequency = frequency
-        self.job = None
-        scheduler.add_job(
-            feedservice.create_feed_update,
+class Task:
+    def __init__(self, func, args, period, start_time_offset=None):
+        if start_time_offset is None:
+            start_time_offset = period
+        self._job = scheduler.add_job(
+            func,
             'interval',
-            seconds=frequency,
-            args=[system_id, feed_id])
+            next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=start_time_offset),
+            seconds=period,
+            args=args
+        )
 
-    def set_frequency(self, frequency):
-        if frequency == self.frequency:
-            return False
-        # Adjust the job
-        return True
+    def set_period(self, period, start_time_offset=None):
+        if start_time_offset is None:
+            start_time_offset = period
+        self._job.reschedule(
+            'interval',
+            seconds=period
+        )
+        self._job.modify(next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=start_time_offset))
+
+    def run_now(self):
+        self._job.modify(next_run_time=datetime.datetime.now())
 
     def __del__(self):
-        # Finish the job
-        pass
+        self._job.remove()
 
 
-feed_pri_key_to_auto_updater = {}
+class FeedAutoUpdateTask(Task):
+
+    def __init__(self, system_id, feed_id, period):
+        super().__init__(
+            feedservice.create_feed_update,
+            [system_id, feed_id],
+            period,
+            period * random.uniform(0, 1)
+        )
+
+    def set_period(self, period, start_time_offset=None):
+        if start_time_offset is None:
+            start_time_offset = period * random.uniform(0, 1)
+        super().set_period(period, start_time_offset)
 
 
-def refresh_tasks():
-    feeds = feedservice.list_all_autoupdating()
-    logger.info('Initializing {} feed autoupdate tasks'.format(len(feeds)))
-    stale_feed_pri_keys = set(feed_pri_key_to_auto_updater.keys())
-    for feed_data in feeds:
-        frequency = feed_data['auto_updater_frequency']
-        auto_updater = feed_pri_key_to_auto_updater.get(feed_data['pk'], None)
-        if auto_updater is not None:
-            auto_updater.set_frequency(frequency)
+feed_pk_to_auto_update_task = {}
+feed_update_trim_task = None
+
+
+def refresh_feed_auto_update_tasks(p=None):
+    feeds_data = feedservice.list_all_autoupdating()
+    logger.info('Refreshing {} feed auto update tasks'.format(len(feeds_data)))
+
+    stale_feed_pks = set(feed_pk_to_auto_update_task.keys())
+    for feed_data in feeds_data:
+        period = feed_data['auto_update_period']
+        if p is not None:
+            period = p
+        auto_update_task = feed_pk_to_auto_update_task.get(feed_data['pk'], None)
+        if auto_update_task is not None:
+            auto_update_task.set_period(period)
         else:
-            auto_updater = AutoUpdater(
+            auto_update_task = FeedAutoUpdateTask(
                 feed_data['system_id'],
                 feed_data['id'],
-                frequency)
-            feed_pri_key_to_auto_updater[feed_data['pk']] = auto_updater
-        stale_feed_pri_keys.discard(feed_data['pk'])
+                period,
+            )
+            feed_pk_to_auto_update_task[feed_data['pk']] = auto_update_task
+        stale_feed_pks.discard(feed_data['pk'])
 
-    for feed_pri_key in stale_feed_pri_keys:
-        del feed_pri_key_to_auto_updater[feed_pri_key]
-
-    return True
+    for feed_pk in stale_feed_pks:
+        del feed_pk_to_auto_update_task[feed_pk]
 
 
 class TaskServer(rpyc.Service):
 
     def exposed_refresh_tasks(self):
         logger.info('Received external refresh tasks command')
-        return refresh_tasks()
+        refresh_feed_auto_update_tasks(30)
+        return True
+
+    def exposed_update_feed(self, feed_pk):
+        auto_update_task = feed_pk_to_auto_update_task.get(feed_pk, None)
+        auto_update_task.run_now()
 
 
 if __name__ == "__main__":
     logger.info('Launching Transiter task server')
+
+    logger.info('Launching background scheduler')
     scheduler = apscheduler.schedulers.background.BackgroundScheduler()
     scheduler.start()
-    refresh_tasks()
+
+    feed_update_trim_task = Task(feedservice.trim_feed_updates, [], 30*60)
+    refresh_feed_auto_update_tasks()
+
+    logger.info('Launching RPyC server')
     server = rpyc.utils.server.ThreadedServer(TaskServer, port=12345)
     server.start()

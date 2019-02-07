@@ -1,4 +1,6 @@
-from sqlalchemy import Column, TIMESTAMP, Index, Integer, String, ForeignKey
+import time
+
+from sqlalchemy import Column, TIMESTAMP, Index, Float, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import functions as sql_functions
 
@@ -13,16 +15,9 @@ class FeedUpdate(Base):
 
     status = Column(String)
     explanation = Column(String)
-    # SCHEDULED,
-    # IN_PROGRESS,
-    # SUCCESS_UPDATED,
-    # SUCCESS_NOT_NEEDED,
-    # FAILURE_COULD_NOT_PARSE,
-    # FAILURE_COULD_NOT_DOWNLOAD,
-    # FAILURE_EMPTY_FEED
     failure_message = Column(String)
     raw_data_hash = Column(String)
-    time = Column(TIMESTAMP(timezone=True))
+    execution_duration = Column(Float)
     last_action_time = Column(TIMESTAMP(timezone=True),
                               server_default=sql_functions.now(),
                               onupdate=sql_functions.current_timestamp(),

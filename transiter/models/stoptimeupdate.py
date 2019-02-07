@@ -25,7 +25,7 @@ class StopTimeUpdate(Base):
     stop = relationship(
         'Stop',
         back_populates='stop_events',
-        cascade="")
+        cascade='')
     trip = relationship(
         'Trip',
         back_populates='stop_events',

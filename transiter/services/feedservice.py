@@ -1,6 +1,8 @@
+import datetime
 import hashlib
 import importlib
 import logging
+import time
 import traceback
 
 import requests
@@ -26,7 +28,7 @@ def list_all_autoupdating():
             'pk': feed.pk,
             'id': feed.id,
             'system_id': feed.system.id,
-            'auto_updater_frequency': feed.auto_updater_frequency
+            'auto_update_period': feed.auto_updater_frequency
         })
     return response
 
@@ -69,9 +71,11 @@ def create_feed_update(system_id, feed_id):
     feed_update = feeddam.create_update()
     feed_update.feed = feed
     feed_update.status = 'SCHEDULED'
-    import time
-    # TODO make this asynchronous
+
+    start_time = time.time()
     _execute_feed_update(feed_update)
+    feed_update.execution_duration = time.time() - start_time
+    logger.debug('Feed update for {} took {} seconds'.format(feed_id, feed_update.execution_duration))
 
     return {
         **feed_update.long_repr()
@@ -149,10 +153,81 @@ def _execute_feed_update(feed_update):
         #raise
 
 
-# TODO: move to updatemanager.py?
+# TODO: move to updatemanager.py? Yes yes yes
 def _gtfs_realtime_parser(feed, content):
 
     gtfs_data = gtfsrealtimeutil.read_gtfs_realtime(content)
     (__, __, trips) = gtfsrealtimeutil.transform_to_transiter_structure(
         gtfs_data, 'America/Los_Angeles')
     tripupdater.sync_trips(feed.system, None, trips)
+
+
+@database.unit_of_work
+def trim_feed_updates():
+    logger.info('Trimming old feed updates.')
+    logger.info('\n' + build_feed_updates_report(120))
+    feeddam.trim_feed_updates(120)
+
+
+def build_feed_updates_report(minutes_before_now):
+    table_row_template = '{delimiter}'.join([
+        '{system_id:13}', '{feed_id:20}', '{status:10}', '{explanation:13}',
+        '{count:>5}', '{avg_execution_duration:>6}'
+    ])
+    table_rows = [
+        'Aggregated feed update report for updates before {}'.format(
+            datetime.datetime.now() - datetime.timedelta(minutes=minutes_before_now)),
+        '',
+        'Column explanations:',
+        '+ number of feed updates of this type',
+        '* average execution time for feed updates of this type',
+        '',
+        table_row_template.format(
+            delimiter=' | ',
+            system_id='system_id',
+            feed_id='feed_id',
+            status='status',
+            explanation='explanation',
+            count='*',
+            avg_execution_duration='+'
+        )
+    ]
+    feed_id = None
+    status = None
+    for feed_update_data in feeddam.aggregate_feed_updates(minutes_before_now):
+        if feed_update_data['feed_id'] != feed_id:
+            table_rows.append(
+                table_row_template.format(
+                    delimiter='-+-',
+                    system_id='-'*13,
+                    feed_id='-'*20,
+                    status='-'*10,
+                    explanation='-'*13,
+                    count='-'*5,
+                    avg_execution_duration='-'*6
+                )
+            )
+            feed_id = table_feed_id = feed_update_data['feed_id']
+            table_system_id = feed_update_data['system_id']
+        else:
+            table_feed_id = ''
+            table_system_id = ''
+
+        if feed_update_data['status'] != status or table_feed_id != '':
+            status = table_status = feed_update_data['status']
+        else:
+            table_status = ''
+
+        table_rows.append(
+            table_row_template.format(
+                delimiter=' | ',
+                system_id=table_system_id,
+                feed_id=table_feed_id,
+                status=table_status,
+                explanation=feed_update_data['explanation'],
+                count=feed_update_data['count'],
+                avg_execution_duration='{:.2f}'.format(feed_update_data['avg_execution_duration'])
+            )
+        )
+
+    return '\n'.join(table_rows)

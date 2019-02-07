@@ -12,8 +12,7 @@ def list_all_in_route_by_pk(route_pk):
         .filter(models.Trip.route_pk == route_pk)
         .options(selectinload(models.Trip.stop_events))
     )
-    for row in query:
-        yield row
+    return query.all()
 
 
 def list_all_in_routes(system_id, route_ids):
