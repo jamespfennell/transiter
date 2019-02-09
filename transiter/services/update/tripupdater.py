@@ -97,13 +97,15 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
             existing_future_stus, updated_future_stus, ('stop_sequence', ))
 
         for new_stu in new_stus:
+            if new_stu.stop_pk is None:
+                continue
+            # NOTE: because of a sql alchemy bug, doing this will emit a warning
+            # https://github.com/sqlalchemy/sqlalchemy/issues/4491
             new_stu.trip_pk = existing_trip.pk
             session.add(new_stu)
             """
             # Because of SQL alchemy bugs and crazy behaviour around relationships,
             # we just create a new STU with no existing trip and write to that.
-            if new_stu.stop_pk is None:
-                continue
             real_new_stu = models.StopTimeUpdate()
             session.add(real_new_stu)
             real_new_stu.trip_pk = existing_trip.pk
@@ -121,7 +123,6 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
             existing_stu.stop_pk = updated_stu.stop_pk
 
         for old_stu in old_stus:
-            #print('Deleting stu ', old_stu)
             session.delete(old_stu)
 
         existing_trip.route_pk = route_pk
@@ -132,13 +133,12 @@ def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
         existing_trip.current_stop_sequence = updated_trip.current_stop_sequence
 
     for old_trip in old_trips:
-        #print('Deleting trip with pk={}'.format(old_trip.pk))
         session.delete(old_trip)
 
     for new_trip in new_trips:
         new_trip.route_pk = route_pk
         session.add(new_trip)
-        # NOTE: because of a sql alchemy bug, doing this will emit an error
+        # NOTE: because of a sql alchemy bug, doing this will emit a warning
         # https://github.com/sqlalchemy/sqlalchemy/issues/4491
         for stu in new_trip.stop_events:
             if stu.stop_pk is not None:

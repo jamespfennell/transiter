@@ -1,14 +1,19 @@
 import logging
 import os
 import traceback
+import warnings
 
 import sqlalchemy.exc
 from decorator import decorator
+from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from transiter import models
 
+warnings.simplefilter(action='ignore', category=SAWarning)
 logger = logging.getLogger(__name__)
+
+
 class DatabaseConnectionParameters:
 
     def __init__(self, database, user, password=None):

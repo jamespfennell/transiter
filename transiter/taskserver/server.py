@@ -3,8 +3,6 @@ import datetime
 import random
 import apscheduler.schedulers.background
 import rpyc.utils.server
-import warnings
-warnings.simplefilter('default')
 
 def log(*args, **kwargs):
     print('Recieved warning:')
@@ -13,6 +11,9 @@ def log(*args, **kwargs):
     print(kwargs)
     #raise ValueError
 #warnings.showwarning = log
+
+
+
 from transiter.services import feedservice
 
 #TODO: catch handle apscheduler warnings about feed updates <- just set the period low to test
