@@ -84,7 +84,7 @@ class _GtfsRealtimeToTransiterTransformer:
         self._trip_id_to_raw_entities = {}
         self._trip_id_to_transformed_entity = {}
         self._trip_id_to_trip_model = {}
-        self._transformed_metadata = None
+        self._transformed_metadata = {}
         self._feed_route_ids = set()
         self._feed_time = None
         self._timestamp_to_datetime_cache = {}
@@ -153,7 +153,10 @@ class _GtfsRealtimeToTransiterTransformer:
 
             vehicle_data = entity.get('vehicle', {})
             trip.last_update_time = self._timestamp_to_datetime(
-                vehicle_data.get('timestamp', int(time.time())))
+                vehicle_data.get(
+                    'timestamp',
+                    self._transformed_metadata.get('timestamp', None)
+                    ))
             trip.current_status = vehicle_data.get('current_status', None)
             trip.current_stop_sequence = vehicle_data.get('current_stop_sequence', 0)
             self._trip_id_to_trip_model[trip_id] = trip

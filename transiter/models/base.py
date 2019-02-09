@@ -5,9 +5,6 @@ from sqlalchemy.ext.declarative import declarative_base
 class _BasicModel:
 
     def __eq__(self, other):
-        print(self.stop_id)
-        print(other.stop_id)
-        #raise NotImplementedError
         for column in inspect(type(self)).columns.keys():
             if column == 'pk':
                 continue

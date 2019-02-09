@@ -292,6 +292,8 @@ class TestImportStaticData(unittest.TestCase):
         feed.parser = 'custom'
         feed.custom_module = self.FEED_PARSER_MODULE
         feed.custom_function = self.FEED_PARSER_FUNCTION
+        feed.auto_updater_enabled = True
+        feed.auto_updater_frequency = 5
 
         systemservice._import_static_data(self.system)
 

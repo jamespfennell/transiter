@@ -238,7 +238,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         }
 
         transformer._transform_trip_base_data()
-
+        #self.assertEqual(trip, transformer._trip_id_to_raw_entities[self.TRIP_ID])
         self.assertDictEqual(
             expected_transformed_base_data,
             transformer._trip_id_to_trip_model)

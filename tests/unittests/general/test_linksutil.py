@@ -10,6 +10,7 @@ class TestLinks(unittest.TestCase):
     @mock.patch('transiter.general.linksutil.flask')
     def test_entity_links(self, flask):
         flask.url_for.return_value = self.URL
+        flask.request.headers = {}
         model = mock.MagicMock()
         link_classes = [
             linksutil.FeedEntityLink,
