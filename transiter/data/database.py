@@ -1,11 +1,14 @@
-from decorator import decorator
+import logging
 import os
+import traceback
+
 import sqlalchemy.exc
+from decorator import decorator
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from transiter import models
 
-
+logger = logging.getLogger(__name__)
 class DatabaseConnectionParameters:
 
     def __init__(self, database, user, password=None):
@@ -114,13 +117,17 @@ def unit_of_work(func, *args, **kw):
     global Session
     ensure_db_connection()
     session = Session()
+    logger.debug('Opened unit of work session {}'.format(session))
     try:
         result = func(*args, **kw)
         session.commit()
-    except:
+    except Exception:
+        logger.warning('Encountered error; rolling back session!')
+        logger.warning('Stack trace:\n' + str(traceback.format_exc()))
         session.rollback()
         raise
     finally:
+        logger.debug('Closing unit of work session {}'.format(session))
         Session.remove()
 
     return result
@@ -132,3 +139,7 @@ def create_tables():
     models.Base.metadata.create_all(engine)
 
 
+def rebuild_db():
+    drop_database()
+    create_database()
+    create_tables()

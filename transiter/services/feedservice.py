@@ -8,7 +8,7 @@ import traceback
 import requests
 
 from transiter.data import database
-from transiter.data.dams import feeddam
+from transiter.data.dams import feeddam, tripdam
 from transiter.general import linksutil, exceptions
 from transiter.services.update import tripupdater, gtfsrealtimeutil
 
@@ -165,18 +165,22 @@ def _gtfs_realtime_parser(feed, content):
 @database.unit_of_work
 def trim_feed_updates():
     logger.info('Trimming old feed updates.')
-    logger.info('\n' + build_feed_updates_report(120))
-    feeddam.trim_feed_updates(120)
+    before_datetime = (
+        datetime.datetime.now() - datetime.timedelta(minutes=60)
+    ).replace(microsecond=0, second=0)
+    logger.info('\n' + build_feed_updates_report(before_datetime))
+    logger.info('Deleting feed updates in DB before {}'.format(before_datetime))
+    feeddam.trim_feed_updates(before_datetime)
 
 
-def build_feed_updates_report(minutes_before_now):
+def build_feed_updates_report(before_datetime):
     table_row_template = '{delimiter}'.join([
-        '{system_id:13}', '{feed_id:20}', '{status:10}', '{explanation:13}',
+        '{system_id:13}', '{feed_id:20}', '{status:10}', '{explanation:20}',
         '{count:>5}', '{avg_execution_duration:>6}'
     ])
     table_rows = [
-        'Aggregated feed update report for updates before {}'.format(
-            datetime.datetime.now() - datetime.timedelta(minutes=minutes_before_now)),
+        'Aggregated feed update report for updates in the database before {}'.format(
+            before_datetime),
         '',
         'Column explanations:',
         '+ number of feed updates of this type',
@@ -194,7 +198,7 @@ def build_feed_updates_report(minutes_before_now):
     ]
     feed_id = None
     status = None
-    for feed_update_data in feeddam.aggregate_feed_updates(minutes_before_now):
+    for feed_update_data in feeddam.aggregate_feed_updates(before_datetime):
         if feed_update_data['feed_id'] != feed_id:
             table_rows.append(
                 table_row_template.format(
@@ -202,7 +206,7 @@ def build_feed_updates_report(minutes_before_now):
                     system_id='-'*13,
                     feed_id='-'*20,
                     status='-'*10,
-                    explanation='-'*13,
+                    explanation='-'*20,
                     count='-'*5,
                     avg_execution_duration='-'*6
                 )

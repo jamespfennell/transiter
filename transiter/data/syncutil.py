@@ -15,7 +15,7 @@ def copy_pks(source_models, target_models, id_keys):
         if source_model is None:
             new_models[id_] = target_model
         else:
-            target_model.pk = source_model.pk
+            #target_model.pk = source_model.pk
             updated_models[id_] = (target_model, source_model)
             del id_to_source_model[id_]
 

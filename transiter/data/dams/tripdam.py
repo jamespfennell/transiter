@@ -1,5 +1,5 @@
 import sqlalchemy
-from sqlalchemy.orm import subqueryload, selectinload, joinedload, defer
+from sqlalchemy.orm import selectinload
 
 from transiter import models
 from transiter.data import database

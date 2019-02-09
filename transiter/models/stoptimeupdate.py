@@ -30,7 +30,8 @@ class StopTimeUpdate(Base):
         'Trip',
         back_populates='stop_events',
         cascade='',
-        cascade_backrefs=False)
+        cascade_backrefs=False
+    )
 
     _short_repr_list = ['arrival_time', 'departure_time', 'track', 'future']
 

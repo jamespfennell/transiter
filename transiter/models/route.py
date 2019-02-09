@@ -26,7 +26,7 @@ class Route(Base):
     trips = relationship(
         'Trip',
         back_populates='route',
-        cascade='all, delete-orphan')
+        cascade='delete, delete-orphan')
     service_patterns = relationship(
         'ServicePattern',
         back_populates='route',

@@ -18,14 +18,6 @@ app.register_blueprint(route_endpoints, url_prefix='/systems/<system_id>/routes'
 app.register_blueprint(trip_endpoints, url_prefix='/systems/<system_id>/routes/<route_id>/trips')
 app.register_blueprint(system_endpoints, url_prefix='/systems')
 
-logger = logging.getLogger('transiter')
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler()
-logger.addHandler(handler)
-formatter = logging.Formatter(
-        '%(asctime)s WS %(levelname)-5s [%(module)s] %(message)s')
-handler.setFormatter(formatter)
-
 
 @app.errorhandler(404)
 def page_not_found(__):
@@ -109,5 +101,17 @@ def about():
     }
 
 
-if __name__ == '__main__':
+def launch():
+    logger = logging.getLogger('transiter')
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler()
+    logger.addHandler(handler)
+    formatter = logging.Formatter(
+        '%(asctime)s WS %(levelname)-5s [%(module)s] %(message)s')
+    handler.setFormatter(formatter)
+
     app.run(debug=True)
+
+
+if __name__ == '__main__':
+    launch()

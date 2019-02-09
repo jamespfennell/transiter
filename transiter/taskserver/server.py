@@ -3,15 +3,24 @@ import datetime
 import random
 import apscheduler.schedulers.background
 import rpyc.utils.server
+import warnings
+warnings.simplefilter('default')
 
+def log(*args, **kwargs):
+    print('Recieved warning:')
+    print(args)
+
+    print(kwargs)
+    #raise ValueError
+#warnings.showwarning = log
 from transiter.services import feedservice
 
-#TODO: handle apscheduler warnings about feed updates
+#TODO: catch handle apscheduler warnings about feed updates <- just set the period low to test
 #logger = logging.getLogger('apscheduler')
 #logger.setLevel(logging.DEBUG)
 
 logger = logging.getLogger('transiter')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 logger.addHandler(handler)
 formatter = logging.Formatter(
@@ -19,55 +28,77 @@ formatter = logging.Formatter(
 handler.setFormatter(formatter)
 
 
+scheduler = apscheduler.schedulers.background.BackgroundScheduler()
+feed_pk_to_auto_update_task = {}
+feed_update_trim_task = None
+
+
 class Task:
-    def __init__(self, func, args, period, start_time_offset=None):
-        if start_time_offset is None:
-            start_time_offset = period
+    def __init__(self, func, args, trigger, **job_kwargs):
         self._job = scheduler.add_job(
             func,
-            'interval',
-            next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=start_time_offset),
-            seconds=period,
-            args=args
+            args=args,
+            trigger=trigger,
+            **job_kwargs,
         )
-
-    def set_period(self, period, start_time_offset=None):
-        if start_time_offset is None:
-            start_time_offset = period
-        self._job.reschedule(
-            'interval',
-            seconds=period
-        )
-        self._job.modify(next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=start_time_offset))
 
     def run_now(self):
         self._job.modify(next_run_time=datetime.datetime.now())
 
     def __del__(self):
-        self._job.remove()
+        pass
+        #self._job.remove()
 
 
-class FeedAutoUpdateTask(Task):
+class IntervalTask(Task):
+
+    def __init__(self, func, args, period):
+        #period = 1
+        super().__init__(
+            func, args, 'interval',
+            seconds=period,
+            next_run_time=self._calculate_next_run_time(period)
+        )
+
+    def set_period(self, period):
+        self._job.reschedule(
+            'interval',
+            seconds=period
+        )
+        self._job.modify(next_run_time=self._calculate_next_run_time(period))
+
+    @staticmethod
+    def _calculate_next_run_time(period):
+        return (
+            datetime.datetime.now()
+            + datetime.timedelta(seconds=period * random.uniform(0, 1))
+        )
+
+
+class CronTask(Task):
+
+    def __init__(self, func, args, **job_kwargs):
+        super().__init__(
+            func,
+            args,
+            'cron',
+            **job_kwargs
+        )
+
+
+class FeedAutoUpdateTask(IntervalTask):
 
     def __init__(self, system_id, feed_id, period):
         super().__init__(
+            #feedservice.test,
             feedservice.create_feed_update,
             [system_id, feed_id],
-            period,
-            period * random.uniform(0, 1)
+            period
         )
-
-    def set_period(self, period, start_time_offset=None):
-        if start_time_offset is None:
-            start_time_offset = period * random.uniform(0, 1)
-        super().set_period(period, start_time_offset)
-
-
-feed_pk_to_auto_update_task = {}
-feed_update_trim_task = None
 
 
 def refresh_feed_auto_update_tasks(p=None):
+    global feed_pk_to_auto_update_task
     feeds_data = feedservice.list_all_autoupdating()
     logger.info('Refreshing {} feed auto update tasks'.format(len(feeds_data)))
 
@@ -104,16 +135,20 @@ class TaskServer(rpyc.Service):
         auto_update_task.run_now()
 
 
-if __name__ == "__main__":
+def launch():
+    global feed_update_trim_task, scheduler
     logger.info('Launching Transiter task server')
 
     logger.info('Launching background scheduler')
-    scheduler = apscheduler.schedulers.background.BackgroundScheduler()
     scheduler.start()
 
-    feed_update_trim_task = Task(feedservice.trim_feed_updates, [], 30*60)
+    feed_update_trim_task = CronTask(feedservice.trim_feed_updates, [], minute='*/15')
     refresh_feed_auto_update_tasks()
 
     logger.info('Launching RPyC server')
     server = rpyc.utils.server.ThreadedServer(TaskServer, port=12345)
     server.start()
+
+
+if __name__ == '__main__':
+    launch()

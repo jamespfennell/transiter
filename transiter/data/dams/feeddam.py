@@ -51,20 +51,16 @@ def create_update():
     return genericqueries.create(models.FeedUpdate)
 
 
-def trim_feed_updates(minutes_before_now):
+def trim_feed_updates(before_datetime):
     session = database.get_session()
     query = (
         sql.delete(models.FeedUpdate)
-        .where(
-            models.FeedUpdate.last_action_time <= (
-                datetime.datetime.now() - datetime.timedelta(minutes=minutes_before_now)
-            )
-        )
+        .where(models.FeedUpdate.last_action_time <= before_datetime)
     )
     session.execute(query)
 
 
-def aggregate_feed_updates(minutes_before_now):
+def aggregate_feed_updates(before_datetime):
     session = database.get_session()
 
     query = (
@@ -78,11 +74,7 @@ def aggregate_feed_updates(minutes_before_now):
             models.Feed.system_id, models.Feed.id, models.FeedUpdate.status,
             models.FeedUpdate.explanation
         )
-        .where(
-            models.FeedUpdate.last_action_time <= (
-                datetime.datetime.now() - datetime.timedelta(minutes=minutes_before_now)
-            )
-        )
+        .where(models.FeedUpdate.last_action_time <= before_datetime)
         .order_by(
             models.Feed.system_id, models.Feed.id, models.FeedUpdate.status
         )

@@ -32,7 +32,8 @@ class Trip(Base):
         back_populates='trip',
         order_by='StopTimeUpdate.stop_sequence',
         cascade='delete, delete-orphan',
-        cascade_backrefs=False)
+        cascade_backrefs=False
+    )
 
     _short_repr_list = ['id']
     _long_repr_list = [
