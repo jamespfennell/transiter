@@ -3,25 +3,24 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Transiter's documentation!
-=====================================
+Transiter
+=========
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User Documentation
+
+   deployment
+   apireference
 
 
-Quick API
-=========
-.. qrefflask:: transiter.http.flaskapp:app
-  :undoc-static:
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer Documentation
 
+   system
+   architecture
 
-API
-===
-
-.. autoflask:: transiter.http.flaskapp:app
-   :undoc-static:
 
 Indices and tables
 ==================
