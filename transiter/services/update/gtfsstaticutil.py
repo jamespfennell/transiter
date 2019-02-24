@@ -4,6 +4,8 @@ import os
 
 from transiter.models import Route, Stop
 
+from io import BytesIO
+from zipfile import ZipFile
 days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
         'sunday']
 
@@ -56,7 +58,7 @@ class StaticTrip:
             self.stop_ids == other.stop_ids
         )
 
-
+import io
 class GtfsStaticParser:
 
     CALENDAR_FILE_NAME = 'calendar.txt'
@@ -69,15 +71,45 @@ class GtfsStaticParser:
     def __init__(self):
         self.route_id_to_route = {}
         self.stop_id_to_stop = {}
-        self._stop_id_alias_to_stop_id = {}
-        self.stop_id_alias_to_stop_alias = {}
         self._service_id_to_service = {}
         self.trip_id_to_trip = {}
-        self._base_path = None
         self.transfer_tuples = []
 
+    def _iterate_over(self, file_name):
+        raise NotImplementedError
+
+    @staticmethod
+    def _iterate_over_zip_builder(zipfile):
+        def _iterate_over(file_name):
+            # TODO: for optional files, check for existence
+            with zipfile.open(file_name) as raw_csv_file:
+                csv_file = io.TextIOWrapper(raw_csv_file, 'utf-8')
+                csv_reader = csv.DictReader(csv_file)
+                for row in csv_reader:
+                    yield row
+        return _iterate_over
+
+    @staticmethod
+    def _iterate_over_directory_builder(base_path):
+        def _iterate_over(file_name):
+            # TODO: for optional files, check for existence
+            file_path = os.path.join(base_path, file_name)
+            with open(file_path) as csv_file:
+                csv_reader = csv.DictReader(csv_file)
+                for row in csv_reader:
+                    yield row
+        return _iterate_over
+
+    def parse_from_zip_data(self, zip_data):
+        zipfile = ZipFile(BytesIO(zip_data))
+        self._iterate_over = self._iterate_over_zip_builder(zipfile)
+        self._parse()
+
     def parse_from_directory(self, path):
-        self._base_path = path
+        self._iterate_over = self._iterate_over_directory_builder(path)
+        self._parse()
+
+    def _parse(self):
         self._parse_routes()
         self._parse_stops()
         self._parse_services()
@@ -86,9 +118,7 @@ class GtfsStaticParser:
         self._parse_transfers()
 
     def _parse_routes(self):
-        routes_file_path = os.path.join(
-            self._base_path, self.ROUTES_FILE_NAME)
-        for row in self._csv_iterator(routes_file_path):
+        for row in self._iterate_over(self.ROUTES_FILE_NAME):
             route = Route()
             route.id = row['route_id']
             route.color = row.get('route_color')
@@ -98,10 +128,8 @@ class GtfsStaticParser:
             route.description = row.get('route_desc')
             self.route_id_to_route[route.id] = route
 
-    def _parse_stops(self, stop_id_alias_mode=False):
-        stops_file_path = os.path.join(
-            self._base_path, self.STOPS_FILE_NAME)
-        for row in self._csv_iterator(stops_file_path):
+    def _parse_stops(self):
+        for row in self._iterate_over(self.STOPS_FILE_NAME):
             stop = Stop()
             stop.id = row['stop_id']
             stop.name = row['stop_name']
@@ -118,20 +146,15 @@ class GtfsStaticParser:
             stop.parent_stop_id = row.get('parent_station', None)
             self.stop_id_to_stop[stop.id] = stop
 
-
     def _parse_services(self):
-        calendar_file_path = os.path.join(
-            self._base_path, self.CALENDAR_FILE_NAME)
-        for row in self._csv_iterator(calendar_file_path):
+        for row in self._iterate_over(self.CALENDAR_FILE_NAME):
             service = _GtfsStaticService()
             for day in days:
                 service.__setattr__(day, row[day] == '1')
             self._service_id_to_service[row['service_id']] = service
 
     def _parse_trips(self):
-        trip_file_path = os.path.join(
-            self._base_path, self.TRIPS_FILE_NAME)
-        for row in self._csv_iterator(trip_file_path):
+        for row in self._iterate_over(self.TRIPS_FILE_NAME):
             service_id = row['service_id']
             service = self._service_id_to_service.get(service_id, None)
             if service is None:
@@ -144,9 +167,7 @@ class GtfsStaticParser:
             self.trip_id_to_trip[row['trip_id']] = trip
 
     def _parse_stop_times(self):
-        stop_times_file_path = os.path.join(
-            self._base_path, self.STOP_TIMES_FILE_NAME)
-        for row in self._csv_iterator(stop_times_file_path):
+        for row in self._iterate_over(self.STOP_TIMES_FILE_NAME):
             trip_id = row['trip_id']
             trip = self.trip_id_to_trip.get(trip_id, None)
             if trip is None:
@@ -170,11 +191,7 @@ class GtfsStaticParser:
             trip.stop_ids.append(stop_id)
 
     def _parse_transfers(self):
-        transfers_file_path = os.path.join(
-            self._base_path, self.TRANSFERS_FILE_NAME)
-        if not os.path.exists(transfers_file_path):
-            return
-        for row in self._csv_iterator(transfers_file_path):
+        for row in self._iterate_over(self.TRANSFERS_FILE_NAME):
             stop_id_1 = row['from_stop_id']
             stop_id_2 = row['to_stop_id']
             if stop_id_1 == stop_id_2:
@@ -188,10 +205,4 @@ class GtfsStaticParser:
         secs = int(gtfs_static_time[6:8])
         return hours + mins/60 + secs/3600
 
-    @staticmethod
-    def _csv_iterator(csv_file_path):
-        with open(csv_file_path) as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
-                yield row
 

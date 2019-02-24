@@ -12,8 +12,6 @@ class System(Base):
 
     name = Column(String, nullable=True)
     timezone = Column(String, nullable=True)
-    package = Column(String, nullable=False)
-    directory_hash = Column(String, nullable=True)
 
     routes = relationship(
         'Route',

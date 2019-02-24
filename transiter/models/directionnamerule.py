@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from .base import Base
 
 
+# TODO: make direction names a separate module in systems/{}/directionnames
 class DirectionNameRule(Base):
     __tablename__ = 'direction_name_rule'
 

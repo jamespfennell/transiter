@@ -3,9 +3,9 @@
 ## Main development thread
 
 
-1. Things needed for realtimerail:
-    1. In the get trip endpoint, show the station instead of
-        the stop
+1. Finish the system service work
+1. Fix the feeds usage
+1. Update the integration test and run it 
 
 
 1. All TODOs in the code and here are to me made as issues on github and 
@@ -24,7 +24,7 @@ is called, seemingly when a trip is being deleted
     for the methods missing them
     
 1. Existing code clean up
-    - C6: Optimize the SQL ALchemy config
+    - C6: Optimize the SQL Alchemy config
         - especially with joins/lazy loading
         - Just adding .join(Model.attribute) loads it I think?
         https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html

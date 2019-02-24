@@ -1,14 +1,16 @@
 import csv
-import os
-import importlib
-import yaml
+import logging
 
-from transiter.data import database
-from transiter.data.dams import systemdam
-from transiter.services.update import gtfsstaticutil
-from transiter.general import linksutil, exceptions
-from transiter.services.servicepattern import servicepatternmanager
+import pytimeparse
+import toml
+
 from transiter import models
+from transiter.data import database
+from transiter.data.dams import systemdam, stopdam
+from transiter.general import linksutil, exceptions
+from transiter.services.update import updatemanager
+
+logger = logging.getLogger(__name__)
 
 
 @database.unit_of_work
@@ -52,191 +54,128 @@ def get_by_id(system_id):
 
 
 @database.unit_of_work
-def install(system_id, package='transiter_nycsubway'):
+def install(system_id, config_str, extra_files, extra_settings):
     if systemdam.get_by_id(system_id) is not None:
         return False
 
     system = systemdam.create()
     system.id = system_id
-    system.package = package
-
-    _import_static_data(system)
+    system_config = _SystemConfig(config_str, extra_files, extra_settings)
+    _install_feeds(system, system_config)
+    _install_service_maps(system, system_config)
+    _install_direction_names(system, system_config)
     return True
 
 
 @database.unit_of_work
 def delete_by_id(system_id):
-
-    """
-    print(time.time())
-    print('Routes')
-    for route in system.routes:
-        session.delete(route)
-    session.commit()
-    print(time.time())
-    print('Stops')
-    for stop in system.stations:
-        session.delete(stop)
-    session.commit()
-    print(time.time())
-    print('Rest')
-    #session.delete(system)
-
-    return True
-    """
-
     deleted = systemdam.delete_by_id(system_id)
     if not deleted:
         raise exceptions.IdNotFoundError
     return True
 
 
-def _lift_stop_properties(parent_stop, child_stops):
+class _SystemConfig:
 
-    parent_stop.latitude = sum(float(child_stop.latitude) for child_stop in child_stops)/len(child_stops)
-    parent_stop.longitude = sum(float(child_stop.longitude) for child_stop in child_stops)/len(child_stops)
+    def __init__(self, config_str, extra_files, extra_settings):
 
-    if parent_stop.id is None:
-        child_stop_ids = [child_stop.id for child_stop in child_stops]
-        parent_stop.id = '-'.join(sorted(child_stop_ids))
+        config = toml.loads(config_str)
 
-    if parent_stop.name is None:
-        child_stop_names = {child_stop.name: 0 for child_stop in child_stops}
-        for child_stop in child_stops:
-            child_stop_names[child_stop.name] += 1
-        max_freq = max(child_stop_names.values())
-        most_frequent_names = set()
-        for child_stop_name, freq in child_stop_names.items():
-            if freq == max_freq:
-                most_frequent_names.add(child_stop_name)
+        # TODO: Verify packages are available
 
-        for name in most_frequent_names.copy():
-            remove = False
-            for other_name in most_frequent_names:
-                if name != other_name and name in other_name:
-                    remove = True
-            if remove:
-                most_frequent_names.remove(name)
-        parent_stop.name = ' / '.join(sorted(most_frequent_names))
+        required_settings = set(config.get('prerequisites', {}).get('settings', {}))
+        required_settings.difference_update(extra_settings.keys())
+        if len(required_settings) > 0:
+            raise Exception('Invalid config')
 
+        self.feeds = config.get('feeds', {})
+        print(self.feeds)
+        for feed_id, feed in self.feeds.items():
+            print('here', feed)
+            feed['url'] = (feed['url']).format(**extra_settings)
 
-def _import_static_data(system):
-
-    package = importlib.import_module(system.package)
-    system_base_dir = os.path.dirname(package.__file__)
-    agency_data_dir = os.path.join(system_base_dir, 'agencydata')
-    custom_data_dir = os.path.join(system_base_dir, 'customdata')
-
-    config_file_path = os.path.join(system_base_dir, 'config.yaml')
-    system_config = SystemConfig(config_file_path)
-
-    gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
-    gtfs_static_parser.parse_from_directory(agency_data_dir)
-
-    for route in gtfs_static_parser.route_id_to_route.values():
-        route.system = system
-
-    # next 3 bits: Construct larger stations using transfers.txt
-    # TODO: make a separate method
-    station_sets_by_stop_id = {}
-    for stop in gtfs_static_parser.stop_id_to_stop.values():
-        stop.system = system
-        if not stop.is_station:
-            parent_stop = gtfs_static_parser.stop_id_to_stop.get(stop.parent_stop_id, None)
-            if parent_stop is None:
-                stop.is_station = True
+            file_upload_fallback = feed.get('file_upload_fallback', None)
+            if 'required_for_install' in feed:
+                if file_upload_fallback is not None:
+                    feed['file_upload_fallback'] = extra_files[file_upload_fallback]
             else:
-                stop.parent_stop = parent_stop
-        if stop.is_station:
-            station_sets_by_stop_id[stop.id] = {stop.id}
+                feed['required_for_install'] = False
 
-    for (stop_id_1, stop_id_2) in gtfs_static_parser.transfer_tuples:
-        updated_station_set = station_sets_by_stop_id[stop_id_1].union(
-            station_sets_by_stop_id[stop_id_2])
-        for stop_id in updated_station_set:
-            station_sets_by_stop_id[stop_id] = updated_station_set
+            if 'auto_update' in feed:
+                auto_update_time_str = feed['auto_update_period']
+                feed['auto_update_period'] = pytimeparse.parse(auto_update_time_str)
+                logger.info(
+                    f'Converted string "{auto_update_time_str}" '
+                    f'to {feed["auto_update_period"]} seconds.')
+            else:
+                feed['auto_update'] = False
 
-    for station_set in station_sets_by_stop_id.values():
-        if len(station_set) <= 1:
+        self.service_maps = config.get('service_maps', {})
+
+        self.direction_name_files = []
+        for file_key in config.get('direction_names', {}).get('file_uploads', []):
+            self.direction_name_files.append(
+                extra_files[file_key]
+            )
+
+
+def _install_feeds(system, system_config):
+
+    for feed_id, feed_config in system_config.feeds.items():
+        # make this a bulk_get_or_create(system_id, feed_ids)
+        # ... but still need to delete old ones...maybe through reassigning
+        # system.feeds? Yes
+        feed = models.Feed()
+        feed.system = system
+        feed.id = feed_id
+        feed.url = feed_config['url']
+        feed.parser = feed_config['parser']
+        feed.auto_updater_enabled = feed_config['auto_update']
+        feed.auto_updater_frequency = feed_config['auto_update_period']
+
+        if not feed_config['required_for_install']:
             continue
-        parent_stop = models.Stop()
-        child_stops = [gtfs_static_parser.stop_id_to_stop[stop_id] for stop_id in station_set]
-        for child_stop in child_stops:
-            child_stop.parent_stop = parent_stop
-        _lift_stop_properties(parent_stop, child_stops)
-        parent_stop.is_station = True
-        parent_stop.system = system
+        feed_update = models.FeedUpdate(feed)
+        updatemanager.execute_feed_update(feed_update)
+        # TODO: check if successful and if not, try again with the local feed
 
-        station_set.clear()
 
-    for stop_alias in gtfs_static_parser.stop_id_alias_to_stop_alias.values():
-        stop_id = stop_alias.stop_id
-        stop = gtfs_static_parser.stop_id_to_stop[stop_id]
-        stop_alias.stop = stop
-
+def _install_service_maps(system, system_config):
+    # For the moment, assume service patterns
+    """
     servicepatternmanager.construct_sps_from_gtfs_static_data(
         gtfs_static_parser,
         system_config.static_route_sps,
         system_config.static_other_sps,
+
     )
+    """
 
-    direction_name_rules_files = system_config.direction_name_rules_files
+
+def _install_direction_names(system, system_config):
+    # For the moment, assume direction names involve a full reset
+    direction_name_files = system_config.direction_name_files
+    stop_id_to_stop = {
+        stop.id: stop for stop in stopdam.list_all_in_system(system.id)
+    }
     priority = 0
-    for direction_name_rules_file_path in direction_name_rules_files:
-        full_path = os.path.join(custom_data_dir, direction_name_rules_file_path)
-        with open(full_path) as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
-                stop_id = row['stop_id']
-                stop = gtfs_static_parser.stop_id_to_stop.get(stop_id, None)
-                if stop is None:
-                    continue
-                direction_id = row.get('direction_id', None)
-                if direction_id is not None:
-                    direction_id = (direction_id == '0')
-                direction_name_rule = models.DirectionNameRule()
-                direction_name_rule.stop = stop
-                direction_name_rule.priority = priority
-                direction_name_rule.direction_id = direction_id
-                direction_name_rule.track = row.get('track', None)
-                direction_name_rule.stop_id_alias = row.get('stop_id_alias', None)
-                direction_name_rule.name = row['direction_name']
-                priority += 1
+    for direction_name_file in direction_name_files:
+        csv_reader = csv.DictReader(
+            line.decode('utf-8') for line in direction_name_file.readlines()
+        )
+        for row in csv_reader:
+            stop = stop_id_to_stop.get(row['stop_id'], None)
+            if stop is None:
+                continue
+            direction_id = row.get('direction_id', None)
+            if direction_id is not None:
+                direction_id = (direction_id == '0')
+            direction_name_rule = models.DirectionNameRule()
+            direction_name_rule.stop = stop
+            direction_name_rule.priority = priority
+            direction_name_rule.direction_id = direction_id
+            direction_name_rule.track = row.get('track', None)
+            direction_name_rule.name = row['direction_name']
+            priority += 1
 
-    for feed_config in system_config.feeds:
-        feed = models.Feed()
-        feed.system = system
-        feed.id = feed_config['name']
-        feed.url = feed_config['url'].format(**system_config.env_vars)
-        feed.parser = feed_config['parser']
-        if feed.parser == 'custom':
-            feed.custom_module = feed_config['custom_parser']['module']
-            feed.custom_function = feed_config['custom_parser']['function']
-        feed.auto_updater_enabled = True
-        feed.auto_updater_frequency = 5
-
-
-class SystemConfig:
-
-    def __init__(self, config_file_path):
-        with open(config_file_path, 'r') as f:
-            self.config = yaml.load(f)
-        self.feeds = self.config.get('feeds', None)
-        self.static_route_sps = self.config.get(
-            'static_route_service_patterns', [])
-        self.static_other_sps = self.config.get(
-            'static_other_service_patterns', [])
-        self.realtime_route_sps = self.config.get(
-            'realtime_route_service_patterns',
-            {'enabled': False})
-        self.direction_name_rules_files = self.config.get(
-            'direction_name_rules_files', [])
-
-        self.env_vars = {}
-        env_vars_config = self.config.get('environment_variables', {})
-        for key, value in env_vars_config.items():
-            if value not in os.environ:
-                # TODO: make this a Transiter spefic exeption type
-                raise KeyError('Missing env var {}'.format(value))
-            self.env_vars[key] = os.environ.get(value, None)
 

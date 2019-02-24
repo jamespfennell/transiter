@@ -18,10 +18,12 @@ setup(
         'flask',
         'gtfs-realtime-bindings',
         'psycopg2-binary',
-        'pyyaml',
+        'pytimeparse',
         'pytz',
+        'pyyaml',
         'requests',
         'rpyc',
-        'sqlalchemy'
+        'sqlalchemy',
+        'toml'
     ]
 )

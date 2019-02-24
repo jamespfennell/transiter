@@ -171,7 +171,7 @@ class TestSystemService(unittest.TestCase):
             'direction_name_rules_files': direction_name_rules_files
         }
 
-        system_config = systemservice.SystemConfig(self.FILE_NAME)
+        system_config = systemservice._SystemConfig(self.FILE_NAME)
 
         self.assertEqual(system_config.feeds, feeds)
         open.assert_called_once_with(self.FILE_NAME, 'r')

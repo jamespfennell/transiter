@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request
 from transiter.services import systemservice
 from transiter.http.responsemanager import http_get_response, http_delete_response, http_put_response
 from transiter.http import inputvalidator
@@ -77,8 +77,17 @@ def install(system_id):
     :status 201: the system's data was found on disk and the system was installed
     :status 404: data for such a system was not found
     """
-    data = inputvalidator.validate_post_data(['package', ], [])
-    return systemservice.install(system_id, **data)
+    config_str = request.files['config_file'].read().decode('utf-8')
+    extra_files = {
+        key: request.files[key].stream for key in request.files
+    }
+    del extra_files['config_file']
+    return systemservice.install(
+        system_id=system_id,
+        config_str=config_str,
+        extra_files=extra_files,
+        extra_settings=request.form.to_dict()
+    )
 
 
 @system_endpoints.route('/<system_id>', methods=['DELETE'])

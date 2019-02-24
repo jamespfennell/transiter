@@ -32,6 +32,10 @@ class FeedUpdate(Base):
     _long_repr_dict = {'id': 'pk'}
     _long_repr_list = ['status', 'explanation', 'raw_data_hash', 'last_action_time']
 
+    def __init__(self, feed):
+        self.feed = feed
+        self.status = 'SCHEDULED'
+
 
 Index('feed_updates_last_successful_idx',
       FeedUpdate.feed_pk,

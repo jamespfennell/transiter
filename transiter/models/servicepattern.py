@@ -10,6 +10,7 @@ class ServicePattern(Base):
     pk = Column(Integer, primary_key=True)
     route_pk = Column(Integer, ForeignKey('route.pk'), index=True, nullable=False)
     name = Column(String)
+    # use_for_routes_at_stop = Column(Boolean)
 
     route = relationship(
         'Route',
