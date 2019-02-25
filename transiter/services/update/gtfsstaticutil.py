@@ -80,13 +80,17 @@ class GtfsStaticParser:
 
     @staticmethod
     def _iterate_over_zip_builder(zipfile):
+        all_file_names = zipfile.namelist()
+
         def _iterate_over(file_name):
-            # TODO: for optional files, check for existence
+            if file_name not in all_file_names:
+                return []
             with zipfile.open(file_name) as raw_csv_file:
                 csv_file = io.TextIOWrapper(raw_csv_file, 'utf-8')
                 csv_reader = csv.DictReader(csv_file)
                 for row in csv_reader:
                     yield row
+                    
         return _iterate_over
 
     @staticmethod
@@ -177,8 +181,6 @@ class GtfsStaticParser:
             pre_stop_id = row['stop_id']
             if pre_stop_id in self.stop_id_to_stop:
                 stop_id = pre_stop_id
-            elif pre_stop_id in self._stop_id_alias_to_stop_id:
-                stop_id = self._stop_id_alias_to_stop_id[pre_stop_id]
             else:
                 print('Test')
                 continue
