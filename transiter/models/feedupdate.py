@@ -28,9 +28,9 @@ class FeedUpdate(Base):
         back_populates='updates')
 
     _short_repr_dict = {'id': 'pk'}
-    _short_repr_list = ['status', 'explanation', 'raw_data_hash', 'last_action_time']
+    _short_repr_list = ['status', 'explanation', 'failure_message', 'raw_data_hash', 'last_action_time']
     _long_repr_dict = {'id': 'pk'}
-    _long_repr_list = ['status', 'explanation', 'raw_data_hash', 'last_action_time']
+    _long_repr_list = ['status', 'explanation', 'failure_message', 'raw_data_hash', 'last_action_time']
 
     def __init__(self, feed):
         self.feed = feed

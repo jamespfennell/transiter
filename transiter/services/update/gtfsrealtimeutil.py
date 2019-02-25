@@ -153,10 +153,10 @@ class _GtfsRealtimeToTransiterTransformer:
 
             vehicle_data = entity.get('vehicle', {})
             trip.last_update_time = self._timestamp_to_datetime(
-                vehicle_data.get(
-                    'timestamp',
-                    self._transformed_metadata.get('timestamp', None)
-                    ))
+                vehicle_data.get('timestamp', None))
+            if trip.last_update_time is None:
+                trip.last_update_time = self._transformed_metadata.get(
+                    'timestamp', None)
             trip.current_status = vehicle_data.get('current_status', None)
             trip.current_stop_sequence = vehicle_data.get('current_stop_sequence', 0)
             self._trip_id_to_trip_model[trip_id] = trip

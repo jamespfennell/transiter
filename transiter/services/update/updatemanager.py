@@ -4,7 +4,7 @@ from transiter.data.dams import feeddam
 from transiter import models
 import time
 import logging
-import decorator
+import importlib
 import traceback
 
 from . import gtfsrealtimeutil, gtfsstaticutil, tripupdater
@@ -45,16 +45,17 @@ def _execute_feed_update_helper(feed_update, content=None):
     except InvalidParser as invalid_parser:
         feed_update.status = 'FAILURE'
         feed_update.explanation = 'INVALID_PARSER'
-        feed_update.status_message = str(invalid_parser)
+        feed_update.failure_message = str(invalid_parser)
         return
 
-    try:
-        content = _get_content(feed)
-    except requests.RequestException as download_error:
-        feed_update.status = 'FAILURE'
-        feed_update.explanation = 'DOWNLOAD_ERROR'
-        feed_update.status_message = str(download_error)
-        return
+    if content is None:
+        try:
+            content = _get_content(feed)
+        except requests.RequestException as download_error:
+            feed_update.status = 'FAILURE'
+            feed_update.explanation = 'DOWNLOAD_ERROR'
+            feed_update.failure_message = str(download_error)
+            return
 
     content_hash = _calculate_content_hash(content)
     feed_update.raw_data_hash = content_hash
@@ -72,7 +73,8 @@ def _execute_feed_update_helper(feed_update, content=None):
     except Exception:
         feed_update.status = 'FAILURE'
         feed_update.explanation = 'PARSE_ERROR'
-        feed_update.status_message = str(traceback.format_exc())
+        feed_update.failure_message = str(traceback.format_exc())
+        logger.debug('Feed parse error:\n' + feed_update.failure_message)
         return
 
     feed_update.status = 'SUCCESS'
@@ -84,6 +86,35 @@ def _get_parser(feed):
     builtin_parser = _builtin_parser_id_to_parser.get(parser_str, None)
     if builtin_parser is not None:
         return builtin_parser
+
+    colon_char = parser_str.find(':')
+    if colon_char == -1:
+        raise InvalidParser(
+            'Custom parser specifier must be of the form module:method'
+        )
+    module_str = parser_str[:colon_char]
+    method_str = parser_str[colon_char+1:]
+
+    try:
+        module = _import_module(module_str)
+    except ModuleNotFoundError:
+        raise InvalidParser('Unknown module \'{}\''.format(module_str))
+
+    try:
+        return getattr(module, method_str)
+    except AttributeError:
+        raise InvalidParser('Module \'{}\' has no method \'{}\'.'.format(
+            module_str, method_str))
+
+
+def _import_module(module_str, invalidate_caches=False):
+    try:
+        return importlib.import_module(module_str)
+    except ModuleNotFoundError:
+        if invalidate_caches:
+            return _import_module(module_str, invalidate_caches=True)
+        else:
+            raise
 
 
 def _get_content(feed):
