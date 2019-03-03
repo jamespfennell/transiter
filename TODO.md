@@ -18,6 +18,8 @@ is called, seemingly when a trip is being deleted
 
 ## Version 0.2
 
+1. Investigate using Arrow
+
 1. Add logging
 
 - Check the code coverage, and then write unit tests

@@ -15,7 +15,7 @@ def get_in_system_by_id(system_id, stop_id):
     )
 
 
-def get_id_to_pk_map_in_system(system_id, stop_ids):
+def get_id_to_pk_map_in_system(system_id, stop_ids=None):
     return genericqueries.get_id_to_pk_map(
         models.Stop, system_id, stop_ids
     )

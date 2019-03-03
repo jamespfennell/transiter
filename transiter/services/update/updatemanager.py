@@ -1,6 +1,7 @@
 import requests
 import hashlib
-from transiter.data.dams import feeddam
+from transiter.data import database
+from transiter.data.dams import feeddam, routedam, stopdam
 from transiter import models
 import time
 import logging
@@ -150,6 +151,8 @@ def _parse_gtfs_static(feed, gtfs_static_zip_data):
     for route in gtfs_static_parser.route_id_to_route.values():
         route.system = system
 
+    stop_id_to_station_id = {}
+
     # next 3 bits: Construct larger stations using transfers.txt
     # TODO: make a separate method in the GTFS parser
     station_sets_by_stop_id = {}
@@ -163,6 +166,8 @@ def _parse_gtfs_static(feed, gtfs_static_zip_data):
                 stop.parent_stop = parent_stop
         if stop.is_station:
             station_sets_by_stop_id[stop.id] = {stop.id}
+        else:
+            stop_id_to_station_id[stop.id] = stop.parent_stop.id
 
     for (stop_id_1, stop_id_2) in gtfs_static_parser.transfer_tuples:
         updated_station_set = station_sets_by_stop_id[stop_id_1].union(
@@ -182,6 +187,29 @@ def _parse_gtfs_static(feed, gtfs_static_zip_data):
         parent_stop.system = system
 
         station_set.clear()
+
+    session = database.get_session()
+    session.flush()
+
+    route_id_to_pk = routedam.get_id_to_pk_map_in_system(system.id)
+    stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id)
+
+    # TODO: get this straight from the DB
+    stop_id_to_station_pk = {}
+    for stop_id in stop_id_to_pk.keys():
+        station_id = stop_id_to_station_id.get(stop_id, stop_id)
+        stop_id_to_station_pk[stop_id] = stop_id_to_pk[station_id]
+
+    gtfsstaticutil.fast_scheduled_entities_inserter(
+        gtfs_static_zip_data,
+        system.pk,
+        route_id_to_pk,
+        stop_id_to_pk,
+        stop_id_to_station_pk
+    )
+    #for service in gtfs_static_parser.service_id_to_service.values():
+    #    service.system = system
+
 
 def _lift_stop_properties(parent_stop, child_stops):
 

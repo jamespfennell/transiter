@@ -1,0 +1,44 @@
+
+# Transiter configuration file
+
+[database]
+
+# The driver and dialect settings are used to specify which DBMS is in use
+# and which Python package to use to connect to it. Currently officially 
+# supported options:
+#
+# | DBMS       | Driver     | Dialect    | Additional python packages required |
+# |------------+------------+------------+-------------------------------------|
+# | SQLite     | sqlite     |            |                                     |
+# | Postgresql | postgresql | psycopg2   | psycopg2-binary                     |
+
+driver = 'postgresql'
+dialect = 'psycopg2'
+
+# The database name. Note that for SQLite the database name is the location 
+# of the file on disk relative to the directory Transiter servers are launched.
+
+name = 'realtimerail'
+
+# User settings.
+
+username = 'james'
+password = ''
+
+# Host settings. If using Postgres or another client/server DBMS the database
+# can be on a separate machine to the Transiter instance. If running the
+# Transiter instance on the same Unix machine as the database, it is highly 
+# recommended to use Unix domain sockets instead of TCP, in which case the
+# host and port settings should be empty
+
+host = ''
+port = ''
+
+[taskserver]
+
+# The port that the task server listens on. This is used both when 
+# launching the task server, and when the main HTTP server attempts to 
+# communicate with it.
+
+port = 5001
+

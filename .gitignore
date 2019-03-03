@@ -11,3 +11,5 @@ dist
 tests/integrationtests/build
 tests/integrationtests/dist
 .eggs
+sandbox
+transiter.db

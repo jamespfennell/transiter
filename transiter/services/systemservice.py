@@ -137,6 +137,8 @@ def _install_feeds(system, system_config):
             continue
         feed_update = models.FeedUpdate(feed)
         updatemanager.execute_feed_update(feed_update)
+        if feed_update.status != 'SUCCESS':
+            raise ValueError('Update failed!')
         # TODO: check if successful and if not, try again with the local feed
 
 

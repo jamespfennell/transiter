@@ -47,16 +47,18 @@ def get_in_system_by_id(DbObject: models.Base, system_id, id_):
     )
 
 
-def get_id_to_pk_map(DbObject: models.Base, system_id, ids):
-    id_to_pk = {id_: None for id_ in ids}
+def get_id_to_pk_map(DbObject: models.Base, system_id=None, ids=None):
+    if ids is not None:
+        id_to_pk = {id_: None for id_ in ids}
+    else:
+        id_to_pk = {}
     session = database.get_session()
-    query = (
-        session.query(DbObject.id, DbObject.pk)
-        .filter(DbObject.id.in_(ids))
-        .filter(DbObject.system_id == system_id)
-        .all()
-    )
-    for (id_, pk) in query:
+    query = session.query(DbObject.id, DbObject.pk)
+    if system_id is not None:
+        query = query.filter(DbObject.system_id == system_id)
+    if ids is not None:
+        query = query.filter(DbObject.id.in_(ids))
+    for (id_, pk) in query.all():
         id_to_pk[id_] = pk
     return id_to_pk
 

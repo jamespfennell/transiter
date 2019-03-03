@@ -1,3 +1,8 @@
+
+class ConfigFileNotFoundError(Exception):
+    pass
+
+
 class IdNotFoundError(Exception):
     pass
 

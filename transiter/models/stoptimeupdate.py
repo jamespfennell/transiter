@@ -5,6 +5,7 @@ from sqlalchemy.sql import text
 from .base import Base
 
 
+#TODO(!) rename TripStopTime
 class StopTimeUpdate(Base):
     __tablename__ = 'stop_time_update'
 

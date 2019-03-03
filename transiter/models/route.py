@@ -40,17 +40,26 @@ class Route(Base):
     # NOTE(fennell): need the post_update=True condition on all of these relationships
     # because the service_patterns table has a FK constraint to this table.
     # TODO: stops_in_route_service_map_pk = ...
-    regular_service_pattern_pk = Column(Integer, ForeignKey('service_pattern.pk'))
+    regular_service_pattern_pk = Column(
+        Integer,
+        ForeignKey('service_pattern.pk', name='james_f_1')
+    )
     regular_service_pattern = relationship(
         'ServicePattern',
         post_update=True,
         foreign_keys=[regular_service_pattern_pk])
-    default_service_pattern_pk = Column(Integer, ForeignKey('service_pattern.pk'))
+    default_service_pattern_pk = Column(
+        Integer,
+        ForeignKey('service_pattern.pk', name='james_f_2')
+    )
     default_service_pattern = relationship(
         'ServicePattern',
         post_update=True,
         foreign_keys=[default_service_pattern_pk])
-    dynamic_service_pattern_pk = Column(Integer, ForeignKey('service_pattern.pk'))
+    dynamic_service_pattern_pk = Column(
+        Integer,
+        ForeignKey('service_pattern.pk', name='james_f_3')
+    )
     dynamic_service_pattern = relationship(
         'ServicePattern',
         post_update=True,

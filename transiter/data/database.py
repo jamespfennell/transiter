@@ -1,5 +1,4 @@
 import logging
-import os
 import traceback
 import warnings
 
@@ -9,55 +8,52 @@ from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from transiter import models
+from transiter.general import config
 
 warnings.simplefilter(action='ignore', category=SAWarning)
 logger = logging.getLogger(__name__)
 
 
-class DatabaseConnectionParameters:
-
-    def __init__(self, database, user, password=None):
-        self._database = database
-        self._user = user
-        self._password = password
-        self._driver = 'postgresql'
-        self._dialect = None
-        self._host = None
-        self._port = None
-
-    def set_driver(self, driver, dialect=None):
-        self._driver = driver
-        self._dialect = dialect
-
-    def set_host(self, host, port=None):
-        self._host = host
-        self._port = port
-
-    def create_url(self):
-        pieces = ['']*9
-        pieces[0] = self._driver
-        if self._dialect is not None:
-            pieces[1] = '+' + str(self._dialect)
-        pieces[2] = '://'
-        pieces[3] = self._user
-        if self._password is not None:
-            pieces[4] = self._password
+def build_connection_url_from_config(database_config):
+    pieces = ['']*9
+    pieces[0] = database_config.driver
+    if database_config.dialect != '':
+        pieces[1] = '+' + database_config.dialect
+    pieces[2] = '://'
+    if database_config.username != '':
+        pieces[3] = database_config.username
+        if database_config.password != '':
+            # TODO: does need to be encoded?
+            pieces[4] = database_config.password
         pieces[4] = '@'
-        if self._host is not None:
-            pieces[5] = self._host
-            if self._port is not None:
-                pieces[6] = ':' + str(self._port)
-        pieces[7] = '/'
-        pieces[8] = self._database
-        return ''.join(pieces)
+    if database_config.host != '':
+        pieces[5] = database_config.host
+        if database_config.port != '':
+            pieces[6] = ':' + database_config.port
+    pieces[7] = '/'
+    pieces[8] = database_config.name
+    logger.info('Connection URL: ' + ''.join(pieces))
+    return ''.join(pieces)
 
 
-def create_engine(actual_db_connection_params: DatabaseConnectionParameters):
-    return sqlalchemy.create_engine(actual_db_connection_params.create_url())
+def build_extra_engine_params_from_config(database_config):
+    extra_params = {}
+    if database_config.driver == 'postgresql':
+        if database_config.dialect == '' or database_config.dialect == 'psycopg2':
+            extra_params['use_batch_mode'] = True
+    logger.info('Extra connection params: ' + str(extra_params))
+    return extra_params
+
+
+def create_engine():
+    connection_url = build_connection_url_from_config(config.database)
+    extra_params = build_extra_engine_params_from_config(config.database)
+    return sqlalchemy.create_engine(connection_url, **extra_params)
 
 
 def _perform_outer_database_action(operation: str,
                                    silent=True):
+    """
     database = db_connection_params._database
     db_connection_params._database = 'postgres'
     outer_engine = create_engine(db_connection_params)
@@ -72,6 +68,8 @@ def _perform_outer_database_action(operation: str,
     finally:
         conn.close()
         db_connection_params._database = database
+    """
+    raise Exception('Why is this method being used?')
 
 
 def drop_database(silent=True):
@@ -82,11 +80,6 @@ def create_database(silent=True):
     _perform_outer_database_action('CREATE', silent)
 
 
-# TODO allow way to specify full config and load at this point
-# TODO: why is user postgres used above?
-db_name = os.environ.get('TRANSITER_DB_NAME', 'realtimerail')
-db_user = os.environ.get('TRANSITER_DB_USER', 'james')
-db_connection_params = DatabaseConnectionParameters(db_name, db_user)
 engine = None
 session_factory = None
 Session = None
@@ -96,7 +89,7 @@ def ensure_db_connection():
     global engine, session_factory, Session
     if engine is not None:
         return
-    engine = create_engine(db_connection_params)
+    engine = create_engine()
     session_factory = sessionmaker(bind=engine)
     Session = scoped_session(session_factory)
 
@@ -121,6 +114,7 @@ def get_session():
 def unit_of_work(func, *args, **kw):
     global Session
     ensure_db_connection()
+    # TODO: investigate autoflush=False
     session = Session()
     logger.debug('Opened unit of work session {}'.format(session))
     try:
@@ -141,10 +135,12 @@ def unit_of_work(func, *args, **kw):
 def create_tables():
     global engine
     ensure_db_connection()
+    models.Base.metadata.drop_all(engine)
     models.Base.metadata.create_all(engine)
 
 
-def rebuild_db():
-    drop_database()
-    create_database()
+def rebuild_db(recreate_db=False):
+    if recreate_db:
+        drop_database()
+        create_database()
     create_tables()

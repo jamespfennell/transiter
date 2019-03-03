@@ -101,7 +101,7 @@ def about():
     }
 
 
-def launch():
+def launch(force=False):
     logger = logging.getLogger('transiter')
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler()

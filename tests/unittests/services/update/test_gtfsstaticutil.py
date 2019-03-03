@@ -144,7 +144,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
         gtfs_static_parser._parse_services()
 
         self.assertEqual(
-            gtfs_static_parser._service_id_to_service,
+            gtfs_static_parser.service_id_to_service,
             {service_id: service}
         )
 
@@ -188,7 +188,7 @@ class TestGtfsStaticUtil(unittest.TestCase):
         gtfs_static_parser = gtfsstaticutil.GtfsStaticParser()
         gtfs_static_parser._base_path = ''
         gtfs_static_parser._csv_iterator = csv_iterator
-        gtfs_static_parser._service_id_to_service = {
+        gtfs_static_parser.service_id_to_service = {
             '1': service
         }
 

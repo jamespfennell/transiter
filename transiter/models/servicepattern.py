@@ -8,7 +8,7 @@ class ServicePattern(Base):
     __tablename__ = 'service_pattern'
 
     pk = Column(Integer, primary_key=True)
-    route_pk = Column(Integer, ForeignKey('route.pk'), index=True, nullable=False)
+    route_pk = Column(Integer, ForeignKey('route.pk', name='james_f_4'), index=True, nullable=False)
     name = Column(String)
     # use_for_routes_at_stop = Column(Boolean)
 

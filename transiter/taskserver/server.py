@@ -136,7 +136,7 @@ class TaskServer(rpyc.Service):
         auto_update_task.run_now()
 
 
-def launch():
+def launch(force=False):
     global feed_update_trim_task, scheduler
     logger.info('Launching Transiter task server')
 

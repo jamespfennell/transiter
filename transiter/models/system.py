@@ -25,5 +25,10 @@ class System(Base):
         'Feed',
         back_populates='system',
         cascade='all, delete-orphan')
+    scheduled_services = relationship(
+        'ScheduledService',
+        back_populates='system',
+        cascade='all, delete-orphan'
+    )
 
     _short_repr_list = ['id']
