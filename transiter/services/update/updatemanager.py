@@ -194,18 +194,11 @@ def _parse_gtfs_static(feed, gtfs_static_zip_data):
     route_id_to_pk = routedam.get_id_to_pk_map_in_system(system.id)
     stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id)
 
-    # TODO: get this straight from the DB
-    stop_id_to_station_pk = {}
-    for stop_id in stop_id_to_pk.keys():
-        station_id = stop_id_to_station_id.get(stop_id, stop_id)
-        stop_id_to_station_pk[stop_id] = stop_id_to_pk[station_id]
-
     gtfsstaticutil.fast_scheduled_entities_inserter(
         gtfs_static_zip_data,
         system.pk,
         route_id_to_pk,
         stop_id_to_pk,
-        stop_id_to_station_pk
     )
     #for service in gtfs_static_parser.service_id_to_service.values():
     #    service.system = system

@@ -2,9 +2,8 @@
 
 ## Main development thread
 
+1. Add the integration with the current service map module
 
-1. Finish the system service work
-1. Fix the feeds usage
 1. Update the integration test and run it 
 
 

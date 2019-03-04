@@ -75,7 +75,7 @@ port = '{database_port}'
 port = {taskserver_port:d}
 
 """
-
+# TODO: add logging config
 
 def _list_settings(default_values=True):
     """
@@ -131,3 +131,6 @@ def generate(default_values=True):
             '{}_{}'.format(section_name, setting_name)
         ] = value
     return _toml_str.format(**format_dict)
+
+
+load()

@@ -299,7 +299,6 @@ def fast_scheduled_entities_inserter(
         system_pk,
         route_id_to_pk,
         stop_id_to_pk,
-        stop_id_to_station_pk
 ):
     """
     This function syncs scheduled entities (services, trips and stop times)
@@ -364,7 +363,7 @@ def fast_scheduled_entities_inserter(
             if row['trip_id'] not in trip_id_to_raw_service_map_list:
                 trip_id_to_raw_service_map_list[row['trip_id']] = []
             trip_id_to_raw_service_map_list[row['trip_id']].append(
-                stop_id_to_station_pk[row['stop_id']]
+                stop_id_to_pk[row['stop_id']]
             )
 
     with zipfile.open(GtfsStaticParser.TRIPS_FILE_NAME) as raw_csv_file:
@@ -373,12 +372,8 @@ def fast_scheduled_entities_inserter(
         rows = csv.DictReader(csv_file)
         for row in rows:
             direction_id = str_to_bool[row['direction_id']]
-            if not direction_id:
-                raw_service_map_str = str(list(reversed(
-                    trip_id_to_raw_service_map_list[row['trip_id']])))
-            else:
-                raw_service_map_str = str(
-                    trip_id_to_raw_service_map_list[row['trip_id']])
+            raw_service_map_str = str(
+                trip_id_to_raw_service_map_list[row['trip_id']])
             fast_inserter.add(
                 {
                     'id': row['trip_id'],

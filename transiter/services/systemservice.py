@@ -32,6 +32,13 @@ def list_all():
 
 @database.unit_of_work
 def get_by_id(system_id):
+    from transiter.data.dams import servicepatterndam
+    import datetime
+    servicepatterndam.list_scheduled_trip_raw_service_maps_in_system(
+        system_id='nycsubway',
+        sunday=True,
+        min_start_time=datetime.time(hour=7, minute=0, second=0)
+    )
     system = systemdam.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError
