@@ -1,6 +1,7 @@
 import csv
 import logging
 
+import json
 import pytimeparse
 import toml
 
@@ -32,16 +33,13 @@ def list_all():
 
 @database.unit_of_work
 def get_by_id(system_id):
-    from transiter.data.dams import servicepatterndam
-    import datetime
-    servicepatterndam.list_scheduled_trip_raw_service_maps_in_system(
-        system_id='nycsubway',
-        sunday=True,
-        min_start_time=datetime.time(hour=7, minute=0, second=0)
-    )
     system = systemdam.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError
+
+    from transiter.services.servicepattern import servicepatternmanager
+    servicepatternmanager.calculate_scheduled_service_maps_for_system(system)
+
     response = system.short_repr()
     response.update({
         "stops": {
@@ -68,8 +66,10 @@ def install(system_id, config_str, extra_files, extra_settings):
     system = systemdam.create()
     system.id = system_id
     system_config = _SystemConfig(config_str, extra_files, extra_settings)
-    _install_feeds(system, system_config)
+    # Service maps must come first in case calculations are triggered
+    # by install_required feed updates
     _install_service_maps(system, system_config)
+    _install_feeds(system, system_config)
     _install_direction_names(system, system_config)
     return True
 
@@ -118,6 +118,14 @@ class _SystemConfig:
                 feed['auto_update'] = False
 
         self.service_maps = config.get('service_maps', {})
+        for service_map_id, service_map in self.service_maps.items():
+            if 'conditions' in service_map:
+                service_map['conditions'] = json.dumps(service_map['conditions'])
+            else:
+                service_map['conditions'] = None
+            service_map.setdefault('threshold', 0)
+            service_map.setdefault('use_for_routes_at_stop', False)
+            service_map.setdefault('use_for_stops_in_route', False)
 
         self.direction_name_files = []
         for file_key in config.get('direction_names', {}).get('file_uploads', []):
@@ -150,15 +158,16 @@ def _install_feeds(system, system_config):
 
 
 def _install_service_maps(system, system_config):
-    # For the moment, assume service patterns
-    """
-    servicepatternmanager.construct_sps_from_gtfs_static_data(
-        gtfs_static_parser,
-        system_config.static_route_sps,
-        system_config.static_other_sps,
+    for service_map_id, service_map_config in system_config.service_maps.items():
 
-    )
-    """
+        service_map_group = models.ServiceMapGroup()
+        service_map_group.system = system
+        service_map_group.id = service_map_id
+        for field in [
+            'source', 'conditions', 'threshold', 'use_for_routes_at_stop',
+            'use_for_stops_in_route'
+        ]:
+            service_map_group.__setattr__(field, service_map_config[field])
 
 
 def _install_direction_names(system, system_config):

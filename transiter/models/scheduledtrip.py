@@ -16,6 +16,7 @@ class ScheduledTrip(Base):
     direction_id = Column(Boolean)
 
     raw_service_map_string = Column(String, index=True)
+    #crosses_midnight = Column(Boolean, default=False)
     # Investigate not deuplicating this data
     #start_time = Column(TIMESTAMP)
     #end_time = Column(TIMESTAMP)

@@ -7,6 +7,7 @@ from .routestatus import RouteStatus, route_status_route
 from .scheduledservice import ScheduledService
 from .scheduledtrip import ScheduledTrip
 from .scheduledtripstoptime import ScheduledTripStopTime
+from .servicemapgroup import ServiceMapGroup
 from .servicepattern import ServicePattern
 from .servicepatternedge import ServicePatternEdge
 from .servicepatternvertex import ServicePatternVertex

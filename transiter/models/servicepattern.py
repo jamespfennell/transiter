@@ -9,9 +9,12 @@ class ServicePattern(Base):
 
     pk = Column(Integer, primary_key=True)
     route_pk = Column(Integer, ForeignKey('route.pk', name='james_f_4'), index=True, nullable=False)
-    name = Column(String)
-    # use_for_routes_at_stop = Column(Boolean)
+    group_pk = Column(Integer, ForeignKey('service_map_group.pk'), nullable=False)
 
+    group = relationship(
+        'ServiceMapGroup',
+        back_populates='maps'
+    )
     route = relationship(
         'Route',
         foreign_keys=[route_pk],
@@ -20,6 +23,7 @@ class ServicePattern(Base):
         'ServicePatternVertex',
         back_populates='service_pattern',
         order_by='ServicePatternVertex.position',
-        cascade='all, delete-orphan')
+        cascade='all, delete-orphan'
+    )
     # edges=? How can we delete them
 

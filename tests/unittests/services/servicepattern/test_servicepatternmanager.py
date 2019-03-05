@@ -381,7 +381,7 @@ class TestTripMatcher(unittest.TestCase):
 
     @staticmethod
     def _trip_matcher_runner(raw_conds, trips):
-        trips_matcher = servicepatternmanager._TripMatcher(raw_conds)
+        trips_matcher = servicepatternmanager._ScheduledTripMatcher(raw_conds)
         matched_trips = []
         for trip in trips:
             if trips_matcher.match(trip):

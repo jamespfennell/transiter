@@ -30,5 +30,10 @@ class System(Base):
         back_populates='system',
         cascade='all, delete-orphan'
     )
+    service_map_groups = relationship(
+        'ServiceMapGroup',
+        back_populates='system',
+        cascade='all, delete-orphan'
+    )
 
     _short_repr_list = ['id']

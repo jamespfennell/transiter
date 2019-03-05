@@ -77,6 +77,7 @@ port = {taskserver_port:d}
 """
 # TODO: add logging config
 
+
 def _list_settings(default_values=True):
     """
     Return an iterator of three tuples (section name, setting name, value)

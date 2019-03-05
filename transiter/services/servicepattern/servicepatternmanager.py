@@ -1,26 +1,65 @@
 """
-ALGO
-
-USE GTFS STATIC! It does everything!
-
-Step 3: for each route, pass each RawTrip through the matchers for that route
-    to get a set of RawTrips for that matchers. By defining a hash function
-    that only takes the list of stops, we eliminate duplicates automatically!
+Service map manager
 """
-
+import datetime
 from transiter import models
 from transiter.services.servicepattern import graphutils
+from transiter.data.dams import servicepatterndam, stopdam
+
+import json
+
+
+def calculate_realtime_service_maps_for_system(system):
+    pass
+
+
+def calculate_scheduled_service_maps_for_system(system):
+    stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(system.id)
+    trip_pk_to_stop_pks = servicepatterndam.get_scheduled_trip_pk_to_stop_pks_map()
+    route_pk_to_trips = {}
+
+    for trip, start_time, end_time in servicepatterndam.list_scheduled_trips_with_times_in_system():
+        trip.start_time = start_time
+        trip.end_time = end_time
+        if trip.direction_id:
+            trip_pk_to_stop_pks.get(trip.pk, []).reverse()
+        trip.path = tuple(
+            stop_pk_to_station_pk[stop_pk] for stop_pk in
+            trip_pk_to_stop_pks.get(trip.pk, [])
+        )
+        if trip.route_pk not in route_pk_to_trips:
+            route_pk_to_trips[trip.route_pk] = []
+        route_pk_to_trips[trip.route_pk].append(trip)
+
+    for service_map_group in system.service_map_groups:
+        if service_map_group.source != 'schedule':
+            continue
+        if service_map_group.conditions is not None:
+            conditions = json.loads(service_map_group.conditions)
+        else:
+            conditions = None
+        matcher = _ScheduledTripMatcher(conditions)
+
+        for route_pk, trips in route_pk_to_trips.items():
+            path_to_count = {}
+            num_trips = 0
+            for trip in trips:
+                if matcher.match(trip):
+                    path_to_count.setdefault(trip.path, 0)
+                    path_to_count[trip.path] += 1
+                    num_trips += 1
+
+            final_paths = [
+                path for path, count in path_to_count.items()
+                if count >= num_trips * service_map_group.threshold
+            ]
+            service_map = _construct_service_map(final_paths)
+            service_map.route_pk = route_pk
+            service_map.group = service_map_group
+
+
 
 """
-SELECT stops.* 
-FROM stops
-INNER JOIN service_pattern_vertices sp_v ON sp_v.stop_pri_key = stops.id
-INNER JOIN service_patterns sp ON sp_v.service_pattern_pri_key = sp.id
-INNER JOIN routes ON sp.id = routes.regular_service_pattern_pri_key
-WHERE  routes.route_id = 'A'
-ORDER BY sp_v.position;
-"""
-
 def construct_sps_from_gtfs_static_data(
         gtfs_static_parser,
         route_sp_settings=[],
@@ -70,42 +109,34 @@ def construct_sps_from_gtfs_static_data(
                 route.default_service_pattern = service_pattern
             if regular:
                 route.regular_service_pattern = service_pattern
+"""
 
 
-# TODO rename this method
-def _construct_for_static_trips(trips, stop_id_to_stop, stop_id_to_station_stop_id):
-    path_lists = set()
-    for trip in trips:
-        if len(trip.stop_ids) == 0:
-            continue
-        station_stop_ids = [stop_id_to_station_stop_id.get(stop_id, stop_id) for stop_id in trip.stop_ids]
-        path_lists.add(tuple(station_stop_ids))
-    sorted_graph = _path_lists_to_sorted_graph(path_lists)
-    service_pattern = _sorted_graph_to_service_pattern(sorted_graph, stop_id_to_stop)
+def _construct_service_map(paths):
+    sorted_graph = _paths_to_sorted_graph(paths)
+    service_pattern = _sorted_graph_to_service_pattern(sorted_graph)
     return service_pattern
 
 
-def _sorted_graph_to_service_pattern(sorted_graph, stop_id_to_stop):
+def _sorted_graph_to_service_pattern(sorted_graph):
     service_pattern = models.ServicePattern()
     for index, vertex in enumerate(sorted_graph.vertices()):
-        stop_id = vertex.label
-        stop = stop_id_to_stop[stop_id]
         sp_vertex = models.ServicePatternVertex()
-        sp_vertex.stop = stop
+        sp_vertex.stop_pk = vertex.label
         sp_vertex.service_pattern = service_pattern
         sp_vertex.position = index
     return service_pattern
 
 
-def _path_lists_to_sorted_graph(path_lists):
-    if len(path_lists) == 0:
+def _paths_to_sorted_graph(paths):
+    if len(paths) == 0:
         return graphutils.graphdatastructs.DirectedPath([])
-    if len(path_lists) == 1:
-        unique_element = next(iter(path_lists))
+    if len(paths) == 1:
+        unique_element = next(iter(paths))
         return graphutils.graphdatastructs.DirectedPath(unique_element)
     paths = [
         graphutils.graphdatastructs.DirectedPath(path_list) for
-        path_list in path_lists
+        path_list in paths
     ]
     graph = graphutils.pathstitcher.stitch(paths)
     # short circuit if the route_graph is actually a path
@@ -114,8 +145,9 @@ def _path_lists_to_sorted_graph(path_lists):
     return graphutils.topologicalsort.sort(graph)
 
 
+"""
 def _filter_trips_by_conditions(trips, threshold, matching_conditions):
-    trip_matcher = _TripMatcher(matching_conditions)
+    trip_matcher = _ScheduledTripMatcher(matching_conditions)
     stop_ids_to_trips = {}
     total_count = 0
     for trip in trips:
@@ -131,11 +163,14 @@ def _filter_trips_by_conditions(trips, threshold, matching_conditions):
         if len(grouped_trips) >= threshold * total_count:
             filtered_trips += grouped_trips
     return filtered_trips
+"""
 
 
-class _TripMatcher:
+class _ScheduledTripMatcher:
 
     def __init__(self, raw_conds):
+        if raw_conds is None:
+            raw_conds = {}
         self._primary_conditions = self._convert_raw_conditions(raw_conds)
 
     def match(self, trip):
@@ -169,7 +204,6 @@ class _TripMatcher:
                 'starts_later_than': cls.order_factory,
                 'ends_earlier_than': cls.order_factory,
                 'ends_later_than': cls.order_factory,
-                'route_id': cls.equality_factory,
                 'weekend': cls.weekend_factory,
                 'weekday': cls.weekday_factory,
             }
@@ -178,7 +212,6 @@ class _TripMatcher:
                 'starts_later_than': ('start_time', False),
                 'ends_earlier_than': ('end_time', True),
                 'ends_later_than': ('end_time', False),
-                'route_id': ('route_id',),
             }
         if key in cls._logical_operators:
             value = cls._convert_raw_conditions(value)
@@ -218,11 +251,14 @@ class _TripMatcher:
 
     @staticmethod
     def order_factory(value, trip_attr, less_than=True):
+        t = datetime.time(hour=value, minute=0, second=0)
+
         def order(trip):
             attr = getattr(trip, trip_attr)
             if attr is None:
                 return False
-            return (attr < value) == less_than
+            return (attr < t) == less_than
+
         return order
 
     @staticmethod
@@ -246,8 +282,14 @@ class _TripMatcher:
     @staticmethod
     def weekday_factory(value):
         def weekday(trip):
-            weekday_cond = trip.monday or trip.tuesday or trip.wednesday or trip.thursday or trip.friday
-            weekend_cond = not (trip.saturday or trip.sunday)
+            weekday_cond = (
+                trip.service.monday or
+                trip.service.tuesday or
+                trip.service.wednesday or
+                trip.service.thursday or
+                trip.service.friday
+            )
+            weekend_cond = not (trip.service.saturday or trip.service.sunday)
             return (weekday_cond and weekend_cond) == value
         return weekday
 
