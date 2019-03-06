@@ -44,12 +44,12 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(response, [])
 
     def test_006_install_system_success(self):
-        with open('tests/integrationtest/transiter_integrationtestsystem/agencydata/Archive.zip', 'rb') as zip_file:
+        with open('output/gtfsstaticdata.zip', 'rb') as zip_file:
             zip_file_data = zip_file.read()
 
         requests.put('http://localhost:5001', data=zip_file_data)
 
-        files = {'config_file': open('tests/integrationtest/transiter_integrationtestsystem/config.toml', 'rb')}
+        files = {'config_file': open('data/system-config.toml', 'rb')}
         response = self._put('systems/testsystem', files=files)
         response.raise_for_status()
 
@@ -58,6 +58,7 @@ class IntegrationTest(unittest.TestCase):
         stops_count = system_response['stops']['count']
         self.assertEqual(len(self.STOP_IDS), stops_count)
 
+    """
     def test_010_get_stop_ids(self):
         stops_response = self._get('systems/testsystem/stops')
         actual_stop_ids = set([stop['id'] for stop in stops_response])
@@ -111,7 +112,6 @@ class IntegrationTest(unittest.TestCase):
                 'systems/testsystem/feeds/{}/updates'.format(feed_id))
             self.assertEqual([], feed_update_response)
 
-    """
     def test_050_feed_update(self):
         trip_1_stops = {
             '1AS': 300,
@@ -356,9 +356,9 @@ def startup_http_services():
     print('(Re)building the Transiter DB')
     rebuild_db()
     print('Launching dummy feed server')
-    launch_flask_app('tests/integrationtest/feedserver.py')
+    launch_flask_app('feedserver.py')
     print('Launching Transiter server')
-    launch_flask_app('transiter/http/flaskapp.py')
+    launch_transiter_http_server()
     """
     try:
     """
@@ -370,8 +370,17 @@ def shutdown_http_services():
 
 
 def rebuild_db():
-    subprocess.call(['python', 'rebuilddb.py'])
+    subprocess.call(
+        ['transiterclt', 'rebuild-db', '--yes']
+    )
 
+
+def launch_transiter_http_server():
+    subprocess.Popen(
+        ['transiterclt', 'launch', 'http-debug-server'],
+        stdout=subprocess.DEVNULL,
+    )
+    time.sleep(1.5)
 
 def launch_flask_app(location):
     subprocess.Popen(

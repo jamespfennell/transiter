@@ -356,32 +356,18 @@ def fast_scheduled_entities_inserter(
             models.ScheduledService
         )
 
-    trip_id_to_raw_service_map_list = {}
-    with zipfile.open(GtfsStaticParser.STOP_TIMES_FILE_NAME) as raw_csv_file:
-        csv_file = io.TextIOWrapper(raw_csv_file, 'utf-8')
-        rows = csv.DictReader(csv_file)
-        for row in rows:
-            if row['trip_id'] not in trip_id_to_raw_service_map_list:
-                trip_id_to_raw_service_map_list[row['trip_id']] = []
-            trip_id_to_raw_service_map_list[row['trip_id']].append(
-                stop_id_to_pk[row['stop_id']]
-            )
-
     with zipfile.open(GtfsStaticParser.TRIPS_FILE_NAME) as raw_csv_file:
         csv_file = io.TextIOWrapper(raw_csv_file, 'utf-8')
         fast_inserter = fastoperations.FastInserter(models.ScheduledTrip)
         rows = csv.DictReader(csv_file)
         for row in rows:
             direction_id = str_to_bool[row['direction_id']]
-            raw_service_map_str = str(
-                trip_id_to_raw_service_map_list[row['trip_id']])
             fast_inserter.add(
                 {
                     'id': row['trip_id'],
                     'service_pk': service_id_to_pk[row['service_id']],
                     'route_pk': route_id_to_pk[row['route_id']],
                     'direction_id': direction_id,
-                    'raw_service_map_string': raw_service_map_str
                 }
             )
         fast_inserter.flush()

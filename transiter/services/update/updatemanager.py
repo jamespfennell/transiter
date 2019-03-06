@@ -154,7 +154,7 @@ def _parse_gtfs_static(feed, gtfs_static_zip_data):
     stop_id_to_station_id = {}
 
     # next 3 bits: Construct larger stations using transfers.txt
-    # TODO: make a separate method in the GTFS parser
+    # TODO: make a separate method in the GTFS parser or stopgraphmanager.py
     station_sets_by_stop_id = {}
     for stop in gtfs_static_parser.stop_id_to_stop.values():
         stop.system = system

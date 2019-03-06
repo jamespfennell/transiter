@@ -1,0 +1,3 @@
+route_id,route_short_name,route_type,
+A,Fruit District Express,1
+B,Fruit District Local,1

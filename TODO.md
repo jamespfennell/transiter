@@ -3,6 +3,8 @@
 ## Main development thread
 
 1. Fix the feed updater - likely doesn't understand the new format
+1. Write the realtime service map generator - and time it.
+    Maybe can run after every update
 1. Update the integration test and run it 
 1. Fix the unit tests
 

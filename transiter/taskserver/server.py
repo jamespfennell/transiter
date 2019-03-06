@@ -13,20 +13,14 @@ def log(*args, **kwargs):
 #warnings.showwarning = log
 
 
+# TODO: catch handle apscheduler warnings about feed updates <- just set the period low to test
+# logger = logging.getLogger('apscheduler')
+# logger.setLevel(logging.DEBUG)
+
+logger = logging.getLogger('transiter')
 
 from transiter.services import feedservice
 
-#TODO: catch handle apscheduler warnings about feed updates <- just set the period low to test
-#logger = logging.getLogger('apscheduler')
-#logger.setLevel(logging.DEBUG)
-
-logger = logging.getLogger('transiter')
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-logger.addHandler(handler)
-formatter = logging.Formatter(
-        '%(asctime)s TS %(levelname)-5s [%(module)s] %(message)s')
-handler.setFormatter(formatter)
 
 
 scheduler = apscheduler.schedulers.background.BackgroundScheduler()
@@ -137,6 +131,14 @@ class TaskServer(rpyc.Service):
 
 
 def launch(force=False):
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    logger.addHandler(handler)
+    formatter = logging.Formatter(
+        '%(asctime)s TS %(levelname)-5s [%(module)s] %(message)s')
+    handler.setFormatter(formatter)
+
+
     global feed_update_trim_task, scheduler
     logger.info('Launching Transiter task server')
 

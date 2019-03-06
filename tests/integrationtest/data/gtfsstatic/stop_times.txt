@@ -1,0 +1,8 @@
+trip_id,arrival_time,departure_time,stop_id,stop_sequence
+A-S-A01-Weekday-1100,11:00:00,11:00:10,1AS,1
+A-S-A01-Weekday-1100,11:02:00,11:02:10,1DS,2
+A-S-A01-Weekday-1100,11:03:00,11:03:10,1ES,3
+A-S-A01-Weekday-1130,11:30:00,11:30:10,1AS,1
+A-S-A01-Weekday-1130,11:32:00,11:32:10,1DS,2
+A-S-A01-Weekday-1130,11:33:00,11:33:10,1FS,3
+A-S-A01-Weekday-1130,11:34:00,11:34:10,1GS,4

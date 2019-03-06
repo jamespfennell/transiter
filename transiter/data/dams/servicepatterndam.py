@@ -5,6 +5,7 @@ from sqlalchemy import func
 from sqlalchemy import orm
 
 
+# TODO: rename
 def get_default_routes_at_stops_map(stop_pks):
     session = database.get_session()
     query = (

@@ -10,6 +10,7 @@ build
 dist
 tests/integrationtests/build
 tests/integrationtests/dist
+tests/integrationtests/output/*
 .eggs
 sandbox
 transiter.db
