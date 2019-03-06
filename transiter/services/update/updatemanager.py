@@ -170,6 +170,7 @@ def _parse_gtfs_static(feed, gtfs_static_zip_data):
             stop_id_to_station_id[stop.id] = stop.parent_stop.id
 
     for (stop_id_1, stop_id_2) in gtfs_static_parser.transfer_tuples:
+        print(stop_id_1, stop_id_2)
         updated_station_set = station_sets_by_stop_id[stop_id_1].union(
             station_sets_by_stop_id[stop_id_2])
         for stop_id in updated_station_set:
@@ -187,7 +188,6 @@ def _parse_gtfs_static(feed, gtfs_static_zip_data):
         parent_stop.system = system
 
         station_set.clear()
-
     session = database.get_session()
     session.flush()
 
@@ -200,6 +200,10 @@ def _parse_gtfs_static(feed, gtfs_static_zip_data):
         route_id_to_pk,
         stop_id_to_pk,
     )
+    session.flush()
+    from transiter.services.servicepattern import servicepatternmanager
+    servicepatternmanager.calculate_scheduled_service_maps_for_system(system)
+
     #for service in gtfs_static_parser.service_id_to_service.values():
     #    service.system = system
 

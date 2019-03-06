@@ -2,9 +2,9 @@
 
 ## Main development thread
 
-1. Add the integration with the current service map module
-
+1. Fix the feed updater - likely doesn't understand the new format
 1. Update the integration test and run it 
+1. Fix the unit tests
 
 
 1. All TODOs in the code and here are to me made as issues on github and 

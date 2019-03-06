@@ -8,17 +8,33 @@ from sqlalchemy import orm
 def get_default_routes_at_stops_map(stop_pks):
     session = database.get_session()
     query = (
-        session.query(models.Stop.pk, models.Route)
-        .join(models.ServicePatternVertex,
-              models.ServicePatternVertex.stop_pk == models.Stop.pk)
-        .join(models.Route,
-              models.Route.regular_service_pattern_pk == models.ServicePatternVertex.service_pattern_pk)
-        .filter(models.Stop.pk.in_(stop_pks))
+        session.query(
+            models.ServiceMapGroup.id,
+            models.ServicePatternVertex.stop_pk,
+            models.Route
+        )
+        .join(
+            models.ServicePattern,
+            models.ServicePattern.group_pk == models.ServiceMapGroup.pk
+        )
+        .join(
+            models.ServicePatternVertex,
+            models.ServicePatternVertex.service_pattern_pk == models.ServicePattern.pk
+        )
+        .join(
+            models.Route,
+            models.Route.pk == models.ServicePattern.route_pk
+        )
+        .filter(models.ServicePatternVertex.stop_pk.in_(stop_pks))
+        .filter(models.ServiceMapGroup.use_for_routes_at_stop)
     )
+    print(query)
 
-    response = {stop_pk: [] for stop_pk in stop_pks}
-    for (stop_pk, route) in query:
-        response[stop_pk].append(route)
+    response = {stop_pk: {} for stop_pk in stop_pks}
+    for group_id, stop_pk, route in query:
+        if group_id not in response[stop_pk]:
+            response[stop_pk][group_id] = []
+        response[stop_pk][group_id].append(route)
     return response
 
 
@@ -67,7 +83,6 @@ def list_scheduled_trips_with_times_in_system():
             last_stop_query,
             models.ScheduledTrip.pk == last_stop_query.c.trip_pk
         )
-        .filter(models.ScheduledTrip.route_pk == 22)
     )
     for trip, start_time, end_time in query:
         yield trip, start_time, end_time

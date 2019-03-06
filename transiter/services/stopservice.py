@@ -17,6 +17,7 @@ def list_all_in_system(system_id):
     return response
 
 
+# TODO: move to the DB?
 class _DirectionNameMatcher:
     def __init__(self, rules):
         self._rules = rules
@@ -123,6 +124,10 @@ def get_in_system_by_id(system_id, stop_id):
     # TODO: make the service pattern dao retrieve by pk
     # TODO: make a default_trip_at_stop function????
     # TODO make this more robust for stops without direction names
+
+    return_links = False
+    return_only_stations = True
+
     stop = stopdam.get_in_system_by_id(system_id, stop_id)
     if stop is None:
         raise exceptions.IdNotFoundError
@@ -137,18 +142,26 @@ def get_in_system_by_id(system_id, stop_id):
 
     total_stop_pks = [stop_pk for stop_pk in all_stop_pks]
     total_stop_pks.extend([s.pk for s in _get_stop_ancestors(stop)])
-    default_routes_map = servicepatterndam.get_default_routes_at_stops_map(total_stop_pks)
+    stop_pk_to_service_map_group_to_routes = servicepatterndam.get_default_routes_at_stops_map(total_stop_pks)
     #default_routes = service_pattern_dao.get_default_trips_at_stops(total_stop_pks)
     default_routes = {}
     for stop_pk in total_stop_pks:
-        default_routes[stop_pk] = [route.id for route in default_routes_map[stop_pk]]
+        default_routes[stop_pk] = [
+            {
+                'group_id': group_id,
+                'routes': [
+                    route.short_repr() for route in routes
+                ]
+            }
+            for group_id, routes in stop_pk_to_service_map_group_to_routes[stop_pk].items()
+        ]
     #default_routes = {stop_pk: default_routes_map[stop_pk].id for stop_pk in total_stop_pks}
 
     stop_event_filter = _StopEventFilter()
     direction_name_matcher = _DirectionNameMatcher(direction_name_rules)
     response = {
         **stop.short_repr(),
-        'usual_routes': default_routes[stop.pk],
+        'related_service_maps': default_routes[stop.pk],
         'direction_names': list(direction_name_matcher.all_names()),
         'stop_time_updates': []
     }
@@ -182,18 +195,20 @@ def get_in_system_by_id(system_id, stop_id):
         }
         response['stop_time_updates'].append(stop_event_response)
 
-    response['child_stops'] = _child_stops_repr(stop, default_routes)
+    response['child_stops'] = _child_stops_repr(stop, default_routes, return_only_stations)
     response['parent_stop'] = _parent_stop_repr(stop, default_routes)
 
     return response
 
 
-def _child_stops_repr(stop, default_routes):
+def _child_stops_repr(stop, default_routes, return_only_stations):
     repr = []
     for child_stop in stop.child_stops:
+        if return_only_stations and not child_stop.is_station:
+            continue
         repr.append({
             **child_stop.short_repr(),
-            'usual_routes': default_routes[child_stop.pk],
+            'related_service_maps': default_routes[child_stop.pk],
             'href': linksutil.StopEntityLink(child_stop),
             'child_stops': _child_stops_repr(child_stop, default_routes)
         })
@@ -205,7 +220,7 @@ def _parent_stop_repr(stop, default_routes):
         return None
     repr = {
         **stop.parent_stop.short_repr(),
-        'usual_routes': default_routes[stop.parent_stop.pk],
+        'related_service_maps': default_routes[stop.parent_stop.pk],
         'href': linksutil.StopEntityLink(stop.parent_stop),
         'child_stops': [],
         'parent_stop': _parent_stop_repr(stop.parent_stop, default_routes)
@@ -215,7 +230,7 @@ def _parent_stop_repr(stop, default_routes):
             continue
         repr['child_stops'].append({
             **child_stop.short_repr(),
-            'usual_routes': default_routes[child_stop.pk],
+            'related_service_maps': default_routes[child_stop.pk],
             'href': linksutil.StopEntityLink(child_stop)
         })
     return repr

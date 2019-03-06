@@ -37,9 +37,6 @@ def get_by_id(system_id):
     if system is None:
         raise exceptions.IdNotFoundError
 
-    from transiter.services.servicepattern import servicepatternmanager
-    servicepatternmanager.calculate_scheduled_service_maps_for_system(system)
-
     response = system.short_repr()
     response.update({
         "stops": {

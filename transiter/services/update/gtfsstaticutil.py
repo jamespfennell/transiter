@@ -91,6 +91,7 @@ class GtfsStaticParser:
         all_file_names = zipfile.namelist()
 
         def _iterate_over(file_name):
+            print(all_file_names)
             if file_name not in all_file_names:
                 return []
             with zipfile.open(file_name) as raw_csv_file:
@@ -124,10 +125,10 @@ class GtfsStaticParser:
     def _parse(self):
         self._parse_routes()
         self._parse_stops()
-        self._parse_services()
+        #self._parse_services()
         #self._parse_trips()
         #self._parse_stop_times()
-        #self._parse_transfers()
+        self._parse_transfers()
 
     def _parse_routes(self):
         for row in self._iterate_over(self.ROUTES_FILE_NAME):

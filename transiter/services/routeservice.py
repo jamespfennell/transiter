@@ -47,6 +47,7 @@ def get_in_system_by_id(system_id, route_id):
     :return:
     """
     # TODO: have verbose option
+    return_links = False
 
     route = routedam.get_in_system_by_id(system_id, route_id)
     if route is None:
@@ -62,20 +63,25 @@ def get_in_system_by_id(system_id, route_id):
         'service_status': route_status,
         'service_status_messages':
             [message.short_repr() for message in route.route_statuses],
-        'stops': []
+        'service_maps': []
         })
-    active_stop_ids = list(routedam.list_active_stop_ids(route.pk))
 
-    default_service_pattern = route.default_service_pattern
+    for service_map in route.service_patterns:
+        if not service_map.group.use_for_stops_in_route:
+            continue
+        service_map_response = {
+            'group_id': service_map.group.id,
+            'stops': []
+        }
+        for entry in service_map.vertices:
+            stop_response = entry.stop.short_repr()
+            if return_links:
+                stop_response.update({
+                    'href': linksutil.StopEntityLink(entry.stop)
+                })
+            service_map_response['stops'].append(stop_response)
+        response['service_maps'].append(service_map_response)
 
-    for entry in default_service_pattern.vertices:
-        stop_response = entry.stop.short_repr()
-        stop_response.update({
-            'current_service': stop_response['id'] in active_stop_ids,
-            'position': entry.position,
-            'href': linksutil.StopEntityLink(entry.stop)
-        })
-        response['stops'].append(stop_response)
     return response
 
 

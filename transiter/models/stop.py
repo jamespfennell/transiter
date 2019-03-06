@@ -43,4 +43,4 @@ class Stop(Base):
 
     __table_args__ = (UniqueConstraint('system_id', 'id'), )
 
-    _short_repr_list = ['id', 'system_id', 'name']
+    _short_repr_list = ['id', 'name']
