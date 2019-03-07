@@ -16,7 +16,7 @@ class IntegrationTest(unittest.TestCase):
         '1AN', '1BN', '1CN', '1DN', '1EN', '1FN', '1GN',
     }
     ROUTE_IDS = {'A', 'B'}
-    FEED_IDS = ['GtfsRealtimeFeed']
+    FEED_IDS = ['GtfsRealtimeFeed', 'gtfsstatic']
     STOP_ID_TO_USUAL_ROUTES = {
         '1A': ['A'],
         '1B': [],
@@ -24,10 +24,10 @@ class IntegrationTest(unittest.TestCase):
         '1D': ['A'],
         '1E': ['A'],
         '1F': [],
-        '1G': [],
+        '1G': ['A'],
     }
     ROUTE_ID_TO_USUAL_ROUTE = {
-        'A': ['1A', '1D', '1E'],
+        'A': ['1A', '1D', '1E', '1G'],
         'B': []
     }
 
@@ -58,7 +58,6 @@ class IntegrationTest(unittest.TestCase):
         stops_count = system_response['stops']['count']
         self.assertEqual(len(self.STOP_IDS), stops_count)
 
-    """
     def test_010_get_stop_ids(self):
         stops_response = self._get('systems/testsystem/stops')
         actual_stop_ids = set([stop['id'] for stop in stops_response])
@@ -92,8 +91,16 @@ class IntegrationTest(unittest.TestCase):
     def test_013_stop_usual_routes(self):
         for stop_id, usual_route in self.STOP_ID_TO_USUAL_ROUTES.items():
             stop_response = self._get('systems/testsystem/stops/{}'.format(stop_id))
-            self.assertListEqual(usual_route, stop_response['usual_routes'])
+            if len(stop_response['related_service_maps']) == 0:
+                actual = []
+            else:
+                actual = [route['id'] for route in stop_response['related_service_maps'][0]['routes']]
+            self.assertListEqual(
+                usual_route,
+                actual
+            )
 
+    """
     def test_014_route_usual_stops(self):
         for route_id, usual_stops in self.ROUTE_ID_TO_USUAL_ROUTE.items():
             route_response = self._get('systems/testsystem/routes/{}'.format(route_id))

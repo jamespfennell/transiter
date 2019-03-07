@@ -1,7 +1,7 @@
 
 prepare-data:
-	rm output/gtfsstaticdata.zip
+	rm -f output/gtfsstaticdata.zip
 	zip -jr output/gtfsstaticdata.zip data/gtfsstatic/*
 
-test:
+test: prepare-data
 	python -m unittest discover ./

@@ -30,7 +30,7 @@ def get_default_routes_at_stops_map(stop_pks):
         .filter(models.ServiceMapGroup.use_for_routes_at_stop)
     )
     print(query)
-
+    print(stop_pks)
     response = {stop_pk: {} for stop_pk in stop_pks}
     for group_id, stop_pk, route in query:
         if group_id not in response[stop_pk]:
