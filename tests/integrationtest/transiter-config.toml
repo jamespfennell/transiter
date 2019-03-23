@@ -12,13 +12,13 @@
 # | SQLite     | sqlite     |            |                                     |
 # | Postgresql | postgresql | psycopg2   | psycopg2-binary                     |
 
-driver = 'sqlite'
-dialect = ''
+driver = 'postgresql'
+dialect = 'psycopg2'
 
 # The database name. Note that for SQLite the database name is the location 
 # of the file on disk relative to the directory Transiter servers are launched.
 
-name = 'output/integration-test.db'
+name = 'transiter_test_db_2'
 
 # User settings.
 
