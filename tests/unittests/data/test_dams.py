@@ -7,10 +7,12 @@ from transiter import models
 
 from transiter.data import database
 from transiter.data.dams import feeddam, tripdam, systemdam, routedam, stopdam, servicepatterndam
-
+from transiter.general import config
 
 class TestDbConstants:
 
+    SYSTEM_ONE_PK = 8
+    SYSTEM_TWO_PK = 9
     SYSTEM_ONE_ID = '1'
     SYSTEM_TWO_ID = '2'
     SYSTEM_THREE_ID = '3'
@@ -54,6 +56,9 @@ class TestDbConstants:
     ROUTE_STATUS_TWO_PK = 83
     ROUTE_STATUS_TWO_MESSAGE = '84'
 
+    SERVICE_MAP_GROUP_ONE_PK = 101
+    SERVICE_MAP_GROUP_ONE_ID = '102'
+
     SERVICE_PATTERN_ONE_PK = 91
     SERVICE_PATTERN_TWO_PK = 92
 
@@ -71,13 +76,18 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
 
     @classmethod
     def setUpClass(cls):
-        test_db_name = 'transiter_test_db_3'
-        test_db_username = 'postgres'
-        database.db_connection_params = database.DatabaseConnectionParameters(
-            test_db_name, test_db_username
-        )
-        database.drop_database()
-        database.create_database()
+        # TODO: make the sqllite DB in memory?
+        toml_str = """
+        [database]
+        driver = 'sqlite'
+        name = 'temp.db'
+        """
+        toml_str = """
+        [database]
+        driver = 'postgresql'
+        name = 'transiter_test_db'
+        """
+        config.load_from_str(toml_str)
         database.ensure_db_connection()
         database.create_tables()
 
@@ -223,12 +233,19 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         )
 
         expected = {
-            self.STOP_ONE_PK: [self.route_one],
-            self.STOP_TWO_PK: [self.route_one, self.route_two],
-            self.STOP_THREE_PK: [self.route_two],
-            self.STOP_FOUR_PK: []
+            self.STOP_ONE_PK: {
+                self.SERVICE_MAP_GROUP_ONE_ID: [self.route_one]
+            },
+            self.STOP_TWO_PK: {
+                self.SERVICE_MAP_GROUP_ONE_ID: [self.route_one, self.route_two]
+            },
+            self.STOP_THREE_PK: {
+                self.SERVICE_MAP_GROUP_ONE_ID: [self.route_two]
+            },
+            self.STOP_FOUR_PK: {}
         }
 
+        self.maxDiff = None
         self.assertDictEqual(expected, actual)
 
     #
@@ -374,7 +391,7 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
             self.LATEST_FEED_UPDATE_TIME)
         db_feed_update.last_action_time = None
 
-        feed_update = models.FeedUpdate()
+        feed_update = models.FeedUpdate(None)
         feed_update.feed_pk = self.FEED_ONE_PK
         feed_update.status = 'SUCCESS'
 

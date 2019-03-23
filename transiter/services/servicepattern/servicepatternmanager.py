@@ -251,7 +251,13 @@ class _ScheduledTripMatcher:
 
     @staticmethod
     def order_factory(value, trip_attr, less_than=True):
-        t = datetime.time(hour=value, minute=0, second=0)
+        import math
+        hour = int(math.floor(value))
+        value = (value - hour)*60
+        minute = int(math.floor(value))
+        value = (value - minute)*60
+        second = int(math.floor(value))
+        t = datetime.time(hour=hour, minute=minute, second=second)
 
         def order(trip):
             attr = getattr(trip, trip_attr)

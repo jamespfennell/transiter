@@ -1,6 +1,6 @@
-INSERT INTO system (id, package) VALUES
-    (:system_one_id, :system_one_package),
-    (:system_two_id, :system_two_package);
+INSERT INTO system (pk, id) VALUES
+    (:system_one_pk, :system_one_id),
+    (:system_two_pk, :system_two_id);
 
 INSERT INTO route (pk, id, system_id) VALUES
     (:route_one_pk,   :route_one_id,   :system_one_id),
@@ -48,9 +48,12 @@ INSERT INTO route_status_route (route_status_pk, route_pk) VALUES
     (:route_status_one_pk, :route_two_pk),
     (:route_status_two_pk, :route_two_pk);
 
-INSERT INTO service_pattern (pk, route_pk) VALUES
-    (:service_pattern_one_pk, :route_one_pk),
-    (:service_pattern_two_pk, :route_two_pk);
+INSERT INTO service_map_group(pk, id, system_pk, source, threshold, use_for_routes_at_stop, use_for_stops_in_route) VALUES
+    (:service_map_group_one_pk, :service_map_group_one_id, :system_one_pk, 'blah', 0, 'true', 'false');
+
+INSERT INTO service_pattern (pk, group_pk, route_pk) VALUES
+    (:service_pattern_one_pk, :service_map_group_one_pk, :route_one_pk),
+    (:service_pattern_two_pk, :service_map_group_one_pk, :route_two_pk);
 
 INSERT INTO service_pattern_vertex (service_pattern_pk, stop_pk) VALUES
     (:service_pattern_one_pk, :stop_one_pk),

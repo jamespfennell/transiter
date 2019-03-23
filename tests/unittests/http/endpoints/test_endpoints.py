@@ -156,14 +156,25 @@ class TestSystemEndpoints(_TestEndpoints):
                                      systemservice.get_by_id,
                                      (self.SYSTEM_ID))
 
-    @mock.patch('transiter.http.endpoints.systemendpoints.inputvalidator')
+    @mock.patch('transiter.http.endpoints.systemendpoints.request')
     @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
-    def test_install(self, systemservice, inputvalidator):
+    def test_install(self, systemservice, request):
         """[System endpoints] Install a system"""
-        inputvalidator.validate_post_data.return_value = {}
-        self._test_no_response_endpoint(systemendpoints.install,
-                                        systemservice.install,
-                                        (self.SYSTEM_ID))
+        config_file_handle = mock.MagicMock()
+        request.files = {
+            'config_file': config_file_handle
+        }
+        request.form.to_dict.return_value = {}
+        config_file_handle.read.return_value = b"ABCD"
+
+        systemendpoints.install(self.SYSTEM_ID)
+
+        systemservice.install.assert_called_once_with(
+            system_id=self.SYSTEM_ID,
+            config_str='ABCD',
+            extra_files={},
+            extra_settings={}
+        )
 
     @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
     def test_delete_by_id(self, systemservice):

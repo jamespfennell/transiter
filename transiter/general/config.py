@@ -98,6 +98,16 @@ def _set_setting(section_name, setting_name, value):
     globals()[section_name].__setattr__(setting_name, value)
 
 
+def load_from_str(toml_str):
+
+    new_config = toml.loads(toml_str)
+    for section_name, setting_name, __ in _list_settings():
+        new_value = new_config.get(section_name, {}).get(setting_name, None)
+        if new_value is None:
+            continue
+        _set_setting(section_name, setting_name, new_value)
+
+
 def load(file_path=None):
     file_must_exist = True
     if file_path is None:
@@ -115,12 +125,7 @@ def load(file_path=None):
         else:
             return
 
-    new_config = toml.loads(toml_str)
-    for section_name, setting_name, __ in _list_settings():
-        new_value = new_config.get(section_name, {}).get(setting_name, None)
-        if new_value is None:
-            continue
-        _set_setting(section_name, setting_name, new_value)
+    load_from_str(toml_str)
 
 
 def generate(default_values=True):

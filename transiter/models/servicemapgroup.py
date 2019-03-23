@@ -13,6 +13,7 @@ class ServiceMapGroup(Base):
 
     source = Column(String, nullable=False)
     conditions = Column(String)
+    # TODO: add defaults to all of these: 0, False, False
     threshold = Column(Float, nullable=False)
     use_for_routes_at_stop = Column(Boolean, nullable=False)
     use_for_stops_in_route = Column(Boolean, nullable=False)
