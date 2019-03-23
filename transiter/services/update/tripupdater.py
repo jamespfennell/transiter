@@ -72,6 +72,7 @@ def sync_trips(system, route_ids, trips):
 def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
     for trip in trips:
         for stu in trip.stop_events:
+            print(trip.id, stu.stop_pk, stu.arrival_time)
             stu.stop_pk = stop_id_to_pk.get(stu.stop_id, None)
 
     existing_trips = list(tripdam.list_all_in_route_by_pk(route_pk))

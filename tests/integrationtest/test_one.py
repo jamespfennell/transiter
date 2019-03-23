@@ -100,24 +100,31 @@ class IntegrationTest(unittest.TestCase):
                 actual
             )
 
-    """
     def test_014_route_usual_stops(self):
         for route_id, usual_stops in self.ROUTE_ID_TO_USUAL_ROUTE.items():
             route_response = self._get('systems/testsystem/routes/{}'.format(route_id))
-            actual_stops = [stop['id'] for stop in route_response['stops']]
-            self.assertListEqual(usual_stops, actual_stops)
+            for service_map in route_response['service_maps']:
+                if service_map['group_id'] != 'any_time':
+                    continue
+                actual_stops = [stop['id'] for stop in service_map['stops']]
+                self.assertListEqual(usual_stops, actual_stops)
+                break
 
-    def test_014_no_service_in_routes(self):
-        for route_id, usual_stops in self.ROUTE_ID_TO_USUAL_ROUTE.items():
-            route_response = self._get('systems/testsystem/routes/{}'.format(route_id))
-            for stop in route_response['stops']:
-                self.assertFalse(stop['current_service'])
+    # TODO: re-enable this when realtime service maps are a thing
+    #def test_014_no_service_in_routes(self):
+    #    for route_id, usual_stops in self.ROUTE_ID_TO_USUAL_ROUTE.items():
+    #        route_response = self._get('systems/testsystem/routes/{}'.format(route_id))
+    #        for stop in route_response['stops']:
+    #            self.assertFalse(stop['current_service'])
 
     def test_015_no_feed_updates(self):
         for feed_id in self.FEED_IDS:
             feed_update_response = self._get(
                 'systems/testsystem/feeds/{}/updates'.format(feed_id))
-            self.assertEqual([], feed_update_response)
+            expected_num_updates = 0
+            if feed_id == 'gtfsstatic':
+                expected_num_updates = 1
+            self.assertEqual(expected_num_updates, len(feed_update_response))
 
     def test_050_feed_update(self):
         trip_1_stops = {
@@ -129,7 +136,7 @@ class IntegrationTest(unittest.TestCase):
             '1FS': 2500,
         }
 
-        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(0,[
+        feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(0, [
             gtfsrealtimegenerator.FeedTrip("trip_1", 'A', trip_1_stops, 0)
         ])
 
@@ -221,7 +228,7 @@ class IntegrationTest(unittest.TestCase):
         feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(850, [])
 
         self._perform_feed_update_stop_test(feed_1)
-    
+
     def _perform_feed_update_stop_test(self, feed_1):
         requests.put('http://localhost:5001', data=feed_1.build_feed())
 
@@ -329,7 +336,6 @@ class IntegrationTest(unittest.TestCase):
             print('Actual', actual_stop_list)
             self.assertEqual(expected_stop_list, actual_stop_list)
 
-    """
 
 
 

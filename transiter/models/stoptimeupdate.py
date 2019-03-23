@@ -1,4 +1,4 @@
-from sqlalchemy import Column, TIMESTAMP, Index, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, TIMESTAMP, DateTime, Index, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text
 
@@ -15,7 +15,8 @@ class StopTimeUpdate(Base):
 
     future = Column(Boolean, server_default=text('true'))
     arrival_time = Column(TIMESTAMP(timezone=True))
-    departure_time = Column(TIMESTAMP(timezone=True))
+    departure_time = Column(DateTime(timezone=True))
+    #departure_time = Column(TIMESTAMP(timezone=True))
     last_update_time = Column(TIMESTAMP(timezone=True))
     # TODO add a unique constraint on stop_sequence, trip_pk
     stop_sequence = Column(Integer, nullable=False)

@@ -116,7 +116,7 @@ def unit_of_work(func, *args, **kw):
     ensure_db_connection()
     # TODO: investigate autoflush=False
     session = Session()
-    logger.debug('Opened unit of work session {}'.format(session))
+    #logger.debug('Opened unit of work session {}'.format(session))
     try:
         result = func(*args, **kw)
         session.commit()
@@ -126,7 +126,7 @@ def unit_of_work(func, *args, **kw):
         session.rollback()
         raise
     finally:
-        logger.debug('Closing unit of work session {}'.format(session))
+        #logger.debug('Closing unit of work session {}'.format(session))
         Session.remove()
 
     return result

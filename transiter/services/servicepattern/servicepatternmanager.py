@@ -21,7 +21,7 @@ def calculate_scheduled_service_maps_for_system(system):
     for trip, start_time, end_time in servicepatterndam.list_scheduled_trips_with_times_in_system():
         trip.start_time = start_time
         trip.end_time = end_time
-        if trip.direction_id:
+        if not trip.direction_id:
             trip_pk_to_stop_pks.get(trip.pk, []).reverse()
         trip.path = tuple(
             stop_pk_to_station_pk[stop_pk] for stop_pk in
