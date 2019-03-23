@@ -53,7 +53,8 @@ class TestRouteService(unittest.TestCase):
 
     @mock.patch('transiter.services.routeservice.linksutil')
     @mock.patch('transiter.services.routeservice.routedam')
-    def test_list_all_in_system(self, route_dao, linksutil):
+    @mock.patch('transiter.services.routeservice.systemdam')
+    def test_list_all_in_system(self, systemdam, route_dao, linksutil):
         """[Route service] Listing all routes in a system"""
 
         def RouteEntityLink(system):
@@ -74,6 +75,7 @@ class TestRouteService(unittest.TestCase):
         }]
         route_dao.list_all_in_system.return_value = [self.route_one,
                                                      self.route_two]
+        systemdam.get_by_id.return_value = 1
         route_dao.list_route_statuses.return_value = {
             500: self.ROUTE_ONE_STATUS,
             501: self.ROUTE_TWO_STATUS,

@@ -104,9 +104,8 @@ class TestSystemService(unittest.TestCase):
         system_dao.count_routes_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
         system_dao.count_feeds_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
 
-    @mock.patch('transiter.services.systemservice._import_static_data')
     @mock.patch('transiter.services.systemservice.systemdam')
-    def test_install_success(self, system_dao, _import_static_data):
+    def _test_install_success(self, system_dao):
         """[System service] Successfully install a system"""
         new_system = mock.MagicMock()
         system_dao.get_by_id.return_value = None
@@ -118,14 +117,13 @@ class TestSystemService(unittest.TestCase):
         self.assertEqual(new_system.id, self.SYSTEM_ONE_ID)
         system_dao.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
         system_dao.create.assert_called_once_with()
-        _import_static_data.assert_called_once_with(new_system)
 
     @mock.patch('transiter.services.systemservice.systemdam')
     def test_install_already_exists(self, system_dao):
         """[System service] Fail to install because system id already taken"""
         system_dao.get_by_id.return_value = self.system_1
 
-        actual = systemservice.install(self.SYSTEM_ONE_ID)
+        actual = systemservice.install(self.SYSTEM_ONE_ID, "", [], "")
 
         self.assertEqual(actual, False)
         system_dao.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
@@ -151,34 +149,8 @@ class TestSystemService(unittest.TestCase):
 
         system_dao.delete_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
 
-    @mock.patch('transiter.services.systemservice.open')
-    @mock.patch('transiter.services.systemservice.yaml')
-    def test_system_config(self, yaml, open):
-        yaml_file = mock.MagicMock()
-        open.return_value = ContextManager(yaml_file)
 
-        feeds = mock.MagicMock()
-        static_route_service_patterns = mock.MagicMock()
-        static_other_service_patterns = mock.MagicMock()
-        realtime_route_service_patterns = mock.MagicMock()
-        direction_name_rules_files = mock.MagicMock()
-
-        yaml.load.return_value = {
-            'feeds': feeds,
-            'static_route_service_patterns': static_route_service_patterns,
-            'static_other_service_patterns': static_other_service_patterns,
-            'realtime_route_service_patterns': realtime_route_service_patterns,
-            'direction_name_rules_files': direction_name_rules_files
-        }
-
-        system_config = systemservice._SystemConfig(self.FILE_NAME)
-
-        self.assertEqual(system_config.feeds, feeds)
-        open.assert_called_once_with(self.FILE_NAME, 'r')
-        yaml.load.assert_called_once_with(yaml_file)
-
-
-class TestImportStaticData(unittest.TestCase):
+class _TestImportStaticData(unittest.TestCase):
 
     SYSTEM_ID = '1'
     STOP_ONE_ID = '2'

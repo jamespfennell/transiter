@@ -11,61 +11,6 @@ days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
         'sunday']
 
 
-class _GtfsStaticService:
-    def __init__(self):
-        for day in days:
-            self.__setattr__(day, None)
-
-    def __eq__(self, other):
-        for day in days:
-            if getattr(self, day) != getattr(other, day):
-                return False
-        return True
-
-# If auto flush is off does this speed things up?
-# https://stackoverflow.com/questions/32922210/why-does-a-query-invoke-a-auto-flush-in-sqlalchemy
-# class TimetabledService
-# class TimetabledTrip
-# class TimetabledTripStopTime
-# TripStopTime
-
-
-class StaticTrip:
-
-    def __init__(self):
-        self.route_id = None
-        self.direction_id = None
-        for day in days:
-            self.__setattr__(day, None)
-        self.stop_ids = []
-        self.start_time = None
-        self.end_time = None
-
-    def reverse(self):
-        self.direction_id = not self.direction_id
-        self.stop_ids.reverse()
-
-    def __hash__(self):
-        return hash((
-            self.route_id,
-            self.direction_id,
-            self.start_time,
-            self.end_time,
-            tuple(self.stop_ids)
-        ))
-
-    def __eq__(self, other):
-        for day in days:
-            if getattr(self, day) != getattr(other, day):
-                return False
-        return (
-            self.route_id == other.route_id and
-            self.direction_id == other.direction_id and
-            self.start_time == other.start_time and
-            self.end_time == other.end_time and
-            self.stop_ids == other.stop_ids
-        )
-
 import io
 class GtfsStaticParser:
 
@@ -125,9 +70,6 @@ class GtfsStaticParser:
     def _parse(self):
         self._parse_routes()
         self._parse_stops()
-        #self._parse_services()
-        #self._parse_trips()
-        #self._parse_stop_times()
         self._parse_transfers()
 
     def _parse_routes(self):
@@ -159,45 +101,6 @@ class GtfsStaticParser:
             stop.parent_stop_id = row.get('parent_station', None)
             self.stop_id_to_stop[stop.id] = stop
 
-    def _parse_services(self):
-        for row in self._iterate_over(self.CALENDAR_FILE_NAME):
-            service = models.ScheduledService()
-            service.id = row['service_id']
-            for day in days:
-                service.__setattr__(day, row[day] == '1')
-            self.service_id_to_service[row['service_id']] = service
-
-    def _parse_trips(self):
-        for row in self._iterate_over(self.TRIPS_FILE_NAME):
-            service_id = row['service_id']
-            service = self.service_id_to_service.get(service_id, None)
-            if service is None:
-                continue
-            route = self.route_id_to_route.get(row['route_id'], None)
-            if route is None:
-                continue
-            trip = models.ScheduledTrip()
-            trip.id = row['trip_id']
-            trip.route = route
-            trip.service = service
-            trip.direction_id = (row['direction_id'] == '1')
-            self.trip_id_to_trip[trip.id] = trip
-
-    def _parse_stop_times(self):
-        for row in self._iterate_over(self.STOP_TIMES_FILE_NAME):
-            trip_id = row['trip_id']
-            trip = self.trip_id_to_trip.get(trip_id, None)
-            if trip is None:
-                continue
-            stop_id = row['stop_id']
-            stop = self.stop_id_to_stop.get(stop_id, None)
-            if stop is None:
-                continue
-            trip_stop_time = models.ScheduledTripStopTime()
-            trip_stop_time.trip = trip
-            trip_stop_time.stop = stop
-            trip_stop_time.stop_sequence = row['stop_sequence']
-
     def _parse_transfers(self):
         for row in self._iterate_over(self.TRANSFERS_FILE_NAME):
             stop_id_1 = row['from_stop_id']
@@ -212,6 +115,7 @@ class GtfsStaticParser:
         mins = int(gtfs_static_time[3:5])
         secs = int(gtfs_static_time[6:8])
         return hours + mins/60 + secs/3600
+
 
 import csv
 class LightCsvReader:
