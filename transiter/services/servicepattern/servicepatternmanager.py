@@ -2,15 +2,47 @@
 Service map manager
 """
 import datetime
-from transiter import models
-from transiter.services.servicepattern import graphutils
-from transiter.data.dams import servicepatterndam, stopdam
-
 import json
 
+from transiter import models
+from transiter.data.dams import servicepatterndam, stopdam
+from transiter.services.servicepattern import graphutils
 
-def calculate_realtime_service_maps_for_system(system):
-    pass
+
+def calculate_realtime_service_maps_for_system(system, route_pks):
+    stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(system.id)
+    realtime_service_map = None
+    for service_map_group in system.service_map_groups:
+        if service_map_group.source != 'realtime':
+            continue
+        realtime_service_map = service_map_group
+        break
+
+    if realtime_service_map is None:
+        return
+
+    # TODO: waat
+    route_pks = set(route_pks)
+    routes = [route for route in system.routes if route.pk in route_pks]
+
+    # TODO: make this better - caching for example
+    for service_map in list(realtime_service_map.maps):
+        if service_map.route_pk in route_pks:
+            service_map.group = None
+
+    for route in routes:
+        trip_pk_to_path = servicepatterndam.get_trip_pk_to_path_map(route.pk)
+        for trip in route.trips:
+            if not trip.direction_id:
+                trip_pk_to_path.get(trip.pk, []).reverse()
+        paths = set()
+        for raw_path in trip_pk_to_path.values():
+            paths.add(tuple(
+                stop_pk_to_station_pk[stop_pk] for stop_pk in raw_path
+            ))
+        service_map = _construct_service_map(paths)
+        service_map.route = route
+        service_map.group = realtime_service_map
 
 
 def calculate_scheduled_service_maps_for_system(system):

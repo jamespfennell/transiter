@@ -1,7 +1,13 @@
-import os
-import toml
-from transiter.general import exceptions
+"""
+The config module is responsible for loading Transiter's global config.
+This currently includes the database and port configuration.
+"""
 
+import os
+
+import toml
+
+from transiter.general import exceptions
 
 DEFAULT_FILE_PATH = 'transiter-config.toml'
 
@@ -98,7 +104,11 @@ def _set_setting(section_name, setting_name, value):
     globals()[section_name].__setattr__(setting_name, value)
 
 
-def load_from_str(toml_str):
+def load_from_str(toml_str: str):
+    """
+    Load a Transiter TOML config given as a string.
+    :param toml_str: the config string
+    """
 
     new_config = toml.loads(toml_str)
     for section_name, setting_name, __ in _list_settings():
@@ -108,7 +118,12 @@ def load_from_str(toml_str):
         _set_setting(section_name, setting_name, new_value)
 
 
-def load(file_path=None):
+def load(file_path: str = None):
+    """
+    Load a Transiter config f
+    :param file_path:
+    :return:
+    """
     file_must_exist = True
     if file_path is None:
         file_path = os.environ.get('TRANSITER_CONFIG', None)

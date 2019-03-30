@@ -7,6 +7,7 @@ from sqlalchemy import orm
 
 # TODO: rename
 def get_default_routes_at_stops_map(stop_pks):
+    # TODO: we should return all service maps, even if they don't have routes for the stop
     session = database.get_session()
     query = (
         session.query(
@@ -39,7 +40,28 @@ def get_default_routes_at_stops_map(stop_pks):
     return response
 
 
-#TODO stop_pks_map -> paths
+def get_trip_pk_to_path_map(route_pk):
+    statement = (
+        sql.select([
+            models.StopTimeUpdate.trip_pk,
+            models.StopTimeUpdate.stop_pk
+        ])
+        .select_from(
+            sql.join(models.StopTimeUpdate, models.Trip)
+        )
+        .where(models.Trip.route_pk == route_pk)
+        .order_by(models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence)
+    )
+    session = database.get_session()
+    trip_pk_to_stop_pks = {}
+    for trip_pk, stop_pk in session.execute(statement):
+        if trip_pk not in trip_pk_to_stop_pks:
+            trip_pk_to_stop_pks[trip_pk] = []
+        trip_pk_to_stop_pks[trip_pk].append(stop_pk)
+    return trip_pk_to_stop_pks
+
+
+# TODO stop_pks_map -> paths
 def get_scheduled_trip_pk_to_stop_pks_map():
     statement = sql.select(
         [

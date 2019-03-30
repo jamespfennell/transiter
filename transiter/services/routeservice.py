@@ -66,6 +66,7 @@ def get_in_system_by_id(system_id, route_id):
         'service_maps': []
         })
 
+    # TODO: also return empty service maps? Or should this be in the db?
     for service_map in route.service_patterns:
         if not service_map.group.use_for_stops_in_route:
             continue

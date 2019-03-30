@@ -2,16 +2,92 @@
 
 ## Main development thread
 
-1. Fix the unit tests
+1. Code quality:
+    1. Clean up the code where relevant
+    1. Add tests for relevant things
+    1. Add docs and integrate with sphinx?
+    1. Document the API correctly
+    1. Does the RTR app still work? Likely not!
 
+1. Is V0.1 feature complete except for realtime service maps?
 
 1. All TODOs in the code and here are to me made as issues on github and 
 removed here before v1!
 
-1. Fix failing tests in NYC subway package 
-
 Bug: sometimes the __eq__ method of _BasicModel
 is called, seemingly when a trip is being deleted
+
+
+
+./general/config.py
+./general/linksutil.py
+./general/__init__.py
+./general/clt.py
+./general/exceptions.py
+./__init__.py
+./models/servicemapgroup.py
+./models/system.py
+./models/servicepatternvertex.py
+./models/servicepattern.py
+./models/servicepatternedge.py
+./models/stoptimeupdate.py
+./models/routestatus.py
+./models/feedupdate.py
+./models/scheduledservice.py
+./models/route.py
+./models/stop.py
+./models/trip.py
+./models/__init__.py
+./models/feed.py
+./models/scheduledtripstoptime.py
+./models/directionnamerule.py
+./models/scheduledtrip.py
+./models/base.py
+./http/permissionsvalidator.py
+./http/responsemanager.py
+./http/endpoints/tripendpoints.py
+./http/endpoints/routeendpoints.py
+./http/endpoints/__init__.py
+./http/endpoints/systemendpoints.py
+./http/endpoints/feedendpoints.py
+./http/endpoints/stopendpoints.py
+./http/__init__.py
+./http/inputvalidator.py
+./http/flaskapp.py
+./taskserver/server.py
+./taskserver/client.py
+./taskserver/__init__.py
+./data/fastoperations.py
+./data/dams/tripdam.py
+./data/dams/servicepatterndam.py
+./data/dams/genericqueries.py
+./data/dams/__init__.py
+./data/dams/routedam.py
+./data/dams/stopdam.py
+./data/dams/feeddam.py
+./data/dams/systemdam.py
+./data/database.py
+./data/__init__.py
+./data/syncutil.py
+./services/update/parsers/__init__.py
+./services/update/routestatusupdater.py
+./services/update/gtfsstaticutil.py
+./services/update/gtfsrealtimeutil.py
+./services/update/__init__.py
+./services/update/tripupdater.py
+./services/update/updatemanager.py
+./services/stopservice.py
+./services/__init__.py
+./services/systemservice.py
+./services/servicepattern/graphutils/topologicalsort.py
+./services/servicepattern/graphutils/__init__.py
+./services/servicepattern/graphutils/pathstitcher.py
+./services/servicepattern/graphutils/graphdatastructs.py
+./services/servicepattern/__init__.py
+./services/servicepattern/servicepatternmanager.py
+./services/routeservice.py
+./services/feedservice.py
+./services/tripservice.py
 
 ## Version 0.2
 

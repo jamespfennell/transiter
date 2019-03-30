@@ -3,6 +3,8 @@ from transiter.data import database, syncutil
 from transiter import models
 import warnings
 
+from transiter.services.servicepattern import servicepatternmanager
+
 class TripDataCleaner:
 
     def __init__(self, trip_cleaners, stu_cleaners):
@@ -56,6 +58,9 @@ def sync_trips(system, route_ids, trips):
         index += 1
         sync_trips_in_route(route_pk, trips_dict.values(), stop_id_to_pk)
 
+    servicepatternmanager.calculate_realtime_service_maps_for_system(
+        system, route_id_to_pk.values()
+    )
 
 # This method essentially performs a session.merge operation
 # on the Trips. There are two considerations which require additional logic:
