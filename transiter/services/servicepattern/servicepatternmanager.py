@@ -10,6 +10,12 @@ from transiter.services.servicepattern import graphutils
 
 
 def calculate_realtime_service_maps_for_system(system, route_pks):
+    """
+    Blah
+    :param system:  a
+    :param route_pks:  v
+    :return: b
+    """
     stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(system.id)
     realtime_service_map = None
     for service_map_group in system.service_map_groups:

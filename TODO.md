@@ -1,15 +1,17 @@
 # Transiter TODO
 
 ## Main development thread
-
+Bugs:
+  Service maps always rewrite
+  Service maps don't appear if empty
+  
 1. Code quality:
     1. Clean up the code where relevant
     1. Add tests for relevant things
-    1. Add docs and integrate with sphinx?
+    1. Add docs
     1. Document the API correctly
     1. Does the RTR app still work? Likely not!
 
-1. Is V0.1 feature complete except for realtime service maps?
 
 1. All TODOs in the code and here are to me made as issues on github and 
 removed here before v1!
@@ -68,7 +70,6 @@ is called, seemingly when a trip is being deleted
 ./data/dams/systemdam.py
 ./data/database.py
 ./data/__init__.py
-./data/syncutil.py
 ./services/update/parsers/__init__.py
 ./services/update/routestatusupdater.py
 ./services/update/gtfsstaticutil.py

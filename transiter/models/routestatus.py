@@ -29,6 +29,7 @@ class RouteStatus(Base):
 
     _short_repr_list = [
         'id',
+        'type',
         'message_title',
         'message_content',
         'start_time',

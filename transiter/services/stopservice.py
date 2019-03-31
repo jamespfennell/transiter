@@ -161,7 +161,7 @@ def get_in_system_by_id(system_id, stop_id):
     direction_name_matcher = _DirectionNameMatcher(direction_name_rules)
     response = {
         **stop.short_repr(),
-        'related_service_maps': default_routes[stop.pk],
+        'service_maps': default_routes[stop.pk],
         'direction_names': list(direction_name_matcher.all_names()),
         'stop_time_updates': []
     }
@@ -208,7 +208,7 @@ def _child_stops_repr(stop, default_routes, return_only_stations):
             continue
         repr.append({
             **child_stop.short_repr(),
-            'related_service_maps': default_routes[child_stop.pk],
+            'service_maps': default_routes[child_stop.pk],
             'href': linksutil.StopEntityLink(child_stop),
             'child_stops': _child_stops_repr(child_stop, default_routes)
         })
@@ -230,7 +230,7 @@ def _parent_stop_repr(stop, default_routes):
             continue
         repr['child_stops'].append({
             **child_stop.short_repr(),
-            'related_service_maps': default_routes[child_stop.pk],
+            'service_maps': default_routes[child_stop.pk],
             'href': linksutil.StopEntityLink(child_stop)
         })
     return repr
