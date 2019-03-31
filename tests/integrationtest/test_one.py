@@ -91,10 +91,10 @@ class IntegrationTest(unittest.TestCase):
     def test_013_stop_usual_routes(self):
         for stop_id, usual_route in self.STOP_ID_TO_USUAL_ROUTES.items():
             stop_response = self._get('systems/testsystem/stops/{}'.format(stop_id))
-            if len(stop_response['related_service_maps']) == 0:
+            if len(stop_response['service_maps']) == 0:
                 actual = []
             else:
-                actual = [route['id'] for route in stop_response['related_service_maps'][0]['routes']]
+                actual = [route['id'] for route in stop_response['service_maps'][0]['routes']]
             self.assertListEqual(
                 usual_route,
                 actual

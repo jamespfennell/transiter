@@ -2,7 +2,8 @@
 
 ## Main development thread
 Bugs:
-  Service maps always rewrite
+  Service maps always rewrite. For the moment, just compute the new map and if
+  it's identical do nothing
   Service maps don't appear if empty
   
 1. Code quality:
