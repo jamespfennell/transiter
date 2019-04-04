@@ -1,12 +1,14 @@
 import json
 from datetime import date, datetime
-
 from decorator import decorator
 
 from transiter.general import linksutil, exceptions as httpexceptions, exceptions as serviceexceptions
 from transiter.http import permissionsvalidator
 
-# Todo: put these in a class
+#from requests.status_codes import codes as http_status_code
+#
+#print(http_status_code.NOT_FOUND)
+# Todo: put these in a class or consider using requests.codes
 
 HTTP_200_OK = 200
 HTTP_201_CREATED = 201

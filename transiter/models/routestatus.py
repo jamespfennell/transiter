@@ -1,10 +1,12 @@
-from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, ForeignKey
+from sqlalchemy import Boolean, Column, TIMESTAMP, Table, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
 from .base import Base
+import enum
 
 
-# TODO: this should be ServiceStatus? ServiceUpdate
+# TODO: this should be ServiceStatus? ServiceUpdate? Or Alert (following
+# GTFS realtime
 class RouteStatus(Base):
     __tablename__ = 'route_status'
 
@@ -12,14 +14,28 @@ class RouteStatus(Base):
     id = Column(String)
 
     type = Column(String)
-    priority = Column(Integer)
     message_title = Column(String)
     message_content = Column(String)
     start_time = Column(TIMESTAMP(timezone=True))
     end_time = Column(TIMESTAMP(timezone=True))
     creation_time = Column(TIMESTAMP(timezone=True))
 
+    class Cause(enum.Enum):
+        ACCIDENT = 1
+        MAINTENANCE = 2
+
+    class Effect(enum.Enum):
+        MODIFIED_SERVICE = 1
+        SIGNIFICANT_DELAYS = 2
+
+    header = Column(String)
+    description = Column(String)
+    cause = Column(Enum(Cause))
+    effect = Column(Enum(Effect))
+    priority = Column(Integer)
+
     route_ids = set()
+
     routes = relationship(
         'Route',
         secondary='route_status_route',

@@ -21,6 +21,8 @@ Bug: sometimes the __eq__ method of _BasicModel
 is called, seemingly when a trip is being deleted
 
 
+Make the repr dicts use the actual fields
+
 
 ./general/config.py
 ./general/linksutil.py

@@ -1,108 +1,108 @@
-import unittest.mock as mock
 import unittest
-import itertools
+import unittest.mock as mock
+
+from transiter import models
 from transiter.services import routeservice
-import datetime
+
 
 class TestRouteService(unittest.TestCase):
 
     SYSTEM_ID = '1'
+    ROUTE_ONE_PK = 2
     ROUTE_ONE_ID = '3'
-    ROUTE_ONE_HREF = '30'
-    ROUTE_ONE_REPR = {'route_id': ROUTE_ONE_ID}
-    ROUTE_ONE_STATUS = 'Bad'
-    ROUTE_TWO_STATUS = 'Good'
-    ROUTE_TWO_HREF = '40'
-    ROUTE_TWO_REPR = {'route_id': '4'}
-    STOP_REPR = {'stop_id': '5'}
-    STOP_EVENT_REPR = {'track': 'Track Two'}
-    GOOD_STATUS = "Good Service"
-    OKAY_STATUS = "Okay"
-    BAD_STATUS = "Quite Bad"
-    REALLY_BAD_STATUS = "Really Bad"
+    ROUTE_ONE_STATUS = routeservice.Status.PLANNED_SERVICE_CHANGE
+    ROUTE_TWO_PK = 4
+    ROUTE_TWO_ID = '5'
+    ROUTE_TWO_STATUS = routeservice.Status.GOOD_SERVICE
+
+    RAW_FREQUENCY = 700
 
     @classmethod
     def setUp(cls):
-        cls.route_one = mock.MagicMock()
-        cls.route_one.short_repr.return_value = cls.ROUTE_ONE_REPR.copy()
-        cls.route_one.pk = 500
-        cls.route_one.short_repr.return_value = cls.ROUTE_ONE_REPR.copy()
+        cls.route_one = models.Route()
+        cls.route_one.id = cls.ROUTE_ONE_ID
+        cls.route_one.pk = cls.ROUTE_ONE_PK
+        cls.route_one.service_patterns = []
+        cls.route_one.alerts = []
 
-        cls.route_two = mock.MagicMock()
-        cls.route_two.pk = 501
-        cls.route_two.short_repr.return_value = cls.ROUTE_TWO_REPR
+        cls.route_two = models.Route()
+        cls.route_two.id = cls.ROUTE_TWO_ID
+        cls.route_two.pk = cls.ROUTE_TWO_PK
 
-
-        """
-        stop = mock.MagicMock()
-        stop.repr_for_list.return_value = cls.STOP_REPR
-
-        stop_event = mock.MagicMock()
-        stop_event.repr_for_list.return_value = cls.STOP_EVENT_REPR
-        stop_event.stop = stop
-        cls.trip_one.stop_events = [stop_event]
-        """
-
-    def _construct_status_mock(self, route):
-        if route == self.route_one:
-            return self.ROUTE_ONE_STATUS
-        elif route == self.route_two:
-            return self.ROUTE_TWO_STATUS
-        else:
-            self.fail('Unwanted interaction with _construct_status')
-
-    @mock.patch('transiter.services.routeservice.linksutil')
+    @mock.patch('transiter.services.routeservice._construct_route_pk_to_status_map')
     @mock.patch('transiter.services.routeservice.routedam')
     @mock.patch('transiter.services.routeservice.systemdam')
-    def test_list_all_in_system(self, systemdam, route_dao, linksutil):
-        """[Route service] Listing all routes in a system"""
+    def test_list_all_in_system(self, systemdam, routedam,
+                                _construct_route_pk_to_status_map):
+        """[Route service] List all routes in a system"""
 
-        def RouteEntityLink(system):
-            if system == self.route_one:
-                return self.ROUTE_ONE_HREF
-            if system == self.route_two:
-                return self.ROUTE_TWO_HREF
-        linksutil.RouteEntityLink.side_effect = RouteEntityLink
-
-        expected = [{
-            'service_status': self.ROUTE_ONE_STATUS,
-            'href': self.ROUTE_ONE_HREF,
-            **self.ROUTE_ONE_REPR
-        },{
-            'service_status': self.ROUTE_TWO_STATUS,
-            'href': self.ROUTE_TWO_HREF,
-            **self.ROUTE_TWO_REPR
-        }]
-        route_dao.list_all_in_system.return_value = [self.route_one,
-                                                     self.route_two]
-        systemdam.get_by_id.return_value = 1
-        route_dao.list_route_statuses.return_value = {
-            500: self.ROUTE_ONE_STATUS,
-            501: self.ROUTE_TWO_STATUS,
+        _construct_route_pk_to_status_map.return_value = {
+            self.ROUTE_ONE_PK: self.ROUTE_ONE_STATUS,
+            self.ROUTE_TWO_PK: self.ROUTE_TWO_STATUS
         }
+        routedam.list_all_in_system.return_value = [
+            self.route_one,
+            self.route_two
+        ]
+        systemdam.get_by_id.return_value = models.System()
+
+        expected = [
+            {
+                **self.route_one.short_repr(),
+                'status': self.ROUTE_ONE_STATUS
+            },
+            {
+                **self.route_two.short_repr(),
+                'status': self.ROUTE_TWO_STATUS
+            }
+        ]
 
         actual = routeservice.list_all_in_system(self.SYSTEM_ID)
 
         self.assertEqual(actual, expected)
-        route_dao.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
-        self.route_one.short_repr.assert_called_once()
-        self.route_two.short_repr.assert_called_once()
 
+        routedam.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
+
+    @mock.patch('transiter.services.routeservice._construct_route_status')
     @mock.patch('transiter.services.routeservice.routedam')
-    def test_get_in_system_by_id(self, route_dao):
-        """[Route service] Getting a specific route in a system"""
-        route_dao.get_in_system_by_id.return_value = self.route_one
-        sp_vertex = mock.MagicMock()
-        self.route_one.default_service_pattern.vertices = [sp_vertex]
+    def test_get_in_system_by_id(self, routedam, _construct_route_status):
+        """[Route service] Get a specific route in a system"""
+
+        _construct_route_status.return_value = self.ROUTE_ONE_STATUS
+        routedam.get_in_system_by_id.return_value = self.route_one
+        routedam.calculate_frequency.return_value = self.RAW_FREQUENCY
+
+        expected = {
+            **self.route_one.short_repr(),
+            'frequency': int(self.RAW_FREQUENCY/6)/10,
+            'status': self.ROUTE_ONE_STATUS,
+            'alerts': [],
+            'service_maps': []
+        }
 
         actual = routeservice.get_in_system_by_id(
             self.SYSTEM_ID,
-            self.ROUTE_ONE_ID)
+            self.ROUTE_ONE_ID
+        )
 
-        #self.assertDictEqual(actual, expected)
-        route_dao.get_in_system_by_id.assert_called_once_with(
+        self.assertDictEqual(actual, expected)
+
+        routedam.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID,
-            self.ROUTE_ONE_ID)
+            self.ROUTE_ONE_ID
+        )
+
+    @mock.patch('transiter.services.routeservice._construct_route_pk_to_status_map')
+    def test_construct_route_status(self, _construct_route_pk_to_status_map):
+
+        _construct_route_pk_to_status_map.return_value = {
+            self.ROUTE_ONE_PK: self.ROUTE_ONE_STATUS
+        }
+
+        self.assertEqual(
+            self.ROUTE_ONE_STATUS,
+            routeservice._construct_route_status(self.ROUTE_ONE_PK)
+        )
 
 
 

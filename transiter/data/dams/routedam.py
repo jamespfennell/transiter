@@ -172,3 +172,53 @@ def list_route_statuses(route_pks):
             route_pk_to_status_tuple[row[0]] = row[1]
 
     return route_pk_to_status_tuple
+
+
+def list_route_pks_with_current_service(route_pks):
+    session = database.get_session()
+    stmt = (
+        sql.select([models.Route.pk])
+        .where(
+            sql.and_(
+                sql.exists(
+                    sql.select([1])
+                    .select_from(sql.join(models.StopTimeUpdate, models.Trip))
+                    .where(models.Trip.route_pk == models.Route.pk)
+                    .limit(1)
+                ),
+                models.Route.pk.in_(route_pks)
+            )
+        )
+    )
+    return [route_pk for (route_pk, ) in session.execute(stmt)]
+
+
+def get_route_pk_to_highest_priority_alerts_map(route_pks):
+    route_pk_to_alerts = {route_pk: [] for route_pk in route_pks}
+    session = database.get_session()
+    inner_query = (
+        session.query(
+            models.Route.pk,
+            sql.func.max(models.RouteStatus.priority)
+        )
+        .join(models.route_status_route)
+        .join(models.RouteStatus)
+        .filter(models.Route.pk.in_(route_pks))
+        .group_by(models.Route.pk)
+    )
+    query = (
+        session.query(models.Route.pk, models.RouteStatus)
+        .join(models.route_status_route)
+        .join(models.RouteStatus)
+        .filter(
+            sql.tuple_(
+                models.Route.pk,
+                models.RouteStatus.priority
+            ).in_(
+                inner_query
+            )
+        )
+    )
+    for route_pk, alert in query:
+        route_pk_to_alerts[route_pk].append(alert)
+    return route_pk_to_alerts
