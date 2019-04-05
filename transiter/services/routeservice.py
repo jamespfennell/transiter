@@ -9,29 +9,27 @@ from transiter.data.dams import routedam, systemdam
 from transiter.general import linksutil, exceptions
 from transiter.models import RouteStatus
 
-# TODO: docs
-# TODO: tests (100% code coverage for this class)
+# TODO: tests (100% code coverage for this class).
 # TODO: good time to rename RouteStatus -> Alert?
 
 
 @database.unit_of_work
 def list_all_in_system(system_id, show_links=False):
     """
-    Get representations for all routes in a system.
-    :param system_id: the text id of the system
-    :return: a list of short model.Route representations with an additional
-    'service_status' entry describing the current status.
+    Get data on all routes in a system.
 
-    .. code-block:: json
+    This function returns a list of dictionaries, one dictionary for each
+    route. The dictionary for a specific route contains
+     * the route's short representation,
+     * its status under key 'status',
+     * and optionally a link to the route.
 
-        [
-            {
-                <fields in a short model.Route representation>,
-                'service_status': <service status>
-            },
-            ...
-        ]
-
+    :param system_id: the ID of the system
+    :type system_id: str
+    :param show_links: whether to return links
+    :type show_links: bool
+    :return: the list described above
+    :rtype: list
     """
     system = systemdam.get_by_id(system_id)
     if system is None:
@@ -55,10 +53,25 @@ def list_all_in_system(system_id, show_links=False):
 @database.unit_of_work
 def get_in_system_by_id(system_id, route_id, show_links=False):
     """
-    Get a representation for a route in the system
-    :param system_id: the system's text id
-    :param route_id: the route's text id
-    :return:
+    Get data for a specific route in a specific system.
+
+    This function returns a dictionary containing,
+     * the route's long representation,
+     * its status under key 'status',
+     * its frequency under key 'frequency',
+     * its alerts under key 'alerts',
+     * all of its service maps for whose group use_for_stops_in_route is true,
+       under key 'service_maps',
+     * and optionally a link to the route.
+
+    :param system_id: the system ID
+    :type system_id: str
+    :param route_id: the route ID
+    :type route_id: str
+    :param show_links: whether to return links
+    :type show_links: bool
+    :return: the dictionary described above
+    :rtype: dict
     """
     route = routedam.get_in_system_by_id(system_id, route_id)
     if route is None:
@@ -98,6 +111,7 @@ def get_in_system_by_id(system_id, route_id, show_links=False):
 
 
 class Status(str, enum.Enum):
+    """Enum containing the possible statuses for a route."""
     NO_SERVICE = 'NO_SERVICE'
     GOOD_SERVICE = 'GOOD_SERVICE'
     PLANNED_SERVICE_CHANGE = 'PLANNED_SERVICE_CHANGE'
@@ -106,10 +120,42 @@ class Status(str, enum.Enum):
 
 
 def _construct_route_status(route_pk):
+    """
+    Construct the status for a specific route.
+
+    See _construct_route_pk_to_status_map for documentation on how this is
+    constructed.
+
+    :param route_pk: the route's PK
+    :type route_pk: int
+    :return: the route's status
+    :rtype: Status
+    """
     return _construct_route_pk_to_status_map([route_pk])[route_pk]
 
 
 def _construct_route_pk_to_status_map(route_pks):
+    """
+    Construct the statuses for multiple routes.
+
+    The algorithm constructs the status by first examining the highest priority
+    alerts for a specific route. If there are alerts then,
+     * If one of these alerts has the effect SIGNIFICANT_DELAYs, then the status
+       of the route is DELAYS.
+     * Otherwise, if one of the alerts has planned false, then the status is
+       UNPLANNED_SERVICE_CHANGE.
+     * Otherwise, the status is PLANNED_SERVICE_CHANGE.
+
+    If there are now no alerts then it is checked to see if there are active
+    trips for this route.
+     * If so, the status is GOOD_SERVICE.
+     * Otherwise, the status is NO_SERVICE.
+
+    :param route_pks: list of the route's PKs
+    :type route_pks: iter
+    :return: list of Status objects
+    :rtype: list
+    """
     route_pks = set(route_pks)
     route_pk_to_status = {route_pk: Status.NO_SERVICE for route_pk in route_pks}
 
