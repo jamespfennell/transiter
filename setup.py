@@ -22,7 +22,7 @@ setup(
         'pyyaml',
         'requests',
         'rpyc',
-        'sqlalchemy',
+        'sqlalchemy==1.2.16',
         'toml'
     ]
 )
