@@ -5,11 +5,12 @@ Bugs:
   Service maps always rewrite. For the moment, just compute the new map and if
   it's identical do nothing
   Service maps don't appear if empty
-  
+
 1. Code quality:
     1. Clean up the code where relevant
     1. Add tests for relevant things
     1. Add docs
+    1. Remove all TODOs - resolve or make Github issues
     1. Document the API correctly
     1. Does the RTR app still work? Likely not!
 

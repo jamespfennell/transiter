@@ -5,6 +5,7 @@ integration-tests:
 
 unit-tests:
 	rm -f .coverage
+	transiterclt rebuild-db --yes
 	nosetests --with-coverage --cover-package=transiter --rednose -v tests/unittests
 
 docs:
