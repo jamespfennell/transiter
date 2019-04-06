@@ -15,6 +15,12 @@ class Link:
         else:
             return http_root + flask.url_for(self.endpoint, _external=False, **self.kwargs)
 
+    def __eq__(self, other):
+        return (
+            self.endpoint == other.endpoint
+            and self.kwargs == other.kwargs
+        )
+
 
 class AboutLink(Link):
     endpoint = 'about'

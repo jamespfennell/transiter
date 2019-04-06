@@ -1,9 +1,12 @@
+import unittest
+
 from transiter import models
+from transiter.general import exceptions
 from transiter.services import routeservice
 from .. import testutil
 
 
-class TestRouteService(testutil.TestCase(routeservice)):
+class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
     SYSTEM_ID = '1'
 
@@ -28,8 +31,19 @@ class TestRouteService(testutil.TestCase(routeservice)):
         self.route_two.id = self.ROUTE_TWO_ID
         self.route_two.pk = self.ROUTE_TWO_PK
 
+        self.alert = models.RouteStatus()
+
         self.routedam = self.mockImportedModule(routeservice.routedam)
         self.systemdam = self.mockImportedModule(routeservice.systemdam)
+
+    def test_list_all_in_system__system_not_found(self):
+        """[Route service] List all routes in a system - system not found"""
+        self.systemdam.get_by_id.return_value = None
+
+        self.assertRaises(
+            exceptions.IdNotFoundError,
+            lambda: routeservice.list_all_in_system(self.SYSTEM_ID)
+        )
 
     @testutil.patch_function(routeservice._construct_route_pk_to_status_map)
     def test_list_all_in_system(self, _construct_route_pk_to_status_map):
@@ -48,19 +62,30 @@ class TestRouteService(testutil.TestCase(routeservice)):
         expected = [
             {
                 **self.route_one.short_repr(),
-                'status': self.ROUTE_ONE_STATUS
+                'status': self.ROUTE_ONE_STATUS,
+                'href': routeservice.linksutil.RouteEntityLink(self.route_one),
             },
             {
                 **self.route_two.short_repr(),
-                'status': self.ROUTE_TWO_STATUS
+                'status': self.ROUTE_TWO_STATUS,
+                'href': routeservice.linksutil.RouteEntityLink(self.route_two),
             }
         ]
 
-        actual = routeservice.list_all_in_system(self.SYSTEM_ID)
+        actual = routeservice.list_all_in_system(self.SYSTEM_ID, show_links=True)
 
         self.assertEqual(actual, expected)
 
         self.routedam.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
+
+    def test_get_in_system_by_id__route_not_found(self):
+        """[Route service] Get a specific route in a system - route not found"""
+        self.systemdam.get_by_id.return_value = None
+
+        self.assertRaises(
+            exceptions.IdNotFoundError,
+            lambda: routeservice.list_all_in_system(self.SYSTEM_ID)
+        )
 
     @testutil.patch_function(routeservice._construct_route_status)
     def test_get_in_system_by_id(self, _construct_route_status):
@@ -92,6 +117,7 @@ class TestRouteService(testutil.TestCase(routeservice)):
 
     @testutil.patch_function(routeservice._construct_route_pk_to_status_map)
     def test_construct_route_status(self, _construct_route_pk_to_status_map):
+        """[Route service] Construct a single route status"""
 
         _construct_route_pk_to_status_map.return_value = {
             self.ROUTE_ONE_PK: self.ROUTE_ONE_STATUS
@@ -102,6 +128,74 @@ class TestRouteService(testutil.TestCase(routeservice)):
             routeservice._construct_route_status(self.ROUTE_ONE_PK)
         )
 
+    def test_construct_route_statuses__no_service(self):
+        """[Route service] Construct route status - NO_SERVICE"""
+        self._test_construct_route_statuses_runner(
+            routeservice.Status.NO_SERVICE,
+            [],
+            False
+        )
 
+    def test_construct_route_statuses__good_service(self):
+        """[Route service] Construct route status - GOOD_SERVICE"""
+        self._test_construct_route_statuses_runner(
+            routeservice.Status.GOOD_SERVICE,
+            [],
+            True
+        )
 
+    def test_construct_route_statuses__planned_service_change(self):
+        """[Route service] Construct route status - PLANNED_SERVICE_CHANGE"""
+        self.alert.cause = self.alert.Cause.MAINTENANCE
+        self.alert.effect = self.alert.Effect.MODIFIED_SERVICE
+        self._test_construct_route_statuses_runner(
+            routeservice.Status.PLANNED_SERVICE_CHANGE,
+            [self.alert],
+            True
+        )
+
+    def test_construct_route_statuses__unplanned_service_change(self):
+        """[Route service] Construct route status - UNPLANNED_SERVICE_CHANGE"""
+        self.alert.cause = self.alert.Cause.ACCIDENT
+        self.alert.effect = self.alert.Effect.MODIFIED_SERVICE
+        self._test_construct_route_statuses_runner(
+            routeservice.Status.UNPLANNED_SERVICE_CHANGE,
+            [self.alert],
+            True
+        )
+
+    def test_construct_route_statuses__delays(self):
+        """[Route service] Construct route status - DELAYS"""
+        self.alert.effect = self.alert.Effect.SIGNIFICANT_DELAYS
+        self._test_construct_route_statuses_runner(
+            routeservice.Status.DELAYS,
+            [self.alert],
+            True
+        )
+
+    def _test_construct_route_statuses_runner(
+            self, expected_status, alerts, current_service):
+
+        self.routedam.get_route_pk_to_highest_priority_alerts_map.return_value = {
+            self.ROUTE_ONE_PK: alerts
+        }
+        if current_service and len(alerts) == 0:
+            self.routedam.list_route_pks_with_current_service.return_value = [
+                self.ROUTE_ONE_PK
+            ]
+        else:
+            self.routedam.list_route_pks_with_current_service.return_value = []
+
+        expected = {
+            self.ROUTE_ONE_PK: expected_status
+        }
+
+        actual = routeservice._construct_route_pk_to_status_map([self.ROUTE_ONE_PK])
+
+        self.assertDictEqual(expected, actual)
+
+        self.routedam.get_route_pk_to_highest_priority_alerts_map.assert_called_once()
+        self.routedam.list_route_pks_with_current_service.assert_called_once_with(
+            {self.ROUTE_ONE_PK} if len(alerts) == 0 else set()
+        )
 

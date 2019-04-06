@@ -134,7 +134,7 @@ def _construct_route_status(route_pk):
     return _construct_route_pk_to_status_map([route_pk])[route_pk]
 
 
-def _construct_route_pk_to_status_map(route_pks):
+def _construct_route_pk_to_status_map(route_pks_iter):
     """
     Construct the statuses for multiple routes.
 
@@ -151,17 +151,16 @@ def _construct_route_pk_to_status_map(route_pks):
      * If so, the status is GOOD_SERVICE.
      * Otherwise, the status is NO_SERVICE.
 
-    :param route_pks: list of the route's PKs
-    :type route_pks: iter
+    :param route_pks_iter: iterator of the routes's PKs
+    :type route_pks_iter: iter
     :return: list of Status objects
     :rtype: list
     """
-    route_pks = set(route_pks)
-    route_pk_to_status = {route_pk: Status.NO_SERVICE for route_pk in route_pks}
+    route_pks = {route_pk for route_pk in route_pks_iter}
 
-    route_pk_to_alerts = (
-        routedam.get_route_pk_to_highest_priority_alerts_map(route_pks)
-    )
+    route_pk_to_alerts = routedam.get_route_pk_to_highest_priority_alerts_map(route_pks)
+
+    route_pk_to_status = {route_pk: Status.NO_SERVICE for route_pk in route_pks}
     for route_pk, alerts in route_pk_to_alerts.items():
         if len(alerts) == 0:
             continue
