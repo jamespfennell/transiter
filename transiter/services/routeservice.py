@@ -9,8 +9,6 @@ from transiter.data.dams import routedam, systemdam, servicepatterndam
 from transiter.general import linksutil, exceptions
 from transiter.models import RouteStatus
 
-# TODO: tests (100% code coverage for this class).
-
 
 @database.unit_of_work
 def list_all_in_system(system_id, show_links=False):

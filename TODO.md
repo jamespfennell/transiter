@@ -4,7 +4,6 @@
 Bugs:
   Service maps always rewrite. For the moment, just compute the new map and if
   it's identical do nothing
-  Service maps don't appear if empty
 
 1. Code quality:
     1. Clean up the code where relevant
@@ -73,11 +72,9 @@ Make the repr dicts use the actual fields
 ./services/update/updatemanager.py
 ./services/stopservice.py
 ./services/systemservice.py
-./services/servicepattern/graphutils/topologicalsort.py
 ./services/servicepattern/graphutils/pathstitcher.py
 ./services/servicepattern/graphutils/graphdatastructs.py
 ./services/servicepattern/servicepatternmanager.py
-./services/routeservice.py
 ./services/feedservice.py
 ./services/tripservice.py
 

@@ -1,19 +1,33 @@
-from . import graphdatastructs
+"""
+This class contains algorithms for topologically sorting graphs.
+"""
 
-# Next
-# (1) Improve the algorithm to keep connected components together
-# (2) How to conserve the edges?
-# (3) Write many tests for this
+from transiter.services.servicepattern.graphutils import graphdatastructs
 
-# Generic top sort algoirithm with some special properties:
-#   The connected components of the graph will be together (NOT TRUE SO FAR!)
-#   Nodes of the form A -> B -> C will be next to each toher
 
-class ImpossibleToTopoligicallySortGraph(Exception):
+class ImpossibleToTopologicallySortGraph(Exception):
+    """
+    Exception thrown if the inputted directed graph contains a cycle.
+    """
     pass
 
-def sort(graph):
 
+def sort(graph: graphdatastructs.DirectedGraph) -> graphdatastructs.SortedDirectedGraph:
+    """
+    Topologically sort a directed graph.
+
+    The algorithm here is the basic topological sort algorithm, except the
+    sorting has the following property. If there are vertices A, B, C, such
+    (A,B) and (B,C) are edges, and there are no other edges out of A and B
+    and in to B and C, then A, B and C will be consecutive in the sorting.
+
+    :param graph: the directed graph to sort
+    :type graph: graphdatastructs.SortedDirectedGraph
+    :return: the sorted graph
+    :rtype: graphdatastructs.SortedDirectedGraph
+    :raise: ImpossibleToTopologicallySortGraph: if the graph cannot be sorted;
+        i.e., it contains a cycle.
+    """
     sorted_graph = []
     sources = set(graph.sources)
     for vertex in graph.vertices():
@@ -21,11 +35,11 @@ def sort(graph):
         vertex.t_prev = set(vertex.prev)
 
     if len(sources) == 0:
-        raise ImpossibleToTopoligicallySortGraph()
+        raise ImpossibleToTopologicallySortGraph()
 
-    while(len(sources)>0):
+    while len(sources) > 0:
         vertex = sources.pop()
-        while(vertex is not None):
+        while vertex is not None:
             sorted_graph.append(vertex)
             if len(vertex.t_next) == 0:
                 vertex = None
@@ -37,12 +51,12 @@ def sort(graph):
                 could_be = True
                 vertex.t_next.remove(next_vertex)
                 next_vertex.t_prev.remove(vertex)
-                #remove_directed_graph_edge(vertex, next_vertex)
+                # remove_directed_graph_edge(vertex, next_vertex)
                 if len(next_vertex.t_prev) == 0:
                     potential_vertex = next_vertex
                     sources.add(potential_vertex)
             if could_be and potential_vertex is None and len(sources) == 0:
-                raise ImpossibleToTopoligicallySortGraph()
+                raise ImpossibleToTopologicallySortGraph()
             # This step ensures that the next vertex considered is connected
             # to the vertex just considered
             if potential_vertex is not None:
