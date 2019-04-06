@@ -1,13 +1,9 @@
-import unittest
-import unittest.mock as mock
-import inspect
 from transiter import models
 from transiter.services import routeservice
+from .. import testutil
 
 
-class TestRouteService(unittest.TestCase):
-
-    __module_being_tested__ = routeservice
+class TestRouteService(testutil.TestCase(routeservice)):
 
     SYSTEM_ID = '1'
 
@@ -20,31 +16,6 @@ class TestRouteService(unittest.TestCase):
     ROUTE_TWO_STATUS = routeservice.Status.GOOD_SERVICE
 
     RAW_FREQUENCY = 700
-
-    @classmethod
-    def _getImportedModulesDict(cls, _caches={}):
-        if len(_caches) == 0:
-            _caches['module_cache'] = {}
-            for name, obj in cls.__module_being_tested__.__dict__.items():
-                if name[:2] == '__':
-                    continue
-                if inspect.ismodule(obj):
-                    _caches['module_cache'][obj.__name__] = name
-        return _caches['module_cache']
-
-    def mockModuleVariable(self, variable_name):
-        patcher = mock.patch.object(
-            self.__module_being_tested__,
-            variable_name
-        )
-        mocked_module = patcher.start()
-        self.addCleanup(patcher.stop)
-        return mocked_module
-
-    def mockImportedModule(self, imported_module):
-        module_global_name = getattr(imported_module, '__name__')
-        module_local_name = self._getImportedModulesDict()[module_global_name]
-        return self.mockModuleVariable(module_local_name)
 
     def setUp(self):
         self.route_one = models.Route()
@@ -60,7 +31,7 @@ class TestRouteService(unittest.TestCase):
         self.routedam = self.mockImportedModule(routeservice.routedam)
         self.systemdam = self.mockImportedModule(routeservice.systemdam)
 
-    @mock.patch.object(routeservice, '_construct_route_pk_to_status_map')
+    @testutil.patch_function(routeservice._construct_route_pk_to_status_map)
     def test_list_all_in_system(self, _construct_route_pk_to_status_map):
         """[Route service] List all routes in a system"""
 
@@ -91,7 +62,7 @@ class TestRouteService(unittest.TestCase):
 
         self.routedam.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
 
-    @mock.patch.object(routeservice, '_construct_route_status')
+    @testutil.patch_function(routeservice._construct_route_status)
     def test_get_in_system_by_id(self, _construct_route_status):
         """[Route service] Get a specific route in a system"""
 
@@ -119,7 +90,7 @@ class TestRouteService(unittest.TestCase):
             self.ROUTE_ONE_ID
         )
 
-    @mock.patch.object(routeservice, '_construct_route_pk_to_status_map')
+    @testutil.patch_function(routeservice._construct_route_pk_to_status_map)
     def test_construct_route_status(self, _construct_route_pk_to_status_map):
 
         _construct_route_pk_to_status_map.return_value = {
