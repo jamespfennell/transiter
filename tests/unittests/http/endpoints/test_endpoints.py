@@ -97,7 +97,7 @@ class TestRouteEndpoints(_TestEndpoints):
         """[Route endpoints] List all routes in a system"""
         self._test_response_endpoint(routeendpoints.list_all_in_system,
                                      routeservice.list_all_in_system,
-                                     (self.SYSTEM_ID))
+                                     self.SYSTEM_ID)
 
     @mock.patch('transiter.http.endpoints.routeendpoints.routeservice')
     def test_get_in_system_by_id(self, routeservice):

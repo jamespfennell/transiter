@@ -13,70 +13,81 @@ Bugs:
     1. Document the API correctly
     1. Does the RTR app still work? Likely not!
 
+Random modules:
 
-1. All TODOs in the code and here are to me made as issues on github and 
-removed here before v1!
+    ./general/config.py
+    ./general/linksutil.py
+    ./general/clt.py
+    ./general/exceptions.py
+    ./http/permissionsvalidator.py
+    ./http/responsemanager.py
+    ./http/inputvalidator.py
+    ./http/flaskapp.py
+    ./taskserver/server.py
+    ./taskserver/client.py
+    ./data/database.py
 
-Bug: sometimes the __eq__ method of _BasicModel
-is called, seemingly when a trip is being deleted
+The update modules:
 
+    ./services/update/routestatusupdater.py
+    ./services/update/gtfsstaticutil.py
+    ./services/update/gtfsrealtimeutil.py
+    ./services/update/tripupdater.py
+    ./services/update/updatemanager.py
 
-Make the repr dicts use the actual fields
+Create of service maps:
 
+    ./services/servicepattern/graphutils/pathstitcher.py
+    ./services/servicepattern/graphutils/graphdatastructs.py
+    ./services/servicepattern/servicepatternmanager.py
 
-./general/config.py
-./general/linksutil.py
-./general/clt.py
-./general/exceptions.py
-./models/servicemapgroup.py
-./models/system.py
-./models/servicepatternvertex.py
-./models/servicepattern.py
-./models/servicepatternedge.py
-./models/stoptimeupdate.py
-./models/routestatus.py
-./models/feedupdate.py
-./models/scheduledservice.py
-./models/route.py
-./models/stop.py
-./models/trip.py
-./models/feed.py
-./models/scheduledtripstoptime.py
-./models/directionnamerule.py
-./models/scheduledtrip.py
-./models/base.py
-./http/permissionsvalidator.py
-./http/responsemanager.py
-./http/endpoints/tripendpoints.py
-./http/endpoints/routeendpoints.py
-./http/endpoints/systemendpoints.py
-./http/endpoints/feedendpoints.py
-./http/endpoints/stopendpoints.py
-./http/inputvalidator.py
-./http/flaskapp.py
-./taskserver/server.py
-./taskserver/client.py
-./data/fastoperations.py
-./data/dams/tripdam.py
-./data/dams/servicepatterndam.py
-./data/dams/genericqueries.py
-./data/dams/routedam.py
-./data/dams/stopdam.py
-./data/dams/feeddam.py
-./data/dams/systemdam.py
-./data/database.py
-./services/update/routestatusupdater.py
-./services/update/gtfsstaticutil.py
-./services/update/gtfsrealtimeutil.py
-./services/update/tripupdater.py
-./services/update/updatemanager.py
-./services/stopservice.py
-./services/systemservice.py
-./services/servicepattern/graphutils/pathstitcher.py
-./services/servicepattern/graphutils/graphdatastructs.py
-./services/servicepattern/servicepatternmanager.py
-./services/feedservice.py
-./services/tripservice.py
+Service. Do the endpoint after. Should just be updating the docs;
+already at 100% test coverage there:
+
+    ./services/stopservice.py
+    ./http/endpoints/stopendpoints.py
+    
+    ./services/systemservice.py
+    ./http/endpoints/systemendpoints.py
+    
+    ./services/feedservice.py
+    ./http/endpoints/feedendpoints.py
+    
+    ./services/tripservice.py
+    ./http/endpoints/tripendpoints.py
+
+Data. would be nice to have the tests passing on SQLLite...
+
+    ./data/fastoperations.py
+    ./data/dams/tripdam.py
+    ./data/dams/servicepatterndam.py
+    ./data/dams/genericqueries.py
+    ./data/dams/routedam.py
+    ./data/dams/stopdam.py
+    ./data/dams/feeddam.py
+    ./data/dams/systemdam.py
+
+Models: mainly just safely renaming after we have close to 100% test coverage
+Also change how short_repr works
+
+    ./models/servicemapgroup.py
+    ./models/system.py
+    ./models/servicepatternvertex.py
+    ./models/servicepattern.py
+    ./models/servicepatternedge.py
+    ./models/stoptimeupdate.py
+    ./models/routestatus.py
+    ./models/feedupdate.py
+    ./models/scheduledservice.py
+    ./models/route.py
+    ./models/stop.py
+    ./models/trip.py
+    ./models/feed.py
+    ./models/scheduledtripstoptime.py
+    ./models/directionnamerule.py
+    ./models/scheduledtrip.py
+    ./models/base.py
+
 
 ## Version 0.2
 
@@ -84,9 +95,6 @@ Make the repr dicts use the actual fields
 
 1. Add logging
 
-- Check the code coverage, and then write unit tests
-    for the methods missing them
-    
 1. Existing code clean up
     - C6: Optimize the SQL Alchemy config
         - especially with joins/lazy loading

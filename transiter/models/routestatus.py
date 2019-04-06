@@ -6,7 +6,7 @@ import enum
 
 
 # TODO: this should be ServiceStatus? ServiceUpdate? Or Alert (following
-# GTFS realtime
+# GTFS realtime. Also update routeendpoint with the right api when this is done
 class RouteStatus(Base):
     __tablename__ = 'route_status'
 
