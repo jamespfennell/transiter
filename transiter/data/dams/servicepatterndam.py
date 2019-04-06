@@ -1,11 +1,37 @@
-from transiter.data import database
-from transiter import models
 import sqlalchemy.sql.expression as sql
 from sqlalchemy import func
 from sqlalchemy import orm
 
+from transiter import models
+from transiter.data import database
 
-# TODO: rename
+
+def list_groups_and_maps_for_stops_in_route(route_pk):
+    session = database.get_session()
+    query = (
+        session.query(models.ServiceMapGroup, models.ServicePattern)
+        .join(
+            models.System,
+            models.System.pk == models.ServiceMapGroup.system_pk
+        )
+        .join(
+            models.Route,
+            models.Route.system_id == models.System.id
+        )
+        .outerjoin(
+            models.ServicePattern,
+            sql.and_(
+                models.ServicePattern.route_pk == models.Route.pk,
+                models.ServicePattern.group_pk == models.ServiceMapGroup.pk
+            )
+        )
+        .filter(models.ServiceMapGroup.use_for_stops_in_route)
+        .filter(models.Route.pk == route_pk)
+    )
+    return [(group, map_) for (group, map_) in query]
+
+
+# TODO: delete
 def get_default_routes_at_stops_map(stop_pks):
     # TODO: we should return all service maps, even if they don't have routes for the stop
     session = database.get_session()
@@ -80,7 +106,6 @@ def get_scheduled_trip_pk_to_stop_pks_map():
 
 def list_scheduled_trips_with_times_in_system():
     session = database.get_session()
-    import time
 
     first_stop_query = session.query(
         models.ScheduledTripStopTime.trip_pk.label('trip_pk'),

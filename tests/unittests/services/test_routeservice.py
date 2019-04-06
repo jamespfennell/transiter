@@ -20,6 +20,10 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
     RAW_FREQUENCY = 700
 
+    SERVICE_MAP_ONE_GROUP_ID = '1000'
+    SERVICE_MAP_TWO_GROUP_ID = '1001'
+    STOP_ID = '1002'
+
     def setUp(self):
         self.route_one = models.Route()
         self.route_one.id = self.ROUTE_ONE_ID
@@ -31,10 +35,24 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         self.route_two.id = self.ROUTE_TWO_ID
         self.route_two.pk = self.ROUTE_TWO_PK
 
+        self.service_map_one_group = models.ServiceMapGroup()
+        self.service_map_one_group.id = self.SERVICE_MAP_ONE_GROUP_ID
+
+        self.service_map_two_group = models.ServiceMapGroup()
+        self.service_map_two_group.id = self.SERVICE_MAP_TWO_GROUP_ID
+
+        self.stop = models.Stop()
+        self.stop.id = self.STOP_ID
+        vertex = models.ServicePatternVertex()
+        vertex.stop = self.stop
+        self.service_map_one = models.ServicePattern()
+        self.service_map_one.vertices = [vertex]
+
         self.alert = models.RouteStatus()
 
         self.routedam = self.mockImportedModule(routeservice.routedam)
         self.systemdam = self.mockImportedModule(routeservice.systemdam)
+        self.servicemapdam = self.mockImportedModule(routeservice.servicepatterndam)
 
     def test_list_all_in_system__system_not_found(self):
         """[Route service] List all routes in a system - system not found"""
@@ -80,11 +98,11 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
     def test_get_in_system_by_id__route_not_found(self):
         """[Route service] Get a specific route in a system - route not found"""
-        self.systemdam.get_by_id.return_value = None
+        self.routedam.get_in_system_by_id.return_value = None
 
         self.assertRaises(
             exceptions.IdNotFoundError,
-            lambda: routeservice.list_all_in_system(self.SYSTEM_ID)
+            lambda: routeservice.get_in_system_by_id(self.SYSTEM_ID, self.ROUTE_ONE_ID)
         )
 
     @testutil.patch_function(routeservice._construct_route_status)
@@ -94,18 +112,37 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         _construct_route_status.return_value = self.ROUTE_ONE_STATUS
         self.routedam.get_in_system_by_id.return_value = self.route_one
         self.routedam.calculate_frequency.return_value = self.RAW_FREQUENCY
+        self.servicemapdam.list_groups_and_maps_for_stops_in_route.return_value = [
+            [self.service_map_one_group, self.service_map_one],
+            [self.service_map_two_group, None]
+        ]
 
         expected = {
             **self.route_one.short_repr(),
             'frequency': int(self.RAW_FREQUENCY/6)/10,
             'status': self.ROUTE_ONE_STATUS,
             'alerts': [],
-            'service_maps': []
+            'service_maps': [
+                {
+                    'group_id': self.SERVICE_MAP_ONE_GROUP_ID,
+                    'stops': [
+                        {
+                            **self.stop.short_repr(),
+                            'href': routeservice.linksutil.StopEntityLink(self.stop)
+                        }
+                    ]
+                },
+                {
+                    'group_id': self.SERVICE_MAP_TWO_GROUP_ID,
+                    'stops': []
+                }
+            ]
         }
 
         actual = routeservice.get_in_system_by_id(
             self.SYSTEM_ID,
-            self.ROUTE_ONE_ID
+            self.ROUTE_ONE_ID,
+            show_links=True
         )
 
         self.assertDictEqual(actual, expected)

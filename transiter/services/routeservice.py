@@ -5,12 +5,11 @@ The route service is used to retrieve data about routes.
 import enum
 
 from transiter.data import database
-from transiter.data.dams import routedam, systemdam
+from transiter.data.dams import routedam, systemdam, servicepatterndam
 from transiter.general import linksutil, exceptions
 from transiter.models import RouteStatus
 
 # TODO: tests (100% code coverage for this class).
-# TODO: good time to rename RouteStatus -> Alert?
 
 
 @database.unit_of_work
@@ -89,22 +88,19 @@ def get_in_system_by_id(system_id, route_id, show_links=False):
         'service_maps': []
     }
 
-    # TODO: also return empty service maps? Yes, don't rely on the DB.
-    # Need a new DAM method list_service_maps_in_route
-    for service_map in route.service_patterns:
-        if not service_map.group.use_for_stops_in_route:
-            continue
+    for group, service_map in (
+        servicepatterndam.list_groups_and_maps_for_stops_in_route(route.pk)
+    ):
         service_map_response = {
-            'group_id': service_map.group.id,
+            'group_id': group.id,
             'stops': []
         }
-        for entry in service_map.vertices:
-            stop_response = entry.stop.short_repr()
-            if show_links:
-                stop_response.update({
-                    'href': linksutil.StopEntityLink(entry.stop)
-                })
-            service_map_response['stops'].append(stop_response)
+        if service_map is not None:
+            for entry in service_map.vertices:
+                stop_response = entry.stop.short_repr()
+                if show_links:
+                    stop_response['href'] = linksutil.StopEntityLink(entry.stop)
+                service_map_response['stops'].append(stop_response)
         response['service_maps'].append(service_map_response)
 
     return response
