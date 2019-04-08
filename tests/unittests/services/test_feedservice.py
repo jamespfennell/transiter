@@ -1,147 +1,182 @@
 import unittest
 import unittest.mock as mock
 
+from transiter.general import exceptions
 from transiter.services import feedservice
+from transiter import models
+from .. import testutil
 
 
-class TestFeedService(unittest.TestCase):
+class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
 
     SYSTEM_ID = '1'
     FEED_ONE_ID = '2'
-    FEED_ONE_REPR = {'feed_id': FEED_ONE_ID}
-    FEED_UPDATE_ONE_REPR = {'id': '4'}
-
-    def _quick_mock(self, name):
-        cache_name = '_quick_mock_cache_{}'.format(name)
-        self.__setattr__(cache_name, mock.patch(
-            'transiter.services.feedservice.{}'.format(name)))
-        mocked = getattr(self, cache_name).start()
-        self.addCleanup(getattr(self, cache_name).stop)
-        return mocked
+    FEED_ONE_PK = 3
+    FEED_ONE_AUTO_UPDATE_PERIOD = 500
+    FEED_TWO_ID = '4'
 
     def setUp(self):
-        #self.importlib = self._quick_mock('importlib')
-        #self.hashlib = self._quick_mock('hashlib')
-        #self.requests = self._quick_mock('requests')
-        self.linksutil = self._quick_mock('linksutil')
-        self.feed_dao = self._quick_mock('feeddam')
+        self.feeddam = self.mockImportedModule(feedservice.feeddam)
+        self.systemdam = self.mockImportedModule(feedservice.systemdam)
+        self.updatemanager = self.mockImportedModule(feedservice.updatemanager)
 
-        self.feed_one = mock.MagicMock()
-        self.feed_one.short_repr.return_value = self.FEED_ONE_REPR
-        self.feed_one_href = mock.MagicMock()
-        self.feed_one.parser = 'custom'
-        self.feed_one.custom_function = 'custom_function'
-        self.feed_dao.list_all_in_system.return_value = [
-            self.feed_one]
-        self.feed_dao.get_in_system_by_id.return_value = self.feed_one
+        self.system = models.System()
+        self.system.id = self.SYSTEM_ID
 
-        self.feed_update_one = mock.MagicMock()
-        self.feed_update_one.short_repr.return_value = self.FEED_UPDATE_ONE_REPR
-        self.feed_dao.list_updates_in_feed.return_value = [
-            self.feed_update_one]
-        self.feed_update_two = mock.MagicMock()
-        self.feed_update_two.feed = self.feed_one
-        self.feed_dao.get_last_successful_update.return_value = self.feed_update_one
+        self.feed_one = models.Feed()
+        self.feed_one.pk = self.FEED_ONE_PK
+        self.feed_one.id = self.FEED_ONE_ID
+        self.feed_one.system = self.system
 
-        self.linksutil.FeedEntityLink.return_value = self.feed_one_href
+        self.feed_two = models.Feed()
+        self.feed_two.id = self.FEED_TWO_ID
 
-        """
-        m = mock.MagicMock()
-        self.hashlib.md5.return_value = m
-        m.hexdigest.return_value = 'HASH2'
+        self.feed_update_one = models.FeedUpdate(self.feed_one)
+        self.feed_update_two = models.FeedUpdate(self.feed_one)
 
-        self.module = mock.MagicMock()
-        self.importlib.import_module.return_value = self.module
-        self.module.custom_function = mock.MagicMock()
+    def test_list_all_auto_updating(self):
+        """[Feed service] List all auto updating feed in system"""
+        self.feed_one.auto_updater_frequency = self.FEED_ONE_AUTO_UPDATE_PERIOD
 
-        self.request = mock.MagicMock()
-        self.requests.get.return_value = self.request
-        """
+        self.feeddam.list_all_autoupdating.return_value = [self.feed_one]
 
-
-    def test_list_all_in_system(self):
-        """[Feed service] List all in system"""
         expected = [
             {
-                **self.FEED_ONE_REPR,
-                'href': self.feed_one_href,
+                'pk': self.FEED_ONE_PK,
+                'id': self.FEED_ONE_ID,
+                'system_id': self.SYSTEM_ID,
+                'auto_update_period': self.FEED_ONE_AUTO_UPDATE_PERIOD
             }
         ]
 
-        actual = feedservice.list_all_in_system(self.SYSTEM_ID)
+        actual = feedservice.list_all_auto_updating()
+
+        self.assertEqual(expected, actual)
+
+    def test_list_all_in_system(self):
+        """[Feed service] List all in system"""
+        self.systemdam.get_by_id.return_value = self.system
+        self.feeddam.list_all_in_system.return_value = [self.feed_one, self.feed_two]
+
+        expected = [
+            {
+                **self.feed_one.short_repr(),
+                'href': feedservice.linksutil.FeedEntityLink(self.feed_one),
+            },
+            {
+                **self.feed_two.short_repr(),
+                'href': feedservice.linksutil.FeedEntityLink(self.feed_two),
+            }
+        ]
+
+        actual = feedservice.list_all_in_system(self.SYSTEM_ID, True)
 
         self.assertListEqual(actual, expected)
-        self.feed_one.short_repr.assert_called_once_with()
-        self.linksutil.FeedEntityLink.assert_called_once_with(self.feed_one)
-        self.feed_dao.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
+
+        self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_ID)
+        self.feeddam.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
+
+    def test_list_all_in_system__no_such_system(self):
+        """[Feed service] List all in system - no such system"""
+        self.systemdam.get_by_id.return_value = None
+
+        self.assertRaises(
+            exceptions.IdNotFoundError,
+            lambda: feedservice.list_all_in_system(self.SYSTEM_ID)
+        )
+
+        self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_ID)
 
     def test_get_in_system_by_id(self):
+        """[Feed service] Get a feed in a system"""
+        self.feeddam.get_in_system_by_id.return_value = self.feed_one
+
         expected = {
-            **self.FEED_ONE_REPR,
+            **self.feed_one.short_repr(),
+            'updates': {
+                'href': feedservice.linksutil.FeedEntityUpdatesLink(self.feed_one)
+            }
         }
 
-        actual = feedservice.get_in_system_by_id(self.SYSTEM_ID, self.FEED_ONE_ID)
-        del actual['updates']
+        actual = feedservice.get_in_system_by_id(
+            self.SYSTEM_ID, self.FEED_ONE_ID, True)
 
         self.assertDictEqual(actual, expected)
 
-        self.feed_one.short_repr.assert_called_once_with()
-        self.feed_dao.get_in_system_by_id.assert_called_once_with(
+        self.feeddam.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID, self.FEED_ONE_ID)
 
-    @mock.patch('transiter.services.feedservice.updatemanager.execute_feed_update')
-    def _test_create_feed_update(self, _execute_feed_update):
-        feed_update = mock.MagicMock()
-        self.feed_dao.create_update.return_value = feed_update
+    def test_get_in_system_by_id__no_such_feed(self):
+        """[Feed service] Get a feed in a system - no such feed"""
+        self.feeddam.get_in_system_by_id.return_value = None
+
+        self.assertRaises(
+            exceptions.IdNotFoundError,
+            lambda: feedservice.get_in_system_by_id(self.SYSTEM_ID, self.FEED_ONE_ID)
+        )
+
+        self.feeddam.get_in_system_by_id.assert_called_once_with(
+            self.SYSTEM_ID, self.FEED_ONE_ID)
+
+    def test_create_feed_update(self):
+        """[Feed service] Create a feed update"""
+        self.feeddam.get_in_system_by_id.return_value = self.feed_one
+
         expected = {
+            **self.feed_update_one.long_repr()
         }
 
         actual = feedservice.create_feed_update(self.SYSTEM_ID, self.FEED_ONE_ID)
 
         self.assertDictEqual(actual, expected)
-        self.assertEqual(feed_update.feed, self.feed_one)
-        self.assertEqual(feed_update.status, 'SCHEDULED')
+        self.assertEqual(self.feed_update_one.feed, self.feed_one)
+        self.assertEqual(self.feed_update_one.status, 'SCHEDULED')
 
-        self.feed_dao.get_in_system_by_id.assert_called_once_with(
+        self.feeddam.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID, self.FEED_ONE_ID)
-        _execute_feed_update.assert_called_once_with(feed_update)
+        self.updatemanager.execute_feed_update.assert_called_once_with(
+            self.feed_update_one)
+
+    def test_create_feed_update__no_such_feed(self):
+        """[Feed service] Create a feed update - no such feed"""
+        self.feeddam.get_in_system_by_id.return_value = None
+
+        self.assertRaises(
+            exceptions.IdNotFoundError,
+            lambda: feedservice.create_feed_update(self.SYSTEM_ID, self.FEED_ONE_ID)
+        )
+
+        self.feeddam.get_in_system_by_id.assert_called_once_with(
+            self.SYSTEM_ID, self.FEED_ONE_ID)
 
     def test_list_updates_in_feed(self):
+        """[Feed service] List updates in a feed"""
+        self.feeddam.get_in_system_by_id.return_value = self.feed_one
+        self.feeddam.list_updates_in_feed.return_value = [
+            self.feed_update_one, self.feed_update_two]
+
         expected = [
-            self.FEED_UPDATE_ONE_REPR
+            self.feed_update_one.short_repr(),
+            self.feed_update_two.short_repr(),
         ]
 
         actual = feedservice.list_updates_in_feed(self.SYSTEM_ID, self.FEED_ONE_ID)
 
         self.assertListEqual(actual, expected)
-        self.feed_dao.get_in_system_by_id.assert_called_once_with(
+
+        self.feeddam.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID, self.FEED_ONE_ID)
-        self.feed_dao.list_updates_in_feed.assert_called_once_with(
+        self.feeddam.list_updates_in_feed.assert_called_once_with(
             self.feed_one)
 
-    def _test_execute_feed_update_success(self):
-        self.feed_update_one.raw_data_hash = 'HASH1'
+    def test_list_updates_in_feed__no_such_feed(self):
+        """[Feed service] List updates in a feed - no such feed"""
+        self.feeddam.get_in_system_by_id.return_value = None
 
-        feedservice._execute_feed_update(self.feed_update_two)
+        self.assertRaises(
+            exceptions.IdNotFoundError,
+            lambda: feedservice.list_updates_in_feed(self.SYSTEM_ID, self.FEED_ONE_ID)
+        )
 
-        self.assertEqual(self.feed_update_two.status, 'SUCCESS')
-        self.module.custom_function.assert_called_once_with(
-            self.feed_one, self.request.content)
-
-    def _test_execute_feed_update_not_needed(self):
-        self.feed_update_one.raw_data_hash = 'HASH2'
-
-        feedservice._execute_feed_update(self.feed_update_two)
-
-        self.assertEqual(self.feed_update_two.status, 'SUCCESS')
-        self.module.custom_function.assert_not_called()
-
-    def _test_execute_feed_update_failure(self):
-        self.feed_update_one.raw_data_hash = 'HASH1'
-        self.module.custom_function.side_effect = Exception
-
-        feedservice._execute_feed_update(self.feed_update_two)
-
-        self.assertEqual(self.feed_update_two.status, 'FAILURE')
-        self.module.custom_function.assert_called_once_with(
-            self.feed_one, self.request.content)
+        self.feeddam.get_in_system_by_id.assert_called_once_with(
+            self.SYSTEM_ID, self.FEED_ONE_ID)

@@ -5,7 +5,7 @@ from .base import Base
 import enum
 
 
-# TODO: this should be ServiceStatus? ServiceUpdate? Or Alert (following
+# TODO: Rename Alert (following
 # GTFS realtime. Also update routeendpoint with the right api when this is done
 class RouteStatus(Base):
     __tablename__ = 'route_status'
@@ -13,6 +13,7 @@ class RouteStatus(Base):
     pk = Column(Integer, primary_key=True)
     id = Column(String)
 
+    # TODO: delete the first 3 here
     type = Column(String)
     message_title = Column(String)
     message_content = Column(String)

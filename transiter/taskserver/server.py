@@ -94,7 +94,7 @@ class FeedAutoUpdateTask(IntervalTask):
 
 def refresh_feed_auto_update_tasks(p=None):
     global feed_pk_to_auto_update_task
-    feeds_data = feedservice.list_all_autoupdating()
+    feeds_data = feedservice.list_all_auto_updating()
     logger.info('Refreshing {} feed auto update tasks'.format(len(feeds_data)))
 
     stale_feed_pks = set(feed_pk_to_auto_update_task.keys())

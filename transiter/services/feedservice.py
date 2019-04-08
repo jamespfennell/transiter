@@ -1,9 +1,13 @@
+"""
+The feed service is used to retrieve data about feeds.
+"""
+
 import datetime
 import logging
 
 from transiter import models
 from transiter.data import database
-from transiter.data.dams import feeddam
+from transiter.data.dams import feeddam, systemdam
 from transiter.general import linksutil, exceptions
 from transiter.services.update import updatemanager
 
@@ -11,11 +15,14 @@ logger = logging.getLogger(__name__)
 
 
 @database.unit_of_work
-def list_all_autoupdating():
+def list_all_auto_updating():
     """
     List all auto updating feeds. This method is designed for use by the task
-    server
-    :return:
+    server.
+
+    :return: a list of dictionaries containing keys pk, id, system_id and
+             auto_update_period.
+    :rtype: list
     """
     response = []
     for feed in feeddam.list_all_autoupdating():
@@ -29,37 +36,68 @@ def list_all_autoupdating():
 
 
 @database.unit_of_work
-def list_all_in_system(system_id):
+def list_all_in_system(system_id, show_links=False):
+    """
+    Get data on all feeds in a system.
 
+    The result is list of dictionaries, one for each feed, containing the
+    feed's short representation and (optionally) a link to the feed.
+
+    :param system_id: the system ID
+    :type system_id: str
+    :param show_links: whether to return links
+    :type show_links: bool
+    :type system_id: str
+    :return: the list described above
+    :rtype: list
+    """
+    system = systemdam.get_by_id(system_id)
+    if system is None:
+        raise exceptions.IdNotFoundError
     response = []
-
     for feed in feeddam.list_all_in_system(system_id):
         feed_response = feed.short_repr()
-        feed_response.update({
-            'href': linksutil.FeedEntityLink(feed),
-        })
+        if show_links:
+            feed_response['href'] = linksutil.FeedEntityLink(feed)
         response.append(feed_response)
     return response
 
 
 @database.unit_of_work
-def get_in_system_by_id(system_id, feed_id):
+def get_in_system_by_id(system_id, feed_id, show_links=False):
+    """
+    Get data on a specific feed in a system.
 
+    :param system_id: the system ID
+    :type system_id: str
+    :param feed_id: the feed ID
+    :type feed_id: str
+    :param show_links: whether to return a link to the feed's updates page.
+    :type show_links: bool
+    :return: the feed's short representation.
+    :rtype: dict
+    """
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         raise exceptions.IdNotFoundError
-    response = {
-        **feed.short_repr(),
-        'updates': {
-            'href': linksutil.FeedEntityUpdatesLink(feed)
-        }
-    }
+    response = feed.short_repr()
+    if show_links:
+        response['updates'] = {'href': linksutil.FeedEntityUpdatesLink(feed)}
     return response
 
 
 @database.unit_of_work
 def create_feed_update(system_id, feed_id):
+    """
+    Create a feed update for a feed in a system.
 
+    :param system_id: the system ID
+    :type system_id: str
+    :param feed_id: the feed ID
+    :type feed_id: str
+    :return: the feed update's long representation.
+    :rtype: dict
+    """
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         raise exceptions.IdNotFoundError
@@ -72,7 +110,16 @@ def create_feed_update(system_id, feed_id):
 
 @database.unit_of_work
 def list_updates_in_feed(system_id, feed_id):
-    # TODO optimize this to only be one query? yes yes
+    """
+    List all of the updates for a feed.
+
+    :param system_id: the system ID
+    :type system_id: str
+    :param feed_id: the feed ID
+    :type feed_id: str
+    :return: a list of short representations of the feed updates.
+    :rtype: list
+    """
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         raise exceptions.IdNotFoundError

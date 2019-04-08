@@ -8,6 +8,7 @@ Bugs:
 1. Code quality:
     1. Clean up the code where relevant
     1. Add tests for relevant things
+            -> all tests had docstring
     1. Add docs
     1. Remove all TODOs - resolve or make Github issues
     1. Document the API correctly

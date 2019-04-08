@@ -3,7 +3,8 @@ from sqlalchemy.orm import relationship
 
 from .base import Base
 
-
+# NOTE: if the table was foreign keyed to system though system.pk instead,
+# wouldn't need to give the task service system info
 class Feed(Base):
     __tablename__ = 'feed'
 
