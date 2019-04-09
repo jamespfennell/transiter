@@ -23,9 +23,7 @@ def list_all_in_system(system_id):
         [
             {
                 "id": "F",
-                "system_id": "nycsubway",
-                "service_status" : "Planned Work",
-                "href": "https://demo.transiter.io/systems/nycsubway/routes/F"
+                "status" : "UNPLANNED_SERVICE_CHANGE"
             },
         ]
 
@@ -51,9 +49,9 @@ def get_in_system_by_id(system_id, route_id):
 
         {
             "id": "A",
-            "frequency": null,
-            "service_status": "Planned Work",
-            "service_status_messages": [
+            "frequency": 6.7,
+            "status": "GOOD_SERVICE",
+            "alerts": [
                 {
                     "id": "MTA NYCT_213185",
                     "message_title": "Track replacement",
@@ -63,14 +61,15 @@ def get_in_system_by_id(system_id, route_id):
                     "creation_time": 1547787600
                 }
             ],
-            "stops": [
+            "service_maps": [
                 {
-                    "id": "A02",
-                    "system_id": "nycsubway",
-                    "name": "Inwood - 207 St",
-                    "current_service": false,
-                    "position": 0,
-                    "href": "https://demo.transiter.io/systems/nycsubway/stops/A02"
+                    "group_id": "daytime",
+                    "stops": [
+                        {
+                            "id": "A02",
+                            "name": "Inwood - 207 St"
+                        }
+                    ]
                 },
             ]
         }

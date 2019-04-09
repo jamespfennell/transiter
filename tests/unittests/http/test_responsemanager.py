@@ -1,6 +1,6 @@
 import unittest
 import unittest.mock as mock
-from transiter.http import responsemanager, permissionsvalidator
+from transiter.http import responsemanager
 from transiter.general import linksutil, exceptions
 import datetime
 
@@ -118,13 +118,13 @@ class TestExceptionHandling(unittest.TestCase):
     def test_permission_denied(self):
         """[Response manager] Access denied error response"""
         self._test_handled_exception(
-            permissionsvalidator.AccessDenied,
+            exceptions.AccessDenied,
             responsemanager.HTTP_403_FORBIDDEN)
 
     def test_unknown_permission_level(self):
         """[Response manager] Unknown permission level error response"""
         self._test_handled_exception(
-            permissionsvalidator.UnknownPermissionsLevelInRequest,
+            exceptions.InvalidPermissionsLevelInRequest,
             responsemanager.HTTP_400_BAD_REQUEST)
 
     def test_unhandled_exception(self):

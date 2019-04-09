@@ -77,6 +77,7 @@ def install(system_id):
     :status 201: the system's data was found on disk and the system was installed
     :status 404: data for such a system was not found
     """
+    # TODO: permission validation
     config_str = request.files['config_file'].read().decode('utf-8')
     extra_files = {
         key: request.files[key].stream for key in request.files
@@ -101,4 +102,5 @@ def delete_by_id(system_id):
     :status 204: the system was uninstalled
     :status 404: a system with that ID does not exists
     """
+    # TODO: permission validation
     return systemservice.delete_by_id(system_id)

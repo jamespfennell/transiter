@@ -2,8 +2,7 @@ import json
 from datetime import date, datetime
 from decorator import decorator
 
-from transiter.general import linksutil, exceptions as httpexceptions, exceptions as serviceexceptions
-from transiter.http import permissionsvalidator
+from transiter.general import linksutil, exceptions # as httpexceptions, exceptions as serviceexceptions
 
 #from requests.status_codes import codes as http_status_code
 #
@@ -31,19 +30,19 @@ def _process_request(callback, func, *args, **kw):
     # TODO: make this a dict
     try:
         result = func(*args, **kw)
-    except serviceexceptions.IdNotFoundError:
+    except exceptions.IdNotFoundError:
         return '', HTTP_404_NOT_FOUND, ''
     except NotImplementedError:
         return '', HTTP_501_NOT_IMPLEMENTED, ''
-    except permissionsvalidator.AccessDenied:
+    except exceptions.AccessDenied:
         return '', HTTP_403_FORBIDDEN, ''
-    except permissionsvalidator.UnknownPermissionsLevelInRequest:
+    except exceptions.InvalidPermissionsLevelInRequest:
         return '', HTTP_400_BAD_REQUEST, ''
-    except httpexceptions.InvalidJson:
+    except exceptions.InvalidJson:
         return create_error_response('Request payload was not valid JSON.', HTTP_400_BAD_REQUEST)
-    except httpexceptions.UnexpectedArgument as e:
+    except exceptions.UnexpectedArgument as e:
         return create_error_response(str(e), HTTP_400_BAD_REQUEST)
-    except httpexceptions.MissingArgument as e:
+    except exceptions.MissingArgument as e:
         return create_error_response(str(e), HTTP_400_BAD_REQUEST)
     #except Exception as e:
     #    print(e)

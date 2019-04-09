@@ -36,6 +36,8 @@ def TestCase(module):
 
         def mockImportedModule(self, imported_module):
             module_global_name = getattr(imported_module, '__name__')
+            #print(module_global_name)
+            #print(self._getImportedModulesDict())
             module_local_name = self._getImportedModulesDict()[module_global_name]
             return self.mockModuleAttribute(module_local_name)
 

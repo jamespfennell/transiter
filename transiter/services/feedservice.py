@@ -131,6 +131,18 @@ def list_updates_in_feed(system_id, feed_id):
 
 @database.unit_of_work
 def trim_feed_updates():
+    """
+    Delete old feed updates.
+
+    This method deletes feed updates that were created more than 60 minutes
+    ago. Before deleting the updates, it prints some aggregate statistics
+    such as the proportion of feed updates that were successful.
+
+    This method is designed to be called hourly by the task server. It is only
+    meant to be a short term solution to the problem of cleaning and documenting
+    old feed updates: in the future, aggregate feed update reports should be
+    persisted in the database.
+    """
     logger.info('Trimming old feed updates.')
     before_datetime = (
         datetime.datetime.now() - datetime.timedelta(minutes=60)

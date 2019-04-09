@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from transiter.http import permissionsvalidator
+from transiter.http import permissions
 from transiter.http.responsemanager import http_get_response, http_post_response
 from transiter.services import feedservice
 
@@ -12,7 +12,6 @@ feed_endpoints = Blueprint('feed_endpoints', __name__)
 def list_all_in_system(system_id):
     """List all feeds for a specific system
 
-
     .. :quickref: Feed; List all feeds for a specific system
 
     :param system_id:
@@ -22,12 +21,11 @@ def list_all_in_system(system_id):
 
         [
             {
-                "feed_id": "123456",
-                "href": "https://transiter.io/systems/nycsubway/feeds/123456",
+                "id": "123456",
             },
         ]
     """
-    permissionsvalidator.validate_permissions('AdminRead')
+    permissions.ensure(permissions.PermissionsLevel.ADMIN_READ)
     return feedservice.list_all_in_system(system_id)
 
 
@@ -35,7 +33,6 @@ def list_all_in_system(system_id):
 @http_get_response
 def get_in_system_by_id(system_id, feed_id):
     """Retrieve a specific feed
-
 
     .. :quickref: Feed; Retrieve a specific feed
 
@@ -47,12 +44,9 @@ def get_in_system_by_id(system_id, feed_id):
 
         {
             "id": "L",
-            "updates": {
-                "href": "https://demo.transitor.io/systems/nycsubway/feeds/L/updates"
-            }
         }
     """
-    permissionsvalidator.validate_permissions('AdminRead')
+    permissions.ensure(permissions.PermissionsLevel.ADMIN_READ)
     return feedservice.get_in_system_by_id(system_id, feed_id)
 
 
@@ -78,11 +72,12 @@ def create_feed_update(system_id, feed_id):
             "id": 6,
             "status": "SUCCESS",
             "explanation": "UPDATED",
+            "failure_message": null,
             "raw_data_hash": "099ae3c5b72d6f2d8fc6eb4290a95776",
-            "last_action_time": 1548014018.17677
+            "last_action_time": 1548014018
         }
     """
-    permissionsvalidator.validate_permissions('All')
+    permissions.ensure(permissions.PermissionsLevel.ALL)
     return feedservice.create_feed_update(system_id, feed_id)
 
 
@@ -108,21 +103,23 @@ def list_updates_in_feed(system_id, feed_id):
 
         [
             {
-                "id": 3,
+                "id": 7,
                 "status": "SUCCESS",
                 "explanation": "NOT_NEEDED",
-                "raw_data_hash": "dd1c428955aad6fb17712ec1e6449ba1",
-                "last_action_time": 1548013683.83237
+                "failure_message": null,
+                "raw_data_hash": "099ae3c5b72d6f2d8fc6eb4290a95776",
+                "last_action_time": 1548014023
             },
             {
-                "id": 2,
+                "id": 6,
                 "status": "SUCCESS",
                 "explanation": "UPDATED",
-                "raw_data_hash": "dd1c428955aad6fb17712ec1e6449ba1",
-                "last_action_time": 1548013682.624686
+                "failure_message": null,
+                "raw_data_hash": "099ae3c5b72d6f2d8fc6eb4290a95776",
+                "last_action_time": 1548014018
             }
         ]
     """
-    permissionsvalidator.validate_permissions('AdminRead')
+    permissions.ensure(permissions.PermissionsLevel.ADMIN_READ)
     return feedservice.list_updates_in_feed(system_id, feed_id)
 

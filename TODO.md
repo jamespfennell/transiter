@@ -20,7 +20,6 @@ Random modules:
     ./general/linksutil.py
     ./general/clt.py
     ./general/exceptions.py
-    ./http/permissionsvalidator.py
     ./http/responsemanager.py
     ./http/inputvalidator.py
     ./http/flaskapp.py
@@ -51,7 +50,6 @@ already at 100% test coverage there:
     ./services/systemservice.py
     ./http/endpoints/systemendpoints.py
     
-    ./services/feedservice.py
     ./http/endpoints/feedendpoints.py
     
     ./services/tripservice.py
