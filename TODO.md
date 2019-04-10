@@ -50,8 +50,6 @@ already at 100% test coverage there:
     ./services/systemservice.py
     ./http/endpoints/systemendpoints.py
     
-    ./http/endpoints/feedendpoints.py
-    
     ./services/tripservice.py
     ./http/endpoints/tripendpoints.py
 

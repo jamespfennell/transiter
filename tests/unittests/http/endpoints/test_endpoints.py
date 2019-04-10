@@ -1,8 +1,10 @@
-import unittest.mock as mock
 import unittest
+import unittest.mock as mock
 
+from transiter.general import exceptions
 from transiter.http import flaskapp
 from transiter.http.endpoints import routeendpoints, stopendpoints, tripendpoints, systemendpoints, feedendpoints
+from ... import testutil
 
 
 class _TestEndpoints(unittest.TestCase):
@@ -19,10 +21,9 @@ class _TestEndpoints(unittest.TestCase):
     JSON_NO_RESPONSE = ''
 
     def setUp(self):
-        pv_patcher = mock.patch('transiter.http.endpoints.feedendpoints.permissions')
-        self.pv = pv_patcher.start()
-        self.addCleanup(pv_patcher.stop)
+        self.setUpSuper()
 
+    def setUpSuper(self):
         patcher = mock.patch('transiter.http.responsemanager.convert_to_json')
         self.convert_to_json = patcher.start()
         self.addCleanup(patcher.stop)
@@ -52,42 +53,86 @@ class _TestEndpoints(unittest.TestCase):
                             self.SERVICE_NO_RESPONSE, self.JSON_NO_RESPONSE)
 
     def _test_not_implemented_endpoint(self, endpoint_function, args=()):
-
         (actual, http_code, __) = endpoint_function(*args)
-
         self.assertEqual(actual, '')
         self.assertEqual(http_code, 501)
 
+    def _test_access_denied(self, endpoint_function, args=()):
+        (actual, http_code, __) = endpoint_function(*args)
+        self.assertEqual(actual, '')
+        self.assertEqual(http_code, 403)
 
-class TestFeedEndpoints(_TestEndpoints):
 
-    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
-    def test_list_all_in_system(self, feedservice):
+class TestFeedEndpoints(testutil.TestCase(feedendpoints), _TestEndpoints):
+
+    def setUp(self):
+        self.setUpSuper()
+        self.feedservice = self.mockImportedModule(feedendpoints.feedservice)
+        self.permissions = self.mockImportedModule(feedendpoints.permissions)
+
+    def test_list_all_in_system(self):
         """[Feed endpoints] List all feeds in a system"""
-        self._test_response_endpoint(feedendpoints.list_all_in_system,
-                                     feedservice.list_all_in_system,
-                                     (self.SYSTEM_ID))
+        self._test_response_endpoint(
+            feedendpoints.list_all_in_system,
+            self.feedservice.list_all_in_system,
+            (self.SYSTEM_ID, )
+        )
 
-    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
-    def test_get_in_system_by_id(self, feedservice):
+    def test_list_all_in_system__no_permission(self):
+        """[Feed endpoints] List all feeds in a system - access denied"""
+        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self._test_access_denied(
+            feedendpoints.list_all_in_system,
+            (self.SYSTEM_ID, )
+        )
+
+    def test_get_in_system_by_id(self):
         """[Feed endpoints] Get a specific feed in a system"""
-        self._test_response_endpoint(feedendpoints.get_in_system_by_id,
-                                     feedservice.get_in_system_by_id,
-                                     (self.SYSTEM_ID, self.ROUTE_ID))
+        self._test_response_endpoint(
+            feedendpoints.get_in_system_by_id,
+            self.feedservice.get_in_system_by_id,
+            (self.SYSTEM_ID, self.ROUTE_ID)
+        )
 
-    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
-    def test_create_feed_update(self, feedservice):
+    def test_get_in_system_by_id__no_permission(self):
+        """[Feed endpoints] Get a specific feed in a system - access denied"""
+        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self._test_access_denied(
+            feedendpoints.get_in_system_by_id,
+            (self.SYSTEM_ID, self.FEED_ID)
+        )
+
+    def test_create_feed_update(self):
         """[Feed endpoints] Create a new feed update for a specific feed"""
-        self._test_response_endpoint(feedendpoints.create_feed_update,
-                                     feedservice.create_feed_update,
-                                     (self.SYSTEM_ID, self.FEED_ID))
+        self._test_response_endpoint(
+            feedendpoints.create_feed_update,
+            self.feedservice.create_feed_update,
+            (self.SYSTEM_ID, self.FEED_ID)
+        )
 
-    @mock.patch('transiter.http.endpoints.feedendpoints.feedservice')
-    def test_list_updates_in_feed(self, feedservice):
+    def test_create_feed_update__access_denied(self):
+        """[Feed endpoints] Create a new feed update for a specific feed - access denied"""
+        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self._test_access_denied(
+            feedendpoints.get_in_system_by_id,
+            (self.SYSTEM_ID, self.ROUTE_ID)
+        )
+
+    def test_list_updates_in_feed(self):
         """[Feed endpoints] List all updates for a specific feed"""
-        self._test_response_endpoint(feedendpoints.list_updates_in_feed,
-                                     feedservice.list_updates_in_feed,
-                                     (self.SYSTEM_ID, self.FEED_ID))
+        self._test_response_endpoint(
+            feedendpoints.list_updates_in_feed,
+            self.feedservice.list_updates_in_feed,
+            (self.SYSTEM_ID, self.FEED_ID)
+        )
+
+    def test_list_updates_in_feed__access_denied(self):
+        """[Feed endpoints] List all updates for a specific feed - access denied"""
+        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self._test_access_denied(
+            feedendpoints.get_in_system_by_id,
+            (self.SYSTEM_ID, self.ROUTE_ID)
+        )
 
 
 class TestRouteEndpoints(_TestEndpoints):
