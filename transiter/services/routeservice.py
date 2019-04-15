@@ -11,7 +11,7 @@ from transiter.models import RouteStatus
 
 
 @database.unit_of_work
-def list_all_in_system(system_id, show_links=False):
+def list_all_in_system(system_id, return_links=False):
     """
     Get data on all routes in a system.
 
@@ -23,8 +23,8 @@ def list_all_in_system(system_id, show_links=False):
 
     :param system_id: the ID of the system
     :type system_id: str
-    :param show_links: whether to return links
-    :type show_links: bool
+    :param return_links: whether to return links
+    :type return_links: bool
     :return: the list described above
     :rtype: list
     """
@@ -41,14 +41,14 @@ def list_all_in_system(system_id, show_links=False):
             **route.short_repr(),
             'status': route_pk_to_status[route.pk]
         }
-        if show_links:
+        if return_links:
             route_response['href'] = linksutil.RouteEntityLink(route)
         response.append(route_response)
     return response
 
 
 @database.unit_of_work
-def get_in_system_by_id(system_id, route_id, show_links=False):
+def get_in_system_by_id(system_id, route_id, return_links=False):
     """
     Get data for a specific route in a specific system.
 
@@ -65,8 +65,8 @@ def get_in_system_by_id(system_id, route_id, show_links=False):
     :type system_id: str
     :param route_id: the route ID
     :type route_id: str
-    :param show_links: whether to return links
-    :type show_links: bool
+    :param return_links: whether to return links
+    :type return_links: bool
     :return: the dictionary described above
     :rtype: dict
     """
@@ -96,7 +96,7 @@ def get_in_system_by_id(system_id, route_id, show_links=False):
         if service_map is not None:
             for entry in service_map.vertices:
                 stop_response = entry.stop.short_repr()
-                if show_links:
+                if return_links:
                     stop_response['href'] = linksutil.StopEntityLink(entry.stop)
                 service_map_response['stops'].append(stop_response)
         response['service_maps'].append(service_map_response)

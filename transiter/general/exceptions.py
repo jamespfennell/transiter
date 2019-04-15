@@ -1,4 +1,18 @@
 
+class InstallError(Exception):
+    """
+    Exception that is thrown when there's a problem during install.
+    """
+    pass
+
+class InvalidInput(Exception):
+    """
+    Exception that is thrown when the input to a service layer function is
+    invalid. This is usually the result of an invalid user HTTP request.
+    """
+    pass
+
+
 class ConfigFileNotFoundError(Exception):
     pass
 

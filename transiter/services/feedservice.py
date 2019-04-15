@@ -1,5 +1,6 @@
 """
-The feed service is used to retrieve data about feeds.
+The feed service is used to retrieve data about feeds and perform feed update
+operations.
 """
 
 import datetime
@@ -36,7 +37,7 @@ def list_all_auto_updating():
 
 
 @database.unit_of_work
-def list_all_in_system(system_id, show_links=False):
+def list_all_in_system(system_id, return_links=False):
     """
     Get data on all feeds in a system.
 
@@ -45,8 +46,8 @@ def list_all_in_system(system_id, show_links=False):
 
     :param system_id: the system ID
     :type system_id: str
-    :param show_links: whether to return links
-    :type show_links: bool
+    :param return_links: whether to return links
+    :type return_links: bool
     :type system_id: str
     :return: the list described above
     :rtype: list
@@ -57,14 +58,14 @@ def list_all_in_system(system_id, show_links=False):
     response = []
     for feed in feeddam.list_all_in_system(system_id):
         feed_response = feed.short_repr()
-        if show_links:
+        if return_links:
             feed_response['href'] = linksutil.FeedEntityLink(feed)
         response.append(feed_response)
     return response
 
 
 @database.unit_of_work
-def get_in_system_by_id(system_id, feed_id, show_links=False):
+def get_in_system_by_id(system_id, feed_id, return_links=False):
     """
     Get data on a specific feed in a system.
 
@@ -72,8 +73,8 @@ def get_in_system_by_id(system_id, feed_id, show_links=False):
     :type system_id: str
     :param feed_id: the feed ID
     :type feed_id: str
-    :param show_links: whether to return a link to the feed's updates page.
-    :type show_links: bool
+    :param return_links: whether to return a link to the feed's updates page.
+    :type return_links: bool
     :return: the feed's short representation.
     :rtype: dict
     """
@@ -81,7 +82,7 @@ def get_in_system_by_id(system_id, feed_id, show_links=False):
     if feed is None:
         raise exceptions.IdNotFoundError
     response = feed.short_repr()
-    if show_links:
+    if return_links:
         response['updates'] = {'href': linksutil.FeedEntityUpdatesLink(feed)}
     return response
 

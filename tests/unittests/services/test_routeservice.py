@@ -90,7 +90,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
             }
         ]
 
-        actual = routeservice.list_all_in_system(self.SYSTEM_ID, show_links=True)
+        actual = routeservice.list_all_in_system(self.SYSTEM_ID, return_links=True)
 
         self.assertEqual(actual, expected)
 
@@ -142,7 +142,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         actual = routeservice.get_in_system_by_id(
             self.SYSTEM_ID,
             self.ROUTE_ONE_ID,
-            show_links=True
+            return_links=True
         )
 
         self.assertDictEqual(actual, expected)
