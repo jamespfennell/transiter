@@ -20,16 +20,15 @@ Random modules:
     ./general/linksutil.py
     ./general/clt.py
     ./general/exceptions.py
-    ./http/responsemanager.py
-    ./http/inputvalidator.py
-    ./http/flaskapp.py
+    ./http/responsemanager.py (--> httpmanager)
+    ./http/inputvalidator.py (delete/move into response manager/http manager)
     ./taskserver/server.py
     ./taskserver/client.py
     ./data/database.py
 
 The update modules:
 
-    ./services/update/routestatusupdater.py
+    ./services/update/routestatusupdater.py (rename alertupdater.py)
     ./services/update/gtfsstaticutil.py
     ./services/update/gtfsrealtimeutil.py
     ./services/update/tripupdater.py
@@ -44,11 +43,10 @@ Create of service maps:
 Service. Do the endpoint after. Should just be updating the docs;
 already at 100% test coverage there:
 
+    ./http/flaskapp.py
+    
     ./services/stopservice.py
     ./http/endpoints/stopendpoints.py
-    
-    ./services/systemservice.py
-    ./http/endpoints/systemendpoints.py
     
     ./services/tripservice.py
     ./http/endpoints/tripendpoints.py
@@ -87,6 +85,9 @@ Also change how short_repr works
 
 
 ## Version 0.2
+
+1. Record the git hash outside of the Git repo for deployments ... 
+    maybe when building the egg?
 
 1. Investigate using Arrow
 

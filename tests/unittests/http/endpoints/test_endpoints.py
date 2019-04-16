@@ -273,8 +273,4 @@ class TestFlaskApp(unittest.TestCase):
         (__, actual_code, __) = flaskapp.root()
         self.assertEqual(expected_code, actual_code)
 
-    def test_about(self):
-        expected_code = 200
-        (__, actual_code, __) = flaskapp.about()
-        self.assertEqual(expected_code, actual_code)
 

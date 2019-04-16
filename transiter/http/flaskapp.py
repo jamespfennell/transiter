@@ -27,12 +27,10 @@ def page_not_found(__):
 @app.route('/')
 @http_get_response
 def root():
-    """Provides links to the root resources.
+    """Provides information about this Transiter instance and the Transit
+    systems it contains.
 
-     This response is mostly to be consistent with the REST links
-     convention, and allows users to 'explore' the API.
-
-    .. :quickref: Basic entry info
+    .. :quickref: Basic instance information
 
     :status 200: always
     :return: A JSON response like the following:
@@ -48,57 +46,30 @@ def root():
             }
         }
     """
-    return {
-        'about': {
-            'href': linksutil.AboutLink()
+    return_links = False
+    try:
+        commit_hash = (
+            subprocess
+            .check_output(['git', 'rev-parse', 'HEAD'])
+            .decode('utf-8')
+            .strip()
+        )
+    except:
+        commit_hash = None
+    response = {
+        'software': {
+            'name': 'Transiter',
+            'version': '0.1',
+            'commit_hash': commit_hash,
+            'href': 'https://github.com/jamespfennell/transiter',
         },
         'systems': {
-            'href': linksutil.SystemsIndexLink()
+            'count': 0
         }
     }
-
-
-@app.route('/about')
-@http_get_response
-def about():
-    """Get basic information about this Transiter instance.
-
-    As well as providing generic information like the Github link,
-    this endpoint returns the current version and Git commit hash, for
-    debugging purposes.
-
-    .. :quickref: About; Information about this Transiter instance.
-
-    :status 200: always
-    :return: A JSON response like the following:
-
-    .. code-block:: json
-
-        {
-            "name": "Transiter",
-            "version": "0.1",
-            "commit": "f58cde22b4532dd493fc65c8fefe8aaba562e28e",
-            "href": "https://github.com/jamespfennell/transiter",
-            "licence": {
-                "name": "MIT Licence",
-                "href": "https://github.com/jamespfennell/transiter/blob/master/LICENSE"
-            }
-        }
-    """
-    try:
-        commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
-    except:
-        commit_hash = 'Not available'
-    return {
-        "name": "Transiter",
-        "version": "0.1",
-        "commit": commit_hash,
-        "href": "https://github.com/jamespfennell/transiter",
-        "licence": {
-            "name": "MIT Licence",
-            "href": "https://github.com/jamespfennell/transiter/blob/master/LICENSE"
-        },
-    }
+    if return_links:
+        response['systems']['href'] = linksutil.SystemsIndexLink()
+    return response
 
 
 def launch(force=False):

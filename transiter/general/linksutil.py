@@ -22,10 +22,6 @@ class Link:
         )
 
 
-class AboutLink(Link):
-    endpoint = 'about'
-
-
 class SystemsIndexLink(Link):
     endpoint = 'system_endpoints.list_all'
 
