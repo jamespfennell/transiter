@@ -135,21 +135,27 @@ class TestFeedEndpoints(testutil.TestCase(feedendpoints), _TestEndpoints):
         )
 
 
-class TestRouteEndpoints(_TestEndpoints):
+class TestRouteEndpoints(testutil.TestCase(routeendpoints), _TestEndpoints):
 
-    @mock.patch('transiter.http.endpoints.routeendpoints.routeservice')
-    def test_list_all_in_system(self, routeservice):
+    def setUp(self):
+        self.setUpSuper()
+        self.routeservice = self.mockImportedModule(routeendpoints.routeservice)
+
+    def test_list_all_in_system(self):
         """[Route endpoints] List all routes in a system"""
-        self._test_response_endpoint(routeendpoints.list_all_in_system,
-                                     routeservice.list_all_in_system,
-                                     self.SYSTEM_ID)
+        self._test_response_endpoint(
+            routeendpoints.list_all_in_system,
+            self.routeservice.list_all_in_system,
+            self.SYSTEM_ID
+        )
 
-    @mock.patch('transiter.http.endpoints.routeendpoints.routeservice')
-    def test_get_in_system_by_id(self, routeservice):
+    def test_get_in_system_by_id(self):
         """[Route endpoints] Get a specific route in a system"""
-        self._test_response_endpoint(routeendpoints.get_in_system_by_id,
-                                     routeservice.get_in_system_by_id,
-                                     (self.SYSTEM_ID, self.ROUTE_ID))
+        self._test_response_endpoint(
+            routeendpoints.get_in_system_by_id,
+            self.routeservice.get_in_system_by_id,
+            (self.SYSTEM_ID, self.ROUTE_ID)
+        )
 
 
 class TestStopEndpoints(_TestEndpoints):
@@ -186,47 +192,75 @@ class TestTripEndpoints(_TestEndpoints):
                                      (self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ID))
 
 
-class TestSystemEndpoints(_TestEndpoints):
+class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
 
-    @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
-    def test_list_all(self, systemservice):
+    def setUp(self):
+        self.setUpSuper()
+        self.flask = self.mockImportedModule(systemendpoints.flask)
+        self.systemservice = self.mockImportedModule(systemendpoints.systemservice)
+        self.permissions = self.mockImportedModule(systemendpoints.permissions)
+
+    def test_list_all(self):
         """[System endpoints] List all systems installed"""
-        self._test_response_endpoint(systemendpoints.list_all,
-                                     systemservice.list_all)
+        self._test_response_endpoint(
+            systemendpoints.list_all,
+            self.systemservice.list_all
+        )
 
-    @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
-    def test_get_by_id(self, systemservice):
+    def test_get_by_id(self):
         """[System endpoints] Get a specific system"""
-        self._test_response_endpoint(systemendpoints.get_by_id,
-                                     systemservice.get_by_id,
-                                     (self.SYSTEM_ID))
+        self._test_response_endpoint(
+            systemendpoints.get_by_id,
+            self.systemservice.get_by_id,
+            self.SYSTEM_ID
+        )
 
-    @mock.patch('transiter.http.endpoints.systemendpoints.request')
-    @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
-    def test_install(self, systemservice, request):
+    def test_install(self):
         """[System endpoints] Install a system"""
+        request = self.flask.request
         config_file_handle = mock.MagicMock()
+        second_file = mock.MagicMock()
         request.files = {
-            'config_file': config_file_handle
+            'config_file': config_file_handle,
+            'second_file': second_file,
         }
-        request.form.to_dict.return_value = {}
+        request.form.to_dict.return_value = {
+            'extra_setting': 'value'
+        }
         config_file_handle.read.return_value = b"ABCD"
 
         systemendpoints.install(self.SYSTEM_ID)
 
-        systemservice.install.assert_called_once_with(
+        self.systemservice.install.assert_called_once_with(
             system_id=self.SYSTEM_ID,
             config_str='ABCD',
-            extra_files={},
-            extra_settings={}
+            extra_files={'second_file': second_file.stream},
+            extra_settings={'extra_setting': 'value'}
         )
 
-    @mock.patch('transiter.http.endpoints.systemendpoints.systemservice')
-    def test_delete_by_id(self, systemservice):
+    def test_install__access_denied(self):
+        """[System endpoints] Install a system - access denied"""
+        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self._test_access_denied(
+            systemendpoints.install,
+            self.SYSTEM_ID
+        )
+
+    def test_delete_by_id(self):
         """[System endpoints] Uninstall a system"""
-        self._test_no_response_endpoint(systemendpoints.delete_by_id,
-                                        systemservice.delete_by_id,
-                                        (self.SYSTEM_ID))
+        self._test_no_response_endpoint(
+            systemendpoints.delete_by_id,
+            self.systemservice.delete_by_id,
+            self.SYSTEM_ID
+        )
+
+    def test_delete_by_id__access_denied(self):
+        """[System endpoints] Uninstall a system - access denied"""
+        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self._test_access_denied(
+            systemendpoints.delete_by_id,
+            self.SYSTEM_ID
+        )
 
 
 class TestFlaskApp(unittest.TestCase):
