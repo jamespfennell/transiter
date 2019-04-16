@@ -18,10 +18,14 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
     SYSTEM_ONE_NUM_ROUTES = 22
     SYSTEM_ONE_NUM_FEEDS = 23
     FILE_NAME = '24'
+    STOP_ONE_ID = '25'
     SYSTEM_CONFIG_STR = 'Blah blah blah'
+    DIRECTION_NAME_ONE = 'Uptown'
 
     def setUp(self):
         self.systemdam = self.mockImportedModule(systemservice.systemdam)
+        self.updatemanager = self.mockImportedModule(systemservice.updatemanager)
+        self.stopdam = self.mockImportedModule(systemservice.stopdam)
 
         self.system_1 = models.System()
         self.system_1.id = self.SYSTEM_ONE_ID
@@ -314,176 +318,134 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             )
         )
 
+    def test_install_service_maps(self):
+        """[System service] Install service maps"""
+        system = models.System()
+        system_config = mock.MagicMock()
+        service_map_group = models.ServiceMapGroup()
+        service_map_config = mock.MagicMock()
+        service_map_config.service_map_group = service_map_group
+        system_config.service_maps = [service_map_config]
 
-class _TestImportStaticData(unittest.TestCase):
+        systemservice._install_service_maps(system, system_config)
 
-    SYSTEM_ID = '1'
-    STOP_ONE_ID = '2'
-    STOP_TWO_ID = '3'
-    STOP_ONE_ID_ALIAS = '4'
-    FEED_NAME = '10'
-    FEED_URL = '11'
-    FEED_PARSER_MODULE = '12'
-    FEED_PARSER_FUNCTION = '13'
+        self.assertEqual(system, service_map_group.system)
 
-    def _quick_mock(self, name):
-        cache_name = '_quick_mock_cache_{}'.format(name)
-        self.__setattr__(cache_name, mock.patch(
-            'transiter.services.systemservice.{}'.format(name)))
-        mocked = getattr(self, cache_name).start()
-        self.addCleanup(getattr(self, cache_name).stop)
-        return mocked
+    def test_install_feeds__not_required(self):
+        """[System service] Install feed - not required for install"""
+        system = models.System()
+        feed_config = mock.MagicMock()
+        feed_config.feed = models.Feed()
+        feed_config.required_for_install = False
+        system_config = mock.MagicMock()
+        system_config.feeds = [feed_config]
 
-    def setUp(self):
-        self._quick_mock('servicepatternmanager')
-        importlib = self._quick_mock('importlib')
-        package = mock.MagicMock()
-        importlib.import_module.return_value = package
-        package.__file__ = ''
+        systemservice._install_feeds(system, system_config)
 
-        GtfsStaticParser = self._quick_mock('gtfsstaticutil.GtfsStaticParser')
-        self.gtfs_static_parser = mock.MagicMock()
-        GtfsStaticParser.return_value = self.gtfs_static_parser
+        self.assertEqual(system, feed_config.feed.system)
 
-        self.gtfs_static_parser.route_id_to_route = {}
-        self.gtfs_static_parser.stop_id_to_stop = {}
-        self.gtfs_static_parser.transfer_tuples = []
-        self.gtfs_static_parser.stop_id_alias_to_stop_alias = {}
+        self.updatemanager.assert_not_called()
 
-        SystemConfig = self._quick_mock('SystemConfig')
-        self.system_config = mock.MagicMock()
-        SystemConfig.return_value = self.system_config
-        self.system_config.direction_name_rules_files = []
-        self.system_config.feeds = []
+    def test_install_feeds__required(self):
+        """[System service] Install feed - required for install"""
+        system = models.System()
+        feed_config = mock.MagicMock()
+        feed_config.feed = models.Feed()
+        feed_config.required_for_install = True
+        feed_config.file_upload_fallback = None
+        system_config = mock.MagicMock()
+        system_config.feeds = [feed_config]
 
-        self.system = models.System()
-        self.system.system_id = self.SYSTEM_ID
+        def execute_feed_update(feed_update):
+            feed_update.status = 'SUCCESS'
+        self.updatemanager.execute_feed_update.side_effect = execute_feed_update
 
-    def test_import_static_data__routes(self):
-        route = models.Route()
-        self.gtfs_static_parser.route_id_to_route = {'route': route}
+        systemservice._install_feeds(system, system_config)
 
-        systemservice._import_static_data(self.system)
+        self.assertEqual(system, feed_config.feed.system)
 
-        self.assertEqual(route.system, self.system)
+        self.updatemanager.execute_feed_update.assert_called_once()
 
-    def test_import_static_data__stops(self):
+    def test_install_feeds__required_with_fallback(self):
+        """[System service] Install feed - file upload fallback used"""
+        system = models.System()
+        feed_config = mock.MagicMock()
+        feed_config.feed = models.Feed()
+        feed_config.required_for_install = True
+        feed_config.file_upload_fallback = mock.MagicMock()
+        system_config = mock.MagicMock()
+        system_config.feeds = [feed_config]
 
+        def execute_feed_update(feed_update, file_upload_fallback=None, cache=[]):
+            if len(cache) == 0:
+                cache.append(0)
+                feed_update.status = 'FAILURE'
+            else:
+                assert file_upload_fallback is not None
+                feed_update.status = 'SUCCESS'
+        self.updatemanager.execute_feed_update.side_effect = execute_feed_update
+
+        systemservice._install_feeds(system, system_config)
+
+        self.assertEqual(system, feed_config.feed.system)
+
+        self.assertEqual(
+            2,
+            self.updatemanager.execute_feed_update.call_count
+        )
+
+    def test_install_feeds__failed_to_update(self):
+        """[System service] Install feed - failed to update"""
+        for file_upload_fallback in [None, mock.MagicMock()]:
+            system = models.System()
+            feed_config = mock.MagicMock()
+            feed_config.feed = models.Feed()
+            feed_config.required_for_install = True
+            feed_config.file_upload_fallback = file_upload_fallback
+            system_config = mock.MagicMock()
+            system_config.feeds = [feed_config]
+
+            def execute_feed_update(feed_update, unused=None):
+                feed_update.status = 'FAILURE'
+            self.updatemanager.execute_feed_update.side_effect = execute_feed_update
+
+            self.assertRaises(
+                exceptions.InstallError,
+                lambda: systemservice._install_feeds(system, system_config)
+            )
+
+        self.assertEqual(
+            1+2,
+            self.updatemanager.execute_feed_update.call_count
+        )
+
+    def test_import_static_data__direction_names(self):
+        """[System service] Install direction names"""
+        system = models.System()
         stop_one = models.Stop()
         stop_one.id = self.STOP_ONE_ID
-        stop_one.parent_stop_id = None
-        stop_two = models.Stop()
-        stop_two.id = self.STOP_TWO_ID
-        stop_two.parent_stop_id = None
-        self.gtfs_static_parser.stop_id_to_stop = {
-            self.STOP_ONE_ID: stop_one,
-            self.STOP_TWO_ID: stop_two
-        }
+        self.stopdam.list_all_in_system.return_value = [stop_one]
 
-        systemservice._import_static_data(self.system)
-
-        self.assertEqual(stop_one.system, self.system)
-        self.assertEqual(stop_two.system, self.system)
-        self.assertEqual(2, len(self.system.stops))
-
-    @mock.patch('transiter.services.systemservice._lift_stop_properties')
-    def test_import_static_data__stops_with_transfer(self, __):
-
-        stop_one = models.Stop()
-        stop_one.id = self.STOP_ONE_ID
-        stop_one.parent_stop_id = None
-        stop_two = models.Stop()
-        stop_two.id = self.STOP_TWO_ID
-        stop_two.parent_stop_id = None
-        self.gtfs_static_parser.stop_id_to_stop = {
-            self.STOP_ONE_ID: stop_one,
-            self.STOP_TWO_ID: stop_two
-        }
-
-        self.gtfs_static_parser.transfer_tuples = [
-            (self.STOP_ONE_ID, self.STOP_TWO_ID)]
-
-        systemservice._import_static_data(self.system)
-
-        self.assertEqual(stop_one.system, self.system)
-        self.assertEqual(stop_two.system, self.system)
-        self.assertEqual(3, len(self.system.stops))
-        self.assertDictEqual(
-            self.gtfs_static_parser.stop_id_to_stop,
-            {stop.id: stop for stop in stop_one.parent_stop.child_stops})
-
-    def test_import_static_data__feeds(self):
-        feed_config = [{
-            'name': self.FEED_NAME,
-            'url': self.FEED_URL,
-            'parser': 'custom',
-            'custom_parser': {
-                'module': self.FEED_PARSER_MODULE,
-                'function': self.FEED_PARSER_FUNCTION
-            }
-        }]
-        self.system_config.feeds = feed_config
-        feed = models.Feed()
-        feed.id = self.FEED_NAME
-        feed.url = self.FEED_URL
-        feed.parser = 'custom'
-        feed.custom_module = self.FEED_PARSER_MODULE
-        feed.custom_function = self.FEED_PARSER_FUNCTION
-        feed.auto_updater_enabled = True
-        feed.auto_updater_frequency = 5
-
-        systemservice._import_static_data(self.system)
-
-        self.assertEqual([feed], self.system.feeds)
-
-    FILE_NAME = '20'
-    DIRECTION_NAME = '21'
-
-    @mock.patch('transiter.services.systemservice.open')
-    @mock.patch('transiter.services.systemservice.csv')
-    def test_import_static_data__direction_names(self, csv, open):
-        stop_one = models.Stop()
-        stop_one.id = self.STOP_ONE_ID
-        stop_one.parent_stop_id = None
-        self.gtfs_static_parser.stop_id_to_stop = {
-            self.STOP_ONE_ID: stop_one,
-        }
-
-        self.system_config.direction_name_rules_files = [self.FILE_NAME]
-        csv_file = mock.MagicMock()
-
-        open.return_value = ContextManager(csv_file)
-        csv.DictReader.return_value = [
-            {
-                'stop_id': self.STOP_ONE_ID,
-                'direction_id': '0',
-                'direction_name': self.DIRECTION_NAME
-            },
-            {
-                'stop_id': self.STOP_TWO_ID
-            }
-        ]
+        file = mock.MagicMock()
+        system_config = mock.MagicMock()
+        system_config.direction_name_files = [file]
+        file.readlines.return_value = (
+            s.encode('utf-8') for s in [
+                'stop_id,direction_id,direction_name',
+                '{},0,{}'.format(self.STOP_ONE_ID, self.DIRECTION_NAME_ONE),
+                '{},1,{}'.format('Unknown', self.DIRECTION_NAME_ONE)
+            ]
+        )
 
         direction_name_rule = models.DirectionNameRule()
         direction_name_rule.priority = 0
         direction_name_rule.direction_id = True
         direction_name_rule.track = None
-        direction_name_rule.stop_id_alias = None
-        direction_name_rule.name = self.DIRECTION_NAME
+        direction_name_rule.name = self.DIRECTION_NAME_ONE
 
-        systemservice._import_static_data(self.system)
+        systemservice._install_direction_names(system, system_config)
 
         self.assertEqual([direction_name_rule], stop_one.direction_name_rules)
 
 
 
-# TODO: put this in shared test module
-class ContextManager(object):
-    def __init__(self, dummy_resource=None):
-        self.dummy_resource = dummy_resource
-
-    def __enter__(self):
-        return self.dummy_resource
-
-    def __exit__(self, *args):
-        pass

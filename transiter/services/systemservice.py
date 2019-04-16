@@ -316,6 +316,14 @@ def _install_service_maps(system, system_config):
 
 
 def _install_direction_names(system, system_config):
+    """
+    Install direction names.
+
+    :param system: the system in install the direction names in
+    :type system: models.System
+    :param system_config: the system config
+    :type system_config: _SystemConfig
+    """
     # For the moment, assume direction names involve a full reset
     direction_name_files = system_config.direction_name_files
     stop_id_to_stop = {
