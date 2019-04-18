@@ -263,14 +263,25 @@ class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
         )
 
 
-class TestFlaskApp(unittest.TestCase):
+class TestFlaskApp(testutil.TestCase(flaskapp)):
 
-    @mock.patch('transiter.http.flaskapp.linksutil')
-    def test_root(self, linksutil):
-        linksutil.AboutLink.return_value = None
-        linksutil.SystemsIndexLink.return_value = None
+    COMMIT_HASH = 'b7e35a125f4c539c37deaf3a6ac72bd408097131'
+
+    def setUp(self):
+        self.subprocess = self.mockImportedModule(flaskapp.subprocess)
+
+    def test_root(self):
+        self.subprocess.check_output.return_value = self.COMMIT_HASH.encode('utf-8')
+
         expected_code = 200
+
         (__, actual_code, __) = flaskapp.root()
+
         self.assertEqual(expected_code, actual_code)
 
+    def test_404(self):
+        expected_code = 404
 
+        (__, actual_code, __) = flaskapp.page_not_found(None)
+
+        self.assertEqual(expected_code, actual_code)

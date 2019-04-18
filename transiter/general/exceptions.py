@@ -1,4 +1,12 @@
 
+class TransiterException(Exception):
+
+    error_message = None
+
+    def json(self):
+        pass
+    pass
+
 class InstallError(Exception):
     """
     Exception that is thrown when there's a problem during install.
