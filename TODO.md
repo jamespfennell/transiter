@@ -14,14 +14,6 @@ Bugs:
     1. Document the API correctly
     1. Does the RTR app still work? Likely not!
 
-abolish (?) the general package?
-
-
-Random modules:
-
-    ./general/config.py
-    ./general/clt.py
-
 The task server:
     
     ./taskserver/server.py
@@ -35,21 +27,21 @@ The update modules:
     ./services/update/tripupdater.py
     ./services/update/updatemanager.py
 
-Create of service maps:
+Creation of service maps:
 
     ./services/servicepattern/graphutils/pathstitcher.py
     ./services/servicepattern/graphutils/graphdatastructs.py
     ./services/servicepattern/servicepatternmanager.py
 
-Service. Do the endpoint after. Should just be updating the docs;
-already at 100% test coverage there:
+Service. Do the endpoint after.
 
     ./services/stopservice.py (fix docs in the endpoint after)
     ./services/tripservice.py (fix docs in the endpoint after)
 
 Data. would be nice to have the tests passing on SQLLite...?
+Also need to fix the bug on the SQL Alchemy upgrade
 
-    ./data/database.py (-> database/connection.py
+    ./data/database.py (-> database/connection.py)
     ./data/fastoperations.py
     ./data/dams/tripdam.py
     ./data/dams/servicepatterndam.py

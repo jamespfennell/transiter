@@ -7,7 +7,7 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'transiterclt = transiter.general.clt:transiter_clt',
+            'transiterclt = transiter.clt:transiter_clt',
         ]
     },
     install_requires=[

@@ -282,6 +282,7 @@ class TestFlaskApp(testutil.TestCase(flaskapp)):
         self.subprocess = self.mockImportedModule(flaskapp.subprocess)
 
     def test_root(self):
+        """[Flask app] Test accessing root"""
         self.subprocess.check_output.return_value = self.COMMIT_HASH.encode('utf-8')
 
         expected_code = 200
@@ -291,6 +292,7 @@ class TestFlaskApp(testutil.TestCase(flaskapp)):
         self.assertEqual(expected_code, actual_code)
 
     def test_404(self):
+        """[Flask app] Test 404 error"""
         expected_code = 404
 
         (__, actual_code, __) = flaskapp.page_not_found(None)

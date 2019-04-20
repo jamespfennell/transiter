@@ -7,12 +7,11 @@ from transiter import config, exceptions
 
 
 class TestConfig(testutil.TestCase(config), unittest.TestCase):
-
     NEW_DATABASE_PORT = '1232'
     NEW_TASK_SERVER_PORT = '10001'
 
-
     def test_load_from_str(self):
+        """[Config] Load config from string"""
         new_config = """
         [database]
         port = '{}'
@@ -44,6 +43,7 @@ class TestLoadConfig(testutil.TestCase(config), unittest.TestCase):
         self.file_handle.read.return_value = self.TOML_STRING
 
     def test_load__from_custom_file__file_found(self):
+        """[Config] Test load from custom file"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
 
         config.load(self.CUSTOM_FILE)
@@ -52,6 +52,7 @@ class TestLoadConfig(testutil.TestCase(config), unittest.TestCase):
         self.load_from_str.assert_called_once_with(self.TOML_STRING)
 
     def test_load__from_custom_file__file_not_found(self):
+        """[Config] Test load from custom file - file not found"""
         self.open.side_effect = FileNotFoundError
 
         self.assertRaises(
@@ -62,6 +63,7 @@ class TestLoadConfig(testutil.TestCase(config), unittest.TestCase):
         self.open.assert_called_once_with(self.CUSTOM_FILE, 'r')
 
     def test_load__from_env_variable__file_found(self):
+        """[Config] Test load from environment variable"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
         self.os.environ = {'TRANSITER_CONFIG': self.CUSTOM_FILE}
 
@@ -71,6 +73,7 @@ class TestLoadConfig(testutil.TestCase(config), unittest.TestCase):
         self.load_from_str.assert_called_once_with(self.TOML_STRING)
 
     def test_load__from_env_variable__file_not_found(self):
+        """[Config] Test load from environment variable - file not found"""
         self.open.side_effect = FileNotFoundError
         self.os.environ = {'TRANSITER_CONFIG': self.CUSTOM_FILE}
 
@@ -82,6 +85,7 @@ class TestLoadConfig(testutil.TestCase(config), unittest.TestCase):
         self.open.assert_called_once_with(self.CUSTOM_FILE, 'r')
 
     def test_load__from_default_file__file_found(self):
+        """[Config] Test load from default file"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
 
         config.load()
@@ -90,6 +94,7 @@ class TestLoadConfig(testutil.TestCase(config), unittest.TestCase):
         self.load_from_str.assert_called_once_with(self.TOML_STRING)
 
     def test_load__from_default_file__file_not_found(self):
+        """[Config] Test load from default file - file not found"""
         self.open.side_effect = FileNotFoundError
 
         config.load()
@@ -97,12 +102,3 @@ class TestLoadConfig(testutil.TestCase(config), unittest.TestCase):
         self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, 'r')
         self.load_from_str.assert_not_called()
 
-    class _FakeContextManager:
-        def __init__(self, mock_):
-            self.mock = mock_
-
-        def __enter__(self):
-            return self.mock
-
-        def __exit__(self, *args, **kwargs):
-            pass

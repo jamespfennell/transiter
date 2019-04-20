@@ -139,8 +139,5 @@ def create_tables():
     models.Base.metadata.create_all(engine)
 
 
-def rebuild_db(recreate_db=False):
-    if recreate_db:
-        drop_database()
-        create_database()
+def rebuild_db():
     create_tables()

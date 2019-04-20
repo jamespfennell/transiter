@@ -7,7 +7,6 @@ from nose.tools import nottest
 
 @nottest
 def TestCase(module):
-
     class ActualTestCase(unittest.TestCase):
 
         _importModuleDictCache = None
@@ -36,10 +35,20 @@ def TestCase(module):
 
         def mockImportedModule(self, imported_module):
             module_global_name = getattr(imported_module, '__name__')
-            #print(module_global_name)
-            #print(self._getImportedModulesDict())
+            # print(module_global_name)
+            # print(self._getImportedModulesDict())
             module_local_name = self._getImportedModulesDict()[module_global_name]
             return self.mockModuleAttribute(module_local_name)
+
+        class _FakeContextManager:
+            def __init__(self, mock_):
+                self.mock = mock_
+
+            def __enter__(self):
+                return self.mock
+
+            def __exit__(self, *args, **kwargs):
+                pass
 
     return ActualTestCase
 
@@ -47,5 +56,3 @@ def TestCase(module):
 def patch_function(func):
     string = '{}.{}'.format(func.__module__, func.__name__)
     return mock.patch(string)
-
-

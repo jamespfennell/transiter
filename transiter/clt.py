@@ -1,3 +1,7 @@
+"""
+This module contains the code for the transiterclt (Transiter command line
+tools) command line program.
+"""
 import click
 
 from transiter.data import database
@@ -81,32 +85,30 @@ def generate_config(force, output_file, use_current_values):
     Generate a Transiter config file template.
     """
     mode = 'w' if force else 'x'
+    if use_current_values:
+        config_str = config.generate()
+    else:
+        config_str = config.generate(
+            database_config=config.DefaultDatabaseConfig,
+            task_server_config=config.DefaultTaskServerConfig
+        )
     try:
         with open(output_file, mode) as file_handle:
-            file_handle.write(config.generate(default_values=not use_current_values))
+            file_handle.write(config_str)
     except FileExistsError:
         click.echo("File already exists. Use the -f option to overwrite it.")
 
 
 @transiter_clt.command()
-@click.option(
-    '-r',
-    '--recreate-db',
-    is_flag=True,
-    help='In addition, drop and re-create the database itself. '
-         'Note this setting requires the database user to have relevant '
-         'permissions, and does not work with certain database systems, '
-         'including SQLite.'
-)
 @click.confirmation_option(
     prompt='This will result in all data in the current database being lost.\n'
            'Are you sure?'
 )
-def rebuild_db(recreate_db):
+def rebuild_db():
     """
     Build or rebuild the Transiter database.
 
     This operation drops all of the Transiter tables in the database, if they
     exist, and then creates them. All existing data will be lost.
     """
-    database.rebuild_db(recreate_db)
+    database.rebuild_db()
