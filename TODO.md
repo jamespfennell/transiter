@@ -14,10 +14,13 @@ Bugs:
     1. Document the API correctly
     1. Does the RTR app still work? Likely not!
 
+abolish (?) the general package?
+
+
 Random modules:
 
     ./general/config.py
-    ./general/linksutil.py
+    ./general/linksutil.py (move to the service layer, rename links.py)
     ./general/clt.py
     ./general/exceptions.py
     ./http/responsemanager.py (--> httpmanager)

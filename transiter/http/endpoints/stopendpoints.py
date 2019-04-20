@@ -1,13 +1,12 @@
-from flask import Blueprint
+import flask
+from transiter.http.httpmanager import http_endpoint, link_target
+from transiter.services import stopservice, links
 
-from transiter.services import stopservice
-from transiter.http.responsemanager import http_get_response
-
-stop_endpoints = Blueprint('stop_endpoints', __name__)
+stop_endpoints = flask.Blueprint(__name__, __name__)
 
 
-@stop_endpoints.route('')
-@http_get_response
+@http_endpoint(stop_endpoints, '')
+@link_target(links.StopsInSystemIndexLink)
 def list_all_in_system(system_id):
     """List all stops for a specific system
 
@@ -33,8 +32,8 @@ def list_all_in_system(system_id):
     return stopservice.list_all_in_system(system_id)
 
 
-@stop_endpoints.route('/<stop_id>')
-@http_get_response
+@http_endpoint(stop_endpoints, '/<stop_id>')
+@link_target(links.StopEntityLink)
 def get_in_system_by_id(system_id, stop_id):
     """Retrieve a specific stop in a specific system.
 

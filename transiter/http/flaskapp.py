@@ -1,26 +1,44 @@
+"""
+This module contains the actual Flask app and is a such the 'root' of the HTTP
+server. All other HTTP endpoints are linked to the app via blueprints in this
+module.
+"""
 import logging
 import subprocess
 
-from flask import Flask
+import flask
 
-from transiter.http.endpoints.feedendpoints import feed_endpoints
-from transiter.http.endpoints.routeendpoints import route_endpoints
-from transiter.http.endpoints.stopendpoints import stop_endpoints
-from transiter.http.endpoints.systemendpoints import system_endpoints
-from transiter.http.endpoints.tripendpoints import trip_endpoints
-from transiter.http.responsemanager import http_get_response
-from transiter.general import linksutil, exceptions
+from transiter.general import exceptions
+from transiter.http import endpoints
+from transiter.http.httpmanager import http_endpoint, http_response
+from transiter.services import links
 
-app = Flask(__name__)
-app.register_blueprint(feed_endpoints, url_prefix='/systems/<system_id>/feeds')
-app.register_blueprint(stop_endpoints, url_prefix='/systems/<system_id>/stops')
-app.register_blueprint(route_endpoints, url_prefix='/systems/<system_id>/routes')
-app.register_blueprint(trip_endpoints, url_prefix='/systems/<system_id>/routes/<route_id>/trips')
-app.register_blueprint(system_endpoints, url_prefix='/systems')
+app = flask.Flask(__name__)
+
+app.register_blueprint(
+    endpoints.feed_endpoints,
+    url_prefix='/systems/<system_id>/feeds'
+)
+app.register_blueprint(
+    endpoints.stop_endpoints,
+    url_prefix='/systems/<system_id>/stops'
+)
+app.register_blueprint(
+    endpoints.route_endpoints,
+    url_prefix='/systems/<system_id>/routes'
+)
+app.register_blueprint(
+    endpoints.trip_endpoints,
+    url_prefix='/systems/<system_id>/routes/<route_id>/trips'
+)
+app.register_blueprint(
+    endpoints.system_endpoints,
+    url_prefix='/systems'
+)
 
 
 @app.errorhandler(404)
-@http_get_response
+@http_response()
 def page_not_found(__):
     """
     What to return if a user requests an endpoint that doesn't exist.
@@ -34,8 +52,7 @@ def page_not_found(__):
     raise exceptions.IdNotFoundError
 
 
-@app.route('/')
-@http_get_response
+@http_endpoint(app, '/')
 def root():
     """Provides information about this Transiter instance and the Transit
     systems it contains.
@@ -63,9 +80,9 @@ def root():
     try:
         commit_hash = (
             subprocess
-            .check_output(['git', 'rev-parse', 'HEAD'])
-            .decode('utf-8')
-            .strip()
+                .check_output(['git', 'rev-parse', 'HEAD'])
+                .decode('utf-8')
+                .strip()
         )
     except:
         commit_hash = None
@@ -81,7 +98,7 @@ def root():
         }
     }
     if return_links:
-        response['systems']['href'] = linksutil.SystemsIndexLink()
+        response['systems']['href'] = links.SystemsIndexLink()
     return response
 
 
@@ -101,4 +118,3 @@ def launch(force=False):
     handler.setFormatter(formatter)
 
     app.run(debug=True)
-

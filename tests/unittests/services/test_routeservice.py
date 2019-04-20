@@ -2,7 +2,7 @@ import unittest
 
 from transiter import models
 from transiter.general import exceptions
-from transiter.services import routeservice
+from transiter.services import routeservice, links
 from .. import testutil
 
 
@@ -81,12 +81,12 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
             {
                 **self.route_one.short_repr(),
                 'status': self.ROUTE_ONE_STATUS,
-                'href': routeservice.linksutil.RouteEntityLink(self.route_one),
+                'href': links.RouteEntityLink(self.route_one),
             },
             {
                 **self.route_two.short_repr(),
                 'status': self.ROUTE_TWO_STATUS,
-                'href': routeservice.linksutil.RouteEntityLink(self.route_two),
+                'href': links.RouteEntityLink(self.route_two),
             }
         ]
 
@@ -128,7 +128,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
                     'stops': [
                         {
                             **self.stop.short_repr(),
-                            'href': routeservice.linksutil.StopEntityLink(self.stop)
+                            'href': links.StopEntityLink(self.stop)
                         }
                     ]
                 },

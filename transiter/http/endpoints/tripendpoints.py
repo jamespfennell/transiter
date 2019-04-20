@@ -1,13 +1,12 @@
-from flask import Blueprint
+import flask
 
-from transiter.services import tripservice
-from transiter.http.responsemanager import http_get_response
+from transiter.http.httpmanager import link_target, http_endpoint
+from transiter.services import tripservice, links
 
-trip_endpoints = Blueprint('trip_endpoints', __name__)
+trip_endpoints = flask.Blueprint(__name__, __name__)
 
 
-@trip_endpoints.route('')
-@http_get_response
+@http_endpoint(trip_endpoints, '')
 def list_all_in_route(system_id, route_id):
     """List all trips for a specific system
 
@@ -37,8 +36,8 @@ def list_all_in_route(system_id, route_id):
     return tripservice.list_all_in_route(system_id, route_id)
 
 
-@trip_endpoints.route('/<trip_id>')
-@http_get_response
+@http_endpoint(trip_endpoints, '/<trip_id>')
+@link_target(links.TripEntityLink)
 def get_in_route_by_id(system_id, route_id, trip_id):
     """Retrieve a specific trip in a specific system.
 

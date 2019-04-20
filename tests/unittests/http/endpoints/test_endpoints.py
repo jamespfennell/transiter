@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock as mock
 
+from transiter.http import permissions
 from transiter.general import exceptions
 from transiter.http import flaskapp
 from transiter.http.endpoints import routeendpoints, stopendpoints, tripendpoints, systemendpoints, feedendpoints
@@ -8,7 +9,6 @@ from ... import testutil
 
 
 class _TestEndpoints(unittest.TestCase):
-
     SYSTEM_ID = '1'
     ROUTE_ID = '2'
     TRIP_ID = '3'
@@ -24,8 +24,12 @@ class _TestEndpoints(unittest.TestCase):
         self.setUpSuper()
 
     def setUpSuper(self):
-        patcher = mock.patch('transiter.http.responsemanager.convert_to_json')
+        patcher = mock.patch('transiter.http.httpmanager._convert_to_json_str')
         self.convert_to_json = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        patcher = mock.patch.object(permissions, 'ensure')
+        self.ensure = patcher.start()
         self.addCleanup(patcher.stop)
 
     def _test_endpoint(self, endpoint_function, service_function, args,
@@ -34,7 +38,7 @@ class _TestEndpoints(unittest.TestCase):
         service_function.return_value = service_response
         if endpoint_response != '':
             self.convert_to_json.return_value = endpoint_response
-            #self.jsonutil.convert_for_http.return_value = endpoint_response
+            # self.jsonutil.convert_for_http.return_value = endpoint_response
 
         (actual, __, __) = endpoint_function(*args)
 
@@ -59,7 +63,6 @@ class _TestEndpoints(unittest.TestCase):
 
     def _test_access_denied(self, endpoint_function, args=()):
         (actual, http_code, __) = endpoint_function(*args)
-        self.assertEqual(actual, '')
         self.assertEqual(http_code, 403)
 
 
@@ -68,22 +71,21 @@ class TestFeedEndpoints(testutil.TestCase(feedendpoints), _TestEndpoints):
     def setUp(self):
         self.setUpSuper()
         self.feedservice = self.mockImportedModule(feedendpoints.feedservice)
-        self.permissions = self.mockImportedModule(feedendpoints.permissions)
 
     def test_list_all_in_system(self):
         """[Feed endpoints] List all feeds in a system"""
         self._test_response_endpoint(
             feedendpoints.list_all_in_system,
             self.feedservice.list_all_in_system,
-            (self.SYSTEM_ID, )
+            (self.SYSTEM_ID,)
         )
 
     def test_list_all_in_system__no_permission(self):
         """[Feed endpoints] List all feeds in a system - access denied"""
-        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self.ensure.side_effect = exceptions.AccessDenied
         self._test_access_denied(
             feedendpoints.list_all_in_system,
-            (self.SYSTEM_ID, )
+            (self.SYSTEM_ID,)
         )
 
     def test_get_in_system_by_id(self):
@@ -96,7 +98,7 @@ class TestFeedEndpoints(testutil.TestCase(feedendpoints), _TestEndpoints):
 
     def test_get_in_system_by_id__no_permission(self):
         """[Feed endpoints] Get a specific feed in a system - access denied"""
-        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self.ensure.side_effect = exceptions.AccessDenied
         self._test_access_denied(
             feedendpoints.get_in_system_by_id,
             (self.SYSTEM_ID, self.FEED_ID)
@@ -112,7 +114,7 @@ class TestFeedEndpoints(testutil.TestCase(feedendpoints), _TestEndpoints):
 
     def test_create_feed_update__access_denied(self):
         """[Feed endpoints] Create a new feed update for a specific feed - access denied"""
-        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self.ensure.side_effect = exceptions.AccessDenied
         self._test_access_denied(
             feedendpoints.get_in_system_by_id,
             (self.SYSTEM_ID, self.ROUTE_ID)
@@ -128,7 +130,7 @@ class TestFeedEndpoints(testutil.TestCase(feedendpoints), _TestEndpoints):
 
     def test_list_updates_in_feed__access_denied(self):
         """[Feed endpoints] List all updates for a specific feed - access denied"""
-        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self.ensure.side_effect = exceptions.AccessDenied
         self._test_access_denied(
             feedendpoints.get_in_system_by_id,
             (self.SYSTEM_ID, self.ROUTE_ID)
@@ -158,38 +160,50 @@ class TestRouteEndpoints(testutil.TestCase(routeendpoints), _TestEndpoints):
         )
 
 
-class TestStopEndpoints(_TestEndpoints):
+class TestStopEndpoints(testutil.TestCase(stopendpoints), _TestEndpoints):
 
-    @mock.patch('transiter.http.endpoints.stopendpoints.stopservice')
-    def test_list_all_in_route(self, stopservice):
+    def setUp(self):
+        self.setUpSuper()
+        self.stopservice = self.mockImportedModule(stopendpoints.stopservice)
+
+    def test_list_all_in_route(self):
         """[Stop endpoints] List all stop in a system"""
-        self._test_response_endpoint(stopendpoints.list_all_in_system,
-                                     stopservice.list_all_in_system,
-                                     (self.SYSTEM_ID))
+        self._test_response_endpoint(
+            stopendpoints.list_all_in_system,
+            self.stopservice.list_all_in_system,
+            self.SYSTEM_ID
+        )
 
-    @mock.patch('transiter.http.endpoints.stopendpoints.stopservice')
-    def test_get_in_route_by_id(self, stopservice):
+    def test_get_in_route_by_id(self):
         """[Stop endpoints] Get a specific stop in a system"""
-        self._test_response_endpoint(stopendpoints.get_in_system_by_id,
-                                     stopservice.get_in_system_by_id,
-                                     (self.SYSTEM_ID, self.STOP_ID))
+        self._test_response_endpoint(
+            stopendpoints.get_in_system_by_id,
+            self.stopservice.get_in_system_by_id,
+            (self.SYSTEM_ID, self.STOP_ID)
+        )
 
 
-class TestTripEndpoints(_TestEndpoints):
+class TestTripEndpoints(testutil.TestCase(tripendpoints), _TestEndpoints):
 
-    @mock.patch('transiter.http.endpoints.tripendpoints.tripservice')
-    def test_list_all_in_route(self, tripservice):
+    def setUp(self):
+        self.setUpSuper()
+        self.tripservice = self.mockImportedModule(tripendpoints.tripservice)
+
+    def test_list_all_in_route(self):
         """[Trip endpoints] List all trips in a route"""
-        self._test_response_endpoint(tripendpoints.list_all_in_route,
-                                     tripservice.list_all_in_route,
-                                     (self.SYSTEM_ID, self.ROUTE_ID))
+        self._test_response_endpoint(
+            tripendpoints.list_all_in_route,
+            self.tripservice.list_all_in_route,
+            (self.SYSTEM_ID, self.ROUTE_ID)
+        )
 
-    @mock.patch('transiter.http.endpoints.tripendpoints.tripservice')
-    def test_get_in_route_by_id(self, tripservice):
+    def test_get_in_route_by_id(self):
         """[Trip endpoints] Get a specific trip in a route"""
-        self._test_response_endpoint(tripendpoints.get_in_route_by_id,
-                                     tripservice.get_in_route_by_id,
-                                     (self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ID))
+        self._test_response_endpoint(
+            tripendpoints.get_in_route_by_id,
+            self.tripservice.get_in_route_by_id,
+            (self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ID)
+        )
 
 
 class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
@@ -198,7 +212,6 @@ class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
         self.setUpSuper()
         self.flask = self.mockImportedModule(systemendpoints.flask)
         self.systemservice = self.mockImportedModule(systemendpoints.systemservice)
-        self.permissions = self.mockImportedModule(systemendpoints.permissions)
 
     def test_list_all(self):
         """[System endpoints] List all systems installed"""
@@ -240,7 +253,7 @@ class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
 
     def test_install__access_denied(self):
         """[System endpoints] Install a system - access denied"""
-        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self.ensure.side_effect = exceptions.AccessDenied
         self._test_access_denied(
             systemendpoints.install,
             self.SYSTEM_ID
@@ -256,7 +269,7 @@ class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
 
     def test_delete_by_id__access_denied(self):
         """[System endpoints] Uninstall a system - access denied"""
-        self.permissions.ensure.side_effect = exceptions.AccessDenied
+        self.ensure.side_effect = exceptions.AccessDenied
         self._test_access_denied(
             systemendpoints.delete_by_id,
             self.SYSTEM_ID
@@ -264,7 +277,6 @@ class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
 
 
 class TestFlaskApp(testutil.TestCase(flaskapp)):
-
     COMMIT_HASH = 'b7e35a125f4c539c37deaf3a6ac72bd408097131'
 
     def setUp(self):

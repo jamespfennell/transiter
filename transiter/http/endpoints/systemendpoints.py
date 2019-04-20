@@ -1,14 +1,14 @@
 import flask
 
-from transiter.http import permissions
-from transiter.http.responsemanager import http_get_response, http_delete_response, http_put_response
-from transiter.services import systemservice
+from transiter.http.permissions import requires_permissions, PermissionsLevel
+from transiter.http.httpmanager import http_endpoint, RequestType, link_target
+from transiter.services import systemservice, links
 
-system_endpoints = flask.Blueprint('system_endpoints', __name__)
+system_endpoints = flask.Blueprint(__name__, __name__)
 
 
-@system_endpoints.route('')
-@http_get_response
+@http_endpoint(system_endpoints, '')
+@link_target(links.SystemsIndexLink)
 def list_all():
     """List all systems
 
@@ -29,8 +29,8 @@ def list_all():
     return systemservice.list_all()
 
 
-@system_endpoints.route('/<system_id>', methods=['GET'])
-@http_get_response
+@http_endpoint(system_endpoints, '/<system_id>')
+@link_target(links.SystemEntityLink)
 def get_by_id(system_id):
     """Get data on a specific system.
 
@@ -61,8 +61,8 @@ def get_by_id(system_id):
     return systemservice.get_by_id(system_id)
 
 
-@system_endpoints.route('/<system_id>', methods=['PUT'])
-@http_put_response
+@http_endpoint(system_endpoints, '/<system_id>', RequestType.CREATE)
+@requires_permissions(PermissionsLevel.ALL)
 def install(system_id):
     """Install a system.
 
@@ -79,7 +79,6 @@ def install(system_id):
     :formparameter (additional setting name): additional settings (for example,
         API keys) required by the system config.
     """
-    permissions.ensure(permissions.PermissionsLevel.ALL)
     config_str = flask.request.files['config_file'].read().decode('utf-8')
     extra_files = {
         key: flask.request.files[key].stream for key in flask.request.files
@@ -93,8 +92,8 @@ def install(system_id):
     )
 
 
-@system_endpoints.route('/<system_id>', methods=['DELETE'])
-@http_delete_response
+@http_endpoint(system_endpoints, '/<system_id>', RequestType.DELETE)
+@requires_permissions(PermissionsLevel.ALL)
 def delete_by_id(system_id):
     """Uninstall a system.
 
@@ -104,5 +103,4 @@ def delete_by_id(system_id):
     :status 204: the system was uninstalled
     :status 404: a system with that ID does not exists
     """
-    permissions.ensure(permissions.PermissionsLevel.ALL)
     return systemservice.delete_by_id(system_id)

@@ -6,7 +6,8 @@ import enum
 
 from transiter.data import database
 from transiter.data.dams import routedam, systemdam, servicepatterndam
-from transiter.general import linksutil, exceptions
+from transiter.general import exceptions
+from transiter.services import links
 from transiter.models import RouteStatus
 
 
@@ -42,7 +43,7 @@ def list_all_in_system(system_id, return_links=False):
             'status': route_pk_to_status[route.pk]
         }
         if return_links:
-            route_response['href'] = linksutil.RouteEntityLink(route)
+            route_response['href'] = links.RouteEntityLink(route)
         response.append(route_response)
     return response
 
@@ -97,7 +98,7 @@ def get_in_system_by_id(system_id, route_id, return_links=False):
             for entry in service_map.vertices:
                 stop_response = entry.stop.short_repr()
                 if return_links:
-                    stop_response['href'] = linksutil.StopEntityLink(entry.stop)
+                    stop_response['href'] = links.StopEntityLink(entry.stop)
                 service_map_response['stops'].append(stop_response)
         response['service_maps'].append(service_map_response)
 

@@ -1,7 +1,7 @@
 import unittest
 import unittest.mock as mock
 
-from transiter.services import systemservice
+from transiter.services import systemservice, links
 from transiter.general import exceptions
 from transiter import models
 from .. import testutil
@@ -37,11 +37,11 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         expected = [
             {
                 **self.system_1.short_repr(),
-                'href': systemservice.linksutil.SystemEntityLink(self.system_1)
+                'href': links.SystemEntityLink(self.system_1)
             },
             {
                 **self.system_2.short_repr(),
-                'href': systemservice.linksutil.SystemEntityLink(self.system_2)
+                'href': links.SystemEntityLink(self.system_2)
             }
         ]
         self.systemdam.list_all.return_value = [
@@ -68,9 +68,9 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         """[System service] Get a specific system"""
 
         hrefs_dict = {
-            'stops': systemservice.linksutil.StopsInSystemIndexLink(self.system_1),
-            'routes': systemservice.linksutil.RoutesInSystemIndexLink(self.system_1),
-            'feeds': systemservice.linksutil.FeedsInSystemIndexLink(self.system_1),
+            'stops': links.StopsInSystemIndexLink(self.system_1),
+            'routes': links.RoutesInSystemIndexLink(self.system_1),
+            'feeds': links.FeedsInSystemIndexLink(self.system_1),
         }
         child_entities_dict = {
             'stops': self.SYSTEM_ONE_NUM_STOPS,

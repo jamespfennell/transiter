@@ -1,14 +1,15 @@
 from flask import Blueprint
 
-from transiter.http import permissions
-from transiter.http.responsemanager import http_get_response, http_post_response
-from transiter.services import feedservice
+from transiter.http.httpmanager import http_endpoint, RequestType, link_target
+from transiter.http.permissions import requires_permissions, PermissionsLevel
+from transiter.services import feedservice, links
 
-feed_endpoints = Blueprint('feed_endpoints', __name__)
+feed_endpoints = Blueprint(__name__, __name__)
 
 
-@feed_endpoints.route('')
-@http_get_response
+@http_endpoint(feed_endpoints, '')
+@link_target(links.FeedsInSystemIndexLink)
+@requires_permissions(PermissionsLevel.ADMIN_READ)
 def list_all_in_system(system_id):
     """List all feeds for a specific system
 
@@ -25,12 +26,12 @@ def list_all_in_system(system_id):
             },
         ]
     """
-    permissions.ensure(permissions.PermissionsLevel.ADMIN_READ)
     return feedservice.list_all_in_system(system_id)
 
 
-@feed_endpoints.route('/<feed_id>')
-@http_get_response
+@http_endpoint(feed_endpoints, '/<feed_id>')
+@link_target(links.FeedEntityLink)
+@requires_permissions(PermissionsLevel.ADMIN_READ)
 def get_in_system_by_id(system_id, feed_id):
     """Retrieve a specific feed
 
@@ -46,12 +47,11 @@ def get_in_system_by_id(system_id, feed_id):
             "id": "L",
         }
     """
-    permissions.ensure(permissions.PermissionsLevel.ADMIN_READ)
     return feedservice.get_in_system_by_id(system_id, feed_id)
 
 
-@feed_endpoints.route('/<feed_id>', methods=['POST'])
-@http_post_response
+@http_endpoint(feed_endpoints, '/<feed_id>', RequestType.UPDATE)
+@requires_permissions(PermissionsLevel.ALL)
 def create_feed_update(system_id, feed_id):
     """Create a new feed update.
 
@@ -77,12 +77,11 @@ def create_feed_update(system_id, feed_id):
             "last_action_time": 1548014018
         }
     """
-    permissions.ensure(permissions.PermissionsLevel.ALL)
     return feedservice.create_feed_update(system_id, feed_id)
 
 
-@feed_endpoints.route('/<feed_id>/updates')
-@http_get_response
+@http_endpoint(feed_endpoints, '/<feed_id>/updates')
+@requires_permissions(PermissionsLevel.ADMIN_READ)
 def list_updates_in_feed(system_id, feed_id):
     """List recent feed updates.
 
@@ -120,6 +119,5 @@ def list_updates_in_feed(system_id, feed_id):
             }
         ]
     """
-    permissions.ensure(permissions.PermissionsLevel.ADMIN_READ)
     return feedservice.list_updates_in_feed(system_id, feed_id)
 

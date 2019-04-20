@@ -14,7 +14,8 @@ import toml
 from transiter import models
 from transiter.data import database
 from transiter.data.dams import systemdam, stopdam
-from transiter.general import linksutil, exceptions
+from transiter.general import exceptions
+from transiter.services import links
 from transiter.services.update import updatemanager
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ def list_all(return_links=False):
     for system in systemdam.list_all():
         system_response = system.short_repr()
         if return_links:
-            system_response['href'] = linksutil.SystemEntityLink(system)
+            system_response['href'] = links.SystemEntityLink(system)
         response.append(system_response)
     return response
 
@@ -71,9 +72,9 @@ def get_by_id(system_id, return_links=False):
     }
     if return_links:
         entity_type_to_link = {
-            'stops': linksutil.StopsInSystemIndexLink(system),
-            'routes': linksutil.RoutesInSystemIndexLink(system),
-            'feeds': linksutil.FeedsInSystemIndexLink(system)
+            'stops': links.StopsInSystemIndexLink(system),
+            'routes': links.RoutesInSystemIndexLink(system),
+            'feeds': links.FeedsInSystemIndexLink(system)
         }
         for entity_type, link in entity_type_to_link.items():
             response[entity_type]['href'] = link

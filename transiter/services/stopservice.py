@@ -1,6 +1,7 @@
 from transiter.data import database
 from transiter.data.dams import stopdam, servicepatterndam, tripdam
-from transiter.general import linksutil, exceptions
+from transiter.general import exceptions
+from transiter.services import links
 
 
 @database.unit_of_work
@@ -11,7 +12,7 @@ def list_all_in_system(system_id):
     for stop in stopdam.list_all_in_system(system_id):
         stop_response = stop.short_repr()
         stop_response.update({
-            'href': linksutil.StopEntityLink(stop)
+            'href': links.StopEntityLink(stop)
         })
         response.append(stop_response)
     return response
@@ -184,13 +185,13 @@ def get_in_system_by_id(system_id, stop_id):
                 **(stop_event.trip.long_repr()),
                 'route': {
                     **(stop_event.trip.route.short_repr()),
-                    'href': linksutil.RouteEntityLink(stop_event.trip.route),
+                    'href': links.RouteEntityLink(stop_event.trip.route),
                 },
                 'last_stop': {
                     **last_stop.short_repr(),
-                    'href': linksutil.StopEntityLink(last_stop)
+                    'href': links.StopEntityLink(last_stop)
                 },
-                'href': linksutil.TripEntityLink(stop_event.trip),
+                'href': links.TripEntityLink(stop_event.trip),
             }
         }
         response['stop_time_updates'].append(stop_event_response)
@@ -209,7 +210,7 @@ def _child_stops_repr(stop, default_routes, return_only_stations):
         repr.append({
             **child_stop.short_repr(),
             'service_maps': default_routes[child_stop.pk],
-            'href': linksutil.StopEntityLink(child_stop),
+            'href': links.StopEntityLink(child_stop),
             'child_stops': _child_stops_repr(child_stop, default_routes)
         })
     return repr
@@ -221,7 +222,7 @@ def _parent_stop_repr(stop, default_routes):
     repr = {
         **stop.parent_stop.short_repr(),
         'related_service_maps': default_routes[stop.parent_stop.pk],
-        'href': linksutil.StopEntityLink(stop.parent_stop),
+        'href': links.StopEntityLink(stop.parent_stop),
         'child_stops': [],
         'parent_stop': _parent_stop_repr(stop.parent_stop, default_routes)
     }
@@ -231,7 +232,7 @@ def _parent_stop_repr(stop, default_routes):
         repr['child_stops'].append({
             **child_stop.short_repr(),
             'service_maps': default_routes[child_stop.pk],
-            'href': linksutil.StopEntityLink(child_stop)
+            'href': links.StopEntityLink(child_stop)
         })
     return repr
 

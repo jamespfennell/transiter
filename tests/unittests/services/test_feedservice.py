@@ -1,8 +1,7 @@
 import unittest
-import unittest.mock as mock
 
 from transiter.general import exceptions
-from transiter.services import feedservice
+from transiter.services import feedservice, links
 from transiter import models
 from .. import testutil
 
@@ -61,11 +60,11 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         expected = [
             {
                 **self.feed_one.short_repr(),
-                'href': feedservice.linksutil.FeedEntityLink(self.feed_one),
+                'href': links.FeedEntityLink(self.feed_one),
             },
             {
                 **self.feed_two.short_repr(),
-                'href': feedservice.linksutil.FeedEntityLink(self.feed_two),
+                'href': links.FeedEntityLink(self.feed_two),
             }
         ]
 
@@ -94,7 +93,7 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         expected = {
             **self.feed_one.short_repr(),
             'updates': {
-                'href': feedservice.linksutil.FeedEntityUpdatesLink(self.feed_one)
+                'href': links.FeedEntityUpdatesLink(self.feed_one)
             }
         }
 

@@ -1,5 +1,6 @@
 import flask
-
+from transiter import models
+# TODO: rename links.py
 
 class Link:
 
@@ -23,13 +24,13 @@ class Link:
 
 
 class SystemsIndexLink(Link):
-    endpoint = 'system_endpoints.list_all'
+    pass
 
 
 class FeedEntityLink(Link):
     endpoint = 'feed_endpoints.get_in_system_by_id'
 
-    def __init__(self, feed):
+    def __init__(self, feed: models.Feed):
         self.kwargs = {
             'system_id': feed.system_id,
             'feed_id': feed.id
@@ -76,8 +77,7 @@ class StopsInSystemIndexLink(Link):
 
 class SystemEntityLink(Link):
 
-    def __init__(self, system):
-        self.endpoint = 'system_endpoints.get_by_id'
+    def __init__(self, system: models.System):
         self.kwargs = {
             'system_id': system.id,
         }

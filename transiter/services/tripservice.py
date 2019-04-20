@@ -1,6 +1,7 @@
 from transiter.data import database
 from transiter.data.dams import tripdam
-from transiter.general import linksutil, exceptions
+from transiter.general import exceptions
+from transiter.services import links
 
 
 @database.unit_of_work
@@ -34,9 +35,9 @@ def list_all_in_route(system_id, route_id):
                 'parent_stop': {
                     **last_stop.parent_stop.short_repr()
                 },
-                'href': linksutil.StopEntityLink(last_stop)
+                'href': links.StopEntityLink(last_stop)
             },
-            'href': linksutil.TripEntityLink(trip),
+            'href': links.TripEntityLink(trip),
         }
         response.append(trip_response)
     return response
@@ -71,7 +72,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
         **trip.long_repr(),
         'route': {
             **trip.route.short_repr(),
-            'href': linksutil.RouteEntityLink(trip.route)
+            'href': links.RouteEntityLink(trip.route)
         },
         'stop_time_updates': [
             {
@@ -81,7 +82,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
                     'parent_stop': {
                         **stu.stop.parent_stop.short_repr(),
                     },
-                    'href': linksutil.StopEntityLink(stu.stop)
+                    'href': links.StopEntityLink(stu.stop)
                 }
             }
             for stu in trip.stop_events

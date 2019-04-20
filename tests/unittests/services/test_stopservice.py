@@ -2,7 +2,7 @@ import unittest
 import unittest.mock as mock
 
 import datetime
-from transiter.services import stopservice
+from transiter.services import stopservice, links
 from transiter import models
 
 
@@ -140,7 +140,7 @@ class TestStopService(unittest.TestCase):
         return mocked
 
     def setUp(self):
-        self.linksutil = self._quick_mock('linksutil')
+        self.linksutil = self._quick_mock('links')
         self.stop_dao = self._quick_mock('stopdam')
         self.tripdam = self._quick_mock('tripdam')
 

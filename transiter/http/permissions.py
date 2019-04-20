@@ -15,6 +15,7 @@ directly to the Transiter HTTP service.
 import enum
 
 import flask
+from decorator import decorator
 
 from transiter.general import exceptions
 
@@ -42,11 +43,29 @@ def ensure(minimum_level):
     :raises AccessDenied: if the permissions level is not met
     """
     request_level_str = flask.request.headers.get(
-        'X-Transiter-AllowedMethods', PermissionsLevel.ALL.name)
+        'X-Transiter-PermissionsLevel', PermissionsLevel.ALL.name)
     try:
         request_level = PermissionsLevel[request_level_str.upper()]
     except KeyError:
-        raise exceptions.InvalidPermissionsLevelInRequest
+        raise exceptions.InvalidPermissionsLevelInRequest(
+            request_level_str.upper(),
+            [permissions_level.name for permissions_level in PermissionsLevel]
+        )
     if request_level.value < minimum_level.value:
-        raise exceptions.AccessDenied
+        raise exceptions.AccessDenied(request_level.name, minimum_level.name)
 
+
+def requires_permissions(minimum_level):
+    """
+    Decorator factory used to enforce permissions using decorators.
+
+    :param minimum_level: the minimum level required for this endpoint
+    :return: a decorator for the endpoint
+    """
+
+    @decorator
+    def decorator_(func, *args, **kwargs):
+        ensure(minimum_level)
+        return func(*args, **kwargs)
+
+    return decorator_
