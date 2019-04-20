@@ -20,11 +20,7 @@ abolish (?) the general package?
 Random modules:
 
     ./general/config.py
-    ./general/linksutil.py (move to the service layer, rename links.py)
     ./general/clt.py
-    ./general/exceptions.py
-    ./http/responsemanager.py (--> httpmanager)
-    ./http/inputvalidator.py (delete/move into response manager/http manager)
     ./taskserver/server.py
     ./taskserver/client.py
     ./data/database.py
@@ -46,13 +42,8 @@ Create of service maps:
 Service. Do the endpoint after. Should just be updating the docs;
 already at 100% test coverage there:
 
-    ./http/flaskapp.py
-    
-    ./services/stopservice.py
-    ./http/endpoints/stopendpoints.py
-    
-    ./services/tripservice.py
-    ./http/endpoints/tripendpoints.py
+    ./services/stopservice.py (fix docs in the endpoint after)
+    ./services/tripservice.py (fix docs in the endpoint after)
 
 Data. would be nice to have the tests passing on SQLLite...
 

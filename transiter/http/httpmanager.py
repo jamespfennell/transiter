@@ -103,7 +103,7 @@ def http_response(request_type=RequestType.GET):
     Decorator factory used to create decorators that convert service layer
     responses into HTTP responses.
 
-    :param request_type: the requst type
+    :param request_type: the request type
     """
 
     @decorator
