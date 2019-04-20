@@ -30,7 +30,8 @@ def transiter_clt(config_file):
     try:
         config.load(config_file)
     except exceptions.ConfigFileNotFoundError:
-        click.echo('Error: config file not found.')
+        click.echo('Error: config file "{}" not found.'.format(config_file))
+        exit()
 
 
 @transiter_clt.command()

@@ -2,7 +2,7 @@ import unittest
 from unittest import mock
 from click.testing import CliRunner
 
-from transiter import clt, config
+from transiter import clt, config, exceptions
 from . import testutil
 
 
@@ -38,6 +38,15 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         self._run(['-c', self.CONFIG_FILE, 'launch', 'task-server'])
 
         self.taskserver.launch.assert_called_once_with(False)
+        self.config.load.assert_called_once_with(self.CONFIG_FILE)
+
+    def test_launch_taskserver_different_bad_config(self):
+        """[CLT] Launch Task Server with unknown config file"""
+        self.config.load.side_effect = exceptions.ConfigFileNotFoundError
+
+        self._run(['-c', self.CONFIG_FILE, 'launch', 'task-server'])
+
+        self.taskserver.launch.assert_not_called()
         self.config.load.assert_called_once_with(self.CONFIG_FILE)
 
     def test_launch_flask_app(self):
