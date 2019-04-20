@@ -1,53 +1,53 @@
 import logging
 import traceback
 import warnings
+import typing
 
 import sqlalchemy.exc
 from decorator import decorator
 from sqlalchemy.exc import SAWarning
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from transiter import models
-from transiter.general import config
+from transiter import models, config
 
 warnings.simplefilter(action='ignore', category=SAWarning)
 logger = logging.getLogger(__name__)
 
 
-def build_connection_url_from_config(database_config):
+def build_connection_url_from_config(database_config: typing.Type[config.DatabaseConfig]):
     pieces = ['']*9
-    pieces[0] = database_config.driver
-    if database_config.dialect != '':
-        pieces[1] = '+' + database_config.dialect
+    pieces[0] = database_config.DRIVER
+    if database_config.DIALECT != '':
+        pieces[1] = '+' + database_config.DIALECT
     pieces[2] = '://'
-    if database_config.username != '':
-        pieces[3] = database_config.username
-        if database_config.password != '':
+    if database_config.USERNAME != '':
+        pieces[3] = database_config.USERNAME
+        if database_config.PASSWORD != '':
             # TODO: does need to be encoded?
-            pieces[4] = database_config.password
+            pieces[4] = database_config.PASSWORD
         pieces[4] = '@'
-    if database_config.host != '':
-        pieces[5] = database_config.host
-        if database_config.port != '':
-            pieces[6] = ':' + database_config.port
+    if database_config.HOST != '':
+        pieces[5] = database_config.HOST
+        if database_config.PORT != '':
+            pieces[6] = ':' + database_config.PORT
     pieces[7] = '/'
-    pieces[8] = database_config.name
+    pieces[8] = database_config.NAME
     logger.info('Connection URL: ' + ''.join(pieces))
     return ''.join(pieces)
 
 
-def build_extra_engine_params_from_config(database_config):
+def build_extra_engine_params_from_config(database_config: typing.Type[config.DatabaseConfig]):
     extra_params = {}
-    if database_config.driver == 'postgresql':
-        if database_config.dialect == '' or database_config.dialect == 'psycopg2':
+    if database_config.DRIVER == 'postgresql':
+        if database_config.DIALECT == '' or database_config.DIALECT == 'psycopg2':
             extra_params['use_batch_mode'] = True
     logger.info('Extra connection params: ' + str(extra_params))
     return extra_params
 
 
 def create_engine():
-    connection_url = build_connection_url_from_config(config.database)
-    extra_params = build_extra_engine_params_from_config(config.database)
+    connection_url = build_connection_url_from_config(config.DatabaseConfig)
+    extra_params = build_extra_engine_params_from_config(config.DatabaseConfig)
     return sqlalchemy.create_engine(connection_url, **extra_params)
 
 

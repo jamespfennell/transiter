@@ -21,9 +21,11 @@ Random modules:
 
     ./general/config.py
     ./general/clt.py
+
+The task server:
+    
     ./taskserver/server.py
     ./taskserver/client.py
-    ./data/database.py
 
 The update modules:
 
@@ -45,8 +47,9 @@ already at 100% test coverage there:
     ./services/stopservice.py (fix docs in the endpoint after)
     ./services/tripservice.py (fix docs in the endpoint after)
 
-Data. would be nice to have the tests passing on SQLLite...
+Data. would be nice to have the tests passing on SQLLite...?
 
+    ./data/database.py (-> database/connection.py
     ./data/fastoperations.py
     ./data/dams/tripdam.py
     ./data/dams/servicepatterndam.py

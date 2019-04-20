@@ -1,6 +1,6 @@
 from transiter.data import database
 from transiter.data.dams import tripdam
-from transiter.general import exceptions
+from transiter import exceptions
 from transiter.services import links
 
 

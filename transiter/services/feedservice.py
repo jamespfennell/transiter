@@ -6,10 +6,9 @@ operations.
 import datetime
 import logging
 
-from transiter import models
+from transiter import models, exceptions
 from transiter.data import database
 from transiter.data.dams import feeddam, systemdam
-from transiter.general import exceptions
 from transiter.services import links
 from transiter.services.update import updatemanager
 

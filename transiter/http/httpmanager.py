@@ -24,7 +24,7 @@ from datetime import date, datetime
 import flask
 from decorator import decorator
 
-from transiter.general import exceptions
+from transiter import exceptions
 from transiter.services import links
 
 logger = logging.getLogger(__name__)

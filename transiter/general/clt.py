@@ -1,7 +1,7 @@
 import click
 
 from transiter.data import database
-from transiter.general import config, exceptions
+from transiter import config, exceptions
 from transiter.http import flaskapp
 from transiter.taskserver import server as taskserver
 

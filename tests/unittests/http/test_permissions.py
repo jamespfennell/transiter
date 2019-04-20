@@ -1,6 +1,6 @@
 import unittest
 
-from transiter.general import exceptions
+from transiter import exceptions
 from transiter.http import permissions
 from .. import testutil
 

@@ -1,8 +1,7 @@
 import unittest
 
-from transiter.general import exceptions
 from transiter.services import feedservice, links
-from transiter import models
+from transiter import models, exceptions
 from .. import testutil
 
 

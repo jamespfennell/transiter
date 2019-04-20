@@ -1,16 +1,14 @@
-import unittest
-from sqlalchemy.sql import text
 import os
+import unittest
 
-from transiter import models
+from sqlalchemy.sql import text
 
-
+from transiter import models, config
 from transiter.data import database
 from transiter.data.dams import feeddam, tripdam, systemdam, routedam, stopdam, servicepatterndam
-from transiter.general import config
+
 
 class TestDbConstants:
-
     SYSTEM_ONE_PK = 8
     SYSTEM_TWO_PK = 9
     SYSTEM_ONE_ID = '1'
@@ -377,11 +375,9 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
 
         self.assertEqual(response, False)
 
-
     #
     #   FEED DATA
     #
-
 
     def test__feed_dao__get_last_successful_update(self):
         db_feed_update = feeddam.get_last_successful_update(self.FEED_ONE_PK)
@@ -412,5 +408,5 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
     @classmethod
     def tearDownClass(cls):
         pass
-        #database.close_db_connection()
-        #database.drop_database()
+        # database.close_db_connection()
+        # database.drop_database()

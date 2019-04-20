@@ -8,7 +8,7 @@ import subprocess
 
 import flask
 
-from transiter.general import exceptions
+from transiter import exceptions
 from transiter.http import endpoints
 from transiter.http.httpmanager import http_endpoint, http_response
 from transiter.services import links

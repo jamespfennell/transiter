@@ -2,7 +2,7 @@ import unittest
 import unittest.mock as mock
 
 from transiter.http import permissions
-from transiter.general import exceptions
+from transiter import exceptions
 from transiter.http import flaskapp
 from transiter.http.endpoints import routeendpoints, stopendpoints, tripendpoints, systemendpoints, feedendpoints
 from ... import testutil

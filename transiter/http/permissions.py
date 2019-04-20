@@ -17,7 +17,7 @@ import enum
 import flask
 from decorator import decorator
 
-from transiter.general import exceptions
+from transiter import exceptions
 
 
 class PermissionsLevel(enum.Enum):
