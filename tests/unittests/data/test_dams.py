@@ -226,7 +226,7 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
     #
 
     def test__servicepatterndata__get_default_trips_at_stops_map(self):
-        actual = servicepatterndam.get_default_routes_at_stops_map(
+        actual = servicepatterndam.get_stop_pk_to_group_id_to_routes_map(
             [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK]
         )
 

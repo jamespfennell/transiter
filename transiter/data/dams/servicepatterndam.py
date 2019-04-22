@@ -31,9 +31,9 @@ def list_groups_and_maps_for_stops_in_route(route_pk):
     return [(group, map_) for (group, map_) in query]
 
 
-# TODO: delete
-def get_default_routes_at_stops_map(stop_pks):
+def get_stop_pk_to_group_id_to_routes_map(stop_pks):
     # TODO: we should return all service maps, even if they don't have routes for the stop
+    # THIS HAS NOT BEEN DONE!
     session = database.get_session()
     query = (
         session.query(

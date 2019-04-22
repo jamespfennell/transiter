@@ -31,9 +31,10 @@ def list_stop_time_updates_at_stops(stop_pks):
         .order_by(models.StopTimeUpdate.departure_time)
         .order_by(models.StopTimeUpdate.arrival_time)
     )
+    response = []
     for row in query:
-        yield row
-
+        response.append(row)
+    return response
 
 def get_stop_pk_to_station_pk_map_in_system(system_id):
     session = database.get_session()

@@ -1,110 +1,294 @@
-from transiter.data import database
-from transiter.data.dams import stopdam, servicepatterndam, tripdam
+import enum
+import time
+
 from transiter import exceptions
+from transiter.data import database
+from transiter.data.dams import stopdam, servicepatterndam, tripdam, systemdam
 from transiter.services import links
 
 
 @database.unit_of_work
-def list_all_in_system(system_id):
+def list_all_in_system(system_id, return_links=False):
+    """
+    Get information on all stops in a specific system.
+
+    :param system_id: the system ID
+    :type system_id: str
+    :param return_links: whether to return links
+    :type return_links: bool
+    :return: a list of dictionaries, one for each stop, containing the stop's
+             short representation and optionally a link.
+    """
+    system = systemdam.get_by_id(system_id)
+    if system is None:
+        raise exceptions.IdNotFoundError
 
     response = []
-
     for stop in stopdam.list_all_in_system(system_id):
         stop_response = stop.short_repr()
-        stop_response.update({
-            'href': links.StopEntityLink(stop)
-        })
+        if return_links:
+            stop_response['href'] = links.StopEntityLink(stop)
         response.append(stop_response)
     return response
 
 
-# TODO: move to the DB?
-class _DirectionNameMatcher:
-    def __init__(self, rules):
-        self._rules = rules
-        self._cache = {}
-        for rule in self._rules:
-            print((rule.stop_pk, rule.direction_id, rule.track, rule.name))
+@database.unit_of_work
+def get_in_system_by_id(
+        system_id, stop_id, return_links=False, return_only_stations=True):
+    """
+    Get information about a specific stop.
+    :param system_id: the system ID
+    :param stop_id: the stop ID
+    :param return_links: whether to return links
+    :param return_only_stations: whether to return only stations in the stops
+                                 graph
+    """
 
-    def all_names(self):
-        return {rule.name for rule in self._rules}
+    stop = stopdam.get_in_system_by_id(system_id, stop_id)
+    if stop is None:
+        raise exceptions.IdNotFoundError
 
-    def match(self, stop_event):
-        #print(self._rules)
-        #print(self._cache)
-        stop = stop_event.stop
-        #print(stop.pk)
-        cache_key = (
-            stop.pk,
-            stop_event.trip.direction_id,
-            stop_event.track)
-        if cache_key not in self._cache:
-            for rule in self._rules:
-                #print((rule.stop_pk, rule.direction_id, rule.track, rule.name))
-                if rule.stop_pk != cache_key[0]:
-                    continue
-                if rule.direction_id is not None and rule.direction_id != cache_key[1]:
-                    continue
-                if rule.track is not None and rule.track != cache_key[2]:
-                    continue
-                self._cache[cache_key] = rule.name
-                break
+    # TODO
+    # load_stop_tree_stops(stop)
 
-        if cache_key not in self._cache:
-            self._cache[cache_key] = None
+    descendants = _get_stop_descendants(stop)
+    direction_name_rules = []
+    direction_name_rules.extend(stop.direction_name_rules)
+    for descendant in descendants:
+        direction_name_rules.extend(descendant.direction_name_rules)
+    direction_name_matcher = _DirectionNameMatcher(direction_name_rules)
+    all_stop_pks = {stop.pk}
+    all_stop_pks.update(stop.pk for stop in descendants)
 
-        return self._cache[cache_key]
+    total_stop_pks = [stop_pk for stop_pk in all_stop_pks]
+    total_stop_pks.extend([s.pk for s in _get_stop_ancestors(stop)])
+
+    # TODO: move this to servicemapmanager:
+    # Constructing the service map responses in a batch allows us to get
+    # away with one SQL query.
+    stop_pk_to_service_map_group_id_to_routes = (
+        servicepatterndam.get_stop_pk_to_group_id_to_routes_map(total_stop_pks)
+    )
+    stop_pk_to_service_maps_response = {}
+    for stop_pk in total_stop_pks:
+        group_id_to_routes = stop_pk_to_service_map_group_id_to_routes[stop_pk]
+        stop_pk_to_service_maps_response[stop_pk] = [
+            {
+                'group_id': group_id,
+                'routes': [
+                    route.short_repr() for route in routes
+                ]
+            }
+            for group_id, routes in group_id_to_routes.items()
+        ]
+
+    response = _build_stop_tree_response(
+        stop, stop_pk_to_service_maps_response, return_links,
+        return_only_stations)
+    response.update({
+        'direction_names': list(direction_name_matcher.all_names()),
+        'stop_time_updates': []
+    })
+
+    stop_event_filter = _TripStopTimeFilter()
+    trip_stop_times = stopdam.list_stop_time_updates_at_stops(all_stop_pks)
+    trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
+        trip_stop_time.trip.pk for trip_stop_time in trip_stop_times
+    )
+    for trip_stop_time in trip_stop_times:
+        direction_name = direction_name_matcher.match(trip_stop_time)
+        if stop_event_filter.exclude(trip_stop_time, direction_name):
+            continue
+        trip = trip_stop_time.trip
+        last_stop = trip_pk_to_last_stop[trip.pk]
+        trip_stop_time_response = {
+            'stop_id': trip_stop_time.stop.id,
+            'direction_name': direction_name,
+            **trip_stop_time.short_repr(),
+            'trip': {
+                **trip_stop_time.trip.long_repr(),
+                'route': trip_stop_time.trip.route.short_repr(),
+                'last_stop': last_stop.short_repr(),
+            }
+        }
+        if return_links:
+            trip_stop_time_response['href'] = links.TripEntityLink(trip_stop_time.trip)
+            trip_stop_time_response['route']['href'] = links.RouteEntityLink(trip_stop_time.trip.route)
+            trip_stop_time_response['last_stop']['href'] = links.StopEntityLink(last_stop)
+        response['stop_time_updates'].append(trip_stop_time_response)
+
+    return response
 
 
-import time
+class _TraversalMode(enum.Enum):
+    DESCENDANTS = 4
+    ALL = 5
 
 
-class _StopEventFilter:
+def _traverse_stops_tree(
+        base,
+        node_function,
+        base_traversal_mode: _TraversalMode,
+        only_visit_stations: bool
+):
+    """
+    This method provides a mechanism for traversing the stops tree.
+    There are multiple traversal modes available: currently ALL, which
+    traverses the whole tree, and DESCENDANTS, which traverses the descendants
+    of the base node.
 
-    def __init__(self):
-        self._count = {}
-        self._route_ids_so_far = {}
+    The method applies a function to each node in the traversal. It uses a
+    depth-first search, so when evaluating the function at a given node
+    the results of evaluating the function at the nodes the next level
+    deep are available. The return of this function is the value of the node
+    function at the base.
+
+    The node function provided must have the following signature:
+
+    def node_function(stop, visited_parent, parent_return, children_return):
         pass
 
-    def _add_direction_name(self, direction_name):
-        if direction_name in self._count:
-            return
-        self._count[direction_name] = 0
-        self._route_ids_so_far[direction_name] = set()
+    The arguments passed to the node function are:
+    - stop: the current node being evaluated
+    - visited_parent: a boolean denoting whether the parent has been traversed
+       already. This being False does not mean the parent won't be traversed;
+       it means that in the relevant depth first search starting from base,
+       the parent node won't be visited before the current node.
+    - parent_return: the result of the node_function applied ot the parent.
+       If visited_parent is False, this is None.
+    - child_returns: a list containing the results of the node_function
+       applied to child nodes of this node. If the child nodes were
+       not traversed, this will be None.
 
-    def exclude(self, stop_event, direction_name):
-        self._add_direction_name(direction_name)
+    :param base: the base node to start at
+    :param node_function: the node function
+    :param base_traversal_mode: the traversal mode
+    :param only_visit_stations: whether to only visit stations
+    :return: the result of the node_function at the base
+    """
 
-        if stop_event.departure_time is None:
-            this_time = stop_event.arrival_time.timestamp()
+    def visit_node(stop, traversal_mode, previous=None):
+        visit_parent = (
+                traversal_mode is _TraversalMode.ALL
+                and stop.parent_stop is not None
+        )
+        visit_children = (
+                traversal_mode is _TraversalMode.DESCENDANTS or
+                traversal_mode is _TraversalMode.ALL
+        )
+
+        if visit_parent:
+            parent_traversal_mode = _TraversalMode.ALL
+            parent_return = visit_node(
+                stop.parent_stop,
+                parent_traversal_mode,
+                previous=stop
+            )
         else:
-            this_time = stop_event.departure_time.timestamp()
+            parent_return = None
 
-        self._count[direction_name] += 1
-        # If this prediction should already have passed
-        # TODO rethink this
-        #if this_time < time.time():
-        #    return True
+        if visit_children:
+            children_traversal_mode = _TraversalMode.DESCENDANTS
 
-        # Rules for whether to append or not go here
-        # If any of these condition are met the stop event will be appended
-        # If there are less that 4 trip in this direction so far
-        condition1 = (self._count[direction_name] <= 4)
-        # If this trip is coming within 5 minutes
-        condition2 = (this_time - time.time() <= 600)
-        # If not trips of this route have been added so far
-        condition3 = (stop_event.trip.route.id not in self._route_ids_so_far[direction_name])
+            children_returns = []
+            for child_stop in stop.child_stops:
+                if previous is not None and child_stop.pk == previous.pk:
+                    continue
+                if only_visit_stations and not child_stop.is_station:
+                    continue
+                children_returns.append(
+                    visit_node(child_stop, children_traversal_mode)
+                )
+        else:
+            children_returns = None
+        return node_function(stop, visit_parent, parent_return, children_returns)
 
-        self._route_ids_so_far[direction_name] \
-            .add(stop_event.trip.route.id)
-        return (not (condition1 or condition2 or condition3))
+    return visit_node(base, base_traversal_mode)
 
 
-def _get_stop_descendants(stop):
-    descendants = [child_stop for child_stop in stop.child_stops]
-    for child_stop in stop.child_stops:
-        descendants.extend(_get_stop_descendants(child_stop))
-    return descendants
+def _build_stop_tree_response(base, stop_pk_to_service_maps_response, return_links, return_only_stations):
+    """
+    Build the stop tree response.
+
+    The response consists of a nested dictionary representing the stop tree
+    with the given base as the starting point of the representation. A given
+    stop in the dictionary can contain 'parent_stop' and 'child_stops'
+    keys which point to relevant related stops in the tree.
+
+    Each stop appearing also contains its short representation, its service
+    map representation and, optionally, a link to the stop.
+
+    :param base: the base node for the representation
+    :param stop_pk_to_service_maps_response: a map containing the service map
+                                             response
+    :param return_links: whether to return links
+    :param return_only_stations: whether to only return stations
+    :return: the dictionary described above.
+    """
+
+    def node_function(stop, visited_parent, parent_return, children_return):
+        response = {
+            **stop.short_repr(),
+            'service_maps': stop_pk_to_service_maps_response[stop.pk]
+        }
+        if return_links:
+            response['href'] = links.StopEntityLink(stop)
+        if visited_parent:
+            response['parent_stop'] = parent_return
+        if stop.parent_stop is None:
+            response['parent_stop'] = None
+        if children_return is not None:
+            response['child_stops'] = children_return
+        return response
+
+    return _traverse_stops_tree(
+        base,
+        node_function,
+        _TraversalMode.ALL,
+        return_only_stations
+    )
+
+
+def _stop_accumulator(stop, is_parent, parent_stops, child_stops_list):
+    """
+    If the stop tree is traversed with this method, each node returns
+    a list containing itself and all of the stops deeper in the traversal.
+    Consequently, the result of the complete traversal is the list of all
+    stops traversed.
+    """
+    response = [stop]
+    if is_parent:
+        response.extend(parent_stops)
+    if child_stops_list is not None:
+        for child_stop in child_stops_list:
+            response.extend(child_stop)
+    return response
+
+
+def _get_stop_descendants(base):
+    """
+    List all stop descendants of the given base stop.
+
+    The response includes the base.
+    """
+    return _traverse_stops_tree(
+        base,
+        _stop_accumulator,
+        _TraversalMode.DESCENDANTS,
+        False
+    )
+
+
+def _get_all_stations(base):
+    """
+    Get all stations in the stop tree containing base.
+    """
+    return _traverse_stops_tree(
+        base,
+        _stop_accumulator,
+        _TraversalMode.ALL,
+        True
+    )
 
 
 def _get_stop_ancestors(stop):
@@ -119,120 +303,105 @@ def _get_stop_ancestors(stop):
     return ancestors
 
 
-@database.unit_of_work
-def get_in_system_by_id(system_id, stop_id):
+class _DirectionNameMatcher:
+    """
+    Object to find the direction name associated to a particular trip at
+    a particular stop.
+    """
 
-    # TODO: make the service pattern dao retrieve by pk
-    # TODO: make a default_trip_at_stop function????
-    # TODO make this more robust for stops without direction names
+    def __init__(self, rules):
+        """
+        Initialize a new matcher.
 
-    return_links = False
-    return_only_stations = True
+        :param rules: the rules to be used in the matcher.
+        :type rules: list of DirectionNameRule models.
+        """
+        self._rules = rules
+        self._cache = {}
 
-    stop = stopdam.get_in_system_by_id(system_id, stop_id)
-    if stop is None:
-        raise exceptions.IdNotFoundError
+    def all_names(self):
+        """
+        Get all of the direction names in the matcher.
 
-    descendants = _get_stop_descendants(stop)
-    direction_name_rules = []
-    direction_name_rules.extend(stop.direction_name_rules)
-    for descendant in descendants:
-        direction_name_rules.extend(descendant.direction_name_rules)
-    all_stop_pks = {stop.pk}
-    all_stop_pks.update(stop.pk for stop in descendants)
+        :return: list of names
+        :rtype: list of strings
+        """
+        return {rule.name for rule in self._rules}
 
-    total_stop_pks = [stop_pk for stop_pk in all_stop_pks]
-    total_stop_pks.extend([s.pk for s in _get_stop_ancestors(stop)])
-    stop_pk_to_service_map_group_to_routes = servicepatterndam.get_default_routes_at_stops_map(total_stop_pks)
-    #default_routes = service_pattern_dao.get_default_trips_at_stops(total_stop_pks)
-    default_routes = {}
-    for stop_pk in total_stop_pks:
-        default_routes[stop_pk] = [
-            {
-                'group_id': group_id,
-                'routes': [
-                    route.short_repr() for route in routes
-                ]
-            }
-            for group_id, routes in stop_pk_to_service_map_group_to_routes[stop_pk].items()
-        ]
-    #default_routes = {stop_pk: default_routes_map[stop_pk].id for stop_pk in total_stop_pks}
+    def match(self, trip_stop_time):
+        """
+        Find the direction name associate to the TripStopTime by matching
+        the appropriate rule.
 
-    stop_event_filter = _StopEventFilter()
-    direction_name_matcher = _DirectionNameMatcher(direction_name_rules)
-    response = {
-        **stop.short_repr(),
-        'service_maps': default_routes[stop.pk],
-        'direction_names': list(direction_name_matcher.all_names()),
-        'stop_time_updates': []
-    }
+        :param trip_stop_time: the TripStopTime
+        :return: the direction name
+        """
+        stop = trip_stop_time.stop
+        cache_key = (
+            stop.pk,
+            trip_stop_time.trip.direction_id,
+            trip_stop_time.track
+        )
+        if cache_key not in self._cache:
+            self._cache[cache_key] = None
+            for rule in self._rules:
+                if rule.stop_pk != cache_key[0]:
+                    continue
+                if rule.direction_id is not None and rule.direction_id != cache_key[1]:
+                    continue
+                if rule.track is not None and rule.track != cache_key[2]:
+                    continue
+                self._cache[cache_key] = rule.name
+                break
 
-    stop_events = list(stopdam.list_stop_time_updates_at_stops(all_stop_pks))
-    trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
-        stu.trip.pk for stu in stop_events
-    )
-    for stop_event in stop_events:
-        direction_name = direction_name_matcher.match(stop_event)
-        if stop_event_filter.exclude(stop_event, direction_name):
-            continue
-        trip = stop_event.trip
-        last_stop = trip_pk_to_last_stop.get(trip.pk)
-        stop_event_response = {
-            'stop_id': stop_event.stop.id,
-            'direction_name': direction_name,
-            **(stop_event.short_repr()),
-            'trip': {
-                **(stop_event.trip.long_repr()),
-                'route': {
-                    **(stop_event.trip.route.short_repr()),
-                    'href': links.RouteEntityLink(stop_event.trip.route),
-                },
-                'last_stop': {
-                    **last_stop.short_repr(),
-                    'href': links.StopEntityLink(last_stop)
-                },
-                'href': links.TripEntityLink(stop_event.trip),
-            }
-        }
-        response['stop_time_updates'].append(stop_event_response)
-
-    response['child_stops'] = _child_stops_repr(stop, default_routes, return_only_stations)
-    response['parent_stop'] = _parent_stop_repr(stop, default_routes)
-
-    return response
+        return self._cache[cache_key]
 
 
-def _child_stops_repr(stop, default_routes, return_only_stations):
-    repr = []
-    for child_stop in stop.child_stops:
-        if return_only_stations and not child_stop.is_station:
-            continue
-        repr.append({
-            **child_stop.short_repr(),
-            'service_maps': default_routes[child_stop.pk],
-            'href': links.StopEntityLink(child_stop),
-            'child_stops': _child_stops_repr(child_stop, default_routes)
-        })
-    return repr
+class _TripStopTimeFilter:
+    """
+    This filter is used to exclude trip stop times based on certain criteria.
+    """
 
+    def __init__(self):
+        """
+        Initialize a new filter.
+        """
+        self._count = {}
+        self._route_ids_so_far = {}
 
-def _parent_stop_repr(stop, default_routes):
-    if stop.parent_stop is None:
-        return None
-    repr = {
-        **stop.parent_stop.short_repr(),
-        'related_service_maps': default_routes[stop.parent_stop.pk],
-        'href': links.StopEntityLink(stop.parent_stop),
-        'child_stops': [],
-        'parent_stop': _parent_stop_repr(stop.parent_stop, default_routes)
-    }
-    for child_stop in stop.parent_stop.child_stops:
-        if stop.id == child_stop.id:
-            continue
-        repr['child_stops'].append({
-            **child_stop.short_repr(),
-            'service_maps': default_routes[child_stop.pk],
-            'href': links.StopEntityLink(child_stop)
-        })
-    return repr
+    def exclude(self, trip_stop_time, direction_name):
+        """
+        Whether to exclude this trip stop time from the response.
+        """
+        self._add_direction_name(direction_name)
 
+        if trip_stop_time.departure_time is None:
+            this_time = trip_stop_time.arrival_time.timestamp()
+        else:
+            this_time = trip_stop_time.departure_time.timestamp()
+
+        # Rules for whether to append or not go here
+        # If any of these condition are met the stop event will be appended
+        # If there are less that 4 trip in this direction so far
+        condition1 = (self._count[direction_name] <= 3)
+        # If this trip is coming within 5 minutes
+        condition2 = (this_time - time.time() <= 600)
+        # If no trips of this route have been added so far
+        condition3 = (
+                trip_stop_time.trip.route.id
+                not in self._route_ids_so_far[direction_name]
+        )
+
+        self._count[direction_name] += 1
+        self._route_ids_so_far[direction_name].add(trip_stop_time.trip.route.id)
+
+        return not (condition1 or condition2 or condition3)
+
+    def _add_direction_name(self, direction_name):
+        """
+        Add a direction name to the internal data structures.
+        """
+        if direction_name in self._count:
+            return
+        self._count[direction_name] = 0
+        self._route_ids_so_far[direction_name] = set()

@@ -14,10 +14,6 @@ Bugs:
     1. Document the API correctly
     1. Does the RTR app still work? Likely not!
 
-The task server:
-    
-    ./taskserver/server.py
-    ./taskserver/client.py
 
 The update modules:
 
@@ -39,7 +35,8 @@ Service. Do the endpoint after.
     ./services/tripservice.py (fix docs in the endpoint after)
 
 Data. would be nice to have the tests passing on SQLLite...?
-Also need to fix the bug on the SQL Alchemy upgrade
+Also need to fix the bug on the SQL Alchemy upgrade.
+ Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
 
     ./data/database.py (-> database/connection.py)
     ./data/fastoperations.py
@@ -51,6 +48,13 @@ Also need to fix the bug on the SQL Alchemy upgrade
     ./data/dams/feeddam.py
     ./data/dams/systemdam.py
 
+The task server:
+Can we run multi process and get around warnings about 123456?
+Workaround is to increase the refresh time
+
+    ./taskserver/server.py
+    ./taskserver/client.py
+    
 Models: mainly just safely renaming after we have close to 100% test coverage
 Also change how short_repr works
 
