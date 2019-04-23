@@ -1,10 +1,19 @@
+"""
+The stop service is used to retrieve information about stops.
+
+In terms of information retrieval, the get_in_system_by_id method is
+probably the most important in Transiter. It returns a significant amount
+of data, and this is reflected in the amount of code executed.
+"""
 import enum
+import itertools
 import time
 
 from transiter import exceptions
 from transiter.data import database
-from transiter.data.dams import stopdam, servicepatterndam, tripdam, systemdam
+from transiter.data.dams import stopdam, tripdam, systemdam
 from transiter.services import links
+from transiter.services.servicepattern import servicepatternmanager
 
 
 @database.unit_of_work
@@ -37,6 +46,7 @@ def get_in_system_by_id(
         system_id, stop_id, return_links=False, return_only_stations=True):
     """
     Get information about a specific stop.
+
     :param system_id: the system ID
     :param stop_id: the stop ID
     :param return_links: whether to return links
@@ -48,40 +58,27 @@ def get_in_system_by_id(
     if stop is None:
         raise exceptions.IdNotFoundError
 
-    # TODO
-    # load_stop_tree_stops(stop)
-
-    descendants = _get_stop_descendants(stop)
-    direction_name_rules = []
-    direction_name_rules.extend(stop.direction_name_rules)
-    for descendant in descendants:
-        direction_name_rules.extend(descendant.direction_name_rules)
-    direction_name_matcher = _DirectionNameMatcher(direction_name_rules)
-    all_stop_pks = {stop.pk}
-    all_stop_pks.update(stop.pk for stop in descendants)
-
-    total_stop_pks = [stop_pk for stop_pk in all_stop_pks]
-    total_stop_pks.extend([s.pk for s in _get_stop_ancestors(stop)])
-
-    # TODO: move this to servicemapmanager:
-    # Constructing the service map responses in a batch allows us to get
-    # away with one SQL query.
-    stop_pk_to_service_map_group_id_to_routes = (
-        servicepatterndam.get_stop_pk_to_group_id_to_routes_map(total_stop_pks)
+    # The descendant stops are used as the source of trip stop times
+    descendant_stops = _get_stop_descendants(stop)
+    direction_name_matcher = _DirectionNameMatcher(
+        itertools.chain.from_iterable(stop.direction_name_rules for stop in descendant_stops)
     )
-    stop_pk_to_service_maps_response = {}
-    for stop_pk in total_stop_pks:
-        group_id_to_routes = stop_pk_to_service_map_group_id_to_routes[stop_pk]
-        stop_pk_to_service_maps_response[stop_pk] = [
-            {
-                'group_id': group_id,
-                'routes': [
-                    route.short_repr() for route in routes
-                ]
-            }
-            for group_id, routes in group_id_to_routes.items()
-        ]
+    trip_stop_times = stopdam.list_stop_time_updates_at_stops(
+        stop.pk for stop in descendant_stops
+    )
+    trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
+        trip_stop_time.trip.pk for trip_stop_time in trip_stop_times
+    )
 
+    # On the other hand, the stop tree graph that is returned consists of all
+    # stations in the stop's tree
+    stop_pk_to_service_maps_response = (
+        servicepatternmanager.build_stop_pk_to_service_maps_response(
+            stop.pk for stop in _get_all_stations(stop)
+        )
+    )
+
+    # Using the data retrieved, we then build the response
     response = _build_stop_tree_response(
         stop, stop_pk_to_service_maps_response, return_links,
         return_only_stations)
@@ -89,38 +86,56 @@ def get_in_system_by_id(
         'direction_names': list(direction_name_matcher.all_names()),
         'stop_time_updates': []
     })
-
     stop_event_filter = _TripStopTimeFilter()
-    trip_stop_times = stopdam.list_stop_time_updates_at_stops(all_stop_pks)
-    trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
-        trip_stop_time.trip.pk for trip_stop_time in trip_stop_times
-    )
     for trip_stop_time in trip_stop_times:
         direction_name = direction_name_matcher.match(trip_stop_time)
         if stop_event_filter.exclude(trip_stop_time, direction_name):
             continue
-        trip = trip_stop_time.trip
-        last_stop = trip_pk_to_last_stop[trip.pk]
-        trip_stop_time_response = {
-            'stop_id': trip_stop_time.stop.id,
-            'direction_name': direction_name,
-            **trip_stop_time.short_repr(),
-            'trip': {
-                **trip_stop_time.trip.long_repr(),
-                'route': trip_stop_time.trip.route.short_repr(),
-                'last_stop': last_stop.short_repr(),
-            }
-        }
-        if return_links:
-            trip_stop_time_response['href'] = links.TripEntityLink(trip_stop_time.trip)
-            trip_stop_time_response['route']['href'] = links.RouteEntityLink(trip_stop_time.trip.route)
-            trip_stop_time_response['last_stop']['href'] = links.StopEntityLink(last_stop)
-        response['stop_time_updates'].append(trip_stop_time_response)
-
+        response['stop_time_updates'].append(
+            _build_trip_stop_time_response(
+                trip_stop_time,
+                direction_name,
+                trip_pk_to_last_stop,
+                return_links
+            )
+        )
     return response
 
 
+def _build_trip_stop_time_response(trip_stop_time, direction_name, trip_pk_to_last_stop, return_links):
+    """
+    Build the response for a specific trip stop time.
+
+    :param trip_stop_time: the trip stop time
+    :param direction_name: the direction name
+    :param trip_pk_to_last_stop: map giving the last stop of trips
+    :param return_links: whether to return links
+    :return:
+    """
+    trip = trip_stop_time.trip
+    last_stop = trip_pk_to_last_stop[trip.pk]
+    trip_stop_time_response = {
+        'stop_id': trip_stop_time.stop.id,
+        'direction_name': direction_name,
+        **trip_stop_time.short_repr(),
+        'trip': {
+            **trip_stop_time.trip.long_repr(),
+            'route': trip_stop_time.trip.route.short_repr(),
+            'last_stop': last_stop.short_repr(),
+        }
+    }
+    if return_links:
+        trip_stop_time_response['trip']['href'] = links.TripEntityLink(trip_stop_time.trip)
+        trip_stop_time_response['trip']['route']['href'] = links.RouteEntityLink(trip_stop_time.trip.route)
+        trip_stop_time_response['trip']['last_stop']['href'] = links.StopEntityLink(last_stop)
+    return trip_stop_time_response
+
+
 class _TraversalMode(enum.Enum):
+    """
+    Different ways in which the stop tree can be traversed starting from a
+    base node.
+    """
     DESCENDANTS = 4
     ALL = 5
 
@@ -314,9 +329,9 @@ class _DirectionNameMatcher:
         Initialize a new matcher.
 
         :param rules: the rules to be used in the matcher.
-        :type rules: list of DirectionNameRule models.
+        :type rules: iterable of DirectionNameRule models.
         """
-        self._rules = rules
+        self._rules = sorted(rules, key=lambda rule: rule.priority)
         self._cache = {}
 
     def all_names(self):

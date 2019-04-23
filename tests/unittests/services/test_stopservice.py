@@ -117,35 +117,28 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
     SYSTEM_ID = '1'
     STOP_ONE_ID = '2'
     STOP_ONE_PK = 3
-    STOP_ONE_REPR = {'stop_id': STOP_ONE_ID}
-    ALL_DIRECTION_NAMES = ['A', 'B']
-    STOP_ONE_HREF = '10'
-    TRIP_HREF = '11'
-    ROUTE_HREF = '12'
-    TRIP_REPR = {'21': '22'}
-    ROUTE_REPR = {'23': '24'}
-    STOP_EVENT_REPR = {'25': '26'}
-    DEFAULT_TRIPS = ['31', '32', '33']
+    TRIP_PK = 100
+    TRIP_ID = '101'
+    ROUTE_ID = '103'
+    STOP_TWO_ID = '102'
+    DIRECTION_NAME = 'Uptown'
+    TRIP_STOP_TIME_ONE_PK = 201
+    TRIP_STOP_TIME_TWO_PK = 202
 
     def setUp(self):
         self.stop_dao = self.mockImportedModule(stopservice.stopdam)
         self.systemdam = self.mockImportedModule(stopservice.systemdam)
         self.tripdam = self.mockImportedModule(stopservice.tripdam)
+        self.servicepatternmanager = self.mockImportedModule(stopservice.servicepatternmanager)
 
         self.stop_one = models.Stop()
         self.stop_one.pk = self.STOP_ONE_PK
         self.stop_one.id = self.STOP_ONE_ID
-        self.stop_dao.list_all_in_system.return_value = [
-            self.stop_one]
-
-        self.usual_routes = []
-        for route_id in self.DEFAULT_TRIPS:
-            route = models.Route()
-            route.id = route_id
-            self.usual_routes.append(route)
 
     def test_list_all_in_system(self):
         """[Stop service] List all in system"""
+        self.stop_dao.list_all_in_system.return_value = [self.stop_one]
+
         expected = [
             {
                 'href': links.StopEntityLink(self.stop_one),
@@ -175,6 +168,107 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
             exceptions.IdNotFoundError,
             lambda: stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)
         )
+
+    @mock.patch.object(stopservice, '_TripStopTimeFilter')
+    @mock.patch.object(stopservice, '_DirectionNameMatcher')
+    @mock.patch.object(stopservice, '_build_trip_stop_time_response')
+    @mock.patch.object(stopservice, '_build_stop_tree_response')
+    def test_get_in_system_by_id(self, _build_stop_tree_response,
+                                 _build_trip_stop_time_response,
+                                 _DirectionNameMatcher, _TripStopTimeFilter):
+        """[Stop service] Get stop"""
+
+        fake_stop_tree_response = {'id': self.STOP_ONE_ID}
+        fake_trip_stop_time_response = {'id': self.TRIP_ID}
+        fake_trip_pk_to_last_stop_map = mock.MagicMock()
+        fake_service_map_response_map = mock.MagicMock()
+
+        direction_name_matcher = mock.MagicMock()
+        _DirectionNameMatcher.return_value = direction_name_matcher
+        direction_name_matcher.match.return_value = self.DIRECTION_NAME
+        direction_name_matcher.all_names.return_value = [self.DIRECTION_NAME]
+
+        stop_time_filter = mock.MagicMock()
+        _TripStopTimeFilter.return_value = stop_time_filter
+        stop_time_filter.exclude = lambda x, __: x.pk == self.TRIP_STOP_TIME_ONE_PK
+
+        _build_stop_tree_response.return_value = fake_stop_tree_response
+        _build_trip_stop_time_response.return_value = fake_trip_stop_time_response
+
+        self.tripdam.get_trip_pk_to_last_stop_map.return_value = fake_trip_pk_to_last_stop_map
+        self.servicepatternmanager.build_stop_pk_to_service_maps_response = fake_service_map_response_map
+
+        stop_time_one = models.StopTimeUpdate()
+        stop_time_one.pk = self.TRIP_STOP_TIME_ONE_PK
+        stop_time_two = models.StopTimeUpdate()
+        stop_time_two.pk = self.TRIP_STOP_TIME_TWO_PK
+        self.stop_dao.list_stop_time_updates_at_stops.return_value = [
+            stop_time_one,
+            stop_time_two
+        ]
+
+        stop = self.stop_one
+        stop.child_stops = []
+        stop.parent_stop = None
+        self.stop_dao.get_in_system_by_id.return_value = stop
+
+        expected = {
+            **fake_stop_tree_response,
+            'direction_names': [self.DIRECTION_NAME],
+            'stop_time_updates': [
+                {
+                    **fake_trip_stop_time_response
+                }
+            ]
+        }
+
+        actual = stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)
+
+        self.assertDictEqual(expected, actual)
+
+    def test_build_trip_stop_time_response(self):
+        """[Stop service] Test build trip stop time response"""
+        stop = models.Stop()
+        stop.id = self.STOP_ONE_ID
+        trip = models.Trip()
+        trip.pk = self.TRIP_PK
+        trip.id = self.TRIP_ID
+        trip_stop_time = models.StopTimeUpdate()
+        trip_stop_time.trip = trip
+        trip_stop_time.stop = stop
+        route = models.Route()
+        route.id = self.ROUTE_ID
+        trip.route = route
+        last_stop = models.Stop()
+        last_stop.id = self.STOP_TWO_ID
+
+        expected = {
+            'stop_id': self.STOP_ONE_ID,
+            'direction_name': self.DIRECTION_NAME,
+            **trip_stop_time.short_repr(),
+            'trip': {
+                **trip.long_repr(),
+                'href': links.TripEntityLink(trip),
+                'route': {
+                    'href': links.RouteEntityLink(route),
+                    **route.short_repr()
+                },
+                'last_stop': {
+                    **last_stop.short_repr(),
+                    'href': links.StopEntityLink(last_stop)
+                }
+            }
+        }
+
+        actual = stopservice._build_trip_stop_time_response(
+            trip_stop_time,
+            self.DIRECTION_NAME,
+            {trip.pk: last_stop},
+            True
+        )
+
+        self.maxDiff = None
+        self.assertDictEqual(expected, actual)
 
     def test_build_stop_tree_response(self):
         """[Stop service] Build stop tree response"""

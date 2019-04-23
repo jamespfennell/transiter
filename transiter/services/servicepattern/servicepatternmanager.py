@@ -9,6 +9,26 @@ from transiter.data.dams import servicepatterndam, stopdam
 from transiter.services.servicepattern import graphutils
 
 
+def build_stop_pk_to_service_maps_response(stop_pks):
+    stop_pks = list(stop_pks)
+    stop_pk_to_service_map_group_id_to_routes = (
+        servicepatterndam.get_stop_pk_to_group_id_to_routes_map(stop_pks)
+    )
+    stop_pk_to_service_maps_response = {}
+    for stop_pk in stop_pks:
+        group_id_to_routes = stop_pk_to_service_map_group_id_to_routes[stop_pk]
+        stop_pk_to_service_maps_response[stop_pk] = [
+            {
+                'group_id': group_id,
+                'routes': [
+                    route.short_repr() for route in routes
+                ]
+            }
+            for group_id, routes in group_id_to_routes.items()
+        ]
+    return stop_pk_to_service_maps_response
+
+
 def calculate_realtime_service_maps_for_system(system, route_pks):
     """
     Blah
@@ -94,7 +114,6 @@ def calculate_scheduled_service_maps_for_system(system):
             service_map = _construct_service_map(final_paths)
             service_map.route_pk = route_pk
             service_map.group = service_map_group
-
 
 
 """
@@ -267,6 +286,7 @@ class _ScheduledTripMatcher:
                 if condition(trip):
                     return True
             return False
+
         return one_of
 
     @staticmethod
@@ -276,6 +296,7 @@ class _ScheduledTripMatcher:
                 if condition(trip):
                     return False
             return True
+
         return none_of
 
     @staticmethod
@@ -285,15 +306,16 @@ class _ScheduledTripMatcher:
                 if not condition(trip):
                     return False
             return True
+
         return all_of
 
     @staticmethod
     def order_factory(value, trip_attr, less_than=True):
         import math
         hour = int(math.floor(value))
-        value = (value - hour)*60
+        value = (value - hour) * 60
         minute = int(math.floor(value))
-        value = (value - minute)*60
+        value = (value - minute) * 60
         second = int(math.floor(value))
         t = datetime.time(hour=hour, minute=minute, second=second)
 
@@ -327,21 +349,17 @@ class _ScheduledTripMatcher:
     def weekday_factory(value):
         def weekday(trip):
             weekday_cond = (
-                trip.service.monday or
-                trip.service.tuesday or
-                trip.service.wednesday or
-                trip.service.thursday or
-                trip.service.friday
+                    trip.service.monday or
+                    trip.service.tuesday or
+                    trip.service.wednesday or
+                    trip.service.thursday or
+                    trip.service.friday
             )
             weekend_cond = not (trip.service.saturday or trip.service.sunday)
             return (weekday_cond and weekend_cond) == value
+
         return weekday
 
     @classmethod
     def weekend_factory(cls, value):
         return cls.weekday_factory(not value)
-
-
-
-
-
