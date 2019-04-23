@@ -31,12 +31,12 @@ Creation of service maps:
 
 Service. Do the endpoint after.
 
-    ./services/stopservice.py (fix docs in the endpoint after)
     ./services/tripservice.py (fix docs in the endpoint after)
 
 Data. would be nice to have the tests passing on SQLLite...?
 Also need to fix the bug on the SQL Alchemy upgrade.
  Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
+Return no iterators from the database layer
 
     ./data/database.py (-> database/connection.py)
     ./data/fastoperations.py

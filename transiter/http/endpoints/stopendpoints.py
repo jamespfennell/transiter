@@ -53,13 +53,15 @@ def get_in_system_by_id(system_id, stop_id):
 
         {
             "id": "L03",
-            "system_id": "nycsubway",
             "name": "Union Sq - 14 St",
-            "usual_routes": [
+            "service_maps": [
                 {
-                    "id": "L",
-                    "system_id": "nycsubway",
-                    "href": "https://demo.transiter.io/systems/nycsubway/routes/L"
+                    "group_id": "realtime",
+                    "routes": [
+                        {
+                            "id": "L"
+                        }
+                    ]
                 },
             ],
             "direction_names": [
@@ -84,41 +86,28 @@ def get_in_system_by_id(system_id, stop_id):
                         "vehicle_id": "0L 1516 8AV/RPY",
                         "route": {
                             "id": "L",
-                            "system_id": "nycsubway",
-                            "href": "https://demo.transiter.io/systems/nycsubway/routes/L"
                         },
                         "last_stop": {
                             "id": "L29S",
-                            "system_id": "nycsubway",
                             "name": "Canarsie - Rockaway Pkwy"
                         },
-                        "href": "https://demo.transiter.io/systems/nycsubway/routes/L/trips/LS1548015360"
                     }
                 }
             ],
             "child_stops": [
                 {
                     "id": "L03S",
-                    "system_id": "nycsubway",
                     "name": "Union Sq - 14 St",
-                    "usual_routes": [],
-                    "href": "https://demo.transiter.io/systems/nycsubway/stops/L03S",
                     "child_stops": []
                 },
             ],
             "parent_stop": {
                 "id": "635-L03-R20",
-                "system_id": "nycsubway",
                 "name": "14 St - Union Sq",
-                "usual_routes": [],
-                "href": "https://demo.transiter.io/systems/nycsubway/stops/635-L03-R20",
                 "child_stops": [
                     {
                         "id": "R20",
-                        "system_id": "nycsubway",
-                        "name": "14 St - Union Sq",
-                        "usual_routes": [],
-                        "href": "https://demo.transiter.io/systems/nycsubway/stops/R20"
+                        "name": "14 St - Union Sq"
                     },
                 ],
                 "parent_stop": null

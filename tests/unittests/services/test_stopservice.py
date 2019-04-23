@@ -29,11 +29,13 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.rule.name = self.DIRECTION_NAME
 
     def test_all_names(self):
+        """[Stop service] List all names in direction name matcher"""
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
         self.assertEqual({self.DIRECTION_NAME}, dnm.all_names())
 
     def test_no_matching_stop_pk(self):
+        """[Stop service] Direction matcher, no match"""
         self.rule.stop_pk = 2
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
@@ -42,6 +44,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.assertEqual(direction_name, None)
 
     def test_no_matching_direction_id(self):
+        """[Stop service] Direction matcher, no matching direction ID"""
         self.rule.direction_id = True
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
@@ -50,6 +53,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.assertEqual(direction_name, None)
 
     def test_no_matching_track(self):
+        """[Stop service] Direction matcher, no matching track"""
         self.rule.track = 'Track'
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
@@ -58,6 +62,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.assertEqual(direction_name, None)
 
     def test_match(self):
+        """[Stop service] Direction matcher, match"""
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
         direction_name = dnm.match(self.stop_event)
@@ -80,6 +85,7 @@ class TestTripStopTimeFilter(unittest.TestCase):
         self.stop_event.trip.route_id = self.ROUTE_ID
 
     def test_add_direction_name(self):
+        """[Stop service] Add direction name"""
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
 
         self.assertDictEqual(
@@ -92,6 +98,7 @@ class TestTripStopTimeFilter(unittest.TestCase):
         )
 
     def test_add_direction_name_already_added(self):
+        """[Stop service] Add direction name - already added"""
         self.stop_event_filter._count[self.DIRECTION_NAME] = 50
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
 
@@ -102,6 +109,7 @@ class TestTripStopTimeFilter(unittest.TestCase):
 
     @mock.patch.object(stopservice, 'time')
     def test_exclude_route_not_there_yet(self, time):
+        """[Stop service] Exclude route not there yet"""
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
         self.stop_event_filter._count[self.DIRECTION_NAME] = 100
         time.time.return_value = self.DATETIME_ONE.timestamp()
@@ -378,61 +386,3 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
 
             self.assertEqual(expected_pks, actual_pks)
 
-    @mock.patch('transiter.services.stopservice.servicepatterndam')
-    @mock.patch('transiter.services.stopservice._TripStopTimeFilter')
-    @mock.patch('transiter.services.stopservice._DirectionNameMatcher')
-    def _test_get_in_system_by_id(self, _DirectionNameMatcher, _StopEventFilter,
-                                  service_pattern_dao):
-        self.stop_one.parent_stop = None
-        self.stop_one.child_stops = []
-        self.stop_dao.get_in_system_by_id.return_value = self.stop_one
-        service_pattern_dao.get_default_routes_at_stops_map.return_value = {
-            self.STOP_ONE_PK: self.usual_routes
-        }
-
-        stop_event_one = mock.MagicMock()
-        stop_event_two = mock.MagicMock()
-        stop_event_two.stop = self.stop_one
-        stop_event_two.short_repr.return_value = self.STOP_EVENT_REPR
-        stop_event_two.trip.long_repr.return_value = self.TRIP_REPR
-        stop_event_two.trip.route.short_repr.return_value = self.ROUTE_REPR
-        self.stop_dao.list_stop_time_updates_at_stops.return_value = [stop_event_one, stop_event_two]
-
-        direction_name_matcher = mock.MagicMock()
-        _DirectionNameMatcher.return_value = direction_name_matcher
-        direction_name_matcher.all_names.return_value = self.ALL_DIRECTION_NAMES
-        direction_name_matcher.match.side_effect = self.ALL_DIRECTION_NAMES
-
-        stop_event_filter = mock.MagicMock()
-        _StopEventFilter.return_value = stop_event_filter
-        stop_event_filter.exclude.side_effect = [True, False]
-
-        expected_response = {
-            **self.STOP_ONE_REPR,
-            'usual_routes': self.DEFAULT_TRIPS,
-            'direction_names': self.ALL_DIRECTION_NAMES,
-            'stop_time_updates': [
-                {
-                    'direction_name': self.ALL_DIRECTION_NAMES[1],
-                    'stop_id': self.STOP_ONE_ID,
-                    **self.STOP_EVENT_REPR,
-                    'trip': {
-                        **self.TRIP_REPR,
-                        'route': {
-                            **self.ROUTE_REPR,
-                            'href': self.ROUTE_HREF
-                        },
-                        'last_stop': {'href': '10'},
-                        'href': self.TRIP_HREF
-                    }
-                }
-            ],
-            'child_stops': [],
-            'parent_stop': None
-        }
-
-        actual_response = stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)
-
-        print(expected_response)
-        print(actual_response)
-        self.assertDictEqual(expected_response, actual_response)

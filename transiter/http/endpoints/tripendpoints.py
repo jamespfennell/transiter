@@ -25,9 +25,7 @@ def list_all_in_route(system_id, route_id):
                 "id" : "LN1548014340",
                 "last_stop": {
                     "id": "L20",
-                    "system_id": "nycsubway",
                     "name": "Canarsie",
-                    "href": "https://demo.transiter.io/systems/nycsubway/routes/L/trips/LN1548014340"
                 }
             }
         ]
@@ -67,8 +65,6 @@ def get_in_route_by_id(system_id, route_id, trip_id):
             "vehicle_id": "0L 1459 RPY/8AV",
             "route": {
                 "id": "L",
-                "system_id": "nycsubway",
-                "href": "https://demo.transiter.io/systems/nycsubway/routes/L"
             },
             "stop_events": [
                 {
@@ -78,16 +74,14 @@ def get_in_route_by_id(system_id, route_id, trip_id):
                     "future": true,
                     "stop": {
                         "id": "L02N",
-                        "system_id": "nycsubway",
                         "name": "6 Av",
-                        "href": "https://demo.transiter.io/systems/nycsubway/stops/L02N"
                     }
                 },
             ],
         }
 
     Note that the stop event item here is the same as the stop event
-    in a stop response, except stop database is returned instead of
-    trip database.
+    in a stop response, except stop data is returned instead of
+    trip data.
     """
     return tripservice.get_in_route_by_id(system_id, route_id, trip_id)

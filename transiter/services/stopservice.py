@@ -306,18 +306,6 @@ def _get_all_stations(base):
     )
 
 
-def _get_stop_ancestors(stop):
-    if stop.parent_stop is None:
-        return []
-    ancestors = [stop.parent_stop]
-    for child_stop in stop.parent_stop.child_stops:
-        if stop.id == child_stop.id:
-            continue
-        ancestors.append(child_stop)
-    ancestors.extend(_get_stop_ancestors(stop.parent_stop))
-    return ancestors
-
-
 class _DirectionNameMatcher:
     """
     Object to find the direction name associated to a particular trip at

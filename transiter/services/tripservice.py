@@ -1,26 +1,23 @@
-from transiter.data import database
-from transiter.data.dams import tripdam
 from transiter import exceptions
+from transiter.data import database
+from transiter.data.dams import tripdam, routedam
 from transiter.services import links
 
 
 @database.unit_of_work
-def list_all_in_route(system_id, route_id):
+def list_all_in_route(system_id, route_id, return_links=False):
     """
     Get representations for all trips in a system.
+
     :param system_id: the text id of the system
     :param route_id: the route id of the system
+    :param return_links: whether to return links
     :return: a list of short model.Trip representations.
-
-    .. code-block:: json
-
-        [
-            {
-                <fields in a short model.Trip representation>,
-            }
-        ]
-
     """
+    route = routedam.get_in_system_by_id(system_id, route_id)
+    if route is None:
+        raise exceptions.IdNotFoundError
+
     response = []
     trips = list(tripdam.list_all_in_route(system_id, route_id))
     trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
@@ -30,62 +27,41 @@ def list_all_in_route(system_id, route_id):
         last_stop = trip_pk_to_last_stop.get(trip.pk)
         trip_response = {
             **trip.short_repr(),
-            "last_stop": {
-                **last_stop.short_repr(),
-                'parent_stop': {
-                    **last_stop.parent_stop.short_repr()
-                },
-                'href': links.StopEntityLink(last_stop)
-            },
-            'href': links.TripEntityLink(trip),
+            "last_stop": last_stop.short_repr()
         }
+        if return_links:
+            trip_response['href'] = links.TripEntityLink(trip)
+            trip_response['last_stop']['href'] = links.StopEntityLink(last_stop)
         response.append(trip_response)
     return response
 
 
 @database.unit_of_work
-def get_in_route_by_id(system_id, route_id, trip_id):
+def get_in_route_by_id(system_id, route_id, trip_id, return_links=False):
     """
     Get a representation for a trip in a system
+
     :param system_id: the text id of the system
     :param route_id: the text id of the route
     :param trip_id: the text id of the route
-    :return: a long model.Trip representation with an additional field
-    'stop_events' containing a list of short model.StopEvent representations.
-    Each of the model.StopEvent representations contains an additional field
-    'stop' containing a short representation of the associated model.Stop.
-    {
-        <fields in a long model.Trip representation>,
-        'stop_events': [
-            {
-                <fields in a short model.StopEvent representation>
-                'stop': {
-                    <fields in a short model.Stop representation>
-                }
-            }
-        ]
+    :param return_links: whether to return links
     """
     trip = tripdam.get_in_route_by_id(system_id, route_id, trip_id)
     if trip is None:
         raise exceptions.IdNotFoundError
     trip_response = {
         **trip.long_repr(),
-        'route': {
-            **trip.route.short_repr(),
-            'href': links.RouteEntityLink(trip.route)
-        },
-        'stop_time_updates': [
-            {
-                **stu.short_repr(),
-                'stop': {
-                    **stu.stop.short_repr(),
-                    'parent_stop': {
-                        **stu.stop.parent_stop.short_repr(),
-                    },
-                    'href': links.StopEntityLink(stu.stop)
-                }
-            }
-            for stu in trip.stop_events
-        ],
+        'route': trip.route.short_repr(),
+        'stop_time_updates': []
     }
+    if return_links:
+        trip_response['route']['href'] = links.RouteEntityLink(trip.route)
+    for stu in trip.stop_events:
+        stop_time_response = {
+            **stu.short_repr(),
+            'stop': stu.stop.short_repr(),
+        }
+        if return_links:
+            stop_time_response['stop']['href'] = links.StopEntityLink(stu.stop)
+        trip_response['stop_time_updates'].append(stop_time_response)
     return trip_response
