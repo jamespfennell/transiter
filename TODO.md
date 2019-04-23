@@ -17,7 +17,6 @@ Bugs:
 
 The update modules:
 
-    ./services/update/routestatusupdater.py (rename alertupdater.py)
     ./services/update/gtfsstaticutil.py
     ./services/update/gtfsrealtimeutil.py
     ./services/update/tripupdater.py
@@ -29,14 +28,10 @@ Creation of service maps:
     ./services/servicepattern/graphutils/graphdatastructs.py
     ./services/servicepattern/servicepatternmanager.py
 
-Service. Do the endpoint after.
-
-    ./services/tripservice.py (fix docs in the endpoint after)
-
 Data. would be nice to have the tests passing on SQLLite...?
 Also need to fix the bug on the SQL Alchemy upgrade.
  Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
-Return no iterators from the database layer
+***Return no iterators from the database layer***
 
     ./data/database.py (-> database/connection.py)
     ./data/fastoperations.py
@@ -63,10 +58,10 @@ Also change how short_repr works
     ./models/servicepatternvertex.py
     ./models/servicepattern.py
     ./models/servicepatternedge.py
-    ./models/stoptimeupdate.py
-    ./models/routestatus.py
+    ./models/stoptimeupdate.py (-> tripstoptime.py)
+    ./models/routestatus.py (-> alert.py)
     ./models/feedupdate.py
-    ./models/scheduledservice.py
+    ./models/scheduledservice.py 
     ./models/route.py
     ./models/stop.py
     ./models/trip.py

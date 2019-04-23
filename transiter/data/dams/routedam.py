@@ -116,9 +116,10 @@ def list_all_route_statuses_in_system(system_id):
         .join(models.System)
         .filter(models.System.id == system_id)
     )
+    l = []
     for row in query:
-        yield row
-
+        l.append(row)
+    return l
 
 def list_route_statuses(route_pks):
     """
