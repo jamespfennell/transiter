@@ -17,13 +17,13 @@ Bugs:
 
 The update modules:
 
+    ./services/update/tripupdater.py <- just unit tests
     ./services/update/gtfsstaticutil.py
     ./services/update/gtfsrealtimeutil.py
-    ./services/update/tripupdater.py
     ./services/update/updatemanager.py
-    ./services/update/syncutil.py <- nuke it
 
 Creation of service maps:
+rename to servicemaps
 
     ./services/servicepattern/graphutils/pathstitcher.py
     ./services/servicepattern/graphutils/graphdatastructs.py
@@ -34,7 +34,7 @@ Also need to fix the bug on the SQL Alchemy upgrade.
  Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
 ***Return no iterators from the database layer***
 
-    ./data/database.py (-> database/connection.py)
+    ./data/database.py (-> database/connection.py?)
     ./data/fastoperations.py
     ./data/dams/tripdam.py
     ./data/dams/servicepatterndam.py

@@ -66,7 +66,7 @@ class TripDataCleaner:
 
 def sync_trips(system, trips, route_ids=None):
     """
-    Synchronize the trips in a given set of routes within a system.
+    Synchronize the trips in xa given set of routes within a system.
 
     Before merging the feed trips into the database, two pre-processing actions occur:
 
@@ -82,26 +82,24 @@ def sync_trips(system, trips, route_ids=None):
     :param route_ids: list of route IDs for the trips
     """
 
-    route_id_to_route = {
-        route.id: route for route in system.routes
-    }
     if route_ids is None:
-        route_ids = route_id_to_route.keys()
-    route_id_to_trips = {
-        route_id: [] for route_id in route_ids
-    }
+        route_id_to_route = {route.id: route for route in system.routes}
+    else:
+        route_id_to_route = {
+            route.id: route for route in system.routes if route.id in route_ids
+        }
+    route_id_to_trips = {route_id: [] for route_id in route_id_to_route}
+
     all_stop_ids = set()
     for trip in trips:
-        if trip.route_id not in route_ids:
+        if trip.route_id not in route_id_to_route:
             continue
         route_id_to_trips[trip.route_id].append(trip)
         all_stop_ids.update(stop_time.stop_id for stop_time in trip.stop_events)
     stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id, all_stop_ids)
 
     for route_id, route_trips in route_id_to_trips.items():
-        route = route_id_to_route.get(route_id, None)
-        if route is None:
-            continue
+        route = route_id_to_route[route_id]
         trip_maps_changed = _sync_trips_in_route(route, route_trips, stop_id_to_pk)
         if trip_maps_changed:
             servicepatternmanager.calculate_realtime_service_map_for_route(route)
@@ -146,7 +144,8 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
                 if stop_time.stop_sequence >= first_future_stop_sequence:
                     continue
                 feed_stop_times.append(
-                    models.StopTimeUpdate(pk=stop_time.pk, future=False)
+                    models.StopTimeUpdate(
+                        pk=stop_time.pk, stop_pk=stop_time.stop_pk, future=False)
                 )
 
         for feed_stop_time in feed_trip.stop_events:
@@ -169,4 +168,6 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
 
     session = database.get_session()
     session.merge(feed_route)
-    return len(existing_trip_maps ^ feed_trip_maps) == 0
+    print(existing_trip_maps)
+    print(feed_trip_maps)
+    return len(existing_trip_maps ^ feed_trip_maps) != 0

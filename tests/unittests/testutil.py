@@ -1,12 +1,23 @@
 import inspect
 import unittest
 import unittest.mock as mock
+from typing import Type
 
 from nose.tools import nottest
 
 
+# NOTE: this is simply to help PyCharm with code completion
+class _TestCaseTemplate(unittest.TestCase):
+
+    def mockModuleAttribute(self, attribute_name):
+        pass
+
+    def mockImportedModule(self, imported_module):
+        pass
+
+
 @nottest
-def TestCase(module):
+def TestCase(module) -> Type[_TestCaseTemplate]:
     class ActualTestCase(unittest.TestCase):
 
         _importModuleDictCache = None
