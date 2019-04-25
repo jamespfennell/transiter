@@ -1,3 +1,26 @@
+"""
+The update manager contains the algorithm for executing feed updates.
+
+This algorithm performs the following steps in order:
+
+(1) Attempt to get the parser for the Feed - either the built in parser or
+    the custom parser. If this fails the update fails with explanation
+    INVALID_PARSER.
+
+(2) Attempt to download the data from the URL specified in the Feed. If this
+    fails the update fails with explanation DOWNLOAD_ERROR.
+
+(3) Calculate the hash of the downloaded data and compare it to the data
+    used for the last successful FeedUpdate for this Feed. If they match,
+    the update succeeds with explanation NOT_NEEDED.
+
+(4) Perform the actual parsing using the Feed's parser. If any exception is
+    raised by the parser then the update is failed with explanation
+    PARSE_ERROR.
+
+(5) If no exception is raised by the parser then the update is deemed to be
+    successful with explanation UPDATED.
+"""
 import hashlib
 import importlib
 import logging
@@ -5,6 +28,7 @@ import time
 import traceback
 
 import requests
+from requests import RequestException
 
 from transiter import models
 from transiter.data.dams import feeddam
@@ -13,15 +37,16 @@ from . import gtfsrealtimeutil, gtfsstaticutil
 logger = logging.getLogger(__name__)
 
 
-class InvalidParser(ValueError):
-    pass
-
-
-class DownloadError(Exception):
-    pass
-
-
 def execute_feed_update(feed_update, content=None):
+    """
+    Execute a feed update with logging and timing.
+
+    For a description of what feed updates involve consult the module docs.
+
+    :param feed_update: the feed update
+    :param content: binary data to use for the update instead of downloading
+                    data
+    """
     start_time = time.time()
     _execute_feed_update_helper(feed_update, content)
     feed_update.execution_duration = time.time() - start_time
@@ -37,13 +62,27 @@ def execute_feed_update(feed_update, content=None):
     )
 
 
+class _InvalidParser(ValueError):
+    """Exception raised when the Feed's parser is invalid."""
+    pass
+
+
 def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
+    """
+    Execute a feed update.
+
+    For a description of what feed updates involve consult the module docs.
+
+    :param feed_update: the feed update
+    :param content: binary data to use for the update instead of downloading
+                    data
+    """
     feed = feed_update.feed
     feed_update.status = feed_update.Status.IN_PROGRESS
 
     try:
         parser = _get_parser(feed)
-    except InvalidParser as invalid_parser:
+    except _InvalidParser as invalid_parser:
         feed_update.status = feed_update.Status.FAILURE
         feed_update.explanation = feed_update.Explanation.INVALID_PARSER
         feed_update.failure_message = str(invalid_parser)
@@ -52,7 +91,7 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
     if content is None:
         try:
             content = _get_content(feed)
-        except requests.RequestException as download_error:
+        except RequestException as download_error:
             feed_update.status = feed_update.Status.FAILURE
             feed_update.explanation = feed_update.Explanation.DOWNLOAD_ERROR
             feed_update.failure_message = str(download_error)
@@ -81,7 +120,7 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
     feed_update.status = feed_update.Status.SUCCESS
     feed_update.explanation = feed_update.Explanation.UPDATED
 
-# TODO: test that this is populated for all built in parsers
+
 _built_in_parser_to_function = {
     models.Feed.BuiltInParser.GTFS_STATIC: gtfsstaticutil.parse_gtfs_static,
     models.Feed.BuiltInParser.GTFS_REALTIME: gtfsrealtimeutil.gtfs_realtime_parser
@@ -89,6 +128,13 @@ _built_in_parser_to_function = {
 
 
 def _get_parser(feed: models.Feed):
+    """
+    Get the parser for a feed.
+
+    :param feed: the feed
+    :return: the parser
+    :rtype: func
+    """
     if feed.built_in_parser is not None:
         return _built_in_parser_to_function[feed.built_in_parser]
 
@@ -96,7 +142,7 @@ def _get_parser(feed: models.Feed):
 
     colon_char = parser_str.find(':')
     if colon_char == -1:
-        raise InvalidParser(
+        raise _InvalidParser(
             'Custom parser specifier must be of the form module:method'
         )
     module_str = parser_str[:colon_char]
@@ -105,32 +151,55 @@ def _get_parser(feed: models.Feed):
     try:
         module = _import_module(module_str)
     except ModuleNotFoundError:
-        raise InvalidParser('Unknown module \'{}\''.format(module_str))
+        raise _InvalidParser('Unknown module \'{}\''.format(module_str))
 
     try:
         return getattr(module, method_str)
     except AttributeError:
-        raise InvalidParser('Module \'{}\' has no method \'{}\'.'.format(
+        raise _InvalidParser('Module \'{}\' has no method \'{}\'.'.format(
             module_str, method_str))
 
 
-def _import_module(module_str, invalidate_caches=False):
+def _import_module(module_str, invalidate_caches=True):
+    """
+    Import a module.
+
+    With invalidate caches True, if the import fails caches will be invalidated
+    and the import attempted once more. Otherwise only one attempt is made.
+
+    :param module_str: the module's name
+    :param invalidate_caches: described above
+    :return: the module
+    """
     try:
         return importlib.import_module(module_str)
     except ModuleNotFoundError:
         if invalidate_caches:
-            return _import_module(module_str, invalidate_caches=True)
+            importlib.invalidate_caches()
+            return _import_module(module_str, invalidate_caches=False)
         else:
             raise
 
 
-def _get_content(feed):
+def _get_content(feed: models.Feed):
+    """
+    Download data from the Feed's URL.
+
+    :param feed: the Feed
+    :return: binary data
+    """
     request = requests.get(feed.url)
     request.raise_for_status()
     return request.content
 
 
 def _calculate_content_hash(content):
+    """
+    Calculate the MD5 hash of binary data.
+
+    :param content: binary data
+    :return: MD5 hash
+    """
     m = hashlib.md5()
     m.update(content)
     return m.hexdigest()
