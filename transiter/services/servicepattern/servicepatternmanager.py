@@ -28,6 +28,8 @@ def build_stop_pk_to_service_maps_response(stop_pks):
         ]
     return stop_pk_to_service_maps_response
 
+def calculate_realtime_service_map_for_route(route):
+    pass
 
 def calculate_realtime_service_maps_for_system(system, route_pks):
     """

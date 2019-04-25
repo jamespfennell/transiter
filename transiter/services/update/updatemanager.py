@@ -166,7 +166,7 @@ def _gtfs_realtime_parser(feed, content):
     gtfs_data = gtfsrealtimeutil.read_gtfs_realtime(content)
     (__, __, trips) = gtfsrealtimeutil.transform_to_transiter_structure(
         gtfs_data, 'America/New_York')
-    tripupdater.sync_trips(feed.system, None, trips)
+    tripupdater.sync_trips(feed.system, trips)
 
 
 

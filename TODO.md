@@ -21,6 +21,7 @@ The update modules:
     ./services/update/gtfsrealtimeutil.py
     ./services/update/tripupdater.py
     ./services/update/updatemanager.py
+    ./services/update/syncutil.py <- nuke it
 
 Creation of service maps:
 
@@ -52,6 +53,7 @@ Workaround is to increase the refresh time
     
 Models: mainly just safely renaming after we have close to 100% test coverage
 Also change how short_repr works
+add string repr?
 
     ./models/servicemapgroup.py
     ./models/system.py

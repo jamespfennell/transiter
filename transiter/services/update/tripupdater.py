@@ -1,17 +1,50 @@
-from transiter.data.dams import routedam, stopdam, tripdam
-from transiter.data import database, syncutil
+"""
+The trip updater is used to synchronize Trips constructed from data feeds
+such as GTFS Realtime with Trips in the database. It also contains a Trip
+cleaning utility.
+"""
 from transiter import models
-import warnings
-
+from transiter.data import database
+from transiter.data.dams import stopdam, tripdam
 from transiter.services.servicepattern import servicepatternmanager
 
-class TripDataCleaner:
 
-    def __init__(self, trip_cleaners, stu_cleaners):
+class TripDataCleaner:
+    """
+    The TripDataCleaner provides a mechanism for cleaning valid and removing
+    invalid Trips and TripStopTimes.
+
+    To use the TripDataCleaner, you must provide a number of cleaning functions.
+    Trip cleaning functions accept a single argument, the Trip being cleaned,
+    and perform some operations to clean up the trip - for example, switching
+    the direction of Trips in a given route to compensate for a known bug in a
+    Transit agency's data feed. If the cleaner returns
+    False, then that Trip is removed from the collection. TripStopTime cleaners
+    work identically.
+
+    After initializing the cleaner with cleaning functions, a list of Trips
+    is passed into its clean method. The cleaners operate on all of the Trips
+    and their contained TripStopTimes, remove entities based on cleaner function
+    results, and returns the list of cleaned trips.
+    """
+
+    def __init__(self, trip_cleaners, stop_time_cleaners):
+        """
+        Initialize a new TripDataCleaner
+
+        :param trip_cleaners: list of Trip cleaning functions
+        :param stop_time_cleaners: list of TripStopTime cleaning functions
+        """
         self._trip_cleaners = trip_cleaners
-        self._stu_cleaners = stu_cleaners
+        self._stop_time_cleaners = stop_time_cleaners
 
     def clean(self, trips):
+        """
+        Clean a collection of trips.
+
+        :param trips: the trips to clean
+        :return: the cleaned trips with bad trips removed
+        """
         trips_to_keep = []
         for trip in trips:
             result = True
@@ -23,131 +56,117 @@ class TripDataCleaner:
                 continue
 
             for stop_time_update in trip.stop_events:
-                for stu_cleaner in self._stu_cleaners:
-                    stu_cleaner(stop_time_update)
+                for stop_time_cleaner in self._stop_time_cleaners:
+                    stop_time_cleaner(stop_time_update)
 
             trips_to_keep.append(trip)
 
         return trips_to_keep
 
-import time
 
-def sync_trips(system, route_ids, trips):
+def sync_trips(system, trips, route_ids=None):
+    """
+    Synchronize the trips in a given set of routes within a system.
 
+    Before merging the feed trips into the database, two pre-processing actions occur:
+
+    (1) TripStopTimes with invalid stop_ids are removed from the trip.
+
+    (2) For Trips that already exist in the database, the TripStopTimes from the past
+        are not deleted but instead marked as past. A TripStopTime is deemed to
+        be in the past if its stop_sequence is less that the stop_sequence of the
+        first TripStopTime in the feed trip.
+
+    :param system: the system
+    :param trips: list of Trips
+    :param route_ids: list of route IDs for the trips
+    """
+
+    route_id_to_route = {
+        route.id: route for route in system.routes
+    }
     if route_ids is None:
-        # TODO: make more efficient, perhaps make the dao method
-        # get_id_to_pk_map 2nd arg optional
-        route_id_to_pk = {
-            route.id: route.pk for route in routedam.list_all_in_system(system.id)
-        }
-    else:
-        route_id_to_pk = routedam.get_id_to_pk_map_in_system(system.id, route_ids)
-    route_pk_to_trips_dict = {route_pk: {} for route_pk in route_id_to_pk.values()}
+        route_ids = route_id_to_route.keys()
+    route_id_to_trips = {
+        route_id: [] for route_id in route_ids
+    }
     all_stop_ids = set()
     for trip in trips:
-        route_pk = route_id_to_pk.get(trip.route_id, None)
-        if route_pk is None:
+        if trip.route_id not in route_ids:
             continue
-        route_pk_to_trips_dict[route_pk][trip.id] = trip
-        for stu in trip.stop_events:
-            all_stop_ids.add(stu.stop_id)
-
+        route_id_to_trips[trip.route_id].append(trip)
+        all_stop_ids.update(stop_time.stop_id for stop_time in trip.stop_events)
     stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id, all_stop_ids)
-    index = 0
-    for route_pk, trips_dict in route_pk_to_trips_dict.items():
-        index += 1
-        sync_trips_in_route(route_pk, trips_dict.values(), stop_id_to_pk)
 
-    servicepatternmanager.calculate_realtime_service_maps_for_system(
-        system, route_id_to_pk.values()
+    for route_id, route_trips in route_id_to_trips.items():
+        route = route_id_to_route.get(route_id, None)
+        if route is None:
+            continue
+        trip_maps_changed = _sync_trips_in_route(route, route_trips, stop_id_to_pk)
+        if trip_maps_changed:
+            servicepatternmanager.calculate_realtime_service_map_for_route(route)
+
+
+def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
+    """
+    Synchronize the trips in a route given in a feed for with those in the database.
+
+    The method additionally calculates whether the set of trip maps has
+    changed because of the merge.
+
+    :param route: the persisted Route
+    :param feed_trips: a list of un-persisted Trips
+    :param stop_id_to_pk: a map from stop_id to stop_pk for stop_ids that are
+            deemed valid
+    :return: boolean, whether the set of trip maps has changed.
+    """
+    feed_route = models.Route(pk=route.pk)
+    feed_route.trips = []
+
+    trip_id_to_trip = {
+        trip.id: trip for trip in tripdam.list_all_in_route_by_pk(route.pk)
+    }
+    existing_trip_maps = set(
+        tuple(stop_time.stop_pk for stop_time in trip.stop_events)
+        for trip in trip_id_to_trip.values()
     )
+    feed_trip_maps = set()
 
-# This method essentially performs a session.merge operation
-# on the Trips. There are two considerations which require additional logic:
-#
-# - SQL Alchemy merges by identifying Trips with the same pk. In the GTFS only
-#   world there are no (globally unique) pks, only (route specific
-#   unique) ids. So we first, for every Trip, have to find
-#   the pk corresponding to that trip in the DB, if it exists.
-#
-# - We want to merge in the StopTimeUpdates as well, but we want to keep
-#   historical StopTimeUpdates and mark them as passed. After we merge in a Trip
-#   its new StopTimeUpdates will be merged in, via the cascade; we then have
-#   to manually put the historical StopTimeUpdates back in.
-def sync_trips_in_route(route_pk, trips, stop_id_to_pk):
-    for trip in trips:
-        for stu in trip.stop_events:
-            print(trip.id, stu.stop_pk, stu.arrival_time)
-            stu.stop_pk = stop_id_to_pk.get(stu.stop_id, None)
+    for feed_trip in feed_trips:
+        if len(feed_trip.stop_events) == 0:
+            continue
+        first_future_stop_sequence = feed_trip.stop_events[0].stop_sequence
+        feed_stop_times = []
+        trip = trip_id_to_trip.get(feed_trip.id, None)
+        stop_sequence_to_stop_time_pk = {}
+        if trip is not None:
+            feed_trip.pk = trip.pk
+            for stop_time in trip.stop_events:
+                stop_sequence_to_stop_time_pk[stop_time.stop_sequence] = stop_time.pk
+                if stop_time.stop_sequence >= first_future_stop_sequence:
+                    continue
+                feed_stop_times.append(
+                    models.StopTimeUpdate(pk=stop_time.pk, future=False)
+                )
 
-    existing_trips = list(tripdam.list_all_in_route_by_pk(route_pk))
-    (old_trips, updated_trip_tuples, new_trips) = syncutil.copy_pks(
-        existing_trips, trips, ('id', ))
+        for feed_stop_time in feed_trip.stop_events:
+            stop_pk = stop_id_to_pk.get(feed_stop_time.stop_id, None)
+            if stop_pk is None:
+                continue
+            feed_stop_time.stop_pk = stop_pk
+            stop_time_pk = stop_sequence_to_stop_time_pk.get(
+                feed_stop_time.stop_sequence, None)
+            if stop_time_pk is not None:
+                feed_stop_time.pk = stop_time_pk
+
+            feed_stop_times.append(feed_stop_time)
+
+        feed_trip.stop_events = feed_stop_times
+        feed_route.trips.append(feed_trip)
+        feed_trip_maps.add(
+            tuple(stop_time.stop_pk for stop_time in feed_trip.stop_events)
+        )
 
     session = database.get_session()
-    for updated_trip, existing_trip in updated_trip_tuples:
-
-        index = 0
-        for existing_stu in existing_trip.stop_events:
-            if existing_stu.stop_sequence >= updated_trip.current_stop_sequence:
-                break
-            existing_stu.future = False
-            index += 1
-        existing_future_stus = existing_trip.stop_events[index:]
-
-        updated_future_stus = []
-        for stu in updated_trip.stop_events:
-            if stu.stop_pk is not None:
-                updated_future_stus.append(stu)
-        (old_stus, updated_stu_tuples, new_stus) = syncutil.copy_pks(
-            existing_future_stus, updated_future_stus, ('stop_sequence', ))
-
-        for new_stu in new_stus:
-            if new_stu.stop_pk is None:
-                continue
-            # NOTE: because of a sql alchemy bug, doing this will emit a warning
-            # https://github.com/sqlalchemy/sqlalchemy/issues/4491
-            new_stu.trip_pk = existing_trip.pk
-            session.add(new_stu)
-            """
-            # Because of SQL alchemy bugs and crazy behaviour around relationships,
-            # we just create a new STU with no existing trip and write to that.
-            real_new_stu = models.StopTimeUpdate()
-            session.add(real_new_stu)
-            real_new_stu.trip_pk = existing_trip.pk
-            real_new_stu.stop_sequence = new_stu.stop_sequence
-            updated_stu_tuples.append((new_stu, real_new_stu))
-            """
-
-        for (updated_stu, existing_stu) in updated_stu_tuples:
-            # The following manual code is meant as a speed-up to session.merge
-            existing_stu.arrival_time = updated_stu.arrival_time
-            existing_stu.departure_time = updated_stu.departure_time
-            existing_stu.track = updated_stu.track
-            existing_stu.future = True
-            existing_stu.last_update_time = updated_stu.last_update_time
-            existing_stu.stop_pk = updated_stu.stop_pk
-
-        for old_stu in old_stus:
-            session.delete(old_stu)
-
-        existing_trip.route_pk = route_pk
-        existing_trip.start_time = updated_trip.start_time
-        existing_trip.direction_id = updated_trip.direction_id
-        existing_trip.vehicle_id = updated_trip.vehicle_id
-        existing_trip.current_status = updated_trip.current_status
-        existing_trip.current_stop_sequence = updated_trip.current_stop_sequence
-
-    for old_trip in old_trips:
-        session.delete(old_trip)
-
-    for new_trip in new_trips:
-        new_trip.route_pk = route_pk
-        session.add(new_trip)
-        # NOTE: because of a sql alchemy bug, doing this will emit a warning
-        # https://github.com/sqlalchemy/sqlalchemy/issues/4491
-        for stu in new_trip.stop_events:
-            if stu.stop_pk is not None:
-                session.add(stu)
-
-
+    session.merge(feed_route)
+    return len(existing_trip_maps ^ feed_trip_maps) == 0

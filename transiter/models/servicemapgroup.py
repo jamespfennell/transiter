@@ -11,6 +11,7 @@ class ServiceMapGroup(Base):
     id = Column(String, nullable=False)
     system_pk = Column(Integer, ForeignKey('system.pk'), nullable=False)
 
+    # TODO: Enum
     source = Column(String, nullable=False)
     conditions = Column(String)
     # TODO: add defaults to all of these: 0, False, False

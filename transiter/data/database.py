@@ -103,6 +103,7 @@ def close_db_connection():
 
 
 # TODO: fail hard if not in a UOW context
+# TODO Leave note explaining why this is thread safe
 def get_session():
     global Session
     return Session()
@@ -127,6 +128,7 @@ def unit_of_work(func, *args, **kw):
         raise
     finally:
         #logger.debug('Closing unit of work session {}'.format(session))
+        # TODO?????
         Session.remove()
 
     return result

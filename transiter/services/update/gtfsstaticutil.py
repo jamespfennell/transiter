@@ -95,7 +95,8 @@ class GtfsStaticParser:
                 stop.is_station = True
                 stop.parent_stop_id = None
                 self.stop_id_to_stop[stop.id] = stop
-            if row['location_type'] != '0':
+            # TODO: the spirit was right, the implementation wrong
+            if row['location_type'] == '1':
                 continue
             stop.is_station = False
             stop.parent_stop_id = row.get('parent_station', None)

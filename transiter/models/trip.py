@@ -31,7 +31,7 @@ class Trip(Base):
         'StopTimeUpdate',
         back_populates='trip',
         order_by='StopTimeUpdate.stop_sequence',
-        cascade='delete, delete-orphan',
+        cascade='all, delete-orphan',
         cascade_backrefs=False
     )
 
