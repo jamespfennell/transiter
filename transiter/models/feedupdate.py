@@ -1,6 +1,6 @@
-import time
+import enum
 
-from sqlalchemy import Column, TIMESTAMP, Index, Float, Integer, String, ForeignKey
+from sqlalchemy import Column, TIMESTAMP, Index, Float, Enum, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import functions as sql_functions
 
@@ -13,8 +13,21 @@ class FeedUpdate(Base):
     pk = Column(Integer, primary_key=True)
     feed_pk = Column(Integer, ForeignKey('feed.pk'))
 
-    status = Column(String)
-    explanation = Column(String)
+    class Status(enum.Enum):
+        SCHEDULED = 1
+        IN_PROGRESS = 2
+        SUCCESS = 3
+        FAILURE = 4
+
+    class Explanation(enum.Enum):
+        UPDATED = 1
+        NOT_NEEDED = 2
+        PARSE_ERROR = 3
+        DOWNLOAD_ERROR = 4
+        INVALID_PARSER = 5
+
+    status = Column(Enum(Status))
+    explanation = Column(Enum(Explanation))
     failure_message = Column(String)
     raw_data_hash = Column(String)
     execution_duration = Column(Float)
@@ -34,7 +47,7 @@ class FeedUpdate(Base):
 
     def __init__(self, feed):
         self.feed = feed
-        self.status = 'SCHEDULED'
+        self.status = self.Status.SCHEDULED
 
 
 Index('feed_updates_last_successful_idx',

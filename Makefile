@@ -1,7 +1,7 @@
 .PHONY: docs test
 
 integration-tests:
-	cd tests/integrationtest; python setup.py develop; make test
+	cd tests/integrationtest; make test
 
 unit-tests:
 	rm -f .coverage

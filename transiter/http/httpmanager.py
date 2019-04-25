@@ -278,6 +278,9 @@ def _transiter_json_serializer(obj):
     if isinstance(obj, (datetime, date)):
         return obj.timestamp()
 
+    if isinstance(obj, enum.Enum):
+        return obj.name
+
     if isinstance(obj, links.Link):
         target = _link_type_to_target[type(obj)]
         return flask.url_for(target, _external=True, **obj.kwargs)

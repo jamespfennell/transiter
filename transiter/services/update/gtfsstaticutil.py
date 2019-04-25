@@ -1,14 +1,116 @@
-import csv
 import os
-# Mode: GTFS stations are Transiter stops
-
-from transiter import models
-from transiter.models import Route, Stop
-
 from io import BytesIO
 from zipfile import ZipFile
+
+from transiter import models
+from transiter.data import database
+from transiter.data.dams import routedam, stopdam
+from transiter.models import Route, Stop
+
+# Mode: GTFS stations are Transiter stops
 days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
         'sunday']
+def parse_gtfs_static(feed, gtfs_static_zip_data):
+    system = feed.system
+
+    gtfs_static_parser = GtfsStaticParser()
+    gtfs_static_parser.parse_from_zip_data(gtfs_static_zip_data)
+
+    for route in gtfs_static_parser.route_id_to_route.values():
+        route.system = system
+
+    stop_id_to_station_id = {}
+
+    # next 3 bits: Construct larger stations using transfers.txt
+    # TODO: make a separate method in the GTFS parser or stopgraphmanager.py
+    station_sets_by_stop_id = {}
+    for stop in gtfs_static_parser.stop_id_to_stop.values():
+        stop.system = system
+        if not stop.is_station:
+            parent_stop = gtfs_static_parser.stop_id_to_stop.get(stop.parent_stop_id, None)
+            if parent_stop is None:
+                stop.is_station = True
+            else:
+                stop.parent_stop = parent_stop
+        if stop.is_station:
+            station_sets_by_stop_id[stop.id] = {stop.id}
+        else:
+            stop_id_to_station_id[stop.id] = stop.parent_stop.id
+
+    for (stop_id_1, stop_id_2) in gtfs_static_parser.transfer_tuples:
+        print(stop_id_1, stop_id_2)
+        updated_station_set = station_sets_by_stop_id[stop_id_1].union(
+            station_sets_by_stop_id[stop_id_2])
+        for stop_id in updated_station_set:
+            station_sets_by_stop_id[stop_id] = updated_station_set
+
+    for station_set in station_sets_by_stop_id.values():
+        if len(station_set) <= 1:
+            continue
+        parent_stop = models.Stop()
+        child_stops = [gtfs_static_parser.stop_id_to_stop[stop_id] for stop_id in station_set]
+        for child_stop in child_stops:
+            child_stop.parent_stop = parent_stop
+        _lift_stop_properties(parent_stop, child_stops)
+        parent_stop.is_station = True
+        parent_stop.system = system
+
+        station_set.clear()
+    session = database.get_session()
+    session.flush()
+
+    route_id_to_pk = routedam.get_id_to_pk_map_in_system(system.id)
+    stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id)
+
+    fast_scheduled_entities_inserter(
+        gtfs_static_zip_data,
+        system.pk,
+        route_id_to_pk,
+        stop_id_to_pk,
+    )
+    session.flush()
+    from transiter.services.servicepattern import servicepatternmanager
+    servicepatternmanager.calculate_scheduled_service_maps_for_system(system)
+
+    # for service in gtfs_static_parser.service_id_to_service.values():
+    #    service.system = system
+
+
+# TODO: move to gtfs static
+def _lift_stop_properties(parent_stop, child_stops):
+    parent_stop.latitude = sum(float(child_stop.latitude) for child_stop in child_stops) / len(child_stops)
+    parent_stop.longitude = sum(float(child_stop.longitude) for child_stop in child_stops) / len(child_stops)
+
+    if parent_stop.id is None:
+        child_stop_ids = [child_stop.id for child_stop in child_stops]
+        parent_stop.id = '-'.join(sorted(child_stop_ids))
+
+    if parent_stop.name is None:
+        child_stop_names = {child_stop.name: 0 for child_stop in child_stops}
+        for child_stop in child_stops:
+            child_stop_names[child_stop.name] += 1
+        max_freq = max(child_stop_names.values())
+        most_frequent_names = set()
+        for child_stop_name, freq in child_stop_names.items():
+            if freq == max_freq:
+                most_frequent_names.add(child_stop_name)
+
+        for name in most_frequent_names.copy():
+            remove = False
+            for other_name in most_frequent_names:
+                if name != other_name and name in other_name:
+                    remove = True
+            if remove:
+                most_frequent_names.remove(name)
+        parent_stop.name = ' / '.join(sorted(most_frequent_names))
+
+
+
+
+
+
+
+
 
 
 import io
@@ -118,7 +220,6 @@ class GtfsStaticParser:
         return hours + mins/60 + secs/3600
 
 
-import csv
 class LightCsvReader:
     class _Row:
         def __init__(self, reader, cells):
@@ -196,7 +297,7 @@ class SqlInsertStatementsBuilder:
                 ]
             )
 
-import time, csv
+import csv
 # https://docs.sqlalchemy.org/en/latest/faq/performance.html
 # ^ run to see if we can match that
 

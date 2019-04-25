@@ -165,7 +165,11 @@ class _SystemConfig:
             self.feed = models.Feed()
             self.feed.id = feed_id
             self.feed.url = raw_dict['url'].format(**extra_settings)
-            self.feed.parser = raw_dict['parser']
+            built_in_parser_string = raw_dict.get('built_in_parser', None)
+            if built_in_parser_string is not None:
+                self.feed.built_in_parser = models.Feed.BuiltInParser[built_in_parser_string]
+            else:
+                self.feed.custom_parser = raw_dict['custom_parser']
 
             self.required_for_install = raw_dict.get('required_for_install', False)
             if self.required_for_install:
@@ -287,7 +291,7 @@ def _install_feeds(system, system_config):
             continue
         feed_update = models.FeedUpdate(feed_config.feed)
         updatemanager.execute_feed_update(feed_update)
-        if feed_update.status == 'SUCCESS':
+        if feed_update.status == feed_update.Status.SUCCESS:
             continue
 
         if feed_config.file_upload_fallback is None:
@@ -297,7 +301,7 @@ def _install_feeds(system, system_config):
             feed_update_retry,
             feed_config.file_upload_fallback
         )
-        if feed_update_retry.status == 'SUCCESS':
+        if feed_update_retry.status == feed_update.Status.SUCCESS:
             continue
         raise exceptions.InstallError('Update failed!')
 

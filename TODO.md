@@ -1,5 +1,14 @@
 # Transiter TODO
+## Github issues:
 
+- make the system service better at responding to bad system config.
+    also, try to get the parser for the feed to ensure it's valid
+    
+- better feed back when the system can't be installed because of a feed update
+    problem
+    
+    
+- investigate our handling of time. Make cross DB platform 
 ## Main development thread
 Bugs:
   Service maps always rewrite. For the moment, just compute the new map and if
@@ -15,12 +24,6 @@ Bugs:
     1. Does the RTR app still work? Likely not!
 
 
-The update modules:
-
-    ./services/update/tripupdater.py <- just unit tests
-    ./services/update/gtfsstaticutil.py
-    ./services/update/gtfsrealtimeutil.py
-    ./services/update/updatemanager.py
 
 Creation of service maps:
 rename to servicemaps
@@ -28,6 +31,13 @@ rename to servicemaps
     ./services/servicepattern/graphutils/pathstitcher.py
     ./services/servicepattern/graphutils/graphdatastructs.py
     ./services/servicepattern/servicepatternmanager.py
+
+The update modules:
+
+    ./services/update/gtfsstaticutil.py
+    ./services/update/gtfsrealtimeutil.py
+    ./services/update/updatemanager.py
+    
 
 Data. would be nice to have the tests passing on SQLLite...?
 Also need to fix the bug on the SQL Alchemy upgrade.
@@ -46,6 +56,8 @@ Also need to fix the bug on the SQL Alchemy upgrade.
 
 The task server:
 Can we run multi process and get around warnings about 123456?
+Also suppress the warnings! <- This. we should support refreshing the 
+feed at a smaller periodicity than the feed update takes
 Workaround is to increase the refresh time
 
     ./taskserver/server.py
@@ -54,6 +66,7 @@ Workaround is to increase the refresh time
 Models: mainly just safely renaming after we have close to 100% test coverage
 Also change how short_repr works
 add string repr?
+Add various DB constraints
 
     ./models/servicemapgroup.py
     ./models/system.py

@@ -7,6 +7,33 @@ from transiter import models
 import pytz
 
 
+from transiter.services.update import  tripupdater
+
+
+
+
+
+
+def gtfs_realtime_parser(feed, content):
+    gtfs_data = read_gtfs_realtime(content)
+    (__, __, trips) = transform_to_transiter_structure(
+        gtfs_data, 'America/New_York')
+    tripupdater.sync_trips(feed.system, trips)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class GtfsRealtimeExtension:
 
     def __init__(self, pb_module, base_module):

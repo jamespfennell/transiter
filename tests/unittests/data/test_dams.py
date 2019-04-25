@@ -389,7 +389,7 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
 
         feed_update = models.FeedUpdate(None)
         feed_update.feed_pk = self.FEED_ONE_PK
-        feed_update.status = 'SUCCESS'
+        feed_update.status = feed_update.Status.SUCCESS
 
         self.assertEqual(feed_update, db_feed_update)
 
@@ -398,7 +398,11 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         data = list(feeddam.list_updates_in_feed(feed))
         self.assertEqual(3, len(data))
         self.assertEqual(
-            ['SUCCESS', 'SUCCESS', 'FAILURE'],
+            [
+                models.FeedUpdate.Status.SUCCESS,
+                models.FeedUpdate.Status.SUCCESS,
+                models.FeedUpdate.Status.FAILURE
+            ],
             [feed_update.status for feed_update in data]
         )
 

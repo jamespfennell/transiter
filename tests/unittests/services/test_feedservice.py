@@ -128,7 +128,7 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
 
         self.assertDictEqual(actual, expected)
         self.assertEqual(self.feed_update_one.feed, self.feed_one)
-        self.assertEqual(self.feed_update_one.status, 'SCHEDULED')
+        self.assertEqual(self.feed_update_one.status, models.FeedUpdate.Status.SCHEDULED)
 
         self.feeddam.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID, self.FEED_ONE_ID)

@@ -169,13 +169,13 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         feed_one = models.Feed()
         feed_one.id = '1000'
         feed_one.url = feed_one_raw_url.format(api_key=api_key)
-        feed_one.parser = '1231435'
+        feed_one.built_in_parser = feed_one.BuiltInParser.GTFS_REALTIME
         feed_one.auto_updater_enabled = False
 
         feed_two = models.Feed()
         feed_two.id = '200'
         feed_two.url = 'BlahBlah'
-        feed_two.parser = 'asdfg'
+        feed_two.custom_parser = 'asdfg'
         feed_two.auto_updater_enabled = True
         feed_two.auto_updater_frequency = 300
 
@@ -185,11 +185,11 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         
             [feeds.{feed_one.id}]
             url = '{feed_one_raw_url}'
-            parser = '{feed_one.parser}'
+            built_in_parser = '{feed_one.built_in_parser.name}'
         
             [feeds.{feed_two.id}]
             url = '{feed_two.url}'
-            parser = '{feed_two.parser}'
+            custom_parser = '{feed_two.custom_parser}'
             auto_update = true
             auto_update_period = '{feed_two.auto_updater_frequency} seconds'
             required_for_install = true
@@ -356,7 +356,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         system_config.feeds = [feed_config]
 
         def execute_feed_update(feed_update):
-            feed_update.status = 'SUCCESS'
+            feed_update.status = models.FeedUpdate.Status.SUCCESS
         self.updatemanager.execute_feed_update.side_effect = execute_feed_update
 
         systemservice._install_feeds(system, system_config)
@@ -378,10 +378,10 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         def execute_feed_update(feed_update, file_upload_fallback=None, cache=[]):
             if len(cache) == 0:
                 cache.append(0)
-                feed_update.status = 'FAILURE'
+                feed_update.status = models.FeedUpdate.Status.FAILURE
             else:
                 assert file_upload_fallback is not None
-                feed_update.status = 'SUCCESS'
+                feed_update.status = models.FeedUpdate.Status.SUCCESS
         self.updatemanager.execute_feed_update.side_effect = execute_feed_update
 
         systemservice._install_feeds(system, system_config)
@@ -405,7 +405,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             system_config.feeds = [feed_config]
 
             def execute_feed_update(feed_update, unused=None):
-                feed_update.status = 'FAILURE'
+                feed_update.status = models.FeedUpdate.Status.FAILURE
             self.updatemanager.execute_feed_update.side_effect = execute_feed_update
 
             self.assertRaises(
