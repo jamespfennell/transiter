@@ -12,6 +12,10 @@
 - bug: feed update time reporting doesn't take into account
     the session closing
     
+- bug: fix the graph data structures. Probably need a b
+# TODO: what about circle graphs? These appear as empty graphs
+
+
 - add source to stop and route and trip
 important for trips!!
     
@@ -54,7 +58,6 @@ important for trips!!
 Creation of service maps:
 rename to servicemaps
 
-    ./services/servicepattern/graphutils/graphdatastructs.py (docs only inc test docs)
     ./services/servicepattern/servicepatternmanager.py
 
 Data. would be nice to have the tests passing on SQLLite...?
