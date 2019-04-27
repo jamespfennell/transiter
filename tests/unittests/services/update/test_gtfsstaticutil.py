@@ -28,7 +28,7 @@ class TestGtfsStaticUtil(testutil.TestCase(gtfsstaticutil), unittest.TestCase):
         self.stopdam = self.mockImportedModule(gtfsstaticutil.stopdam)
         self.fastoperations = self.mockImportedModule(gtfsstaticutil.fastoperations)
         self.genericqueries = self.mockImportedModule(gtfsstaticutil.genericqueries)
-        self.servicemapmanager = self.mockImportedModule(gtfsstaticutil.servicepatternmanager)
+        self.servicemapmanager = self.mockImportedModule(gtfsstaticutil.servicemapmanager)
         self.get_id_to_pk_map = {
             models.ScheduledService: {},
             models.ScheduledTrip: {}

@@ -13,7 +13,7 @@ from transiter import exceptions
 from transiter.data import database
 from transiter.data.dams import stopdam, tripdam, systemdam
 from transiter.services import links
-from transiter.services.servicepattern import servicepatternmanager
+from transiter.services.servicemap import servicemapmanager
 
 
 @database.unit_of_work
@@ -73,7 +73,7 @@ def get_in_system_by_id(
     # On the other hand, the stop tree graph that is returned consists of all
     # stations in the stop's tree
     stop_pk_to_service_maps_response = (
-        servicepatternmanager.build_stop_pk_to_service_maps_response(
+        servicemapmanager.build_stop_pk_to_service_maps_response(
             stop.pk for stop in _get_all_stations(stop)
         )
     )

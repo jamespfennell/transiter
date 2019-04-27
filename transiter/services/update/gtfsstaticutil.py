@@ -13,7 +13,7 @@ import zipfile
 from transiter import models
 from transiter.data import fastoperations
 from transiter.data.dams import routedam, stopdam, genericqueries
-from transiter.services.servicepattern import servicepatternmanager
+from transiter.services.servicemap import servicemapmanager
 
 
 def parse_gtfs_static(feed_update, gtfs_static_zip_data):
@@ -62,7 +62,7 @@ def parse_gtfs_static(feed_update, gtfs_static_zip_data):
 
     fast_scheduled_entities_insert(gtfs_static_zip_data, system)
 
-    servicepatternmanager.calculate_scheduled_service_maps_for_system(system)
+    servicemapmanager.calculate_scheduled_service_maps_for_system(system)
 
 
 def _create_station_from_child_stops(child_stops):

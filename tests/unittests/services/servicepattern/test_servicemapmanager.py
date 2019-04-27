@@ -3,7 +3,7 @@ import unittest
 from unittest import mock
 
 from transiter import models
-from transiter.services.servicepattern import servicepatternmanager
+from transiter.services.servicemap import servicemapmanager
 from transiter.services.update import gtfsstaticutil
 
 
@@ -22,19 +22,19 @@ class TestServicePatternManager(unittest.TestCase):
         self.trip_three.route_id = 'A'
         self.trip_three.direction_id = True
 
-    @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
+    @mock.patch('transiter.services.servicemap.servicemapmanager.graphutils')
     def test_path_lists_to_sorted_graph__empty_list(self, graphutils):
         """[Service pattern manager] Empty path list to sorted graph"""
         graph = mock.MagicMock()
         graphutils.graphdatastructs.DirectedPath.return_value = graph
 
-        actual = servicepatternmanager._paths_to_sorted_graph([])
+        actual = servicemapmanager._paths_to_sorted_graph([])
 
         self.assertEqual(graph, actual)
 
         graphutils.graphdatastructs.DirectedPath.assert_called_once_with([])
 
-    @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
+    @mock.patch('transiter.services.servicemap.servicemapmanager.graphutils')
     def test_path_lists_to_sorted_graph__single_list(self, graphutils):
         """[Service pattern manager] Single path list to sorted graph"""
         path_list = mock.MagicMock()
@@ -42,7 +42,7 @@ class TestServicePatternManager(unittest.TestCase):
         graph = mock.MagicMock()
         graphutils.graphdatastructs.DirectedPath.return_value = graph
 
-        actual = servicepatternmanager._paths_to_sorted_graph(path_lists)
+        actual = servicemapmanager._paths_to_sorted_graph(path_lists)
 
         self.assertEqual(graph, actual)
 
@@ -53,7 +53,7 @@ class TestServicePatternManager(unittest.TestCase):
         label_one = '1'
         label_two = '2'
         path_list = [label_one, label_two]
-        graph = servicepatternmanager.graphutils.graphdatastructs.DirectedPath(path_list)
+        graph = servicemapmanager.graphutils.graphdatastructs.DirectedPath(path_list)
 
         stop_one = mock.MagicMock()
         stop_two = mock.MagicMock()
@@ -72,13 +72,13 @@ class TestServicePatternManager(unittest.TestCase):
         v_two.service_pattern = expected_sp
         v_two.position = 1
 
-        actual_sp = servicepatternmanager._sorted_graph_to_service_pattern(
+        actual_sp = servicemapmanager._sorted_graph_to_service_pattern(
             graph)
 
         self.assertEqual(expected_sp, actual_sp)
         self.assertEqual(expected_sp.vertices, actual_sp.vertices)
 
-    @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
+    @mock.patch.object(servicemapmanager, 'graphutils')
     def test_path_lists_to_sorted_graph__stiches_to_path(self, graphutils):
         """[Service pattern manager] Two path lists to sorted graph, just from stitching"""
         path_list_one = mock.MagicMock()
@@ -103,7 +103,7 @@ class TestServicePatternManager(unittest.TestCase):
         final_graph = mock.MagicMock()
         graph.cast_to_path.return_value = final_graph
 
-        actual = servicepatternmanager._paths_to_sorted_graph(path_lists)
+        actual = servicemapmanager._paths_to_sorted_graph(path_lists)
 
         self.assertEqual(final_graph, actual)
 
@@ -114,7 +114,7 @@ class TestServicePatternManager(unittest.TestCase):
         graph.cast_to_path.assert_called_once_with()
         graphutils.topologicalsort.sort.assert_not_called()
 
-    @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
+    @mock.patch.object(servicemapmanager, 'graphutils')
     def test_path_lists_to_sorted_graph__topological_sort(self, graphutils):
         """[Service pattern manager] Two path lists to sorted graph, from top sort"""
         path_list_one = mock.MagicMock()
@@ -139,7 +139,7 @@ class TestServicePatternManager(unittest.TestCase):
         final_graph = mock.MagicMock()
         graphutils.topologicalsort.sort.return_value = final_graph
 
-        actual = servicepatternmanager._paths_to_sorted_graph(path_lists)
+        actual = servicemapmanager._paths_to_sorted_graph(path_lists)
 
         self.assertEqual(final_graph, actual)
 
@@ -298,7 +298,7 @@ class TestTripMatcher(unittest.TestCase):
 
     @staticmethod
     def _trip_matcher_runner(raw_conds, trips):
-        trips_matcher = servicepatternmanager._ScheduledTripMatcher(raw_conds)
+        trips_matcher = servicemapmanager._ScheduledTripMatcher(raw_conds)
         matched_trips = []
         for trip in trips:
             if trips_matcher.match(trip):

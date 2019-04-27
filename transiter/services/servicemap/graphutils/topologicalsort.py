@@ -2,7 +2,7 @@
 This class contains algorithms for topologically sorting graphs.
 """
 
-from transiter.services.servicepattern.graphutils import graphdatastructs
+from transiter.services.servicemap.graphutils import graphdatastructs
 
 
 class ImpossibleToTopologicallySortGraph(Exception):

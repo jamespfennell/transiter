@@ -137,7 +137,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         self.stop_dao = self.mockImportedModule(stopservice.stopdam)
         self.systemdam = self.mockImportedModule(stopservice.systemdam)
         self.tripdam = self.mockImportedModule(stopservice.tripdam)
-        self.servicepatternmanager = self.mockImportedModule(stopservice.servicepatternmanager)
+        self.servicepatternmanager = self.mockImportedModule(stopservice.servicemapmanager)
 
         self.stop_one = models.Stop()
         self.stop_one.pk = self.STOP_ONE_PK

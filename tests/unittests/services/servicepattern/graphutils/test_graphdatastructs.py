@@ -1,6 +1,6 @@
 import unittest
 
-from transiter.services.servicepattern.graphutils import graphdatastructs
+from transiter.services.servicemap.graphutils import graphdatastructs
 
 
 class TestGraphDataStructs(unittest.TestCase):

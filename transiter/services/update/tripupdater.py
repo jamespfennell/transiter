@@ -6,7 +6,7 @@ cleaning utility.
 from transiter import models
 from transiter.data import database
 from transiter.data.dams import stopdam, tripdam
-from transiter.services.servicepattern import servicepatternmanager
+from transiter.services.servicemap import servicemapmanager
 
 
 class TripDataCleaner:
@@ -104,7 +104,7 @@ def sync_trips(system, trips, route_ids=None):
         route = route_id_to_route[route_id]
         trip_maps_changed = _sync_trips_in_route(route, route_trips, stop_id_to_pk)
         if trip_maps_changed:
-            servicepatternmanager.calculate_realtime_service_map_for_route(route)
+            servicemapmanager.calculate_realtime_service_map_for_route(route)
 
 
 def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):

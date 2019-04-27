@@ -1,5 +1,5 @@
 import unittest
-from transiter.services.servicepattern.graphutils import graphdatastructs, topologicalsort
+from transiter.services.servicemap.graphutils import graphdatastructs, topologicalsort
 
 
 class TestTopologicalSort(unittest.TestCase):

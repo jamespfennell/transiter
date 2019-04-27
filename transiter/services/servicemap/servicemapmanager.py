@@ -6,7 +6,7 @@ import json
 
 from transiter import models
 from transiter.data.dams import servicepatterndam, stopdam
-from transiter.services.servicepattern import graphutils
+from transiter.services.servicemap import graphutils
 
 
 def build_stop_pk_to_service_maps_response(stop_pks):

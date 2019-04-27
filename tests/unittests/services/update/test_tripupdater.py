@@ -39,7 +39,7 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         self.database.get_session.return_value = self.session
         self.tripdam = self.mockImportedModule(tripupdater.tripdam)
         self.stopdam = self.mockImportedModule(tripupdater.stopdam)
-        self.servicemapmanager = self.mockImportedModule(tripupdater.servicepatternmanager)
+        self.servicemapmanager = self.mockImportedModule(tripupdater.servicemapmanager)
 
     @testutil.patch_function(tripupdater._sync_trips_in_route)
     def test_sync_trips(self, _sync_trips_in_route):
