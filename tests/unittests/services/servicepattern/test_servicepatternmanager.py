@@ -1,8 +1,10 @@
+import datetime
 import unittest
 from unittest import mock
+
+from transiter import models
 from transiter.services.servicepattern import servicepatternmanager
 from transiter.services.update import gtfsstaticutil
-from transiter import models
 
 
 class TestServicePatternManager(unittest.TestCase):
@@ -112,7 +114,6 @@ class TestServicePatternManager(unittest.TestCase):
         graph.cast_to_path.assert_called_once_with()
         graphutils.topologicalsort.sort.assert_not_called()
 
-
     @mock.patch('transiter.services.servicepattern.servicepatternmanager.graphutils')
     def test_path_lists_to_sorted_graph__topological_sort(self, graphutils):
         """[Service pattern manager] Two path lists to sorted graph, from top sort"""
@@ -151,36 +152,35 @@ class TestServicePatternManager(unittest.TestCase):
 
 
 
-import datetime
-
 
 class TestTripMatcher(unittest.TestCase):
+    DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
     def setUp(self):
         self.early_weekday_trip = self._create_trip({
             'start_time': datetime.time(hour=6, minute=0, second=0),
-            'end_time':  datetime.time(hour=8, minute=0, second=0),
+            'end_time': datetime.time(hour=8, minute=0, second=0),
             'monday': True,
             'route_id': 'A'
         })
 
         self.mid_weekday_trip = self._create_trip({
-            'start_time':  datetime.time(hour=12, minute=0, second=0),
+            'start_time': datetime.time(hour=12, minute=0, second=0),
             'end_time': datetime.time(hour=14, minute=0, second=0),
             'tuesday': True,
             'route_id': 'A'
         })
 
         self.late_weekday_trip = self._create_trip({
-            'start_time':  datetime.time(hour=22, minute=0, second=0),
-            'end_time':  datetime.time(hour=23, minute=0, second=0),
+            'start_time': datetime.time(hour=22, minute=0, second=0),
+            'end_time': datetime.time(hour=23, minute=0, second=0),
             'wednesday': True,
             'route_id': 'B'
         })
 
         self.early_weekend_trip = self._create_trip({
             'start_time': datetime.time(hour=6, minute=0, second=0),
-            'end_time':  datetime.time(hour=8, minute=0, second=0),
+            'end_time': datetime.time(hour=8, minute=0, second=0),
             'sunday': True,
             'route_id': 'C'
         })
@@ -296,7 +296,6 @@ class TestTripMatcher(unittest.TestCase):
             raw_conds,
             self.trips)
 
-
     @staticmethod
     def _trip_matcher_runner(raw_conds, trips):
         trips_matcher = servicepatternmanager._ScheduledTripMatcher(raw_conds)
@@ -306,18 +305,16 @@ class TestTripMatcher(unittest.TestCase):
                 matched_trips.append(trip)
         return matched_trips
 
-    @staticmethod
-    def _create_trip(attrs):
+    def _create_trip(self, attrs):
         trip = models.ScheduledTrip()
         service = models.ScheduledService()
         trip.service = service
-        for day in gtfsstaticutil.days:
+        for day in self.DAYS:
             service.__setattr__(day, False)
-        days = set(gtfsstaticutil.days)
+        days = set(self.DAYS)
         for key, value in attrs.items():
             if key in days:
                 service.__setattr__(key, value)
             else:
                 trip.__setattr__(key, value)
         return trip
-

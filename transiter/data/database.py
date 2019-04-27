@@ -122,8 +122,6 @@ def unit_of_work(func, *args, **kw):
         result = func(*args, **kw)
         session.commit()
     except Exception:
-        logger.warning('Encountered error; rolling back session!')
-        logger.warning('Stack trace:\n' + str(traceback.format_exc()))
         session.rollback()
         raise
     finally:

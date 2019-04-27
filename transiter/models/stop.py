@@ -17,6 +17,8 @@ class Stop(Base):
     latitude = Column(Numeric(precision=9, scale=6))
     is_station = Column(Boolean)
 
+    parent_stop_id = None
+
     system = relationship(
         'System',
         back_populates='stops')

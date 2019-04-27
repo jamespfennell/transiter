@@ -37,7 +37,7 @@ important for trips!!
 -replace direction name rules with stop head sign and
     have a custom parser that populates these? would need
     to be on static and realtime import
-
+- investigate lazy loading of SQL alchemy enities
 ## Main development thread
 
 1. Code quality:
@@ -63,7 +63,6 @@ Don't refactor anything! File a ticket instead
 Just ensure docs + tests
 
     ./services/update/gtfsstaticutil.py
-    ./services/update/gtfsrealtimeutil.py
     
 
 Data. would be nice to have the tests passing on SQLLite...?
@@ -115,25 +114,12 @@ Add various DB constraints
     ./models/base.py
 
 
-## Version 0.2
 
 1. Record the git hash outside of the Git repo for deployments ... 
     maybe when building the egg?
+Incorporate this into building and distributing the App
 
 
-1. Add logging
-
-1. Existing code clean up
-    - C6: Optimize the SQL Alchemy config
-        - especially with joins/lazy loading
-        - Just adding .join(Model.attribute) loads it I think?
-        https://docs.sqlalchemy.org/en/latest/orm/relationship_api.html
-        look at lazy
-        
-        For example, when getting stop events get the trip and stop as well
-        
-        cascade = None
-      
 
 #### F4: Write the Feed Health Code
 How to delete old entries?

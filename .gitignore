@@ -8,9 +8,7 @@ docs/_build
 *.egg-info
 build
 dist
-tests/integrationtests/build
-tests/integrationtests/dist
-tests/integrationtests/output/*
+tests/integrationtest/output/*
 .eggs
 sandbox
 transiter.db
