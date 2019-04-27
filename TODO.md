@@ -54,7 +54,6 @@ important for trips!!
 Creation of service maps:
 rename to servicemaps
 
-    ./services/servicepattern/graphutils/pathstitcher.py (docs only inc test docs)
     ./services/servicepattern/graphutils/graphdatastructs.py (docs only inc test docs)
     ./services/servicepattern/servicepatternmanager.py
 

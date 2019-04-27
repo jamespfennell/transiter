@@ -235,13 +235,19 @@ class TestGtfsStaticUtil(testutil.TestCase(gtfsstaticutil), unittest.TestCase):
     def test_parse_transfers(self):
         """[GTFS static util] Parse transfers"""
 
-        data = {
-            'from_stop_id': '1',
-            'to_stop_id': '2'
-        }
+        data = [
+            {
+                'from_stop_id': '1',
+                'to_stop_id': '2'
+            },
+            {
+                'from_stop_id': '3',
+                'to_stop_id': '3'
+            }
+        ]
 
         self._set_gtfs_static_file_data(
-            gtfsstaticutil.GtfsStaticFile.TRANSFERS, [data])
+            gtfsstaticutil.GtfsStaticFile.TRANSFERS, data)
 
         gtfs_static_parser = gtfsstaticutil.GtfsStaticData()
         gtfs_static_parser.parse_from_zip_data(mock.MagicMock())
