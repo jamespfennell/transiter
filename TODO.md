@@ -58,13 +58,6 @@ rename to servicemaps
     ./services/servicepattern/graphutils/graphdatastructs.py (docs only inc test docs)
     ./services/servicepattern/servicepatternmanager.py
 
-The update modules:
-Don't refactor anything! File a ticket instead
-Just ensure docs + tests
-
-    ./services/update/gtfsstaticutil.py
-    
-
 Data. would be nice to have the tests passing on SQLLite...?
 Also need to fix the bug on the SQL Alchemy upgrade.
  Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
@@ -120,6 +113,9 @@ Add various DB constraints
 Incorporate this into building and distributing the App
 
 
+Final (?) 0.1 bug: the fast scheduled entites inserter doesn't just 
+get the id_to_pk map for the current system
+Need a scheduledam probably
 
 #### F4: Write the Feed Health Code
 How to delete old entries?
