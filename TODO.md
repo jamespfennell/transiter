@@ -6,13 +6,39 @@
     
 - better feed back when the system can't be installed because of a feed update
     problem
+- bug: if a custom module has an error, it's reported as if the module
+    doesn't exist
     
+- bug: feed update time reporting doesn't take into account
+    the session closing
+    
+- add source to stop and route and trip
+important for trips!!
     
 - investigate our handling of time. Make cross DB platform 
+    Also America/New York is hardcoded in  
+       Investigate using Arrow
+     Especially in the GTFS realtime util
+     The most important thing is that end to end is the identity
+     we seem to be using postgres time types.....
+     
+   - also docformatter
+     
+- Put the feed time in the FeedUpdate?
+
+
+- figure out how the protobuf extension actually works
+
+- full GTFS static and realtime
+
+
+- make a transiter GTFS realtime extension
+
+-replace direction name rules with stop head sign and
+    have a custom parser that populates these? would need
+    to be on static and realtime import
+
 ## Main development thread
-Bugs:
-  Service maps always rewrite. For the moment, just compute the new map and if
-  it's identical do nothing
 
 1. Code quality:
     1. Clean up the code where relevant
@@ -28,21 +54,23 @@ Bugs:
 Creation of service maps:
 rename to servicemaps
 
-    ./services/servicepattern/graphutils/pathstitcher.py
-    ./services/servicepattern/graphutils/graphdatastructs.py
+    ./services/servicepattern/graphutils/pathstitcher.py (docs only inc test docs)
+    ./services/servicepattern/graphutils/graphdatastructs.py (docs only inc test docs)
     ./services/servicepattern/servicepatternmanager.py
 
 The update modules:
+Don't refactor anything! File a ticket instead
+Just ensure docs + tests
 
     ./services/update/gtfsstaticutil.py
     ./services/update/gtfsrealtimeutil.py
-    ./services/update/updatemanager.py
     
 
 Data. would be nice to have the tests passing on SQLLite...?
 Also need to fix the bug on the SQL Alchemy upgrade.
  Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
 ***Return no iterators from the database layer***
+Check that queries are actually being used
 
     ./data/database.py (-> database/connection.py?)
     ./data/fastoperations.py
@@ -92,7 +120,6 @@ Add various DB constraints
 1. Record the git hash outside of the Git repo for deployments ... 
     maybe when building the egg?
 
-1. Investigate using Arrow
 
 1. Add logging
 

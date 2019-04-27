@@ -1,4 +1,4 @@
-from sqlalchemy import Column, UniqueConstraint, Enum, Integer, String, Boolean, ForeignKey
+from sqlalchemy import DateTime, Column, UniqueConstraint, Enum, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -27,7 +27,6 @@ class Feed(Base):
     parser = Column(String)
     custom_module = Column(String)
     custom_function = Column(String)
-
 
     # TODO: rename auto_update
     auto_updater_enabled = Column(Boolean)

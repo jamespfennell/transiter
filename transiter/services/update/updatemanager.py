@@ -8,7 +8,8 @@ This algorithm performs the following steps in order:
     INVALID_PARSER.
 
 (2) Attempt to download the data from the URL specified in the Feed. If this
-    fails the update fails with explanation DOWNLOAD_ERROR.
+    fails the update fails with explanation DOWNLOAD_ERROR. If the content
+    of the download is empty, the update fails with explanation EMPTY_FEED.
 
 (3) Calculate the hash of the downloaded data and compare it to the data
     used for the last successful FeedUpdate for this Feed. If they match,
@@ -97,6 +98,11 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
             feed_update.failure_message = str(download_error)
             return
 
+    if len(content) == 0:
+        feed_update.status = feed_update.Status.FAILURE
+        feed_update.explanation = feed_update.Explanation.EMPTY_FEED
+        return
+
     content_hash = _calculate_content_hash(content)
     feed_update.raw_data_hash = content_hash
     last_successful_update = feeddam.get_last_successful_update(feed.pk)
@@ -109,7 +115,7 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
         return
 
     try:
-        parser(feed, content)
+        parser(feed_update, content)
     except Exception:
         feed_update.status = feed_update.Status.FAILURE
         feed_update.explanation = feed_update.Explanation.PARSE_ERROR
@@ -123,7 +129,7 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
 
 _built_in_parser_to_function = {
     models.Feed.BuiltInParser.GTFS_STATIC: gtfsstaticutil.parse_gtfs_static,
-    models.Feed.BuiltInParser.GTFS_REALTIME: gtfsrealtimeutil.gtfs_realtime_parser
+    models.Feed.BuiltInParser.GTFS_REALTIME: gtfsrealtimeutil.built_in_parser
 }
 
 

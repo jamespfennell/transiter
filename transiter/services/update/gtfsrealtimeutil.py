@@ -1,77 +1,108 @@
-import time
+"""
+The GTFS Realtime Util contains the logic for reading feeds of this format.
+
+The official reference is here: https://gtfs.org/reference/realtime/v2/
+"""
 import datetime
-import importlib
-from google.transit import gtfs_realtime_pb2
-from google.protobuf.message import DecodeError
-from transiter import models
+import time
+
 import pytz
+from google.transit import gtfs_realtime_pb2
+
+from transiter import models
+from transiter.services.update import tripupdater
 
 
-from transiter.services.update import  tripupdater
-
-
-
-
-
-
-def gtfs_realtime_parser(feed, content):
-    gtfs_data = read_gtfs_realtime(content)
-    (__, __, trips) = transform_to_transiter_structure(
-        gtfs_data, 'America/New_York')
-    tripupdater.sync_trips(feed.system, trips)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class GtfsRealtimeExtension:
-
-    def __init__(self, pb_module, base_module):
-        self._pb_module = pb_module
-        self._base_module = base_module
-
-    def activate(self):
-        importlib.import_module(self._pb_module, self._base_module)
-
-
-# TODO Rename pb2_to_json
-def read_gtfs_realtime(content, extension=None):
+def create_parser(
+        gtfs_realtime_pb2_module=None,
+        post_pb2_parsing_function=None,
+        trip_data_cleaner: tripupdater.TripDataCleaner = None,
+        route_ids_function=None):
     """
-    Convert a binary GTFS Realtime feed from protobuf format to a JSON-like
-    data structure
+    Create a GTFS Realtime parser.
+
+    The returned parser performs the following steps in order:
+
+    (1) Read the GTFS Realtime binary data into a JSON structure using either
+        the default GTFS Realtime protobuf modules or a custom module.
+        The custom is for when a GTFS Realtime extension is being used.
+
+    (2) Optionally apply a post-pb2-parsing function to the JSON structure.
+        This is generally used for merging GTFS Realtime extension data into
+        the main JSON structure. Clean-up of the data within the feed is
+        easier with a trip cleaner in (4).
+
+    (3) Convert the JSON structure into various Transiter Python objects.
+        These objects are SQL Alchemy models that correspond to database tables.
+
+    (4) Optionally apply a trip cleaner to the Python objects to filter out
+        bad trips or otherwise clean up the data.
+
+    (5) Persist the Python objects in the database.
+
+    :param gtfs_realtime_pb2_module: optional, the protobuffers module to use
+        to read the feed. Defaults to the official module on PyPI.
+    :param post_pb2_parsing_function: the function described in (2). It takes
+        a single argument, which is the JSON data structure. It returns nothing;
+        rather, it alterts the JSON structure in place.
+    :param trip_data_cleaner: the trip cleaner described in (4)
+    :param route_ids_function: a function used to determine which routes are
+        update as part of this feed update. It takes in two arguments
+        (route_ids, feed) where route_ids is the collection or route_ids
+        found in the feed. Defaults to returning all routes in the system.
+    :return: the parser
+    """
+    if gtfs_realtime_pb2_module is None:
+        gtfs_realtime_pb2_module = gtfs_realtime_pb2
+    if post_pb2_parsing_function is None:
+        post_pb2_parsing_function = lambda __: None
+    if trip_data_cleaner is None:
+        trip_data_cleaner_function = lambda __, trips: trips
+    else:
+        trip_data_cleaner_function = trip_data_cleaner.clean
+    if route_ids_function is None:
+        route_ids_function = lambda __, ___: None
+
+    def parser(feed_update, content):
+        gtfs_data = read_gtfs_realtime(content, gtfs_realtime_pb2_module)
+        post_pb2_parsing_function(gtfs_data)
+        (feed_time, route_ids, trips) = transform_to_transiter_structure(
+            gtfs_data, 'America/New_York')
+        feed_update.feed_time = feed_time
+        cleaned_trips = trip_data_cleaner_function(feed_update, trips)
+        tripupdater.sync_trips(
+            feed_update.feed.system,
+            cleaned_trips,
+            route_ids_function(feed_update.feed, route_ids)
+        )
+
+    return parser
+
+
+built_in_parser = create_parser()
+
+
+def read_gtfs_realtime(content, gtfs_realtime_pb2_module):
+    """
+    Convert a binary GTFS Realtime feed to a JSON-like data structure
+
     :param content: GTFS realtime binary data
-    :param extension: an optional GtfsRealtimeExtension object
-    :return: the data in a JSON-like dictionary and list structure
+    :param gtfs_realtime_pb2_module: GTFS realtime module
+    :return: the data in a JSON-like data structure
     """
-    if extension is not None:
-        extension.activate()
-    gtfs_feed = gtfs_realtime_pb2.FeedMessage()
-    try:
-        gtfs_feed.ParseFromString(content)
-    except DecodeError as e:
-        # TODO: make this a more specific (feed) service exception
-        raise Exception(e)
+    gtfs_feed = gtfs_realtime_pb2_module.FeedMessage()
+    gtfs_feed.ParseFromString(content)
     return _read_protobuf_message(gtfs_feed)
 
 
-# Takes 40 milliseconds for the 123456 -> kind of a small bottleneck
-# Can it be sped up?
 def _read_protobuf_message(message):
     """
-    Convert a protobuf message into a dictionary and list structure.
-    This is not an exaustive converter but mean to be sufficient for GTFS
+    Convert a protobuf message into a JSON-like structure.
+
+    This is not an exhaustive converter but mean to be sufficient for GTFS
     realtime
-    :param message: a google.protobuf.message.Message
+
+    :param message: a google.protobuf.message.Message object
     :return: a dictionary of {key: value} for fields in the Message. The
     function is recursive so if value is also a protobuf then that will be
     expanded
@@ -100,6 +131,13 @@ def _read_protobuf_message(message):
 
 
 def transform_to_transiter_structure(data, timezone_str=None):
+    """
+    Transform GTFS Realtime data in JSON like format to Transiter models
+
+    :param data: the data
+    :param timezone_str: a string decribing the timezone
+    :return: feed_time, trips, route_ids in the feed
+    """
     transformer = _GtfsRealtimeToTransiterTransformer(data, timezone_str)
     return transformer.transform()
 
@@ -118,7 +156,6 @@ class _GtfsRealtimeToTransiterTransformer:
         if timezone_str is None:
             self._timezone = None
         else:
-            # Todo: what if this doesn't work?
             self._timezone = pytz.timezone(timezone_str)
 
     def transform(self):
@@ -173,9 +210,9 @@ class _GtfsRealtimeToTransiterTransformer:
 
             trip.vehicle_id = (
                 entity
-                .get('trip_update', {})
-                .get('vehicle', {})
-                .get('id', None)
+                    .get('trip_update', {})
+                    .get('vehicle', {})
+                    .get('id', None)
             )
 
             vehicle_data = entity.get('vehicle', {})
@@ -226,7 +263,6 @@ class _GtfsRealtimeToTransiterTransformer:
             self._timestamp_to_datetime_cache[timestamp] = self._localize_datetime(utc_dt)
         return self._timestamp_to_datetime_cache[timestamp]
 
-    # TODO: figure this out!
     def _localize_datetime(self, dt, naive=False):
         if self._timezone is None:
             return dt

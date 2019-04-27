@@ -25,6 +25,7 @@ class FeedUpdate(Base):
         PARSE_ERROR = 3
         DOWNLOAD_ERROR = 4
         INVALID_PARSER = 5
+        EMPTY_FEED = 6
 
     status = Column(Enum(Status))
     explanation = Column(Enum(Explanation))
@@ -35,6 +36,7 @@ class FeedUpdate(Base):
                               server_default=sql_functions.now(),
                               onupdate=sql_functions.current_timestamp(),
                               index=True)
+    feed_time = Column(TIMESTAMP(timezone=True))
 
     feed = relationship(
         'Feed',

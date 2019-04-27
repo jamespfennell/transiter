@@ -185,13 +185,13 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         trip = models.Trip()
         trip.stop_events.append(stop_event)
 
-        clean_trips = gtfs_cleaner.clean([trip])
+        clean_trips = gtfs_cleaner.clean('', [trip])
 
         self.assertEqual([trip], clean_trips)
         for cleaner in trip_cleaners:
-            cleaner.assert_called_once_with(trip)
+            cleaner.assert_called_once_with('', trip)
         for cleaner in stop_event_cleaners:
-            cleaner.assert_called_once_with(stop_event)
+            cleaner.assert_called_once_with('', stop_event)
 
     def test_clean_buggy_trip(self):
         """[Trip updater] Trip cleaner - Buggy trip"""
@@ -208,11 +208,11 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         trip = models.Trip()
         trip.stop_events.append(stop_event)
 
-        clean_trips = gtfs_cleaner.clean([trip])
+        clean_trips = gtfs_cleaner.clean('', [trip])
 
         self.assertEqual([], clean_trips)
-        trip_cleaners[0].assert_called_once_with(trip)
-        trip_cleaners[1].assert_called_once_with(trip)
+        trip_cleaners[0].assert_called_once_with('', trip)
+        trip_cleaners[1].assert_called_once_with('', trip)
         trip_cleaners[2].assert_not_called()
         for cleaner in stop_event_cleaners:
             cleaner.assert_not_called()

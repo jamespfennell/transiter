@@ -15,7 +15,8 @@ class TripDataCleaner:
     invalid Trips and TripStopTimes.
 
     To use the TripDataCleaner, you must provide a number of cleaning functions.
-    Trip cleaning functions accept a single argument, the Trip being cleaned,
+    Trip cleaning functions accept two arguments - the current FeedUpdate
+    and the Trip being cleaned,
     and perform some operations to clean up the trip - for example, switching
     the direction of Trips in a given route to compensate for a known bug in a
     Transit agency's data feed. If the cleaner returns
@@ -38,10 +39,11 @@ class TripDataCleaner:
         self._trip_cleaners = trip_cleaners
         self._stop_time_cleaners = stop_time_cleaners
 
-    def clean(self, trips):
+    def clean(self, feed_update, trips):
         """
         Clean a collection of trips.
 
+        :param feed_update: the feed update
         :param trips: the trips to clean
         :return: the cleaned trips with bad trips removed
         """
@@ -49,7 +51,7 @@ class TripDataCleaner:
         for trip in trips:
             result = True
             for trip_cleaner in self._trip_cleaners:
-                result = trip_cleaner(trip)
+                result = trip_cleaner(feed_update, trip)
                 if not result:
                     break
             if not result:
@@ -57,7 +59,7 @@ class TripDataCleaner:
 
             for stop_time_update in trip.stop_events:
                 for stop_time_cleaner in self._stop_time_cleaners:
-                    stop_time_cleaner(stop_time_update)
+                    stop_time_cleaner(feed_update, stop_time_update)
 
             trips_to_keep.append(trip)
 
@@ -168,6 +170,4 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
 
     session = database.get_session()
     session.merge(feed_route)
-    print(existing_trip_maps)
-    print(feed_trip_maps)
     return len(existing_trip_maps ^ feed_trip_maps) != 0

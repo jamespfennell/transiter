@@ -10,7 +10,8 @@ from transiter.models import Route, Stop
 # Mode: GTFS stations are Transiter stops
 days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
         'sunday']
-def parse_gtfs_static(feed, gtfs_static_zip_data):
+def parse_gtfs_static(feed_update, gtfs_static_zip_data):
+    feed = feed_update.feed
     system = feed.system
 
     gtfs_static_parser = GtfsStaticParser()

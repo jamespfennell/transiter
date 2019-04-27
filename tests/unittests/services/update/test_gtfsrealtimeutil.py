@@ -1,82 +1,50 @@
+import datetime
 import unittest
 from unittest import mock
-from google.transit import gtfs_realtime_pb2 as gtfs
-from transiter.services.update import gtfsrealtimeutil
-from transiter import models
-import datetime
+
 from google.protobuf.message import DecodeError
+from google.transit import gtfs_realtime_pb2 as gtfs
 
-class TestGtfsRealtimeExtension(unittest.TestCase):
-
-    PB_MODULE = 'Module One'
-    BASE_MODULE = 'Module Two'
-
-    @mock.patch('transiter.services.update.gtfsrealtimeutil.importlib')
-    def test_gtfs_realtime_extension(self, importlib):
-        """[Read GTFS Realtime] Feed extension activation"""
-        gtfs_realtime_extension = gtfsrealtimeutil.GtfsRealtimeExtension(
-            self.PB_MODULE, self.BASE_MODULE)
-
-        gtfs_realtime_extension.activate()
-
-        importlib.import_module.assert_called_once_with(
-            self.PB_MODULE, self.BASE_MODULE)
+from transiter import models
+from transiter.services.update import gtfsrealtimeutil
+from ... import testutil
 
 
-class TestReadGtfsRealtime(unittest.TestCase):
-
+class TestReadGtfsRealtime(testutil.TestCase(gtfsrealtimeutil)):
     RAW_CONTENT = 'Some content'
     PARSED_CONTENT = 'Transformed'
 
     def setUp(self):
         self.gtfs_feed = mock.MagicMock()
 
-        self.patch1 = mock.patch('transiter.services.update.gtfsrealtimeutil.gtfs_realtime_pb2')
-        self.gtfs_realtime_pb2 = self.patch1.start()
+        self.gtfs_realtime_pb2 = self.mockImportedModule(gtfsrealtimeutil.gtfs_realtime_pb2)
         self.gtfs_realtime_pb2.FeedMessage.return_value = self.gtfs_feed
 
-        self.patch2 = mock.patch('transiter.services.update.gtfsrealtimeutil._read_protobuf_message')
-        self._read_protobuf_message = self.patch2.start()
+        self._read_protobuf_message = self.mockModuleAttribute('_read_protobuf_message')
         self._read_protobuf_message.return_value = self.PARSED_CONTENT
 
     def tearDown(self):
         self.gtfs_realtime_pb2.FeedMessage.assert_called_once_with()
         self.gtfs_feed.ParseFromString.assert_called_once_with(self.RAW_CONTENT)
-        self.patch1.stop()
-
-        self.patch2.stop()
 
     def test_read_gtfs_realtime_parse_error(self):
-        """[Read GTFS Realtime] GTFS realtime parse error"""
+        """[GTFS Realtime Util] GTFS realtime parse error"""
         self.gtfs_feed.ParseFromString.side_effect = DecodeError
 
         self.assertRaises(
-            Exception,
-            gtfsrealtimeutil.read_gtfs_realtime,
-            self.RAW_CONTENT
+            DecodeError,
+            lambda: gtfsrealtimeutil.read_gtfs_realtime(self.RAW_CONTENT, self.gtfs_realtime_pb2)
         )
 
     def test_read_gtfs_realtime(self):
-        """[Read GTFS Realtime] Read basic feed subtask scheduling"""
-        actual_response = gtfsrealtimeutil.read_gtfs_realtime(self.RAW_CONTENT)
+        """[GTFS Realtime Util] Read basic feed subtask scheduling"""
+        actual_response = gtfsrealtimeutil.read_gtfs_realtime(self.RAW_CONTENT, self.gtfs_realtime_pb2)
 
         self.assertEqual(actual_response, self.PARSED_CONTENT)
-        self._read_protobuf_message.assert_called_once_with(self.gtfs_feed)
-
-    def test_read_gtfs_realtime_with_extension(self):
-        """[Read GTFS Realtime] Read feed with extension subtask scheduling"""
-        extension = mock.MagicMock()
-
-        actual_response = gtfsrealtimeutil.read_gtfs_realtime(self.RAW_CONTENT, extension)
-
-        self.assertEqual(actual_response, self.PARSED_CONTENT)
-
-        extension.activate.assert_called_once_with()
         self._read_protobuf_message.assert_called_once_with(self.gtfs_feed)
 
 
 class TestReadProtobufMessage(unittest.TestCase):
-
     GTFS_REALTIME_VERSION = '2.0'
     INCREMENTALITY = "FULL_DATASET"
     INCREMENTALITY_INT = gtfs.FeedHeader.Incrementality.Value(INCREMENTALITY)
@@ -89,7 +57,7 @@ class TestReadProtobufMessage(unittest.TestCase):
     CONGESTION_TWO_INT = gtfs.VehiclePosition.CongestionLevel.Value(CONGESTION_TWO)
 
     def test_read_protobuf_message(self):
-        """[Read GTFS Realtime] Read protobuf message"""
+        """[GTFS Realtime Util] Read protobuf message"""
         root = gtfs.FeedMessage()
         header = root.header
         header.gtfs_realtime_version = self.GTFS_REALTIME_VERSION
@@ -130,7 +98,6 @@ class TestReadProtobufMessage(unittest.TestCase):
 
 
 class TestTransformGtfsRealtime(unittest.TestCase):
-
     GTFS_REALTIME_VERSION = '2.0'
     INCREMENTALITY = 'FULL_DATASET'
     INCREMENTALITY_INT = gtfs.FeedHeader.Incrementality.Value(INCREMENTALITY)
@@ -238,7 +205,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         }
 
         transformer._transform_trip_base_data()
-        #self.assertEqual(trip, transformer._trip_id_to_raw_entities[self.TRIP_ID])
+        # self.assertEqual(trip, transformer._trip_id_to_raw_entities[self.TRIP_ID])
         self.assertDictEqual(
             expected_transformed_base_data,
             transformer._trip_id_to_trip_model)
@@ -373,44 +340,44 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             },
             'entity': [
                 {
-                'id': self.ENTITY_1_ID,
-                "vehicle": {
-                    "trip": {
-                        "trip_id": "trip_id",
-                        "start_date": "20180915",
-                        "route_id": "4",
-                    },
-                    "current_stop_sequence": 16,
-                    "current_status": 2,
-                    "timestamp": self.TRIP_UPDATE_TIMESTAMP,
-                    "stop_id": "626S"
+                    'id': self.ENTITY_1_ID,
+                    "vehicle": {
+                        "trip": {
+                            "trip_id": "trip_id",
+                            "start_date": "20180915",
+                            "route_id": "4",
+                        },
+                        "current_stop_sequence": 16,
+                        "current_status": 2,
+                        "timestamp": self.TRIP_UPDATE_TIMESTAMP,
+                        "stop_id": "626S"
                     }
                 },
                 {
-                'id': self.ENTITY_2_ID,
-                "trip_update": {
-                    "trip": {
-                        "trip_id": "trip_id",
-                        "start_date": "20180915",
-                        "route_id": "4"
-                    },
-                    "stop_time_update": [
-                        {
-                            "arrival": {
-                                "time": self.STOP_ONE_ARR_TIMESTAMP,
-                            },
-                            "departure": {
-                                "time": self.STOP_ONE_DEP_TIMESTAMP,
-                            },
-                            "stop_id": self.STOP_ONE_ID,
+                    'id': self.ENTITY_2_ID,
+                    "trip_update": {
+                        "trip": {
+                            "trip_id": "trip_id",
+                            "start_date": "20180915",
+                            "route_id": "4"
                         },
-                        {
-                            "arrival": {
-                                "time": self.STOP_TWO_ARR_TIMESTAMP,
+                        "stop_time_update": [
+                            {
+                                "arrival": {
+                                    "time": self.STOP_ONE_ARR_TIMESTAMP,
+                                },
+                                "departure": {
+                                    "time": self.STOP_ONE_DEP_TIMESTAMP,
+                                },
+                                "stop_id": self.STOP_ONE_ID,
                             },
-                            "stop_id": self.STOP_TWO_ID,
-                        }
-                    ]
+                            {
+                                "arrival": {
+                                    "time": self.STOP_TWO_ARR_TIMESTAMP,
+                                },
+                                "stop_id": self.STOP_TWO_ID,
+                            }
+                        ]
                     }
                 }
             ]
@@ -426,7 +393,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         trip.current_status = 2
         trip.current_stop_sequence = 16
         trip.direction_id = None
-        #trip.feed_update_time = self.timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
+        # trip.feed_update_time = self.timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
         trip.last_update_time = self.timestamp_to_datetime(self.TRIP_UPDATE_TIMESTAMP)
 
         stu_1 = models.StopTimeUpdate()
@@ -461,5 +428,3 @@ class TestTransformGtfsRealtime(unittest.TestCase):
     def test_timestamp_to_datetime_edge_case_2(self):
         actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer("")._timestamp_to_datetime(0)
         self.assertEqual(None, actual)
-
-
