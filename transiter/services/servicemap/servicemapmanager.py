@@ -1,5 +1,6 @@
 """
-Service map manager
+Service map manager has responsibility for constructing and displaying service
+maps
 """
 import datetime
 import json
@@ -10,6 +11,12 @@ from transiter.services.servicemap import graphutils
 
 
 def build_stop_pk_to_service_maps_response(stop_pks):
+    """
+    Build the service maps response used in the stop service.
+
+    :param stop_pks: the PKs of the stops to construct it for.
+    :return: a map of stop PK to the response
+    """
     stop_pks = list(stop_pks)
     stop_pk_to_service_map_group_id_to_routes = (
         servicepatterndam.get_stop_pk_to_group_id_to_routes_map(stop_pks)
@@ -28,8 +35,44 @@ def build_stop_pk_to_service_maps_response(stop_pks):
         ]
     return stop_pk_to_service_maps_response
 
+
 def calculate_realtime_service_map_for_route(route):
-    pass
+    """
+    Build the realtime service map for a route
+    :param route: the route
+    :return: nothing; the service map is persisted in the database
+    """
+    # First find the realtime service map group, if it exists.
+    realtime_service_map = None
+    for service_map_group in route.system.service_map_groups:
+        if service_map_group.source != 'realtime':
+            continue
+        realtime_service_map = service_map_group
+        break
+    if realtime_service_map is None:
+        return
+
+    # Delete the old service map for this route. This works by using SQL
+    # Alchemy's delete orphan cascade.
+    for service_map in list(realtime_service_map.maps):
+        if service_map.route_pk == route.pk:
+            service_map.group = None
+            break
+
+    # Now actually build the map.
+    stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(
+        route.system.id)
+    trip_pk_to_path = servicepatterndam.get_trip_pk_to_path_map(route.pk)
+    paths = set()
+    for trip in route.trips:
+        path = trip_pk_to_path.get(trip.pk, [])
+        if not trip.direction_id:
+            path.reverse()
+        paths.add(tuple(stop_pk_to_station_pk[stop_pk] for stop_pk in path))
+    service_map = _build_service_map_from_paths(paths)
+    service_map.route = route
+    service_map.group = realtime_service_map
+
 
 def calculate_realtime_service_maps_for_system(system, route_pks):
     """
@@ -68,7 +111,7 @@ def calculate_realtime_service_maps_for_system(system, route_pks):
             paths.add(tuple(
                 stop_pk_to_station_pk[stop_pk] for stop_pk in raw_path
             ))
-        service_map = _construct_service_map(paths)
+        service_map = _build_service_map_from_paths(paths)
         service_map.route = route
         service_map.group = realtime_service_map
 
@@ -113,71 +156,22 @@ def calculate_scheduled_service_maps_for_system(system):
                 path for path, count in path_to_count.items()
                 if count >= num_trips * service_map_group.threshold
             ]
-            service_map = _construct_service_map(final_paths)
+            service_map = _build_service_map_from_paths(final_paths)
             service_map.route_pk = route_pk
             service_map.group = service_map_group
 
 
-"""
-def construct_sps_from_gtfs_static_data(
-        gtfs_static_parser,
-        route_sp_settings=[],
-        general_sp_settings=None):
-    route_id_to_route = gtfs_static_parser.route_id_to_route
-    stop_id_to_stop = gtfs_static_parser.stop_id_to_stop
-    trips = gtfs_static_parser.trip_id_to_trip.values()
-
-    # Transform the trips ids
-    stop_id_to_station_stop_id = {}
-    for stop in stop_id_to_stop.values():
-        if not stop.is_station:
-            stop_id_to_station_stop_id[stop.id] = stop.parent_stop_id
-    # print(stop_id_to_station_stop_id)
-
-    route_id_to_trips = {
-        route_id: set() for route_id in route_id_to_route.keys()}
-    for trip in trips:
-        # TODO: what happens if this is not set?
-        if trip.direction_id:
-            trip.reverse()
-
-        if trip.route_id in route_id_to_trips:
-            route_id_to_trips[trip.route_id].add(trip)
-
-    # TODO: invert the for loops here for an easy optimization
-    # Better: split off a new method construct from trips and settings
-    for route_id, trips in route_id_to_trips.items():
-        route = route_id_to_route[route_id]
-        for sp_setting in route_sp_settings:
-            name = sp_setting.get('name', None)
-            default = sp_setting.get('default', False)
-            regular = sp_setting.get('regular', False)
-            threshold = sp_setting.get('threshold', 0)
-            conditions = sp_setting.get('conditions', None)
-
-            if conditions is not None:
-                sp_trips = _filter_trips_by_conditions(trips, threshold, conditions)
-            else:
-                sp_trips = trips
-
-            service_pattern = _construct_for_static_trips(
-                sp_trips, stop_id_to_stop, stop_id_to_station_stop_id)
-            service_pattern.name = name
-            service_pattern.route = route
-            if default:
-                route.default_service_pattern = service_pattern
-            if regular:
-                route.regular_service_pattern = service_pattern
-"""
+def _build_service_map_from_paths(paths):
+    """
+    Given a list of paths build the service map.
+    """
+    return _convert_sorted_graph_to_service_pattern(_build_sorted_graph_from_paths(paths))
 
 
-def _construct_service_map(paths):
-    sorted_graph = _paths_to_sorted_graph(paths)
-    service_pattern = _sorted_graph_to_service_pattern(sorted_graph)
-    return service_pattern
-
-
-def _sorted_graph_to_service_pattern(sorted_graph):
+def _convert_sorted_graph_to_service_pattern(sorted_graph):
+    """
+    Convert a sorted graph object to a service map object.
+    """
     service_pattern = models.ServicePattern()
     for index, vertex in enumerate(sorted_graph.vertices()):
         sp_vertex = models.ServicePatternVertex()
@@ -187,7 +181,10 @@ def _sorted_graph_to_service_pattern(sorted_graph):
     return service_pattern
 
 
-def _paths_to_sorted_graph(paths):
+def _build_sorted_graph_from_paths(paths):
+    """
+    Given a list of paths build the sorted graph.
+    """
     if len(paths) == 0:
         return graphutils.graphdatastructs.DirectedPath([])
     if len(paths) == 1:
@@ -202,27 +199,6 @@ def _paths_to_sorted_graph(paths):
     if graph.is_path():
         return graph.cast_to_path()
     return graphutils.topologicalsort.sort(graph)
-
-
-"""
-def _filter_trips_by_conditions(trips, threshold, matching_conditions):
-    trip_matcher = _ScheduledTripMatcher(matching_conditions)
-    stop_ids_to_trips = {}
-    total_count = 0
-    for trip in trips:
-        if not trip_matcher.match(trip):
-            continue
-        total_count += 1
-        stop_ids = tuple(trip.stop_ids)
-        stop_ids_to_trips.setdefault(stop_ids, [])
-        stop_ids_to_trips[stop_ids].append(trip)
-
-    filtered_trips = []
-    for stop_ids, grouped_trips in stop_ids_to_trips.items():
-        if len(grouped_trips) >= threshold * total_count:
-            filtered_trips += grouped_trips
-    return filtered_trips
-"""
 
 
 class _ScheduledTripMatcher:

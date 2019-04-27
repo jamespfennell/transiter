@@ -1,47 +1,4 @@
-# Transiter TODO
-## Github issues:
-
-- make the system service better at responding to bad system config.
-    also, try to get the parser for the feed to ensure it's valid
     
-- better feed back when the system can't be installed because of a feed update
-    problem
-- bug: if a custom module has an error, it's reported as if the module
-    doesn't exist
-    
-- bug: feed update time reporting doesn't take into account
-    the session closing
-    
-- bug: fix the graph data structures. Probably need a b
-# TODO: what about circle graphs? These appear as empty graphs
-
-
-- add source to stop and route and trip
-important for trips!!
-    
-- investigate our handling of time. Make cross DB platform 
-    Also America/New York is hardcoded in  
-       Investigate using Arrow
-     Especially in the GTFS realtime util
-     The most important thing is that end to end is the identity
-     we seem to be using postgres time types.....
-     
-   - also docformatter
-     
-- Put the feed time in the FeedUpdate?
-
-
-- figure out how the protobuf extension actually works
-
-- full GTFS static and realtime
-
-
-- make a transiter GTFS realtime extension
-
--replace direction name rules with stop head sign and
-    have a custom parser that populates these? would need
-    to be on static and realtime import
-- investigate lazy loading of SQL alchemy enities
 ## Main development thread
 
 1. Code quality:
@@ -115,60 +72,11 @@ Add various DB constraints
 Incorporate this into building and distributing the App
 
 
+Distribute the App somehow on PyPI
+
+
 Final (?) 0.1 bug: the fast scheduled entites inserter doesn't just 
 get the id_to_pk map for the current system
 Need a scheduledam probably
-
-#### F4: Write the Feed Health Code
-How to delete old entries?
-Just delete old entries when updating?
-Yes - have the time a configuration parameter
-
-Do we need feed health to be like this?
-Can we just delete old feed updates when updating
-and generate reports dynamically? 
-
-#### F6: Feed autoupdaters
-- Rename it Jobs Executor   
-- Should probably have a more generic Jobs scheme:
-    - Updating feeds
-    - Calculating realtime route service patterns (if enabled)
-    - Calculating the feed health (and deleting old entries)
-        - Generating FeedHealthReport types
-    
-#### F7: Add a verbose option to route and stop GET endpoints
-
-- In general, figure out a full set of extra GET parameters
-   
-### Features
-- Service pattern endpoints and the edges table
-- write the optimized topological 
-sort algorithm for generating service patterns
-- Make a system to download the latest GTFS static data 
-    from the transit agency
-    and check if it's up to date.
-    - If it's not, what happens? 
-    Maybe use the sync util carefully to allow updates <- just use a feed with
-        default gtfsstatic parser
-- How does a user/admin make stops? 
-    - Admin service for
-       finding stops based on geolocation
-    - post and delete methods
-- Have a generic get paremater that decides how times are to be read -
-    timestamp, diff from now, human readable
-- Support for trip schedules/general gtfs static data
-- Get parameter to show all service patterns at a stop
-
-
-    
-- Integration test:
-    write three separate test runs:
-        - gtfs static import 
-        - gtfs realtime import (stops)
-        - gtfs realtime import (trips)
-        
-Last 2 only run if first succeeeds
-clean it up in general
-
 
 
