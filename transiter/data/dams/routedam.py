@@ -7,7 +7,7 @@ from transiter.data.dams import genericqueries
 
 
 def list_all_in_system(system_id):
-    yield from genericqueries.list_all_in_system(
+    return genericqueries.list_all_in_system(
         models.Route, system_id, models.Route.id
     )
 

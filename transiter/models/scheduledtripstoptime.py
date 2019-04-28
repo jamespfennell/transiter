@@ -18,6 +18,7 @@ class ScheduledTripStopTime(Base):
 
     stop = relationship(
         'Stop',
+        back_populates='scheduled_trip_times',
         cascade=''
     )
     trip = relationship(

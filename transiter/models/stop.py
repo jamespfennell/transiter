@@ -37,9 +37,13 @@ class Stop(Base):
     stop_events = relationship(
         'StopTimeUpdate',
         back_populates='stop',
-        cascade='delete, delete-orphan')
+        cascade='all, delete-orphan')
     service_pattern_vertices = relationship(
         'ServicePatternVertex',
+        back_populates='stop',
+        cascade='all, delete-orphan')
+    scheduled_trip_times = relationship(
+        'ScheduledTripStopTime',
         back_populates='stop',
         cascade='all, delete-orphan')
 

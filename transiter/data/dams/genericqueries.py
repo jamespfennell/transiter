@@ -33,9 +33,7 @@ def list_all_in_system(DbObject: models.Base, system_id, order_by_field=None):
     query = session.query(DbObject).filter(DbObject.system_id == system_id)
     if order_by_field is not None:
         query = query.order_by(order_by_field)
-    # TODO: THIS should not yield, just return a list
-    for row in query:
-        yield row
+    return query.all()
 
 
 def get_in_system_by_id(DbObject: models.Base, system_id, id_):

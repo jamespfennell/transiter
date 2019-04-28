@@ -19,7 +19,8 @@ class Trip(Base):
 
     vehicle_id = Column(String)
     last_update_time = Column(TIMESTAMP(timezone=True))
-    current_status = Column(String)
+
+    current_status = Column(String)  # TODO: ENUMIFY
     current_stop_sequence = Column(Integer)
 
     route = relationship(
