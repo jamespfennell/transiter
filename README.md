@@ -1,17 +1,19 @@
 
 # Transiter
 
+![alt text](luca-bravo-613000-unsplash.jpg)
+
+
 Transiter is a HTTP web service that makes it easy to use 
-transit data in web apps, train arrival time boards and similar
-pieces of technology.
+transit data in web apps, train arrival time boards and similar technologies.
 
 Transiter subscribes to GTFS static, GTFS realtime and other types of feeds
-    and provides integrated views of the data through an intuitive HTTP REST API.
+    and provides integrated views of the data through an intuitive REST API.
 The endpoint for a particular stop, for example,
     returns the stop's static data (such as its name and GPS coordinates),
     its realtime data (the list of vehicles that will arrive next,
         and the times they will arrive),
-    as well as derived data that Transiter generates automatically,
+    as well as derived data that Transiter computes automatically,
         such as which routes usually call at the stop,
         and which transfers to other stops are available.
 You can get a full sense for what's available by navigating through the 
