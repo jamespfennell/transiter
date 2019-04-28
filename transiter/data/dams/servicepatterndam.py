@@ -33,7 +33,8 @@ def list_groups_and_maps_for_stops_in_route(route_pk):
 
 def get_stop_pk_to_group_id_to_routes_map(stop_pks):
     # TODO: we should return all service maps, even if they don't have routes for the stop
-    # THIS HAS NOT BEEN DONE!
+    # TODO: THIS HAS NOT BEEN DONE!
+    # TODO: TEST!!
     session = database.get_session()
     query = (
         session.query(
@@ -66,6 +67,7 @@ def get_stop_pk_to_group_id_to_routes_map(stop_pks):
     return response
 
 
+# TODO move this to the trip dam
 def get_trip_pk_to_path_map(route_pk):
     statement = (
         sql.select([
@@ -88,6 +90,7 @@ def get_trip_pk_to_path_map(route_pk):
 
 
 # TODO stop_pks_map -> paths
+# TODO: in system
 def get_scheduled_trip_pk_to_stop_pks_map():
     statement = sql.select(
         [
@@ -135,6 +138,8 @@ def list_scheduled_trips_with_times_in_system():
     for trip, start_time, end_time in query:
         yield trip, start_time, end_time
 
+
+# TODO: delete
 def list_scheduled_trip_raw_service_maps_in_system(
         system_id=None,
         min_start_time=None,

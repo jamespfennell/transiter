@@ -36,6 +36,9 @@ def list_stop_time_updates_at_stops(stop_pks):
         response.append(row)
     return response
 
+
+# TODO: docs. This returns every stop in the system. (Maybe enable filtering
+# on the stops returned? Benchmark
 def get_stop_pk_to_station_pk_map_in_system(system_id):
     session = database.get_session()
     query = (
