@@ -51,7 +51,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         self.routedam = self.mockImportedModule(routeservice.routedam)
         self.systemdam = self.mockImportedModule(routeservice.systemdam)
-        self.servicemapdam = self.mockImportedModule(routeservice.servicepatterndam)
+        self.servicemapdam = self.mockImportedModule(routeservice.servicemapdam)
 
     def test_list_all_in_system__system_not_found(self):
         """[Route service] List all routes in a system - system not found"""

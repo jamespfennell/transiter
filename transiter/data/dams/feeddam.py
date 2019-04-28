@@ -47,10 +47,6 @@ def list_updates_in_feed(feed):
         yield feed_update
 
 
-def create_update():
-    return genericqueries.create(models.FeedUpdate)
-
-
 def trim_feed_updates(before_datetime):
     session = database.get_session()
     query = (

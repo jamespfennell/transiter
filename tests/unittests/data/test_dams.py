@@ -5,7 +5,7 @@ from sqlalchemy.sql import text
 
 from transiter import models, config
 from transiter.data import database
-from transiter.data.dams import feeddam, tripdam, systemdam, routedam, stopdam, servicepatterndam
+from transiter.data.dams import feeddam, tripdam, systemdam, routedam, stopdam, servicemapdam
 
 
 class TestDbConstants:
@@ -185,18 +185,6 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
 
         self.assertEqual(3596, int(data))
 
-    def test__routedata__list_active_stop_ids(self):
-        db_stop_ids = routedam.list_active_stop_ids(self.ROUTE_ONE_PK)
-
-        self.assertListEqual(
-            [self.STOP_ONE_ID, self.STOP_TWO_ID, self.STOP_THREE_ID, self.STOP_FOUR_ID],
-            list(db_stop_ids))
-
-    def test__routedata__list_active_stop_ids__no_stops(self):
-        db_stop_ids = routedam.list_active_stop_ids(self.ROUTE_THREE_PK)
-
-        self.assertEqual([], list(db_stop_ids))
-
     #
     #   STOP DATA
     #
@@ -226,7 +214,7 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
     #
 
     def test__servicepatterndata__get_default_trips_at_stops_map(self):
-        actual = servicepatterndam.get_stop_pk_to_group_id_to_routes_map(
+        actual = servicemapdam.get_stop_pk_to_group_id_to_routes_map(
             [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK]
         )
 
@@ -275,39 +263,6 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
             self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID, self.TRIP_ONE_ID)
 
         self.assertEqual(None, db_trip)
-
-    def test__trip_dao__list_all_in_routes(self):
-        expected = [self.trip_one, self.trip_two, self.trip_three]
-
-        actual = list(tripdam.list_all_in_routes(
-            self.SYSTEM_ONE_ID, [self.ROUTE_ONE_ID]
-        ))
-
-        self.assertListEqual(expected, actual)
-
-    def test__trip_dao__list_all_in_routes__no_trips(self):
-        expected = []
-
-        actual = list(tripdam.list_all_in_routes(
-            self.SYSTEM_ONE_ID, [self.ROUTE_TWO_ID, self.ROUTE_THREE_ID]
-        ))
-
-        self.assertListEqual(expected, actual)
-
-    def test_get_trip_pk_to_future_stop_events_map(self):
-        trip_pks_to_stop_pks = {
-            self.TRIP_ONE_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_THREE_PK, self.STOP_FOUR_PK],
-            self.TRIP_TWO_PK: [self.STOP_ONE_PK, self.STOP_TWO_PK, self.STOP_FOUR_PK],
-            self.TRIP_THREE_PK: [self.STOP_ONE_PK, self.STOP_FOUR_PK],
-        }
-
-        data = tripdam.get_trip_pk_to_future_stop_events_map(
-            trip_pks_to_stop_pks.keys()
-        )
-
-        for trip_pk, stop_events in data.items():
-            stop_pks = [stop_event.stop_pk for stop_event in stop_events]
-            self.assertEqual(trip_pks_to_stop_pks[trip_pk], stop_pks)
 
     #
     #   SYSTEM DATA

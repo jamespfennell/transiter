@@ -6,7 +6,7 @@ import datetime
 import json
 
 from transiter import models
-from transiter.data.dams import servicepatterndam, stopdam
+from transiter.data.dams import servicemapdam, stopdam
 from transiter.services.servicemap import graphutils
 
 
@@ -19,7 +19,7 @@ def build_stop_pk_to_service_maps_response(stop_pks):
     """
     stop_pks = list(stop_pks)
     stop_pk_to_service_map_group_id_to_routes = (
-        servicepatterndam.get_stop_pk_to_group_id_to_routes_map(stop_pks)
+        servicemapdam.get_stop_pk_to_group_id_to_routes_map(stop_pks)
     )
     stop_pk_to_service_maps_response = {}
     for stop_pk in stop_pks:
@@ -63,7 +63,7 @@ def calculate_realtime_service_map_for_route(route):
     # Now actually build the map.
     stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(
         route.system.id)
-    trip_pk_to_path = servicepatterndam.get_trip_pk_to_path_map(route.pk)
+    trip_pk_to_path = servicemapdam.get_trip_pk_to_path_map(route.pk)
     paths = set()
     for trip in route.trips:
         path = trip_pk_to_path.get(trip.pk, [])
@@ -83,10 +83,10 @@ def calculate_scheduled_service_maps_for_system(system):
     :return: nothing; the service maps are persisted in the database
     """
     stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(system.id)
-    trip_pk_to_stop_pks = servicepatterndam.get_scheduled_trip_pk_to_stop_pks_map()
+    trip_pk_to_stop_pks = servicemapdam.get_scheduled_trip_pk_to_stop_pks_map()
     route_pk_to_trips = {}
 
-    for trip, start_time, end_time in servicepatterndam.list_scheduled_trips_with_times_in_system():
+    for trip, start_time, end_time in servicemapdam.list_scheduled_trips_with_times_in_system():
         trip.start_time = start_time
         trip.end_time = end_time
         if not trip.direction_id:
@@ -271,24 +271,6 @@ class _ScheduledTripMatcher:
             return (attr < t) == less_than
 
         return order
-
-    @staticmethod
-    def equality_factory(value, trip_attr):
-        def equality(trip):
-            attr = getattr(trip, trip_attr)
-            if attr is None:
-                return False
-            return attr == value
-
-        def contains(trip):
-            attr = getattr(trip, trip_attr)
-            if attr is None:
-                return False
-            return attr in value
-
-        if isinstance(value, list):
-            return contains
-        return equality
 
     @staticmethod
     def weekday_factory(value):

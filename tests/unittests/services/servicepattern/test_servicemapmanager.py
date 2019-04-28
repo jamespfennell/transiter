@@ -27,7 +27,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
 
         self.actual_graphutils = servicemapmanager.graphutils
         self.graphutils = self.mockImportedModule(servicemapmanager.graphutils)
-        self.servicemapdam = self.mockImportedModule(servicemapmanager.servicepatterndam)
+        self.servicemapdam = self.mockImportedModule(servicemapmanager.servicemapdam)
         self.stopdam = self.mockImportedModule(servicemapmanager.stopdam)
 
         self.trip_one = models.ScheduledTrip(pk=self.TRIP_1_PK)

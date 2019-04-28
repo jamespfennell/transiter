@@ -5,7 +5,7 @@ The route service is used to retrieve data about routes.
 import enum
 
 from transiter.data import database
-from transiter.data.dams import routedam, systemdam, servicepatterndam
+from transiter.data.dams import routedam, systemdam, servicemapdam
 from transiter import exceptions
 from transiter.services import links
 from transiter.models import RouteStatus
@@ -88,7 +88,7 @@ def get_in_system_by_id(system_id, route_id, return_links=False):
     }
 
     for group, service_map in (
-        servicepatterndam.list_groups_and_maps_for_stops_in_route(route.pk)
+        servicemapdam.list_groups_and_maps_for_stops_in_route(route.pk)
     ):
         service_map_response = {
             'group_id': group.id,

@@ -11,27 +11,22 @@
     1. Does the RTR app still work? Likely not!
 
 
-
-Creation of service maps:
-rename to servicemaps
-
-    ./services/servicepattern/servicepatternmanager.py
-
 Data. would be nice to have the tests passing on SQLLite...?
 Also need to fix the bug on the SQL Alchemy upgrade.
  Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
 ***Return no iterators from the database layer***
 Check that queries are actually being used
 
-    ./data/database.py (-> database/connection.py?)
-    ./data/fastoperations.py
-    ./data/dams/tripdam.py
-    ./data/dams/servicepatterndam.py
-    ./data/dams/genericqueries.py
-    ./data/dams/routedam.py
     ./data/dams/stopdam.py
+    ./data/dams/routedam.py
     ./data/dams/feeddam.py
     ./data/dams/systemdam.py
+    ./data/dams/tripdam.py
+    ./data/dams/servicepatterndam.py
+   
+    ./data/database.py (-> database/connection.py?)
+    ./data/fastoperations.py
+    ./data/dams/genericqueries.py (should need no tests)
 
 The task server:
 Can we run multi process and get around warnings about 123456?
