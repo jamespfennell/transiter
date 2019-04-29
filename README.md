@@ -14,8 +14,9 @@ The endpoint for a particular stop, for example,
         and the times they will arrive),
     as well as derived data that Transiter computes automatically,
         such as which routes usually call at the stop,
-        and which transfers to other stops are available.
-You can get a sense for what's available by navigating through the 
+        which transfers to other stops are available,
+        and which routes are currently calling at *those* stops.
+You can get a sense for the data that's available by navigating through the 
     [live demo site](https://demo.transiter.io).
         
 

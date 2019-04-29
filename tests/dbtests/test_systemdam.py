@@ -8,7 +8,7 @@ class TestSystemDAM(dbtestutil.TestCase):
         """[System DAM] Count number of stops"""
         count = systemdam.count_stops_in_system(testdata.SYSTEM_ONE_ID)
 
-        self.assertEqual(5, count)
+        self.assertEqual(7, count)
 
     def test__system_dao__count_routes_in_system(self):
         """[System DAM] Count number of stops"""

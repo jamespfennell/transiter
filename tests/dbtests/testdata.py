@@ -46,11 +46,19 @@ STOP_FOUR_PK = 48
 STOP_FIVE_ID = '49'
 STOP_FIVE_PK = 50
 
-stop_one = models.Stop(pk=STOP_ONE_PK, id=STOP_ONE_ID, system=system_one)
-stop_two = models.Stop(pk=STOP_TWO_PK, id=STOP_TWO_ID, system=system_one)
-stop_three = models.Stop(pk=STOP_THREE_PK, id=STOP_THREE_ID, system=system_one)
-stop_four = models.Stop(pk=STOP_FOUR_PK, id=STOP_FOUR_ID, system=system_one)
-stop_five = models.Stop(pk=STOP_FIVE_PK, id=STOP_FIVE_ID, system=system_one)
+stop_one = models.Stop(pk=STOP_ONE_PK, id=STOP_ONE_ID, system=system_one, is_station=False)
+stop_two = models.Stop(pk=STOP_TWO_PK, id=STOP_TWO_ID, system=system_one, is_station=False)
+stop_three = models.Stop(pk=STOP_THREE_PK, id=STOP_THREE_ID, system=system_one, is_station=False)
+stop_four = models.Stop(pk=STOP_FOUR_PK, id=STOP_FOUR_ID, system=system_one, is_station=True)
+stop_five = models.Stop(pk=STOP_FIVE_PK, id=STOP_FIVE_ID, system=system_one, is_station=True)
+
+STATION_1_PK = 51
+STATION_2_PK = 52
+
+station_1 = models.Stop(pk=STATION_1_PK, system=system_one, is_station=True)
+station_1.child_stops = [stop_one, stop_two]
+station_2 = models.Stop(pk=STATION_2_PK, system=system_one, is_station=True)
+station_2.child_stops = [stop_four]
 
 TRIP_ONE_PATH = [stop_one, stop_two, stop_three, stop_four]
 TRIP_ONE_TIMES = ['2018-11-02 10:00:00', '2018-11-02 10:01:00',
@@ -61,15 +69,15 @@ TRIP_THREE_PATH = [stop_one, stop_four]
 TRIP_THREE_TIMES = ['2018-11-02 12:00:00', '2018-11-02 12:03:00']
 
 trip_one.stop_events = [
-    models.StopTimeUpdate(stop=TRIP_ONE_PATH[i], stop_sequence=i+1, arrival_time=TRIP_ONE_TIMES[i])
+    models.StopTimeUpdate(stop=TRIP_ONE_PATH[i], stop_sequence=i + 1, arrival_time=TRIP_ONE_TIMES[i])
     for i in range(4)
 ]
 trip_two.stop_events = [
-    models.StopTimeUpdate(stop=TRIP_TWO_PATH[i], stop_sequence=i+1, arrival_time=TRIP_TWO_TIMES[i])
+    models.StopTimeUpdate(stop=TRIP_TWO_PATH[i], stop_sequence=i + 1, arrival_time=TRIP_TWO_TIMES[i])
     for i in range(3)
 ]
 trip_three.stop_events = [
-    models.StopTimeUpdate(stop=TRIP_THREE_PATH[i], stop_sequence=i+1, arrival_time=TRIP_THREE_TIMES[i])
+    models.StopTimeUpdate(stop=TRIP_THREE_PATH[i], stop_sequence=i + 1, arrival_time=TRIP_THREE_TIMES[i])
     for i in range(2)
 ]
 

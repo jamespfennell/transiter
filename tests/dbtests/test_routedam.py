@@ -23,7 +23,6 @@ class TestRouteDAM(dbtestutil.TestCase):
         expected = {
             testdata.ROUTE_ONE_ID: testdata.ROUTE_ONE_PK,
             testdata.ROUTE_TWO_ID: testdata.ROUTE_TWO_PK,
-            testdata.ROUTE_THREE_ID: testdata.ROUTE_THREE_PK,
             'unknown': None,
         }
 
@@ -32,7 +31,26 @@ class TestRouteDAM(dbtestutil.TestCase):
 
         self.assertEqual(expected, actual)
 
+    def test_get_id_to_pk_map_in_system__all_routes(self):
+        """[Route DAM] Get ID to PK map in system - all routes"""
+        expected = {
+            testdata.ROUTE_ONE_ID: testdata.ROUTE_ONE_PK,
+            testdata.ROUTE_TWO_ID: testdata.ROUTE_TWO_PK,
+            testdata.ROUTE_THREE_ID: testdata.ROUTE_THREE_PK,
+        }
+
+        actual = routedam.get_id_to_pk_map_in_system(
+            testdata.SYSTEM_ONE_ID, expected.keys())
+
+        self.assertEqual(expected, actual)
+
     def test_list_terminus_data(self):
+        """[Route DAM] Calculate periodicity - no trips case"""
+        data = routedam.calculate_periodicity(testdata.ROUTE_TWO_PK)
+
+        self.assertEqual(None, data)
+
+    def test_list_terminus_data_2(self):
         """[Route DAM] Calculate periodicity"""
         data = routedam.calculate_periodicity(testdata.ROUTE_ONE_PK)
 
