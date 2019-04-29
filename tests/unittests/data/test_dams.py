@@ -235,36 +235,6 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         self.assertDictEqual(expected, actual)
 
     #
-    #   TRIP DATA
-    #
-
-    def test__trip_dao__list_all_in_route(self):
-        db_trips = tripdam.list_all_in_route(
-            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID)
-
-        self.assertEqual(
-            [self.trip_one, self.trip_two, self.trip_three],
-            list(db_trips))
-
-    def test__trip_dao__list_all_in_route__no_trips(self):
-        db_trips = tripdam.list_all_in_route(
-            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID)
-
-        self.assertEqual([], list(db_trips))
-
-    def test__trip_dao__get_in_route_by_id(self):
-        db_trip = tripdam.get_in_route_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_ONE_ID, self.TRIP_TWO_ID)
-
-        self.assertEqual(self.trip_two, db_trip)
-
-    def test__trip_dao__get_in_route_by_id__no_trip(self):
-        db_trip = tripdam.get_in_route_by_id(
-            self.SYSTEM_ONE_ID, self.ROUTE_THREE_ID, self.TRIP_ONE_ID)
-
-        self.assertEqual(None, db_trip)
-
-    #
     #   SYSTEM DATA
     #
 

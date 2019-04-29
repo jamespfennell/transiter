@@ -47,7 +47,7 @@ class TestTripService(testutil.TestCase(tripservice), unittest.TestCase):
 
     def test_list_all_in_route(self):
         """[Trip service] List all trips in a route"""
-        self.tripdam.list_all_in_route.return_value = [self.trip_one, self.trip_two]
+        self.tripdam.list_all_in_route_by_pk.return_value = [self.trip_one, self.trip_two]
         self.tripdam.get_trip_pk_to_last_stop_map.return_value = {
             self.TRIP_ONE_PK: self.stop_one,
             self.TRIP_TWO_PK: self.stop_two

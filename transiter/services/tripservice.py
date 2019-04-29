@@ -19,7 +19,7 @@ def list_all_in_route(system_id, route_id, return_links=False):
         raise exceptions.IdNotFoundError
 
     response = []
-    trips = list(tripdam.list_all_in_route(system_id, route_id))
+    trips = tripdam.list_all_in_route_by_pk(route.pk)
     trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
         trip.pk for trip in trips
     )
