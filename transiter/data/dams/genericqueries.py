@@ -15,8 +15,7 @@ def list_all(DbObject: models.Base, order_by_field=None):
     query = session.query(DbObject)
     if order_by_field is not None:
         query = query.order_by(order_by_field)
-    for row in query:
-        yield row
+    return query.all()
 
 
 def get_by_id(DbObject: models.Base, id_):

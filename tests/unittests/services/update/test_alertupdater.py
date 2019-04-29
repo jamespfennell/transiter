@@ -16,7 +16,7 @@ class TestAlertUpdater(testutil.TestCase(alertupdater), unittest.TestCase):
     ALERT_2_PK = 7
 
     def setUp(self):
-        self.routedam = self.mockImportedModule(alertupdater.routedam)
+        self.systemdam = self.mockImportedModule(alertupdater.systemdam)
         self.database = self.mockImportedModule(alertupdater.database)
 
     def test_sync_alerts(self):
@@ -45,7 +45,7 @@ class TestAlertUpdater(testutil.TestCase(alertupdater), unittest.TestCase):
         stale_alert.id = self.ALERT_2_ID
         stale_alert.route_ids = [self.ROUTE_1_ID]
         stale_alert.pk = self.ALERT_2_PK
-        self.routedam.list_all_route_statuses_in_system.return_value = [
+        self.systemdam.list_all_alerts_in_system.return_value = [
             expired_alert,
             stale_alert
         ]

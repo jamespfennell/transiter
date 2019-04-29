@@ -56,7 +56,7 @@ def get_in_system_by_id(system_id, route_id, return_links=False):
     This function returns a dictionary containing,
      * the route's long representation,
      * its status under key 'status',
-     * its frequency under key 'frequency',
+     * its periodicity under key 'periodicity',
      * its alerts under key 'alerts',
      * all of its service maps for whose group use_for_stops_in_route is true,
        under key 'service_maps',
@@ -75,12 +75,12 @@ def get_in_system_by_id(system_id, route_id, return_links=False):
     if route is None:
         raise exceptions.IdNotFoundError
     status = _construct_route_status(route.pk)
-    frequency = routedam.calculate_frequency(route.pk)
-    if frequency is not None:
-        frequency = int(frequency/6)/10
+    periodicity = routedam.calculate_periodicity(route.pk)
+    if periodicity is not None:
+        periodicity = int(periodicity/6)/10
     response = {
         **route.long_repr(),
-        'frequency': frequency,
+        'periodicity': periodicity,
         'status': status,
         'alerts':
             [alert.short_repr() for alert in route.route_statuses],

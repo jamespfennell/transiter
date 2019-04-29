@@ -1,8 +1,7 @@
 
 # Transiter
 
-![alt text](luca-bravo-613000-unsplash.jpg)
-
+[![7 train in Queens, New York, United States](luca-bravo-613000-unsplash.jpg "Photo by Luca Bravo")](https://unsplash.com/@lucabravo)
 
 Transiter is a HTTP web service that makes it easy to use 
 transit data in web apps, train arrival time boards and similar technologies.
@@ -16,7 +15,7 @@ The endpoint for a particular stop, for example,
     as well as derived data that Transiter computes automatically,
         such as which routes usually call at the stop,
         and which transfers to other stops are available.
-You can get a full sense for what's available by navigating through the 
+You can get a sense for what's available by navigating through the 
     [live demo site](https://demo.transiter.io).
         
 

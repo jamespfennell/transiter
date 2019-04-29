@@ -46,11 +46,11 @@ STOP_FOUR_PK = 48
 STOP_FIVE_ID = '49'
 STOP_FIVE_PK = 50
 
-stop_one = models.Stop(pk=STOP_ONE_PK, id=STOP_ONE_ID)
-stop_two = models.Stop(pk=STOP_TWO_PK, id=STOP_TWO_ID)
-stop_three = models.Stop(pk=STOP_THREE_PK, id=STOP_THREE_ID)
-stop_four = models.Stop(pk=STOP_FOUR_PK, id=STOP_FOUR_ID)
-stop_five = models.Stop(pk=STOP_FIVE_PK, id=STOP_FIVE_ID)
+stop_one = models.Stop(pk=STOP_ONE_PK, id=STOP_ONE_ID, system=system_one)
+stop_two = models.Stop(pk=STOP_TWO_PK, id=STOP_TWO_ID, system=system_one)
+stop_three = models.Stop(pk=STOP_THREE_PK, id=STOP_THREE_ID, system=system_one)
+stop_four = models.Stop(pk=STOP_FOUR_PK, id=STOP_FOUR_ID, system=system_one)
+stop_five = models.Stop(pk=STOP_FIVE_PK, id=STOP_FIVE_ID, system=system_one)
 
 TRIP_ONE_PATH = [stop_one, stop_two, stop_three, stop_four]
 TRIP_ONE_TIMES = ['2018-11-02 10:00:00', '2018-11-02 10:01:00',
@@ -77,6 +77,22 @@ FEED_ONE_ID = '71'
 FEED_ONE_PK = 72
 FEED_TWO_ID = '73'
 FEED_TWO_PK = 74
+
+feed_one = models.Feed(pk=FEED_ONE_PK, id=FEED_ONE_ID, system=system_one)
+feed_two = models.Feed(pk=FEED_TWO_PK, id=FEED_TWO_ID, system=system_one)
+
+ALERT_1_PK = 81
+ALERT_2_PK = 82
+ALERT_3_PK = 83
+ALERT_4_PK = 84
+
+alert_1 = models.RouteStatus(pk=ALERT_1_PK, priority=1)
+alert_2 = models.RouteStatus(pk=ALERT_2_PK, priority=2)
+alert_3 = models.RouteStatus(pk=ALERT_3_PK, priority=2)
+alert_4 = models.RouteStatus(pk=ALERT_4_PK, priority=3)
+
+route_one.route_statuses = [alert_1, alert_2, alert_3]
+route_two.route_statuses = [alert_1, alert_3, alert_4]
 
 ROUTE_STATUS_ONE_PK = 81
 ROUTE_STATUS_ONE_MESSAGE = '82'

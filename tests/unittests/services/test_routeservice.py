@@ -110,7 +110,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         _construct_route_status.return_value = self.ROUTE_ONE_STATUS
         self.routedam.get_in_system_by_id.return_value = self.route_one
-        self.routedam.calculate_frequency.return_value = self.RAW_FREQUENCY
+        self.routedam.calculate_periodicity.return_value = self.RAW_FREQUENCY
         self.servicemapdam.list_groups_and_maps_for_stops_in_route.return_value = [
             [self.service_map_one_group, self.service_map_one],
             [self.service_map_two_group, None]
@@ -118,7 +118,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         expected = {
             **self.route_one.short_repr(),
-            'frequency': int(self.RAW_FREQUENCY/6)/10,
+            'periodicity': int(self.RAW_FREQUENCY/6)/10,
             'status': self.ROUTE_ONE_STATUS,
             'alerts': [],
             'service_maps': [
@@ -144,6 +144,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
             return_links=True
         )
 
+        self.maxDiff = None
         self.assertDictEqual(actual, expected)
 
         self.routedam.get_in_system_by_id.assert_called_once_with(

@@ -181,7 +181,7 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         self.assertEqual(expected, actual)
 
     def test__routedata__list_terminus_data(self):
-        data = routedam.calculate_frequency(self.ROUTE_ONE_PK)
+        data = routedam.calculate_periodicity(self.ROUTE_ONE_PK)
 
         self.assertEqual(3596, int(data))
 

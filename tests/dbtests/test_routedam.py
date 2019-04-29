@@ -1,8 +1,5 @@
-import unittest
-
-from . import dbtestutil, testdata
-
 from transiter.data.dams import routedam
+from . import dbtestutil, testdata
 
 
 class TestRouteDAM(dbtestutil.TestCase):
@@ -36,8 +33,8 @@ class TestRouteDAM(dbtestutil.TestCase):
         self.assertEqual(expected, actual)
 
     def test_list_terminus_data(self):
-        """[Route DAM] Calculate frequency"""
-        data = routedam.calculate_frequency(testdata.ROUTE_ONE_PK)
+        """[Route DAM] Calculate periodicity"""
+        data = routedam.calculate_periodicity(testdata.ROUTE_ONE_PK)
 
         self.assertEqual(3600, int(data))
 
@@ -49,3 +46,15 @@ class TestRouteDAM(dbtestutil.TestCase):
                 [testdata.ROUTE_ONE_PK, testdata.ROUTE_TWO_PK, testdata.ROUTE_THREE_PK]
             )
         )
+
+    def test_get_route_pk_to_highest_priority_alerts_maps(self):
+        """[Route DAM] Get highest priority alerts"""
+        expected = {
+            testdata.ROUTE_ONE_PK: [testdata.alert_2, testdata.alert_3],
+            testdata.ROUTE_TWO_PK: [testdata.alert_4],
+            testdata.ROUTE_THREE_PK: []
+        }
+        actual = routedam.get_route_pk_to_highest_priority_alerts_map(
+            [testdata.ROUTE_ONE_PK, testdata.ROUTE_TWO_PK, testdata.ROUTE_THREE_PK]
+        )
+        self.assertDictEqual(expected, actual)
