@@ -20,11 +20,7 @@ def list_all(DbObject: models.Base, order_by_field=None):
 
 def get_by_id(DbObject: models.Base, id_):
     session = database.get_session()
-    return (
-        session.query(DbObject)
-            .filter(DbObject.id == id_)
-            .one_or_none()
-    )
+    return session.query(DbObject).filter(DbObject.id == id_).one_or_none()
 
 
 def list_all_in_system(DbObject: models.Base, system_id, order_by_field=None):
@@ -59,5 +55,3 @@ def get_id_to_pk_map(DbObject: models.Base, system_id=None, ids=None):
     for (id_, pk) in query.all():
         id_to_pk[id_] = pk
     return id_to_pk
-
-

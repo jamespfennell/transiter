@@ -9,7 +9,7 @@ from .. import testutil
 
 class TestDirectionNamesMatcher(unittest.TestCase):
     STOP_PK = 1
-    DIRECTION_NAME = 'Direction Name'
+    DIRECTION_NAME = "Direction Name"
 
     def setUp(self):
         self.stop = models.Stop()
@@ -54,7 +54,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
 
     def test_no_matching_track(self):
         """[Stop service] Direction matcher, no matching track"""
-        self.rule.track = 'Track'
+        self.rule.track = "Track"
         dnm = stopservice._DirectionNameMatcher([self.rule])
 
         direction_name = dnm.match(self.stop_event)
@@ -71,10 +71,10 @@ class TestDirectionNamesMatcher(unittest.TestCase):
 
 
 class TestTripStopTimeFilter(unittest.TestCase):
-    DIRECTION_NAME = '1'
+    DIRECTION_NAME = "1"
     DATETIME_ONE = datetime.datetime(2000, 1, 1, 1, 0, 0)
     DATETIME_TWO = datetime.datetime(2000, 1, 1, 2, 0, 0)
-    ROUTE_ID = '1'
+    ROUTE_ID = "1"
 
     def setUp(self):
         self.stop_event_filter = stopservice._TripStopTimeFilter()
@@ -88,13 +88,9 @@ class TestTripStopTimeFilter(unittest.TestCase):
         """[Stop service] Add direction name"""
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
 
+        self.assertDictEqual(self.stop_event_filter._count, {self.DIRECTION_NAME: 0})
         self.assertDictEqual(
-            self.stop_event_filter._count,
-            {self.DIRECTION_NAME: 0}
-        )
-        self.assertDictEqual(
-            self.stop_event_filter._route_ids_so_far,
-            {self.DIRECTION_NAME: set()}
+            self.stop_event_filter._route_ids_so_far, {self.DIRECTION_NAME: set()}
         )
 
     def test_add_direction_name_already_added(self):
@@ -102,12 +98,9 @@ class TestTripStopTimeFilter(unittest.TestCase):
         self.stop_event_filter._count[self.DIRECTION_NAME] = 50
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
 
-        self.assertDictEqual(
-            self.stop_event_filter._count,
-            {self.DIRECTION_NAME: 50}
-        )
+        self.assertDictEqual(self.stop_event_filter._count, {self.DIRECTION_NAME: 50})
 
-    @mock.patch.object(stopservice, 'time')
+    @mock.patch.object(stopservice, "time")
     def test_exclude_route_not_there_yet(self, time):
         """[Stop service] Exclude route not there yet"""
         self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
@@ -115,21 +108,20 @@ class TestTripStopTimeFilter(unittest.TestCase):
         time.time.return_value = self.DATETIME_ONE.timestamp()
         self.stop_event.departure_time = self.DATETIME_ONE
 
-        exclude = self.stop_event_filter.exclude(
-            self.stop_event, self.DIRECTION_NAME)
+        exclude = self.stop_event_filter.exclude(self.stop_event, self.DIRECTION_NAME)
 
         self.assertFalse(exclude)
 
 
 class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
-    SYSTEM_ID = '1'
-    STOP_ONE_ID = '2'
+    SYSTEM_ID = "1"
+    STOP_ONE_ID = "2"
     STOP_ONE_PK = 3
     TRIP_PK = 100
-    TRIP_ID = '101'
-    ROUTE_ID = '103'
-    STOP_TWO_ID = '102'
-    DIRECTION_NAME = 'Uptown'
+    TRIP_ID = "101"
+    ROUTE_ID = "103"
+    STOP_TWO_ID = "102"
+    DIRECTION_NAME = "Uptown"
     TRIP_STOP_TIME_ONE_PK = 201
     TRIP_STOP_TIME_TWO_PK = 202
 
@@ -137,7 +129,9 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         self.stop_dao = self.mockImportedModule(stopservice.stopdam)
         self.systemdam = self.mockImportedModule(stopservice.systemdam)
         self.tripdam = self.mockImportedModule(stopservice.tripdam)
-        self.servicepatternmanager = self.mockImportedModule(stopservice.servicemapmanager)
+        self.servicepatternmanager = self.mockImportedModule(
+            stopservice.servicemapmanager
+        )
 
         self.stop_one = models.Stop()
         self.stop_one.pk = self.STOP_ONE_PK
@@ -148,10 +142,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         self.stop_dao.list_all_in_system.return_value = [self.stop_one]
 
         expected = [
-            {
-                'href': links.StopEntityLink(self.stop_one),
-                **self.stop_one.short_repr(),
-            }
+            {"href": links.StopEntityLink(self.stop_one), **self.stop_one.short_repr()}
         ]
 
         actual = stopservice.list_all_in_system(self.SYSTEM_ID, True)
@@ -165,7 +156,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
 
         self.assertRaises(
             exceptions.IdNotFoundError,
-            lambda: stopservice.list_all_in_system(self.SYSTEM_ID)
+            lambda: stopservice.list_all_in_system(self.SYSTEM_ID),
         )
 
     def test_get_in_system_by_id__stop_not_found(self):
@@ -174,20 +165,24 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
 
         self.assertRaises(
             exceptions.IdNotFoundError,
-            lambda: stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)
+            lambda: stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID),
         )
 
-    @mock.patch.object(stopservice, '_TripStopTimeFilter')
-    @mock.patch.object(stopservice, '_DirectionNameMatcher')
-    @mock.patch.object(stopservice, '_build_trip_stop_time_response')
-    @mock.patch.object(stopservice, '_build_stop_tree_response')
-    def test_get_in_system_by_id(self, _build_stop_tree_response,
-                                 _build_trip_stop_time_response,
-                                 _DirectionNameMatcher, _TripStopTimeFilter):
+    @mock.patch.object(stopservice, "_TripStopTimeFilter")
+    @mock.patch.object(stopservice, "_DirectionNameMatcher")
+    @mock.patch.object(stopservice, "_build_trip_stop_time_response")
+    @mock.patch.object(stopservice, "_build_stop_tree_response")
+    def test_get_in_system_by_id(
+        self,
+        _build_stop_tree_response,
+        _build_trip_stop_time_response,
+        _DirectionNameMatcher,
+        _TripStopTimeFilter,
+    ):
         """[Stop service] Get stop"""
 
-        fake_stop_tree_response = {'id': self.STOP_ONE_ID}
-        fake_trip_stop_time_response = {'id': self.TRIP_ID}
+        fake_stop_tree_response = {"id": self.STOP_ONE_ID}
+        fake_trip_stop_time_response = {"id": self.TRIP_ID}
         fake_trip_pk_to_last_stop_map = mock.MagicMock()
         fake_service_map_response_map = mock.MagicMock()
 
@@ -203,8 +198,12 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         _build_stop_tree_response.return_value = fake_stop_tree_response
         _build_trip_stop_time_response.return_value = fake_trip_stop_time_response
 
-        self.tripdam.get_trip_pk_to_last_stop_map.return_value = fake_trip_pk_to_last_stop_map
-        self.servicepatternmanager.build_stop_pk_to_service_maps_response = fake_service_map_response_map
+        self.tripdam.get_trip_pk_to_last_stop_map.return_value = (
+            fake_trip_pk_to_last_stop_map
+        )
+        self.servicepatternmanager.build_stop_pk_to_service_maps_response = (
+            fake_service_map_response_map
+        )
 
         stop_time_one = models.StopTimeUpdate()
         stop_time_one.pk = self.TRIP_STOP_TIME_ONE_PK
@@ -212,7 +211,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         stop_time_two.pk = self.TRIP_STOP_TIME_TWO_PK
         self.stop_dao.list_stop_time_updates_at_stops.return_value = [
             stop_time_one,
-            stop_time_two
+            stop_time_two,
         ]
 
         stop = self.stop_one
@@ -222,12 +221,8 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
 
         expected = {
             **fake_stop_tree_response,
-            'direction_names': [self.DIRECTION_NAME],
-            'stop_time_updates': [
-                {
-                    **fake_trip_stop_time_response
-                }
-            ]
+            "direction_names": [self.DIRECTION_NAME],
+            "stop_time_updates": [{**fake_trip_stop_time_response}],
         }
 
         actual = stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)
@@ -251,28 +246,22 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         last_stop.id = self.STOP_TWO_ID
 
         expected = {
-            'stop_id': self.STOP_ONE_ID,
-            'direction_name': self.DIRECTION_NAME,
+            "stop_id": self.STOP_ONE_ID,
+            "direction_name": self.DIRECTION_NAME,
             **trip_stop_time.short_repr(),
-            'trip': {
+            "trip": {
                 **trip.long_repr(),
-                'href': links.TripEntityLink(trip),
-                'route': {
-                    'href': links.RouteEntityLink(route),
-                    **route.short_repr()
-                },
-                'last_stop': {
+                "href": links.TripEntityLink(trip),
+                "route": {"href": links.RouteEntityLink(route), **route.short_repr()},
+                "last_stop": {
                     **last_stop.short_repr(),
-                    'href': links.StopEntityLink(last_stop)
-                }
-            }
+                    "href": links.StopEntityLink(last_stop),
+                },
+            },
         }
 
         actual = stopservice._build_trip_stop_time_response(
-            trip_stop_time,
-            self.DIRECTION_NAME,
-            {trip.pk: last_stop},
-            True
+            trip_stop_time, self.DIRECTION_NAME, {trip.pk: last_stop}, True
         )
 
         self.maxDiff = None
@@ -293,7 +282,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
             stops[i].pk = i
             stops[i].id = str(i)
             stops[i].is_station = True
-            stops[i].system_id = 'system'
+            stops[i].system_id = "system"
         stops[0].child_stops = [stops[1], stops[2]]
         stops[1].child_stops = [stops[3]]
         stops[3].is_station = False
@@ -302,30 +291,27 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
 
         expected = {
             **stops[1].short_repr(),
-            'service_maps': 1,
-            'href': links.StopEntityLink(stops[1]),
-            'parent_stop': {
+            "service_maps": 1,
+            "href": links.StopEntityLink(stops[1]),
+            "parent_stop": {
                 **stops[0].short_repr(),
-                'service_maps': 0,
-                'href': links.StopEntityLink(stops[0]),
-                'parent_stop': None,
-                'child_stops': [
+                "service_maps": 0,
+                "href": links.StopEntityLink(stops[0]),
+                "parent_stop": None,
+                "child_stops": [
                     {
                         **stops[2].short_repr(),
-                        'service_maps': 2,
-                        'href': links.StopEntityLink(stops[2]),
-                        'child_stops': []
+                        "service_maps": 2,
+                        "href": links.StopEntityLink(stops[2]),
+                        "child_stops": [],
                     }
-                ]
+                ],
             },
-            'child_stops': []
+            "child_stops": [],
         }
 
         actual = stopservice._build_stop_tree_response(
-            stops[1],
-            stop_pk_to_service_maps_response,
-            True,
-            True
+            stops[1], stop_pk_to_service_maps_response, True, True
         )
 
         self.maxDiff = None
@@ -385,4 +371,3 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
             actual_pks = {stop.pk for stop in stopservice._get_all_stations(stop)}
 
             self.assertEqual(expected_pks, actual_pks)
-

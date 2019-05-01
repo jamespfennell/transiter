@@ -15,7 +15,3 @@ from .stop import Stop
 from .stoptimeupdate import StopTimeUpdate
 from .system import System
 from .trip import Trip
-
-
-
-

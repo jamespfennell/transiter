@@ -31,16 +31,14 @@ class _TransiterException(Exception):
         Return structured information about this exception instance.
         """
         if len(self.additional_info) > 0:
-            additional_info = {
-                'additional_info': self.additional_info
-            }
+            additional_info = {"additional_info": self.additional_info}
         else:
             additional_info = {}
         return {
-            'type': type(self).__name__,
-            'code': self.code,
-            'message': self.message,
-            **additional_info
+            "type": type(self).__name__,
+            "code": self.code,
+            "message": self.message,
+            **additional_info,
         }
 
 
@@ -49,8 +47,8 @@ class InstallError(_TransiterException):
     Exception that is thrown when there's a problem during install.
     """
 
-    code = 'T010'
-    message = 'There was an error installing the transit system.'
+    code = "T010"
+    message = "There was an error installing the transit system."
 
 
 class InvalidInput(_TransiterException):
@@ -59,8 +57,8 @@ class InvalidInput(_TransiterException):
     invalid. This is usually the result of an invalid user HTTP request.
     """
 
-    code = 'T020'
-    message = 'The request contained invalid input.'
+    code = "T020"
+    message = "The request contained invalid input."
 
 
 class ConfigFileNotFoundError(_TransiterException):
@@ -68,8 +66,8 @@ class ConfigFileNotFoundError(_TransiterException):
     Exception that is raised when the Transiter config file could not be found.
     """
 
-    code = 'T030'
-    message = 'The Transiter config file could not be found!'
+    code = "T030"
+    message = "The Transiter config file could not be found!"
 
 
 # TODO: accept the ID and type and rename EntityNotFound
@@ -78,8 +76,8 @@ class IdNotFoundError(_TransiterException):
     Exception that is raised when a specific DB entity could not be found.
     """
 
-    code = 'T050'
-    message = 'One of the requested enities could not be found.'
+    code = "T050"
+    message = "One of the requested enities could not be found."
 
 
 class InvalidPermissionsLevelInRequest(_TransiterException):
@@ -87,13 +85,13 @@ class InvalidPermissionsLevelInRequest(_TransiterException):
     Raised when the HTTP requests contains an unknown permissions level.
     """
 
-    code = 'T060'
+    code = "T060"
 
     def __init__(self, permissions_level_str=None, valid_levels=[]):
-        self.message = 'Unknown permissions level in the HTTP request.'
+        self.message = "Unknown permissions level in the HTTP request."
         self.additional_info = {
-            'request_permissions_level': permissions_level_str,
-            'valid_permissions_levels': valid_levels
+            "request_permissions_level": permissions_level_str,
+            "valid_permissions_levels": valid_levels,
         }
 
 
@@ -102,13 +100,11 @@ class AccessDenied(_TransiterException):
     Raised when the HTTP request has insufficient permissions.
     """
 
-    code = 'T061'
+    code = "T061"
 
     def __init__(self, provided=None, required=None):
-        self.message = (
-            'Insufficient permission to access this HTTP endpoint.'
-        )
+        self.message = "Insufficient permission to access this HTTP endpoint."
         self.additional_info = {
-            'required_permissions_level': required,
-            'request_permissions_level': provided
+            "required_permissions_level": required,
+            "request_permissions_level": provided,
         }

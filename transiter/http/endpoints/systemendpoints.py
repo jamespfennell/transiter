@@ -7,7 +7,7 @@ from transiter.services import systemservice, links
 system_endpoints = flask.Blueprint(__name__, __name__)
 
 
-@http_endpoint(system_endpoints, '')
+@http_endpoint(system_endpoints, "")
 @link_target(links.SystemsIndexLink)
 def list_all():
     """List all systems
@@ -29,7 +29,7 @@ def list_all():
     return systemservice.list_all()
 
 
-@http_endpoint(system_endpoints, '/<system_id>')
+@http_endpoint(system_endpoints, "/<system_id>")
 @link_target(links.SystemEntityLink)
 def get_by_id(system_id):
     """Get data on a specific system.
@@ -61,7 +61,7 @@ def get_by_id(system_id):
     return systemservice.get_by_id(system_id)
 
 
-@http_endpoint(system_endpoints, '/<system_id>', RequestType.CREATE)
+@http_endpoint(system_endpoints, "/<system_id>", RequestType.CREATE)
 @requires_permissions(PermissionsLevel.ALL)
 def install(system_id):
     """Install a system.
@@ -79,20 +79,18 @@ def install(system_id):
     :formparameter (additional setting name): additional settings (for example,
         API keys) required by the system config.
     """
-    config_str = flask.request.files['config_file'].read().decode('utf-8')
-    extra_files = {
-        key: flask.request.files[key].stream for key in flask.request.files
-    }
-    del extra_files['config_file']
+    config_str = flask.request.files["config_file"].read().decode("utf-8")
+    extra_files = {key: flask.request.files[key].stream for key in flask.request.files}
+    del extra_files["config_file"]
     return systemservice.install(
         system_id=system_id,
         config_str=config_str,
         extra_files=extra_files,
-        extra_settings=flask.request.form.to_dict()
+        extra_settings=flask.request.form.to_dict(),
     )
 
 
-@http_endpoint(system_endpoints, '/<system_id>', RequestType.DELETE)
+@http_endpoint(system_endpoints, "/<system_id>", RequestType.DELETE)
 @requires_permissions(PermissionsLevel.ALL)
 def delete_by_id(system_id):
     """Uninstall a system.

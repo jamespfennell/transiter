@@ -6,22 +6,21 @@ from .base import Base
 
 # TODO: make direction names a separate module in systems/{}/directionnames
 class DirectionNameRule(Base):
-    __tablename__ = 'direction_name_rule'
+    __tablename__ = "direction_name_rule"
 
     pk = Column(Integer, primary_key=True)
-    stop_pk = Column(Integer, ForeignKey('stop.pk'))
+    stop_pk = Column(Integer, ForeignKey("stop.pk"))
 
     priority = Column(Integer)
     direction_id = Column(Boolean)
     track = Column(String)
     name = Column(String)
 
-    stop = relationship(
-        'Stop',
-        back_populates='direction_name_rules')
+    stop = relationship("Stop", back_populates="direction_name_rules")
 
 
-Index('direction_name_rule_stop_pk_priority_idx',
-      DirectionNameRule.stop_pk,
-      DirectionNameRule.priority)
-
+Index(
+    "direction_name_rule_stop_pk_priority_idx",
+    DirectionNameRule.stop_pk,
+    DirectionNameRule.priority,
+)

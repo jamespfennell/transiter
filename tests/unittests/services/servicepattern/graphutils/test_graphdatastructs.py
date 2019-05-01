@@ -5,13 +5,13 @@ from transiter.services.servicemap.graphutils import graphdatastructs
 
 class TestGraphDataStructs(unittest.TestCase):
     def setUp(self):
-        edges = [('a', 'b'), ('c', 'd'), ('b', 'c')]
+        edges = [("a", "b"), ("c", "d"), ("b", "c")]
         self.graph_1 = graphdatastructs.construct_graph_from_edge_tuples(edges)
-        edges = [('a', 'b'), ('c', 'd'), ('c', 'b')]
+        edges = [("a", "b"), ("c", "d"), ("c", "b")]
         self.graph_2 = graphdatastructs.construct_graph_from_edge_tuples(edges)
-        edges = [('a', 'b'), ('b', 'c'), ('b', 'd')]
+        edges = [("a", "b"), ("b", "c"), ("b", "d")]
         self.graph_3 = graphdatastructs.construct_graph_from_edge_tuples(edges)
-        edges = [('a', 'b'), ('b', 'c'), ('c', 'a')]
+        edges = [("a", "b"), ("b", "c"), ("c", "a")]
         self.graph_4 = graphdatastructs.construct_graph_from_edge_tuples(edges)
 
     def test_is_path_1(self):
@@ -36,7 +36,7 @@ class TestGraphDataStructs(unittest.TestCase):
     def test_cast_to_path_1(self):
         """[Graph data structs] Case to path - works"""
         path = self.graph_1.cast_to_path()
-        expected = ['a', 'b', 'c', 'd']
+        expected = ["a", "b", "c", "d"]
         i = 0
         for vertex in path.vertices():
             self.assertEquals(expected[i], vertex.label)
@@ -44,13 +44,15 @@ class TestGraphDataStructs(unittest.TestCase):
 
     def test_cast_to_path_2(self):
         """[Graph data structs] Case to path - impossible, case 1"""
-        self.assertRaises(graphdatastructs.NotCastableAsAPathError,
-                          self.graph_2.cast_to_path)
+        self.assertRaises(
+            graphdatastructs.NotCastableAsAPathError, self.graph_2.cast_to_path
+        )
 
     def test_cast_to_path_3(self):
         """[Graph data structs] Case to path - impossible, case 2"""
-        self.assertRaises(graphdatastructs.NotCastableAsAPathError,
-                          self.graph_3.cast_to_path)
+        self.assertRaises(
+            graphdatastructs.NotCastableAsAPathError, self.graph_3.cast_to_path
+        )
 
     def test_equal_graphs_1(self):
         """[Graph data structs] Graphs are equal - case 1"""

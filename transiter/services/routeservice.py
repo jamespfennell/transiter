@@ -34,16 +34,11 @@ def list_all_in_system(system_id, return_links=False):
         raise exceptions.IdNotFoundError
     response = []
     routes = list(routedam.list_all_in_system(system_id))
-    route_pk_to_status = (
-        _construct_route_pk_to_status_map(route.pk for route in routes)
-    )
+    route_pk_to_status = _construct_route_pk_to_status_map(route.pk for route in routes)
     for route in routes:
-        route_response = {
-            **route.short_repr(),
-            'status': route_pk_to_status[route.pk]
-        }
+        route_response = {**route.short_repr(), "status": route_pk_to_status[route.pk]}
         if return_links:
-            route_response['href'] = links.RouteEntityLink(route)
+            route_response["href"] = links.RouteEntityLink(route)
         response.append(route_response)
     return response
 
@@ -77,41 +72,38 @@ def get_in_system_by_id(system_id, route_id, return_links=False):
     status = _construct_route_status(route.pk)
     periodicity = routedam.calculate_periodicity(route.pk)
     if periodicity is not None:
-        periodicity = int(periodicity/6)/10
+        periodicity = int(periodicity / 6) / 10
     response = {
         **route.long_repr(),
-        'periodicity': periodicity,
-        'status': status,
-        'alerts':
-            [alert.short_repr() for alert in route.route_statuses],
-        'service_maps': []
+        "periodicity": periodicity,
+        "status": status,
+        "alerts": [alert.short_repr() for alert in route.route_statuses],
+        "service_maps": [],
     }
 
-    for group, service_map in (
-        servicemapdam.list_groups_and_maps_for_stops_in_route(route.pk)
+    for group, service_map in servicemapdam.list_groups_and_maps_for_stops_in_route(
+        route.pk
     ):
-        service_map_response = {
-            'group_id': group.id,
-            'stops': []
-        }
+        service_map_response = {"group_id": group.id, "stops": []}
         if service_map is not None:
             for entry in service_map.vertices:
                 stop_response = entry.stop.short_repr()
                 if return_links:
-                    stop_response['href'] = links.StopEntityLink(entry.stop)
-                service_map_response['stops'].append(stop_response)
-        response['service_maps'].append(service_map_response)
+                    stop_response["href"] = links.StopEntityLink(entry.stop)
+                service_map_response["stops"].append(stop_response)
+        response["service_maps"].append(service_map_response)
 
     return response
 
 
 class Status(str, enum.Enum):
     """Enum containing the possible statuses for a route."""
-    NO_SERVICE = 'NO_SERVICE'
-    GOOD_SERVICE = 'GOOD_SERVICE'
-    PLANNED_SERVICE_CHANGE = 'PLANNED_SERVICE_CHANGE'
-    UNPLANNED_SERVICE_CHANGE = 'UNPLANNED_SERVICE_CHANGE'
-    DELAYS = 'DELAYS'
+
+    NO_SERVICE = "NO_SERVICE"
+    GOOD_SERVICE = "GOOD_SERVICE"
+    PLANNED_SERVICE_CHANGE = "PLANNED_SERVICE_CHANGE"
+    UNPLANNED_SERVICE_CHANGE = "UNPLANNED_SERVICE_CHANGE"
+    DELAYS = "DELAYS"
 
 
 def _construct_route_status(route_pk):
@@ -173,4 +165,3 @@ def _construct_route_pk_to_status_map(route_pks_iter):
         route_pk_to_status[route_pk] = Status.GOOD_SERVICE
 
     return route_pk_to_status
-

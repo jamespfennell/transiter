@@ -1,4 +1,13 @@
-from sqlalchemy import DateTime, Column, UniqueConstraint, Enum, Integer, String, Boolean, ForeignKey
+from sqlalchemy import (
+    DateTime,
+    Column,
+    UniqueConstraint,
+    Enum,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+)
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -8,11 +17,11 @@ import enum
 # NOTE: if the table was foreign keyed to system though system.pk instead,
 # wouldn't need to give the task service system info
 class Feed(Base):
-    __tablename__ = 'feed'
+    __tablename__ = "feed"
 
     pk = Column(Integer, primary_key=True)
     id = Column(String)
-    system_id = Column(String, ForeignKey('system.id'))
+    system_id = Column(String, ForeignKey("system.id"))
 
     url = Column(String)
 
@@ -33,14 +42,11 @@ class Feed(Base):
     # TODO: rename auto_update_period
     auto_updater_frequency = Column(Integer)
 
-    system = relationship(
-        'System',
-        back_populates='feeds')
+    system = relationship("System", back_populates="feeds")
     updates = relationship(
-        'FeedUpdate',
-        back_populates='feed',
-        cascade='all, delete-orphan')
+        "FeedUpdate", back_populates="feed", cascade="all, delete-orphan"
+    )
 
-    __table_args__ = (UniqueConstraint('system_id', 'id'),)
+    __table_args__ = (UniqueConstraint("system_id", "id"),)
 
-    _short_repr_list = ['id']
+    _short_repr_list = ["id"]

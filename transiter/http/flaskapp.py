@@ -16,25 +16,18 @@ from transiter.services import links
 app = flask.Flask(__name__)
 
 app.register_blueprint(
-    endpoints.feed_endpoints,
-    url_prefix='/systems/<system_id>/feeds'
+    endpoints.feed_endpoints, url_prefix="/systems/<system_id>/feeds"
 )
 app.register_blueprint(
-    endpoints.stop_endpoints,
-    url_prefix='/systems/<system_id>/stops'
+    endpoints.stop_endpoints, url_prefix="/systems/<system_id>/stops"
 )
 app.register_blueprint(
-    endpoints.route_endpoints,
-    url_prefix='/systems/<system_id>/routes'
+    endpoints.route_endpoints, url_prefix="/systems/<system_id>/routes"
 )
 app.register_blueprint(
-    endpoints.trip_endpoints,
-    url_prefix='/systems/<system_id>/routes/<route_id>/trips'
+    endpoints.trip_endpoints, url_prefix="/systems/<system_id>/routes/<route_id>/trips"
 )
-app.register_blueprint(
-    endpoints.system_endpoints,
-    url_prefix='/systems'
-)
+app.register_blueprint(endpoints.system_endpoints, url_prefix="/systems")
 
 
 @app.errorhandler(404)
@@ -52,7 +45,7 @@ def page_not_found(__):
     raise exceptions.IdNotFoundError
 
 
-@http_endpoint(app, '/')
+@http_endpoint(app, "/")
 def root():
     """Provides information about this Transiter instance and the Transit
     systems it contains.
@@ -79,26 +72,23 @@ def root():
     return_links = False
     try:
         commit_hash = (
-            subprocess
-                .check_output(['git', 'rev-parse', 'HEAD'])
-                .decode('utf-8')
-                .strip()
+            subprocess.check_output(["git", "rev-parse", "HEAD"])
+            .decode("utf-8")
+            .strip()
         )
     except:
         commit_hash = None
     response = {
-        'software': {
-            'name': 'Transiter',
-            'version': '0.1',
-            'commit_hash': commit_hash,
-            'href': 'https://github.com/jamespfennell/transiter',
+        "software": {
+            "name": "Transiter",
+            "version": "0.1",
+            "commit_hash": commit_hash,
+            "href": "https://github.com/jamespfennell/transiter",
         },
-        'systems': {
-            'count': 0
-        }
+        "systems": {"count": 0},
     }
     if return_links:
-        response['systems']['href'] = links.SystemsIndexLink()
+        response["systems"]["href"] = links.SystemsIndexLink()
     return response
 
 
@@ -109,12 +99,13 @@ def launch(force=False):
     :param force: unused currently. In future, if true, will force kill any
         process listening on the target port
     """
-    logger = logging.getLogger('transiter')
+    logger = logging.getLogger("transiter")
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler()
     logger.addHandler(handler)
     formatter = logging.Formatter(
-        '%(asctime)s WS %(levelname)-5s [%(module)s] %(message)s')
+        "%(asctime)s WS %(levelname)-5s [%(module)s] %(message)s"
+    )
     handler.setFormatter(formatter)
 
     app.run(debug=True)

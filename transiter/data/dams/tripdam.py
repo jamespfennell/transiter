@@ -16,8 +16,8 @@ def list_all_in_route_by_pk(route_pk):
     session = database.get_session()
     query = (
         session.query(models.Trip)
-            .filter(models.Trip.route_pk == route_pk)
-            .options(selectinload(models.Trip.stop_events))
+        .filter(models.Trip.route_pk == route_pk)
+        .options(selectinload(models.Trip.stop_events))
     )
     return query.all()
 
@@ -32,12 +32,14 @@ def get_in_route_by_id(system_id, route_id, trip_id):
     :return: the Trip
     """
     session = database.get_session()
-    return session.query(models.Trip) \
-        .join(models.Route, models.Route.pk == models.Trip.route_pk) \
-        .filter(models.Route.system_id == system_id) \
-        .filter(models.Route.id == route_id) \
-        .filter(models.Trip.id == trip_id) \
+    return (
+        session.query(models.Trip)
+        .join(models.Route, models.Route.pk == models.Trip.route_pk)
+        .filter(models.Route.system_id == system_id)
+        .filter(models.Route.id == route_id)
+        .filter(models.Trip.id == trip_id)
         .one_or_none()
+    )
 
 
 def get_trip_pk_to_last_stop_map(trip_pks):
@@ -52,19 +54,18 @@ def get_trip_pk_to_last_stop_map(trip_pks):
     sub_query = (
         session.query(
             models.StopTimeUpdate.trip_pk,
-            sqlalchemy.func.max(models.StopTimeUpdate.stop_sequence)
+            sqlalchemy.func.max(models.StopTimeUpdate.stop_sequence),
         )
-            .group_by(models.StopTimeUpdate.trip_pk)
-            .filter(models.StopTimeUpdate.trip_pk.in_(trip_pks))
+        .group_by(models.StopTimeUpdate.trip_pk)
+        .filter(models.StopTimeUpdate.trip_pk.in_(trip_pks))
     )
     query = (
         session.query(models.StopTimeUpdate.trip_pk, models.Stop)
-            .filter(models.StopTimeUpdate.stop_pk == models.Stop.pk)
-            .filter(
+        .filter(models.StopTimeUpdate.stop_pk == models.Stop.pk)
+        .filter(
             sqlalchemy.tuple_(
-                models.StopTimeUpdate.trip_pk,
-                models.StopTimeUpdate.stop_sequence)
-                .in_(sub_query)
+                models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence
+            ).in_(sub_query)
         )
     )
     trip_pk_to_last_stop = {trip_pk: None for trip_pk in trip_pks}
@@ -83,15 +84,10 @@ def get_trip_pk_to_path_map(route_pk):
     :return: map described above
     """
     statement = (
-        sql.select([
-            models.StopTimeUpdate.trip_pk,
-            models.StopTimeUpdate.stop_pk
-        ])
-            .select_from(
-            sql.join(models.StopTimeUpdate, models.Trip)
-        )
-            .where(models.Trip.route_pk == route_pk)
-            .order_by(models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence)
+        sql.select([models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_pk])
+        .select_from(sql.join(models.StopTimeUpdate, models.Trip))
+        .where(models.Trip.route_pk == route_pk)
+        .order_by(models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence)
     )
     session = database.get_session()
     trip_pk_to_stop_pks = {}

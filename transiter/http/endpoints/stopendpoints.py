@@ -5,7 +5,7 @@ from transiter.services import stopservice, links
 stop_endpoints = flask.Blueprint(__name__, __name__)
 
 
-@http_endpoint(stop_endpoints, '')
+@http_endpoint(stop_endpoints, "")
 @link_target(links.StopsInSystemIndexLink)
 def list_all_in_system(system_id):
     """List all stops for a specific system
@@ -32,7 +32,7 @@ def list_all_in_system(system_id):
     return stopservice.list_all_in_system(system_id)
 
 
-@http_endpoint(stop_endpoints, '/<stop_id>')
+@http_endpoint(stop_endpoints, "/<stop_id>")
 @link_target(links.StopEntityLink)
 def get_in_system_by_id(system_id, stop_id):
     """Retrieve a specific stop in a specific system.

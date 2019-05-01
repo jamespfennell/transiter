@@ -4,7 +4,6 @@ This module contains the graph data structures used in the service map code.
 
 
 class DirectedPath:
-
     def __init__(self, label_list):
         self._vertices = [DirectedPathVertex(label) for label in label_list]
         for i in range(len(self._vertices) - 1):
@@ -23,7 +22,6 @@ class DirectedPath:
 
 
 class DirectedPathVertex:
-
     def __init__(self, label):
         self.label = label
         self.prev = None
@@ -34,11 +32,11 @@ class NotCastableAsAPathError(Exception):
     """
     Thrown if a non-path directed graph is attempted to be case to a path.
     """
+
     pass
 
 
 class DirectedGraph:
-
     def __init__(self):
         self.sources = set()
 
@@ -138,7 +136,6 @@ class DirectedGraphVertex:
 
 
 class SortedDirectedGraph(DirectedGraph):
-
     def __init__(self, directed_graph, order):
         self.sources = directed_graph.sources
         self._order = order

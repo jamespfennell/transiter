@@ -6,19 +6,18 @@ from .. import testutil
 
 
 class TestPermissions(testutil.TestCase(permissions), unittest.TestCase):
-
     def setUp(self):
         flask = self.mockImportedModule(permissions.flask)
         self.headers = flask.request.headers
 
     def test_invalid_request_permissions_level(self):
         """[Permissions validator] Invalid request permissions level"""
-        self.headers.get.return_value = 'GarbageStatus'
+        self.headers.get.return_value = "GarbageStatus"
 
         self.assertRaises(
             exceptions.InvalidPermissionsLevelInRequest,
             permissions.ensure,
-            permissions.PermissionsLevel.ALL
+            permissions.PermissionsLevel.ALL,
         )
 
     def test_no_permission(self):
@@ -28,7 +27,7 @@ class TestPermissions(testutil.TestCase(permissions), unittest.TestCase):
         self.assertRaises(
             exceptions.AccessDenied,
             permissions.ensure,
-            permissions.PermissionsLevel.ALL
+            permissions.PermissionsLevel.ALL,
         )
 
     def test_has_permission(self):

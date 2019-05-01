@@ -9,6 +9,7 @@ class ImpossibleToTopologicallySortGraph(Exception):
     """
     Exception thrown if the inputted directed graph contains a cycle.
     """
+
     pass
 
 

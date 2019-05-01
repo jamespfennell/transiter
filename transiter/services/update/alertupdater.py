@@ -15,7 +15,7 @@ def sync_alerts(system, alerts):
     session = database.get_session()
     existing_alerts = systemdam.list_all_alerts_in_system(system.id)
 
-    (expired_alerts, __, __) = syncutil.copy_pks(existing_alerts, alerts, ('id',))
+    (expired_alerts, __, __) = syncutil.copy_pks(existing_alerts, alerts, ("id",))
 
     for expired_alert in expired_alerts:
         session.delete(expired_alert)
@@ -25,7 +25,4 @@ def sync_alerts(system, alerts):
     for alert in alerts:
         persisted_alert = session.merge(alert)
         route_ids = alert.route_ids
-        persisted_alert.routes = [
-            route_id_to_route[route_id] for route_id in route_ids
-        ]
-
+        persisted_alert.routes = [route_id_to_route[route_id] for route_id in route_ids]

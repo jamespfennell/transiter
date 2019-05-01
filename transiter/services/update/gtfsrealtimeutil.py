@@ -14,10 +14,11 @@ from transiter.services.update import tripupdater
 
 
 def create_parser(
-        gtfs_realtime_pb2_module=None,
-        post_pb2_parsing_function=None,
-        trip_data_cleaner: tripupdater.TripDataCleaner = None,
-        route_ids_function=None):
+    gtfs_realtime_pb2_module=None,
+    post_pb2_parsing_function=None,
+    trip_data_cleaner: tripupdater.TripDataCleaner = None,
+    route_ids_function=None,
+):
     """
     Create a GTFS Realtime parser.
 
@@ -67,13 +68,14 @@ def create_parser(
         gtfs_data = read_gtfs_realtime(content, gtfs_realtime_pb2_module)
         post_pb2_parsing_function(gtfs_data)
         (feed_time, route_ids, trips) = transform_to_transiter_structure(
-            gtfs_data, 'America/New_York')
+            gtfs_data, "America/New_York"
+        )
         feed_update.feed_time = feed_time
         cleaned_trips = trip_data_cleaner_function(feed_update, trips)
         tripupdater.sync_trips(
             feed_update.feed.system,
             cleaned_trips,
-            route_ids_function(feed_update.feed, route_ids)
+            route_ids_function(feed_update.feed, route_ids),
         )
 
     return parser
@@ -114,9 +116,12 @@ def _read_protobuf_message(message):
         if descriptor.type == descriptor.TYPE_MESSAGE:
             parsing_function = _read_protobuf_message
         elif descriptor.type == descriptor.TYPE_ENUM:
+
             def parsing_function(value):
                 return descriptor.enum_type.values_by_number[value].name
+
         else:
+
             def parsing_function(value):
                 return value
 
@@ -143,7 +148,6 @@ def transform_to_transiter_structure(data, timezone_str=None):
 
 
 class _GtfsRealtimeToTransiterTransformer:
-
     def __init__(self, raw_data, timezone_str=None):
         self._raw_data = raw_data
         self._trip_id_to_raw_entities = {}
@@ -164,65 +168,65 @@ class _GtfsRealtimeToTransiterTransformer:
         self._transform_trip_base_data()
         self._transform_trip_stop_events()
         self._update_stop_event_indices()
-        return (self._feed_time,
-                self._feed_route_ids,
-                list(self._trip_id_to_trip_model.values()))
+        return (
+            self._feed_time,
+            self._feed_route_ids,
+            list(self._trip_id_to_trip_model.values()),
+        )
 
     def _transform_feed_metadata(self):
         self._feed_time = self._timestamp_to_datetime(
-            self._raw_data['header']['timestamp'])
-        self._transformed_metadata = {
-            'timestamp': self._feed_time
-        }
+            self._raw_data["header"]["timestamp"]
+        )
+        self._transformed_metadata = {"timestamp": self._feed_time}
 
     def _group_trip_entities(self):
-
         def attach_entity(entity_key, entity):
-            trip_descriptor = entity.get('trip', {})
-            trip_id = trip_descriptor.get('trip_id', None)
+            trip_descriptor = entity.get("trip", {})
+            trip_id = trip_descriptor.get("trip_id", None)
             if trip_id is None:
                 return
             self._trip_id_to_raw_entities.setdefault(trip_id, {})
-            self._trip_id_to_raw_entities[trip_id]['trip'] = trip_descriptor
+            self._trip_id_to_raw_entities[trip_id]["trip"] = trip_descriptor
             self._trip_id_to_raw_entities[trip_id][entity_key] = entity
 
-        for main_entity in self._raw_data.get('entity', []):
-            if 'trip_update' in main_entity:
-                attach_entity('trip_update', main_entity['trip_update'])
-            if 'vehicle' in main_entity:
-                attach_entity('vehicle', main_entity['vehicle'])
+        for main_entity in self._raw_data.get("entity", []):
+            if "trip_update" in main_entity:
+                attach_entity("trip_update", main_entity["trip_update"])
+            if "vehicle" in main_entity:
+                attach_entity("vehicle", main_entity["vehicle"])
 
     def _transform_trip_base_data(self):
         for trip_id, entity in self._trip_id_to_raw_entities.items():
-            trip_data = entity.get('trip', {})
+            trip_data = entity.get("trip", {})
 
             trip = models.Trip()
             trip.id = trip_id
-            trip.route_id = trip_data.get('route_id', None)
-            trip.direction_id = trip_data.get('direction_id', None)
-            start_date_str = trip_data.get('start_date', None)
+            trip.route_id = trip_data.get("route_id", None)
+            trip.direction_id = trip_data.get("direction_id", None)
+            start_date_str = trip_data.get("start_date", None)
             if start_date_str is not None:
                 start_dt = datetime.datetime(
                     year=int(start_date_str[0:4]),
                     month=int(start_date_str[4:6]),
-                    day=int(start_date_str[6:8]))
+                    day=int(start_date_str[6:8]),
+                )
                 trip.start_time = self._localize_datetime(start_dt, naive=True)
 
             trip.vehicle_id = (
-                entity
-                    .get('trip_update', {})
-                    .get('vehicle', {})
-                    .get('id', None)
+                entity.get("trip_update", {}).get("vehicle", {}).get("id", None)
             )
 
-            vehicle_data = entity.get('vehicle', {})
+            vehicle_data = entity.get("vehicle", {})
             trip.last_update_time = self._timestamp_to_datetime(
-                vehicle_data.get('timestamp', None))
+                vehicle_data.get("timestamp", None)
+            )
             if trip.last_update_time is None:
                 trip.last_update_time = self._transformed_metadata.get(
-                    'timestamp', None)
-            trip.current_status = vehicle_data.get('current_status', None)
-            trip.current_stop_sequence = vehicle_data.get('current_stop_sequence', 0)
+                    "timestamp", None
+                )
+            trip.current_status = vehicle_data.get("current_status", None)
+            trip.current_stop_sequence = vehicle_data.get("current_stop_sequence", 0)
             self._trip_id_to_trip_model[trip_id] = trip
             self._feed_route_ids.add(trip.route_id)
 
@@ -230,19 +234,20 @@ class _GtfsRealtimeToTransiterTransformer:
         for trip_id, trip in self._trip_id_to_trip_model.items():
             entity = self._trip_id_to_raw_entities[trip_id]
 
-            trip_update = entity.get('trip_update', {})
+            trip_update = entity.get("trip_update", {})
             stop_time_updates = []
 
-            for stop_time_update_data in trip_update.get('stop_time_update', []):
+            for stop_time_update_data in trip_update.get("stop_time_update", []):
                 t = time.time()
                 stop_time_update = models.StopTimeUpdate()
-                stop_time_update.stop_id = stop_time_update_data['stop_id']
-                stop_time_update.track = stop_time_update_data.get('track', None)
-                stop_time_update.arrival_time = (
-                    self._timestamp_to_datetime(
-                        stop_time_update_data.get('arrival', {}).get('time', None)))
+                stop_time_update.stop_id = stop_time_update_data["stop_id"]
+                stop_time_update.track = stop_time_update_data.get("track", None)
+                stop_time_update.arrival_time = self._timestamp_to_datetime(
+                    stop_time_update_data.get("arrival", {}).get("time", None)
+                )
                 stop_time_update.departure_time = self._timestamp_to_datetime(
-                    stop_time_update_data.get('departure', {}).get('time', None))
+                    stop_time_update_data.get("departure", {}).get("time", None)
+                )
                 stop_time_updates.append(stop_time_update)
             trip.stop_events = stop_time_updates
 
@@ -260,7 +265,9 @@ class _GtfsRealtimeToTransiterTransformer:
         if timestamp not in self._timestamp_to_datetime_cache:
             utc_dt_naive = datetime.datetime.utcfromtimestamp(timestamp)
             utc_dt = pytz.UTC.localize(utc_dt_naive)
-            self._timestamp_to_datetime_cache[timestamp] = self._localize_datetime(utc_dt)
+            self._timestamp_to_datetime_cache[timestamp] = self._localize_datetime(
+                utc_dt
+            )
         return self._timestamp_to_datetime_cache[timestamp]
 
     def _localize_datetime(self, dt, naive=False):

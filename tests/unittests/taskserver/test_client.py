@@ -5,9 +5,9 @@ from transiter.taskserver import client
 
 class TestClient(unittest.TestCase):
 
-    RESPONSE = '1'
+    RESPONSE = "1"
 
-    @mock.patch('transiter.taskserver.client.rpyc')
+    @mock.patch("transiter.taskserver.client.rpyc")
     def test_content(self, rpyc):
         """[RPYC Scheduler] Client get success"""
         conn = mock.MagicMock()
@@ -18,10 +18,10 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(self.RESPONSE, response)
 
-        rpyc.connect.assert_called_once_with('localhost', 12345)
+        rpyc.connect.assert_called_once_with("localhost", 12345)
         conn.root.refresh_tasks.assert_called_once_with()
 
-    @mock.patch('transiter.taskserver.client.rpyc')
+    @mock.patch("transiter.taskserver.client.rpyc")
     def test_fail_to_connect(self, rpyc):
         """[RPYC Scheduler] Client failure to connect"""
         rpyc.connect.side_effect = ConnectionRefusedError
@@ -30,4 +30,4 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(False, response)
 
-        rpyc.connect.assert_called_once_with('localhost', 12345)
+        rpyc.connect.assert_called_once_with("localhost", 12345)

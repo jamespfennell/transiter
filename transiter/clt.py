@@ -12,16 +12,16 @@ from transiter.taskserver import server as taskserver
 
 @click.group()
 @click.option(
-    '-c',
-    '--config-file',
+    "-c",
+    "--config-file",
     default=None,
     type=str,
-    help='Path to the Transiter config file. If not provided, this defaults '
-         'to the value of the environment variable TRANSITER_CONFIG, '
-         'or transiter-config.toml '
-         'if the environment variable is not set. '
-         'In the last case, if transiter-config.toml does not exist, the'
-         'default (SQLite) configuration is used.'
+    help="Path to the Transiter config file. If not provided, this defaults "
+    "to the value of the environment variable TRANSITER_CONFIG, "
+    "or transiter-config.toml "
+    "if the environment variable is not set. "
+    "In the last case, if transiter-config.toml does not exist, the"
+    "default (SQLite) configuration is used.",
 )
 def transiter_clt(config_file):
     """
@@ -36,15 +36,12 @@ def transiter_clt(config_file):
 
 @transiter_clt.command()
 @click.option(
-    '-f',
-    '--force',
+    "-f",
+    "--force",
     is_flag=True,
-    help='Force start by killing any process listening on the target port.'
+    help="Force start by killing any process listening on the target port.",
 )
-@click.argument(
-    'server',
-    type=click.Choice(['http-debug-server', 'task-server']),
-)
+@click.argument("server", type=click.Choice(["http-debug-server", "task-server"]))
 def launch(force, server):
     """
     Launch a Transiter server.
@@ -54,44 +51,39 @@ def launch(force, server):
 
     - The task-server is designed to be used in production.
     """
-    if server == 'http-debug-server':
+    if server == "http-debug-server":
         flaskapp.launch(force)
-    if server == 'task-server':
+    if server == "task-server":
         taskserver.launch(force)
 
 
 @transiter_clt.command()
+@click.option("-f", "--force", is_flag=True, help="Overwrite any existing file.")
 @click.option(
-    '-f',
-    '--force',
-    is_flag=True,
-    help='Overwrite any existing file.'
-)
-@click.option(
-    '-o',
-    '--output-file',
+    "-o",
+    "--output-file",
     default=config.DEFAULT_FILE_PATH,
     show_default=True,
-    help='Path to output the config file to.'
+    help="Path to output the config file to.",
 )
 @click.option(
-    '-u',
-    '--use-current-values',
+    "-u",
+    "--use-current-values",
     is_flag=True,
-    help='Populate the Transiter config file with the current config values, '
-         'rather than the defaults.'
+    help="Populate the Transiter config file with the current config values, "
+    "rather than the defaults.",
 )
 def generate_config(force, output_file, use_current_values):
     """
     Generate a Transiter config file template.
     """
-    mode = 'w' if force else 'x'
+    mode = "w" if force else "x"
     if use_current_values:
         config_str = config.generate()
     else:
         config_str = config.generate(
             database_config=config.DefaultDatabaseConfig,
-            task_server_config=config.DefaultTaskServerConfig
+            task_server_config=config.DefaultTaskServerConfig,
         )
     try:
         with open(output_file, mode) as file_handle:
@@ -102,8 +94,8 @@ def generate_config(force, output_file, use_current_values):
 
 @transiter_clt.command()
 @click.confirmation_option(
-    prompt='This will result in all data in the current database being lost.\n'
-           'Are you sure?'
+    prompt="This will result in all data in the current database being lost.\n"
+    "Are you sure?"
 )
 def rebuild_db():
     """

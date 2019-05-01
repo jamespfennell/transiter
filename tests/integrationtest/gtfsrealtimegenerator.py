@@ -2,17 +2,13 @@ from google.transit import gtfs_realtime_pb2
 
 
 class FeedTrip:
-
     def __init__(self, trip_id, route_id, stops_dict, base_time):
         self.trip_id = trip_id
         self.route_id = route_id
-        self.stops_dict = {
-            key: value + base_time for key, value in stops_dict.items()
-        }
+        self.stops_dict = {key: value + base_time for key, value in stops_dict.items()}
 
 
 class GtfsRealtimeFeed:
-
     def __init__(self, feed_time, feed_trips):
 
         self.feed_time = feed_time
@@ -26,7 +22,7 @@ class GtfsRealtimeFeed:
         header.gtfs_realtime_version = "2.0"
         header.timestamp = self.feed_time
         header.incrementality = 0
-        #feed_header.incrementality = gtfs_realtime_pb2..Incrementality.FULL_DATASET
+        # feed_header.incrementality = gtfs_realtime_pb2..Incrementality.FULL_DATASET
 
         for index, trip in enumerate(self.feed_trips):
             trip_entity = feed_message.entity.add()
@@ -55,8 +51,8 @@ class GtfsRealtimeFeed:
             trip_descr.route_id = trip.route_id
             vehicle_position.current_stop_sequence = num_ignored_stops
             trip.current_stop_sequence = num_ignored_stops
-        #gtfs_realtime_pb2._FEEDHEADER_INCREMENTALITY
-        #print(feed_message)
+        # gtfs_realtime_pb2._FEEDHEADER_INCREMENTALITY
+        # print(feed_message)
         return feed_message.SerializeToString()
 
     def stop_data(self):
@@ -67,12 +63,14 @@ class GtfsRealtimeFeed:
                 if time < self.feed_time:
                     continue
                 stop_data.setdefault(stop_id, [])
-                stop_data[stop_id].append({
-                    'trip_id': trip.trip_id,
-                    'route_id': trip.route_id,
-                    'arrival_time': time,
-                    'departure_time': time + 15
-                })
+                stop_data[stop_id].append(
+                    {
+                        "trip_id": trip.trip_id,
+                        "route_id": trip.route_id,
+                        "arrival_time": time,
+                        "departure_time": time + 15,
+                    }
+                )
         return stop_data
 
     def trip_data(self):
@@ -85,13 +83,16 @@ class GtfsRealtimeFeed:
                 if time < self.feed_time:
                     continue
                 trip_data.setdefault(trip.trip_id, [])
-                trip_data[trip.trip_id].append({
-                    'stop_id': stop_id,
-                    'route_id': trip.route_id,
-                    'arrival_time': time,
-                    'departure_time': time + 15
-                })
+                trip_data[trip.trip_id].append(
+                    {
+                        "stop_id": stop_id,
+                        "route_id": trip.route_id,
+                        "arrival_time": time,
+                        "departure_time": time + 15,
+                    }
+                )
         return (stop_sequences, trip_data)
+
 
 """
 

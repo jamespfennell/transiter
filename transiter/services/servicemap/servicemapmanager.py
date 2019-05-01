@@ -18,19 +18,14 @@ def build_stop_pk_to_service_maps_response(stop_pks):
     :return: a map of stop PK to the response
     """
     stop_pks = list(stop_pks)
-    stop_pk_to_service_map_group_id_to_routes = (
-        servicemapdam.get_stop_pk_to_group_id_to_routes_map(stop_pks)
+    stop_pk_to_service_map_group_id_to_routes = servicemapdam.get_stop_pk_to_group_id_to_routes_map(
+        stop_pks
     )
     stop_pk_to_service_maps_response = {}
     for stop_pk in stop_pks:
         group_id_to_routes = stop_pk_to_service_map_group_id_to_routes[stop_pk]
         stop_pk_to_service_maps_response[stop_pk] = [
-            {
-                'group_id': group_id,
-                'routes': [
-                    route.short_repr() for route in routes
-                ]
-            }
+            {"group_id": group_id, "routes": [route.short_repr() for route in routes]}
             for group_id, routes in group_id_to_routes.items()
         ]
     return stop_pk_to_service_maps_response
@@ -46,7 +41,7 @@ def calculate_realtime_service_map_for_route(route):
     # First find the realtime service map group, if it exists.
     realtime_service_map = None
     for service_map_group in route.system.service_map_groups:
-        if service_map_group.source != 'realtime':
+        if service_map_group.source != "realtime":
             continue
         realtime_service_map = service_map_group
         break
@@ -62,7 +57,8 @@ def calculate_realtime_service_map_for_route(route):
 
     # Now actually build the map.
     stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(
-        route.system.id)
+        route.system.id
+    )
     trip_pk_to_path = tripdam.get_trip_pk_to_path_map(route.pk)
     paths = set()
     for trip in route.trips:
@@ -86,21 +82,25 @@ def calculate_scheduled_service_maps_for_system(system):
     trip_pk_to_stop_pks = servicemapdam.get_scheduled_trip_pk_to_stop_pks_map()
     route_pk_to_trips = {}
 
-    for trip, start_time, end_time in servicemapdam.list_scheduled_trips_with_times_in_system():
+    for (
+        trip,
+        start_time,
+        end_time,
+    ) in servicemapdam.list_scheduled_trips_with_times_in_system():
         trip.start_time = start_time
         trip.end_time = end_time
         if not trip.direction_id:
             trip_pk_to_stop_pks.get(trip.pk, []).reverse()
         trip.path = tuple(
-            stop_pk_to_station_pk[stop_pk] for stop_pk in
-            trip_pk_to_stop_pks.get(trip.pk, [])
+            stop_pk_to_station_pk[stop_pk]
+            for stop_pk in trip_pk_to_stop_pks.get(trip.pk, [])
         )
         if trip.route_pk not in route_pk_to_trips:
             route_pk_to_trips[trip.route_pk] = []
         route_pk_to_trips[trip.route_pk].append(trip)
 
     for service_map_group in system.service_map_groups:
-        if service_map_group.source != 'schedule':
+        if service_map_group.source != "schedule":
             continue
         # Delete the old maps, using SQL Alchemy's delete-orphan cascade
         service_map_group.maps = []
@@ -120,7 +120,8 @@ def calculate_scheduled_service_maps_for_system(system):
                     num_trips += 1
 
             final_paths = {
-                path for path, count in path_to_count.items()
+                path
+                for path, count in path_to_count.items()
                 if count >= num_trips * service_map_group.threshold
             }
             service_map = _build_service_map_from_paths(final_paths)
@@ -132,7 +133,9 @@ def _build_service_map_from_paths(paths):
     """
     Given a list of paths build the service map.
     """
-    return _convert_sorted_graph_to_service_pattern(_build_sorted_graph_from_paths(paths))
+    return _convert_sorted_graph_to_service_pattern(
+        _build_sorted_graph_from_paths(paths)
+    )
 
 
 def _convert_sorted_graph_to_service_pattern(sorted_graph):
@@ -157,10 +160,7 @@ def _build_sorted_graph_from_paths(paths):
     if len(paths) == 1:
         unique_element = next(iter(paths))
         return graphutils.graphdatastructs.DirectedPath(unique_element)
-    paths = [
-        graphutils.graphdatastructs.DirectedPath(path_list) for
-        path_list in paths
-    ]
+    paths = [graphutils.graphdatastructs.DirectedPath(path_list) for path_list in paths]
     graph = graphutils.pathstitcher.stitch(paths)
     # short circuit if the route_graph is actually a path
     if graph.is_path():
@@ -169,7 +169,6 @@ def _build_sorted_graph_from_paths(paths):
 
 
 class _ScheduledTripMatcher:
-
     def __init__(self, raw_conds):
         if raw_conds is None:
             raw_conds = {}
@@ -197,23 +196,23 @@ class _ScheduledTripMatcher:
         # Having these variables as class variables that are populated on the
         # first run is basically a form of caching
         if cls._logical_operators is None:
-            cls._logical_operators = {'one_of', 'all_of', 'none_of'}
+            cls._logical_operators = {"one_of", "all_of", "none_of"}
             cls._key_to_function = {
-                'one_of': cls.one_of_factory,
-                'all_of': cls.all_of_factory,
-                'none_of': cls.none_of_factory,
-                'starts_earlier_than': cls.order_factory,
-                'starts_later_than': cls.order_factory,
-                'ends_earlier_than': cls.order_factory,
-                'ends_later_than': cls.order_factory,
-                'weekend': cls.weekend_factory,
-                'weekday': cls.weekday_factory,
+                "one_of": cls.one_of_factory,
+                "all_of": cls.all_of_factory,
+                "none_of": cls.none_of_factory,
+                "starts_earlier_than": cls.order_factory,
+                "starts_later_than": cls.order_factory,
+                "ends_earlier_than": cls.order_factory,
+                "ends_later_than": cls.order_factory,
+                "weekend": cls.weekend_factory,
+                "weekday": cls.weekday_factory,
             }
             cls._key_to_extra_args = {
-                'starts_earlier_than': ('start_time', True),
-                'starts_later_than': ('start_time', False),
-                'ends_earlier_than': ('end_time', True),
-                'ends_later_than': ('end_time', False),
+                "starts_earlier_than": ("start_time", True),
+                "starts_later_than": ("start_time", False),
+                "ends_earlier_than": ("end_time", True),
+                "ends_later_than": ("end_time", False),
             }
         if key in cls._logical_operators:
             value = cls._convert_raw_conditions(value)
@@ -257,6 +256,7 @@ class _ScheduledTripMatcher:
     @staticmethod
     def order_factory(value, trip_attr, less_than=True):
         import math
+
         hour = int(math.floor(value))
         value = (value - hour) * 60
         minute = int(math.floor(value))
@@ -276,11 +276,11 @@ class _ScheduledTripMatcher:
     def weekday_factory(value):
         def weekday(trip):
             weekday_cond = (
-                    trip.service.monday or
-                    trip.service.tuesday or
-                    trip.service.wednesday or
-                    trip.service.thursday or
-                    trip.service.friday
+                trip.service.monday
+                or trip.service.tuesday
+                or trip.service.wednesday
+                or trip.service.thursday
+                or trip.service.friday
             )
             weekend_cond = not (trip.service.saturday or trip.service.sunday)
             return (weekday_cond and weekend_cond) == value

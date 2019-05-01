@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class HttpHeader(enum.Enum):
-    CONTENT_TYPE_JSON = {'Content-Type': 'application/json'}
+    CONTENT_TYPE_JSON = {"Content-Type": "application/json"}
 
 
 class HttpStatus(enum.IntEnum):
@@ -56,10 +56,10 @@ _exception_type_to_http_status = {
 
 
 class HttpMethod(enum.Enum):
-    DELETE = 'DELETE'
-    GET = 'GET'
-    POST = 'POST'
-    PUT = 'PUT'
+    DELETE = "DELETE"
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
 
 
 class RequestType(enum.Enum):
@@ -69,6 +69,7 @@ class RequestType(enum.Enum):
     service layer response to a HTTP response. The value of the enum is the
     relevant HttpMethod.
     """
+
     CREATE = HttpMethod.PUT
     DELETE = HttpMethod.DELETE
     GET = HttpMethod.GET
@@ -132,7 +133,7 @@ def link_target(link_type):
     """
 
     def decorator_(func):
-        flask_endpoint = '{}.{}'.format(func.__module__, func.__name__)
+        flask_endpoint = "{}.{}".format(func.__module__, func.__name__)
         _link_type_to_target[link_type] = flask_endpoint
         return func
 
@@ -168,17 +169,11 @@ def _perform_request(request_type, func, *args, **kwargs):
             return (
                 _convert_to_json_str(e.response()),
                 _exception_type_to_http_status[type(e)],
-                {
-                    **HttpHeader.CONTENT_TYPE_JSON.value
-                }
+                {**HttpHeader.CONTENT_TYPE_JSON.value},
             )
     except Exception:
-        logger.exception('Unexpected exception in processing HTTP request.')
-        return (
-            '',
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            {}
-        )
+        logger.exception("Unexpected exception in processing HTTP request.")
+        return ("", HttpStatus.INTERNAL_SERVER_ERROR, {})
 
 
 _request_type_to_post_processor = {}
@@ -207,11 +202,7 @@ def _create_post_processor(response):
     nothing was done. When Transiter's PUT requests become more sophisticated
     this may change - see [Github #2].
     """
-    return (
-        '',
-        HttpStatus.CREATED if response else HttpStatus.NO_CONTENT,
-        {}
-    )
+    return ("", HttpStatus.CREATED if response else HttpStatus.NO_CONTENT, {})
 
 
 @_post_processor(RequestType.DELETE)
@@ -223,11 +214,7 @@ def _delete_post_processor(__):
     In all other cases an Exception is raised which is handled in the main
     _process_request method.
     """
-    return (
-        '',
-        HttpStatus.NO_CONTENT,
-        {}
-    )
+    return ("", HttpStatus.NO_CONTENT, {})
 
 
 @_post_processor(RequestType.GET)
@@ -238,9 +225,7 @@ def _get_post_processor(response):
     return (
         _convert_to_json_str(response),
         HttpStatus.OK,
-        {
-            **HttpHeader.CONTENT_TYPE_JSON.value
-        }
+        {**HttpHeader.CONTENT_TYPE_JSON.value},
     )
 
 
@@ -252,9 +237,7 @@ def _update_post_processor(response):
     return (
         _convert_to_json_str(response),
         HttpStatus.CREATED,
-        {
-            **HttpHeader.CONTENT_TYPE_JSON.value
-        }
+        {**HttpHeader.CONTENT_TYPE_JSON.value},
     )
 
 
@@ -263,10 +246,7 @@ def _convert_to_json_str(data):
     Convert a server layer response to a JSON string.
     """
     return json.dumps(
-        data,
-        indent=2,
-        separators=(',', ': '),
-        default=_transiter_json_serializer
+        data, indent=2, separators=(",", ": "), default=_transiter_json_serializer
     )
 
 
@@ -285,4 +265,4 @@ def _transiter_json_serializer(obj):
         target = _link_type_to_target[type(obj)]
         return flask.url_for(target, _external=True, **obj.kwargs)
 
-    raise TypeError('Type {} not serializable'.format(type(obj)))
+    raise TypeError("Type {} not serializable".format(type(obj)))

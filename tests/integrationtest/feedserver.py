@@ -24,31 +24,30 @@ class Feed:
 feed = Feed()
 
 
-@app.route('/', methods=['GET'])
+@app.route("/", methods=["GET"])
 def get_feed():
     content = feed.get_content()
     if content is None:
-        content = ''
+        content = ""
     status = feed.get_status()
     if status is None:
         status = 200
-    return content, status, ''
+    return content, status, ""
 
 
-@app.route('/', methods=['PUT'])
+@app.route("/", methods=["PUT"])
 def put_feed():
     feed.set_content(request.data)
     feed.set_status(200)
-    return ''
+    return ""
 
 
-@app.route('/', methods=['DELETE'])
+@app.route("/", methods=["DELETE"])
 def delete_feed():
     feed.set_content(None)
     feed.set_status(404)
-    return ''
+    return ""
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(port=5001)
-

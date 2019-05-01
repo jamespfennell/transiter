@@ -27,6 +27,7 @@ class PermissionsLevel(enum.Enum):
     Transiter permissions level are hierarchical: access to a given level
     permits access to all lower level.
     """
+
     USER_READ = 0
     ADMIN_READ = 1
     ALL = 2
@@ -43,13 +44,14 @@ def ensure(minimum_level):
     :raises AccessDenied: if the permissions level is not met
     """
     request_level_str = flask.request.headers.get(
-        'X-Transiter-PermissionsLevel', PermissionsLevel.ALL.name)
+        "X-Transiter-PermissionsLevel", PermissionsLevel.ALL.name
+    )
     try:
         request_level = PermissionsLevel[request_level_str.upper()]
     except KeyError:
         raise exceptions.InvalidPermissionsLevelInRequest(
             request_level_str.upper(),
-            [permissions_level.name for permissions_level in PermissionsLevel]
+            [permissions_level.name for permissions_level in PermissionsLevel],
         )
     if request_level.value < minimum_level.value:
         raise exceptions.AccessDenied(request_level.name, minimum_level.name)

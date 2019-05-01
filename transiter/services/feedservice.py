@@ -27,12 +27,14 @@ def list_all_auto_updating():
     """
     response = []
     for feed in feeddam.list_all_autoupdating():
-        response.append({
-            'pk': feed.pk,
-            'id': feed.id,
-            'system_id': feed.system.id,
-            'auto_update_period': feed.auto_updater_frequency
-        })
+        response.append(
+            {
+                "pk": feed.pk,
+                "id": feed.id,
+                "system_id": feed.system.id,
+                "auto_update_period": feed.auto_updater_frequency,
+            }
+        )
     return response
 
 
@@ -59,7 +61,7 @@ def list_all_in_system(system_id, return_links=False):
     for feed in feeddam.list_all_in_system(system_id):
         feed_response = feed.short_repr()
         if return_links:
-            feed_response['href'] = links.FeedEntityLink(feed)
+            feed_response["href"] = links.FeedEntityLink(feed)
         response.append(feed_response)
     return response
 
@@ -83,7 +85,7 @@ def get_in_system_by_id(system_id, feed_id, return_links=False):
         raise exceptions.IdNotFoundError
     response = feed.short_repr()
     if return_links:
-        response['updates'] = {'href': links.FeedEntityUpdatesLink(feed)}
+        response["updates"] = {"href": links.FeedEntityUpdatesLink(feed)}
     return response
 
 
@@ -104,9 +106,7 @@ def create_feed_update(system_id, feed_id):
         raise exceptions.IdNotFoundError
     feed_update = models.FeedUpdate(feed)
     updatemanager.execute_feed_update(feed_update)
-    return {
-        **feed_update.long_repr()
-    }
+    return {**feed_update.long_repr()}
 
 
 @database.unit_of_work
@@ -144,74 +144,83 @@ def trim_feed_updates():
     old feed updates: in the future, aggregate feed update reports should be
     persisted in the database.
     """
-    logger.info('Trimming old feed updates.')
+    logger.info("Trimming old feed updates.")
     before_datetime = (
         datetime.datetime.now() - datetime.timedelta(minutes=60)
     ).replace(microsecond=0, second=0)
-    logger.info('\n' + _build_feed_updates_report(before_datetime))
-    logger.info('Deleting feed updates in DB before {}'.format(before_datetime))
+    logger.info("\n" + _build_feed_updates_report(before_datetime))
+    logger.info("Deleting feed updates in DB before {}".format(before_datetime))
     feeddam.trim_feed_updates(before_datetime)
 
 
 def _build_feed_updates_report(before_datetime):
-    table_row_template = '{delimiter}'.join([
-        '{system_id:13}', '{feed_id:20}', '{status:10}', '{explanation:20}',
-        '{count:>5}', '{avg_execution_duration:>6}'
-    ])
+    table_row_template = "{delimiter}".join(
+        [
+            "{system_id:13}",
+            "{feed_id:20}",
+            "{status:10}",
+            "{explanation:20}",
+            "{count:>5}",
+            "{avg_execution_duration:>6}",
+        ]
+    )
     table_rows = [
-        'Aggregated feed update report for updates in the database before {}'.format(
-            before_datetime),
-        '',
-        'Column explanations:',
-        '+ number of feed updates of this type',
-        '* average execution time for feed updates of this type',
-        '',
+        "Aggregated feed update report for updates in the database before {}".format(
+            before_datetime
+        ),
+        "",
+        "Column explanations:",
+        "+ number of feed updates of this type",
+        "* average execution time for feed updates of this type",
+        "",
         table_row_template.format(
-            delimiter=' | ',
-            system_id='system_id',
-            feed_id='feed_id',
-            status='status',
-            explanation='explanation',
-            count='*',
-            avg_execution_duration='+'
-        )
+            delimiter=" | ",
+            system_id="system_id",
+            feed_id="feed_id",
+            status="status",
+            explanation="explanation",
+            count="*",
+            avg_execution_duration="+",
+        ),
     ]
     feed_id = None
     status = None
     for feed_update_data in feeddam.aggregate_feed_updates(before_datetime):
-        if feed_update_data['feed_id'] != feed_id:
+        if feed_update_data["feed_id"] != feed_id:
             table_rows.append(
                 table_row_template.format(
-                    delimiter='-+-',
-                    system_id='-'*13,
-                    feed_id='-'*20,
-                    status='-'*10,
-                    explanation='-'*20,
-                    count='-'*5,
-                    avg_execution_duration='-'*6
+                    delimiter="-+-",
+                    system_id="-" * 13,
+                    feed_id="-" * 20,
+                    status="-" * 10,
+                    explanation="-" * 20,
+                    count="-" * 5,
+                    avg_execution_duration="-" * 6,
                 )
             )
-            feed_id = table_feed_id = feed_update_data['feed_id']
-            table_system_id = feed_update_data['system_id']
+            feed_id = table_feed_id = feed_update_data["feed_id"]
+            table_system_id = feed_update_data["system_id"]
         else:
-            table_feed_id = ''
-            table_system_id = ''
+            table_feed_id = ""
+            table_system_id = ""
 
-        if feed_update_data['status'] != status or table_feed_id != '':
-            status = table_status = feed_update_data['status']
+        if feed_update_data["status"] != status or table_feed_id != "":
+            status = table_status = feed_update_data["status"]
         else:
-            table_status = ''
+            table_status = ""
 
         table_rows.append(
             table_row_template.format(
-                delimiter=' | ',
+                delimiter=" | ",
                 system_id=table_system_id,
                 feed_id=table_feed_id,
                 status=table_status,
-                explanation=feed_update_data['explanation'],
-                count=feed_update_data['count'],
-                avg_execution_duration='{:.2f}'.format(feed_update_data['avg_execution_duration'])
+                explanation=feed_update_data["explanation"],
+                count=feed_update_data["count"],
+                avg_execution_duration="{:.2f}".format(
+                    feed_update_data["avg_execution_duration"]
+                ),
             )
         )
 
-    return '\n'.join(table_rows)
+    return "\n".join(table_rows)

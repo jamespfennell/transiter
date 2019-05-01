@@ -4,7 +4,7 @@ from transiter.services.servicemap.graphutils import graphdatastructs, topologic
 
 class TestTopologicalSort(unittest.TestCase):
     def test_sort(self):
-        edges = [('a', 'b'), ('b', 'c'), ('d', 'c'), ('c', 'e'), ('c', 'f'), ('f', 'g')]
+        edges = [("a", "b"), ("b", "c"), ("d", "c"), ("c", "e"), ("c", "f"), ("f", "g")]
         graph = graphdatastructs.construct_graph_from_edge_tuples(edges)
         sorted_graph = topologicalsort.sort(graph)
         visited_labels = set()
@@ -14,16 +14,19 @@ class TestTopologicalSort(unittest.TestCase):
             visited_labels.add(vertex.label)
 
     def test_impossible_to_sort_one(self):
-        edges = [('a', 'b'), ('b', 'c'), ('c', 'd'), ('d', 'a')]
+        edges = [("a", "b"), ("b", "c"), ("c", "d"), ("d", "a")]
         graph = graphdatastructs.construct_graph_from_edge_tuples(edges)
         self.assertRaises(
             topologicalsort.ImpossibleToTopologicallySortGraph,
-            topologicalsort.sort, graph)
+            topologicalsort.sort,
+            graph,
+        )
 
     def test_impossible_to_sort_two(self):
-        edges = [('a', 'b'), ('b', 'c'), ('c', 'd'), ('d', 'b')]
+        edges = [("a", "b"), ("b", "c"), ("c", "d"), ("d", "b")]
         graph = graphdatastructs.construct_graph_from_edge_tuples(edges)
         self.assertRaises(
             topologicalsort.ImpossibleToTopologicallySortGraph,
-            topologicalsort.sort, graph)
-
+            topologicalsort.sort,
+            graph,
+        )

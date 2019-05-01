@@ -8,18 +8,18 @@ from .. import testutil
 
 class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
-    SYSTEM_ONE_ID = '1'
-    SYSTEM_TWO_ID = '2'
-    SYSTEM_TWO_HREF = '4'
-    SYSTEM_TWO_REPR = {'system_id': SYSTEM_TWO_ID, 'href': SYSTEM_TWO_HREF}
+    SYSTEM_ONE_ID = "1"
+    SYSTEM_TWO_ID = "2"
+    SYSTEM_TWO_HREF = "4"
+    SYSTEM_TWO_REPR = {"system_id": SYSTEM_TWO_ID, "href": SYSTEM_TWO_HREF}
     SYSTEM_ONE_NUM_STOPS = 20
     SYSTEM_ONE_NUM_STATIONS = 21
     SYSTEM_ONE_NUM_ROUTES = 22
     SYSTEM_ONE_NUM_FEEDS = 23
-    FILE_NAME = '24'
-    STOP_ONE_ID = '25'
-    SYSTEM_CONFIG_STR = 'Blah blah blah'
-    DIRECTION_NAME_ONE = 'Uptown'
+    FILE_NAME = "24"
+    STOP_ONE_ID = "25"
+    SYSTEM_CONFIG_STR = "Blah blah blah"
+    DIRECTION_NAME_ONE = "Uptown"
 
     def setUp(self):
         self.systemdam = self.mockImportedModule(systemservice.systemdam)
@@ -36,17 +36,14 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         expected = [
             {
                 **self.system_1.short_repr(),
-                'href': links.SystemEntityLink(self.system_1)
+                "href": links.SystemEntityLink(self.system_1),
             },
             {
                 **self.system_2.short_repr(),
-                'href': links.SystemEntityLink(self.system_2)
-            }
+                "href": links.SystemEntityLink(self.system_2),
+            },
         ]
-        self.systemdam.list_all.return_value = [
-            self.system_1,
-            self.system_2
-        ]
+        self.systemdam.list_all.return_value = [self.system_1, self.system_2]
 
         actual = systemservice.list_all(True)
 
@@ -58,29 +55,25 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         self.systemdam.get_by_id.return_value = None
 
         self.assertRaises(
-            exceptions.IdNotFoundError,
-            systemservice.get_by_id,
-            self.SYSTEM_ONE_ID
+            exceptions.IdNotFoundError, systemservice.get_by_id, self.SYSTEM_ONE_ID
         )
 
     def test_get_by_id(self):
         """[System service] Get a specific system"""
 
         hrefs_dict = {
-            'stops': links.StopsInSystemIndexLink(self.system_1),
-            'routes': links.RoutesInSystemIndexLink(self.system_1),
-            'feeds': links.FeedsInSystemIndexLink(self.system_1),
+            "stops": links.StopsInSystemIndexLink(self.system_1),
+            "routes": links.RoutesInSystemIndexLink(self.system_1),
+            "feeds": links.FeedsInSystemIndexLink(self.system_1),
         }
         child_entities_dict = {
-            'stops': self.SYSTEM_ONE_NUM_STOPS,
-            'routes': self.SYSTEM_ONE_NUM_ROUTES,
-            'feeds': self.SYSTEM_ONE_NUM_FEEDS
+            "stops": self.SYSTEM_ONE_NUM_STOPS,
+            "routes": self.SYSTEM_ONE_NUM_ROUTES,
+            "feeds": self.SYSTEM_ONE_NUM_FEEDS,
         }
         expected = {
-            name: {
-                'count': count,
-                'href': hrefs_dict[name]
-            } for (name, count) in child_entities_dict.items()
+            name: {"count": count, "href": hrefs_dict[name]}
+            for (name, count) in child_entities_dict.items()
         }
         expected.update(**self.system_1.short_repr())
 
@@ -95,13 +88,15 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         self.assertDictEqual(actual, expected)
         self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
         self.systemdam.count_stops_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
-        self.systemdam.count_routes_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
+        self.systemdam.count_routes_in_system.assert_called_once_with(
+            self.SYSTEM_ONE_ID
+        )
         self.systemdam.count_feeds_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
 
-    @mock.patch.object(systemservice, '_SystemConfig')
-    @mock.patch.object(systemservice, '_install_service_maps')
-    @mock.patch.object(systemservice, '_install_feeds')
-    @mock.patch.object(systemservice, '_install_direction_names')
+    @mock.patch.object(systemservice, "_SystemConfig")
+    @mock.patch.object(systemservice, "_install_service_maps")
+    @mock.patch.object(systemservice, "_install_feeds")
+    @mock.patch.object(systemservice, "_install_direction_names")
     def test_install_success(self, step1, step2, step3, _SystemConfig):
         """[System service] Successfully install a system"""
         self.systemdam.get_by_id.return_value = None
@@ -112,14 +107,17 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         extra_settings = mock.MagicMock()
 
         actual = systemservice.install(
-            self.SYSTEM_TWO_ID, self.SYSTEM_CONFIG_STR, extra_files, extra_settings)
+            self.SYSTEM_TWO_ID, self.SYSTEM_CONFIG_STR, extra_files, extra_settings
+        )
 
         self.assertEqual(actual, True)
         self.assertEqual(self.system_1.id, self.SYSTEM_TWO_ID)
 
         self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_TWO_ID)
         self.systemdam.create.assert_called_once_with()
-        _SystemConfig.assert_called_once_with(self.SYSTEM_CONFIG_STR, extra_files, extra_settings)
+        _SystemConfig.assert_called_once_with(
+            self.SYSTEM_CONFIG_STR, extra_files, extra_settings
+        )
         step1.assert_called_once_with(self.system_1, system_config)
         step2.assert_called_once_with(self.system_1, system_config)
         step3.assert_called_once_with(self.system_1, system_config)
@@ -147,35 +145,31 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         """[System service] Fail to delete a nonexistent system"""
         self.systemdam.delete_by_id.return_value = False
 
-        self.assertRaises(exceptions.IdNotFoundError,
-                          systemservice.delete_by_id,
-                          self.SYSTEM_ONE_ID)
+        self.assertRaises(
+            exceptions.IdNotFoundError, systemservice.delete_by_id, self.SYSTEM_ONE_ID
+        )
 
         self.systemdam.delete_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
 
     def test_populate_system_config__feeds(self):
         """[System service] Populate feeds config"""
-        feed_one_raw_url = '1001{api_key}'
-        api_key = 'asfhtghfgah'
-        extra_settings = {
-            'api_key': api_key
-        }
-        file_name = 'File1'
+        feed_one_raw_url = "1001{api_key}"
+        api_key = "asfhtghfgah"
+        extra_settings = {"api_key": api_key}
+        file_name = "File1"
         file_upload = mock.MagicMock()
-        extra_files = {
-            file_name: file_upload
-        }
+        extra_files = {file_name: file_upload}
 
         feed_one = models.Feed()
-        feed_one.id = '1000'
+        feed_one.id = "1000"
         feed_one.url = feed_one_raw_url.format(api_key=api_key)
         feed_one.built_in_parser = feed_one.BuiltInParser.GTFS_REALTIME
         feed_one.auto_updater_enabled = False
 
         feed_two = models.Feed()
-        feed_two.id = '200'
-        feed_two.url = 'BlahBlah'
-        feed_two.custom_parser = 'asdfg'
+        feed_two.id = "200"
+        feed_two.url = "BlahBlah"
+        feed_two.custom_parser = "asdfg"
         feed_two.auto_updater_enabled = True
         feed_two.auto_updater_frequency = 300
 
@@ -216,9 +210,9 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
     def test_populate_system_config__service_maps(self):
         """[System service] Populate service maps config"""
         service_map_group = models.ServiceMapGroup()
-        service_map_group.id = 'daytime'
+        service_map_group.id = "daytime"
         service_map_group.conditions = '{"weekday": true}'
-        service_map_group.source = 'realtime'
+        service_map_group.source = "realtime"
         service_map_group.threshold = 0.1
         service_map_group.use_for_stops_in_route = False
         service_map_group.use_for_routes_at_stop = True
@@ -233,26 +227,20 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             use_for_routes_at_stop = true
         """
 
-        system_config = systemservice._SystemConfig(
-            config_str, {}, {}
-        )
+        system_config = systemservice._SystemConfig(config_str, {}, {})
 
         self.assertEqual(1, len(system_config.service_maps))
         self.assertEqual(
-            service_map_group,
-            system_config.service_maps[0].service_map_group
+            service_map_group, system_config.service_maps[0].service_map_group
         )
 
     def test_populate_system_config__direction_names(self):
         """[System service] Populate direction names maps config"""
-        file_name_one = 'File1'
-        file_name_two = 'File2'
+        file_name_one = "File1"
+        file_name_two = "File2"
         file_upload_one = mock.MagicMock()
         file_upload_two = mock.MagicMock()
-        extra_files = {
-            file_name_one: file_upload_one,
-            file_name_two: file_upload_two
-        }
+        extra_files = {file_name_one: file_upload_one, file_name_two: file_upload_two}
 
         config_str = f"""
         [direction_names]
@@ -263,21 +251,18 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         ]
         """
 
-        system_config = systemservice._SystemConfig(
-            config_str, extra_files, {}
-        )
+        system_config = systemservice._SystemConfig(config_str, extra_files, {})
 
         self.assertEqual(
-            [file_upload_one, file_upload_two],
-            system_config.direction_name_files
+            [file_upload_one, file_upload_two], system_config.direction_name_files
         )
 
-    @mock.patch.object(systemservice, 'importlib')
+    @mock.patch.object(systemservice, "importlib")
     def test_populate_system_config__missing_packages(self, importlib):
         """[System service] Missing packages referenced in system config"""
 
         importlib.util.find_spec.return_value = None
-        package_name = 'apscheduler'
+        package_name = "apscheduler"
 
         config_str = f"""
         
@@ -289,9 +274,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
         self.assertRaises(
             systemservice._SystemConfig.InvalidSystemConfig,
-            lambda: systemservice._SystemConfig(
-                config_str, {}, {}
-            )
+            lambda: systemservice._SystemConfig(config_str, {}, {}),
         )
 
         importlib.util.find_spec.assert_called_once_with(package_name)
@@ -299,8 +282,8 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
     def test_populate_system_config__missing_settings(self):
         """[System service] Missing settings in system config"""
 
-        setting_key_one = 'Blah'
-        setting_key_two = 'BlahTo'
+        setting_key_one = "Blah"
+        setting_key_two = "BlahTo"
 
         config_str = f"""
         
@@ -313,8 +296,8 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         self.assertRaises(
             systemservice._SystemConfig.InvalidSystemConfig,
             lambda: systemservice._SystemConfig(
-                config_str, {}, {setting_key_one: 'Value'}
-            )
+                config_str, {}, {setting_key_one: "Value"}
+            ),
         )
 
     def test_install_service_maps(self):
@@ -357,6 +340,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
         def execute_feed_update(feed_update):
             feed_update.status = models.FeedUpdate.Status.SUCCESS
+
         self.updatemanager.execute_feed_update.side_effect = execute_feed_update
 
         systemservice._install_feeds(system, system_config)
@@ -382,16 +366,14 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             else:
                 assert file_upload_fallback is not None
                 feed_update.status = models.FeedUpdate.Status.SUCCESS
+
         self.updatemanager.execute_feed_update.side_effect = execute_feed_update
 
         systemservice._install_feeds(system, system_config)
 
         self.assertEqual(system, feed_config.feed.system)
 
-        self.assertEqual(
-            2,
-            self.updatemanager.execute_feed_update.call_count
-        )
+        self.assertEqual(2, self.updatemanager.execute_feed_update.call_count)
 
     def test_install_feeds__failed_to_update(self):
         """[System service] Install feed - failed to update"""
@@ -406,17 +388,15 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
             def execute_feed_update(feed_update, unused=None):
                 feed_update.status = models.FeedUpdate.Status.FAILURE
+
             self.updatemanager.execute_feed_update.side_effect = execute_feed_update
 
             self.assertRaises(
                 exceptions.InstallError,
-                lambda: systemservice._install_feeds(system, system_config)
+                lambda: systemservice._install_feeds(system, system_config),
             )
 
-        self.assertEqual(
-            1+2,
-            self.updatemanager.execute_feed_update.call_count
-        )
+        self.assertEqual(1 + 2, self.updatemanager.execute_feed_update.call_count)
 
     def test_import_static_data__direction_names(self):
         """[System service] Install direction names"""
@@ -429,10 +409,11 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         system_config = mock.MagicMock()
         system_config.direction_name_files = [file]
         file.readlines.return_value = (
-            s.encode('utf-8') for s in [
-                'stop_id,direction_id,direction_name',
-                '{},0,{}'.format(self.STOP_ONE_ID, self.DIRECTION_NAME_ONE),
-                '{},1,{}'.format('Unknown', self.DIRECTION_NAME_ONE)
+            s.encode("utf-8")
+            for s in [
+                "stop_id,direction_id,direction_name",
+                "{},0,{}".format(self.STOP_ONE_ID, self.DIRECTION_NAME_ONE),
+                "{},1,{}".format("Unknown", self.DIRECTION_NAME_ONE),
             ]
         )
 
@@ -445,6 +426,3 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         systemservice._install_direction_names(system, system_config)
 
         self.assertEqual([direction_name_rule], stop_one.direction_name_rules)
-
-
-

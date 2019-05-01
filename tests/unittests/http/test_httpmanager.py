@@ -13,7 +13,7 @@ from .. import testutil
 
 
 class TestHttpManager(testutil.TestCase(httpmanager), unittest.TestCase):
-    FAKE_URL = 'http://www.transiter.io/entity'
+    FAKE_URL = "http://www.transiter.io/entity"
     TIMESTAMP = 24536456
 
     def setUp(self):
@@ -35,10 +35,9 @@ class TestHttpManager(testutil.TestCase(httpmanager), unittest.TestCase):
     def test_all_exceptions_have_http_status(self):
         """[HTTP Manager] Ensure every exception has a HTTP status"""
         for transiter_exception in exceptions._TransiterException.__subclasses__():
-            print('Testing', transiter_exception)
+            print("Testing", transiter_exception)
             self.assertTrue(
-                transiter_exception in
-                httpmanager._exception_type_to_http_status
+                transiter_exception in httpmanager._exception_type_to_http_status
             )
 
     def test_unexpected_error(self):
@@ -50,10 +49,7 @@ class TestHttpManager(testutil.TestCase(httpmanager), unittest.TestCase):
 
         __, status, __ = bad_endpoint()
 
-        self.assertEqual(
-            httpmanager.HttpStatus.INTERNAL_SERVER_ERROR,
-            status
-        )
+        self.assertEqual(httpmanager.HttpStatus.INTERNAL_SERVER_ERROR, status)
 
     def test_json_serialization__links(self):
         """[HTTP Manager] JSON serialization of Links"""
@@ -72,8 +68,7 @@ class TestHttpManager(testutil.TestCase(httpmanager), unittest.TestCase):
         self.assertEqual(self.FAKE_URL, actual_url)
 
         self.flask.url_for.assert_called_once_with(
-            '{}.{}'.format(__name__, entity.__name__),
-            _external=True
+            "{}.{}".format(__name__, entity.__name__), _external=True
         )
 
     def test_json_serialization__datetimes(self):
@@ -89,6 +84,5 @@ class TestHttpManager(testutil.TestCase(httpmanager), unittest.TestCase):
         """[HTTP Manager] JSON serialization failure given unknown object"""
 
         self.assertRaises(
-            TypeError,
-            lambda: httpmanager._transiter_json_serializer(unittest.TestCase)
+            TypeError, lambda: httpmanager._transiter_json_serializer(unittest.TestCase)
         )

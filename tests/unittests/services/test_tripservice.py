@@ -6,14 +6,14 @@ from .. import testutil
 
 
 class TestTripService(testutil.TestCase(tripservice), unittest.TestCase):
-    SYSTEM_ID = '1'
-    ROUTE_ID = '2'
-    TRIP_ONE_ID = '3'
+    SYSTEM_ID = "1"
+    ROUTE_ID = "2"
+    TRIP_ONE_ID = "3"
     TRIP_ONE_PK = 4
-    TRIP_TWO_ID = '5'
+    TRIP_TWO_ID = "5"
     TRIP_TWO_PK = 6
-    STOP_ONE_ID = '7'
-    STOP_TWO_ID = '8'
+    STOP_ONE_ID = "7"
+    STOP_TWO_ID = "8"
 
     def setUp(self):
         self.tripdam = self.mockImportedModule(tripservice.tripdam)
@@ -42,34 +42,37 @@ class TestTripService(testutil.TestCase(tripservice), unittest.TestCase):
 
         self.assertRaises(
             exceptions.IdNotFoundError,
-            lambda: tripservice.list_all_in_route(self.SYSTEM_ID, self.ROUTE_ID)
+            lambda: tripservice.list_all_in_route(self.SYSTEM_ID, self.ROUTE_ID),
         )
 
     def test_list_all_in_route(self):
         """[Trip service] List all trips in a route"""
-        self.tripdam.list_all_in_route_by_pk.return_value = [self.trip_one, self.trip_two]
+        self.tripdam.list_all_in_route_by_pk.return_value = [
+            self.trip_one,
+            self.trip_two,
+        ]
         self.tripdam.get_trip_pk_to_last_stop_map.return_value = {
             self.TRIP_ONE_PK: self.stop_one,
-            self.TRIP_TWO_PK: self.stop_two
+            self.TRIP_TWO_PK: self.stop_two,
         }
 
         expected = [
             {
                 **self.trip_one.short_repr(),
-                'last_stop': {
+                "last_stop": {
                     **self.stop_one.short_repr(),
-                    'href': links.StopEntityLink(self.stop_one)
+                    "href": links.StopEntityLink(self.stop_one),
                 },
-                'href': links.TripEntityLink(self.trip_one)
+                "href": links.TripEntityLink(self.trip_one),
             },
             {
                 **self.trip_two.short_repr(),
-                'last_stop': {
+                "last_stop": {
                     **self.stop_two.short_repr(),
-                    'href': links.StopEntityLink(self.stop_two)
+                    "href": links.StopEntityLink(self.stop_two),
                 },
-                'href': links.TripEntityLink(self.trip_two)
-            }
+                "href": links.TripEntityLink(self.trip_two),
+            },
         ]
 
         actual = tripservice.list_all_in_route(self.SYSTEM_ID, self.ROUTE_ID, True)
@@ -82,7 +85,9 @@ class TestTripService(testutil.TestCase(tripservice), unittest.TestCase):
 
         self.assertRaises(
             exceptions.IdNotFoundError,
-            lambda: tripservice.get_in_route_by_id(self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ONE_ID)
+            lambda: tripservice.get_in_route_by_id(
+                self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ONE_ID
+            ),
         )
 
     def test_get_in_route_by_id(self):
@@ -95,23 +100,24 @@ class TestTripService(testutil.TestCase(tripservice), unittest.TestCase):
 
         excpected = {
             **self.trip_one.long_repr(),
-            'route': {
+            "route": {
                 **self.route.short_repr(),
-                'href': links.RouteEntityLink(self.route)
+                "href": links.RouteEntityLink(self.route),
             },
-            'stop_time_updates': [
+            "stop_time_updates": [
                 {
                     **stop_time.short_repr(),
-                    'stop': {
+                    "stop": {
                         **self.stop_one.short_repr(),
-                        'href': links.StopEntityLink(self.stop_one)
-                    }
+                        "href": links.StopEntityLink(self.stop_one),
+                    },
                 }
-            ]
+            ],
         }
 
-        actual = tripservice.get_in_route_by_id(self.SYSTEM_ID, self.ROUTE_ID,
-                                                self.TRIP_ONE_ID, True)
+        actual = tripservice.get_in_route_by_id(
+            self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ONE_ID, True
+        )
 
         self.maxDiff = None
         self.assertDictEqual(excpected, actual)

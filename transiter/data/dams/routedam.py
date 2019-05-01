@@ -12,9 +12,7 @@ def list_all_in_system(system_id):
     :param system_id: the system's ID
     :return: a list of Routes
     """
-    return genericqueries.list_all_in_system(
-        models.Route, system_id, models.Route.id
-    )
+    return genericqueries.list_all_in_system(models.Route, system_id, models.Route.id)
 
 
 def get_in_system_by_id(system_id, route_id):
@@ -25,9 +23,7 @@ def get_in_system_by_id(system_id, route_id):
     :param route_id: the route's ID
     :return: Route, if it exists; None if it does not
     """
-    return genericqueries.get_in_system_by_id(
-        models.Route, system_id, route_id
-    )
+    return genericqueries.get_in_system_by_id(models.Route, system_id, route_id)
 
 
 def get_id_to_pk_map_in_system(system_id, route_ids=None):
@@ -38,9 +34,7 @@ def get_id_to_pk_map_in_system(system_id, route_ids=None):
     :param route_ids: an optional collection that limits the keys in the dict
     :return: map of ID to PK
     """
-    return genericqueries.get_id_to_pk_map(
-        models.Route, system_id, route_ids
-    )
+    return genericqueries.get_id_to_pk_map(models.Route, system_id, route_ids)
 
 
 def calculate_periodicity(route_pk):
@@ -57,32 +51,31 @@ def calculate_periodicity(route_pk):
 
     route_stop_pks_stmt = (
         sql.select([models.Stop.pk])
-            .select_from(
-            sql.join(models.Stop, models.StopTimeUpdate).join(models.Trip)
-        )
-            .where(models.Trip.route_pk == route_pk)
-            .where(models.Trip.current_status != 'SCHEDULED')
-            .where(models.StopTimeUpdate.future)
-            .where(models.StopTimeUpdate.arrival_time != None)
-            .distinct()
+        .select_from(sql.join(models.Stop, models.StopTimeUpdate).join(models.Trip))
+        .where(models.Trip.route_pk == route_pk)
+        .where(models.Trip.current_status != "SCHEDULED")
+        .where(models.StopTimeUpdate.future)
+        .where(models.StopTimeUpdate.arrival_time != None)
+        .distinct()
     )
     stop_data_stmt = (
-        sql.select([
-            sql.func.extract(
-                'epoch',
-                sql.func.max(models.StopTimeUpdate.arrival_time) -
-                sql.func.min(models.StopTimeUpdate.arrival_time)
-            ).label('time_diff'),
-            sql.func.count().label('number')]
+        sql.select(
+            [
+                sql.func.extract(
+                    "epoch",
+                    sql.func.max(models.StopTimeUpdate.arrival_time)
+                    - sql.func.min(models.StopTimeUpdate.arrival_time),
+                ).label("time_diff"),
+                sql.func.count().label("number"),
+            ]
         )
-            .where(models.StopTimeUpdate.stop_pk.in_(route_stop_pks_stmt))
-            .group_by(models.StopTimeUpdate.stop_pk)
-            .having(sql.func.count() > 1)
+        .where(models.StopTimeUpdate.stop_pk.in_(route_stop_pks_stmt))
+        .group_by(models.StopTimeUpdate.stop_pk)
+        .having(sql.func.count() > 1)
     )
     stop_data_alias = sql.alias(stop_data_stmt)
-    final_stmt = (
-        sql.select([
-            sql.func.avg(stop_data_alias.c.time_diff / (stop_data_alias.c.number - 1))])
+    final_stmt = sql.select(
+        [sql.func.avg(stop_data_alias.c.time_diff / (stop_data_alias.c.number - 1))]
     )
     result = [row for row in session.execute(final_stmt)]
     if len(result) > 0:
@@ -98,18 +91,15 @@ def list_route_pks_with_current_service(route_pks):
     :return: a subset of the input
     """
     session = database.get_session()
-    stmt = (
-        sql.select([models.Route.pk])
-            .where(
-            sql.and_(
-                sql.exists(
-                    sql.select([1])
-                        .select_from(sql.join(models.StopTimeUpdate, models.Trip))
-                        .where(models.Trip.route_pk == models.Route.pk)
-                        .limit(1)
-                ),
-                models.Route.pk.in_(route_pks)
-            )
+    stmt = sql.select([models.Route.pk]).where(
+        sql.and_(
+            sql.exists(
+                sql.select([1])
+                .select_from(sql.join(models.StopTimeUpdate, models.Trip))
+                .where(models.Trip.route_pk == models.Route.pk)
+                .limit(1)
+            ),
+            models.Route.pk.in_(route_pks),
         )
     )
     return [route_pk for (route_pk,) in session.execute(stmt)]
@@ -127,26 +117,18 @@ def get_route_pk_to_highest_priority_alerts_map(route_pks):
     route_pk_to_alerts = {route_pk: [] for route_pk in route_pks}
     session = database.get_session()
     inner_query = (
-        session.query(
-            models.Route.pk,
-            sql.func.max(models.RouteStatus.priority)
-        )
-            .join(models.route_status_route)
-            .join(models.RouteStatus)
-            .filter(models.Route.pk.in_(route_pks))
-            .group_by(models.Route.pk)
+        session.query(models.Route.pk, sql.func.max(models.RouteStatus.priority))
+        .join(models.route_status_route)
+        .join(models.RouteStatus)
+        .filter(models.Route.pk.in_(route_pks))
+        .group_by(models.Route.pk)
     )
     query = (
         session.query(models.Route.pk, models.RouteStatus)
-            .join(models.route_status_route)
-            .join(models.RouteStatus)
-            .filter(
-            sql.tuple_(
-                models.Route.pk,
-                models.RouteStatus.priority
-            ).in_(
-                inner_query
-            )
+        .join(models.route_status_route)
+        .join(models.RouteStatus)
+        .filter(
+            sql.tuple_(models.Route.pk, models.RouteStatus.priority).in_(inner_query)
         )
     )
     for route_pk, alert in query:

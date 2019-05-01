@@ -7,7 +7,7 @@ from transiter.services import feedservice, links
 feed_endpoints = Blueprint(__name__, __name__)
 
 
-@http_endpoint(feed_endpoints, '')
+@http_endpoint(feed_endpoints, "")
 @link_target(links.FeedsInSystemIndexLink)
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def list_all_in_system(system_id):
@@ -29,7 +29,7 @@ def list_all_in_system(system_id):
     return feedservice.list_all_in_system(system_id)
 
 
-@http_endpoint(feed_endpoints, '/<feed_id>')
+@http_endpoint(feed_endpoints, "/<feed_id>")
 @link_target(links.FeedEntityLink)
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def get_in_system_by_id(system_id, feed_id):
@@ -50,7 +50,7 @@ def get_in_system_by_id(system_id, feed_id):
     return feedservice.get_in_system_by_id(system_id, feed_id)
 
 
-@http_endpoint(feed_endpoints, '/<feed_id>', RequestType.UPDATE)
+@http_endpoint(feed_endpoints, "/<feed_id>", RequestType.UPDATE)
 @requires_permissions(PermissionsLevel.ALL)
 def create_feed_update(system_id, feed_id):
     """Create a new feed update.
@@ -80,7 +80,7 @@ def create_feed_update(system_id, feed_id):
     return feedservice.create_feed_update(system_id, feed_id)
 
 
-@http_endpoint(feed_endpoints, '/<feed_id>/updates')
+@http_endpoint(feed_endpoints, "/<feed_id>/updates")
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def list_updates_in_feed(system_id, feed_id):
     """List recent feed updates.
@@ -120,4 +120,3 @@ def list_updates_in_feed(system_id, feed_id):
         ]
     """
     return feedservice.list_updates_in_feed(system_id, feed_id)
-

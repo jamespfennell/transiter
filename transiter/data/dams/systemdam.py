@@ -58,8 +58,7 @@ def _count_child_entity_in_system(system_id, Model):
     :return: the integer count
     """
     session = database.get_session()
-    query = session.query(func.count(Model.pk)) \
-        .filter(Model.system_id == system_id)
+    query = session.query(func.count(Model.pk)).filter(Model.system_id == system_id)
     return query.one()[0]
 
 
@@ -103,8 +102,8 @@ def list_all_alerts_in_system(system_id):
     session = database.get_session()
     query = (
         session.query(models.RouteStatus)
-            .join(models.Route, models.RouteStatus.routes)
-            .join(models.System)
-            .filter(models.System.id == system_id)
+        .join(models.Route, models.RouteStatus.routes)
+        .join(models.System)
+        .filter(models.System.id == system_id)
     )
     return query.all()

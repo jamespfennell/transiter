@@ -7,21 +7,21 @@ from .. import testutil
 
 class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
-    SYSTEM_ID = '1'
+    SYSTEM_ID = "1"
 
     ROUTE_ONE_PK = 2
-    ROUTE_ONE_ID = '3'
+    ROUTE_ONE_ID = "3"
     ROUTE_ONE_STATUS = routeservice.Status.PLANNED_SERVICE_CHANGE
 
     ROUTE_TWO_PK = 4
-    ROUTE_TWO_ID = '5'
+    ROUTE_TWO_ID = "5"
     ROUTE_TWO_STATUS = routeservice.Status.GOOD_SERVICE
 
     RAW_FREQUENCY = 700
 
-    SERVICE_MAP_ONE_GROUP_ID = '1000'
-    SERVICE_MAP_TWO_GROUP_ID = '1001'
-    STOP_ID = '1002'
+    SERVICE_MAP_ONE_GROUP_ID = "1000"
+    SERVICE_MAP_TWO_GROUP_ID = "1001"
+    STOP_ID = "1002"
 
     def setUp(self):
         self.route_one = models.Route()
@@ -59,7 +59,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         self.assertRaises(
             exceptions.IdNotFoundError,
-            lambda: routeservice.list_all_in_system(self.SYSTEM_ID)
+            lambda: routeservice.list_all_in_system(self.SYSTEM_ID),
         )
 
     @testutil.patch_function(routeservice._construct_route_pk_to_status_map)
@@ -68,25 +68,22 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         _construct_route_pk_to_status_map.return_value = {
             self.ROUTE_ONE_PK: self.ROUTE_ONE_STATUS,
-            self.ROUTE_TWO_PK: self.ROUTE_TWO_STATUS
+            self.ROUTE_TWO_PK: self.ROUTE_TWO_STATUS,
         }
-        self.routedam.list_all_in_system.return_value = [
-            self.route_one,
-            self.route_two
-        ]
+        self.routedam.list_all_in_system.return_value = [self.route_one, self.route_two]
         self.systemdam.get_by_id.return_value = models.System()
 
         expected = [
             {
                 **self.route_one.short_repr(),
-                'status': self.ROUTE_ONE_STATUS,
-                'href': links.RouteEntityLink(self.route_one),
+                "status": self.ROUTE_ONE_STATUS,
+                "href": links.RouteEntityLink(self.route_one),
             },
             {
                 **self.route_two.short_repr(),
-                'status': self.ROUTE_TWO_STATUS,
-                'href': links.RouteEntityLink(self.route_two),
-            }
+                "status": self.ROUTE_TWO_STATUS,
+                "href": links.RouteEntityLink(self.route_two),
+            },
         ]
 
         actual = routeservice.list_all_in_system(self.SYSTEM_ID, return_links=True)
@@ -101,7 +98,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         self.assertRaises(
             exceptions.IdNotFoundError,
-            lambda: routeservice.get_in_system_by_id(self.SYSTEM_ID, self.ROUTE_ONE_ID)
+            lambda: routeservice.get_in_system_by_id(self.SYSTEM_ID, self.ROUTE_ONE_ID),
         )
 
     @testutil.patch_function(routeservice._construct_route_status)
@@ -113,43 +110,37 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         self.routedam.calculate_periodicity.return_value = self.RAW_FREQUENCY
         self.servicemapdam.list_groups_and_maps_for_stops_in_route.return_value = [
             [self.service_map_one_group, self.service_map_one],
-            [self.service_map_two_group, None]
+            [self.service_map_two_group, None],
         ]
 
         expected = {
             **self.route_one.short_repr(),
-            'periodicity': int(self.RAW_FREQUENCY/6)/10,
-            'status': self.ROUTE_ONE_STATUS,
-            'alerts': [],
-            'service_maps': [
+            "periodicity": int(self.RAW_FREQUENCY / 6) / 10,
+            "status": self.ROUTE_ONE_STATUS,
+            "alerts": [],
+            "service_maps": [
                 {
-                    'group_id': self.SERVICE_MAP_ONE_GROUP_ID,
-                    'stops': [
+                    "group_id": self.SERVICE_MAP_ONE_GROUP_ID,
+                    "stops": [
                         {
                             **self.stop.short_repr(),
-                            'href': links.StopEntityLink(self.stop)
+                            "href": links.StopEntityLink(self.stop),
                         }
-                    ]
+                    ],
                 },
-                {
-                    'group_id': self.SERVICE_MAP_TWO_GROUP_ID,
-                    'stops': []
-                }
-            ]
+                {"group_id": self.SERVICE_MAP_TWO_GROUP_ID, "stops": []},
+            ],
         }
 
         actual = routeservice.get_in_system_by_id(
-            self.SYSTEM_ID,
-            self.ROUTE_ONE_ID,
-            return_links=True
+            self.SYSTEM_ID, self.ROUTE_ONE_ID, return_links=True
         )
 
         self.maxDiff = None
         self.assertDictEqual(actual, expected)
 
         self.routedam.get_in_system_by_id.assert_called_once_with(
-            self.SYSTEM_ID,
-            self.ROUTE_ONE_ID
+            self.SYSTEM_ID, self.ROUTE_ONE_ID
         )
 
     @testutil.patch_function(routeservice._construct_route_pk_to_status_map)
@@ -162,23 +153,19 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         self.assertEqual(
             self.ROUTE_ONE_STATUS,
-            routeservice._construct_route_status(self.ROUTE_ONE_PK)
+            routeservice._construct_route_status(self.ROUTE_ONE_PK),
         )
 
     def test_construct_route_statuses__no_service(self):
         """[Route service] Construct route status - NO_SERVICE"""
         self._test_construct_route_statuses_runner(
-            routeservice.Status.NO_SERVICE,
-            [],
-            False
+            routeservice.Status.NO_SERVICE, [], False
         )
 
     def test_construct_route_statuses__good_service(self):
         """[Route service] Construct route status - GOOD_SERVICE"""
         self._test_construct_route_statuses_runner(
-            routeservice.Status.GOOD_SERVICE,
-            [],
-            True
+            routeservice.Status.GOOD_SERVICE, [], True
         )
 
     def test_construct_route_statuses__planned_service_change(self):
@@ -186,9 +173,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         self.alert.cause = self.alert.Cause.MAINTENANCE
         self.alert.effect = self.alert.Effect.MODIFIED_SERVICE
         self._test_construct_route_statuses_runner(
-            routeservice.Status.PLANNED_SERVICE_CHANGE,
-            [self.alert],
-            True
+            routeservice.Status.PLANNED_SERVICE_CHANGE, [self.alert], True
         )
 
     def test_construct_route_statuses__unplanned_service_change(self):
@@ -196,22 +181,19 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         self.alert.cause = self.alert.Cause.ACCIDENT
         self.alert.effect = self.alert.Effect.MODIFIED_SERVICE
         self._test_construct_route_statuses_runner(
-            routeservice.Status.UNPLANNED_SERVICE_CHANGE,
-            [self.alert],
-            True
+            routeservice.Status.UNPLANNED_SERVICE_CHANGE, [self.alert], True
         )
 
     def test_construct_route_statuses__delays(self):
         """[Route service] Construct route status - DELAYS"""
         self.alert.effect = self.alert.Effect.SIGNIFICANT_DELAYS
         self._test_construct_route_statuses_runner(
-            routeservice.Status.DELAYS,
-            [self.alert],
-            True
+            routeservice.Status.DELAYS, [self.alert], True
         )
 
     def _test_construct_route_statuses_runner(
-            self, expected_status, alerts, current_service):
+        self, expected_status, alerts, current_service
+    ):
 
         self.routedam.get_route_pk_to_highest_priority_alerts_map.return_value = {
             self.ROUTE_ONE_PK: alerts
@@ -223,9 +205,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         else:
             self.routedam.list_route_pks_with_current_service.return_value = []
 
-        expected = {
-            self.ROUTE_ONE_PK: expected_status
-        }
+        expected = {self.ROUTE_ONE_PK: expected_status}
 
         actual = routeservice._construct_route_pk_to_status_map([self.ROUTE_ONE_PK])
 
@@ -235,4 +215,3 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         self.routedam.list_route_pks_with_current_service.assert_called_once_with(
             {self.ROUTE_ONE_PK} if len(alerts) == 0 else set()
         )
-

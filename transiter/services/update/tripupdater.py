@@ -147,7 +147,8 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
                     continue
                 feed_stop_times.append(
                     models.StopTimeUpdate(
-                        pk=stop_time.pk, stop_pk=stop_time.stop_pk, future=False)
+                        pk=stop_time.pk, stop_pk=stop_time.stop_pk, future=False
+                    )
                 )
 
         for feed_stop_time in feed_trip.stop_events:
@@ -156,7 +157,8 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
                 continue
             feed_stop_time.stop_pk = stop_pk
             stop_time_pk = stop_sequence_to_stop_time_pk.get(
-                feed_stop_time.stop_sequence, None)
+                feed_stop_time.stop_sequence, None
+            )
             if stop_time_pk is not None:
                 feed_stop_time.pk = stop_time_pk
 

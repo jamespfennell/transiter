@@ -7,8 +7,8 @@ from . import testutil
 
 
 class TestClr(testutil.TestCase(clt), unittest.TestCase):
-    CONFIG_FILE = 'my-file.toml'
-    TOML_CONFIG = 'blah'
+    CONFIG_FILE = "my-file.toml"
+    TOML_CONFIG = "blah"
 
     def setUp(self):
         self.config = self.mockImportedModule(clt.config)
@@ -16,7 +16,7 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         self.taskserver = self.mockImportedModule(clt.taskserver)
         self.database = self.mockImportedModule(clt.database)
         self.runner = CliRunner()
-        patcher = mock.patch.object(clt, 'open')
+        patcher = mock.patch.object(clt, "open")
         self.open = patcher.start()
         self.addCleanup(patcher.stop)
         self.file_handle = mock.MagicMock()
@@ -29,13 +29,13 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
 
     def test_launch_taskserver(self):
         """[CLT] Launch Task Server"""
-        self._run(['launch', 'task-server'])
+        self._run(["launch", "task-server"])
 
         self.taskserver.launch.assert_called_once_with(False)
 
     def test_launch_taskserver_different_config(self):
         """[CLT] Launch Task Server with different config"""
-        self._run(['-c', self.CONFIG_FILE, 'launch', 'task-server'])
+        self._run(["-c", self.CONFIG_FILE, "launch", "task-server"])
 
         self.taskserver.launch.assert_called_once_with(False)
         self.config.load.assert_called_once_with(self.CONFIG_FILE)
@@ -44,20 +44,20 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         """[CLT] Launch Task Server with unknown config file"""
         self.config.load.side_effect = exceptions.ConfigFileNotFoundError
 
-        self._run(['-c', self.CONFIG_FILE, 'launch', 'task-server'])
+        self._run(["-c", self.CONFIG_FILE, "launch", "task-server"])
 
         self.taskserver.launch.assert_not_called()
         self.config.load.assert_called_once_with(self.CONFIG_FILE)
 
     def test_launch_flask_app(self):
         """[CLT] Launch Flask app"""
-        self._run(['launch', 'http-debug-server'])
+        self._run(["launch", "http-debug-server"])
 
         self.flaskapp.launch.assert_called_once_with(False)
 
     def test_launch_flask_app__forced(self):
         """[CLT] Launch Flask app - forced"""
-        self._run(['launch', '-f', 'http-debug-server'])
+        self._run(["launch", "-f", "http-debug-server"])
 
         self.flaskapp.launch.assert_called_once_with(True)
 
@@ -65,12 +65,12 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         """[CLT] Generate config from default file"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
 
-        self._run(['generate-config'])
+        self._run(["generate-config"])
 
-        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, 'x')
+        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, "x")
         self.config.generate.assert_called_once_with(
             database_config=self.database_config,
-            task_server_config=self.task_server_config
+            task_server_config=self.task_server_config,
         )
         self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
 
@@ -78,12 +78,12 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         """[CLT] Generate config from default file - file exists and write fails"""
         self.open.side_effect = FileExistsError
 
-        self._run(['generate-config'])
+        self._run(["generate-config"])
 
-        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, 'x')
+        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, "x")
         self.config.generate.assert_called_once_with(
             database_config=self.database_config,
-            task_server_config=self.task_server_config
+            task_server_config=self.task_server_config,
         )
         self.file_handle.write.assert_not_called()
 
@@ -91,12 +91,12 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         """[CLT] Generate config from default file - force overwrite"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
 
-        self._run(['generate-config', '-f'])
+        self._run(["generate-config", "-f"])
 
-        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, 'w')
+        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, "w")
         self.config.generate.assert_called_once_with(
             database_config=self.database_config,
-            task_server_config=self.task_server_config
+            task_server_config=self.task_server_config,
         )
         self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
 
@@ -104,12 +104,12 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         """[CLT] Generate config from different file"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
 
-        self._run(['generate-config', '-o', self.CONFIG_FILE])
+        self._run(["generate-config", "-o", self.CONFIG_FILE])
 
-        self.open.assert_called_once_with(self.CONFIG_FILE, 'x')
+        self.open.assert_called_once_with(self.CONFIG_FILE, "x")
         self.config.generate.assert_called_once_with(
             database_config=self.database_config,
-            task_server_config=self.task_server_config
+            task_server_config=self.task_server_config,
         )
         self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
 
@@ -117,21 +117,21 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         """[CLT] Generate config from using current values"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
 
-        self._run(['generate-config', '-u'])
+        self._run(["generate-config", "-u"])
 
-        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, 'x')
+        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, "x")
         self.config.generate.assert_called_once_with()
         self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
 
     def test_rebuild_db(self):
         """[CLT] Rebuild DB"""
-        self._run(['rebuild-db', '--yes'])
+        self._run(["rebuild-db", "--yes"])
 
         self.database.rebuild_db.assert_called_once_with()
 
     def test_rebuild_db_require_verification(self):
         """[CLT] Rebuild DB - requires verification"""
-        self._run(['rebuild-db'])
+        self._run(["rebuild-db"])
 
         self.database.rebuild_db.assert_not_called()
 

@@ -5,7 +5,7 @@ from .base import Base
 
 
 class System(Base):
-    __tablename__ = 'system'
+    __tablename__ = "system"
 
     pk = Column(Integer, primary_key=True)
     id = Column(String, unique=True, index=True)
@@ -14,26 +14,15 @@ class System(Base):
     timezone = Column(String, nullable=True)
 
     routes = relationship(
-        'Route',
-        back_populates='system',
-        cascade='all, delete-orphan')
-    stops = relationship(
-        'Stop',
-        back_populates='system',
-        cascade='all, delete-orphan')
-    feeds = relationship(
-        'Feed',
-        back_populates='system',
-        cascade='all, delete-orphan')
+        "Route", back_populates="system", cascade="all, delete-orphan"
+    )
+    stops = relationship("Stop", back_populates="system", cascade="all, delete-orphan")
+    feeds = relationship("Feed", back_populates="system", cascade="all, delete-orphan")
     scheduled_services = relationship(
-        'ScheduledService',
-        back_populates='system',
-        cascade='all, delete-orphan'
+        "ScheduledService", back_populates="system", cascade="all, delete-orphan"
     )
     service_map_groups = relationship(
-        'ServiceMapGroup',
-        back_populates='system',
-        cascade='all, delete-orphan'
+        "ServiceMapGroup", back_populates="system", cascade="all, delete-orphan"
     )
 
-    _short_repr_list = ['id']
+    _short_repr_list = ["id"]

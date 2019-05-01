@@ -35,7 +35,7 @@ def list_all(return_links=False):
     for system in systemdam.list_all():
         system_response = system.short_repr()
         if return_links:
-            system_response['href'] = links.SystemEntityLink(system)
+            system_response["href"] = links.SystemEntityLink(system)
         response.append(system_response)
     return response
 
@@ -59,24 +59,18 @@ def get_by_id(system_id, return_links=False):
         raise exceptions.IdNotFoundError
     response = {
         **system.short_repr(),
-        'stops': {
-            'count': systemdam.count_stops_in_system(system_id)
-        },
-        'routes': {
-            'count': systemdam.count_routes_in_system(system_id)
-        },
-        'feeds': {
-            'count': systemdam.count_feeds_in_system(system_id)
-        }
+        "stops": {"count": systemdam.count_stops_in_system(system_id)},
+        "routes": {"count": systemdam.count_routes_in_system(system_id)},
+        "feeds": {"count": systemdam.count_feeds_in_system(system_id)},
     }
     if return_links:
         entity_type_to_link = {
-            'stops': links.StopsInSystemIndexLink(system),
-            'routes': links.RoutesInSystemIndexLink(system),
-            'feeds': links.FeedsInSystemIndexLink(system)
+            "stops": links.StopsInSystemIndexLink(system),
+            "routes": links.RoutesInSystemIndexLink(system),
+            "feeds": links.FeedsInSystemIndexLink(system),
         }
         for entity_type, link in entity_type_to_link.items():
-            response[entity_type]['href'] = link
+            response[entity_type]["href"] = link
     return response
 
 
@@ -138,6 +132,7 @@ class _SystemConfig:
         """
         Exception thrown if the system config TOML file is invalid.
         """
+
         pass
 
     class FeedConfig:
@@ -164,27 +159,31 @@ class _SystemConfig:
             """
             self.feed = models.Feed()
             self.feed.id = feed_id
-            self.feed.url = raw_dict['url'].format(**extra_settings)
-            built_in_parser_string = raw_dict.get('built_in_parser', None)
+            self.feed.url = raw_dict["url"].format(**extra_settings)
+            built_in_parser_string = raw_dict.get("built_in_parser", None)
             if built_in_parser_string is not None:
-                self.feed.built_in_parser = models.Feed.BuiltInParser[built_in_parser_string]
+                self.feed.built_in_parser = models.Feed.BuiltInParser[
+                    built_in_parser_string
+                ]
             else:
-                self.feed.custom_parser = raw_dict['custom_parser']
+                self.feed.custom_parser = raw_dict["custom_parser"]
 
-            self.required_for_install = raw_dict.get('required_for_install', False)
+            self.required_for_install = raw_dict.get("required_for_install", False)
             if self.required_for_install:
-                if 'file_upload_fallback' in raw_dict:
+                if "file_upload_fallback" in raw_dict:
                     self.file_upload_fallback = extra_files[
-                        raw_dict['file_upload_fallback']
+                        raw_dict["file_upload_fallback"]
                     ]
 
-            self.feed.auto_updater_enabled = raw_dict.get('auto_update', False)
+            self.feed.auto_updater_enabled = raw_dict.get("auto_update", False)
             if self.feed.auto_updater_enabled:
-                auto_update_time_str = raw_dict['auto_update_period']
-                self.feed.auto_updater_frequency = pytimeparse.parse(auto_update_time_str)
+                auto_update_time_str = raw_dict["auto_update_period"]
+                self.feed.auto_updater_frequency = pytimeparse.parse(
+                    auto_update_time_str
+                )
                 logger.info(
                     f'Converted string "{auto_update_time_str}" '
-                    f'to {self.feed.auto_updater_frequency} seconds.'
+                    f"to {self.feed.auto_updater_frequency} seconds."
                 )
             else:
                 self.feed.auto_updater_enabled = False
@@ -210,16 +209,18 @@ class _SystemConfig:
             """
             self.service_map_group = models.ServiceMapGroup()
             self.service_map_group.id = group_id
-            self.service_map_group.source = raw_dict['source']
-            if 'conditions' in raw_dict:
-                self.service_map_group.conditions = json.dumps(raw_dict['conditions'])
+            self.service_map_group.source = raw_dict["source"]
+            if "conditions" in raw_dict:
+                self.service_map_group.conditions = json.dumps(raw_dict["conditions"])
             else:
                 self.service_map_group.conditions = None
-            self.service_map_group.threshold = raw_dict.get('threshold', 0)
+            self.service_map_group.threshold = raw_dict.get("threshold", 0)
             self.service_map_group.use_for_routes_at_stop = raw_dict.get(
-                'use_for_routes_at_stop', False)
+                "use_for_routes_at_stop", False
+            )
             self.service_map_group.use_for_stops_in_route = raw_dict.get(
-                'use_for_stops_in_route', False)
+                "use_for_stops_in_route", False
+            )
 
     feeds = None
     service_maps = None
@@ -240,35 +241,33 @@ class _SystemConfig:
         """
         config = toml.loads(config_str)
 
-        required_packages = set(config.get('prerequisites', {}).get('packages', {}))
+        required_packages = set(config.get("prerequisites", {}).get("packages", {}))
         for required_package in required_packages:
             if importlib.util.find_spec(required_package) is None:
                 raise self.InvalidSystemConfig(
-                    'Missing required package: {}'.format(required_package)
+                    "Missing required package: {}".format(required_package)
                 )
 
-        required_settings = set(config.get('prerequisites', {}).get('settings', {}))
+        required_settings = set(config.get("prerequisites", {}).get("settings", {}))
         required_settings.difference_update(extra_settings.keys())
         if len(required_settings) > 0:
             raise self.InvalidSystemConfig(
-                'Missing required settings {}'.format(','.join(required_settings))
+                "Missing required settings {}".format(",".join(required_settings))
             )
 
         self.feeds = [
             self.FeedConfig(feed_id, raw_dict, extra_files, extra_settings)
-            for feed_id, raw_dict in config.get('feeds', {}).items()
+            for feed_id, raw_dict in config.get("feeds", {}).items()
         ]
 
         self.service_maps = [
             self.ServiceMapConfig(group_id, raw_dict)
-            for group_id, raw_dict in config.get('service_maps', {}).items()
+            for group_id, raw_dict in config.get("service_maps", {}).items()
         ]
 
         self.direction_name_files = []
-        for file_key in config.get('direction_names', {}).get('file_uploads', []):
-            self.direction_name_files.append(
-                extra_files[file_key]
-            )
+        for file_key in config.get("direction_names", {}).get("file_uploads", []):
+            self.direction_name_files.append(extra_files[file_key])
 
 
 def _install_feeds(system, system_config):
@@ -295,15 +294,14 @@ def _install_feeds(system, system_config):
             continue
 
         if feed_config.file_upload_fallback is None:
-            raise exceptions.InstallError('Update failed!')
+            raise exceptions.InstallError("Update failed!")
         feed_update_retry = models.FeedUpdate(feed_config.feed)
         updatemanager.execute_feed_update(
-            feed_update_retry,
-            feed_config.file_upload_fallback
+            feed_update_retry, feed_config.file_upload_fallback
         )
         if feed_update_retry.status == feed_update.Status.SUCCESS:
             continue
-        raise exceptions.InstallError('Update failed!')
+        raise exceptions.InstallError("Update failed!")
 
 
 def _install_service_maps(system, system_config):
@@ -330,27 +328,23 @@ def _install_direction_names(system, system_config):
     """
     # For the moment, assume direction names involve a full reset
     direction_name_files = system_config.direction_name_files
-    stop_id_to_stop = {
-        stop.id: stop for stop in stopdam.list_all_in_system(system.id)
-    }
+    stop_id_to_stop = {stop.id: stop for stop in stopdam.list_all_in_system(system.id)}
     priority = 0
     for direction_name_file in direction_name_files:
         csv_reader = csv.DictReader(
-            line.decode('utf-8') for line in direction_name_file.readlines()
+            line.decode("utf-8") for line in direction_name_file.readlines()
         )
         for row in csv_reader:
-            stop = stop_id_to_stop.get(row['stop_id'], None)
+            stop = stop_id_to_stop.get(row["stop_id"], None)
             if stop is None:
                 continue
-            direction_id = row.get('direction_id', None)
+            direction_id = row.get("direction_id", None)
             if direction_id is not None:
-                direction_id = (direction_id == '0')
+                direction_id = direction_id == "0"
             direction_name_rule = models.DirectionNameRule()
             direction_name_rule.stop = stop
             direction_name_rule.priority = priority
             direction_name_rule.direction_id = direction_id
-            direction_name_rule.track = row.get('track', None)
-            direction_name_rule.name = row['direction_name']
+            direction_name_rule.track = row.get("track", None)
+            direction_name_rule.name = row["direction_name"]
             priority += 1
-
-

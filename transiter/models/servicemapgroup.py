@@ -1,15 +1,23 @@
-from sqlalchemy import Column, Float, UniqueConstraint, Integer, String, Boolean, ForeignKey
+from sqlalchemy import (
+    Column,
+    Float,
+    UniqueConstraint,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+)
 from sqlalchemy.orm import relationship
 
 from .base import Base
 
 
 class ServiceMapGroup(Base):
-    __tablename__='service_map_group'
+    __tablename__ = "service_map_group"
 
     pk = Column(Integer, primary_key=True)
     id = Column(String, nullable=False)
-    system_pk = Column(Integer, ForeignKey('system.pk'), nullable=False)
+    system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False)
 
     # TODO: Enum
     source = Column(String, nullable=False)
@@ -21,12 +29,6 @@ class ServiceMapGroup(Base):
     use_for_stops_in_route = Column(Boolean, nullable=False, default=False)
 
     maps = relationship(
-        'ServicePattern',
-        cascade='all, delete-orphan',
-        back_populates='group',
+        "ServicePattern", cascade="all, delete-orphan", back_populates="group"
     )
-    system = relationship(
-        'System',
-        cascade='',
-        back_populates='service_map_groups'
-    )
+    system = relationship("System", cascade="", back_populates="service_map_groups")

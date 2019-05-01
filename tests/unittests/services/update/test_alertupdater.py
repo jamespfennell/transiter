@@ -7,12 +7,12 @@ from ... import testutil
 
 
 class TestAlertUpdater(testutil.TestCase(alertupdater), unittest.TestCase):
-    SYSTEM_ID = '1'
-    ALERT_1_ID = '2'
-    ALERT_2_ID = '3'
-    ALERT_3_ID = '4'
-    ROUTE_1_ID = '5'
-    ROUTE_2_ID = '6'
+    SYSTEM_ID = "1"
+    ALERT_1_ID = "2"
+    ALERT_2_ID = "3"
+    ALERT_3_ID = "4"
+    ROUTE_1_ID = "5"
+    ROUTE_2_ID = "6"
     ALERT_2_PK = 7
 
     def setUp(self):
@@ -47,7 +47,7 @@ class TestAlertUpdater(testutil.TestCase(alertupdater), unittest.TestCase):
         stale_alert.pk = self.ALERT_2_PK
         self.systemdam.list_all_alerts_in_system.return_value = [
             expired_alert,
-            stale_alert
+            stale_alert,
         ]
 
         updated_alert = models.RouteStatus()

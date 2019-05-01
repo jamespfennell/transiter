@@ -34,7 +34,6 @@ def ensure_db_setup():
 
 
 class TestCase(unittest.TestCase):
-
     def setUp(self):
         ensure_db_setup()
         self.session = database.get_session()

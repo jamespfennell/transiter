@@ -3,7 +3,6 @@ import time
 
 
 class FastInserter:
-
     def __init__(self, DbModel, batch_size=50000):
         self._DbModel = DbModel
         self._batch_size = batch_size
@@ -18,9 +17,6 @@ class FastInserter:
 
     def flush(self):
         start_time = time.time()
-        self._session.execute(
-            self._DbModel.__table__.insert(),
-            self._queue
-        )
+        self._session.execute(self._DbModel.__table__.insert(), self._queue)
         self._total_db_time += time.time() - start_time
         self._queue = []

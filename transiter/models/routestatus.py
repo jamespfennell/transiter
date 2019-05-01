@@ -1,4 +1,13 @@
-from sqlalchemy import Boolean, Column, TIMESTAMP, Table, Integer, String, ForeignKey, Enum
+from sqlalchemy import (
+    Boolean,
+    Column,
+    TIMESTAMP,
+    Table,
+    Integer,
+    String,
+    ForeignKey,
+    Enum,
+)
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -8,7 +17,7 @@ import enum
 # TODO: Rename Alert (following
 # GTFS realtime. Also update routeendpoint with the right api when this is done
 class RouteStatus(Base):
-    __tablename__ = 'route_status'
+    __tablename__ = "route_status"
 
     pk = Column(Integer, primary_key=True)
     id = Column(String)
@@ -38,26 +47,26 @@ class RouteStatus(Base):
     route_ids = set()
 
     routes = relationship(
-        'Route',
-        secondary='route_status_route',
-        back_populates='route_statuses',
-        cascade='none'
+        "Route",
+        secondary="route_status_route",
+        back_populates="route_statuses",
+        cascade="none",
     )
 
     _short_repr_list = [
-        'id',
-        'type',
-        'message_title',
-        'message_content',
-        'start_time',
-        'end_time',
-        'creation_time',
+        "id",
+        "type",
+        "message_title",
+        "message_content",
+        "start_time",
+        "end_time",
+        "creation_time",
     ]
 
 
 route_status_route = Table(
-    'route_status_route',
+    "route_status_route",
     Base.metadata,
-    Column('route_status_pk', Integer, ForeignKey('route_status.pk')),
-    Column('route_pk', Integer, ForeignKey('route.pk'), index=True)
+    Column("route_status_pk", Integer, ForeignKey("route_status.pk")),
+    Column("route_pk", Integer, ForeignKey("route.pk"), index=True),
 )

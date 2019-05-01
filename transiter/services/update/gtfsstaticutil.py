@@ -36,7 +36,9 @@ def parse_gtfs_static(feed_update, gtfs_static_zip_data):
     for stop in gtfs_static_data.stop_id_to_stop.values():
         stop.system = system
         if not stop.is_station:
-            parent_stop = gtfs_static_data.stop_id_to_stop.get(stop.parent_stop_id, None)
+            parent_stop = gtfs_static_data.stop_id_to_stop.get(
+                stop.parent_stop_id, None
+            )
             if parent_stop is None:
                 stop.is_station = True
             else:
@@ -48,14 +50,17 @@ def parse_gtfs_static(feed_update, gtfs_static_zip_data):
 
     for (stop_id_1, stop_id_2) in gtfs_static_data.transfer_tuples:
         updated_station_set = station_sets_by_stop_id[stop_id_1].union(
-            station_sets_by_stop_id[stop_id_2])
+            station_sets_by_stop_id[stop_id_2]
+        )
         for stop_id in updated_station_set:
             station_sets_by_stop_id[stop_id] = updated_station_set
 
     for station_set in station_sets_by_stop_id.values():
         if len(station_set) <= 1:
             continue
-        child_stops = [gtfs_static_data.stop_id_to_stop[stop_id] for stop_id in station_set]
+        child_stops = [
+            gtfs_static_data.stop_id_to_stop[stop_id] for stop_id in station_set
+        ]
         parent_stop = _create_station_from_child_stops(child_stops)
         parent_stop.system = system
         station_set.clear()
@@ -86,12 +91,14 @@ def _create_station_from_child_stops(child_stops):
     parent_stop.is_station = True
 
     parent_stop.latitude = sum(
-        float(child_stop.latitude) for child_stop in child_stops) / len(child_stops)
+        float(child_stop.latitude) for child_stop in child_stops
+    ) / len(child_stops)
     parent_stop.longitude = sum(
-        float(child_stop.longitude) for child_stop in child_stops) / len(child_stops)
+        float(child_stop.longitude) for child_stop in child_stops
+    ) / len(child_stops)
 
     child_stop_ids = [child_stop.id for child_stop in child_stops]
-    parent_stop.id = '-'.join(sorted(child_stop_ids))
+    parent_stop.id = "-".join(sorted(child_stop_ids))
 
     child_stop_names = {child_stop.name: 0 for child_stop in child_stops}
     for child_stop in child_stops:
@@ -110,18 +117,18 @@ def _create_station_from_child_stops(child_stops):
                 remove = True
         if remove:
             most_frequent_names.remove(name)
-    parent_stop.name = ' / '.join(sorted(most_frequent_names))
+    parent_stop.name = " / ".join(sorted(most_frequent_names))
 
     return parent_stop
 
 
 class GtfsStaticFile(enum.Enum):
-    CALENDAR = 'calendar.txt'
-    ROUTES = 'routes.txt'
-    STOP_TIMES = 'stop_times.txt'
-    STOPS = 'stops.txt'
-    TRANSFERS = 'transfers.txt'
-    TRIPS = 'trips.txt'
+    CALENDAR = "calendar.txt"
+    ROUTES = "routes.txt"
+    STOP_TIMES = "stop_times.txt"
+    STOPS = "stops.txt"
+    TRANSFERS = "transfers.txt"
+    TRIPS = "trips.txt"
 
 
 def read_gtfs_static_file(zip_file, gtfs_static_file):
@@ -135,7 +142,7 @@ def read_gtfs_static_file(zip_file, gtfs_static_file):
     file_name = gtfs_static_file.value
     try:
         with zip_file.open(file_name) as raw_csv_file:
-            csv_file = io.TextIOWrapper(raw_csv_file, 'utf-8')
+            csv_file = io.TextIOWrapper(raw_csv_file, "utf-8")
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
                 yield row
@@ -175,35 +182,35 @@ class GtfsStaticData:
     def _parse_routes(self):
         for row in read_gtfs_static_file(self._zip_file, GtfsStaticFile.ROUTES):
             route = models.Route()
-            route.id = row['route_id']
-            route.color = row.get('route_color')
-            route.timetable_url = row.get('route_url')
-            route.short_name = row.get('route_short_name')
-            route.long_name = row.get('route_long_name')
-            route.description = row.get('route_desc')
+            route.id = row["route_id"]
+            route.color = row.get("route_color")
+            route.timetable_url = row.get("route_url")
+            route.short_name = row.get("route_short_name")
+            route.long_name = row.get("route_long_name")
+            route.description = row.get("route_desc")
             self.route_id_to_route[route.id] = route
 
     def _parse_stops(self):
         for row in read_gtfs_static_file(self._zip_file, GtfsStaticFile.STOPS):
             stop = models.Stop()
-            stop.id = row['stop_id']
-            stop.name = row['stop_name']
-            stop.longitude = row['stop_lon']
-            stop.latitude = row['stop_lat']
+            stop.id = row["stop_id"]
+            stop.name = row["stop_name"]
+            stop.longitude = row["stop_lon"]
+            stop.latitude = row["stop_lat"]
 
-            if row['location_type'] == '1':
+            if row["location_type"] == "1":
                 stop.is_station = True
                 stop.parent_stop_id = None
                 self.stop_id_to_stop[stop.id] = stop
                 continue
             stop.is_station = False
-            stop.parent_stop_id = row.get('parent_station', None)
+            stop.parent_stop_id = row.get("parent_station", None)
             self.stop_id_to_stop[stop.id] = stop
 
     def _parse_transfers(self):
         for row in read_gtfs_static_file(self._zip_file, GtfsStaticFile.TRANSFERS):
-            stop_id_1 = row['from_stop_id']
-            stop_id_2 = row['to_stop_id']
+            stop_id_1 = row["from_stop_id"]
+            stop_id_2 = row["to_stop_id"]
             if stop_id_1 == stop_id_2:
                 continue
             self.transfer_tuples.append((stop_id_1, stop_id_2))
@@ -230,24 +237,21 @@ def fast_scheduled_entities_insert(gtfs_static_zip_data, system: models.System):
     route_id_to_pk = routedam.get_id_to_pk_map_in_system(system.id)
     stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id)
     zip_file = zipfile.ZipFile(io.BytesIO(gtfs_static_zip_data))
-    str_to_bool = {
-        '0': False,
-        '1': True
-    }
+    str_to_bool = {"0": False, "1": True}
 
     fast_inserter = fastoperations.FastInserter(models.ScheduledService)
     for row in read_gtfs_static_file(zip_file, GtfsStaticFile.CALENDAR):
         fast_inserter.add(
             {
-                'id': row['service_id'],
-                'system_pk': system.pk,
-                'monday': str_to_bool[row['monday']],
-                'tuesday': str_to_bool[row['tuesday']],
-                'wednesday': str_to_bool[row['wednesday']],
-                'thursday': str_to_bool[row['thursday']],
-                'friday': str_to_bool[row['friday']],
-                'saturday': str_to_bool[row['saturday']],
-                'sunday': str_to_bool[row['sunday']]
+                "id": row["service_id"],
+                "system_pk": system.pk,
+                "monday": str_to_bool[row["monday"]],
+                "tuesday": str_to_bool[row["tuesday"]],
+                "wednesday": str_to_bool[row["wednesday"]],
+                "thursday": str_to_bool[row["thursday"]],
+                "friday": str_to_bool[row["friday"]],
+                "saturday": str_to_bool[row["saturday"]],
+                "sunday": str_to_bool[row["sunday"]],
             }
         )
     fast_inserter.flush()
@@ -256,35 +260,33 @@ def fast_scheduled_entities_insert(gtfs_static_zip_data, system: models.System):
 
     fast_inserter = fastoperations.FastInserter(models.ScheduledTrip)
     for row in read_gtfs_static_file(zip_file, GtfsStaticFile.TRIPS):
-        direction_id = str_to_bool[row['direction_id']]
+        direction_id = str_to_bool[row["direction_id"]]
         fast_inserter.add(
             {
-                'id': row['trip_id'],
-                'service_pk': service_id_to_pk[row['service_id']],
-                'route_pk': route_id_to_pk[row['route_id']],
-                'direction_id': direction_id,
+                "id": row["trip_id"],
+                "service_pk": service_id_to_pk[row["service_id"]],
+                "route_pk": route_id_to_pk[row["route_id"]],
+                "direction_id": direction_id,
             }
         )
     fast_inserter.flush()
     trip_id_to_pk = genericqueries.get_id_to_pk_map(models.ScheduledTrip)
 
     def time_str_to_datetime_time(time_str):
-        hour, minute, second = time_str.split(':')
+        hour, minute, second = time_str.split(":")
         return datetime.time(
-            hour=int(hour) % 24,
-            minute=int(minute),
-            second=int(second)
+            hour=int(hour) % 24, minute=int(minute), second=int(second)
         )
 
     fast_inserter = fastoperations.FastInserter(models.ScheduledTripStopTime)
     for row in read_gtfs_static_file(zip_file, GtfsStaticFile.STOP_TIMES):
         fast_inserter.add(
             {
-                'trip_pk': trip_id_to_pk[row['trip_id']],
-                'stop_pk': stop_id_to_pk[row['stop_id']],
-                'stop_sequence': int(row['stop_sequence']),
-                'departure_time': time_str_to_datetime_time(row['departure_time']),
-                'arrival_time': time_str_to_datetime_time(row['arrival_time']),
+                "trip_pk": trip_id_to_pk[row["trip_id"]],
+                "stop_pk": stop_id_to_pk[row["stop_id"]],
+                "stop_sequence": int(row["stop_sequence"]),
+                "departure_time": time_str_to_datetime_time(row["departure_time"]),
+                "arrival_time": time_str_to_datetime_time(row["arrival_time"]),
             }
         )
     fast_inserter.flush()

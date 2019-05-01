@@ -3,18 +3,18 @@ from . import dbtestutil, testdata
 
 
 class TestRouteDAM(dbtestutil.TestCase):
-
     def test_list_all_in_system(self):
         """[Route DAM] List all in system"""
         self.assertListEqual(
             [testdata.route_one, testdata.route_two, testdata.route_three],
-            routedam.list_all_in_system(testdata.SYSTEM_ONE_ID)
+            routedam.list_all_in_system(testdata.SYSTEM_ONE_ID),
         )
 
     def test__routedata__get_in_system_by_id(self):
         """[Route DAM] Get in system by ID"""
         db_route = routedam.get_in_system_by_id(
-            testdata.SYSTEM_ONE_ID, testdata.ROUTE_ONE_ID)
+            testdata.SYSTEM_ONE_ID, testdata.ROUTE_ONE_ID
+        )
 
         self.assertEqual(testdata.route_one, db_route)
 
@@ -23,11 +23,12 @@ class TestRouteDAM(dbtestutil.TestCase):
         expected = {
             testdata.ROUTE_ONE_ID: testdata.ROUTE_ONE_PK,
             testdata.ROUTE_TWO_ID: testdata.ROUTE_TWO_PK,
-            'unknown': None,
+            "unknown": None,
         }
 
         actual = routedam.get_id_to_pk_map_in_system(
-            testdata.SYSTEM_ONE_ID, expected.keys())
+            testdata.SYSTEM_ONE_ID, expected.keys()
+        )
 
         self.assertEqual(expected, actual)
 
@@ -39,8 +40,7 @@ class TestRouteDAM(dbtestutil.TestCase):
             testdata.ROUTE_THREE_ID: testdata.ROUTE_THREE_PK,
         }
 
-        actual = routedam.get_id_to_pk_map_in_system(
-            testdata.SYSTEM_ONE_ID)
+        actual = routedam.get_id_to_pk_map_in_system(testdata.SYSTEM_ONE_ID)
 
         self.assertEqual(expected, actual)
 
@@ -62,7 +62,7 @@ class TestRouteDAM(dbtestutil.TestCase):
             [testdata.ROUTE_ONE_PK],
             routedam.list_route_pks_with_current_service(
                 [testdata.ROUTE_ONE_PK, testdata.ROUTE_TWO_PK, testdata.ROUTE_THREE_PK]
-            )
+            ),
         )
 
     def test_get_route_pk_to_highest_priority_alerts_maps(self):
@@ -70,7 +70,7 @@ class TestRouteDAM(dbtestutil.TestCase):
         expected = {
             testdata.ROUTE_ONE_PK: [testdata.alert_2, testdata.alert_3],
             testdata.ROUTE_TWO_PK: [testdata.alert_4],
-            testdata.ROUTE_THREE_PK: []
+            testdata.ROUTE_THREE_PK: [],
         }
         actual = routedam.get_route_pk_to_highest_priority_alerts_map(
             [testdata.ROUTE_ONE_PK, testdata.ROUTE_TWO_PK, testdata.ROUTE_THREE_PK]

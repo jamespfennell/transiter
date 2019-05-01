@@ -22,17 +22,17 @@ import toml
 
 from transiter import exceptions
 
-DEFAULT_FILE_PATH = 'transiter-config.toml'
+DEFAULT_FILE_PATH = "transiter-config.toml"
 
 
 class DefaultDatabaseConfig:
-    DRIVER = 'sqlite'
-    DIALECT = ''
-    NAME = 'transiter.db'
-    USERNAME = ''
-    PASSWORD = ''
-    HOST = ''
-    PORT = ''
+    DRIVER = "sqlite"
+    DIALECT = ""
+    NAME = "transiter.db"
+    USERNAME = ""
+    PASSWORD = ""
+    HOST = ""
+    PORT = ""
 
 
 DatabaseConfig = DefaultDatabaseConfig
@@ -45,8 +45,7 @@ class DefaultTaskServerConfig:
 TaskServerConfig = DefaultTaskServerConfig
 
 
-def generate(database_config=DatabaseConfig,
-             task_server_config=TaskServerConfig):
+def generate(database_config=DatabaseConfig, task_server_config=TaskServerConfig):
     """
     Generate a Transiter config string.
 
@@ -59,8 +58,7 @@ def generate(database_config=DatabaseConfig,
     :return: the TOML string
     """
     return _TOML_CONFIG_STR_TEMPLATE.format(
-        DatabaseConfig=database_config,
-        TaskServerConfig=task_server_config
+        DatabaseConfig=database_config, TaskServerConfig=task_server_config
     )
 
 
@@ -80,8 +78,8 @@ def load_from_str(toml_str: str):
         pass
 
     toml_section_to_config = {
-        'database': CustomDatabaseConfig,
-        'taskserver': CustomTaskServerConfig
+        "database": CustomDatabaseConfig,
+        "taskserver": CustomTaskServerConfig,
     }
 
     for section, Config in toml_section_to_config.items():
@@ -106,13 +104,13 @@ def load(file_path: str = None):
     """
     file_must_exist = True
     if file_path is None:
-        file_path = os.environ.get('TRANSITER_CONFIG', None)
+        file_path = os.environ.get("TRANSITER_CONFIG", None)
         if file_path is None:
             file_must_exist = False
             file_path = DEFAULT_FILE_PATH
 
     try:
-        with open(file_path, 'r') as file_handle:
+        with open(file_path, "r") as file_handle:
             toml_str = file_handle.read()
     except FileNotFoundError:
         if file_must_exist:

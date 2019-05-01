@@ -45,7 +45,9 @@ def stitch(paths) -> graphdatastructs.DirectedGraph:
         first_vertex = path.first()
         if first_vertex.label not in graph_vertices_by_label:
             # print('creating source {}'.format(path.stop_id))
-            graph_vertices_by_label[first_vertex.label] = graphdatastructs.DirectedGraphVertex(first_vertex.label)
+            graph_vertices_by_label[
+                first_vertex.label
+            ] = graphdatastructs.DirectedGraphVertex(first_vertex.label)
             sources.add(graph_vertices_by_label[first_vertex.label])
         else:
             last_path_vertex_already_in_graph = first_vertex
@@ -54,7 +56,9 @@ def stitch(paths) -> graphdatastructs.DirectedGraph:
             graph_v_1 = graph_vertices_by_label[v_1.label]
             if v_2.label not in graph_vertices_by_label:
                 # print('creating {}'.format(v_2.stop_id))
-                graph_vertices_by_label[v_2.label] = graphdatastructs.DirectedGraphVertex(v_2.label)
+                graph_vertices_by_label[
+                    v_2.label
+                ] = graphdatastructs.DirectedGraphVertex(v_2.label)
                 graph_v_2 = graph_vertices_by_label[v_2.label]
                 graph_v_1.next.add(graph_v_2)
                 graph_v_2.prev.add(graph_v_1)
@@ -76,7 +80,8 @@ def stitch(paths) -> graphdatastructs.DirectedGraph:
                 continue
 
             last_graph_vertex = graph_vertices_by_label[
-                last_path_vertex_already_in_graph.label]
+                last_path_vertex_already_in_graph.label
+            ]
 
             if graph_v_2 in last_graph_vertex.next:
                 last_graph_vertex.next.remove(graph_v_2)
