@@ -10,10 +10,13 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 from transiter import models, config
 
-warnings.simplefilter(action='ignore', category=SAWarning)
+#
+# warnings.simplefilter(action='ignore', category=SAWarning)
 logger = logging.getLogger(__name__)
 
 
+# TODO: this is reinventing the wheel
+# https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.engine.url.make_url
 def build_connection_url_from_config(database_config: typing.Type[config.DatabaseConfig]):
     pieces = ['']*9
     pieces[0] = database_config.DRIVER
@@ -51,34 +54,6 @@ def create_engine():
     return sqlalchemy.create_engine(connection_url, **extra_params)
 
 
-def _perform_outer_database_action(operation: str,
-                                   silent=True):
-    """
-    database = db_connection_params._database
-    db_connection_params._database = 'postgres'
-    outer_engine = create_engine(db_connection_params)
-    conn = outer_engine.connect()
-    print('Database: {}'.format(database))
-    try:
-        conn.execute('commit')
-        conn.execute('{} DATABASE {}'.format(operation, database))
-    except sqlalchemy.exc.ProgrammingError:
-        if not silent:
-            raise
-    finally:
-        conn.close()
-        db_connection_params._database = database
-    """
-    raise Exception('Why is this method being used?')
-
-
-def drop_database(silent=True):
-    _perform_outer_database_action('DROP', silent)
-
-
-def create_database(silent=True):
-    _perform_outer_database_action('CREATE', silent)
-
 
 engine = None
 session_factory = None
@@ -94,14 +69,6 @@ def ensure_db_connection():
     Session = scoped_session(session_factory)
 
 
-def close_db_connection():
-    global engine, session_factory, Session
-    Session.remove()
-    engine = None
-    session_factory = None
-    Session = None
-
-
 # TODO: fail hard if not in a UOW context
 # TODO Leave note explaining why this is thread safe
 def get_session():
@@ -109,15 +76,12 @@ def get_session():
     return Session()
 
 
-# TODO: Need to this to allow nesting of read sessions
 # TODO: Fail hard if a nested write session is attempted
 @decorator
 def unit_of_work(func, *args, **kw):
     global Session
     ensure_db_connection()
-    # TODO: investigate autoflush=False
     session = Session()
-    #logger.debug('Opened unit of work session {}'.format(session))
     try:
         result = func(*args, **kw)
         session.commit()
@@ -125,19 +89,14 @@ def unit_of_work(func, *args, **kw):
         session.rollback()
         raise
     finally:
-        #logger.debug('Closing unit of work session {}'.format(session))
-        # TODO?????
-        Session.remove()
+        session.close()
 
     return result
 
 
-def create_tables():
+def rebuild_db():
     global engine
     ensure_db_connection()
     models.Base.metadata.drop_all(engine)
     models.Base.metadata.create_all(engine)
 
-
-def rebuild_db():
-    create_tables()

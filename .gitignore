@@ -10,5 +10,5 @@ build
 dist
 tests/integrationtest/output/*
 .eggs
-sandbox
+sandbox/*
 transiter.db

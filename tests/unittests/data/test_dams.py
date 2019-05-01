@@ -87,7 +87,7 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
         """
         config.load_from_str(toml_str)
         database.ensure_db_connection()
-        database.create_tables()
+        database.rebuild_db()
 
         test_db_dump_file_path = os.path.join(os.path.dirname(__file__), 'test_db_dump.sql')
         with open(test_db_dump_file_path) as f:
@@ -303,33 +303,6 @@ class TestDataAccess(unittest.TestCase, TestDbConstants):
     #
     #   FEED DATA
     #
-
-    def test__feed_dao__get_last_successful_update(self):
-        db_feed_update = feeddam.get_last_successful_update(self.FEED_ONE_PK)
-
-        self._compare_datetime_to_str(
-            db_feed_update.last_action_time,
-            self.LATEST_FEED_UPDATE_TIME)
-        db_feed_update.last_action_time = None
-
-        feed_update = models.FeedUpdate(None)
-        feed_update.feed_pk = self.FEED_ONE_PK
-        feed_update.status = feed_update.Status.SUCCESS
-
-        self.assertEqual(feed_update, db_feed_update)
-
-    def test__feed_dao__list_updates_in_feed(self):
-        feed = feeddam.get_in_system_by_id(self.SYSTEM_ONE_ID, self.FEED_ONE_ID)
-        data = list(feeddam.list_updates_in_feed(feed))
-        self.assertEqual(3, len(data))
-        self.assertEqual(
-            [
-                models.FeedUpdate.Status.SUCCESS,
-                models.FeedUpdate.Status.SUCCESS,
-                models.FeedUpdate.Status.FAILURE
-            ],
-            [feed_update.status for feed_update in data]
-        )
 
     def _compare_datetime_to_str(self, dt, st):
         self.assertEqual(str(dt)[:-6], st)

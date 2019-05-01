@@ -17,11 +17,9 @@ Also need to fix the bug on the SQL Alchemy upgrade.
 ***Return no iterators from the database layer***
 Check that queries are actually being used
 
-    ./data/dams/feeddam.py
-    ./data/dams/tripdam.py
     ./data/dams/servicepatterndam.py
    
-    ./data/database.py (-> database/connection.py?)
+    ./data/database.py (-> database/dbconnection.py?)
     ./data/fastoperations.py
     ./data/dams/genericqueries.py (should need no tests)
 

@@ -14,7 +14,7 @@ class TestStopDAM(dbtestutil.TestCase):
         )
 
     def test__routedata__get_in_system_by_id(self):
-        """[Route DAM] Get in system by ID"""
+        """[Stop DAM] Get in system by ID"""
         self.assertEqual(
             testdata.stop_one,
             stopdam.get_in_system_by_id(testdata.SYSTEM_ONE_ID, testdata.STOP_ONE_ID)

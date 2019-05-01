@@ -125,7 +125,7 @@ def list_updates_in_feed(system_id, feed_id):
     if feed is None:
         raise exceptions.IdNotFoundError
     response = []
-    for feed_update in feeddam.list_updates_in_feed(feed):
+    for feed_update in feeddam.list_updates_in_feed(feed.pk):
         response.append(feed_update.short_repr())
     return response
 

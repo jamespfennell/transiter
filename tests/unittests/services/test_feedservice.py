@@ -165,7 +165,7 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         self.feeddam.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID, self.FEED_ONE_ID)
         self.feeddam.list_updates_in_feed.assert_called_once_with(
-            self.feed_one)
+            self.FEED_ONE_PK)
 
     def test_list_updates_in_feed__no_such_feed(self):
         """[Feed service] List updates in a feed - no such feed"""

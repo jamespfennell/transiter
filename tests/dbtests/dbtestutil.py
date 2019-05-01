@@ -25,7 +25,7 @@ def ensure_db_setup():
     """
     config.load_from_str(toml_str)
     database.ensure_db_connection()
-    database.create_tables()
+    database.rebuild_db()
 
     session = database.Session()
     session.add(testdata.system_one)

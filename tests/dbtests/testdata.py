@@ -1,4 +1,5 @@
 from transiter import models
+import datetime
 
 SYSTEM_ONE_PK = 8
 SYSTEM_TWO_PK = 9
@@ -85,9 +86,25 @@ FEED_ONE_ID = '71'
 FEED_ONE_PK = 72
 FEED_TWO_ID = '73'
 FEED_TWO_PK = 74
+FEED_3_ID = '75'
+FEED_3_PK = 76
 
-feed_one = models.Feed(pk=FEED_ONE_PK, id=FEED_ONE_ID, system=system_one)
-feed_two = models.Feed(pk=FEED_TWO_PK, id=FEED_TWO_ID, system=system_one)
+feed_one = models.Feed(pk=FEED_ONE_PK, id=FEED_ONE_ID, system=system_one, auto_updater_enabled=True)
+feed_two = models.Feed(pk=FEED_TWO_PK, id=FEED_TWO_ID, system=system_one, auto_updater_enabled=False)
+feed_3 = models.Feed(pk=FEED_3_PK, id=FEED_3_ID, system=system_two, auto_updater_enabled=True)
+
+feed_1_update_1 = models.FeedUpdate(
+    feed_one, status=models.FeedUpdate.Status.SUCCESS,
+    last_action_time=datetime.datetime(2011, 1, 1, 1, 0, 0)
+)
+feed_1_update_2 = models.FeedUpdate(
+    feed_one, status=models.FeedUpdate.Status.SUCCESS,
+    last_action_time=datetime.datetime(2011, 1, 1, 2, 0, 0)
+)
+feed_1_update_3 = models.FeedUpdate(
+    feed_one, status=models.FeedUpdate.Status.FAILURE,
+    last_action_time=datetime.datetime(2011, 1, 1, 3, 0, 0)
+)
 
 ALERT_1_PK = 81
 ALERT_2_PK = 82
