@@ -6,7 +6,7 @@ import datetime
 import json
 
 from transiter import models
-from transiter.data.dams import servicemapdam, stopdam
+from transiter.data.dams import servicemapdam, stopdam, tripdam
 from transiter.services.servicemap import graphutils
 
 
@@ -63,7 +63,7 @@ def calculate_realtime_service_map_for_route(route):
     # Now actually build the map.
     stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(
         route.system.id)
-    trip_pk_to_path = servicemapdam.get_trip_pk_to_path_map(route.pk)
+    trip_pk_to_path = tripdam.get_trip_pk_to_path_map(route.pk)
     paths = set()
     for trip in route.trips:
         path = trip_pk_to_path.get(trip.pk, [])

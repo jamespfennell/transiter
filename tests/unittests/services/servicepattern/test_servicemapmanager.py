@@ -6,8 +6,6 @@ from transiter import models
 from transiter.services.servicemap import servicemapmanager
 from ... import testutil
 
-import datetime
-
 
 class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
     STOP_1_PK = 1
@@ -29,6 +27,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
         self.graphutils = self.mockImportedModule(servicemapmanager.graphutils)
         self.servicemapdam = self.mockImportedModule(servicemapmanager.servicemapdam)
         self.stopdam = self.mockImportedModule(servicemapmanager.stopdam)
+        self.tripdam = self.mockImportedModule(servicemapmanager.tripdam)
 
         self.trip_one = models.ScheduledTrip(pk=self.TRIP_1_PK)
         self.trip_one.stop_ids = []
@@ -75,7 +74,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
 
         self.route_1.trips = [self.trip_one, self.trip_two]
 
-        self.servicemapdam.get_trip_pk_to_path_map.return_value = {
+        self.tripdam.get_trip_pk_to_path_map.return_value = {
             self.TRIP_1_PK: [1, 2, 3, 4],
             self.TRIP_2_PK: [3, 1, 0]
         }

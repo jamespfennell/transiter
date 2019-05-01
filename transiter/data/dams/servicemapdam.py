@@ -6,6 +6,15 @@ from transiter.data import database
 
 
 def list_groups_and_maps_for_stops_in_route(route_pk):
+    """
+    This function is used to get the service maps for a route.
+
+    It returns a list of tuples (service map group, service map) for each
+    service map group having use_for_stops_in_route equal True.
+
+    :param route_pk: the route's PK
+    :return: the list described above
+    """
     session = database.get_session()
     query = (
         session.query(models.ServiceMapGroup, models.ServicePattern)
@@ -31,6 +40,18 @@ def list_groups_and_maps_for_stops_in_route(route_pk):
 
 
 def get_stop_pk_to_group_id_to_routes_map(stop_pks):
+    """
+    This function is used to get service map information for stops; namely,
+    which routes call at the stop based on the service maps.
+
+    Get a map whose key is a stop's PK and whose the value is another map.
+    This second map has a key for every service map group having
+    use_for_routes_at_stop equal to True. The value of this map is the list of
+    routes that contain the stop in the relevant service map.
+
+    :param stop_pks: stop PKs to build the map for
+    :return: the monster map described above
+    """
     # TODO: we should return all service maps, even if they don't have routes for the stop
     # TODO: THIS HAS NOT BEEN DONE!
     # TODO: TEST!!
@@ -56,8 +77,6 @@ def get_stop_pk_to_group_id_to_routes_map(stop_pks):
             .filter(models.ServicePatternVertex.stop_pk.in_(stop_pks))
             .filter(models.ServiceMapGroup.use_for_routes_at_stop)
     )
-    print(query)
-    print(stop_pks)
     response = {stop_pk: {} for stop_pk in stop_pks}
     for group_id, stop_pk, route in query:
         if group_id not in response[stop_pk]:
@@ -65,27 +84,6 @@ def get_stop_pk_to_group_id_to_routes_map(stop_pks):
         response[stop_pk][group_id].append(route)
     return response
 
-
-# TODO move this to the trip dam
-def get_trip_pk_to_path_map(route_pk):
-    statement = (
-        sql.select([
-            models.StopTimeUpdate.trip_pk,
-            models.StopTimeUpdate.stop_pk
-        ])
-            .select_from(
-            sql.join(models.StopTimeUpdate, models.Trip)
-        )
-            .where(models.Trip.route_pk == route_pk)
-            .order_by(models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence)
-    )
-    session = database.get_session()
-    trip_pk_to_stop_pks = {}
-    for trip_pk, stop_pk in session.execute(statement):
-        if trip_pk not in trip_pk_to_stop_pks:
-            trip_pk_to_stop_pks[trip_pk] = []
-        trip_pk_to_stop_pks[trip_pk].append(stop_pk)
-    return trip_pk_to_stop_pks
 
 
 # TODO stop_pks_map -> paths

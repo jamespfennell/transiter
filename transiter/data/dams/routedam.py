@@ -84,9 +84,9 @@ def calculate_periodicity(route_pk):
         sql.select([
             sql.func.avg(stop_data_alias.c.time_diff / (stop_data_alias.c.number - 1))])
     )
-    for row in session.execute(final_stmt):
-        return row[0]
-    return None
+    result = [row for row in session.execute(final_stmt)]
+    if len(result) > 0:
+        return result[0][0]
 
 
 def list_route_pks_with_current_service(route_pks):

@@ -119,22 +119,36 @@ alert_4 = models.RouteStatus(pk=ALERT_4_PK, priority=3)
 route_one.route_statuses = [alert_1, alert_2, alert_3]
 route_two.route_statuses = [alert_1, alert_3, alert_4]
 
-ROUTE_STATUS_ONE_PK = 81
-ROUTE_STATUS_ONE_MESSAGE = '82'
-ROUTE_STATUS_TWO_PK = 83
-ROUTE_STATUS_TWO_MESSAGE = '84'
-
 SERVICE_MAP_GROUP_ONE_PK = 101
 SERVICE_MAP_GROUP_ONE_ID = '102'
+
+service_map_group_1 = models.ServiceMapGroup(
+    system=system_one,
+    source="realtime",
+    use_for_routes_at_stop=True,
+    pk=SERVICE_MAP_GROUP_ONE_PK,
+    id=SERVICE_MAP_GROUP_ONE_ID)
 
 SERVICE_PATTERN_ONE_PK = 91
 SERVICE_PATTERN_TWO_PK = 92
 
-STOP_ID_ALIAS_ONE = '101'
-STOP_ID_ALIAS_TWO = '102'
+service_map_1 = models.ServicePattern(
+    group=service_map_group_1,
+    route=route_one,
+    pk=SERVICE_PATTERN_ONE_PK
+)
+service_map_1.vertices = [
+    models.ServicePatternVertex(stop=stop_one),
+    models.ServicePatternVertex(stop=stop_two),
+]
+service_map_2 = models.ServicePattern(
+    group=service_map_group_1,
+    route=route_two,
+    pk=SERVICE_PATTERN_TWO_PK
+)
+service_map_2.vertices = [
+    models.ServicePatternVertex(stop=stop_two),
+    models.ServicePatternVertex(stop=stop_three),
+]
 
-EARLIEST_TERMINAL_TIME = '2018-11-02 10:00:30'
-MIDDLE_TERMINAL_TIME = '2018-11-02 11:00:20'
-LATEST_TERMINAL_TIME = '2018-11-02 12:00:10'
 
-LATEST_FEED_UPDATE_TIME = '2018-11-03 11:00:00'

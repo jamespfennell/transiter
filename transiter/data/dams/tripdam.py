@@ -1,4 +1,5 @@
 import sqlalchemy
+import sqlalchemy.sql.expression as sql
 from sqlalchemy.orm import selectinload
 
 from transiter import models
@@ -70,3 +71,32 @@ def get_trip_pk_to_last_stop_map(trip_pks):
     for trip_pk, last_stop in query:
         trip_pk_to_last_stop[trip_pk] = last_stop
     return trip_pk_to_last_stop
+
+
+def get_trip_pk_to_path_map(route_pk):
+    """
+    Get a map of trip PK to the path of the trip for every trip in a route.
+
+    The path here is a list of stop PKs.
+
+    :param route_pk: the route's PK
+    :return: map described above
+    """
+    statement = (
+        sql.select([
+            models.StopTimeUpdate.trip_pk,
+            models.StopTimeUpdate.stop_pk
+        ])
+            .select_from(
+            sql.join(models.StopTimeUpdate, models.Trip)
+        )
+            .where(models.Trip.route_pk == route_pk)
+            .order_by(models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence)
+    )
+    session = database.get_session()
+    trip_pk_to_stop_pks = {}
+    for trip_pk, stop_pk in session.execute(statement):
+        if trip_pk not in trip_pk_to_stop_pks:
+            trip_pk_to_stop_pks[trip_pk] = []
+        trip_pk_to_stop_pks[trip_pk].append(stop_pk)
+    return trip_pk_to_stop_pks

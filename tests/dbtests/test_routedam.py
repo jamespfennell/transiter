@@ -40,7 +40,7 @@ class TestRouteDAM(dbtestutil.TestCase):
         }
 
         actual = routedam.get_id_to_pk_map_in_system(
-            testdata.SYSTEM_ONE_ID, expected.keys())
+            testdata.SYSTEM_ONE_ID)
 
         self.assertEqual(expected, actual)
 

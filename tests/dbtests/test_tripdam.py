@@ -62,3 +62,15 @@ class TestTripDAM(dbtestutil.TestCase):
         actual = tripdam.get_trip_pk_to_last_stop_map(expected.keys())
 
         self.assertEqual(expected, actual)
+
+    def test_get_trip_pk_to_path_map(self):
+        """[Trip DAM] Get trip PK to path map"""
+        expected = {
+            testdata.TRIP_ONE_PK: [stop.pk for stop in testdata.TRIP_ONE_PATH],
+            testdata.TRIP_TWO_PK: [stop.pk for stop in testdata.TRIP_TWO_PATH],
+            testdata.TRIP_THREE_PK: [stop.pk for stop in testdata.TRIP_THREE_PATH],
+        }
+
+        actual = tripdam.get_trip_pk_to_path_map(testdata.ROUTE_ONE_PK)
+
+        self.assertEqual(expected, actual)
