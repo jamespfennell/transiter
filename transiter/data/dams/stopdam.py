@@ -10,9 +10,7 @@ def list_all_in_system(system_id):
     :param system_id: the system's ID
     :return: a list of Stops
     """
-    return genericqueries.list_all_in_system(
-        models.Stop, system_id, models.Stop.id
-    )
+    return genericqueries.list_all_in_system(models.Stop, system_id, models.Stop.id)
 
 
 def get_in_system_by_id(system_id, stop_id):
@@ -23,9 +21,7 @@ def get_in_system_by_id(system_id, stop_id):
     :param stop_id: the stop's ID
     :return: Stop, if it exists; None if it does not
     """
-    return genericqueries.get_in_system_by_id(
-        models.Stop, system_id, stop_id
-    )
+    return genericqueries.get_in_system_by_id(models.Stop, system_id, stop_id)
 
 
 def get_id_to_pk_map_in_system(system_id, stop_ids=None):
@@ -36,9 +32,7 @@ def get_id_to_pk_map_in_system(system_id, stop_ids=None):
     :param stop_ids: an optional collection that limits the keys in the dict
     :return: map of ID to PK
     """
-    return genericqueries.get_id_to_pk_map(
-        models.Stop, system_id, stop_ids
-    )
+    return genericqueries.get_id_to_pk_map(models.Stop, system_id, stop_ids)
 
 
 def list_stop_time_updates_at_stops(stop_pks):
@@ -54,10 +48,10 @@ def list_stop_time_updates_at_stops(stop_pks):
     session = database.get_session()
     query = (
         session.query(models.StopTimeUpdate)
-            .filter(models.StopTimeUpdate.stop_pk.in_(stop_pks))
-            .filter(models.StopTimeUpdate.future)
-            .order_by(models.StopTimeUpdate.departure_time)
-            .order_by(models.StopTimeUpdate.arrival_time)
+        .filter(models.StopTimeUpdate.stop_pk.in_(stop_pks))
+        .filter(models.StopTimeUpdate.future)
+        .order_by(models.StopTimeUpdate.departure_time)
+        .order_by(models.StopTimeUpdate.arrival_time)
     )
     return query.all()
 
@@ -73,10 +67,9 @@ def get_stop_pk_to_station_pk_map_in_system(system_id):
     :return: map of stop PK to stop PK
     """
     session = database.get_session()
-    query = (
-        session.query(models.Stop.pk, models.Stop.parent_stop_pk, models.Stop.is_station)
-            .filter(models.Stop.system_id == system_id)
-    )
+    query = session.query(
+        models.Stop.pk, models.Stop.parent_stop_pk, models.Stop.is_station
+    ).filter(models.Stop.system_id == system_id)
     stop_pk_to_station_pk = {}
     for stop_pk, parent_stop_pk, is_station in query:
         if is_station or parent_stop_pk is None:

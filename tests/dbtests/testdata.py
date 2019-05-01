@@ -121,6 +121,8 @@ route_two.route_statuses = [alert_1, alert_3, alert_4]
 
 SERVICE_MAP_GROUP_ONE_PK = 101
 SERVICE_MAP_GROUP_ONE_ID = '102'
+SERVICE_MAP_GROUP_2_PK = 102
+SERVICE_MAP_GROUP_2_ID = '103'
 
 service_map_group_1 = models.ServiceMapGroup(
     system=system_one,
@@ -129,26 +131,44 @@ service_map_group_1 = models.ServiceMapGroup(
     pk=SERVICE_MAP_GROUP_ONE_PK,
     id=SERVICE_MAP_GROUP_ONE_ID)
 
+service_map_group_2 = models.ServiceMapGroup(
+    system=system_one,
+    source="scheduled",
+    use_for_stops_in_route=True,
+    pk=SERVICE_MAP_GROUP_2_PK,
+    id=SERVICE_MAP_GROUP_2_ID)
+
 SERVICE_PATTERN_ONE_PK = 91
 SERVICE_PATTERN_TWO_PK = 92
+SERVICE_MAP_2_1_PK = 93
 
-service_map_1 = models.ServicePattern(
+service_map_1_1 = models.ServicePattern(
     group=service_map_group_1,
     route=route_one,
     pk=SERVICE_PATTERN_ONE_PK
 )
-service_map_1.vertices = [
+service_map_1_1.vertices = [
     models.ServicePatternVertex(stop=stop_one),
     models.ServicePatternVertex(stop=stop_two),
 ]
-service_map_2 = models.ServicePattern(
+
+service_map_1_2 = models.ServicePattern(
     group=service_map_group_1,
     route=route_two,
     pk=SERVICE_PATTERN_TWO_PK
 )
-service_map_2.vertices = [
+service_map_1_2.vertices = [
     models.ServicePatternVertex(stop=stop_two),
     models.ServicePatternVertex(stop=stop_three),
 ]
 
+service_map_2_1 = models.ServicePattern(
+    group=service_map_group_2,
+    route=route_two,
+    pk=SERVICE_MAP_2_1_PK
+)
+service_map_2_1.vertices = [
+    models.ServicePatternVertex(stop=stop_one),
+    models.ServicePatternVertex(stop=stop_two),
+]
 

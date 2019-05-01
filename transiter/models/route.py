@@ -67,3 +67,7 @@ class Route(Base):
 
     _short_repr_list = ['id'] #, 'system_id']
     _long_repr_list = ['id']
+
+    # TODO: do this as the base level
+    def __repr__(self):
+        return 'Route(id={}, pk={})'.format(self.id, self.pk)

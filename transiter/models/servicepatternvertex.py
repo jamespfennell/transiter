@@ -9,12 +9,14 @@ class ServicePatternVertex(Base):
 
     pk = Column(Integer, primary_key=True)
     stop_pk = Column(Integer, ForeignKey('stop.pk'))
+    # TODO: change to map_pk
     service_pattern_pk = Column(Integer, ForeignKey('service_pattern.pk'))
 
     position = Column(Integer)
 
     stop = relationship(
         'Stop')
+    # TODO change to map
     service_pattern = relationship(
         'ServicePattern',
         back_populates='vertices')
