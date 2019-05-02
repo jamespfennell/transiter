@@ -17,7 +17,6 @@ Also need to fix the bug on the SQL Alchemy upgrade.
     ./data/dams/scheduledam.py
    
     ./data/fastoperations.py
-    ./data/dams/genericqueries.py (should need no tests)
 
 The task server:
 Can we run multi process and get around warnings about 123456?
