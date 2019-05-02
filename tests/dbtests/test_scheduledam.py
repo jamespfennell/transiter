@@ -1,6 +1,3 @@
-import datetime
-
-from transiter import models
 from transiter.data.dams import scheduledam
 from . import dbtestutil, testdata
 

@@ -403,12 +403,14 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         self.assertEqual([trip], actual_trips)
 
     def test_timestamp_to_datetime_edge_case_1(self):
+        """[GTFS Realtime Util] Timestamp to datetime edge case 1"""
         actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(
             ""
         )._timestamp_to_datetime(None)
         self.assertEqual(None, actual)
 
     def test_timestamp_to_datetime_edge_case_2(self):
+        """[GTFS Realtime Util] Timestamp to datetime edge case 2"""
         actual = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(
             ""
         )._timestamp_to_datetime(0)

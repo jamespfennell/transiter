@@ -1,6 +1,9 @@
     
 ## Main development thread
 
+TODO: add github issue to add logging configuration
+
+
 1. Code quality:
     1. Clean up the code where relevant
     1. Add tests for relevant things
@@ -14,9 +17,6 @@
 Also need to fix the bug on the SQL Alchemy upgrade.
  Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
 
-    ./data/dams/scheduledam.py
-   
-    ./data/fastoperations.py
 
 The task server:
 Can we run multi process and get around warnings about 123456?

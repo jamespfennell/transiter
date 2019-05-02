@@ -342,6 +342,7 @@ class TestTripMatcher(unittest.TestCase):
         ]
 
     def test_one(self):
+        """[Service map manager] trip matcher test 1"""
         raw_conds = {
             "weekday": True,
             "one_of": {"starts_earlier_than": 7, "starts_later_than": 20},
@@ -353,6 +354,7 @@ class TestTripMatcher(unittest.TestCase):
         self.assertListEqual(matched_trips, expected_trips)
 
     def test_two(self):
+        """[Service map manager] trip matcher test 2"""
         raw_conds = {"all_of": {"starts_earlier_than": 7, "starts_later_than": 7.01}}
         expected_trips = []
 
@@ -361,6 +363,7 @@ class TestTripMatcher(unittest.TestCase):
         self.assertListEqual(matched_trips, expected_trips)
 
     def test_three(self):
+        """[Service map manager] trip matcher test 3"""
         raw_conds = {"weekday": True, "starts_later_than": 7, "starts_earlier_than": 20}
         expected_trips = [self.mid_weekday_trip]
 
@@ -369,6 +372,7 @@ class TestTripMatcher(unittest.TestCase):
         self.assertListEqual(matched_trips, expected_trips)
 
     def test_four(self):
+        """[Service map manager] trip matcher test 4"""
         raw_conds = {"none_of": {"ends_later_than": 13}}
         expected_trips = [self.early_weekday_trip, self.early_weekend_trip]
 
@@ -377,6 +381,7 @@ class TestTripMatcher(unittest.TestCase):
         self.assertListEqual(matched_trips, expected_trips)
 
     def test_five(self):
+        """[Service map manager] trip matcher test 5"""
         raw_conds = {"all_of": {"ends_earlier_than": 11, "weekday": True}}
         expected_trips = [self.early_weekday_trip]
 
@@ -385,6 +390,7 @@ class TestTripMatcher(unittest.TestCase):
         self.assertListEqual(matched_trips, expected_trips)
 
     def test_six(self):
+        """[Service map manager] trip matcher test 6"""
         raw_conds = {"weekend": True}
         expected_trips = [self.early_weekend_trip]
 
@@ -393,6 +399,7 @@ class TestTripMatcher(unittest.TestCase):
         self.assertListEqual(matched_trips, expected_trips)
 
     def _test_seven(self):
+        """[Service map manager] trip matcher test 7"""
         raw_conds = {"route_id": "A"}
         expected_trips = [self.early_weekday_trip, self.mid_weekday_trip]
 
@@ -401,6 +408,7 @@ class TestTripMatcher(unittest.TestCase):
         self.assertListEqual(matched_trips, expected_trips)
 
     def _test_eight(self):
+        """[Service map manager] trip matcher test 8"""
         raw_conds = {"route_id": ["B", "C"]}
         expected_trips = [self.late_weekday_trip, self.early_weekend_trip]
 
@@ -409,6 +417,7 @@ class TestTripMatcher(unittest.TestCase):
         self.assertListEqual(matched_trips, expected_trips)
 
     def test_nine(self):
+        """[Service map manager] trip matcher test 9"""
         raw_conds = {"unknown_condition": True}
 
         self.assertRaises(

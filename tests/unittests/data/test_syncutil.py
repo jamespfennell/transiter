@@ -13,6 +13,7 @@ class TestSync(unittest.TestCase):
             return self.__dict__ == other.__dict__
 
     def test_copy_pks(self):
+        """[Sync util] Copy PKs"""
         new_model = self.MockDbModel("1")
         updated_model_new = self.MockDbModel("2")
         updated_model_old = self.MockDbModel("2", 2)

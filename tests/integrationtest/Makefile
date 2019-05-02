@@ -6,4 +6,4 @@ prepare-data:
 
 test: prepare-data
 	transiterclt rebuild-db --yes
-	python -m unittest discover ./
+	nosetests --rednose -v ./
