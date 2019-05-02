@@ -3,7 +3,7 @@
 clear-coverage:
 	rm -f .coverage
 
-all-tests: clear-coverage unit-tests db-tests
+all-tests: clear-coverage unit-tests db-tests integration-tests
 
 integration-tests:
 	cd tests/integrationtest; make test

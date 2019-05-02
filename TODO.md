@@ -30,7 +30,6 @@ Workaround is to increase the refresh time
 Models: mainly just safely renaming after we have close to 100% test coverage
 Also change how short_repr works
 add string repr?
-Add various DB constraints
 
     ./models/servicemapgroup.py
     ./models/system.py
@@ -60,8 +59,5 @@ Incorporate this into building and distributing the App
 Distribute the App somehow on PyPI
 
 
-Final (?) 0.1 bug: the fast scheduled entites inserter doesn't just 
-get the id_to_pk map for the current system
-Need a scheduledam probably
 
 

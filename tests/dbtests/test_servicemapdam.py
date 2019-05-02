@@ -3,9 +3,9 @@ from . import dbtestutil, testdata
 
 
 class TestServiceMapDAM(dbtestutil.TestCase):
-    def list_groups_and_maps_for_stops_in_route(self):
+    def test_list_groups_and_maps_for_stops_in_route(self):
         """[Service Map DAM] List groups and maps for stops at route"""
-        expected = [testdata.service_map_group_2, testdata.service_map_2_1]
+        expected = [(testdata.service_map_group_2, testdata.service_map_2_1)]
 
         actual = servicemapdam.list_groups_and_maps_for_stops_in_route(
             testdata.ROUTE_TWO_PK
@@ -13,7 +13,7 @@ class TestServiceMapDAM(dbtestutil.TestCase):
 
         self.assertEqual(expected, actual)
 
-    def test__servicepatterndata__get_default_trips_at_stops_map(self):
+    def test_get_default_trips_at_stops_map(self):
         """[Service Map DAM] Get default trips at stops map"""
         expected = {
             testdata.STOP_ONE_PK: {

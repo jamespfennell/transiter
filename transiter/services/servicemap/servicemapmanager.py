@@ -79,14 +79,14 @@ def calculate_scheduled_service_maps_for_system(system):
     :return: nothing; the service maps are persisted in the database
     """
     stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(system.id)
-    trip_pk_to_stop_pks = scheduledam.get_scheduled_trip_pk_to_path_in_system()
+    trip_pk_to_stop_pks = scheduledam.get_scheduled_trip_pk_to_path_in_system(system.pk)
     route_pk_to_trips = {}
 
     for (
         trip,
         start_time,
         end_time,
-    ) in scheduledam.list_scheduled_trips_with_times_in_system():
+    ) in scheduledam.list_scheduled_trips_with_times_in_system(system.pk):
         trip.start_time = start_time
         trip.end_time = end_time
         if not trip.direction_id:

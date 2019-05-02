@@ -106,7 +106,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
 
     @mock.patch.object(servicemapmanager, "_ScheduledTripMatcher")
     @mock.patch.object(servicemapmanager, "_build_service_map_from_paths")
-    def test_calculate_scheule_service_map_for_route(
+    def test_calculate_schedule_service_map_for_route(
         self, _build_service_map_from_paths, _ScheduledTripMatcher
     ):
         """[Service map manager] Calculate schedule service maps for system"""

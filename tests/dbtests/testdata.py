@@ -20,10 +20,12 @@ ROUTE_TWO_ID = "13"
 ROUTE_TWO_PK = 14
 ROUTE_THREE_ID = "15"
 ROUTE_THREE_PK = 16
+ROUTE_2_1_PK = 17
 
 route_one = models.Route(pk=ROUTE_ONE_PK, id=ROUTE_ONE_ID, system=system_one)
 route_two = models.Route(pk=ROUTE_TWO_PK, id=ROUTE_TWO_ID, system=system_one)
 route_three = models.Route(pk=ROUTE_THREE_PK, id=ROUTE_THREE_ID, system=system_one)
+route_2_1 = models.Route(pk=ROUTE_2_1_PK, id=ROUTE_ONE_ID, system=system_two)
 
 TRIP_ONE_ID = "21"
 TRIP_ONE_PK = 22
@@ -52,6 +54,7 @@ STOP_FOUR_ID = "47"
 STOP_FOUR_PK = 48
 STOP_FIVE_ID = "49"
 STOP_FIVE_PK = 50
+STOP_2_1_PK = 51
 
 stop_one = models.Stop(
     pk=STOP_ONE_PK, id=STOP_ONE_ID, system=system_one, is_station=False
@@ -68,9 +71,10 @@ stop_four = models.Stop(
 stop_five = models.Stop(
     pk=STOP_FIVE_PK, id=STOP_FIVE_ID, system=system_one, is_station=True
 )
+stop_2_1 = models.Stop(pk=STOP_2_1_PK, id=STOP_ONE_ID, system=system_two)
 
-STATION_1_PK = 51
-STATION_2_PK = 52
+STATION_1_PK = 60
+STATION_2_PK = 61
 
 station_1 = models.Stop(pk=STATION_1_PK, system=system_one, is_station=True)
 station_1.child_stops = [stop_one, stop_two]
@@ -201,4 +205,56 @@ service_map_2_1 = models.ServicePattern(
 service_map_2_1.vertices = [
     models.ServicePatternVertex(stop=stop_one),
     models.ServicePatternVertex(stop=stop_two),
+]
+
+
+SCHEDULED_SERVICE_1_PK = 201
+SCHEDULED_SERVICE_1_ID = "202"
+SCHEDULED_SERVICE_2_PK = 202
+SCHEDULED_SERVICE_2_ID = "203"
+
+scheduled_service_1 = models.ScheduledService(
+    pk=SCHEDULED_SERVICE_1_PK, id=SCHEDULED_SERVICE_1_ID, system=system_one
+)
+scheduled_service_2 = models.ScheduledService(
+    pk=SCHEDULED_SERVICE_2_PK, id=SCHEDULED_SERVICE_2_ID, system=system_two
+)
+
+SCHEDULED_TRIP_1_1_PK = 210
+SCHEDULED_TRIP_1_1_ID = "211"
+SCHEDULED_TRIP_1_1_STOPS = [stop_one, stop_three, stop_four]
+SCHEDULED_TRIP_1_1_TIMES = [
+    datetime.time(11, 0, 0),
+    datetime.time(11, 10, 0),
+    datetime.time(11, 20, 0),
+]
+SCHEDULED_TRIP_2_1_PK = 212
+SCHEDULED_TRIP_2_1_ID = "213"
+SCHEDULED_TRIP_2_1_STOPS = [stop_2_1]
+
+scheduled_trip_1_1 = models.ScheduledTrip(
+    pk=SCHEDULED_TRIP_1_1_PK,
+    id=SCHEDULED_TRIP_1_1_ID,
+    service=scheduled_service_1,
+    route=route_one,
+)
+for i in range(len(SCHEDULED_TRIP_1_1_STOPS)):
+    stop_time = models.ScheduledTripStopTime(
+        trip=scheduled_trip_1_1,
+        stop_sequence=i,
+        stop=SCHEDULED_TRIP_1_1_STOPS[i],
+        departure_time=SCHEDULED_TRIP_1_1_TIMES[i],
+    )
+
+scheduled_trip_2_1 = models.ScheduledTrip(
+    pk=SCHEDULED_TRIP_2_1_PK,
+    id=SCHEDULED_TRIP_2_1_ID,
+    service=scheduled_service_2,
+    route=route_2_1,
+)
+scheduled_trip_2_1.stop_times = [
+    models.ScheduledTripStopTime(
+        stop_sequence=i, stop=stop, departure_time=datetime.time(1, 1, 1)
+    )
+    for i, stop in enumerate(SCHEDULED_TRIP_2_1_STOPS)
 ]
