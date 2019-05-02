@@ -1,4 +1,4 @@
-from transiter.data import database
+from transiter.data import dbconnection
 import time
 
 
@@ -6,7 +6,7 @@ class FastInserter:
     def __init__(self, DbModel, batch_size=50000):
         self._DbModel = DbModel
         self._batch_size = batch_size
-        self._session = database.get_session()
+        self._session = dbconnection.get_session()
         self._queue = []
         self._total_db_time = 0
 

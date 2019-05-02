@@ -1,4 +1,4 @@
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
 from transiter import models
 from sqlalchemy import func
@@ -25,7 +25,7 @@ def delete_by_id(id_):
     entity = get_by_id(id_)
     if entity is None:
         return False
-    session = database.get_session()
+    session = dbconnection.get_session()
     session.delete(entity)
     return True
 
@@ -57,7 +57,7 @@ def _count_child_entity_in_system(system_id, Model):
     :param Model: the model type: Trip, Route or Stop
     :return: the integer count
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = session.query(func.count(Model.pk)).filter(Model.system_id == system_id)
     return query.one()[0]
 
@@ -99,7 +99,7 @@ def list_all_alerts_in_system(system_id):
     :param system_id: the system's ID
     :return: list of Alerts
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = (
         session.query(models.RouteStatus)
         .join(models.Route, models.RouteStatus.routes)

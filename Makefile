@@ -19,8 +19,7 @@ docs:
 	cd docs; rm -r build; make html
 
 clean:
-	rm -rf *.egg-info build dist .eggs .coverage
-	cd tests/integrationtest; rm -rf *.egg-info build dist .eggs
+	git clean -dnX
 
 black:
 	black {transiter,tests,*py}

@@ -1,10 +1,10 @@
 from transiter import exceptions
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import tripdam, routedam
 from transiter.services import links
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def list_all_in_route(system_id, route_id, return_links=False):
     """
     Get representations for all trips in a system.
@@ -33,7 +33,7 @@ def list_all_in_route(system_id, route_id, return_links=False):
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def get_in_route_by_id(system_id, route_id, trip_id, return_links=False):
     """
     Get a representation for a trip in a system

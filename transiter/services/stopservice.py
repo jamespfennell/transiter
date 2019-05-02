@@ -10,13 +10,13 @@ import itertools
 import time
 
 from transiter import exceptions
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import stopdam, tripdam, systemdam
 from transiter.services import links
 from transiter.services.servicemap import servicemapmanager
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def list_all_in_system(system_id, return_links=False):
     """
     Get information on all stops in a specific system.
@@ -41,7 +41,7 @@ def list_all_in_system(system_id, return_links=False):
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def get_in_system_by_id(
     system_id, stop_id, return_links=False, return_only_stations=True
 ):

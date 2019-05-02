@@ -27,12 +27,12 @@ DEFAULT_FILE_PATH = "transiter-config.toml"
 
 class DefaultDatabaseConfig:
     DRIVER = "sqlite"
-    DIALECT = ""
+    DIALECT = None
     NAME = "transiter.db"
-    USERNAME = ""
-    PASSWORD = ""
-    HOST = ""
-    PORT = ""
+    USERNAME = None
+    PASSWORD = None
+    HOST = None
+    PORT = None
 
 
 DatabaseConfig = DefaultDatabaseConfig
@@ -86,6 +86,8 @@ def load_from_str(toml_str: str):
         for name, value in new_config.get(section, {}).items():
             existing_names = set(dir(Config))
             if name.upper() in existing_names:
+                if value == "":
+                    value = None
                 setattr(Config, name.upper(), value)
 
     global DatabaseConfig, TaskServerConfig

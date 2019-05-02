@@ -37,7 +37,7 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
             models.StopTimeUpdate(stop_id=stop_id) for stop_id in self.STOP_IDS_2
         ]
 
-        self.database = self.mockImportedModule(tripupdater.database)
+        self.database = self.mockImportedModule(tripupdater.dbconnection)
         self.session = mock.MagicMock()
         self.database.get_session.return_value = self.session
         self.tripdam = self.mockImportedModule(tripupdater.tripdam)

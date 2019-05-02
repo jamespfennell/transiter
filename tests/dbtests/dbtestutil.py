@@ -1,5 +1,5 @@
 import unittest
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter import config
 
 from . import testdata
@@ -24,10 +24,10 @@ def ensure_db_setup():
     name = 'transiter_test_db'
     """
     config.load_from_str(toml_str)
-    database.ensure_db_connection()
-    database.rebuild_db()
+    dbconnection.ensure_db_connection()
+    dbconnection.rebuild_db()
 
-    session = database.Session()
+    session = dbconnection.Session()
     session.add(testdata.system_one)
     session.add(testdata.system_two)
     session.commit()
@@ -36,7 +36,7 @@ def ensure_db_setup():
 class TestCase(unittest.TestCase):
     def setUp(self):
         ensure_db_setup()
-        self.session = database.get_session()
+        self.session = dbconnection.get_session()
 
     def tearDown(self):
         self.session.rollback()

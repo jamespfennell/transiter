@@ -1,8 +1,7 @@
 import sqlalchemy.sql.expression as sql
-from sqlalchemy import func
 
 from transiter import models
-from transiter.data import database
+from transiter.data import dbconnection
 
 
 def list_groups_and_maps_for_stops_in_route(route_pk):
@@ -15,7 +14,7 @@ def list_groups_and_maps_for_stops_in_route(route_pk):
     :param route_pk: the route's PK
     :return: the list described above
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = (
         session.query(models.ServiceMapGroup, models.ServicePattern)
         .join(models.System, models.System.pk == models.ServiceMapGroup.system_pk)
@@ -46,7 +45,7 @@ def get_stop_pk_to_group_id_to_routes_map(stop_pks):
     :param stop_pks: stop PKs to build the map for
     :return: the monster map described above
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = (
         session.query(models.Stop.pk, models.ServiceMapGroup.id, models.Route)
         .join(models.System, models.System.id == models.Stop.system_id)
@@ -78,52 +77,3 @@ def get_stop_pk_to_group_id_to_routes_map(stop_pks):
         if route is not None:
             response[stop_pk][group_id].append(route)
     return response
-
-
-# TODO stop_pks_map -> paths
-# TODO: in system
-def get_scheduled_trip_pk_to_stop_pks_map():
-    statement = sql.select(
-        [models.ScheduledTripStopTime.trip_pk, models.ScheduledTripStopTime.stop_pk]
-    ).order_by(
-        models.ScheduledTripStopTime.trip_pk, models.ScheduledTripStopTime.stop_sequence
-    )
-    session = database.get_session()
-    trip_pk_to_stop_pks = {}
-    for trip_pk, stop_pk in session.execute(statement):
-        if trip_pk not in trip_pk_to_stop_pks:
-            trip_pk_to_stop_pks[trip_pk] = []
-        trip_pk_to_stop_pks[trip_pk].append(stop_pk)
-    return trip_pk_to_stop_pks
-
-
-def list_scheduled_trips_with_times_in_system():
-    session = database.get_session()
-
-    first_stop_query = (
-        session.query(
-            models.ScheduledTripStopTime.trip_pk.label("trip_pk"),
-            func.min(models.ScheduledTripStopTime.departure_time).label("time"),
-        )
-        .group_by(models.ScheduledTripStopTime.trip_pk)
-        .subquery()
-    )
-
-    last_stop_query = (
-        session.query(
-            models.ScheduledTripStopTime.trip_pk.label("trip_pk"),
-            func.max(models.ScheduledTripStopTime.departure_time).label("time"),
-        )
-        .group_by(models.ScheduledTripStopTime.trip_pk)
-        .subquery()
-    )
-
-    query = (
-        session.query(
-            models.ScheduledTrip, first_stop_query.c.time, last_stop_query.c.time
-        )
-        .join(first_stop_query, models.ScheduledTrip.pk == first_stop_query.c.trip_pk)
-        .join(last_stop_query, models.ScheduledTrip.pk == last_stop_query.c.trip_pk)
-    )
-    for trip, start_time, end_time in query:
-        yield trip, start_time, end_time

@@ -11,15 +11,11 @@
     1. Does the RTR app still work? Likely not!
 
 
-Data. would be nice to have the tests passing on SQLLite...?
 Also need to fix the bug on the SQL Alchemy upgrade.
  Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
-***Return no iterators from the database layer***
-Check that queries are actually being used
 
-    ./data/dams/servicepatterndam.py
+    ./data/dams/scheduledam.py
    
-    ./data/database.py (-> database/dbconnection.py?)
     ./data/fastoperations.py
     ./data/dams/genericqueries.py (should need no tests)
 

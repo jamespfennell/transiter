@@ -4,7 +4,7 @@ tools) command line program.
 """
 import click
 
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter import config, exceptions
 from transiter.http import flaskapp
 from transiter.taskserver import server as taskserver
@@ -104,4 +104,4 @@ def rebuild_db():
     This operation drops all of the Transiter tables in the database, if they
     exist, and then creates them. All existing data will be lost.
     """
-    database.rebuild_db()
+    dbconnection.rebuild_db()

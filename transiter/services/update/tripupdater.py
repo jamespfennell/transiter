@@ -4,7 +4,7 @@ such as GTFS Realtime with Trips in the database. It also contains a Trip
 cleaning utility.
 """
 from transiter import models
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import stopdam, tripdam
 from transiter.services.servicemap import servicemapmanager
 
@@ -170,6 +170,6 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
             tuple(stop_time.stop_pk for stop_time in feed_trip.stop_events)
         )
 
-    session = database.get_session()
+    session = dbconnection.get_session()
     session.merge(feed_route)
     return len(existing_trip_maps ^ feed_trip_maps) != 0

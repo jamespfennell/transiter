@@ -1,7 +1,7 @@
 from sqlalchemy import func, sql
 
 from transiter import models
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
 
 
@@ -11,7 +11,7 @@ def list_all_autoupdating():
 
     :return: list of Feeds
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = session.query(models.Feed).filter(models.Feed.auto_updater_enabled)
     return query.all()
 
@@ -44,7 +44,7 @@ def get_last_successful_update(feed_pk):
     :param feed_pk: the feed's PK
     :return: FeedUpdate, or None if it doesn't exist
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = (
         session.query(models.FeedUpdate)
         .filter(models.FeedUpdate.feed_pk == feed_pk)
@@ -62,7 +62,7 @@ def list_updates_in_feed(feed_pk):
     :param feed_pk: the Feed's PK
     :return: list of FeedUpdates
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = (
         session.query(models.FeedUpdate)
         .filter(models.FeedUpdate.feed_pk == feed_pk)
@@ -79,7 +79,7 @@ def trim_feed_updates(before_datetime):
     :param before_datetime: the cut-off point
     :return: None
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = sql.delete(models.FeedUpdate).where(
         models.FeedUpdate.last_action_time <= before_datetime
     )
@@ -105,7 +105,7 @@ def aggregate_feed_updates(before_datetime):
     :param before_datetime: the cut-off time
     :return: the list described above
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = (
         sql.select(
             [

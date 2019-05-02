@@ -12,7 +12,7 @@ import pytimeparse
 import toml
 
 from transiter import models, exceptions
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import systemdam, stopdam
 from transiter.services import links
 from transiter.services.update import updatemanager
@@ -20,7 +20,7 @@ from transiter.services.update import updatemanager
 logger = logging.getLogger(__name__)
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def list_all(return_links=False):
     """
     List all installed systems.
@@ -40,7 +40,7 @@ def list_all(return_links=False):
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def get_by_id(system_id, return_links=False):
     """
     Get information on a specific system.
@@ -74,7 +74,7 @@ def get_by_id(system_id, return_links=False):
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def install(system_id, config_str, extra_files, extra_settings):
     """
     Install a Transit system.
@@ -106,7 +106,7 @@ def install(system_id, config_str, extra_files, extra_settings):
     return True
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def delete_by_id(system_id):
     """
     Delete a tranist system

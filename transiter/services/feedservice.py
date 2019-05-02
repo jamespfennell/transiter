@@ -7,7 +7,7 @@ import datetime
 import logging
 
 from transiter import models, exceptions
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam
 from transiter.services import links
 from transiter.services.update import updatemanager
@@ -15,7 +15,7 @@ from transiter.services.update import updatemanager
 logger = logging.getLogger(__name__)
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def list_all_auto_updating():
     """
     List all auto updating feeds. This method is designed for use by the task
@@ -38,7 +38,7 @@ def list_all_auto_updating():
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def list_all_in_system(system_id, return_links=False):
     """
     Get data on all feeds in a system.
@@ -66,7 +66,7 @@ def list_all_in_system(system_id, return_links=False):
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def get_in_system_by_id(system_id, feed_id, return_links=False):
     """
     Get data on a specific feed in a system.
@@ -89,7 +89,7 @@ def get_in_system_by_id(system_id, feed_id, return_links=False):
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def create_feed_update(system_id, feed_id):
     """
     Create a feed update for a feed in a system.
@@ -109,7 +109,7 @@ def create_feed_update(system_id, feed_id):
     return {**feed_update.long_repr()}
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def list_updates_in_feed(system_id, feed_id):
     """
     List all of the updates for a feed.
@@ -130,7 +130,7 @@ def list_updates_in_feed(system_id, feed_id):
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def trim_feed_updates():
     """
     Delete old feed updates.

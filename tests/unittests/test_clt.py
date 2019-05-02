@@ -14,7 +14,7 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         self.config = self.mockImportedModule(clt.config)
         self.flaskapp = self.mockImportedModule(clt.flaskapp)
         self.taskserver = self.mockImportedModule(clt.taskserver)
-        self.database = self.mockImportedModule(clt.database)
+        self.database = self.mockImportedModule(clt.dbconnection)
         self.runner = CliRunner()
         patcher = mock.patch.object(clt, "open")
         self.open = patcher.start()

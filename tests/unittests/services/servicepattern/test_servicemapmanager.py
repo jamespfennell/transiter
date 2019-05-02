@@ -26,6 +26,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
         self.actual_graphutils = servicemapmanager.graphutils
         self.graphutils = self.mockImportedModule(servicemapmanager.graphutils)
         self.servicemapdam = self.mockImportedModule(servicemapmanager.servicemapdam)
+        self.scheduledam = self.mockImportedModule(servicemapmanager.scheduledam)
         self.stopdam = self.mockImportedModule(servicemapmanager.stopdam)
         self.tripdam = self.mockImportedModule(servicemapmanager.tripdam)
 
@@ -109,7 +110,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
         self, _build_service_map_from_paths, _ScheduledTripMatcher
     ):
         """[Service map manager] Calculate schedule service maps for system"""
-        self.servicemapdam.get_scheduled_trip_pk_to_stop_pks_map.return_value = {
+        self.scheduledam.get_scheduled_trip_pk_to_path_in_system.return_value = {
             self.TRIP_1_PK: [1, 2, 3, 4],
             self.TRIP_2_PK: [3, 1, 0],
         }
@@ -122,7 +123,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
         }
         self.trip_one.route_pk = self.ROUTE_1_PK
         self.trip_two.route_pk = self.ROUTE_1_PK
-        self.servicemapdam.list_scheduled_trips_with_times_in_system.return_value = [
+        self.scheduledam.list_scheduled_trips_with_times_in_system.return_value = [
             (self.trip_one, self.TRIP_1_START_TIME, self.TRIP_1_END_TIME),
             (self.trip_two, self.TRIP_2_START_TIME, self.TRIP_2_END_TIME),
         ]

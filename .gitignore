@@ -8,7 +8,8 @@ docs/_build
 *.egg-info
 build
 dist
-tests/integrationtest/output/*
+tests/integrationtest/output
 .eggs
 sandbox/*
 transiter.db
+__pycache__

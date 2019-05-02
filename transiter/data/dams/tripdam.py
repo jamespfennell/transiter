@@ -3,7 +3,7 @@ import sqlalchemy.sql.expression as sql
 from sqlalchemy.orm import selectinload
 
 from transiter import models
-from transiter.data import database
+from transiter.data import dbconnection
 
 
 def list_all_in_route_by_pk(route_pk):
@@ -13,7 +13,7 @@ def list_all_in_route_by_pk(route_pk):
     :param route_pk: the route's PK
     :return: list of Trips
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = (
         session.query(models.Trip)
         .filter(models.Trip.route_pk == route_pk)
@@ -31,7 +31,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
     :param trip_id: the trip's ID
     :return: the Trip
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     return (
         session.query(models.Trip)
         .join(models.Route, models.Route.pk == models.Trip.route_pk)
@@ -49,7 +49,7 @@ def get_trip_pk_to_last_stop_map(trip_pks):
     :param trip_pks: the trip PKs to build the map for
     :return: trip_pk to Stop
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
 
     sub_query = (
         session.query(
@@ -89,7 +89,7 @@ def get_trip_pk_to_path_map(route_pk):
         .where(models.Trip.route_pk == route_pk)
         .order_by(models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence)
     )
-    session = database.get_session()
+    session = dbconnection.get_session()
     trip_pk_to_stop_pks = {}
     for trip_pk, stop_pk in session.execute(statement):
         if trip_pk not in trip_pk_to_stop_pks:

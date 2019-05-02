@@ -17,7 +17,7 @@ class TestAlertUpdater(testutil.TestCase(alertupdater), unittest.TestCase):
 
     def setUp(self):
         self.systemdam = self.mockImportedModule(alertupdater.systemdam)
-        self.database = self.mockImportedModule(alertupdater.database)
+        self.database = self.mockImportedModule(alertupdater.dbconnection)
 
     def test_sync_alerts(self):
         """[Alert updater] Sync alerts"""

@@ -1,5 +1,5 @@
 from transiter import models
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
 
 
@@ -45,7 +45,7 @@ def list_stop_time_updates_at_stops(stop_pks):
     :param stop_pks: collection of stop PKs
     :return: list of futre TripStopTimes
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = (
         session.query(models.StopTimeUpdate)
         .filter(models.StopTimeUpdate.stop_pk.in_(stop_pks))
@@ -66,7 +66,7 @@ def get_stop_pk_to_station_pk_map_in_system(system_id):
     :param system_id: the system ID
     :return: map of stop PK to stop PK
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     query = session.query(
         models.Stop.pk, models.Stop.parent_stop_pk, models.Stop.is_station
     ).filter(models.Stop.system_id == system_id)

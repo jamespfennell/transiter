@@ -1,7 +1,7 @@
 """
 This updater syncs Alerts in a new feed update with those in the database.
 """
-from transiter.data import syncutil, database
+from transiter.data import syncutil, dbconnection
 from transiter.data.dams import systemdam
 
 
@@ -12,7 +12,7 @@ def sync_alerts(system, alerts):
     :param system: the system
     :param alerts: list of Alert models
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     existing_alerts = systemdam.list_all_alerts_in_system(system.id)
 
     (expired_alerts, __, __) = syncutil.copy_pks(existing_alerts, alerts, ("id",))

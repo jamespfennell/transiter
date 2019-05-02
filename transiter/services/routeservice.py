@@ -4,14 +4,14 @@ The route service is used to retrieve data about routes.
 
 import enum
 
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import routedam, systemdam, servicemapdam
 from transiter import exceptions
 from transiter.services import links
 from transiter.models import RouteStatus
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def list_all_in_system(system_id, return_links=False):
     """
     Get data on all routes in a system.
@@ -43,7 +43,7 @@ def list_all_in_system(system_id, return_links=False):
     return response
 
 
-@database.unit_of_work
+@dbconnection.unit_of_work
 def get_in_system_by_id(system_id, route_id, return_links=False):
     """
     Get data for a specific route in a specific system.

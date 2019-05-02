@@ -1,7 +1,7 @@
 import sqlalchemy.sql.expression as sql
 
 from transiter import models
-from transiter.data import database
+from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
 
 
@@ -47,7 +47,7 @@ def calculate_periodicity(route_pk):
     :param route_pk: the route's PK
     :return: a float, representing the periodicity in seconds.=
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
 
     route_stop_pks_stmt = (
         sql.select([models.Stop.pk])
@@ -90,7 +90,7 @@ def list_route_pks_with_current_service(route_pks):
     :param route_pks: collection of route PKs
     :return: a subset of the input
     """
-    session = database.get_session()
+    session = dbconnection.get_session()
     stmt = sql.select([models.Route.pk]).where(
         sql.and_(
             sql.exists(
@@ -115,7 +115,7 @@ def get_route_pk_to_highest_priority_alerts_map(route_pks):
     :return: map of route PK to list of Alerts
     """
     route_pk_to_alerts = {route_pk: [] for route_pk in route_pks}
-    session = database.get_session()
+    session = dbconnection.get_session()
     inner_query = (
         session.query(models.Route.pk, sql.func.max(models.RouteStatus.priority))
         .join(models.route_status_route)
