@@ -18,9 +18,7 @@ class ServicePattern(Base):
     __tablename__ = "service_pattern"
 
     pk = Column(Integer, primary_key=True)
-    route_pk = Column(
-        Integer, ForeignKey("route.pk", name="james_f_4"), index=True, nullable=False
-    )
+    route_pk = Column(Integer, ForeignKey("route.pk"), index=True, nullable=False)
     group_pk = Column(Integer, ForeignKey("service_map_group.pk"), nullable=False)
 
     group = relationship("ServiceMapGroup", back_populates="maps")

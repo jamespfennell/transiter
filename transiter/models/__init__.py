@@ -12,6 +12,6 @@ from .servicepattern import ServicePattern
 from .servicepatternedge import ServicePatternEdge
 from .servicepatternvertex import ServicePatternVertex
 from .stop import Stop
-from .stoptimeupdate import StopTimeUpdate
+from .tripstoptime import TripStopTime
 from .system import System
 from .trip import Trip

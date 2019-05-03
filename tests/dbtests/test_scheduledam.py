@@ -32,4 +32,3 @@ class TestScheduleDAM(dbtestutil.TestCase):
         )
 
         self.assertEqual(expected, actual)
-

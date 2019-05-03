@@ -47,11 +47,11 @@ def list_stop_time_updates_at_stops(stop_pks):
     """
     session = dbconnection.get_session()
     query = (
-        session.query(models.StopTimeUpdate)
-        .filter(models.StopTimeUpdate.stop_pk.in_(stop_pks))
-        .filter(models.StopTimeUpdate.future)
-        .order_by(models.StopTimeUpdate.departure_time)
-        .order_by(models.StopTimeUpdate.arrival_time)
+        session.query(models.TripStopTime)
+        .filter(models.TripStopTime.stop_pk.in_(stop_pks))
+        .filter(models.TripStopTime.future)
+        .order_by(models.TripStopTime.departure_time)
+        .order_by(models.TripStopTime.arrival_time)
     )
     return query.all()
 

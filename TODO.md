@@ -33,17 +33,21 @@ Models: mainly just safely renaming after we have close to 100% test coverage
 Also change how short_repr works
 add string repr?
 
+
+DONE: 
+
+
+TOGO:
+
     ./models/servicemapgroup.py
     ./models/system.py
     ./models/servicepatternvertex.py
     ./models/servicepattern.py
     ./models/servicepatternedge.py
-    ./models/stoptimeupdate.py (-> tripstoptime.py)
     ./models/routestatus.py (-> alert.py)
     ./models/feedupdate.py
     ./models/scheduledservice.py 
     ./models/route.py
-    ./models/stop.py
     ./models/trip.py
     ./models/feed.py
     ./models/scheduledtripstoptime.py

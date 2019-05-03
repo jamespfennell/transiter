@@ -15,7 +15,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.stop = models.Stop()
         self.stop.pk = self.STOP_PK
 
-        self.stop_event = models.StopTimeUpdate()
+        self.stop_event = models.TripStopTime()
         self.stop_event.track = None
         self.stop_event.stop_id_alias = None
         self.stop_event.trip = models.Trip()
@@ -78,7 +78,7 @@ class TestTripStopTimeFilter(unittest.TestCase):
 
     def setUp(self):
         self.stop_event_filter = stopservice._TripStopTimeFilter()
-        self.stop_event = models.StopTimeUpdate()
+        self.stop_event = models.TripStopTime()
         self.stop_event.arrival_time = self.DATETIME_ONE
         self.stop_event.trip = models.Trip()
         self.stop_event.trip.route = models.Route()
@@ -205,9 +205,9 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
             fake_service_map_response_map
         )
 
-        stop_time_one = models.StopTimeUpdate()
+        stop_time_one = models.TripStopTime()
         stop_time_one.pk = self.TRIP_STOP_TIME_ONE_PK
-        stop_time_two = models.StopTimeUpdate()
+        stop_time_two = models.TripStopTime()
         stop_time_two.pk = self.TRIP_STOP_TIME_TWO_PK
         self.stop_dao.list_stop_time_updates_at_stops.return_value = [
             stop_time_one,
@@ -236,7 +236,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         trip = models.Trip()
         trip.pk = self.TRIP_PK
         trip.id = self.TRIP_ID
-        trip_stop_time = models.StopTimeUpdate()
+        trip_stop_time = models.TripStopTime()
         trip_stop_time.trip = trip
         trip_stop_time.stop = stop
         route = models.Route()

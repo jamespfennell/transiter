@@ -94,9 +94,9 @@ class TestTripService(testutil.TestCase(tripservice), unittest.TestCase):
         """[Trip service] Get in in route"""
         self.tripdam.get_in_route_by_id.return_value = self.trip_one
 
-        stop_time = models.StopTimeUpdate()
+        stop_time = models.TripStopTime()
         stop_time.stop = self.stop_one
-        self.trip_one.stop_events = [stop_time]
+        self.trip_one.stop_times = [stop_time]
 
         excpected = {
             **self.trip_one.long_repr(),

@@ -68,7 +68,7 @@ def get_in_system_by_id(system_id, stop_id):
                 "East Side and Brooklyn",
                 "West Side (8 Av)"
             ],
-            "stop_events": [
+            "stop_times": [
                 {
                     "stop_id": "L03S",
                     "direction_name": "East Side and Brooklyn",

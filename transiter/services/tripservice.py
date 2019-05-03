@@ -53,9 +53,12 @@ def get_in_route_by_id(system_id, route_id, trip_id, return_links=False):
     }
     if return_links:
         trip_response["route"]["href"] = links.RouteEntityLink(trip.route)
-    for stu in trip.stop_events:
-        stop_time_response = {**stu.short_repr(), "stop": stu.stop.short_repr()}
+    for stop_time in trip.stop_times:
+        stop_time_response = {
+            **stop_time.short_repr(),
+            "stop": stop_time.stop.short_repr(),
+        }
         if return_links:
-            stop_time_response["stop"]["href"] = links.StopEntityLink(stu.stop)
+            stop_time_response["stop"]["href"] = links.StopEntityLink(stop_time.stop)
         trip_response["stop_time_updates"].append(stop_time_response)
     return trip_response

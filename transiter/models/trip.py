@@ -24,11 +24,10 @@ class Trip(Base):
     current_stop_sequence = Column(Integer)
 
     route = relationship("Route", back_populates="trips", cascade="")
-    # TODO: rename stop_times
-    stop_events = relationship(
-        "StopTimeUpdate",
+    stop_times = relationship(
+        "TripStopTime",
         back_populates="trip",
-        order_by="StopTimeUpdate.stop_sequence",
+        order_by="TripStopTime.stop_sequence",
         cascade="all, delete-orphan",
         cascade_backrefs=False,
     )
@@ -41,7 +40,7 @@ class Trip(Base):
         last_update_time,
         current_status,
         current_stop_sequence,
-        vehicle_id
+        vehicle_id,
     ]
 
 

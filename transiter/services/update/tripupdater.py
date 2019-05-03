@@ -57,7 +57,7 @@ class TripDataCleaner:
             if not result:
                 continue
 
-            for stop_time_update in trip.stop_events:
+            for stop_time_update in trip.stop_times:
                 for stop_time_cleaner in self._stop_time_cleaners:
                     stop_time_cleaner(feed_update, stop_time_update)
 
@@ -97,7 +97,7 @@ def sync_trips(system, trips, route_ids=None):
         if trip.route_id not in route_id_to_route:
             continue
         route_id_to_trips[trip.route_id].append(trip)
-        all_stop_ids.update(stop_time.stop_id for stop_time in trip.stop_events)
+        all_stop_ids.update(stop_time.stop_id for stop_time in trip.stop_times)
     stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(system.id, all_stop_ids)
 
     for route_id, route_trips in route_id_to_trips.items():
@@ -127,31 +127,31 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
         trip.id: trip for trip in tripdam.list_all_in_route_by_pk(route.pk)
     }
     existing_trip_maps = set(
-        tuple(stop_time.stop_pk for stop_time in trip.stop_events)
+        tuple(stop_time.stop_pk for stop_time in trip.stop_times)
         for trip in trip_id_to_trip.values()
     )
     feed_trip_maps = set()
 
     for feed_trip in feed_trips:
-        if len(feed_trip.stop_events) == 0:
+        if len(feed_trip.stop_times) == 0:
             continue
-        first_future_stop_sequence = feed_trip.stop_events[0].stop_sequence
+        first_future_stop_sequence = feed_trip.stop_times[0].stop_sequence
         feed_stop_times = []
         trip = trip_id_to_trip.get(feed_trip.id, None)
         stop_sequence_to_stop_time_pk = {}
         if trip is not None:
             feed_trip.pk = trip.pk
-            for stop_time in trip.stop_events:
+            for stop_time in trip.stop_times:
                 stop_sequence_to_stop_time_pk[stop_time.stop_sequence] = stop_time.pk
                 if stop_time.stop_sequence >= first_future_stop_sequence:
                     continue
                 feed_stop_times.append(
-                    models.StopTimeUpdate(
+                    models.TripStopTime(
                         pk=stop_time.pk, stop_pk=stop_time.stop_pk, future=False
                     )
                 )
 
-        for feed_stop_time in feed_trip.stop_events:
+        for feed_stop_time in feed_trip.stop_times:
             stop_pk = stop_id_to_pk.get(feed_stop_time.stop_id, None)
             if stop_pk is None:
                 continue
@@ -164,10 +164,10 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
 
             feed_stop_times.append(feed_stop_time)
 
-        feed_trip.stop_events = feed_stop_times
+        feed_trip.stop_times = feed_stop_times
         feed_route.trips.append(feed_trip)
         feed_trip_maps.add(
-            tuple(stop_time.stop_pk for stop_time in feed_trip.stop_events)
+            tuple(stop_time.stop_pk for stop_time in feed_trip.stop_times)
         )
 
     session = dbconnection.get_session()

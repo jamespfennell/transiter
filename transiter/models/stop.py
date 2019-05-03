@@ -31,9 +31,7 @@ class Stop(Base):
     # NOTE: this relationship is a little tricky and this definition follows
     # https://docs.sqlalchemy.org/en/latest/_modules/examples/adjacency_list/adjacency_list.html
     child_stops = relationship(
-        "Stop",
-        cascade="all, delete-orphan",
-        backref=backref("parent_stop", remote_side=pk),
+        "Stop", cascade=None, backref=backref("parent_stop", remote_side=pk)
     )
     direction_name_rules = relationship(
         "DirectionNameRule",
@@ -41,8 +39,8 @@ class Stop(Base):
         cascade="all, delete-orphan",
         order_by="DirectionNameRule.priority",
     )
-    stop_events = relationship(
-        "StopTimeUpdate", back_populates="stop", cascade="all, delete-orphan"
+    trip_times = relationship(
+        "TripStopTime", back_populates="stop", cascade="all, delete-orphan"
     )
     service_pattern_vertices = relationship(
         "ServicePatternVertex", back_populates="stop", cascade="all, delete-orphan"

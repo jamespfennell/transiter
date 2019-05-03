@@ -51,11 +51,11 @@ def calculate_periodicity(route_pk):
 
     route_stop_pks_stmt = (
         sql.select([models.Stop.pk])
-        .select_from(sql.join(models.Stop, models.StopTimeUpdate).join(models.Trip))
+        .select_from(sql.join(models.Stop, models.TripStopTime).join(models.Trip))
         .where(models.Trip.route_pk == route_pk)
         .where(models.Trip.current_status != "SCHEDULED")
-        .where(models.StopTimeUpdate.future)
-        .where(models.StopTimeUpdate.arrival_time != None)
+        .where(models.TripStopTime.future)
+        .where(models.TripStopTime.arrival_time != None)
         .distinct()
     )
     stop_data_stmt = (
@@ -63,14 +63,14 @@ def calculate_periodicity(route_pk):
             [
                 sql.func.extract(
                     "epoch",
-                    sql.func.max(models.StopTimeUpdate.arrival_time)
-                    - sql.func.min(models.StopTimeUpdate.arrival_time),
+                    sql.func.max(models.TripStopTime.arrival_time)
+                    - sql.func.min(models.TripStopTime.arrival_time),
                 ).label("time_diff"),
                 sql.func.count().label("number"),
             ]
         )
-        .where(models.StopTimeUpdate.stop_pk.in_(route_stop_pks_stmt))
-        .group_by(models.StopTimeUpdate.stop_pk)
+        .where(models.TripStopTime.stop_pk.in_(route_stop_pks_stmt))
+        .group_by(models.TripStopTime.stop_pk)
         .having(sql.func.count() > 1)
     )
     stop_data_alias = sql.alias(stop_data_stmt)
@@ -95,7 +95,7 @@ def list_route_pks_with_current_service(route_pks):
         sql.and_(
             sql.exists(
                 sql.select([1])
-                .select_from(sql.join(models.StopTimeUpdate, models.Trip))
+                .select_from(sql.join(models.TripStopTime, models.Trip))
                 .where(models.Trip.route_pk == models.Route.pk)
                 .limit(1)
             ),

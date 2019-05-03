@@ -60,7 +60,7 @@ class RouteStatus(Base):
         message_content,
         start_time,
         end_time,
-        creation_time
+        creation_time,
     ]
 
 

@@ -51,7 +51,7 @@ class TestStopDAM(dbtestutil.TestCase):
 
     def test_list_stop_time_updates_at_stops__some_past(self):
         """[Stop DAM] List TripStopTimes at stops - some past"""
-        for stop_time in testdata.trip_one.stop_events:
+        for stop_time in testdata.trip_one.stop_times:
             stop_time.future = False
         self.session.merge(testdata.trip_one)
         self.session.flush()

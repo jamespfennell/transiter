@@ -26,15 +26,13 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         self.trip_1 = models.Trip(
             pk=self.TRIP_PK, id=self.TRIP_ID, route_id=self.ROUTE_1_ID
         )
-        self.trip_1.stop_events = [
-            models.StopTimeUpdate(
-                stop_pk=int(stop_id), stop_id=stop_id, stop_sequence=i
-            )
+        self.trip_1.stop_times = [
+            models.TripStopTime(stop_pk=int(stop_id), stop_id=stop_id, stop_sequence=i)
             for i, stop_id in enumerate(self.STOP_IDS)
         ]
         self.trip_2 = models.Trip(route_id=self.ROUTE_2_ID)
-        self.trip_2.stop_events = [
-            models.StopTimeUpdate(stop_id=stop_id) for stop_id in self.STOP_IDS_2
+        self.trip_2.stop_times = [
+            models.TripStopTime(stop_id=stop_id) for stop_id in self.STOP_IDS_2
         ]
 
         self.database = self.mockImportedModule(tripupdater.dbconnection)
@@ -106,7 +104,7 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         self.assertTrue(result)
         self.assertEqual(
             [int(self.STOP_IDS[1]), int(self.STOP_IDS[2])],
-            [stop_time.stop_pk for stop_time in self.trip_1.stop_events],
+            [stop_time.stop_pk for stop_time in self.trip_1.stop_times],
         )
 
         self.tripdam.list_all_in_route_by_pk.assert_called_once_with(self.ROUTE_1_PK)
@@ -139,9 +137,9 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
 
         stop_id_to_stop_pk = {stop_id: int(stop_id) for stop_id in self.STOP_IDS}
         feed_trip = models.Trip(id=self.TRIP_ID)
-        feed_trip.stop_events = [
-            models.StopTimeUpdate(stop_id=self.STOP_IDS[1], stop_sequence=1),
-            models.StopTimeUpdate(stop_id=self.STOP_IDS[2], stop_sequence=2),
+        feed_trip.stop_times = [
+            models.TripStopTime(stop_id=self.STOP_IDS[1], stop_sequence=1),
+            models.TripStopTime(stop_id=self.STOP_IDS[2], stop_sequence=2),
         ]
 
         result = tripupdater._sync_trips_in_route(
@@ -151,9 +149,9 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         self.assertFalse(result)
         self.assertEqual(
             [int(self.STOP_IDS[0]), int(self.STOP_IDS[1]), int(self.STOP_IDS[2])],
-            [stop_time.stop_pk for stop_time in feed_trip.stop_events],
+            [stop_time.stop_pk for stop_time in feed_trip.stop_times],
         )
-        self.assertFalse(feed_trip.stop_events[0].future)
+        self.assertFalse(feed_trip.stop_times[0].future)
 
         self.tripdam.list_all_in_route_by_pk.assert_called_once_with(self.ROUTE_1_PK)
 
@@ -167,9 +165,9 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
             for stop_id in set(self.STOP_IDS).union(self.STOP_IDS_2)
         }
         feed_trip = models.Trip(id=self.TRIP_ID)
-        feed_trip.stop_events = [
-            models.StopTimeUpdate(stop_id=self.STOP_IDS[1], stop_sequence=1),
-            models.StopTimeUpdate(stop_id=self.STOP_IDS_2[2], stop_sequence=2),
+        feed_trip.stop_times = [
+            models.TripStopTime(stop_id=self.STOP_IDS[1], stop_sequence=1),
+            models.TripStopTime(stop_id=self.STOP_IDS_2[2], stop_sequence=2),
         ]
 
         result = tripupdater._sync_trips_in_route(
@@ -179,9 +177,9 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         self.assertTrue(result)
         self.assertEqual(
             [int(self.STOP_IDS[0]), int(self.STOP_IDS[1]), int(self.STOP_IDS_2[2])],
-            [stop_time.stop_pk for stop_time in feed_trip.stop_events],
+            [stop_time.stop_pk for stop_time in feed_trip.stop_times],
         )
-        self.assertFalse(feed_trip.stop_events[0].future)
+        self.assertFalse(feed_trip.stop_times[0].future)
 
         self.tripdam.list_all_in_route_by_pk.assert_called_once_with(self.ROUTE_1_PK)
 
@@ -194,9 +192,9 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         stop_event_cleaners = [mock.MagicMock() for __ in range(3)]
         gtfs_cleaner = tripupdater.TripDataCleaner(trip_cleaners, stop_event_cleaners)
 
-        stop_event = models.StopTimeUpdate()
+        stop_event = models.TripStopTime()
         trip = models.Trip()
-        trip.stop_events.append(stop_event)
+        trip.stop_times.append(stop_event)
 
         clean_trips = gtfs_cleaner.clean("", [trip])
 
@@ -216,9 +214,9 @@ class TestTripUpdater(testutil.TestCase(tripupdater)):
         stop_event_cleaners = [mock.MagicMock() for __ in range(3)]
         gtfs_cleaner = tripupdater.TripDataCleaner(trip_cleaners, stop_event_cleaners)
 
-        stop_event = models.StopTimeUpdate()
+        stop_event = models.TripStopTime()
         trip = models.Trip()
-        trip.stop_events.append(stop_event)
+        trip.stop_times.append(stop_event)
 
         clean_trips = gtfs_cleaner.clean("", [trip])
 

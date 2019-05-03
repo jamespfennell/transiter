@@ -6,7 +6,7 @@ from sqlalchemy import Column, String, Integer
 class TestBasicModel(unittest.TestCase):
     def _test_short_repr(self):
         class TestModel(base.Base):
-            __tablename__ = 'blak'
+            __tablename__ = "blak"
             pk = Column(Integer, primary_key=True)
             id = Column(String)
             name = Column(String)
@@ -26,7 +26,7 @@ class TestBasicModel(unittest.TestCase):
 
     def test_long_repr(self):
         class TestModel(base.Base):
-            __tablename__ = 'blak2'
+            __tablename__ = "blak2"
             pk = Column(Integer, primary_key=True)
             id = Column(String)
             name = Column(String)
@@ -46,7 +46,7 @@ class TestBasicModel(unittest.TestCase):
 
     def test_not_implemented(self):
         class TestModel(base.Base):
-            __tablename__ = 'blak3'
+            __tablename__ = "blak3"
             pk = Column(Integer, primary_key=True)
             id = Column(String)
             name = Column(String)

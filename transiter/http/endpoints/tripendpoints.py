@@ -66,7 +66,7 @@ def get_in_route_by_id(system_id, route_id, trip_id):
             "route": {
                 "id": "L",
             },
-            "stop_events": [
+            "stop_times": [
                 {
                     "arrival_time": 1548016371,
                     "departure_time": 1548016386,

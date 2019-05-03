@@ -2,7 +2,7 @@ from sqlalchemy import inspect
 from sqlalchemy.ext.declarative import declarative_base
 
 
-class _BasicModel:
+class _BaseModel:
     """
     Basic model that all Transiter models inherit from.
 
@@ -77,4 +77,4 @@ class _BasicModel:
         }
 
 
-Base = declarative_base(cls=_BasicModel)
+Base = declarative_base(cls=_BaseModel)

@@ -257,7 +257,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
 
         transformer._transform_trip_stop_events()
 
-        self.assertEqual([], trip.stop_events)
+        self.assertEqual([], trip.stop_times)
 
     def test_transform_trip_stop_events(self):
         """[GTFS Realtime transformer] Transform trip stop events"""
@@ -283,13 +283,13 @@ class TestTransformGtfsRealtime(unittest.TestCase):
             }
         }
 
-        stu_1 = models.StopTimeUpdate()
+        stu_1 = models.TripStopTime()
         stu_1.stop_id = self.STOP_ONE_ID
         stu_1.arrival_time = self.timestamp_to_datetime(self.STOP_ONE_ARR_TIMESTAMP)
         stu_1.departure_time = self.timestamp_to_datetime(self.STOP_ONE_DEP_TIMESTAMP)
         stu_1.track: None
 
-        stu_2 = models.StopTimeUpdate()
+        stu_2 = models.TripStopTime()
         stu_2.stop_id = self.STOP_TWO_ID
         stu_2.arrival_time = self.timestamp_to_datetime(self.STOP_TWO_ARR_TIMESTAMP)
         stu_2.departure_time = None
@@ -298,19 +298,19 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         transformer._transform_trip_stop_events()
 
         self.maxDiff = None
-        self.assertEqual([stu_1, stu_2], trip.stop_events)
+        self.assertEqual([stu_1, stu_2], trip.stop_times)
 
     def test_update_stop_event_indices(self):
         """[GTFS Realtime transformer] Update stop event indices"""
         transformer = gtfsrealtimeutil._GtfsRealtimeToTransiterTransformer(None)
         trip = models.Trip()
         trip.current_stop_sequence = 15
-        trip.stop_events = [models.StopTimeUpdate(), models.StopTimeUpdate()]
+        trip.stop_times = [models.TripStopTime(), models.TripStopTime()]
         transformer._trip_id_to_trip_model = {self.TRIP_ID: trip}
 
         transformer._update_stop_event_indices()
 
-        self.assertEqual([15, 16], [stu.stop_sequence for stu in trip.stop_events])
+        self.assertEqual([15, 16], [stu.stop_sequence for stu in trip.stop_times])
 
     def test_start_to_finish_parse(self):
         """[GTFS Realtime transformer] Full transformation test"""
@@ -373,21 +373,21 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         # trip.feed_update_time = self.timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
         trip.last_update_time = self.timestamp_to_datetime(self.TRIP_UPDATE_TIMESTAMP)
 
-        stu_1 = models.StopTimeUpdate()
+        stu_1 = models.TripStopTime()
         stu_1.stop_id = self.STOP_ONE_ID
         stu_1.stop_sequence = 17
         stu_1.arrival_time = self.timestamp_to_datetime(self.STOP_ONE_ARR_TIMESTAMP)
         stu_1.departure_time = self.timestamp_to_datetime(self.STOP_ONE_DEP_TIMESTAMP)
         stu_1.track = None
 
-        stu_2 = models.StopTimeUpdate()
+        stu_2 = models.TripStopTime()
         stu_2.stop_id = self.STOP_ONE_ID
         stu_2.stop_sequence = 18
         stu_1.arrival_time = self.timestamp_to_datetime(self.STOP_TWO_ARR_TIMESTAMP)
         stu_1.departure_time = None
         stu_2.track = None
 
-        trip.stop_events.extend([stu_1, stu_2])
+        trip.stop_times.extend([stu_1, stu_2])
 
         expected_feed_time = timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)
 

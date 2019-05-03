@@ -17,7 +17,7 @@ def list_all_in_route_by_pk(route_pk):
     query = (
         session.query(models.Trip)
         .filter(models.Trip.route_pk == route_pk)
-        .options(selectinload(models.Trip.stop_events))
+        .options(selectinload(models.Trip.stop_times))
     )
     return query.all()
 
@@ -53,18 +53,18 @@ def get_trip_pk_to_last_stop_map(trip_pks):
 
     sub_query = (
         session.query(
-            models.StopTimeUpdate.trip_pk,
-            sqlalchemy.func.max(models.StopTimeUpdate.stop_sequence),
+            models.TripStopTime.trip_pk,
+            sqlalchemy.func.max(models.TripStopTime.stop_sequence),
         )
-        .group_by(models.StopTimeUpdate.trip_pk)
-        .filter(models.StopTimeUpdate.trip_pk.in_(trip_pks))
+        .group_by(models.TripStopTime.trip_pk)
+        .filter(models.TripStopTime.trip_pk.in_(trip_pks))
     )
     query = (
-        session.query(models.StopTimeUpdate.trip_pk, models.Stop)
-        .filter(models.StopTimeUpdate.stop_pk == models.Stop.pk)
+        session.query(models.TripStopTime.trip_pk, models.Stop)
+        .filter(models.TripStopTime.stop_pk == models.Stop.pk)
         .filter(
             sqlalchemy.tuple_(
-                models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence
+                models.TripStopTime.trip_pk, models.TripStopTime.stop_sequence
             ).in_(sub_query)
         )
     )
@@ -84,10 +84,10 @@ def get_trip_pk_to_path_map(route_pk):
     :return: map described above
     """
     statement = (
-        sql.select([models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_pk])
-        .select_from(sql.join(models.StopTimeUpdate, models.Trip))
+        sql.select([models.TripStopTime.trip_pk, models.TripStopTime.stop_pk])
+        .select_from(sql.join(models.TripStopTime, models.Trip))
         .where(models.Trip.route_pk == route_pk)
-        .order_by(models.StopTimeUpdate.trip_pk, models.StopTimeUpdate.stop_sequence)
+        .order_by(models.TripStopTime.trip_pk, models.TripStopTime.stop_sequence)
     )
     session = dbconnection.get_session()
     trip_pk_to_stop_pks = {}

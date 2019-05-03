@@ -29,7 +29,7 @@ def create_parser(
         The custom is for when a GTFS Realtime extension is being used.
 
     (2) Optionally apply a post-pb2-parsing function to the JSON structure.
-        This is generally used for merging GTFS Realtime extension data into
+        This is generally use for merging GTFS Realtime extension data into
         the main JSON structure. Clean-up of the data within the feed is
         easier with a trip cleaner in (4).
 
@@ -239,7 +239,7 @@ class _GtfsRealtimeToTransiterTransformer:
 
             for stop_time_update_data in trip_update.get("stop_time_update", []):
                 t = time.time()
-                stop_time_update = models.StopTimeUpdate()
+                stop_time_update = models.TripStopTime()
                 stop_time_update.stop_id = stop_time_update_data["stop_id"]
                 stop_time_update.track = stop_time_update_data.get("track", None)
                 stop_time_update.arrival_time = self._timestamp_to_datetime(
@@ -249,12 +249,12 @@ class _GtfsRealtimeToTransiterTransformer:
                     stop_time_update_data.get("departure", {}).get("time", None)
                 )
                 stop_time_updates.append(stop_time_update)
-            trip.stop_events = stop_time_updates
+            trip.stop_times = stop_time_updates
 
     def _update_stop_event_indices(self):
         for trip_id, trip in self._trip_id_to_trip_model.items():
             index = trip.current_stop_sequence
-            for stop_time_update in trip.stop_events:
+            for stop_time_update in trip.stop_times:
                 # TODO: if not null, don't assign
                 stop_time_update.stop_sequence = index
                 index += 1

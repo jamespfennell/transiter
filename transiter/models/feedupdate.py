@@ -57,7 +57,7 @@ class FeedUpdate(Base):
         explanation,
         failure_message,
         raw_data_hash,
-        last_action_time
+        last_action_time,
     ]
     _long_repr_dict = _short_repr_dict
     _long_repr_list = _short_repr_list

@@ -36,7 +36,7 @@ def compare_responses(rtr_s, transiter_s):
     rtr = json.loads(rtr_s)
     trn = json.loads(transiter_s)
     trn_stop_event = {}
-    for stop_event in trn["stop_events"]:
+    for stop_event in trn["stop_times"]:
         trn_stop_event[stop_event["trip"]["trip_id"]] = stop_event
 
     for direction in rtr["directions"]:
