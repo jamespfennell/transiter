@@ -181,28 +181,28 @@ SERVICE_PATTERN_ONE_PK = 91
 SERVICE_PATTERN_TWO_PK = 92
 SERVICE_MAP_2_1_PK = 93
 
-service_map_1_1 = models.ServicePattern(
+service_map_1_1 = models.ServiceMap(
     group=service_map_group_1, route=route_one, pk=SERVICE_PATTERN_ONE_PK
 )
 service_map_1_1.vertices = [
-    models.ServicePatternVertex(stop=stop_one),
-    models.ServicePatternVertex(stop=stop_two),
+    models.ServiceMapVertex(stop=stop_one),
+    models.ServiceMapVertex(stop=stop_two),
 ]
 
-service_map_1_2 = models.ServicePattern(
+service_map_1_2 = models.ServiceMap(
     group=service_map_group_1, route=route_two, pk=SERVICE_PATTERN_TWO_PK
 )
 service_map_1_2.vertices = [
-    models.ServicePatternVertex(stop=stop_two),
-    models.ServicePatternVertex(stop=stop_three),
+    models.ServiceMapVertex(stop=stop_two),
+    models.ServiceMapVertex(stop=stop_three),
 ]
 
-service_map_2_1 = models.ServicePattern(
+service_map_2_1 = models.ServiceMap(
     group=service_map_group_2, route=route_two, pk=SERVICE_MAP_2_1_PK
 )
 service_map_2_1.vertices = [
-    models.ServicePatternVertex(stop=stop_one),
-    models.ServicePatternVertex(stop=stop_two),
+    models.ServiceMapVertex(stop=stop_one),
+    models.ServiceMapVertex(stop=stop_two),
 ]
 
 

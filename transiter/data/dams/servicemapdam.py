@@ -16,14 +16,14 @@ def list_groups_and_maps_for_stops_in_route(route_pk):
     """
     session = dbconnection.get_session()
     query = (
-        session.query(models.ServiceMapGroup, models.ServicePattern)
+        session.query(models.ServiceMapGroup, models.ServiceMap)
         .join(models.System, models.System.pk == models.ServiceMapGroup.system_pk)
         .join(models.Route, models.Route.system_id == models.System.id)
         .outerjoin(
-            models.ServicePattern,
+            models.ServiceMap,
             sql.and_(
-                models.ServicePattern.route_pk == models.Route.pk,
-                models.ServicePattern.group_pk == models.ServiceMapGroup.pk,
+                models.ServiceMap.route_pk == models.Route.pk,
+                models.ServiceMap.group_pk == models.ServiceMapGroup.pk,
             ),
         )
         .filter(models.ServiceMapGroup.use_for_stops_in_route)
@@ -57,17 +57,17 @@ def get_stop_pk_to_group_id_to_routes_map(stop_pks):
             ),
         )
         .outerjoin(
-            models.ServicePattern,
+            models.ServiceMap,
             sql.and_(
-                models.ServicePattern.group_pk == models.ServiceMapGroup.pk,
-                models.ServicePattern.pk.in_(
-                    session.query(
-                        models.ServicePatternVertex.service_pattern_pk
-                    ).filter(models.ServicePatternVertex.stop_pk == models.Stop.pk)
+                models.ServiceMap.group_pk == models.ServiceMapGroup.pk,
+                models.ServiceMap.pk.in_(
+                    session.query(models.ServiceMapVertex.map_pk).filter(
+                        models.ServiceMapVertex.stop_pk == models.Stop.pk
+                    )
                 ),
             ),
         )
-        .outerjoin(models.Route, models.Route.pk == models.ServicePattern.route_pk)
+        .outerjoin(models.Route, models.Route.pk == models.ServiceMap.route_pk)
         .filter(models.Stop.pk.in_(stop_pks))
     )
     response = {stop_pk: {} for stop_pk in stop_pks}

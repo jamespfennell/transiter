@@ -54,10 +54,10 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
         self.service_map_group_realtime = models.ServiceMapGroup(
             source=models.ServiceMapGroup.ServiceMapSource.REALTIME
         )
-        self.service_map_realtime_1 = models.ServicePattern(
+        self.service_map_realtime_1 = models.ServiceMap(
             group=self.service_map_group_realtime, route_pk=self.ROUTE_1_PK
         )
-        self.service_map_realtime_2 = models.ServicePattern(
+        self.service_map_realtime_2 = models.ServiceMap(
             group=self.service_map_group_realtime, route=self.route_2
         )
         self.service_map_group_schedule = models.ServiceMapGroup(
@@ -65,10 +65,10 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
             conditions='{"weekday": true}',
             threshold=0,
         )
-        self.service_map_schedule_1 = models.ServicePattern(
+        self.service_map_schedule_1 = models.ServiceMap(
             group=self.service_map_group_schedule, route=self.route_1
         )
-        self.service_map_schedule_2 = models.ServicePattern(
+        self.service_map_schedule_2 = models.ServiceMap(
             group=self.service_map_group_schedule, route=self.route_2
         )
         self.system.service_map_groups = [
@@ -96,7 +96,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
             4: 14,
         }
 
-        new_service_map = models.ServicePattern()
+        new_service_map = models.ServiceMap()
         _build_service_map_from_paths.return_value = new_service_map
 
         expected_paths = {(11, 2, 3, 14), (0, 11, 3)}
@@ -200,14 +200,14 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
         stop_two = mock.MagicMock()
         label_to_stop = {label_one: stop_one, label_two: stop_two}
 
-        expected_sp = models.ServicePattern()
-        v_one = models.ServicePatternVertex()
+        expected_sp = models.ServiceMap()
+        v_one = models.ServiceMapVertex()
         v_one.stop_pk = label_one
-        v_one.service_pattern = expected_sp
+        v_one.map = expected_sp
         v_one.position = 0
-        v_two = models.ServicePatternVertex()
+        v_two = models.ServiceMapVertex()
         v_two.stop_pk = label_two
-        v_two.service_pattern = expected_sp
+        v_two.map = expected_sp
         v_two.position = 1
 
         actual_sp = servicemapmanager._convert_sorted_graph_to_service_pattern(graph)

@@ -42,9 +42,9 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         self.stop = models.Stop()
         self.stop.id = self.STOP_ID
-        vertex = models.ServicePatternVertex()
+        vertex = models.ServiceMapVertex()
         vertex.stop = self.stop
-        self.service_map_one = models.ServicePattern()
+        self.service_map_one = models.ServiceMap()
         self.service_map_one.vertices = [vertex]
 
         self.alert = models.Alert()

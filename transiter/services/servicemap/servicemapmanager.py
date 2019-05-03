@@ -142,11 +142,11 @@ def _convert_sorted_graph_to_service_pattern(sorted_graph):
     """
     Convert a sorted graph object to a service map object.
     """
-    service_pattern = models.ServicePattern()
+    service_pattern = models.ServiceMap()
     for index, vertex in enumerate(sorted_graph.vertices()):
-        sp_vertex = models.ServicePatternVertex()
+        sp_vertex = models.ServiceMapVertex()
         sp_vertex.stop_pk = vertex.label
-        sp_vertex.service_pattern = service_pattern
+        sp_vertex.map = service_pattern
         sp_vertex.position = index
     return service_pattern
 

@@ -39,8 +39,8 @@ DONE:
 
 TOGO:
     
-    ./models/servicepatternvertex.py
-    ./models/servicepattern.py
+    ./models/servicemapvertex.py
+    ./models/servicemap.py
     ./models/servicepatternedge.py
     
     

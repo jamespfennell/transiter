@@ -24,6 +24,6 @@ class ServiceMapGroup(Base):
     use_for_stops_in_route = Column(Boolean, nullable=False, default=False)
 
     maps = relationship(
-        "ServicePattern", cascade="all, delete-orphan", back_populates="group"
+        "ServiceMap", cascade="all, delete-orphan", back_populates="group"
     )
     system = relationship("System", cascade="", back_populates="service_map_groups")

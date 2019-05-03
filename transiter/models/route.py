@@ -19,10 +19,10 @@ class Route(Base):
 
     system = relationship("System", back_populates="routes")
     trips = relationship("Trip", back_populates="route", cascade="all, delete-orphan")
-    service_patterns = relationship(
-        "ServicePattern",
+    service_maps = relationship(
+        "ServiceMap",
         back_populates="route",
-        primaryjoin="ServicePattern.route_pk==Route.pk",
+        primaryjoin="ServiceMap.route_pk==Route.pk",
         cascade="all, delete-orphan",
     )
     route_statuses = relationship(
