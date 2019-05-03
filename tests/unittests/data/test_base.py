@@ -4,17 +4,21 @@ from sqlalchemy import Column, String, Integer
 
 
 class TestBasicModel(unittest.TestCase):
-    def test_short_repr(self):
-        class TestModel(base._BasicModel):
+    def _test_short_repr(self):
+        class TestModel(base.Base):
+            __tablename__ = 'blak'
+            pk = Column(Integer, primary_key=True)
+            id = Column(String)
+            name = Column(String)
 
-            _short_repr_list = ["A"]
-            _short_repr_dict = {"B": "C"}
+            _short_repr_list = [id]
+            _short_repr_dict = {"full_name": name}
 
         test_model = TestModel()
-        test_model.A = "1"
-        test_model.C = "2"
+        test_model.id = "L"
+        test_model.name = "James"
 
-        expected_short_repr = {"B": "2", "A": "1"}
+        expected_short_repr = {"id": "L", "full_name": "James"}
 
         actual_short_repr = test_model.short_repr()
 

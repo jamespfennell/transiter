@@ -6,9 +6,10 @@ from . import dbtestutil, testdata
 
 class TestFastOperations(dbtestutil.TestCase):
 
-    NEW_SYSTEM_1_DICT = {"id": "A", "name": "B"}
-    NEW_SYSTEM_2_DICT = {"id": "C", "name": "D"}
-    NEW_SYSTEM_3_DICT = {"id": "E", "name": "F"}
+    # We insert the PKs too so we can compare the models easily
+    NEW_SYSTEM_1_DICT = {"pk": 10000, "id": "A", "name": "B"}
+    NEW_SYSTEM_2_DICT = {"pk": 10001, "id": "C", "name": "D"}
+    NEW_SYSTEM_3_DICT = {"pk": 10002, "id": "E", "name": "F"}
 
     def setUp(self):
         super().setUp()

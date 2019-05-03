@@ -74,11 +74,13 @@ stop_five = models.Stop(
 stop_2_1 = models.Stop(pk=STOP_2_1_PK, id=STOP_ONE_ID, system=system_two)
 
 STATION_1_PK = 60
-STATION_2_PK = 61
+STATION_1_ID = "61"
+STATION_2_PK = 62
+STATION_2_ID = "63"
 
-station_1 = models.Stop(pk=STATION_1_PK, system=system_one, is_station=True)
+station_1 = models.Stop(pk=STATION_1_PK, id=STATION_1_ID, system=system_one, is_station=True)
 station_1.child_stops = [stop_one, stop_two]
-station_2 = models.Stop(pk=STATION_2_PK, system=system_one, is_station=True)
+station_2 = models.Stop(pk=STATION_2_PK, id=STATION_2_ID, system=system_one, is_station=True)
 station_2.child_stops = [stop_four]
 
 TRIP_ONE_PATH = [stop_one, stop_two, stop_three, stop_four]

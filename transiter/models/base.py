@@ -3,10 +3,18 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 class _BasicModel:
+    """
+    Basic model that all Transiter models inherit from.
+
+    This class defines an equals method for use in testing, and representation
+    functions for outputting dictionary representations of entities in the service
+    layer.
+    """
+
     def __eq__(self, other):
         for column in inspect(type(self)).columns.keys():
-            if column == "pk":
-                continue
+            # if column == "pk":
+            #    continue
             if getattr(self, column) != getattr(other, column):
                 print('Values for attribute "{}" don\'t match!'.format(column))
                 print(' Model one: "' + str(getattr(self, column)) + '"')
@@ -14,7 +22,10 @@ class _BasicModel:
                 return False
         return True
 
-    # Hack to get around a bug/design problem in SQL alchemy
+    def __repr__(self):
+        return str(self.pk)
+
+    # Hack to get around a bug/design problem in SQL Alchemy
     # Should not be relied on!
     def __hash__(self):
         return id(self)

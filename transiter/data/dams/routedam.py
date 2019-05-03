@@ -130,6 +130,7 @@ def get_route_pk_to_highest_priority_alerts_map(route_pks):
         .filter(
             sql.tuple_(models.Route.pk, models.RouteStatus.priority).in_(inner_query)
         )
+        .order_by(models.RouteStatus.pk)
     )
     for route_pk, alert in query:
         route_pk_to_alerts[route_pk].append(alert)
