@@ -6,18 +6,6 @@ TODO: add github issue to add logging configuration
 
 printing config is broken?
 
-1. Code quality:
-    1. Clean up the code where relevant
-    1. Add tests for relevant things
-            -> all tests had docstring
-    1. Add docs
-    1. Remove all TODOs - resolve or make Github issues
-    1. Document the API correctly
-    1. Does the RTR app still work? Likely not!
-
-
-Also need to fix the bug on the SQL Alchemy upgrade.
- Maybe it's this: https://github.com/sqlalchemy/sqlalchemy/issues/4538
 
 
 The task server:
@@ -29,23 +17,6 @@ Workaround is to increase the refresh time
     ./taskserver/server.py
     ./taskserver/client.py
     
-Models: mainly just safely renaming after we have close to 100% test coverage
-Also change how short_repr works
-add string repr?
-
-
-DONE: 
-
-
-TOGO:
-    
-    ./models/servicemapvertex.py
-    ./models/servicemap.py
-    ./models/servicepatternedge.py
-    
-    
-    
-
 
 
 1. Record the git hash outside of the Git repo for deployments ... 

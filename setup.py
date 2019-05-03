@@ -15,10 +15,9 @@ setup(
         "psycopg2-binary",
         "pytimeparse",
         "pytz",
-        "pyyaml",
         "requests",
         "rpyc",
-        "sqlalchemy==1.2.16",
+        "sqlalchemy",
         "toml",
     ],
 )
