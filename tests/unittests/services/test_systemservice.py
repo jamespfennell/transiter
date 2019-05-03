@@ -212,7 +212,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         service_map_group = models.ServiceMapGroup()
         service_map_group.id = "daytime"
         service_map_group.conditions = '{"weekday": true}'
-        service_map_group.source = "realtime"
+        service_map_group.source = service_map_group.ServiceMapSource.REALTIME
         service_map_group.threshold = 0.1
         service_map_group.use_for_stops_in_route = False
         service_map_group.use_for_routes_at_stop = True
@@ -222,7 +222,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         
             [service_maps.{service_map_group.id}]  
             conditions = {{weekday = true}}
-            source = 'realtime'
+            source = 'REALTIME'
             threshold = {service_map_group.threshold}
             use_for_routes_at_stop = true
         """

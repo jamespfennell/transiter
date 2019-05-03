@@ -34,15 +34,9 @@ TRIP_TWO_PK = 24
 TRIP_THREE_ID = "25"
 TRIP_THREE_PK = 26
 
-trip_one = models.Trip(
-    pk=TRIP_ONE_PK, id=TRIP_ONE_ID, route=route_one,
-)
-trip_two = models.Trip(
-    pk=TRIP_TWO_PK, id=TRIP_TWO_ID, route=route_one,
-)
-trip_three = models.Trip(
-    pk=TRIP_THREE_PK, id=TRIP_THREE_ID, route=route_one,
-)
+trip_one = models.Trip(pk=TRIP_ONE_PK, id=TRIP_ONE_ID, route=route_one)
+trip_two = models.Trip(pk=TRIP_TWO_PK, id=TRIP_TWO_ID, route=route_one)
+trip_three = models.Trip(pk=TRIP_THREE_PK, id=TRIP_THREE_ID, route=route_one)
 
 STOP_ONE_ID = "41"
 STOP_ONE_PK = 42
@@ -131,9 +125,7 @@ feed_one = models.Feed(
 feed_two = models.Feed(
     pk=FEED_TWO_PK, id=FEED_TWO_ID, system=system_one, auto_update_on=False
 )
-feed_3 = models.Feed(
-    pk=FEED_3_PK, id=FEED_3_ID, system=system_two, auto_update_on=True
-)
+feed_3 = models.Feed(pk=FEED_3_PK, id=FEED_3_ID, system=system_two, auto_update_on=True)
 
 feed_1_update_1 = models.FeedUpdate(
     feed_one,
@@ -156,10 +148,10 @@ ALERT_2_PK = 82
 ALERT_3_PK = 83
 ALERT_4_PK = 84
 
-alert_1 = models.RouteStatus(pk=ALERT_1_PK, priority=1)
-alert_2 = models.RouteStatus(pk=ALERT_2_PK, priority=2)
-alert_3 = models.RouteStatus(pk=ALERT_3_PK, priority=2)
-alert_4 = models.RouteStatus(pk=ALERT_4_PK, priority=3)
+alert_1 = models.Alert(pk=ALERT_1_PK, priority=1)
+alert_2 = models.Alert(pk=ALERT_2_PK, priority=2)
+alert_3 = models.Alert(pk=ALERT_3_PK, priority=2)
+alert_4 = models.Alert(pk=ALERT_4_PK, priority=3)
 
 route_one.route_statuses = [alert_1, alert_2, alert_3]
 route_two.route_statuses = [alert_1, alert_3, alert_4]
@@ -171,7 +163,7 @@ SERVICE_MAP_GROUP_2_ID = "103"
 
 service_map_group_1 = models.ServiceMapGroup(
     system=system_one,
-    source="realtime",
+    source=models.ServiceMapGroup.ServiceMapSource.REALTIME,
     use_for_routes_at_stop=True,
     pk=SERVICE_MAP_GROUP_ONE_PK,
     id=SERVICE_MAP_GROUP_ONE_ID,
@@ -179,7 +171,7 @@ service_map_group_1 = models.ServiceMapGroup(
 
 service_map_group_2 = models.ServiceMapGroup(
     system=system_one,
-    source="scheduled",
+    source=models.ServiceMapGroup.ServiceMapSource.SCHEDULE,
     use_for_stops_in_route=True,
     pk=SERVICE_MAP_GROUP_2_PK,
     id=SERVICE_MAP_GROUP_2_ID,

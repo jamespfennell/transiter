@@ -47,7 +47,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         self.service_map_one = models.ServicePattern()
         self.service_map_one.vertices = [vertex]
 
-        self.alert = models.RouteStatus()
+        self.alert = models.Alert()
 
         self.routedam = self.mockImportedModule(routeservice.routedam)
         self.systemdam = self.mockImportedModule(routeservice.systemdam)

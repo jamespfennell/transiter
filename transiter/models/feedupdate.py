@@ -51,6 +51,10 @@ class FeedUpdate(Base):
 
     feed = relationship("Feed", back_populates="updates")
 
+    __table_args__ = (
+        Index("feed_updates_last_successful_idx", feed_pk, last_action_time, status),
+    )
+
     _short_repr_dict = {"id": pk}
     _short_repr_list = [
         status,
@@ -66,11 +70,3 @@ class FeedUpdate(Base):
         self.status = self.Status.SCHEDULED
         super().__init__(*args, **kwargs)
         self.feed = feed
-
-
-Index(
-    "feed_updates_last_successful_idx",
-    FeedUpdate.feed_pk,
-    FeedUpdate.last_action_time,
-    FeedUpdate.status,
-)

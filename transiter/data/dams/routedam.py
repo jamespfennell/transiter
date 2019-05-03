@@ -116,20 +116,18 @@ def get_route_pk_to_highest_priority_alerts_map(route_pks):
     route_pk_to_alerts = {route_pk: [] for route_pk in route_pks}
     session = dbconnection.get_session()
     inner_query = (
-        session.query(models.Route.pk, sql.func.max(models.RouteStatus.priority))
-        .join(models.route_status_route)
-        .join(models.RouteStatus)
+        session.query(models.Route.pk, sql.func.max(models.Alert.priority))
+        .join(models.alert_route)
+        .join(models.Alert)
         .filter(models.Route.pk.in_(route_pks))
         .group_by(models.Route.pk)
     )
     query = (
-        session.query(models.Route.pk, models.RouteStatus)
-        .join(models.route_status_route)
-        .join(models.RouteStatus)
-        .filter(
-            sql.tuple_(models.Route.pk, models.RouteStatus.priority).in_(inner_query)
-        )
-        .order_by(models.RouteStatus.pk)
+        session.query(models.Route.pk, models.Alert)
+        .join(models.alert_route)
+        .join(models.Alert)
+        .filter(sql.tuple_(models.Route.pk, models.Alert.priority).in_(inner_query))
+        .order_by(models.Alert.pk)
     )
     for route_pk, alert in query:
         route_pk_to_alerts[route_pk].append(alert)

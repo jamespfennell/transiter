@@ -1,12 +1,6 @@
-from sqlalchemy import (
-    Column,
-    Float,
-    UniqueConstraint,
-    Integer,
-    String,
-    Boolean,
-    ForeignKey,
-)
+import enum
+
+from sqlalchemy import Column, Enum, Float, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -19,11 +13,12 @@ class ServiceMapGroup(Base):
     id = Column(String, nullable=False)
     system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False)
 
-    # TODO: Enum
-    source = Column(String, nullable=False)
+    class ServiceMapSource(enum.Enum):
+        SCHEDULE = 1
+        REALTIME = 2
+
+    source = Column(Enum(ServiceMapSource), nullable=False)
     conditions = Column(String)
-    # TODO: add defaults to all of these: 0, False, False
-    # Here versus DB?
     threshold = Column(Float, nullable=False, default=0)
     use_for_routes_at_stop = Column(Boolean, nullable=False, default=False)
     use_for_stops_in_route = Column(Boolean, nullable=False, default=False)

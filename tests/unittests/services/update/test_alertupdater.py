@@ -39,9 +39,9 @@ class TestAlertUpdater(testutil.TestCase(alertupdater), unittest.TestCase):
         route_2.id = self.ROUTE_2_ID
         system.routes = [route_1, route_2]
 
-        expired_alert = models.RouteStatus()
+        expired_alert = models.Alert()
         expired_alert.id = self.ALERT_1_ID
-        stale_alert = models.RouteStatus()
+        stale_alert = models.Alert()
         stale_alert.id = self.ALERT_2_ID
         stale_alert.route_ids = [self.ROUTE_1_ID]
         stale_alert.pk = self.ALERT_2_PK
@@ -50,10 +50,10 @@ class TestAlertUpdater(testutil.TestCase(alertupdater), unittest.TestCase):
             stale_alert,
         ]
 
-        updated_alert = models.RouteStatus()
+        updated_alert = models.Alert()
         updated_alert.id = self.ALERT_2_ID
         updated_alert.route_ids = [self.ROUTE_1_ID, self.ROUTE_2_ID]
-        new_alert = models.RouteStatus()
+        new_alert = models.Alert()
         new_alert.id = self.ALERT_3_ID
         new_alert.route_ids = [self.ROUTE_2_ID]
 

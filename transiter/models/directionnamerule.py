@@ -4,7 +4,6 @@ from sqlalchemy.orm import relationship
 from .base import Base
 
 
-# TODO: make direction names a separate module in systems/{}/directionnames
 class DirectionNameRule(Base):
     __tablename__ = "direction_name_rule"
 
@@ -18,9 +17,6 @@ class DirectionNameRule(Base):
 
     stop = relationship("Stop", back_populates="direction_name_rules")
 
-
-Index(
-    "direction_name_rule_stop_pk_priority_idx",
-    DirectionNameRule.stop_pk,
-    DirectionNameRule.priority,
-)
+    __table_args__ = (
+        Index("direction_name_rule_stop_pk_priority_idx", stop_pk, priority),
+    )

@@ -51,7 +51,9 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
             pk=self.ROUTE_2_PK, id=self.ROUTE_2_ID, system=self.system
         )
 
-        self.service_map_group_realtime = models.ServiceMapGroup(source="realtime")
+        self.service_map_group_realtime = models.ServiceMapGroup(
+            source=models.ServiceMapGroup.ServiceMapSource.REALTIME
+        )
         self.service_map_realtime_1 = models.ServicePattern(
             group=self.service_map_group_realtime, route_pk=self.ROUTE_1_PK
         )
@@ -59,7 +61,9 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
             group=self.service_map_group_realtime, route=self.route_2
         )
         self.service_map_group_schedule = models.ServiceMapGroup(
-            source="schedule", conditions='{"weekday": true}', threshold=0
+            source=models.ServiceMapGroup.ServiceMapSource.SCHEDULE,
+            conditions='{"weekday": true}',
+            threshold=0,
         )
         self.service_map_schedule_1 = models.ServicePattern(
             group=self.service_map_group_schedule, route=self.route_1

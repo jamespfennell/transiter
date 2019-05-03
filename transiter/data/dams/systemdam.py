@@ -101,8 +101,8 @@ def list_all_alerts_in_system(system_id):
     """
     session = dbconnection.get_session()
     query = (
-        session.query(models.RouteStatus)
-        .join(models.Route, models.RouteStatus.routes)
+        session.query(models.Alert)
+        .join(models.Route, models.Alert.routes)
         .join(models.System)
         .filter(models.System.id == system_id)
     )

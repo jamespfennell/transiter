@@ -8,7 +8,7 @@ from transiter.data import dbconnection
 from transiter.data.dams import routedam, systemdam, servicemapdam
 from transiter import exceptions
 from transiter.services import links
-from transiter.models import RouteStatus
+from transiter.models import Alert
 
 
 @dbconnection.unit_of_work
@@ -153,9 +153,9 @@ def _construct_route_pk_to_status_map(route_pks_iter):
             continue
         causes = set(alert.cause for alert in alerts)
         effects = set(alert.effect for alert in alerts)
-        if RouteStatus.Effect.SIGNIFICANT_DELAYS in effects:
+        if Alert.Effect.SIGNIFICANT_DELAYS in effects:
             route_pk_to_status[route_pk] = Status.DELAYS
-        elif RouteStatus.Cause.ACCIDENT in causes:
+        elif Alert.Cause.ACCIDENT in causes:
             route_pk_to_status[route_pk] = Status.UNPLANNED_SERVICE_CHANGE
         else:
             route_pk_to_status[route_pk] = Status.PLANNED_SERVICE_CHANGE

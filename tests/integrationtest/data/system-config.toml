@@ -29,19 +29,19 @@
 
     [service_maps.weekday_day]
     type = 'per_route'
-    source = 'timetable'
+    source = 'schedule'
     conditions = {weekday = true, starts_later_than = 7, ends_earlier_than = 19}
     threshold = 0.1
 
     [service_maps.weekday_night]
     type = 'per_route'
-    source = 'timetable'
+    source = 'schedule'
     conditions = {weekday = true, starts_later_than = 0, ends_earlier_than = 6}
     threshold = 0.1
 
     [service_maps.weekend]
     type = 'per_route'
-    source = 'timetable'
+    source = 'schedule'
     conditions = {weekend = true, starts_later_than = 7, ends_earlier_than = 19}
     threshold = 0.1
 

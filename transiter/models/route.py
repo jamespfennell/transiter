@@ -26,7 +26,7 @@ class Route(Base):
         cascade="all, delete-orphan",
     )
     route_statuses = relationship(
-        "RouteStatus", secondary="route_status_route", back_populates="routes"
+        "Alert", secondary="alert_route", back_populates="routes"
     )
 
     _short_repr_list = [id]

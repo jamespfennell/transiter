@@ -178,9 +178,7 @@ class _SystemConfig:
             self.feed.auto_update_on = raw_dict.get("auto_update", False)
             if self.feed.auto_update_on:
                 auto_update_time_str = raw_dict["auto_update_period"]
-                self.feed.auto_update_period = pytimeparse.parse(
-                    auto_update_time_str
-                )
+                self.feed.auto_update_period = pytimeparse.parse(auto_update_time_str)
                 logger.info(
                     f'Converted string "{auto_update_time_str}" '
                     f"to {self.feed.auto_update_period} seconds."
@@ -209,7 +207,9 @@ class _SystemConfig:
             """
             self.service_map_group = models.ServiceMapGroup()
             self.service_map_group.id = group_id
-            self.service_map_group.source = raw_dict["source"]
+            self.service_map_group.source = self.service_map_group.ServiceMapSource[
+                raw_dict["source"].upper()
+            ]
             if "conditions" in raw_dict:
                 self.service_map_group.conditions = json.dumps(raw_dict["conditions"])
             else:

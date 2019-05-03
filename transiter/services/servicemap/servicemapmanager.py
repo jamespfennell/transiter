@@ -41,7 +41,7 @@ def calculate_realtime_service_map_for_route(route):
     # First find the realtime service map group, if it exists.
     realtime_service_map = None
     for service_map_group in route.system.service_map_groups:
-        if service_map_group.source != "realtime":
+        if service_map_group.source != models.ServiceMapGroup.ServiceMapSource.REALTIME:
             continue
         realtime_service_map = service_map_group
         break
@@ -100,7 +100,7 @@ def calculate_scheduled_service_maps_for_system(system):
         route_pk_to_trips[trip.route_pk].append(trip)
 
     for service_map_group in system.service_map_groups:
-        if service_map_group.source != "schedule":
+        if service_map_group.source != models.ServiceMapGroup.ServiceMapSource.SCHEDULE:
             continue
         # Delete the old maps, using SQL Alchemy's delete-orphan cascade
         service_map_group.maps = []
