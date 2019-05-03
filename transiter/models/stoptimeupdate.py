@@ -41,7 +41,10 @@ class StopTimeUpdate(Base):
         cascade_backrefs=False,
     )
 
-    _short_repr_list = ["arrival_time", "departure_time", "track", "future"]
+    _short_repr_list = [arrival_time,
+                        departure_time,
+                        track,
+                        future]
 
 
 Index("stop_time_update_trip_idx", StopTimeUpdate.trip_pk, StopTimeUpdate.stop_sequence)

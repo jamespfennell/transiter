@@ -4,6 +4,8 @@
 TODO: add github issue to add logging configuration
 
 
+printing config is broken?
+
 1. Code quality:
     1. Clean up the code where relevant
     1. Add tests for relevant things
@@ -47,7 +49,6 @@ add string repr?
     ./models/scheduledtripstoptime.py
     ./models/directionnamerule.py
     ./models/scheduledtrip.py
-    ./models/base.py
 
 
 

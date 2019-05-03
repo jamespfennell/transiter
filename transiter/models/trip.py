@@ -33,15 +33,15 @@ class Trip(Base):
         cascade_backrefs=False,
     )
 
-    _short_repr_list = ["id"]
+    _short_repr_list = [id]
     _long_repr_list = [
-        "id",
-        "direction_id",
-        "start_time",
-        "last_update_time",
-        "current_status",
-        "current_stop_sequence",
-        "vehicle_id",
+        id,
+        direction_id,
+        start_time,
+        last_update_time,
+        current_status,
+        current_stop_sequence,
+        vehicle_id
     ]
 
 

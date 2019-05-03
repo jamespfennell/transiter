@@ -51,22 +51,16 @@ class FeedUpdate(Base):
 
     feed = relationship("Feed", back_populates="updates")
 
-    _short_repr_dict = {"id": "pk"}
+    _short_repr_dict = {"id": pk}
     _short_repr_list = [
-        "status",
-        "explanation",
-        "failure_message",
-        "raw_data_hash",
-        "last_action_time",
+        status,
+        explanation,
+        failure_message,
+        raw_data_hash,
+        last_action_time
     ]
-    _long_repr_dict = {"id": "pk"}
-    _long_repr_list = [
-        "status",
-        "explanation",
-        "failure_message",
-        "raw_data_hash",
-        "last_action_time",
-    ]
+    _long_repr_dict = _short_repr_dict
+    _long_repr_list = _short_repr_list
 
     def __init__(self, feed, *args, **kwargs):
         self.status = self.Status.SCHEDULED

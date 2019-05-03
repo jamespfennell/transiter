@@ -49,4 +49,4 @@ class Feed(Base):
 
     __table_args__ = (UniqueConstraint("system_id", "id"),)
 
-    _short_repr_list = ["id"]
+    _short_repr_list = [id]

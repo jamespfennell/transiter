@@ -25,4 +25,4 @@ class System(Base):
         "ServiceMapGroup", back_populates="system", cascade="all, delete-orphan"
     )
 
-    _short_repr_list = ["id"]
+    _short_repr_list = [id]

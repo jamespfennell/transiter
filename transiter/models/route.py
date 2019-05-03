@@ -54,9 +54,6 @@ class Route(Base):
         "ServicePattern", post_update=True, foreign_keys=[dynamic_service_pattern_pk]
     )
 
-    _short_repr_list = ["id"]  # , 'system_id']
-    _long_repr_list = ["id"]
+    _short_repr_list = [id]
+    _long_repr_list = [id]
 
-    # TODO: do this as the base level
-    def __repr__(self):
-        return "Route(id={}, pk={})".format(self.id, self.pk)
