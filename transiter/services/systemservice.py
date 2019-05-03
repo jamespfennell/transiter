@@ -16,6 +16,7 @@ from transiter.data import dbconnection
 from transiter.data.dams import systemdam, stopdam
 from transiter.services import links
 from transiter.services.update import updatemanager
+from transiter.taskserver import client
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,6 @@ def get_by_id(system_id, return_links=False):
     return response
 
 
-@dbconnection.unit_of_work
 def install(system_id, config_str, extra_files, extra_settings):
     """
     Install a Transit system.
@@ -91,6 +91,16 @@ def install(system_id, config_str, extra_files, extra_settings):
     :type extra_settings: dict
     :return: whether the install succeeded
     :rtype: bool
+    """
+    install_success = install_uow(system_id, config_str, extra_files, extra_settings)
+    client.refresh_tasks()
+    return install_success
+
+
+@dbconnection.unit_of_work
+def install_uow(system_id, config_str, extra_files, extra_settings):
+    """
+    Perform the DB actions neccesary to install a Transit system.
     """
     if systemdam.get_by_id(system_id) is not None:
         return False

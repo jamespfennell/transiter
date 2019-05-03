@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -21,3 +21,5 @@ class ServiceMap(Base):
         order_by="ServiceMapVertex.position",
         cascade="all, delete-orphan",
     )
+
+    __table_args__ = (UniqueConstraint(route_pk, group_pk),)

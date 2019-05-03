@@ -1,13 +1,12 @@
     
 ## Main development thread
 
-TODO: add github issue to add logging configuration
+TODO: add github issue to add logging configuration and clean up config
+
+Also: github ticket to figure out why equals is called so much on the models
 
 
-printing config is broken?
 
-
-Does the task server work when a system is added?
 
 The task server:
 Can we run multi process and get around warnings about 123456?

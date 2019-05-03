@@ -40,13 +40,13 @@ class Stop(Base):
         order_by="DirectionNameRule.priority",
     )
     trip_times = relationship(
-        "TripStopTime", back_populates="stop", cascade="all, delete-orphan"
+        "TripStopTime", back_populates="stop", cascade="delete, delete-orphan"
     )
     service_pattern_vertices = relationship(
-        "ServiceMapVertex", back_populates="stop", cascade="all, delete-orphan"
+        "ServiceMapVertex", back_populates="stop", cascade="delete, delete-orphan"
     )
     scheduled_trip_times = relationship(
-        "ScheduledTripStopTime", back_populates="stop", cascade="all, delete-orphan"
+        "ScheduledTripStopTime", back_populates="stop", cascade="delete, delete-orphan"
     )
 
     __table_args__ = (UniqueConstraint("system_id", "id"),)

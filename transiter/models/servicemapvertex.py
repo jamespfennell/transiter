@@ -13,7 +13,7 @@ class ServiceMapVertex(Base):
 
     position = Column(Integer)
 
-    stop = relationship("Stop")
-    map = relationship("ServiceMap", back_populates="vertices")
+    stop = relationship("Stop", cascade=None)
+    map = relationship("ServiceMap", back_populates="vertices", cascade=None)
 
     __table_args__ = (Index("service_map_vertex_map_pk_position", map_pk, position),)

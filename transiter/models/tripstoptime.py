@@ -34,7 +34,7 @@ class TripStopTime(Base):
     trip = relationship(
         "Trip",
         back_populates="stop_times",
-        cascade="save-update",
+        cascade=None,
         cascade_backrefs=False,
     )
 

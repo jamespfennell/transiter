@@ -25,7 +25,7 @@ def build_extra_engine_params_from_config(database_config):
     if database_config.DRIVER == "postgresql":
         if database_config.DIALECT is None or database_config.DIALECT == "psycopg2":
             extra_params["use_batch_mode"] = True
-    logger.info("Extra connection params: " + str(extra_params))
+    logger.debug("Extra connection params: " + str(extra_params))
     return extra_params
 
 

@@ -15,11 +15,11 @@ class _BaseModel:
     def __eq__(self, other):
         for column in inspect(type(self)).columns.keys():
             if getattr(self, column) != getattr(other, column):
-                print(
-                    'Values for attribute "{}" don\'t match: "{}" != "{}"'.format(
-                        column, str(getattr(self, column)), str(getattr(other, column))
-                    )
-                )
+                # print(
+                #    'Values for attribute "{}" don\'t match: "{}" != "{}"'.format(
+                #        column, str(getattr(self, column)), str(getattr(other, column))
+                #    )
+                # )
                 return False
         return True
 
