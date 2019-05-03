@@ -140,7 +140,7 @@ def _construct_route_pk_to_status_map(route_pks_iter):
 
     :param route_pks_iter: iterator of the routes's PKs
     :type route_pks_iter: iter
-    :return: list of Status objects
+    :return: list of TripStatus objects
     :rtype: list
     """
     route_pks = {route_pk for route_pk in route_pks_iter}

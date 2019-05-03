@@ -114,7 +114,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         ]
 
         expected = {
-            **self.route_one.short_repr(),
+            **self.route_one.long_repr(),
             "periodicity": int(self.RAW_FREQUENCY / 6) / 10,
             "status": self.ROUTE_ONE_STATUS,
             "alerts": [],

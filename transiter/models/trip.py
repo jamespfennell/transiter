@@ -1,4 +1,15 @@
-from sqlalchemy import Column, TIMESTAMP, Integer, String, Boolean, ForeignKey, Index
+import enum
+
+from sqlalchemy import (
+    Column,
+    Enum,
+    TIMESTAMP,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -11,17 +22,21 @@ class Trip(Base):
     id = Column(String)
     route_pk = Column(Integer, ForeignKey("route.pk"), nullable=False)
 
+    class TripStatus(enum.Enum):
+        SCHEDULED = 1
+        INCOMING_AT = 2
+        STOPPED_AT = 3
+        IN_TRANSIT_TO = 4
+
     direction_id = Column(Boolean)
     start_time = Column(TIMESTAMP(timezone=True))
+    vehicle_id = Column(String)
+    last_update_time = Column(TIMESTAMP(timezone=True))
+    current_status = Column(Enum(TripStatus))
+    current_stop_sequence = Column(Integer)
 
     route_id = None
     stop_id = None
-
-    vehicle_id = Column(String)
-    last_update_time = Column(TIMESTAMP(timezone=True))
-
-    current_status = Column(String)  # TODO: ENUMIFY
-    current_stop_sequence = Column(Integer)
 
     route = relationship("Route", back_populates="trips", cascade="")
     stop_times = relationship(
@@ -31,6 +46,8 @@ class Trip(Base):
         cascade="all, delete-orphan",
         cascade_backrefs=False,
     )
+
+    __table_args__ = (UniqueConstraint(route_pk, id),)
 
     _short_repr_list = [id]
     _long_repr_list = [
@@ -42,7 +59,3 @@ class Trip(Base):
         current_stop_sequence,
         vehicle_id,
     ]
-
-
-# TODO: this should be a unique constraint
-Index("get_trip_in_route_idx", Trip.route_pk, Trip.id)

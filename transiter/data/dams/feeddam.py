@@ -12,7 +12,7 @@ def list_all_autoupdating():
     :return: list of Feeds
     """
     session = dbconnection.get_session()
-    query = session.query(models.Feed).filter(models.Feed.auto_updater_enabled)
+    query = session.query(models.Feed).filter(models.Feed.auto_update_on)
     return query.all()
 
 

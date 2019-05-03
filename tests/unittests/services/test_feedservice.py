@@ -34,7 +34,7 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
 
     def test_list_all_auto_updating(self):
         """[Feed service] List all auto updating feed in system"""
-        self.feed_one.auto_updater_frequency = self.FEED_ONE_AUTO_UPDATE_PERIOD
+        self.feed_one.auto_update_period = self.FEED_ONE_AUTO_UPDATE_PERIOD
 
         self.feeddam.list_all_autoupdating.return_value = [self.feed_one]
 

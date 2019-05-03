@@ -156,7 +156,7 @@ class TestGtfsStaticUtil(testutil.TestCase(gtfsstaticutil), unittest.TestCase):
         route = models.Route()
         route.id = "1"
         route.color = "2"
-        route.timetable_url = "3"
+        route.url = "3"
         route.short_name = "4"
         route.long_name = "5"
         route.description = "6"

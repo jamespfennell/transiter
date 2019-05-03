@@ -9,7 +9,7 @@ class System(Base):
 
     pk = Column(Integer, primary_key=True)
     id = Column(String, unique=True, index=True)
-    # TODO: expose this in the reprs
+
     name = Column(String, nullable=True)
     timezone = Column(String, nullable=True)
 
@@ -25,4 +25,4 @@ class System(Base):
         "ServiceMapGroup", back_populates="system", cascade="all, delete-orphan"
     )
 
-    _short_repr_list = [id]
+    _short_repr_list = [id, name]

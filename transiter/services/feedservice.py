@@ -32,7 +32,7 @@ def list_all_auto_updating():
                 "pk": feed.pk,
                 "id": feed.id,
                 "system_id": feed.system.id,
-                "auto_update_period": feed.auto_updater_frequency,
+                "auto_update_period": feed.auto_update_period,
             }
         )
     return response

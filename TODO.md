@@ -40,16 +40,12 @@ DONE:
 TOGO:
 
     ./models/servicemapgroup.py
-    ./models/system.py
     ./models/servicepatternvertex.py
     ./models/servicepattern.py
     ./models/servicepatternedge.py
     ./models/routestatus.py (-> alert.py)
     ./models/feedupdate.py
     ./models/scheduledservice.py 
-    ./models/route.py
-    ./models/trip.py
-    ./models/feed.py
     ./models/scheduledtripstoptime.py
     ./models/directionnamerule.py
     ./models/scheduledtrip.py

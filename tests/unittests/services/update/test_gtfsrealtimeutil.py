@@ -222,7 +222,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                 },
                 "vehicle": {
                     "timestamp": self.TRIP_UPDATE_TIMESTAMP,
-                    "current_status": self.CURRENT_STATUS,
+                    "current_status": "STOPPED_AT",
                     "current_stop_sequence": self.CURRENT_STOP_SEQUENCE,
                 },
             }
@@ -235,7 +235,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         trip.start_time = datetime.datetime(year=1990, month=3, day=26)
         trip.train_id = self.TRAIN_ID
         trip.direction_id = self.TRIP_DIRECTION_ID
-        trip.current_status = self.CURRENT_STATUS
+        trip.current_status = trip.TripStatus.STOPPED_AT
         trip.current_stop_sequence = self.CURRENT_STOP_SEQUENCE
         trip.last_update_time = self.timestamp_to_datetime(self.TRIP_UPDATE_TIMESTAMP)
         trip.feed_update_time = None
@@ -330,7 +330,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
                             "route_id": "4",
                         },
                         "current_stop_sequence": 16,
-                        "current_status": 2,
+                        "current_status": "IN_TRANSIT_TO",
                         "timestamp": self.TRIP_UPDATE_TIMESTAMP,
                         "stop_id": "626S",
                     },
@@ -367,7 +367,7 @@ class TestTransformGtfsRealtime(unittest.TestCase):
         trip.train_id = None
         trip.route_id = "4"
         trip.start_time = datetime.datetime(year=2018, month=9, day=15)
-        trip.current_status = 2
+        trip.current_status = trip.TripStatus.IN_TRANSIT_TO
         trip.current_stop_sequence = 16
         trip.direction_id = None
         # trip.feed_update_time = self.timestamp_to_datetime(self.FEED_UPDATE_TIMESTAMP)

@@ -35,13 +35,13 @@ TRIP_THREE_ID = "25"
 TRIP_THREE_PK = 26
 
 trip_one = models.Trip(
-    pk=TRIP_ONE_PK, id=TRIP_ONE_ID, route=route_one, current_status=""
+    pk=TRIP_ONE_PK, id=TRIP_ONE_ID, route=route_one,
 )
 trip_two = models.Trip(
-    pk=TRIP_TWO_PK, id=TRIP_TWO_ID, route=route_one, current_status=""
+    pk=TRIP_TWO_PK, id=TRIP_TWO_ID, route=route_one,
 )
 trip_three = models.Trip(
-    pk=TRIP_THREE_PK, id=TRIP_THREE_ID, route=route_one, current_status=""
+    pk=TRIP_THREE_PK, id=TRIP_THREE_ID, route=route_one,
 )
 
 STOP_ONE_ID = "41"
@@ -126,13 +126,13 @@ FEED_3_ID = "75"
 FEED_3_PK = 76
 
 feed_one = models.Feed(
-    pk=FEED_ONE_PK, id=FEED_ONE_ID, system=system_one, auto_updater_enabled=True
+    pk=FEED_ONE_PK, id=FEED_ONE_ID, system=system_one, auto_update_on=True
 )
 feed_two = models.Feed(
-    pk=FEED_TWO_PK, id=FEED_TWO_ID, system=system_one, auto_updater_enabled=False
+    pk=FEED_TWO_PK, id=FEED_TWO_ID, system=system_one, auto_update_on=False
 )
 feed_3 = models.Feed(
-    pk=FEED_3_PK, id=FEED_3_ID, system=system_two, auto_updater_enabled=True
+    pk=FEED_3_PK, id=FEED_3_ID, system=system_two, auto_update_on=True
 )
 
 feed_1_update_1 = models.FeedUpdate(

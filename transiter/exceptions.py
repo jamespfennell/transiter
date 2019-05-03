@@ -7,7 +7,7 @@ Module containing all Exceptions that can be raised in Transiter.
 #
 # (1) They must be subclasses of _TransiterException.
 #
-# (2) They must have an associated HTTP Status in the HTTP Manager.
+# (2) They must have an associated HTTP TripStatus in the HTTP Manager.
 #
 # If an exception is added breaking one of these, one of the HTTP Manager
 # unit tests will very intentionally fail.

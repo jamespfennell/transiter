@@ -175,19 +175,19 @@ class _SystemConfig:
                         raw_dict["file_upload_fallback"]
                     ]
 
-            self.feed.auto_updater_enabled = raw_dict.get("auto_update", False)
-            if self.feed.auto_updater_enabled:
+            self.feed.auto_update_on = raw_dict.get("auto_update", False)
+            if self.feed.auto_update_on:
                 auto_update_time_str = raw_dict["auto_update_period"]
-                self.feed.auto_updater_frequency = pytimeparse.parse(
+                self.feed.auto_update_period = pytimeparse.parse(
                     auto_update_time_str
                 )
                 logger.info(
                     f'Converted string "{auto_update_time_str}" '
-                    f"to {self.feed.auto_updater_frequency} seconds."
+                    f"to {self.feed.auto_update_period} seconds."
                 )
             else:
-                self.feed.auto_updater_enabled = False
-                self.feed.auto_updater_frequency = None
+                self.feed.auto_update_on = False
+                self.feed.auto_update_period = None
 
     class ServiceMapConfig:
         """

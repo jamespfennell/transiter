@@ -164,14 +164,14 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         feed_one.id = "1000"
         feed_one.url = feed_one_raw_url.format(api_key=api_key)
         feed_one.built_in_parser = feed_one.BuiltInParser.GTFS_REALTIME
-        feed_one.auto_updater_enabled = False
+        feed_one.auto_update_on = False
 
         feed_two = models.Feed()
         feed_two.id = "200"
         feed_two.url = "BlahBlah"
         feed_two.custom_parser = "asdfg"
-        feed_two.auto_updater_enabled = True
-        feed_two.auto_updater_frequency = 300
+        feed_two.auto_update_on = True
+        feed_two.auto_update_period = 300
 
         config_str = f"""
         
@@ -185,7 +185,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             url = '{feed_two.url}'
             custom_parser = '{feed_two.custom_parser}'
             auto_update = true
-            auto_update_period = '{feed_two.auto_updater_frequency} seconds'
+            auto_update_period = '{feed_two.auto_update_period} seconds'
             required_for_install = true
             file_upload_fallback = '{file_name}'
         

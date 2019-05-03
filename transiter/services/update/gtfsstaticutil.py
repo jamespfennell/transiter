@@ -184,7 +184,7 @@ class GtfsStaticData:
             route = models.Route()
             route.id = row["route_id"]
             route.color = row.get("route_color")
-            route.timetable_url = row.get("route_url")
+            route.url = row.get("route_url")
             route.short_name = row.get("route_short_name")
             route.long_name = row.get("route_long_name")
             route.description = row.get("route_desc")
