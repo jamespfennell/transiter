@@ -62,7 +62,7 @@ def launch(force, server):
 @click.option(
     "-o",
     "--output-file",
-    default=config.DEFAULT_FILE_PATH,
+    default=None, #config.DEFAULT_FILE_PATH,
     show_default=True,
     help="Path to output the config file to.",
 )
@@ -76,6 +76,8 @@ def launch(force, server):
 def generate_config(force, output_file, use_current_values):
     """
     Generate a Transiter config file template.
+
+    Write to the standard output, or to a file if -o is specified.
     """
     mode = "w" if force else "x"
     if use_current_values:
@@ -85,6 +87,9 @@ def generate_config(force, output_file, use_current_values):
             database_config=config.DefaultDatabaseConfig,
             task_server_config=config.DefaultTaskServerConfig,
         )
+    if output_file is None:
+        print(config_str)
+        return
     try:
         with open(output_file, mode) as file_handle:
             file_handle.write(config_str)

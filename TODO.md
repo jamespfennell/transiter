@@ -7,6 +7,7 @@ TODO: add github issue to add logging configuration
 printing config is broken?
 
 
+Does the task server work when a system is added?
 
 The task server:
 Can we run multi process and get around warnings about 123456?

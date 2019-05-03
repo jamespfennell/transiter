@@ -57,9 +57,19 @@ def generate(database_config=DatabaseConfig, task_server_config=TaskServerConfig
     :param task_server_config: the taskserver config to use
     :return: the TOML string
     """
-    return _TOML_CONFIG_STR_TEMPLATE.format(
-        DatabaseConfig=database_config, TaskServerConfig=task_server_config
-    )
+    format_dict = {}
+    for type_, config in (
+        ("DatabaseConfig", database_config),
+        ("TaskServerConfig", task_server_config),
+    ):
+        for key, value in config.__dict__.items():
+            if key[0] == "_":
+                continue
+            if value is None:
+                value = ""
+            full_key = "{}-{}".format(type_, key)
+            format_dict[full_key] = value
+    return _TOML_CONFIG_STR_TEMPLATE.format(**format_dict)
 
 
 def load_from_str(toml_str: str):
@@ -134,21 +144,20 @@ _TOML_CONFIG_STR_TEMPLATE = """
 #
 # | DBMS       | Driver     | Dialect    | Additional python packages required |
 # |------------+------------+------------+-------------------------------------|
-# | SQLite     | sqlite     |            |                                     |
 # | Postgresql | postgresql | psycopg2   | psycopg2-binary                     |
 
-driver = '{DatabaseConfig.DRIVER}'
-dialect = '{DatabaseConfig.DIALECT}'
+driver = '{DatabaseConfig-DRIVER}'
+dialect = '{DatabaseConfig-DIALECT}'
 
 # The database name. Note that for SQLite the database name is the location 
 # of the file on disk relative to the directory Transiter servers are launched.
 
-name = '{DatabaseConfig.NAME}'
+name = '{DatabaseConfig-NAME}'
 
 # User settings.
 
-username = '{DatabaseConfig.USERNAME}'
-password = '{DatabaseConfig.PASSWORD}'
+username = '{DatabaseConfig-USERNAME}'
+password = '{DatabaseConfig-PASSWORD}'
 
 # Host settings. If using Postgres or another client/server DBMS the database
 # can be on a separate machine to the Transiter instance. If running the
@@ -156,8 +165,8 @@ password = '{DatabaseConfig.PASSWORD}'
 # recommended to use Unix domain sockets instead of TCP, in which case the
 # host and port settings should be empty
 
-host = '{DatabaseConfig.HOST}'
-port = '{DatabaseConfig.PORT}'
+host = '{DatabaseConfig-HOST}'
+port = '{DatabaseConfig-PORT}'
 
 [taskserver]
 
@@ -165,7 +174,7 @@ port = '{DatabaseConfig.PORT}'
 # launching the task server, and when the main HTTP server attempts to 
 # communicate with it.
 
-port = '{TaskServerConfig.PORT}'
+port = '{TaskServerConfig-PORT}'
 
 """
 

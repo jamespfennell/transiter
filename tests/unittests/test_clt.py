@@ -62,46 +62,7 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         self.flaskapp.launch.assert_called_once_with(True)
 
     def test_generate_config__default_case(self):
-        """[CLT] Generate config from default file"""
-        self.open.return_value = self._FakeContextManager(self.file_handle)
-
-        self._run(["generate-config"])
-
-        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, "x")
-        self.config.generate.assert_called_once_with(
-            database_config=self.database_config,
-            task_server_config=self.task_server_config,
-        )
-        self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
-
-    def test_generate_config__write_failure(self):
-        """[CLT] Generate config from default file - file exists and write fails"""
-        self.open.side_effect = FileExistsError
-
-        self._run(["generate-config"])
-
-        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, "x")
-        self.config.generate.assert_called_once_with(
-            database_config=self.database_config,
-            task_server_config=self.task_server_config,
-        )
-        self.file_handle.write.assert_not_called()
-
-    def test_generate_config__overwrite(self):
-        """[CLT] Generate config from default file - force overwrite"""
-        self.open.return_value = self._FakeContextManager(self.file_handle)
-
-        self._run(["generate-config", "-f"])
-
-        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, "w")
-        self.config.generate.assert_called_once_with(
-            database_config=self.database_config,
-            task_server_config=self.task_server_config,
-        )
-        self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
-
-    def test_generate_config__different_output(self):
-        """[CLT] Generate config from different file"""
+        """[CLT] Generate config, write to file"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
 
         self._run(["generate-config", "-o", self.CONFIG_FILE])
@@ -113,13 +74,52 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         )
         self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
 
-    def test_generate_config__custom_values(self):
-        """[CLT] Generate config from using current values"""
+    def test_generate_config__write_failure(self):
+        """[CLT] Generate config - file exists and write fails"""
+        self.open.side_effect = FileExistsError
+
+        self._run(["generate-config", "-o", self.CONFIG_FILE])
+
+        self.open.assert_called_once_with(self.CONFIG_FILE, "x")
+        self.config.generate.assert_called_once_with(
+            database_config=self.database_config,
+            task_server_config=self.task_server_config,
+        )
+        self.file_handle.write.assert_not_called()
+
+    def test_generate_config__overwrite(self):
+        """[CLT] Generate config - force overwrite"""
         self.open.return_value = self._FakeContextManager(self.file_handle)
 
-        self._run(["generate-config", "-u"])
+        self._run(["generate-config", "-o", self.CONFIG_FILE, "-f"])
 
-        self.open.assert_called_once_with(config.DEFAULT_FILE_PATH, "x")
+        self.open.assert_called_once_with(self.CONFIG_FILE, "w")
+        self.config.generate.assert_called_once_with(
+            database_config=self.database_config,
+            task_server_config=self.task_server_config,
+        )
+        self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
+
+    @mock.patch.object(clt, 'print')
+    def test_generate_config__different_output(self, print_):
+        """[CLT] Generate config, print to std out"""
+        self.open.return_value = self._FakeContextManager(self.file_handle)
+
+        self._run(["generate-config"])
+
+        self.config.generate.assert_called_once_with(
+            database_config=self.database_config,
+            task_server_config=self.task_server_config,
+        )
+        print_.assert_called_once_with(self.TOML_CONFIG)
+
+    def test_generate_config__custom_values(self):
+        """[CLT] Generate config using current values"""
+        self.open.return_value = self._FakeContextManager(self.file_handle)
+
+        self._run(["generate-config", "-o", self.CONFIG_FILE, "-u"])
+
+        self.open.assert_called_once_with(self.CONFIG_FILE, "x")
         self.config.generate.assert_called_once_with()
         self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
 
