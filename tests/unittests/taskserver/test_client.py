@@ -18,7 +18,7 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(self.RESPONSE, response)
 
-        rpyc.connect.assert_called_once_with("localhost", 12345)
+        rpyc.connect.assert_called_once()
         conn.root.refresh_tasks.assert_called_once_with()
 
     @mock.patch("transiter.taskserver.client.rpyc")
@@ -30,4 +30,4 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(False, response)
 
-        rpyc.connect.assert_called_once_with("localhost", 12345)
+        rpyc.connect.assert_called_once()
