@@ -32,6 +32,7 @@ import requests
 from requests import RequestException
 
 from transiter import models
+from transiter.data import dbconnection
 from transiter.data.dams import feeddam
 from . import gtfsrealtimeutil, gtfsstaticutil
 
@@ -50,11 +51,15 @@ def execute_feed_update(feed_update, content=None):
     """
     start_time = time.time()
     _execute_feed_update_helper(feed_update, content)
+    dbconnection.get_session().flush()
     feed_update.execution_duration = time.time() - start_time
     log_prefix = "[{}/{}]".format(feed_update.feed.system.id, feed_update.feed.id)
-    logger.debug(
-        "{} Feed update for took {} seconds".format(
-            log_prefix, feed_update.execution_duration
+    logger.info(
+        "Feed update: {:7} / {:13} {:.2f} seconds  {}.".format(
+            feed_update.status.name,
+            feed_update.explanation.name,
+            feed_update.execution_duration,
+            log_prefix,
         )
     )
 
@@ -192,7 +197,7 @@ def _get_content(feed: models.Feed):
     :param feed: the Feed
     :return: binary data
     """
-    request = requests.get(feed.url)
+    request = requests.get(feed.url, timeout=4)
     request.raise_for_status()
     return request.content
 

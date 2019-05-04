@@ -33,3 +33,13 @@ class TestTopologicalSort(unittest.TestCase):
             topologicalsort.sort,
             graph,
         )
+
+    def test_impossible_to_sort_three(self):
+        """[Topological sort] Impossible to sort, case 2"""
+        edges = [("a", "b"), ("a", "a")]
+        graph = graphdatastructs.construct_graph_from_edge_tuples(edges)
+        self.assertRaises(
+            topologicalsort.ImpossibleToTopologicallySortGraph,
+            topologicalsort.sort,
+            graph,
+        )

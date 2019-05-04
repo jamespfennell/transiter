@@ -12,12 +12,6 @@ def ensure_db_setup():
     if _db_setup:
         return
     _db_setup = True
-    # TODO: make the sqllite DB in memory?
-    toml_str = """
-    [database]
-    driver = 'sqlite'
-    name = 'temp.db'
-    """
     toml_str = """
     [database]
     driver = 'postgresql'

@@ -31,6 +31,7 @@ class TestUpdateManager(testutil.TestCase(updatemanager)):
 
         self.importlib = self.mockImportedModule(updatemanager.importlib)
         self.traceback = self.mockImportedModule(updatemanager.traceback)
+        self.dbconnection = self.mockImportedModule(updatemanager.dbconnection)
 
         self.built_in_parser = mock.MagicMock()
         updatemanager._built_in_parser_to_function[

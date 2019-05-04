@@ -205,7 +205,7 @@ def _build_feed_updates_report(before_datetime):
             table_system_id = ""
 
         if feed_update_data["status"] != status or table_feed_id != "":
-            status = table_status = feed_update_data["status"]
+            status = table_status = feed_update_data["status"].name
         else:
             table_status = ""
 
@@ -215,7 +215,7 @@ def _build_feed_updates_report(before_datetime):
                 system_id=table_system_id,
                 feed_id=table_feed_id,
                 status=table_status,
-                explanation=feed_update_data["explanation"],
+                explanation=feed_update_data["explanation"].name,
                 count=feed_update_data["count"],
                 avg_execution_duration="{:.2f}".format(
                     feed_update_data["avg_execution_duration"]

@@ -13,22 +13,6 @@ from transiter import models, config
 logger = logging.getLogger(__name__)
 
 
-def build_extra_engine_params_from_config(database_config):
-    """
-    Build additional engine parameters based on the configuration. This is to take
-    advantage of some optimizations available in specific driver.
-
-    :param database_config: the database config
-    :return: a dictionary of empty parameters
-    """
-    extra_params = {}
-    if database_config.DRIVER == "postgresql":
-        if database_config.DIALECT is None or database_config.DIALECT == "psycopg2":
-            extra_params["use_batch_mode"] = True
-    logger.debug("Extra connection params: " + str(extra_params))
-    return extra_params
-
-
 def create_engine():
     """
     Create a SQL Alchemy engine using config.DatabaseConfig.
@@ -46,8 +30,7 @@ def create_engine():
         port=config.DatabaseConfig.PORT,
         database=config.DatabaseConfig.NAME,
     )
-    extra_params = build_extra_engine_params_from_config(config.DatabaseConfig)
-    return sqlalchemy.create_engine(connection_url, **extra_params)
+    return sqlalchemy.create_engine(connection_url)
 
 
 engine = None

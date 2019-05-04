@@ -100,7 +100,7 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         )
         self.file_handle.write.assert_called_once_with(self.TOML_CONFIG)
 
-    @mock.patch.object(clt, 'print')
+    @mock.patch.object(clt, "print")
     def test_generate_config__different_output(self, print_):
         """[CLT] Generate config, print to std out"""
         self.open.return_value = self._FakeContextManager(self.file_handle)

@@ -257,7 +257,6 @@ class _GtfsRealtimeToTransiterTransformer:
         for trip_id, trip in self._trip_id_to_trip_model.items():
             index = trip.current_stop_sequence
             for stop_time_update in trip.stop_times:
-                # TODO: if not null, don't assign
                 stop_time_update.stop_sequence = index
                 index += 1
 

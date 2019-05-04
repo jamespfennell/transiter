@@ -1,31 +1,26 @@
+"""
+Transiter Task Server
+
+The task server is Python process that runs tasks periodically using APScheduler. It
+has an RPyC interface that enables a Transiter HTTP server to communicate with it.
+"""
 import logging
 import datetime
 import random
 import apscheduler.schedulers.background
 import rpyc.utils.server
 
+from transiter.services import feedservice
+from transiter import config
 
-def log(*args, **kwargs):
-    print("Recieved warning:")
-    print(args)
-
-    print(kwargs)
-    # raise ValueError
-
-
-# warnings.showwarning = log
-
-
-# TODO: catch handle apscheduler warnings about feed updates <- just set the period low to test
-# logger = logging.getLogger('apscheduler')
-# logger.setLevel(logging.DEBUG)
 
 logger = logging.getLogger("transiter")
 
-from transiter.services import feedservice
 
+scheduler = apscheduler.schedulers.background.BackgroundScheduler(
+    executors={"default": {"type": "threadpool", "max_workers": 20}}
+)
 
-scheduler = apscheduler.schedulers.background.BackgroundScheduler()
 feed_pk_to_auto_update_task = {}
 feed_update_trim_task = None
 
@@ -44,7 +39,6 @@ class Task:
 
 class IntervalTask(Task):
     def __init__(self, func, args, period):
-        # period = 1
         super().__init__(
             func,
             args,
@@ -71,15 +65,13 @@ class CronTask(Task):
 
 class FeedAutoUpdateTask(IntervalTask):
     def __init__(self, system_id, feed_id, period):
-        super().__init__(
-            # feedservice.test,
-            feedservice.create_feed_update,
-            [system_id, feed_id],
-            period,
-        )
+        super().__init__(feedservice.create_feed_update, [system_id, feed_id], period)
 
 
-def refresh_feed_auto_update_tasks(p=None):
+def refresh_feed_auto_update_tasks():
+    """
+    Refresh the task server's registry of auto update tasks.
+    """
     global feed_pk_to_auto_update_task
     feeds_data = feedservice.list_all_auto_updating()
     logger.info("Refreshing {} feed auto update tasks".format(len(feeds_data)))
@@ -87,8 +79,6 @@ def refresh_feed_auto_update_tasks(p=None):
     stale_feed_pks = set(feed_pk_to_auto_update_task.keys())
     for feed_data in feeds_data:
         period = feed_data["auto_update_period"]
-        if p is not None:
-            period = p
         auto_update_task = feed_pk_to_auto_update_task.get(feed_data["pk"], None)
         if auto_update_task is not None:
             auto_update_task.set_period(period)
@@ -104,9 +94,13 @@ def refresh_feed_auto_update_tasks(p=None):
 
 
 class TaskServer(rpyc.Service):
+    """
+    RPyC interface for the task server.
+    """
+
     def exposed_refresh_tasks(self):
         logger.info("Received external refresh tasks command")
-        refresh_feed_auto_update_tasks(30)
+        refresh_feed_auto_update_tasks()
         return True
 
     def exposed_update_feed(self, feed_pk):
@@ -114,7 +108,10 @@ class TaskServer(rpyc.Service):
         auto_update_task.run_now()
 
 
-def launch(force=False):
+def launch(__):
+    """
+    Launch the task server.
+    """
     logger.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     logger.addHandler(handler)
@@ -122,20 +119,16 @@ def launch(force=False):
         "%(asctime)s TS %(levelname)-5s [%(module)s] %(message)s"
     )
     handler.setFormatter(formatter)
-
-    global feed_update_trim_task, scheduler
     logger.info("Launching Transiter task server")
 
     logger.info("Launching background scheduler")
+    global feed_update_trim_task, scheduler
     scheduler.start()
-
     feed_update_trim_task = CronTask(feedservice.trim_feed_updates, [], minute="*/15")
     refresh_feed_auto_update_tasks()
 
     logger.info("Launching RPyC server")
-    server = rpyc.utils.server.ThreadedServer(TaskServer, port=12345)
+    server = rpyc.utils.server.ThreadedServer(
+        TaskServer, port=config.TaskServerConfig.PORT
+    )
     server.start()
-
-
-if __name__ == "__main__":
-    launch()

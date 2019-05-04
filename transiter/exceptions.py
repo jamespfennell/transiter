@@ -70,7 +70,6 @@ class ConfigFileNotFoundError(_TransiterException):
     message = "The Transiter config file could not be found!"
 
 
-# TODO: accept the ID and type and rename EntityNotFound
 class IdNotFoundError(_TransiterException):
     """
     Exception that is raised when a specific DB entity could not be found.

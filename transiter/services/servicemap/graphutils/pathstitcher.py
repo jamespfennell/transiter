@@ -53,6 +53,8 @@ def stitch(paths) -> graphdatastructs.DirectedGraph:
             last_path_vertex_already_in_graph = first_vertex
 
         for (v_1, v_2) in path.edges():
+            if v_1.label == v_2.label:
+                continue
             graph_v_1 = graph_vertices_by_label[v_1.label]
             if v_2.label not in graph_vertices_by_label:
                 # print('creating {}'.format(v_2.stop_id))
@@ -66,9 +68,10 @@ def stitch(paths) -> graphdatastructs.DirectedGraph:
 
             graph_v_2 = graph_vertices_by_label[v_2.label]
 
-            if v_1 == last_path_vertex_already_in_graph:
-                last_path_vertex_already_in_graph = v_2
-                continue
+            if last_path_vertex_already_in_graph is not None:
+                if v_1.label == last_path_vertex_already_in_graph.label:
+                    last_path_vertex_already_in_graph = v_2
+                    continue
 
             graph_v_1.next.add(graph_v_2)
             graph_v_2.prev.add(graph_v_1)

@@ -32,10 +32,7 @@ class TripStopTime(Base):
 
     stop = relationship("Stop", back_populates="trip_times", cascade=None)
     trip = relationship(
-        "Trip",
-        back_populates="stop_times",
-        cascade=None,
-        cascade_backrefs=False,
+        "Trip", back_populates="stop_times", cascade=None, cascade_backrefs=False
     )
 
     __table_args__ = (
@@ -43,4 +40,4 @@ class TripStopTime(Base):
         Index("trip_stop_time_stop_pk_arrival_time_idx", stop_pk, arrival_time),
     )
 
-    _short_repr_list = [arrival_time, departure_time, track, future]
+    _short_repr_list = [arrival_time, departure_time, track, future, stop_sequence]

@@ -62,7 +62,7 @@ def launch(force, server):
 @click.option(
     "-o",
     "--output-file",
-    default=None, #config.DEFAULT_FILE_PATH,
+    default=None,  # config.DEFAULT_FILE_PATH,
     show_default=True,
     help="Path to output the config file to.",
 )
