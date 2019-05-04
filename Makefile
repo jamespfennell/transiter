@@ -23,3 +23,9 @@ clean:
 
 black:
 	black {transiter,tests,*py}
+
+package:
+	python setup.py sdist bdist_wheel
+
+distribute:
+	python -m twine upload dist/*

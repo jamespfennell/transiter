@@ -5,3 +5,6 @@ coverage
 nose
 rednose
 black
+setuptools
+wheel
+twine
