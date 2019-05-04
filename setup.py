@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="Transiter",
-    version="0.1dev",
+    version="0.2dev",
     packages=find_packages(),
     license="MIT",
     entry_points={"console_scripts": ["transiterclt = transiter.clt:transiter_clt"]},
