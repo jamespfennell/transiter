@@ -5,6 +5,7 @@ import logging
 
 import rpyc
 
+from transiter import config
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +28,7 @@ def update_feed(feed_pk):
 
 def _run(func_name, *args, **kwargs):
     try:
-        conn = rpyc.connect("localhost", 12345)
+        conn = rpyc.connect("localhost", config.TaskServerConfig.PORT)
         func = getattr(conn.root, func_name)
         return func(*args, **kwargs)
     except ConnectionRefusedError:
