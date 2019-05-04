@@ -14,7 +14,7 @@ install:
 script:
   - pip install -r dev-requirements.txt
   - make unit-tests
-  - TRANSITER_CONFIG=tests/integrationtest/transiter-config-postgres.toml make db-tests
+  - TRANSITER_CONFIG=tests/integrationtest/transiter-config.toml make db-tests
   - make integration-tests
 after_success:
   - coveralls
