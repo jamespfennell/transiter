@@ -25,7 +25,8 @@ black:
 	black {transiter,tests,*py}
 
 package:
+	rm dist/*
 	python setup.py sdist bdist_wheel
 
 distribute:
-	python -m twine upload dist/*
+	twine upload dist/*

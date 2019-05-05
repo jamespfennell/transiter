@@ -21,12 +21,14 @@ You can get a sense for the data that's available by navigating through the
         
 
     
+Version 0.1 of Transiter has been released and is now on PyPI:
 
-Transiter is currently in the initial development phase.
-Version 0.1 will be somewhere between a refactor and a total rewrite of the
-current backend of the [realtimerail.nyc web app](https://www.realtimerail.nyc).
+    pip install transiter
+    
+The current focus is on producing documentation so
+Transiter can actually be used.
 
-[Documentation for Transiter](https://docs.transiter.io) (lots of work to be done here).
+[Documentation website](https://docs.transiter.io).
 
 ## Development indicators
 
@@ -34,16 +36,3 @@ current backend of the [realtimerail.nyc web app](https://www.realtimerail.nyc).
 [![Documentation Status](https://readthedocs.org/projects/transiter/badge/?version=latest)](https://docs.transiter.io)
 [![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master&service=github)](https://coveralls.io/github/jamespfennell/transiter?branch=master) 
 
-## Deployment notes
-
-- Install Postgres 
-    - Create a user and allow them to create DBs
-    - Set the username and DB name through environment variables, default
-        to transiter/transiter.   
-    -Then initialize the DB - how! Should add a command
-    transiter-builddb.
-
-- Install gunicorn and use supervisor to run the gunicorn process
-    and the transiter-task process.
- 
-- Install nginx and reverse proxy to Gunicorn (post config)

@@ -180,7 +180,11 @@ class _SystemConfig:
 
             self.required_for_install = raw_dict.get("required_for_install", False)
             if self.required_for_install:
-                if "file_upload_fallback" in raw_dict:
+                file_upload_fallback = raw_dict.get("file_upload_fallback", None)
+                if (
+                    file_upload_fallback is not None
+                    and file_upload_fallback in raw_dict
+                ):
                     self.file_upload_fallback = extra_files[
                         raw_dict["file_upload_fallback"]
                     ]
