@@ -1,7 +1,6 @@
 services:
   - postgresql
 language: python
-# sudo: required
 dist: xenial
 python: "3.6"
 before_script:
