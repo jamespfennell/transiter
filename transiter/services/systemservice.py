@@ -183,7 +183,7 @@ class _SystemConfig:
                 file_upload_fallback = raw_dict.get("file_upload_fallback", None)
                 if (
                     file_upload_fallback is not None
-                    and file_upload_fallback in raw_dict
+                    and file_upload_fallback in extra_files
                 ):
                     self.file_upload_fallback = extra_files[
                         raw_dict["file_upload_fallback"]
