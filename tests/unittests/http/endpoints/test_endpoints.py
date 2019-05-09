@@ -274,12 +274,8 @@ class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
 class TestFlaskApp(testutil.TestCase(flaskapp)):
     COMMIT_HASH = "b7e35a125f4c539c37deaf3a6ac72bd408097131"
 
-    def setUp(self):
-        self.subprocess = self.mockImportedModule(flaskapp.subprocess)
-
     def test_root(self):
         """[Flask app] Test accessing root"""
-        self.subprocess.check_output.return_value = self.COMMIT_HASH.encode("utf-8")
 
         expected_code = 200
 
