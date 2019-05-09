@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
+import re
 
+with open("transiter/metadata.py") as f:
+    pattern = 'VERSION = "(?P<h>[0-9.]+)"'
+    match = re.match(pattern, f.read())
+    version = match.group("h")
 
 setup(
     name="transiter",
-    version="0.1.2",
+    version=version,
     author="James Fennell",
     author_email="jamespfennell@gmail.com",
     description="HTTP web service for transit data",

@@ -2,7 +2,7 @@ services:
   - postgresql
 language: python
 dist: xenial
-python: "3.6"
+python: "3.5"
 before_script:
 - psql -c 'create database transiter_test_db;' -U postgres
 - psql -c 'create database transiter_test_db_2;' -U postgres

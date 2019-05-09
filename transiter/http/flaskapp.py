@@ -4,11 +4,10 @@ server. All other HTTP endpoints are linked to the app via blueprints in this
 module.
 """
 import logging
-import subprocess
 
 import flask
 
-from transiter import exceptions
+from transiter import exceptions, metadata
 from transiter.http import endpoints
 from transiter.http.httpmanager import http_endpoint, http_response
 from transiter.services import links
@@ -61,7 +60,6 @@ def root():
             "software": {
                 "name": "Transiter",
                 "version": "0.1",
-                "commit_hash": "b7e35a125f4c539c37deaf3a6ac72bd408097131",
                 "href": "https://github.com/jamespfennell/transiter"
             },
             "systems": {
@@ -70,19 +68,9 @@ def root():
         }
     """
     return_links = False
-    try:
-        commit_hash = (
-            subprocess.check_output(["git", "rev-parse", "HEAD"])
-            .decode("utf-8")
-            .strip()
-        )
-    except:
-        commit_hash = None
     response = {
-        "software": {
-            "name": "Transiter",
-            "version": "0.1",
-            "commit_hash": commit_hash,
+        "transiter": {
+            "version": metadata.VERSION,
             "href": "https://github.com/jamespfennell/transiter",
         },
         "systems": {"count": 0},

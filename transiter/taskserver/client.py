@@ -6,6 +6,7 @@ import logging
 import rpyc
 
 from transiter import config
+
 logger = logging.getLogger(__name__)
 
 

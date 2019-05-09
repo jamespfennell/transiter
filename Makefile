@@ -25,7 +25,7 @@ black:
 	black {transiter,tests,*py}
 
 package:
-	rm dist/*
+	rm -f dist/*
 	python setup.py sdist bdist_wheel
 
 distribute:
