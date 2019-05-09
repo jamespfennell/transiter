@@ -4,7 +4,6 @@ sphinxcontrib-httpdomain==1.7.0
 coverage
 nose
 rednose
-black
 setuptools
 wheel
 twine

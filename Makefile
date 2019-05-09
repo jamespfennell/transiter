@@ -22,6 +22,7 @@ clean:
 	git clean -dnX
 
 black:
+	pip install black
 	black {transiter,tests,*py}
 
 package:
