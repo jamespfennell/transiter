@@ -10,7 +10,7 @@ from transiter import models
 from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
 from transiter.services.servicemap import graphutils
 
-logger = logging.Logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def build_stop_pk_to_service_maps_response(stop_pks):
