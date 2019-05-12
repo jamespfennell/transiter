@@ -4,10 +4,13 @@ maps
 """
 import datetime
 import json
+import logging
 
 from transiter import models
 from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
 from transiter.services.servicemap import graphutils
+
+logger = logging.Logger(__name__)
 
 
 def build_stop_pk_to_service_maps_response(stop_pks):
@@ -66,6 +69,9 @@ def calculate_realtime_service_map_for_route(route):
         if not trip.direction_id:
             path.reverse()
         paths.add(tuple(stop_pk_to_station_pk[stop_pk] for stop_pk in path))
+    logger.info('Building service map for route {} with paths\n{}'.format(
+        route.id, paths
+    ))
     service_map = _build_service_map_from_paths(paths)
     service_map.route = route
     service_map.group = realtime_service_map

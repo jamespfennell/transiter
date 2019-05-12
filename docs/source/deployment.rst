@@ -91,6 +91,8 @@ HTTP service::
 Installing your first Transit system
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+NOTE: right now the flask app is not visible outside the server!
+
 The debug HTTP server launches on port 5000.
 Navigating in your browser to the URL, ::
 
@@ -182,6 +184,11 @@ Gunicorn::
 
      gunicorn transiter:wsgi_app
 
+Gunicorn timeout issue
+
+Transiter task server port needs to be an integer
+
+Postgres - need to think about authentication
 
 Supervisor configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
