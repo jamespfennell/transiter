@@ -135,6 +135,15 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
     for feed_trip in feed_trips:
         if len(feed_trip.stop_times) == 0:
             continue
+
+        # Used to ensure that duplicate stops are not put into the DB. This is a
+        # safety measure until #36 is resolved.
+        future_stop_pks = set()
+        for future_stop_time in feed_trip.stop_times:
+            stop_pk = stop_id_to_pk.get(future_stop_time.stop_id, None)
+            if stop_pk is not None:
+                future_stop_pks.add(stop_pk)
+
         first_future_stop_sequence = feed_trip.stop_times[0].stop_sequence
         feed_stop_times = []
         trip = trip_id_to_trip.get(feed_trip.id, None)
@@ -143,13 +152,23 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
             feed_trip.pk = trip.pk
             for stop_time in trip.stop_times:
                 stop_sequence_to_stop_time_pk[stop_time.stop_sequence] = stop_time.pk
+            # Prepend the trip by all stop times that have a lower stop_sequence
+            # and do not contain any stops that are also in the future. This is a
+            # safety measure until #36 is resolved.
+            for stop_time in trip.stop_times:
                 if stop_time.stop_sequence >= first_future_stop_sequence:
-                    continue
+                    break
+                if stop_time.stop_pk in future_stop_pks:
+                    break
                 feed_stop_times.append(
                     models.TripStopTime(
-                        pk=stop_time.pk, stop_pk=stop_time.stop_pk, future=False
+                        pk=stop_time.pk,
+                        stop_pk=stop_time.stop_pk,
+                        future=False,
+                        stop_sequence=stop_time.stop_sequence,
                     )
                 )
+                del stop_sequence_to_stop_time_pk[stop_time.stop_sequence]
 
         for feed_stop_time in feed_trip.stop_times:
             stop_pk = stop_id_to_pk.get(feed_stop_time.stop_id, None)
@@ -159,6 +178,8 @@ def _sync_trips_in_route(route, feed_trips, stop_id_to_pk):
             stop_time_pk = stop_sequence_to_stop_time_pk.get(
                 feed_stop_time.stop_sequence, None
             )
+            if stop_time_pk is not None:
+                del stop_sequence_to_stop_time_pk[feed_stop_time.stop_sequence]
             if stop_time_pk is not None:
                 feed_stop_time.pk = stop_time_pk
 

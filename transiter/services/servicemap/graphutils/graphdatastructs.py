@@ -61,17 +61,11 @@ class DirectedGraph:
         return edges
 
     def is_path(self):
-        if len(self.sources) == 0:
+        try:
+            self.cast_to_path()
             return True
-
-        if len(self.sources) > 1:
+        except NotCastableAsAPathError:
             return False
-        vertex = next(iter(self.sources))
-        while len(vertex.next) > 0:
-            if len(vertex.next) > 1:
-                return False
-            vertex = next(iter(vertex.next))
-        return True
 
     def cast_to_path(self) -> DirectedPath:
         """
@@ -80,6 +74,7 @@ class DirectedGraph:
         Raises NotCastableAsPathError if this is not possible! Consider using
         is_path instead for test for this case.
         """
+        visited_labels = set()
         if len(self.sources) == 0:
             return DirectedPath([])
         if len(self.sources) > 1:
@@ -87,6 +82,9 @@ class DirectedGraph:
         vertex = next(iter(self.sources))
         label_list = [vertex.label]
         while len(vertex.next) > 0:
+            if vertex.label in visited_labels:
+                raise NotCastableAsAPathError()
+            visited_labels.add(vertex.label)
             if len(vertex.next) > 1:
                 raise NotCastableAsAPathError()
             vertex = next(iter(vertex.next))

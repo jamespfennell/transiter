@@ -190,6 +190,18 @@ Transiter task server port needs to be an integer
 
 Postgres - need to think about authentication
 
+After an hour or two there should be almost no realtime service maps
+being recalculated
+
+For NYC subway there should never be a topological sort problem -
+if there is, it's caused by Transiter
+
+Also the bug with the direction of NYC trips
+
+Need to think about the best way to fix the gnarly NYCT issue
+
+Error with the Alerts header in NYCT
+
 Supervisor configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

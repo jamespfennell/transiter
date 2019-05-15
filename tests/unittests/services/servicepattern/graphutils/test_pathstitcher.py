@@ -48,11 +48,6 @@ class TestPathSticher(unittest.TestCase):
         self.paths = [["a", "b", "c"], ["z", "a", "b"]]
         self.edges = {("z", "a"), ("a", "b"), ("b", "c")}
 
-    def test_stitch_9(self):
-        """[Path stitcher] case 9"""
-        self.paths = [["a", "b", "b"], ["a", "a", "b"], ["a", "b"]]
-        self.edges = {("a", "b")}
-
     def test_stitch_10(self):
         """[Path stitcher] case 10"""
         self.paths = [["a", "b"]]

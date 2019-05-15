@@ -229,6 +229,7 @@ class _GtfsRealtimeToTransiterTransformer:
             if raw_current_status is not None:
                 trip.current_status = trip.TripStatus[raw_current_status]
             trip.current_stop_sequence = vehicle_data.get("current_stop_sequence", 0)
+            trip.current_stop_id = vehicle_data.get("stop_id", None)
             self._trip_id_to_trip_model[trip_id] = trip
             self._feed_route_ids.add(trip.route_id)
 

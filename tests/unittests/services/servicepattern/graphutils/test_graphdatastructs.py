@@ -13,6 +13,8 @@ class TestGraphDataStructs(unittest.TestCase):
         self.graph_3 = graphdatastructs.construct_graph_from_edge_tuples(edges)
         edges = [("a", "b"), ("b", "c"), ("c", "a")]
         self.graph_4 = graphdatastructs.construct_graph_from_edge_tuples(edges)
+        edges = [("a", "b"), ("b", "c"), ("c", "d"), ("d", "b")]
+        self.graph_5 = graphdatastructs.construct_graph_from_edge_tuples(edges)
 
     def test_is_path_1(self):
         """[Graph data structs] Is path - true"""
@@ -32,6 +34,10 @@ class TestGraphDataStructs(unittest.TestCase):
         # https://github.com/jamespfennell/transiter/issues/8
         self.assertTrue(self.graph_4.is_path())
         self.graph_4.cast_to_path()
+
+    def test_is_path_5(self):
+        """[Graph data structs] Test is path - loop inside"""
+        self.assertFalse(self.graph_5.is_path())
 
     def test_cast_to_path_1(self):
         """[Graph data structs] Case to path - works"""

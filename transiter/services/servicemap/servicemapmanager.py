@@ -69,10 +69,16 @@ def calculate_realtime_service_map_for_route(route):
         if not trip.direction_id:
             path.reverse()
         paths.add(tuple(stop_pk_to_station_pk[stop_pk] for stop_pk in path))
-    logger.info('Building service map for route {} with paths\n{}'.format(
-        route.id, paths
-    ))
-    service_map = _build_service_map_from_paths(paths)
+    logger.info("Building realtime service map for route {}.".format(route.id))
+    try:
+        service_map = _build_service_map_from_paths(paths)
+    except graphutils.topologicalsort.ImpossibleToTopologicallySortGraph:
+        logger.exception(
+            "Could not topologically sort:\n{}".format(
+                json.dumps(list(paths))
+            )  # list(paths), indent=2))
+        )
+        raise
     service_map.route = route
     service_map.group = realtime_service_map
 

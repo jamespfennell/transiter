@@ -127,7 +127,7 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
             self.SYSTEM_ID, self.FEED_ONE_ID
         )
         self.updatemanager.execute_feed_update.assert_called_once_with(
-            self.feed_update_one
+            self.feed_update_one, None
         )
 
     def test_create_feed_update__no_such_feed(self):

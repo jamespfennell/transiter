@@ -1,4 +1,5 @@
 import unittest
+
 from transiter.services.servicemap.graphutils import graphdatastructs, topologicalsort
 
 
@@ -37,16 +38,6 @@ class TestTopologicalSort(unittest.TestCase):
     def test_impossible_to_sort_three(self):
         """[Topological sort] Impossible to sort, case 3"""
         edges = [("a", "b"), ("a", "a")]
-        graph = graphdatastructs.construct_graph_from_edge_tuples(edges)
-        self.assertRaises(
-            topologicalsort.ImpossibleToTopologicallySortGraph,
-            topologicalsort.sort,
-            graph,
-        )
-
-    def test_impossible_to_sort_four(self):
-        """[Topological sort] Impossible to sort, case 4"""
-        edges = [("a", "b"), ("b", "c"), ("c", "d"), ("d", "c")]
         graph = graphdatastructs.construct_graph_from_edge_tuples(edges)
         self.assertRaises(
             topologicalsort.ImpossibleToTopologicallySortGraph,

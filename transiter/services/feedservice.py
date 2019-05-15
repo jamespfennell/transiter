@@ -90,7 +90,7 @@ def get_in_system_by_id(system_id, feed_id, return_links=False):
 
 
 @dbconnection.unit_of_work
-def create_feed_update(system_id, feed_id):
+def create_feed_update(system_id, feed_id, content=None):
     """
     Create a feed update for a feed in a system.
 
@@ -98,6 +98,7 @@ def create_feed_update(system_id, feed_id):
     :type system_id: str
     :param feed_id: the feed ID
     :type feed_id: str
+    :param content: the content to use for the feed update.
     :return: the feed update's long representation.
     :rtype: dict
     """
@@ -105,7 +106,7 @@ def create_feed_update(system_id, feed_id):
     if feed is None:
         raise exceptions.IdNotFoundError
     feed_update = models.FeedUpdate(feed)
-    updatemanager.execute_feed_update(feed_update)
+    updatemanager.execute_feed_update(feed_update, content)
     return {**feed_update.long_repr()}
 
 
