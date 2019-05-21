@@ -91,10 +91,13 @@ def http_endpoint(flask_entity, flask_rule, request_type=RequestType.GET):
     """
     http_method = request_type.value
     flask_decorator = flask_entity.route(flask_rule, methods=[http_method.value])
+    flask_decorator_with_slash = flask_entity.route(
+        flask_rule + "/", methods=[http_method.value]
+    )
     custom_decorator = http_response(request_type)
 
     def composed_decorator(func):
-        return flask_decorator(custom_decorator(func))
+        return flask_decorator_with_slash(flask_decorator(custom_decorator(func)))
 
     return composed_decorator
 
@@ -263,6 +266,9 @@ def _transiter_json_serializer(obj):
 
     if isinstance(obj, links.Link):
         target = _link_type_to_target[type(obj)]
+        custom_host = flask.request.headers.get('X-Transiter-Host')
+        if custom_host is not None:
+            return custom_host + flask.url_for(target, _external=False, **obj.kwargs)
         return flask.url_for(target, _external=True, **obj.kwargs)
 
     raise TypeError("Type {} not serializable".format(type(obj)))
