@@ -52,6 +52,8 @@ class TestBasicModel(unittest.TestCase):
             name = Column(String)
 
         test_model = TestModel()
+        test_model.id = "L"
+        test_model.name = "James"
 
         self.assertRaises(NotImplementedError, test_model.short_repr)
 
