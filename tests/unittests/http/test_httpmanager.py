@@ -61,6 +61,7 @@ class TestHttpManager(testutil.TestCase(httpmanager), unittest.TestCase):
         def entity():
             pass
 
+        self.flask.request.headers = {}
         self.flask.url_for.return_value = self.FAKE_URL
 
         actual_url = httpmanager._transiter_json_serializer(FakeLink())
@@ -69,6 +70,27 @@ class TestHttpManager(testutil.TestCase(httpmanager), unittest.TestCase):
 
         self.flask.url_for.assert_called_once_with(
             "{}.{}".format(__name__, entity.__name__), _external=True
+        )
+
+    def test_json_serialization__links_with_host(self):
+        """[HTTP Manager] JSON serialization of Links with custom host"""
+
+        class FakeLink(links.Link):
+            pass
+
+        @httpmanager.link_target(FakeLink)
+        def entity():
+            pass
+
+        self.flask.request.headers = {"X-Transiter-Host": "myhost"}
+        self.flask.url_for.return_value = self.FAKE_URL
+
+        actual_url = httpmanager._transiter_json_serializer(FakeLink())
+
+        self.assertEqual("myhost" + self.FAKE_URL, actual_url)
+
+        self.flask.url_for.assert_called_once_with(
+            "{}.{}".format(__name__, entity.__name__), _external=False
         )
 
     def test_json_serialization__datetimes(self):

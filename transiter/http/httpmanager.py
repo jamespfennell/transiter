@@ -266,7 +266,7 @@ def _transiter_json_serializer(obj):
 
     if isinstance(obj, links.Link):
         target = _link_type_to_target[type(obj)]
-        custom_host = flask.request.headers.get('X-Transiter-Host')
+        custom_host = flask.request.headers.get("X-Transiter-Host")
         if custom_host is not None:
             return custom_host + flask.url_for(target, _external=False, **obj.kwargs)
         return flask.url_for(target, _external=True, **obj.kwargs)
