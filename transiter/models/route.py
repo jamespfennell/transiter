@@ -29,5 +29,5 @@ class Route(Base):
         "Alert", secondary="alert_route", back_populates="routes"
     )
 
-    _short_repr_list = [id]
+    _short_repr_list = [id, color]
     _long_repr_list = [id, short_name, long_name, color, description, url]

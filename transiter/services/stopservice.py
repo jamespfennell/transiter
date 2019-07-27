@@ -371,6 +371,10 @@ class _TripStopTimeFilter:
         else:
             this_time = trip_stop_time.departure_time.timestamp()
 
+        # If the trip arrived before 30 seconds ago, exclude
+        if this_time < time.time() - 30:
+            return True
+
         # Rules for whether to append or not go here
         # If any of these condition are met the stop event will be appended
         # If there are less that 4 trip in this direction so far
