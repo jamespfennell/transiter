@@ -2,6 +2,7 @@ import unittest
 import unittest.mock as mock
 
 from transiter.http import permissions
+
 from transiter import exceptions
 from transiter.http import flaskapp
 from transiter.http.endpoints import (
@@ -38,11 +39,17 @@ class _TestEndpoints(unittest.TestCase):
         self.ensure = patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = mock.patch("transiter.http.httpmanager._get_all_request_args")
+        self.get_all_request_args = patcher.start()
+        self.get_all_request_args.return_value = {}
+        self.addCleanup(patcher.stop)
+
     def _test_endpoint(
         self,
         endpoint_function,
         service_function,
         args,
+        kwargs,
         service_response,
         endpoint_response,
     ):
@@ -56,22 +63,28 @@ class _TestEndpoints(unittest.TestCase):
         self.assertEqual(actual, endpoint_response)
         if endpoint_response != "":
             self.convert_to_json.assert_called_once_with(service_response)
-        service_function.assert_called_once_with(*args)
+        service_function.assert_called_once_with(*args, **kwargs)
 
-    def _test_response_endpoint(self, endpoint_function, service_function, args=()):
+    def _test_response_endpoint(
+        self, endpoint_function, service_function, args=(), kwargs={}
+    ):
         self._test_endpoint(
             endpoint_function,
             service_function,
             args,
+            kwargs,
             self.SERVICE_RESPONSE,
             self.JSON_RESPONSE,
         )
 
-    def _test_no_response_endpoint(self, endpoint_function, service_function, args=()):
+    def _test_no_response_endpoint(
+        self, endpoint_function, service_function, args=(), kwargs={}
+    ):
         self._test_endpoint(
             endpoint_function,
             service_function,
             args,
+            kwargs,
             self.SERVICE_NO_RESPONSE,
             self.JSON_NO_RESPONSE,
         )
@@ -191,6 +204,7 @@ class TestStopEndpoints(testutil.TestCase(stopendpoints), _TestEndpoints):
             stopendpoints.get_in_system_by_id,
             self.stopservice.get_in_system_by_id,
             (self.SYSTEM_ID, self.STOP_ID),
+            {"earliest_time": None, "latest_time": None},
         )
 
 

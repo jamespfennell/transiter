@@ -1,3 +1,7 @@
+import datetime
+
+from sqlalchemy import sql
+
 from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
@@ -35,7 +39,7 @@ def get_id_to_pk_map_in_system(system_id, stop_ids=None):
     return genericqueries.get_id_to_pk_map(models.Stop, system_id, stop_ids)
 
 
-def list_stop_time_updates_at_stops(stop_pks):
+def list_stop_time_updates_at_stops(stop_pks, earliest_time=None, latest_time=None):
     """
     List the future TripStopTimes for a collection of stops.
 
@@ -43,7 +47,7 @@ def list_stop_time_updates_at_stops(stop_pks):
     the arrival time.
 
     :param stop_pks: collection of stop PKs
-    :return: list of futre TripStopTimes
+    :return: list of future TripStopTimes
     """
     session = dbconnection.get_session()
     query = (
@@ -53,6 +57,23 @@ def list_stop_time_updates_at_stops(stop_pks):
         .order_by(models.TripStopTime.departure_time)
         .order_by(models.TripStopTime.arrival_time)
     )
+
+    if earliest_time is not None:
+        earliest_datetime = datetime.datetime.fromtimestamp(float(earliest_time))
+        query = query.filter(
+            sql.or_(
+                models.TripStopTime.departure_time >= earliest_datetime,
+                models.TripStopTime.arrival_time >= earliest_datetime,
+            )
+        )
+    if latest_time is not None:
+        latest_datetime = datetime.datetime.fromtimestamp(float(latest_time))
+        query = query.filter(
+            sql.or_(
+                models.TripStopTime.departure_time <= latest_datetime,
+                models.TripStopTime.arrival_time <= latest_datetime,
+            )
+        )
     return query.all()
 
 

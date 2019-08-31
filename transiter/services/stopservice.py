@@ -43,7 +43,12 @@ def list_all_in_system(system_id, return_links=False):
 
 @dbconnection.unit_of_work
 def get_in_system_by_id(
-    system_id, stop_id, return_links=False, return_only_stations=True
+    system_id,
+    stop_id,
+    return_links=False,
+    return_only_stations=True,
+    earliest_time=None,
+    latest_time=None,
 ):
     """
     Get information about a specific stop.
@@ -67,7 +72,9 @@ def get_in_system_by_id(
         )
     )
     trip_stop_times = stopdam.list_stop_time_updates_at_stops(
-        stop.pk for stop in descendant_stops
+        (stop.pk for stop in descendant_stops),
+        earliest_time=earliest_time,
+        latest_time=latest_time,
     )
     trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
         trip_stop_time.trip.pk for trip_stop_time in trip_stop_times
@@ -89,11 +96,8 @@ def get_in_system_by_id(
             "stop_time_updates": [],
         }
     )
-    stop_event_filter = _TripStopTimeFilter()
     for trip_stop_time in trip_stop_times:
         direction_name = direction_name_matcher.match(trip_stop_time)
-        if stop_event_filter.exclude(trip_stop_time, direction_name):
-            continue
         response["stop_time_updates"].append(
             _build_trip_stop_time_response(
                 trip_stop_time, direction_name, trip_pk_to_last_stop, return_links
@@ -346,56 +350,3 @@ class _DirectionNameMatcher:
                 break
 
         return self._cache[cache_key]
-
-
-class _TripStopTimeFilter:
-    """
-    This filter is used to exclude trip stop times based on certain criteria.
-    """
-
-    def __init__(self):
-        """
-        Initialize a new filter.
-        """
-        self._count = {}
-        self._route_ids_so_far = {}
-
-    def exclude(self, trip_stop_time, direction_name):
-        """
-        Whether to exclude this trip stop time from the response.
-        """
-        self._add_direction_name(direction_name)
-
-        if trip_stop_time.departure_time is None:
-            this_time = trip_stop_time.arrival_time.timestamp()
-        else:
-            this_time = trip_stop_time.departure_time.timestamp()
-
-        # If the trip arrived before 30 seconds ago, exclude
-        if this_time < time.time() - 30:
-            return True
-
-        # Rules for whether to append or not go here
-        # If any of these condition are met the stop event will be appended
-        # If there are less that 4 trip in this direction so far
-        condition1 = self._count[direction_name] <= 3
-        # If this trip is coming within 5 minutes
-        condition2 = this_time - time.time() <= 600
-        # If no trips of this route have been added so far
-        condition3 = (
-            trip_stop_time.trip.route.id not in self._route_ids_so_far[direction_name]
-        )
-
-        self._count[direction_name] += 1
-        self._route_ids_so_far[direction_name].add(trip_stop_time.trip.route.id)
-
-        return not (condition1 or condition2 or condition3)
-
-    def _add_direction_name(self, direction_name):
-        """
-        Add a direction name to the internal data structures.
-        """
-        if direction_name in self._count:
-            return
-        self._count[direction_name] = 0
-        self._route_ids_so_far[direction_name] = set()

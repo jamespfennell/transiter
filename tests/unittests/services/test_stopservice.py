@@ -70,49 +70,6 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.assertEqual(direction_name, self.DIRECTION_NAME)
 
 
-class TestTripStopTimeFilter(unittest.TestCase):
-    DIRECTION_NAME = "1"
-    DATETIME_ONE = datetime.datetime(2000, 1, 1, 1, 0, 0)
-    DATETIME_TWO = datetime.datetime(2000, 1, 1, 2, 0, 0)
-    ROUTE_ID = "1"
-
-    def setUp(self):
-        self.stop_event_filter = stopservice._TripStopTimeFilter()
-        self.stop_event = models.TripStopTime()
-        self.stop_event.arrival_time = self.DATETIME_ONE
-        self.stop_event.trip = models.Trip()
-        self.stop_event.trip.route = models.Route()
-        self.stop_event.trip.route_id = self.ROUTE_ID
-
-    def test_add_direction_name(self):
-        """[Stop service] Add direction name"""
-        self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
-
-        self.assertDictEqual(self.stop_event_filter._count, {self.DIRECTION_NAME: 0})
-        self.assertDictEqual(
-            self.stop_event_filter._route_ids_so_far, {self.DIRECTION_NAME: set()}
-        )
-
-    def test_add_direction_name_already_added(self):
-        """[Stop service] Add direction name - already added"""
-        self.stop_event_filter._count[self.DIRECTION_NAME] = 50
-        self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
-
-        self.assertDictEqual(self.stop_event_filter._count, {self.DIRECTION_NAME: 50})
-
-    @mock.patch.object(stopservice, "time")
-    def test_exclude_route_not_there_yet(self, time):
-        """[Stop service] Exclude route not there yet"""
-        self.stop_event_filter._add_direction_name(self.DIRECTION_NAME)
-        self.stop_event_filter._count[self.DIRECTION_NAME] = 100
-        time.time.return_value = self.DATETIME_ONE.timestamp()
-        self.stop_event.departure_time = self.DATETIME_ONE
-
-        exclude = self.stop_event_filter.exclude(self.stop_event, self.DIRECTION_NAME)
-
-        self.assertFalse(exclude)
-
-
 class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
     SYSTEM_ID = "1"
     STOP_ONE_ID = "2"
@@ -168,7 +125,6 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
             lambda: stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID),
         )
 
-    @mock.patch.object(stopservice, "_TripStopTimeFilter")
     @mock.patch.object(stopservice, "_DirectionNameMatcher")
     @mock.patch.object(stopservice, "_build_trip_stop_time_response")
     @mock.patch.object(stopservice, "_build_stop_tree_response")
@@ -177,7 +133,6 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         _build_stop_tree_response,
         _build_trip_stop_time_response,
         _DirectionNameMatcher,
-        _TripStopTimeFilter,
     ):
         """[Stop service] Get stop"""
 
@@ -190,10 +145,6 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         _DirectionNameMatcher.return_value = direction_name_matcher
         direction_name_matcher.match.return_value = self.DIRECTION_NAME
         direction_name_matcher.all_names.return_value = [self.DIRECTION_NAME]
-
-        stop_time_filter = mock.MagicMock()
-        _TripStopTimeFilter.return_value = stop_time_filter
-        stop_time_filter.exclude = lambda x, __: x.pk == self.TRIP_STOP_TIME_ONE_PK
 
         _build_stop_tree_response.return_value = fake_stop_tree_response
         _build_trip_stop_time_response.return_value = fake_trip_stop_time_response
@@ -222,7 +173,10 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         expected = {
             **fake_stop_tree_response,
             "direction_names": [self.DIRECTION_NAME],
-            "stop_time_updates": [{**fake_trip_stop_time_response}],
+            "stop_time_updates": [
+                {**fake_trip_stop_time_response},
+                {**fake_trip_stop_time_response},
+            ],
         }
 
         actual = stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)

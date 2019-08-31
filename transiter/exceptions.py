@@ -41,6 +41,10 @@ class _TransiterException(Exception):
             **additional_info,
         }
 
+    def __init__(self, message=None):
+        if message is not None:
+            self.message = message
+
 
 class InstallError(_TransiterException):
     """

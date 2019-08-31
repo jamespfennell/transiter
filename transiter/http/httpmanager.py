@@ -143,6 +143,21 @@ def link_target(link_type):
     return decorator_
 
 
+def get_request_args(keys):
+    all_request_args = _get_all_request_args()
+    extra_keys = set(all_request_args.keys()) - set(keys)
+    if len(extra_keys) > 0:
+        raise exceptions.InvalidInput(
+            "Unknown GET parameters: {}. Valid parameters: {}".format(extra_keys, keys)
+        )
+
+    return {key: all_request_args.get(key) for key in keys}
+
+
+def _get_all_request_args():
+    return flask.request.args
+
+
 def _perform_request(request_type, func, *args, **kwargs):
     """
     Perform the request.

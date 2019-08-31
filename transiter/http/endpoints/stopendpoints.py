@@ -1,5 +1,5 @@
 import flask
-from transiter.http.httpmanager import http_endpoint, link_target
+from transiter.http.httpmanager import http_endpoint, link_target, get_request_args
 from transiter.services import stopservice, links
 
 stop_endpoints = flask.Blueprint(__name__, __name__)
@@ -115,4 +115,5 @@ def get_in_system_by_id(system_id, stop_id):
         }
 
     """
-    return stopservice.get_in_system_by_id(system_id, stop_id)
+    request_args = get_request_args(["earliest_time", "latest_time"])
+    return stopservice.get_in_system_by_id(system_id, stop_id, **request_args)
