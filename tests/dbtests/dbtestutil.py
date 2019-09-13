@@ -1,7 +1,6 @@
 import unittest
-from transiter.data import dbconnection
-from transiter import config
 
+from transiter.data import dbconnection
 from . import testdata
 
 _db_setup = False
@@ -12,12 +11,6 @@ def ensure_db_setup():
     if _db_setup:
         return
     _db_setup = True
-    toml_str = """
-    [database]
-    driver = 'postgresql'
-    name = 'transiter_test_db'
-    """
-    config.load_from_str(toml_str)
     dbconnection.ensure_db_connection()
     dbconnection.rebuild_db()
 

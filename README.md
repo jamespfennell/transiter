@@ -20,8 +20,43 @@ You can get a sense for the data that's available by navigating through the
     [live demo site](https://demo.transiter.io).
         
 
+## Getting started
+
+Getting started with Transiter is easy, and requires
+only that you have Docker installed.
+After checking out the Github repo, in the root directory run:
+
+    docker-compose up
     
-Version 0.1 of Transiter has been released and is now on PyPI:
+This will build Transiter's Docker images and launch the 
+whole service on localhost's port 8000.
+You can verify it's working by running,
+
+    curl localhost:8000
+    
+which should yield a response like,
+
+    {
+      "transiter": {
+        "version": "0.2.0",
+        "href": "https://github.com/jamespfennell/transiter"
+      },
+      "systems": {
+        "count": 0
+      }
+    }
+    
+As you can see, there are no transit systems installed and the 
+next step is to install one.
+To try out Transiter we suggest installing the San Francisco BART
+system as it's fairly simple to install.
+Follow the instructions in that Github repo.
+
+
+        
+
+
+## Docs
 
     pip install transiter
     

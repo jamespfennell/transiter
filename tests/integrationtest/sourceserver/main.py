@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 class Feed:
 
-    content = None
+    content = ""
     status = 200
 
     def get_content(self):

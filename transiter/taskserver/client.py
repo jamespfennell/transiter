@@ -29,7 +29,7 @@ def update_feed(feed_pk):
 
 def _run(func_name, *args, **kwargs):
     try:
-        conn = rpyc.connect("localhost", config.TaskServerConfig.PORT)
+        conn = rpyc.connect(config.TASKSERVER_HOST, config.TASKSERVER_PORT)
         func = getattr(conn.root, func_name)
         return func(*args, **kwargs)
     except ConnectionRefusedError:

@@ -1,19 +1,7 @@
 .PHONY: docs test
 
-clear-coverage:
-	rm -f .coverage
-
-all-tests: clear-coverage unit-tests db-tests integration-tests
-
 integration-tests:
 	cd tests/integrationtest; make test
-
-unit-tests:
-	nosetests --with-coverage --cover-package=transiter --rednose -v tests/unittests
-
-db-tests:
-	transiterclt rebuild-db --yes
-	nosetests --with-coverage --cover-package=transiter --rednose -v tests/dbtests
 
 docs:
 	cd docs; rm -r build; make html
@@ -31,3 +19,17 @@ package:
 
 distribute:
 	twine upload dist/*
+
+
+unit-tests:
+	rm -f .coverage
+	pip install -r dev-requirements.txt
+	nosetests --with-coverage --cover-package=transiter --rednose \
+	    -v tests/unittests -v tests/dbtests
+
+make unit-tests-in-docker-container:
+	docker cp tests transiter-webserver:/transiter
+	docker cp dev-requirements.txt transiter-webserver:/transiter/dev-requirements.txt
+	docker cp Makefile transiter-webserver:/transiter/Makefile
+	docker exec -w /transiter -it transiter-webserver make unit-tests
+	docker cp transiter-webserver:/transiter/.coverage .coverage

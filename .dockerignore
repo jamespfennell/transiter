@@ -1,0 +1,8 @@
+.DS_Store
+venv
+venv2
+build
+dist
+Transiter.egg-info
+transiter_jamespfennell.egg-info
+sandbox

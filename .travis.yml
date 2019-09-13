@@ -1,18 +1,20 @@
-services:
-  - postgresql
+# Python is used here just to install coveralls. It is not necessary to keep the
+# version in sync with Transiter's Python version.
 language: python
 python: "3.6"
-before_script:
-- psql -c 'create database transiter_test_db;' -U postgres
-- psql -c 'create database transiter_test_db_2;' -U postgres
+
 install:
-  - python setup.py install
-  - pip install coveralls
-# command to run tests
+  - pip install coveralls docker
+  - docker-compose up -d --build
+
 script:
-  - pip install -r dev-requirements.txt
-  - make unit-tests
-  - TRANSITER_CONFIG=tests/integrationtest/transiter-config.toml make db-tests
-  - make integration-tests
+  - make unit-tests-in-docker-container
+  - cd tests/integrationtest; python run.py
+
 after_success:
+  # The next command transforms paths in the .coverage file from being relative
+  # to the Docker container to be relative to the Travis CI build directory. This
+  # is necessary for correct coverage reporting.
+  - coverage combine .coverage
   - coveralls
+  - echo "Push docker images if on master?"

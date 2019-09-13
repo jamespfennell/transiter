@@ -11,27 +11,11 @@ from transiter.taskserver import server as taskserver
 
 
 @click.group()
-@click.option(
-    "-c",
-    "--config-file",
-    default=None,
-    type=str,
-    help="Path to the Transiter config file. If not provided, this defaults "
-    "to the value of the environment variable TRANSITER_CONFIG, "
-    "or transiter-config.toml "
-    "if the environment variable is not set. "
-    "In the last case, if transiter-config.toml does not exist, the"
-    "default (SQLite) configuration is used.",
-)
-def transiter_clt(config_file):
+def transiter_clt():
     """
     Transiter Command Line Tools
     """
-    try:
-        config.load(config_file)
-    except exceptions.ConfigFileNotFoundError:
-        click.echo('Error: config file "{}" not found.'.format(config_file))
-        exit()
+    pass
 
 
 @transiter_clt.command()
@@ -58,43 +42,8 @@ def launch(force, server):
 
 
 @transiter_clt.command()
-@click.option("-f", "--force", is_flag=True, help="Overwrite any existing file.")
-@click.option(
-    "-o",
-    "--output-file",
-    default=None,  # config.DEFAULT_FILE_PATH,
-    show_default=True,
-    help="Path to output the config file to.",
-)
-@click.option(
-    "-u",
-    "--use-current-values",
-    is_flag=True,
-    help="Populate the Transiter config file with the current config values, "
-    "rather than the defaults.",
-)
-def generate_config(force, output_file, use_current_values):
-    """
-    Generate a Transiter config file template.
-
-    Write to the standard output, or to a file if -o is specified.
-    """
-    mode = "w" if force else "x"
-    if use_current_values:
-        config_str = config.generate()
-    else:
-        config_str = config.generate(
-            database_config=config.DefaultDatabaseConfig,
-            task_server_config=config.DefaultTaskServerConfig,
-        )
-    if output_file is None:
-        print(config_str)
-        return
-    try:
-        with open(output_file, mode) as file_handle:
-            file_handle.write(config_str)
-    except FileExistsError:
-        click.echo("File already exists. Use the -f option to overwrite it.")
+def generate_schema():
+    dbconnection.generate_schema()
 
 
 @transiter_clt.command()

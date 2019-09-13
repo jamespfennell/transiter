@@ -2,7 +2,7 @@
 [feeds]
 
     [feeds.gtfsstatic]
-    url = "http://localhost:5001"
+    url = "http://sourceserver:8000"
     built_in_parser = "GTFS_STATIC"
     parser = "gtfsstatic"
     required_for_install = true
@@ -11,7 +11,7 @@
 
 
     [feeds.GtfsRealtimeFeed]
-    url = "http://localhost:5001"
+    url = "http://sourceserver:8000"
     built_in_parser = "GTFS_REALTIME"
     parser = "gtfsrealtime"
     auto_update = true

@@ -1,15 +1,15 @@
-import subprocess
-import time
-import requests
-import json
 import unittest
 
-import gtfsrealtimegenerator
+import requests
 
+from . import gtfsrealtimegenerator
+
+TRANSITER_URL = "http://webserver:8000/"
+SOURCE_SERVER_URL = "http://sourceserver:8000"
 
 class IntegrationTest(unittest.TestCase):
 
-    TRANSITER_URL = "http://localhost:5000/"
+    TRANSITER_URL = "http://webserver:8000/"
 
     STOP_IDS = {
         "1A",
@@ -47,23 +47,15 @@ class IntegrationTest(unittest.TestCase):
     }
     ROUTE_ID_TO_USUAL_ROUTE = {"A": ["1A", "1D", "1E", "1G"], "B": []}
 
-    @classmethod
-    def setUpClass(cls):
-        startup_http_services()
-
-    @classmethod
-    def tearDownClass(cls):
-        shutdown_http_services()
-
     def test_000_check_for_no_systems(self):
         response = self._get("systems")
         self.assertEqual(response, [])
 
     def test_006_install_system_success(self):
-        with open("output/gtfsstaticdata.zip", "rb") as zip_file:
+        with open("data/gtfsstaticdata.zip", "rb") as zip_file:
             zip_file_data = zip_file.read()
 
-        requests.put("http://localhost:5001", data=zip_file_data)
+        requests.put(SOURCE_SERVER_URL, data=zip_file_data)
 
         files = {"config_file": open("data/system-config.toml", "rb")}
         response = self._put("systems/testsystem", files=files)
@@ -240,7 +232,7 @@ class IntegrationTest(unittest.TestCase):
         self._perform_feed_update_stop_test(feed_1)
 
     def _perform_feed_update_stop_test(self, feed_1):
-        requests.put("http://localhost:5001", data=feed_1.build_feed())
+        requests.put(SOURCE_SERVER_URL, data=feed_1.build_feed())
 
         self._post("systems/testsystem/feeds/{}".format(self.FEED_IDS[0]))
 
@@ -293,7 +285,7 @@ class IntegrationTest(unittest.TestCase):
     def _perform_feed_update_trip_test(self, feeds):
 
         for feed in feeds:
-            requests.put("http://localhost:5001", data=feed.build_feed())
+            requests.put(SOURCE_SERVER_URL, data=feed.build_feed())
             self._post("systems/testsystem/feeds/{}".format(self.FEED_IDS[0]))
 
         all_sss = []
@@ -370,53 +362,6 @@ class IntegrationTest(unittest.TestCase):
     def _post(cls, endpoint):
         return requests.post("{}{}".format(cls.TRANSITER_URL, endpoint))
 
-
-def startup_http_services():
-    shutdown_http_services()
-    subprocess.call(["python", "--version"])
-    print("(Re)building the Transiter DB")
-    rebuild_db()
-    print("Launching dummy feed server")
-    launch_flask_app("feedserver.py")
-    print("Launching Transiter server")
-    launch_transiter_http_server()
-    """
-    try:
-    """
-
-
-def shutdown_http_services():
-    kill_process_on_port(5000)
-    kill_process_on_port(5001)
-
-
-def rebuild_db():
-    subprocess.call(["transiterclt", "rebuild-db", "--yes"])
-
-
-def launch_transiter_http_server():
-    subprocess.Popen(
-        ["transiterclt", "launch", "http-debug-server"], stdout=subprocess.DEVNULL
-    )
-    time.sleep(1.5)
-
-
-def launch_flask_app(location):
-    subprocess.Popen(["python", location], stdout=subprocess.DEVNULL)
-    time.sleep(1.5)
-
-
-def kill_process_on_port(port_number):
-    try:
-        raw_pids = subprocess.check_output(["lsof", "-t", "-i:{}".format(port_number)])
-    except subprocess.CalledProcessError:
-        print("No process to kill on port {}".format(port_number))
-        return
-    pids = raw_pids.decode("utf-8").split()
-    for pid in pids:
-        subprocess.call(
-            ["kill", pid], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
 
 
 if __name__ == "__main__":

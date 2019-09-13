@@ -19,16 +19,13 @@ def create_engine():
 
     :return: the engine
     """
-    drivername = config.DatabaseConfig.DRIVER
-    if config.DatabaseConfig.DIALECT is not None:
-        drivername += "+" + config.DatabaseConfig.DIALECT
     connection_url = URL(
-        drivername,
-        username=config.DatabaseConfig.USERNAME,
-        password=config.DatabaseConfig.PASSWORD,
-        host=config.DatabaseConfig.HOST,
-        port=config.DatabaseConfig.PORT,
-        database=config.DatabaseConfig.NAME,
+        drivername=config.DB_DRIVER,
+        username=config.DB_USERNAME,
+        password=config.DB_PASSWORD,
+        host=config.DB_HOST,
+        port=config.DB_PORT,
+        database=config.DB_DATABASE,
     )
     return sqlalchemy.create_engine(connection_url)
 
@@ -101,3 +98,13 @@ def rebuild_db():
     ensure_db_connection()
     models.Base.metadata.drop_all(engine)
     models.Base.metadata.create_all(engine)
+
+
+def generate_schema():
+    def dump(sql, *args, **kwargs):
+        sql_string = str(sql.compile(dialect=engine.dialect)).strip()
+
+        print("{};\n\n".format(sql_string))
+
+    engine = sqlalchemy.create_engine("postgresql://", strategy="mock", executor=dump)
+    models.Base.metadata.create_all(engine, checkfirst=False)

@@ -4,15 +4,17 @@ Transiter Task Server
 The task server is Python process that runs tasks periodically using APScheduler. It
 has an RPyC interface that enables a Transiter HTTP server to communicate with it.
 """
-import logging
 import datetime
+import logging
 import random
+import signal
+import time
+
 import apscheduler.schedulers.background
 import rpyc.utils.server
 
-from transiter.services import feedservice
 from transiter import config
-
+from transiter.services import feedservice
 
 logger = logging.getLogger("transiter")
 
@@ -93,6 +95,17 @@ def refresh_feed_auto_update_tasks():
         del feed_pk_to_auto_update_task[feed_pk]
 
 
+def initialize_feed_auto_update_tasks():
+
+    while True:
+        try:
+            refresh_feed_auto_update_tasks()
+            return
+        except:
+            logger.info("Failed to update tasks; trying again in 1 second.")
+            time.sleep(1)
+
+
 class TaskServer(rpyc.Service):
     """
     RPyC interface for the task server.
@@ -125,10 +138,17 @@ def launch(__):
     global feed_update_trim_task, scheduler
     scheduler.start()
     feed_update_trim_task = CronTask(feedservice.trim_feed_updates, [], minute="*/15")
-    refresh_feed_auto_update_tasks()
+    initialize_feed_auto_update_tasks()
 
     logger.info("Launching RPyC server")
     server = rpyc.utils.server.ThreadedServer(
-        TaskServer, port=config.TaskServerConfig.PORT
+        TaskServer, port=int(config.TASKSERVER_PORT)
     )
+
+    def shutdown(_, __):
+        logger.info("Performing orderly shutdown.")
+        server.close()
+        return
+    signal.signal(signal.SIGTERM, shutdown)
+
     server.start()
