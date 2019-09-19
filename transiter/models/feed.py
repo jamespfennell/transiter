@@ -28,6 +28,7 @@ class Feed(Base):
     built_in_parser = Column(Enum(BuiltInParser))
     custom_parser = Column(String)
     url = Column(String)
+    headers = Column(String)
     auto_update_on = Column(Boolean)
     auto_update_period = Column(Integer)
 

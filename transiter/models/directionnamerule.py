@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from .base import Base
 
 
+# TODO: rename DirectionRule. The 'name' is redundant
 class DirectionNameRule(Base):
     __tablename__ = "direction_name_rule"
 

@@ -65,6 +65,11 @@ class InvalidInput(_TransiterException):
     message = "The request contained invalid input."
 
 
+class InvalidSystemConfigFile(_TransiterException):
+    code = "T029"
+    message = "The system config file is invalid"
+
+
 class ConfigFileNotFoundError(_TransiterException):
     """
     Exception that is raised when the Transiter config file could not be found.
@@ -80,7 +85,7 @@ class IdNotFoundError(_TransiterException):
     """
 
     code = "T050"
-    message = "One of the requested enities could not be found."
+    message = "One of the requested entities could not be found."
 
 
 class InvalidPermissionsLevelInRequest(_TransiterException):

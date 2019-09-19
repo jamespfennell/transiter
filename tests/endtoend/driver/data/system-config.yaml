@@ -1,0 +1,52 @@
+
+name: Test System
+
+requirements:
+
+  settings:
+  - source_server_url
+
+feeds:
+
+  gtfsstatic:
+    http:
+      url: "{source_server_url}/gtfsstatic"
+    parser:
+      built_in: GTFS_STATIC
+    required_for_install: true
+    auto_update:
+      period: 1 day
+
+  GtfsRealtimeFeed:
+    http:
+      url: "{source_server_url}/gtfsrealtime"
+    parser:
+      built_in: GTFS_REALTIME
+    auto_update:
+      period: 1 day
+
+service_maps:
+  any_time:
+    source: SCHEDULE
+    threshold: 0.1
+    use_for_routes_at_stop: true
+    use_for_stops_in_route: true
+
+  weekday_day:
+    source: SCHEDULE
+    threshold: 0.1
+    conditions: "{{\"weekday\": true, \"starts_later_than\": 7, \"ends_earlier_than\": 19}}"
+
+  weekday_night:
+    source: SCHEDULE
+    threshold: 0.1
+    #conditions: "{{weekday = true, starts_later_than = 0, ends_earlier_than = 6}}"
+
+  weekend:
+    source: SCHEDULE
+    threshold: 0.1
+    #conditions: "{{weekend = true, starts_later_than = 7, ends_earlier_than = 19}}"
+
+  realtime:
+    source: REALTIME
+

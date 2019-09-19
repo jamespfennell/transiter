@@ -5,8 +5,6 @@ tools) command line program.
 import click
 
 from transiter.data import dbconnection
-from transiter import config, exceptions
-from transiter.http import flaskapp
 from transiter.taskserver import server as taskserver
 
 
@@ -36,6 +34,9 @@ def launch(force, server):
     - The task-server is designed to be used in production.
     """
     if server == "http-debug-server":
+        # NOTE: the flask app is imported here because otherwise the task server will
+        # use the app's logging configuration.
+        from transiter.http import flaskapp
         flaskapp.launch(force)
     if server == "task-server":
         taskserver.launch(force)

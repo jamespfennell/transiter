@@ -28,6 +28,13 @@ app.register_blueprint(
 )
 app.register_blueprint(endpoints.system_endpoints, url_prefix="/systems")
 
+logger = logging.getLogger("transiter")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+logger.addHandler(handler)
+formatter = logging.Formatter("%(asctime)s WS %(levelname)-5s [%(module)s] %(message)s")
+handler.setFormatter(formatter)
+
 
 @app.errorhandler(404)
 @http_response()
@@ -87,13 +94,5 @@ def launch(force=False):
     :param force: unused currently. In future, if true, will force kill any
         process listening on the target port
     """
-    logger = logging.getLogger("transiter")
     logger.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler()
-    logger.addHandler(handler)
-    formatter = logging.Formatter(
-        "%(asctime)s WS %(levelname)-5s [%(module)s] %(message)s"
-    )
-    handler.setFormatter(formatter)
-
-    app.run(debug=True)
+    app.run(port=8000, debug=True)

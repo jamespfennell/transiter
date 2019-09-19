@@ -28,6 +28,7 @@ setup(
         "requests",
         "rpyc",
         "sqlalchemy",
-        "toml",
+        "strictyaml",
+        "toml"  # TODO: remove
     ],
 )

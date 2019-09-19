@@ -32,6 +32,6 @@ def _run(func_name, *args, **kwargs):
         conn = rpyc.connect(config.TASKSERVER_HOST, config.TASKSERVER_PORT)
         func = getattr(conn.root, func_name)
         return func(*args, **kwargs)
-    except ConnectionRefusedError:
+    except:
         logger.info("Could not connect to the Transiter task server")
     return False

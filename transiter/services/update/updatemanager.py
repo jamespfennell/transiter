@@ -24,6 +24,7 @@ This algorithm performs the following steps in order:
 """
 import hashlib
 import importlib
+import json
 import logging
 import time
 import traceback
@@ -122,7 +123,7 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
         feed_update.status = feed_update.Status.FAILURE
         feed_update.explanation = feed_update.Explanation.PARSE_ERROR
         feed_update.failure_message = str(traceback.format_exc())
-        logger.debug("Feed parse error:\n" + feed_update.failure_message)
+        logger.info("Feed parse error:\n" + feed_update.failure_message)
         return
 
     feed_update.status = feed_update.Status.SUCCESS
@@ -160,6 +161,8 @@ def _get_parser(feed: models.Feed):
         module = _import_module(module_str)
     except ModuleNotFoundError:
         raise _InvalidParser("Unknown module '{}'".format(module_str))
+    except:
+        raise _InvalidParser(f"Failed to import module {module_str}")
 
     try:
         return getattr(module, method_str)
@@ -197,7 +200,7 @@ def _get_content(feed: models.Feed):
     :param feed: the Feed
     :return: binary data
     """
-    request = requests.get(feed.url, timeout=4)
+    request = requests.get(feed.url, timeout=4, headers=json.loads(feed.headers))
     request.raise_for_status()
     return request.content
 

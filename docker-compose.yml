@@ -1,8 +1,11 @@
 version: '3.5'
-
+# TODO: need to figure out what's happening with env variables
 services:
 
   webserver:
+    environment:
+      - TRANSITER_TASKSERVER_HOST=taskserver
+      - TRANSITER_TASKSERVER_PORT
     build:
       context: .
       dockerfile: docker/webserver/Dockerfile
@@ -31,7 +34,7 @@ services:
       dockerfile: docker/postgres/Dockerfile
     image: jamespfennell/transiter:latest-postgres
     volumes:
-      - data-volume:/var/lib/postgresql/pata
+      - data-volume:/var/lib/postgresql/pata  # TODO: ?
     expose:
       - "${TRANSITER_DB_PORT:-5432}"
     restart: always

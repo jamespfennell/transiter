@@ -1,15 +1,14 @@
 import unittest
-
+import os
 import requests
 
 from . import gtfsrealtimegenerator
 
-TRANSITER_URL = "http://webserver:8000/"
-SOURCE_SERVER_URL = "http://sourceserver:8000"
+TRANSITER_URL = os.environ.get("TRANSITER_URL", "http://localhost:8000")
+SOURCE_SERVER_URL = os.environ.get("SOURCE_SERVER_URL", "http://localhost:5001")
+
 
 class IntegrationTest(unittest.TestCase):
-
-    TRANSITER_URL = "http://webserver:8000/"
 
     STOP_IDS = {
         "1A",
@@ -54,11 +53,19 @@ class IntegrationTest(unittest.TestCase):
     def test_006_install_system_success(self):
         with open("data/gtfsstaticdata.zip", "rb") as zip_file:
             zip_file_data = zip_file.read()
+        requests.put(SOURCE_SERVER_URL + "/gtfsstatic", data=zip_file_data)
 
-        requests.put(SOURCE_SERVER_URL, data=zip_file_data)
+        with open("data/system-config.yaml") as config_file:
+            config_file_data = config_file.read()
+        requests.put(SOURCE_SERVER_URL + "/config", data=config_file_data)
 
-        files = {"config_file": open("data/system-config.toml", "rb")}
-        response = self._put("systems/testsystem", files=files)
+        response = self._put(
+            "systems/testsystem",
+            data={
+                "config_file": SOURCE_SERVER_URL + "/config",
+                "source_server_url": SOURCE_SERVER_URL,
+            },
+        )
         response.raise_for_status()
 
     def test_010_count_stops(self):
@@ -232,7 +239,7 @@ class IntegrationTest(unittest.TestCase):
         self._perform_feed_update_stop_test(feed_1)
 
     def _perform_feed_update_stop_test(self, feed_1):
-        requests.put(SOURCE_SERVER_URL, data=feed_1.build_feed())
+        requests.put(SOURCE_SERVER_URL + "/gtfsrealtime", data=feed_1.build_feed())
 
         self._post("systems/testsystem/feeds/{}".format(self.FEED_IDS[0]))
 
@@ -285,7 +292,7 @@ class IntegrationTest(unittest.TestCase):
     def _perform_feed_update_trip_test(self, feeds):
 
         for feed in feeds:
-            requests.put(SOURCE_SERVER_URL, data=feed.build_feed())
+            requests.put(SOURCE_SERVER_URL + "/gtfsrealtime", data=feed.build_feed())
             self._post("systems/testsystem/feeds/{}".format(self.FEED_IDS[0]))
 
         all_sss = []
@@ -337,7 +344,7 @@ class IntegrationTest(unittest.TestCase):
                 # print(stop_data)
                 actual_stop_list.append((stop_data["stop"]["id"], stop_data["future"]))
 
-            print("Actual", actual_stop_list)
+            # print("Actual", actual_stop_list)
             self.assertEqual(expected_stop_list, actual_stop_list)
 
     # Test service patterns
@@ -350,20 +357,14 @@ class IntegrationTest(unittest.TestCase):
 
     @classmethod
     def _get(cls, endpoint):
-        response = requests.get("{}{}".format(cls.TRANSITER_URL, endpoint))
+        response = requests.get("{}/{}".format(TRANSITER_URL, endpoint))
         response.raise_for_status()
         return response.json()
 
     @classmethod
     def _put(cls, endpoint, *args, **kwargs):
-        return requests.put("{}{}".format(cls.TRANSITER_URL, endpoint), *args, **kwargs)
+        return requests.put("{}/{}".format(TRANSITER_URL, endpoint), *args, **kwargs)
 
     @classmethod
     def _post(cls, endpoint):
-        return requests.post("{}{}".format(cls.TRANSITER_URL, endpoint))
-
-
-
-if __name__ == "__main__":
-    suite = IntegrationTest()
-    unittest.TextTestRunner().run(suite)
+        return requests.post("{}/{}".format(TRANSITER_URL, endpoint))

@@ -1,6 +1,7 @@
 Sphinx==1.8.3
 sphinx-rtd-theme==0.4.2
 sphinxcontrib-httpdomain==1.7.0
+docker
 coverage
 nose
 rednose

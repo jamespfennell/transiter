@@ -39,7 +39,7 @@ class TestUpdateManager(testutil.TestCase(updatemanager)):
         ] = self.built_in_parser
 
         self.system = models.System(id=self.SYSTEM_ID)
-        self.feed = models.Feed(id=self.FEED_ID, system=self.system)
+        self.feed = models.Feed(id=self.FEED_ID, system=self.system, headers="{}")
         self.feed_update = models.FeedUpdate(self.feed)
 
         self.feeddam = self.mockImportedModule(updatemanager.feeddam)

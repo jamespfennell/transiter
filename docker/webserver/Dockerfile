@@ -12,4 +12,4 @@ RUN pip install gunicorn
 
 EXPOSE 8000
 
-ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:8000", "transiter:wsgi_app"]
+ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:8000", "transiter.http:wsgi_app"]

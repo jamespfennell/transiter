@@ -1,8 +1,10 @@
 import flask
+import requests
 
 from transiter.http.permissions import requires_permissions, PermissionsLevel
 from transiter.http.httpmanager import http_endpoint, RequestType, link_target
 from transiter.services import systemservice, links
+from transiter import exceptions
 
 system_endpoints = flask.Blueprint(__name__, __name__)
 
@@ -79,14 +81,28 @@ def install(system_id):
     :formparameter (additional setting name): additional settings (for example,
         API keys) required by the system config.
     """
-    config_str = flask.request.files["config_file"].read().decode("utf-8")
-    extra_files = {key: flask.request.files[key].stream for key in flask.request.files}
-    del extra_files["config_file"]
-    return systemservice.install(
-        system_id=system_id,
-        config_str=config_str,
-        extra_files=extra_files,
-        extra_settings=flask.request.form.to_dict(),
+
+    form_key_to_value = flask.request.form.to_dict()
+    form_key_to_file_storage = flask.request.files.to_dict()
+
+    if "config_file" in form_key_to_value:
+        config_file_location = form_key_to_value["config_file"]
+        try:
+            response = requests.get(config_file_location)
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            raise exceptions.InstallError(
+                "Could not download from '{}'".format(config_file_location)
+            )
+        config_str = response.text
+        del form_key_to_value["config_file"]
+    elif "config_file" in form_key_to_file_storage:
+        config_str = flask.request.files["config_file"].read().decode("utf-8")
+    else:
+        raise exceptions.InstallError("Config file not provided!")
+
+    systemservice.install(
+        system_id=system_id, config_str=config_str, extra_settings=form_key_to_value
     )
 
 

@@ -1,5 +1,5 @@
-# Python is used here just to install coveralls. It is not necessary to keep the
-# version in sync with Transiter's Python version.
+# Python is used here just to install coveralls and docker. It is not necessary to
+# keep the version in sync with Transiter's Python version.
 language: python
 python: "3.6"
 
@@ -8,8 +8,8 @@ install:
   - docker-compose up -d --build
 
 script:
-  - make unit-tests-in-docker-container
-  - cd tests/integrationtest; python run.py
+  - make python-tests-in-docker-container
+  - cd tests/endtoend; python dockerdriver.py
 
 after_success:
   # The next command transforms paths in the .coverage file from being relative

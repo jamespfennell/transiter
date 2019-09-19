@@ -1,8 +1,5 @@
 .PHONY: docs test
 
-integration-tests:
-	cd tests/integrationtest; make test
-
 docs:
 	cd docs; rm -r build; make html
 
@@ -21,15 +18,15 @@ distribute:
 	twine upload dist/*
 
 
-unit-tests:
+python-tests:
 	rm -f .coverage
-	pip install -r dev-requirements.txt
+	pip -q install -r dev-requirements.txt
 	nosetests --with-coverage --cover-package=transiter --rednose \
-	    -v tests/unittests -v tests/dbtests
+	    -v tests/unit -v tests/db
 
-make unit-tests-in-docker-container:
+make python-tests-in-docker-container:
 	docker cp tests transiter-webserver:/transiter
 	docker cp dev-requirements.txt transiter-webserver:/transiter/dev-requirements.txt
 	docker cp Makefile transiter-webserver:/transiter/Makefile
-	docker exec -w /transiter -it transiter-webserver make unit-tests
+	docker exec -w /transiter -it transiter-webserver make python-tests
 	docker cp transiter-webserver:/transiter/.coverage .coverage

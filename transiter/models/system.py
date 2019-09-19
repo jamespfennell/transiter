@@ -12,6 +12,7 @@ class System(Base):
 
     name = Column(String, nullable=True)
     timezone = Column(String, nullable=True)
+    raw_config = Column(String)
 
     routes = relationship(
         "Route", back_populates="system", cascade="all, delete-orphan"

@@ -50,6 +50,7 @@ _exception_type_to_http_status = {
     exceptions.IdNotFoundError: HttpStatus.NOT_FOUND,
     exceptions.InstallError: HttpStatus.INTERNAL_SERVER_ERROR,
     exceptions.InvalidInput: HttpStatus.BAD_REQUEST,
+    exceptions.InvalidSystemConfigFile: HttpStatus.BAD_REQUEST,
     exceptions.ConfigFileNotFoundError: HttpStatus.INTERNAL_SERVER_ERROR,
     exceptions.InvalidPermissionsLevelInRequest: HttpStatus.INTERNAL_SERVER_ERROR,
 }

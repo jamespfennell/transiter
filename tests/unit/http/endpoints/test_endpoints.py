@@ -248,7 +248,7 @@ class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
             systemendpoints.get_by_id, self.systemservice.get_by_id, self.SYSTEM_ID
         )
 
-    def test_install(self):
+    def __install(self):
         """[System endpoints] Install a system"""
         request = self.flask.request
         config_file_handle = mock.MagicMock()
