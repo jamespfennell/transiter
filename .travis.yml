@@ -9,7 +9,7 @@ install:
 
 script:
   - make python-tests-in-docker-container
-  - cd tests/endtoend; python dockerdriver.py
+  - python tests/endtoend/dockerdriver.py
 
 after_success:
   # The next command transforms paths in the .coverage file from being relative
