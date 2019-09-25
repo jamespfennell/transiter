@@ -17,4 +17,4 @@ after_success:
   # is necessary for correct coverage reporting.
   - coverage combine .coverage
   - coveralls
-  - echo "Push docker images if on master?"
+  - bash docker/docker_hub_push.sh
