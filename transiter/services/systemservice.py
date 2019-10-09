@@ -15,6 +15,7 @@ from transiter.taskserver import client
 import requests
 import io
 import json
+
 logger = logging.getLogger(__name__)
 
 

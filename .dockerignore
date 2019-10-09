@@ -6,3 +6,4 @@ dist
 Transiter.egg-info
 transiter_jamespfennell.egg-info
 sandbox
+.pyenv

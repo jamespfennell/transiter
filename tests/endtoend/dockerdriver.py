@@ -2,6 +2,8 @@ from contextlib import contextmanager
 
 import docker
 
+# .... should all of this just be done with docker compose?
+
 
 @contextmanager
 def source_server():
@@ -39,7 +41,7 @@ print("Transiter is running on the Docker network port: {}".format(transiter_por
 with source_server():
     print("Building the test driver Docker image")
     image, __ = client.images.build(path="driver")
-    print("Runing the test driver Docker container")
+    print("Running the test driver Docker container")
     container = client.containers.run(image.id, network=network, detach=True)
     for line in container.logs(stream=True):
         print(line.strip().decode("utf-8"))

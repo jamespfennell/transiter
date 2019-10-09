@@ -22,15 +22,26 @@ You can get a sense for the data that's available by navigating through the
 
 ## Getting started
 
-Getting started with Transiter is easy, and requires
-only that you have Docker installed.
-After checking out the Github repo, in the root directory run:
+The easiest way to get Transiter up and running is to
+use Docker compose with the configuration file at 
+`docker/docker-compose.yaml`. It references Docker images
+that are stored in Docker Hub, so it will work immediately;
+assuming it's in the current working directory,
 
     docker-compose up
+
+Building the Docker images themselves is also easy.
+Checkout the Git repo and run:
+
+    make build
     
-This will build Transiter's Docker images and launch the 
-whole service on localhost's port 8000.
-You can verify it's working by running,
+Then launch using Docker compose:
+
+    docker-compose -f docker/docker-compose.yaml up
+    
+Either approach will launch a Transiter service
+listening for HTTP requests on localhost's port 8000.
+Running
 
     curl localhost:8000
     
@@ -70,4 +81,5 @@ Transiter can actually be used.
 [![Build Status](https://travis-ci.org/jamespfennell/transiter.svg?branch=master)](https://travis-ci.org/jamespfennell/transiter)
 [![Documentation Status](https://readthedocs.org/projects/transiter/badge/?version=latest)](https://docs.transiter.io)
 [![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master&service=github)](https://coveralls.io/github/jamespfennell/transiter?branch=master) 
+[![Requirements Status](https://requires.io/github/jamespfennell/transiter/requirements.svg?branch=master)](https://requires.io/github/jamespfennell/transiter/requirements/?branch=DockerAndPyPi)
 

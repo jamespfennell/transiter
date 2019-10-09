@@ -1,0 +1,25 @@
+version: '3.5'
+
+services:
+
+  unit-tests:
+    image: jamespfennell/transiter:latest-ci
+    command: unit-tests
+    volumes:
+      - ${PWD}/coverage:/transiter-ci/coverage
+
+  db-tests:
+    image: jamespfennell/transiter:latest-ci
+    container_name: transiter-ci
+    command: db-tests
+    environment:
+      - TRANSITER_DB_HOST=postgres-db-tests
+      - TRANSITER_DB_PORT=5432
+    volumes:
+      - ${PWD}/coverage:/transiter-ci/coverage
+
+  postgres-db-tests:
+    image: jamespfennell/transiter:latest-postgres
+    expose:
+      - "5432"
+

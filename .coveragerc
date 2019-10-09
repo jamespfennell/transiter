@@ -4,4 +4,8 @@
 [paths]
 source =
   transiter/
-  /transiter/transiter/
+  */site-packages/transiter/
+
+[run]
+data_file = coverage/.coverage
+source = transiter

@@ -149,6 +149,7 @@ def launch(__):
         logger.info("Performing orderly shutdown.")
         server.close()
         return
+
     signal.signal(signal.SIGTERM, shutdown)
 
     server.start()

@@ -4,17 +4,28 @@ language: python
 python: "3.6"
 
 install:
-  - pip install coveralls docker
-  - docker-compose up -d --build
+  - pip install docker
+  - python travis.py before
+  - make build-all
+  - docker-compose -p transiter -f docker/docker-compose.yml up -d
 
 script:
-  - make python-tests-in-docker-container
-  - cd tests/endtoend; python dockerdriver.py; cd ../..
+  - make containerized-unit-tests
+  - make containerized-db-tests
+  - make end-to-end-tests
 
 after_success:
-  # The next command transforms paths in the .coverage file from being relative
-  # to the Docker container to be relative to the Travis CI build directory. This
-  # is necessary for correct coverage reporting.
-  - coverage combine .coverage
+  - python travis.py after
+  # In order to submit code coverage numbers, we need to perform some
+  # pre-processing steps:
+  # 1. Install the coveralls package.
+  # 1. Make the coverage file writable. This file is often created
+  #    inside a directory mounted as a Docker volume, and by default
+  #    is only writable by root.
+  # 2. Transform paths in the .coverage file from being relative
+  #    to the Docker container to be relative to the Travis CI build
+  #    directory. Necessary for correct coverage reporting.
+  - pip install coveralls
+  - sudo chmod -R 0777 coverage
+  - coverage combine coverage/.coverage
   - coveralls
-  - bash docker/docker_hub_push.sh

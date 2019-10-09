@@ -37,6 +37,7 @@ def launch(force, server):
         # NOTE: the flask app is imported here because otherwise the task server will
         # use the app's logging configuration.
         from transiter.http import flaskapp
+
         flaskapp.launch(force)
     if server == "task-server":
         taskserver.launch(force)
@@ -44,6 +45,9 @@ def launch(force, server):
 
 @transiter_clt.command()
 def generate_schema():
+    """
+    Generate a SQL file that builds the Transiter schema.
+    """
     dbconnection.generate_schema()
 
 

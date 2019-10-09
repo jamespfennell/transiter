@@ -23,7 +23,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         "requirements": {"packages": [], "extra_settings": {}},
         "feeds": "Blah blah blah",
         "service_maps": "ser",
-        "direction_rules_files": []
+        "direction_rules_files": [],
     }
     DIRECTION_NAME_ONE = "Uptown"
 
@@ -103,7 +103,9 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
     @mock.patch.object(systemservice, "_install_service_maps")
     @mock.patch.object(systemservice, "_install_feeds")
     @mock.patch.object(systemservice, "_install_direction_rules")
-    def test_install_success(self, _install_direction_rules, _install_feeds, _install_service_maps, read):
+    def test_install_success(
+        self, _install_direction_rules, _install_feeds, _install_service_maps, read
+    ):
         """[System service] Successfully install a system"""
 
         self.systemdam.get_by_id.return_value = None

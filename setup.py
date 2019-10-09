@@ -1,10 +1,9 @@
 from setuptools import setup, find_packages
-import re
 
-with open("transiter/metadata.py") as f:
-    pattern = 'VERSION = "(?P<h>[0-9.]+)"'
-    match = re.match(pattern, f.read())
-    version = match.group("h")
+metadata = {}
+with open("transiter/__version__.py") as f:
+    exec(f.read(), metadata)
+version = metadata["__version__"]
 
 setup(
     name="transiter",
@@ -29,6 +28,5 @@ setup(
         "rpyc",
         "sqlalchemy",
         "strictyaml",
-        "toml"  # TODO: remove
     ],
 )

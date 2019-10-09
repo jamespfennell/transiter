@@ -8,3 +8,6 @@ rednose
 setuptools
 wheel
 twine
+black
+pytest
+pytest-cov

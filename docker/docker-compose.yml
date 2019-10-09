@@ -5,38 +5,32 @@ services:
   webserver:
     environment:
       - TRANSITER_TASKSERVER_HOST=taskserver
-      - TRANSITER_TASKSERVER_PORT
-    build:
-      context: .
-      dockerfile: docker/webserver/Dockerfile
+      - TRANSITER_TASKSERVER_PORT=18812
+      - TRANSITER_DB_HOST=postgres
+      - TRANSITER_DB_PORT=5432
     image: jamespfennell/transiter:latest-webserver
     container_name: transiter-webserver
-    env_file: .env
     expose:
-      - "8000"
+      - "80"
     ports:
-      - "8000:8000"
+      - "8000:80"
     restart: always
 
   taskserver:
-    build:
-      context: .
-      dockerfile: docker/taskserver/Dockerfile
     image: jamespfennell/transiter:latest-taskserver
-    env_file: .env
+    environment:
+      - TRANSITER_DB_HOST=postgres
+      - TRANSITER_DB_PORT=5432
     expose:
-      - "${TRANSITER_TASKSERVER_PORT:-5000}"
+      - "18812"
     restart: always
 
   postgres:
-    build:
-      context: .
-      dockerfile: docker/postgres/Dockerfile
     image: jamespfennell/transiter:latest-postgres
     volumes:
-      - data-volume:/var/lib/postgresql/pata  # TODO: ?
+      - data-volume:/var/lib/postgresql/data-not-used
     expose:
-      - "${TRANSITER_DB_PORT:-5432}"
+      - "5432"
     restart: always
 
 volumes:
