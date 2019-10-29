@@ -117,6 +117,9 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
         feed_update.explanation = feed_update.Explanation.NOT_NEEDED
         return
 
+    # We catch any exception that can be thrown in the feed parser as, from our
+    # perspective, the feed parser is foreign code.
+    # noinspection PyBroadException
     try:
         parser(feed_update, content)
     except Exception:
@@ -157,11 +160,14 @@ def _get_parser(feed: models.Feed):
     module_str = parser_str[:colon_char]
     method_str = parser_str[(colon_char + 1) :]
 
+    # The broad exception here is to capture any buggy code in the module being
+    # imported.
+    # noinspection PyBroadException
     try:
         module = _import_module(module_str)
     except ModuleNotFoundError:
         raise _InvalidParser("Unknown module '{}'".format(module_str))
-    except:
+    except Exception:
         raise _InvalidParser(f"Failed to import module {module_str}")
 
     try:
