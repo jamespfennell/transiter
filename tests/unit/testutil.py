@@ -3,7 +3,7 @@ import unittest
 import unittest.mock as mock
 from typing import Type
 
-from nose.tools import nottest
+import pytest
 
 
 # NOTE: this is simply to help PyCharm with code completion
@@ -15,7 +15,7 @@ class _TestCaseTemplate(unittest.TestCase):
         pass
 
 
-@nottest
+@pytest.mark.skip
 def TestCase(module) -> Type[_TestCaseTemplate]:
     class ActualTestCase(unittest.TestCase):
 

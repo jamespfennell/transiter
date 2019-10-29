@@ -2,6 +2,7 @@
 *pyc
 venv
 .pyenv
+.venv
 venv2
 coverage
 .coverage
