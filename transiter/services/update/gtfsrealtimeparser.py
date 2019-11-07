@@ -10,15 +10,9 @@ import pytz
 from google.transit import gtfs_realtime_pb2
 
 from transiter import models
-from transiter.services.update import tripupdater
 
 
-def create_parser(
-    gtfs_realtime_pb2_module=None,
-    post_pb2_parsing_function=None,
-    trip_data_cleaner: tripupdater.TripDataCleaner = None,
-    route_ids_function=None,
-):
+def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None):
     """
     Create a GTFS Realtime parser.
 
@@ -36,47 +30,26 @@ def create_parser(
     (3) Convert the JSON structure into various Transiter Python objects.
         These objects are SQL Alchemy models that correspond to database tables.
 
-    (4) Optionally apply a trip cleaner to the Python objects to filter out
-        bad trips or otherwise clean up the data.
-
-    (5) Persist the Python objects in the database.
-
     :param gtfs_realtime_pb2_module: optional, the protobuffers module to use
         to read the feed. Defaults to the official module on PyPI.
     :param post_pb2_parsing_function: the function described in (2). It takes
         a single argument, which is the JSON data structure. It returns nothing;
         rather, it alterts the JSON structure in place.
-    :param trip_data_cleaner: the trip cleaner described in (4)
-    :param route_ids_function: a function used to determine which routes are
-        update as part of this feed update. It takes in two arguments
-        (route_ids, feed) where route_ids is the collection or route_ids
-        found in the feed. Defaults to returning all routes in the system.
     :return: the parser
     """
     if gtfs_realtime_pb2_module is None:
         gtfs_realtime_pb2_module = gtfs_realtime_pb2
-    if post_pb2_parsing_function is None:
-        post_pb2_parsing_function = lambda __: None
-    if trip_data_cleaner is None:
-        trip_data_cleaner_function = lambda __, trips: trips
-    else:
-        trip_data_cleaner_function = trip_data_cleaner.clean
-    if route_ids_function is None:
-        route_ids_function = lambda __, ___: None
 
-    def parser(feed_update, content):
-        gtfs_data = read_gtfs_realtime(content, gtfs_realtime_pb2_module)
-        post_pb2_parsing_function(gtfs_data)
-        (feed_time, route_ids, trips) = transform_to_transiter_structure(
+    # Additional arguments are accepted for forwards compatibility
+    # noinspection PyUnusedLocal
+    def parser(binary_content, *args, **kwargs):
+        gtfs_data = read_gtfs_realtime(binary_content, gtfs_realtime_pb2_module)
+        if post_pb2_parsing_function is not None:
+            post_pb2_parsing_function(gtfs_data)
+        (feed_time, trips) = transform_to_transiter_structure(
             gtfs_data, "America/New_York"
         )
-        feed_update.feed_time = feed_time
-        cleaned_trips = trip_data_cleaner_function(feed_update, trips)
-        tripupdater.sync_trips(
-            feed_update.feed.system,
-            cleaned_trips,
-            route_ids_function(feed_update.feed, route_ids),
-        )
+        return trips
 
     return parser
 
@@ -154,7 +127,6 @@ class _GtfsRealtimeToTransiterTransformer:
         self._trip_id_to_transformed_entity = {}
         self._trip_id_to_trip_model = {}
         self._transformed_metadata = {}
-        self._feed_route_ids = set()
         self._feed_time = None
         self._timestamp_to_datetime_cache = {}
         if timezone_str is None:
@@ -168,11 +140,7 @@ class _GtfsRealtimeToTransiterTransformer:
         self._transform_trip_base_data()
         self._transform_trip_stop_events()
         self._update_stop_event_indices()
-        return (
-            self._feed_time,
-            self._feed_route_ids,
-            list(self._trip_id_to_trip_model.values()),
-        )
+        return (self._feed_time, list(self._trip_id_to_trip_model.values()))
 
     def _transform_feed_metadata(self):
         self._feed_time = self._timestamp_to_datetime(
@@ -231,7 +199,6 @@ class _GtfsRealtimeToTransiterTransformer:
             trip.current_stop_sequence = vehicle_data.get("current_stop_sequence", 0)
             trip.current_stop_id = vehicle_data.get("stop_id", None)
             self._trip_id_to_trip_model[trip_id] = trip
-            self._feed_route_ids.add(trip.route_id)
 
     def _transform_trip_stop_events(self):
         for trip_id, trip in self._trip_id_to_trip_model.items():
@@ -279,3 +246,59 @@ class _GtfsRealtimeToTransiterTransformer:
             return self._timezone.localize(dt)
         else:
             return dt.astimezone(self._timezone)
+
+
+class TripDataCleaner:
+    """
+    The TripDataCleaner provides a mechanism for cleaning valid and removing
+    invalid Trips and TripStopTimes.
+
+    To use the TripDataCleaner, you must provide a number of cleaning functions.
+    Trip cleaning functions accept two arguments - the current FeedUpdate
+    and the Trip being cleaned,
+    and perform some operations to clean up the trip - for example, switching
+    the direction of Trips in a given route to compensate for a known bug in a
+    Transit agency's data feed. If the cleaner returns
+    False, then that Trip is removed from the collection. TripStopTime cleaners
+    work identically.
+
+    After initializing the cleaner with cleaning functions, a list of Trips
+    is passed into its clean method. The cleaners operate on all of the Trips
+    and their contained TripStopTimes, remove entities based on cleaner function
+    results, and returns the list of cleaned trips.
+    """
+
+    def __init__(self, trip_cleaners, stop_time_cleaners):
+        """
+        Initialize a new TripDataCleaner
+
+        :param trip_cleaners: list of Trip cleaning functions
+        :param stop_time_cleaners: list of TripStopTime cleaning functions
+        """
+        self._trip_cleaners = trip_cleaners
+        self._stop_time_cleaners = stop_time_cleaners
+
+    def clean(self, trips):
+        """
+        Clean a collection of trips.
+
+        :param trips: the trips to clean
+        :return: the cleaned trips with bad trips removed
+        """
+        trips_to_keep = []
+        for trip in trips:
+            result = True
+            for trip_cleaner in self._trip_cleaners:
+                result = trip_cleaner(trip)
+                if not result:
+                    break
+            if not result:
+                continue
+
+            for stop_time_update in trip.stop_times:
+                for stop_time_cleaner in self._stop_time_cleaners:
+                    stop_time_cleaner(stop_time_update)
+
+            trips_to_keep.append(trip)
+
+        return trips_to_keep

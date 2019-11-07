@@ -6,6 +6,19 @@ from transiter import models
 from transiter.data import dbconnection
 
 
+def list_all_from_feed(feed_pk):
+    session = dbconnection.get_session()
+    query = (
+        session.query(models.Trip)
+        .filter(
+            models.Trip.source_pk == models.FeedUpdate.pk,
+            models.FeedUpdate.feed_pk == feed_pk,
+        )
+        .options(selectinload(models.Trip.stop_times))
+    )
+    return query.all()
+
+
 def list_all_in_route_by_pk(route_pk):
     """
     List all of the Trips in a route.

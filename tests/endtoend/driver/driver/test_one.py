@@ -124,13 +124,6 @@ class IntegrationTest(unittest.TestCase):
                 self.assertListEqual(usual_stops, actual_stops)
                 break
 
-    # TODO: re-enable this when realtime service maps are a thing
-    # def test_014_no_service_in_routes(self):
-    #    for route_id, usual_stops in self.ROUTE_ID_TO_USUAL_ROUTE.items():
-    #        route_response = self._get('systems/testsystem/routes/{}'.format(route_id))
-    #        for stop in route_response['stops']:
-    #            self.assertFalse(stop['current_service'])
-
     def test_015_no_feed_updates(self):
         for feed_id in self.FEED_IDS:
             feed_update_response = self._get(

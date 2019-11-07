@@ -4,13 +4,15 @@ from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, ForeignKey, En
 from sqlalchemy.orm import relationship
 
 from .base import Base
+from .updatableentity import UpdatableEntity
 
 
-class Alert(Base):
+class Alert(Base, UpdatableEntity):
     __tablename__ = "alert"
 
     pk = Column(Integer, primary_key=True)
     id = Column(String)
+    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
     class Cause(enum.Enum):
         ACCIDENT = 1
@@ -31,11 +33,9 @@ class Alert(Base):
 
     route_ids = set()
 
+    source = relationship("FeedUpdate", cascade="none")
     routes = relationship(
-        "Route",
-        secondary="alert_route",
-        back_populates="route_statuses",
-        cascade="none",
+        "Route", secondary="alert_route", back_populates="route_statuses"
     )
 
     _short_repr_list = [id, start_time, end_time, creation_time, header, description]

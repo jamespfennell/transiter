@@ -2,14 +2,16 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base
+from .updatableentity import UpdatableEntity
 
 
-class ScheduledService(Base):
+class ScheduledService(Base, UpdatableEntity):
     __tablename__ = "scheduled_service"
 
     pk = Column(Integer, primary_key=True)
     id = Column(String, nullable=False)
-    system_pk = Column(Integer, ForeignKey("system.pk"), index=True, nullable=False)
+    system_pk = Column(Integer, ForeignKey("system.pk"), index=True)
+    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
     monday = Column(Boolean)
     tuesday = Column(Boolean)
@@ -19,7 +21,8 @@ class ScheduledService(Base):
     saturday = Column(Boolean)
     sunday = Column(Boolean)
 
-    system = relationship("System", back_populates="scheduled_services", cascade="")
+    source = relationship("FeedUpdate", cascade="none")
+    system = relationship("System", back_populates="scheduled_services")
     trips = relationship(
-        "ScheduledTrip", back_populates="service", cascade="all, delete-orphan"
+        "ScheduledTrip", back_populates="service", cascade="delete, delete-orphan"
     )

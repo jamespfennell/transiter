@@ -15,6 +15,8 @@ def ensure_db_setup():
     dbconnection.rebuild_db()
 
     session = dbconnection.Session()
+    session.add(testdata.scheduled_trip_1_1)
+    session.add(testdata.scheduled_trip_2_1)
     session.add(testdata.system_one)
     session.add(testdata.system_two)
     session.commit()

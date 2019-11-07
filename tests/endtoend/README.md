@@ -65,7 +65,7 @@ transiterclt launch http-debug server
 Assuming you are in the end to end test directory, the
 source server can be launched with:
 ```bash
-python sourceserver
+python sourceserver/main.py
 ```
 Before running the test, ensure the database is empty:
 ```bash

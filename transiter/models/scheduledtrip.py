@@ -14,8 +14,11 @@ class ScheduledTrip(Base):
 
     direction_id = Column(Boolean)
 
-    route = relationship("Route", cascade="")
-    service = relationship("ScheduledService", back_populates="trips", cascade="")
+    route_id = None
+
+    route = relationship("Route", cascade="none")
+    service = relationship("ScheduledService", back_populates="trips", cascade="none")
     stop_times = relationship(
         "ScheduledTripStopTime", back_populates="trip", cascade="all, delete-orphan"
     )
+    stop_times_light = None

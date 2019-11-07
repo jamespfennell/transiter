@@ -11,15 +11,12 @@ Transiter
    :caption: User Documentation
 
    deployment
+   system
+   customfeedparser
    apireference
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Developer Documentation
 
-   system
-   architecture
 
 
 

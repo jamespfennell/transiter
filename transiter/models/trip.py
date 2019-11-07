@@ -13,14 +13,16 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from .base import Base
+from .updatableentity import UpdatableEntity
 
 
-class Trip(Base):
+class Trip(Base, UpdatableEntity):
     __tablename__ = "trip"
 
     pk = Column(Integer, primary_key=True)
     id = Column(String)
     route_pk = Column(Integer, ForeignKey("route.pk"), nullable=False)
+    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
     class TripStatus(enum.Enum):
         SCHEDULED = 1
@@ -38,6 +40,7 @@ class Trip(Base):
     route_id = None
     stop_id = None
 
+    source = relationship("FeedUpdate", cascade="none")
     route = relationship("Route", back_populates="trips", cascade="")
     stop_times = relationship(
         "TripStopTime",

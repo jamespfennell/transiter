@@ -1,5 +1,5 @@
-Introductory guide to using Transiter
-=====================================
+Introductory guide
+==================
 
 
 

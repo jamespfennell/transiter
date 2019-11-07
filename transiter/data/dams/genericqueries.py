@@ -4,6 +4,8 @@ This module provides some abstract methods to remove code duplication in the DAM
 from transiter.data import dbconnection
 from transiter import models
 
+import typing
+
 
 def create(DbEntity: models.Base, entity=None):
     """
@@ -107,3 +109,33 @@ def get_id_to_pk_map(DbEntity: models.Base, system_id=None, ids=None):
     for (id_, pk) in query.all():
         id_to_pk[id_] = pk
     return id_to_pk
+
+
+# DbEntity is a class
+# noinspection PyPep8Naming
+def get_id_to_pk_map_by_feed_pk(DbEntity: typing.Type[models.Base], feed_pk):
+    id_to_pk = {}
+    session = dbconnection.get_session()
+    query = (
+        session.query(DbEntity.id, DbEntity.pk)
+        .join(models.FeedUpdate, DbEntity.source_pk == models.FeedUpdate.pk)
+        .filter(models.FeedUpdate.feed_pk == feed_pk)
+    )
+    for (id_, pk) in query.all():
+        id_to_pk[id_] = pk
+    return id_to_pk
+
+
+# DbEntity is a class
+# noinspection PyPep8Naming
+def list_stale_entities(
+    DbEntity: typing.Type[models.Base], feed_update: models.FeedUpdate
+):
+    session = dbconnection.get_session()
+    query = (
+        session.query(DbEntity)
+        .join(models.FeedUpdate, DbEntity.source_pk == models.FeedUpdate.pk)
+        .filter(models.FeedUpdate.feed_pk == feed_update.feed_pk)
+        .filter(models.FeedUpdate.pk != feed_update.pk)
+    )
+    return query.all()

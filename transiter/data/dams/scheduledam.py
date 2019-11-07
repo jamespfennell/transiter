@@ -85,3 +85,19 @@ def list_scheduled_trips_with_times_in_system(system_pk):
         .join(last_stop_query, models.ScheduledTrip.pk == last_stop_query.c.trip_pk)
     )
     return query.all()
+
+
+def get_trip_id_to_pk_map_by_feed_pk(feed_pk):
+    id_to_pk = {}
+    query = (
+        dbconnection.get_session()
+        .query(models.ScheduledTrip.id, models.ScheduledTrip.pk)
+        .filter(
+            models.ScheduledService.pk == models.ScheduledTrip.service_pk,
+            models.ScheduledService.source_pk == models.FeedUpdate.pk,
+            models.FeedUpdate.feed_pk == feed_pk,
+        )
+    )
+    for (id_, pk) in query.all():
+        id_to_pk[id_] = pk
+    return id_to_pk

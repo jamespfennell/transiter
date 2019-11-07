@@ -1,2 +1,2 @@
-Creating a Transit System
+Creating a transit system
 =========================

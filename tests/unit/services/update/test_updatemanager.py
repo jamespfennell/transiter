@@ -32,6 +32,7 @@ class TestUpdateManager(testutil.TestCase(updatemanager)):
         self.importlib = self.mockImportedModule(updatemanager.importlib)
         self.traceback = self.mockImportedModule(updatemanager.traceback)
         self.dbconnection = self.mockImportedModule(updatemanager.dbconnection)
+        self.sync = self.mockImportedModule(updatemanager.sync)
 
         self.built_in_parser = mock.MagicMock()
         updatemanager._built_in_parser_to_function[
@@ -108,6 +109,19 @@ class TestUpdateManager(testutil.TestCase(updatemanager)):
         self.assertEqual(self.feed_update.status, self.feed_update.Status.FAILURE)
         self.assertEqual(
             self.feed_update.explanation, self.feed_update.Explanation.PARSE_ERROR
+        )
+
+    def test_execute_feed_update__sync_error(self):
+        """[Update manager] execute feed update - sync error"""
+        self.feed.built_in_parser = self.feed.BuiltInParser.GTFS_REALTIME
+
+        self.sync.sync.side_effect = ValueError
+
+        updatemanager.execute_feed_update(self.feed_update)
+
+        self.assertEqual(self.feed_update.status, self.feed_update.Status.FAILURE)
+        self.assertEqual(
+            self.feed_update.explanation, self.feed_update.Explanation.SYNC_ERROR
         )
 
     def test_get_parser__invalid_parser_string(self):

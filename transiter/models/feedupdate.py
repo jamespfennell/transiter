@@ -35,6 +35,7 @@ class FeedUpdate(Base):
         DOWNLOAD_ERROR = 4
         INVALID_PARSER = 5
         EMPTY_FEED = 6
+        SYNC_ERROR = 7
 
     status = Column(Enum(Status))
     explanation = Column(Enum(Explanation))

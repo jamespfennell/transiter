@@ -15,12 +15,15 @@ This algorithm performs the following steps in order:
     used for the last successful FeedUpdate for this Feed. If they match,
     the update succeeds with explanation NOT_NEEDED.
 
-(4) Perform the actual parsing using the Feed's parser. If any exception is
+(4) Perform the actual parsing using the Feed's parser. This "converts" the raw
+    feed content into an iterator of UpdatableEntities. If any exception is
     raised by the parser then the update is failed with explanation
     PARSE_ERROR.
 
-(5) If no exception is raised by the parser then the update is deemed to be
-    successful with explanation UPDATED.
+(5) Sync the results of the parser to the database using the sync module. If any
+    exception is raised here, the update fails with explanation SYNC_ERROR.
+
+(6) Otherwise, the update is deemed to be successful with explanation UPDATED.
 """
 import hashlib
 import importlib
@@ -35,7 +38,8 @@ from requests import RequestException
 from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam
-from . import gtfsrealtimeutil, gtfsstaticutil
+from transiter.services.update import sync
+from . import gtfsrealtimeparser, gtfsstaticparser
 
 logger = logging.getLogger(__name__)
 
@@ -86,10 +90,11 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
 
     try:
         parser = _get_parser(feed)
-    except _InvalidParser as invalid_parser:
+    except _InvalidParser:
         feed_update.status = feed_update.Status.FAILURE
         feed_update.explanation = feed_update.Explanation.INVALID_PARSER
-        feed_update.failure_message = str(invalid_parser)
+        feed_update.failure_message = str(traceback.format_exc())
+        logger.info("Feed parser import error:\n" + feed_update.failure_message)
         return
 
     if content is None:
@@ -121,7 +126,7 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
     # perspective, the feed parser is foreign code.
     # noinspection PyBroadException
     try:
-        parser(feed_update, content)
+        entities = parser(binary_content=content)
     except Exception:
         feed_update.status = feed_update.Status.FAILURE
         feed_update.explanation = feed_update.Explanation.PARSE_ERROR
@@ -129,13 +134,25 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
         logger.info("Feed parse error:\n" + feed_update.failure_message)
         return
 
+    # noinspection PyBroadException
+    try:
+        sync.sync(feed_update, entities)
+    except Exception:
+        feed_update.status = feed_update.Status.FAILURE
+        feed_update.explanation = feed_update.Explanation.SYNC_ERROR
+        feed_update.failure_message = str(traceback.format_exc())
+        logger.info(
+            "Error syncing parsed results to the DB:\n" + feed_update.failure_message
+        )
+        return
+
     feed_update.status = feed_update.Status.SUCCESS
     feed_update.explanation = feed_update.Explanation.UPDATED
 
 
 _built_in_parser_to_function = {
-    models.Feed.BuiltInParser.GTFS_STATIC: gtfsstaticutil.parse_gtfs_static,
-    models.Feed.BuiltInParser.GTFS_REALTIME: gtfsrealtimeutil.built_in_parser,
+    models.Feed.BuiltInParser.GTFS_STATIC: gtfsstaticparser.parse_gtfs_static,
+    models.Feed.BuiltInParser.GTFS_REALTIME: gtfsrealtimeparser.built_in_parser,
 }
 
 

@@ -27,6 +27,7 @@ app.register_blueprint(
     endpoints.trip_endpoints, url_prefix="/systems/<system_id>/routes/<route_id>/trips"
 )
 app.register_blueprint(endpoints.system_endpoints, url_prefix="/systems")
+app.url_map.strict_slashes = False
 
 logger = logging.getLogger("transiter")
 logger.setLevel(logging.INFO)

@@ -87,8 +87,6 @@ def install_uow(system_id, config_str, extra_settings):
 
     system_config = systemconfigreader.read(config_str, extra_settings)
 
-    # TODO: verify the python requirements
-
     system = systemdam.create()
     system.id = system_id
     system.name = system_config[systemconfigreader.NAME]

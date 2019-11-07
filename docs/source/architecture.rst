@@ -1,2 +1,0 @@
-Transiter Architecture
-======================
