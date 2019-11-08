@@ -37,28 +37,11 @@ def calculate_version():
     version = calculate_base_version()
 
     travis_build_number = os.environ.get("TRAVIS_BUILD_NUMBER")
-    git_tag = os.environ.get("TRAVIS_TAG")
-    if git_tag == "":
-        git_tag = None
     if travis_build_number is not None:
-        if git_tag is None:
+        if not is_release():
             version += ".dev{}".format(travis_build_number)
-        else:
-            assert git_tag == version
 
     return version
-
-
-def is_dev_version():
-    travis_build_number = os.environ.get("TRAVIS_BUILD_NUMBER")
-    git_tag = os.environ.get("TRAVIS_TAG")
-    if git_tag == "":
-        git_tag = None
-    if travis_build_number is None:
-        return True
-    if git_tag is None:
-        return True
-    return False
 
 
 def set_version(new_version):
@@ -73,17 +56,33 @@ def set_version(new_version):
         )
 
 
+def is_release():
+    """
+    True if this is a build on a release tag.
+    """
+    travis_branch = os.environ.get("TRAVIS_BRANCH")
+    return (
+        travis_branch is not None
+        and travis_branch == os.environ.get("TRAVIS_TAG")
+        and travis_branch == calculate_base_version()
+    )
+
+
 def is_mainline_build():
-    if os.environ.get("TRAVIS_BUILD_NUMBER") is None:
-        return False
-    if os.environ.get("TRAVIS_BRANCH") != "master":
-        return False
-    if os.environ.get("TRAVIS_PULL_REQUEST") != "false":
-        return False
-    return True
+    """
+    True if this is a build on master or a release tag.
+    """
+    return os.environ.get("TRAVIS_PULL_REQUEST") == "false" and (
+        os.environ.get("TRAVIS_BRANCH") == "master" or is_release()
+    )
 
 
 def upload_to_py_pi():
+    """
+    Upload the Transiter Python package inside the CI container to PyPI.
+
+    If this is not a build on master or a release tag, this is a no-op.
+    """
     if not is_mainline_build():
         return
     subprocess.run(
@@ -101,6 +100,11 @@ def upload_to_py_pi():
 
 
 def upload_to_docker_hub():
+    """
+    Upload the Transiter Docker images to Docker Hub.
+
+    If this is not a build on master or a release tag, this is a no-op.
+    """
     if not is_mainline_build():
         return
     client = docker.from_env()
@@ -110,11 +114,10 @@ def upload_to_docker_hub():
     )
     image_names = ["webserver", "taskserver", "postgres"]
 
-    if is_dev_version():
-        latest_prefix = "latest-dev"
-    else:
-        latest_prefix = "latest"
-    for prefix in [latest_prefix, calculate_version()]:
+    prefixes = ["latest-dev", calculate_version()]
+    if is_release():
+        prefixes.append("latest")
+    for prefix in prefixes:
         for image_name in image_names:
             full_image_name = "jamespfennell/transiter:{}-{}".format(prefix, image_name)
             image = client.images.get(
