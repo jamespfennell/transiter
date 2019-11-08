@@ -35,7 +35,10 @@ class Alert(Base, UpdatableEntity):
 
     source = relationship("FeedUpdate", cascade="none")
     routes = relationship(
-        "Route", secondary="alert_route", back_populates="route_statuses"
+        "Route",
+        secondary="alert_route",
+        back_populates="route_statuses",
+        cascade="none",
     )
 
     _short_repr_list = [id, start_time, end_time, creation_time, header, description]

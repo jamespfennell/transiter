@@ -224,11 +224,13 @@ def _calculate_changed_route_pks(old_trips, new_trips):
 def _sync_alerts(feed_update, alerts):
     if len(alerts) == 0:
         return
+    persisted_alerts = _merge_entities(models.Alert, feed_update, alerts)
     route_id_to_route = {route.id: route for route in feed_update.feed.system.routes}
-    for alert in alerts:
-        alert.routes = [route_id_to_route[route_id] for route_id in alert.route_ids]
-
-    return _merge_entities(models.Alert, feed_update, alerts)
+    alert_id_to_route_ids = {alert.id: alert.route_ids for alert in alerts}
+    for alert in persisted_alerts:
+        alert.routes = [
+            route_id_to_route[route_id] for route_id in alert_id_to_route_ids[alert.id]
+        ]
 
 
 # DbEntity is a class
@@ -248,10 +250,10 @@ def _merge_entities(DbObject: typing.Type[models.Base], feed_update, entities):
 
     persisted_entities = []
     id_to_pk = genericqueries.get_id_to_pk_map_by_feed_pk(DbObject, feed_update.feed.pk)
-
     session = dbconnection.get_session()
     for entity in entities:
-        entity.pk = id_to_pk.get(entity.id)
+        if entity.id in id_to_pk:
+            entity.pk = id_to_pk[entity.id]
         entity.source_pk = feed_update.pk
         persisted_entities.append(session.merge(entity))
 
