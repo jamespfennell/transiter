@@ -61,6 +61,10 @@ def get_by_id(system_id, return_links=True):
         "stops": {"count": systemdam.count_stops_in_system(system_id)},
         "routes": {"count": systemdam.count_routes_in_system(system_id)},
         "feeds": {"count": systemdam.count_feeds_in_system(system_id)},
+        "agency_alerts": [
+            alert.long_repr()
+            for alert in systemdam.list_all_alerts_associated_to_system(system.pk)
+        ],
     }
     if return_links:
         entity_type_to_link = {

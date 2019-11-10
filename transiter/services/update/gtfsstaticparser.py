@@ -78,11 +78,15 @@ def parse_routes(gtfs_static_file: GtfsStaticFile):
     for row in gtfs_static_file.routes():
         route = models.Route()
         route.id = row["route_id"]
-        route.color = row.get("route_color")
+        if "route_type" in row:
+            route.type = models.Route.Type(int(row["route_type"]))
+        route.color = row.get("route_color", "FFFFF")
+        route.text_color = row.get("route_text_color", "000000")
         route.url = row.get("route_url")
         route.short_name = row.get("route_short_name")
         route.long_name = row.get("route_long_name")
         route.description = row.get("route_desc")
+        route.sort_order = row.get("route_sort_order")
         yield route
 
 

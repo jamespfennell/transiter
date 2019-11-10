@@ -6,6 +6,7 @@ from strictyaml import Map
 from strictyaml.exceptions import YAMLValidationError, YAMLSerializationError
 
 from transiter.services import systemconfigreader
+from transiter import models, exceptions
 
 
 class TestHumanReadableTimePeriod(unittest.TestCase):
@@ -74,3 +75,118 @@ class TestPyEnum(unittest.TestCase):
             pass
 
         self.assertRaises(AssertionError, lambda: systemconfigreader.PyEnum(DummyClass))
+
+
+class TestReadConfig(unittest.TestCase):
+    SYSTEM_NAME = "Test System"
+    FEED_ID = "GTFS"
+    URL = "https://transiter.io"
+    SETTING_VALUE = "value"
+
+    def test_base_case(self):
+        """[System config reader] Base case"""
+
+        config = f"""
+        {systemconfigreader.NAME}: "{self.SYSTEM_NAME}"
+        
+        {systemconfigreader.FEEDS}:
+          {self.FEED_ID}:
+            http:
+              url: {self.URL}
+            parser:
+              built_in: GTFS_STATIC
+        """
+
+        expected = {
+            systemconfigreader.NAME: self.SYSTEM_NAME,
+            "requirements": {"packages": [], "settings": []},
+            "feeds": {
+                self.FEED_ID: {
+                    "http": {"url": self.URL, "headers": {}},
+                    "parser": {"built_in": models.Feed.BuiltInParser.GTFS_STATIC},
+                    "auto_update": {"enabled": False, "period": -1},
+                    "required_for_install": False,
+                }
+            },
+            "direction_rules_files": [],
+        }
+
+        actual = systemconfigreader.read(config)
+        del actual["service_maps"]
+
+        self.maxDiff = None
+        self.assertDictEqual(expected, actual)
+
+    def test_yaml_schema_error(self):
+        """[System config reader] Yaml schema error"""
+
+        config = """
+        random_key:
+          and_again: 2
+        """
+
+        self.assertRaises(
+            exceptions.InvalidSystemConfigFile, lambda: systemconfigreader.read(config)
+        )
+
+    def test_yaml_parser_error(self):
+        """[System config reader] Yaml parser error"""
+
+        config = """
+        random_key:
+        <HTML TAG>
+            Ramon ind
+          and_again: 2
+        """
+
+        self.assertRaises(
+            exceptions.InvalidSystemConfigFile, lambda: systemconfigreader.read(config)
+        )
+        pass
+
+    def test_missing_settings(self):
+        """[System config reader] Missing setting"""
+
+        config = f"""
+        {systemconfigreader.NAME}: "{self.SYSTEM_NAME}"
+        
+        {systemconfigreader.REQUIREMENTS}:
+          {systemconfigreader.SETTINGS}:
+            -setting_name
+
+        {systemconfigreader.FEEDS}:
+          {self.FEED_ID}:
+            http:
+              url: "{{setting_name}}"
+            parser:
+              built_in: GTFS_STATIC
+        """
+
+        self.assertRaises(
+            exceptions.InvalidSystemConfigFile, lambda: systemconfigreader.read(config)
+        )
+
+    def test_substitute_settings(self):
+        """[System config reader] Substitute setting"""
+
+        config = f"""
+        {systemconfigreader.NAME}: "{self.SYSTEM_NAME}"
+
+        {systemconfigreader.REQUIREMENTS}:
+          {systemconfigreader.SETTINGS}:
+            - setting_name
+
+        {systemconfigreader.FEEDS}:
+          {self.FEED_ID}:
+            http:
+              url: "{{setting_name}}"
+            parser:
+              built_in: GTFS_STATIC
+        """
+
+        self.assertEqual(
+            self.SETTING_VALUE,
+            systemconfigreader.read(config, {"setting_name": self.SETTING_VALUE})[
+                systemconfigreader.FEEDS
+            ][self.FEED_ID][systemconfigreader.HTTP][systemconfigreader.URL],
+        )

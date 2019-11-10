@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
 from .base import Base
 from .updatableentity import UpdatableEntity
+import enum
 
 
 class Route(Base, UpdatableEntity):
@@ -13,11 +14,24 @@ class Route(Base, UpdatableEntity):
     system_id = Column(String, ForeignKey("system.id"), index=True)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
+    class Type(enum.Enum):
+        LIGHT_RAIL = 0
+        SUBWAY = 1
+        RAIL = 2
+        BUS = 3
+        FERRY = 4
+        CABLE_CAR = 5
+        GONDOLA = 6
+        FUNICULAR = 7
+
     color = Column(String)
+    text_color = Column(String)
     short_name = Column(String)
     long_name = Column(String)
     description = Column(String)
     url = Column(String)
+    type = Column(Enum(Type, name="route_type"))
+    sort_order = Column(Integer)
 
     system = relationship("System", back_populates="routes")
     source = relationship("FeedUpdate", cascade="none")
@@ -33,4 +47,4 @@ class Route(Base, UpdatableEntity):
     )
 
     _short_repr_list = [id, color]
-    _long_repr_list = [id, short_name, long_name, color, description, url]
+    _long_repr_list = [id, short_name, long_name, color, description, url, type]

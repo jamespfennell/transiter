@@ -106,6 +106,7 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
             feed_update.failure_message = str(download_error)
             return
 
+    feed_update.content_length = len(content)
     if len(content) == 0:
         feed_update.status = feed_update.Status.FAILURE
         feed_update.explanation = feed_update.Explanation.EMPTY_FEED

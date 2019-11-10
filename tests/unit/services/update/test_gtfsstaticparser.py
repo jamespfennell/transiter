@@ -56,11 +56,16 @@ class TestGtfsStaticUtil(testutil.TestCase(gtfsstaticparser), unittest.TestCase)
                 "route_id": self.ROUTE_ID,
                 "route_color": self.ROUTE_COLOR,
                 "route_desc": self.ROUTE_DESCRIPTION,
+                "route_type": models.Route.Type.RAIL.value,
             }
         ]
 
         expected_route = models.Route(
-            id=self.ROUTE_ID, color=self.ROUTE_COLOR, description=self.ROUTE_DESCRIPTION
+            id=self.ROUTE_ID,
+            color=self.ROUTE_COLOR,
+            description=self.ROUTE_DESCRIPTION,
+            text_color="000000",
+            type=models.Route.Type.RAIL,
         )
 
         self.assertEqual(

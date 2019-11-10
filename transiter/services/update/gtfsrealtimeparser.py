@@ -38,9 +38,6 @@ def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None)
         rather, it alterts the JSON structure in place.
     :return: the parser
     """
-    if gtfs_realtime_pb2_module is None:
-        gtfs_realtime_pb2_module = gtfs_realtime_pb2
-
     # Additional arguments are accepted for forwards compatibility
     # noinspection PyUnusedLocal
     def parser(binary_content, *args, **kwargs):
@@ -59,7 +56,7 @@ def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None)
 built_in_parser = create_parser()
 
 
-def read_gtfs_realtime(content, gtfs_realtime_pb2_module):
+def read_gtfs_realtime(content, gtfs_realtime_pb2_module=None):
     """
     Convert a binary GTFS Realtime feed to a JSON-like data structure
 
@@ -67,6 +64,9 @@ def read_gtfs_realtime(content, gtfs_realtime_pb2_module):
     :param gtfs_realtime_pb2_module: GTFS realtime module
     :return: the data in a JSON-like data structure
     """
+    if gtfs_realtime_pb2_module is None:
+        gtfs_realtime_pb2_module = gtfs_realtime_pb2
+
     gtfs_feed = gtfs_realtime_pb2_module.FeedMessage()
     gtfs_feed.ParseFromString(content)
     return _read_protobuf_message(gtfs_feed)
@@ -122,6 +122,24 @@ def transform_to_transiter_structure(data, timezone_str=None):
     return transformer.transform()
 
 
+ACTIVE_PERIOD = "active_period"
+AGENCY_ID = "agency_id"
+ALERT = "alert"
+CAUSE = "cause"
+DESCRIPTION_TEXT = "description_text"
+EFFECT = "effect"
+END = "end"
+ENTITY = "entity"
+HEADER_TEXT = "header_text"
+ID = "id"
+INFORMED_ENTITY = "informed_entity"
+ROUTE_ID = "route_id"
+START = "start"
+TRANSLATION = "translation"
+TEXT = "text"
+URL = "url"
+
+
 class _GtfsRealtimeToTransiterTransformer:
     def __init__(self, raw_data, timezone_str=None):
         self._raw_data = raw_data
@@ -142,7 +160,66 @@ class _GtfsRealtimeToTransiterTransformer:
         self._transform_trip_base_data()
         self._transform_trip_stop_events()
         self._update_stop_event_indices()
-        return (self._feed_time, list(self._trip_id_to_trip_model.values()))
+        return (
+            self._feed_time,
+            list(self._trip_id_to_trip_model.values())
+            + self.build_alerts(self._raw_data),
+        )
+
+    def build_alerts(self, raw_data):
+        def get_text(alert_data_, key):
+            texts = alert_data_.get(key, {}).get(TRANSLATION, [])
+            if len(texts) == 0:
+                return None
+            return texts[0][TEXT]
+
+        def get_enum_value(enum, key, default):
+            try:
+                return enum[key]
+            except KeyError:
+                return default
+
+        alerts = []
+        for entity in raw_data.get(ENTITY, []):
+            alert_id = entity.get(ID)
+            alert_data = entity.get(ALERT)
+            if alert_id is None or alert_data is None:
+                continue
+            alert = models.Alert(
+                id=alert_id,
+                cause=get_enum_value(
+                    models.Alert.Cause,
+                    alert_data.get(CAUSE),
+                    models.Alert.Cause.UNKNOWN_CAUSE,
+                ),
+                effect=get_enum_value(
+                    models.Alert.Effect,
+                    alert_data.get(EFFECT),
+                    models.Alert.Effect.UNKNOWN_EFFECT,
+                ),
+                header=get_text(alert_data, HEADER_TEXT),
+                description=get_text(alert_data, DESCRIPTION_TEXT),
+                url=get_text(alert_data, URL),
+                start_time=self._timestamp_to_datetime(
+                    alert_data.get(ACTIVE_PERIOD, {}).get(START)
+                ),
+                end_time=self._timestamp_to_datetime(
+                    alert_data.get(ACTIVE_PERIOD, {}).get(START)
+                ),
+            )
+            informed_entities = alert_data.get(INFORMED_ENTITY, {})
+            alert.agency_ids = [
+                informed_entity[AGENCY_ID]
+                for informed_entity in informed_entities
+                if AGENCY_ID in informed_entity
+            ]
+            alert.route_ids = [
+                informed_entity[ROUTE_ID]
+                for informed_entity in informed_entities
+                if ROUTE_ID in informed_entity
+            ]
+            alerts.append(alert)
+        return alerts
 
     def _transform_feed_metadata(self):
         self._feed_time = self._timestamp_to_datetime(
@@ -165,6 +242,8 @@ class _GtfsRealtimeToTransiterTransformer:
                 attach_entity("trip_update", main_entity["trip_update"])
             if "vehicle" in main_entity:
                 attach_entity("vehicle", main_entity["vehicle"])
+            # if "alert" in main_entity:
+            #    self._alerts_raw_data.append(main_entity["alert"])
 
     def _transform_trip_base_data(self):
         for trip_id, entity in self._trip_id_to_raw_entities.items():

@@ -66,6 +66,8 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
     def test_get_by_id(self):
         """[System service] Get a specific system"""
+        alert = models.Alert(id="alert_id", header="alert_header")
+        self.systemdam.list_all_alerts_associated_to_system.return_value = [alert]
 
         hrefs_dict = {
             "stops": links.StopsInSystemIndexLink(self.system_1),
@@ -82,6 +84,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             for (name, count) in child_entities_dict.items()
         }
         expected.update(**self.system_1.short_repr())
+        expected["agency_alerts"] = [alert.long_repr()]
 
         self.systemdam.get_by_id.return_value = self.system_1
         self.systemdam.count_stops_in_system.return_value = self.SYSTEM_ONE_NUM_STOPS

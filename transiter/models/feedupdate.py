@@ -41,6 +41,7 @@ class FeedUpdate(Base):
     explanation = Column(Enum(Explanation))
     failure_message = Column(String)
     raw_data_hash = Column(String)
+    content_length = Column(Integer)
     execution_duration = Column(Float)
     last_action_time = Column(
         TIMESTAMP(timezone=True),
@@ -62,6 +63,7 @@ class FeedUpdate(Base):
         explanation,
         failure_message,
         raw_data_hash,
+        content_length,
         last_action_time,
     ]
     _long_repr_dict = _short_repr_dict

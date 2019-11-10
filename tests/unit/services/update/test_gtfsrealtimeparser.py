@@ -99,6 +99,72 @@ class TestReadProtobufMessage(unittest.TestCase):
         self.assertDictEqual(actual_data, expected_data)
 
 
+class TestParseAlerts(unittest.TestCase):
+
+    ID = "1"
+    CAUSE = models.Alert.Cause.CONSTRUCTION
+    EFFECT = models.Alert.Effect.SIGNIFICANT_DELAYS
+    HEADER = "2"
+
+    def setUp(self):
+        self.parser = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer("")
+
+    def test_no_alerts(self):
+        """[GTFS Realtime parser] Parse alerts, no alert data"""
+        raw_data = {"entity": [{"id": self.ID, "vehicle": {}}]}
+
+        self.assertEqual([], self.parser.build_alerts(raw_data))
+
+    def test_no_alerts_ids(self):
+        """[GTFS Realtime parser] Parse alerts, no alert id"""
+        raw_data = {"entity": [{"alert": {}}]}
+
+        self.assertEqual([], self.parser.build_alerts(raw_data))
+
+    def test_base_case(self):
+        """[GTFS Realtime parser] Parse alert base case"""
+
+        raw_data = {
+            "entity": [
+                {
+                    "id": self.ID,
+                    "alert": {
+                        "cause": self.CAUSE.name,
+                        "effect": self.EFFECT.name,
+                        "header_text": {"translation": [{"text": self.HEADER}]},
+                    },
+                }
+            ]
+        }
+
+        expected_alert = models.Alert(
+            id=self.ID, cause=self.CAUSE, effect=self.EFFECT, header=self.HEADER
+        )
+
+        self.assertEqual([expected_alert], self.parser.build_alerts(raw_data))
+
+    def test_no_effect_or_cause(self):
+        """[GTFS Realtime parser] Parse alert, no effect or cause"""
+
+        raw_data = {
+            "entity": [
+                {
+                    "id": self.ID,
+                    "alert": {"header_text": {"translation": [{"text": self.HEADER}]}},
+                }
+            ]
+        }
+
+        expected_alert = models.Alert(
+            id=self.ID,
+            cause=models.Alert.Cause.UNKNOWN_CAUSE,
+            effect=models.Alert.Effect.UNKNOWN_EFFECT,
+            header=self.HEADER,
+        )
+
+        self.assertEqual([expected_alert], self.parser.build_alerts(raw_data))
+
+
 class TestTransformGtfsRealtime(unittest.TestCase):
     GTFS_REALTIME_VERSION = "2.0"
     INCREMENTALITY = "FULL_DATASET"

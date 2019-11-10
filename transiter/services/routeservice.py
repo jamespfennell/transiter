@@ -77,7 +77,7 @@ def get_in_system_by_id(system_id, route_id, return_links=True):
         **route.long_repr(),
         "periodicity": periodicity,
         "status": status,
-        "alerts": [alert.short_repr() for alert in route.route_statuses],
+        "alerts": [alert.long_repr() for alert in route.route_statuses],
         "service_maps": [],
     }
 

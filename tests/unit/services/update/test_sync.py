@@ -93,7 +93,47 @@ class TestSync(testutil.TestCase(sync)):
         )
 
 
+class TestSyncAlerts(testutil.TestCase(sync)):
+
+    ID_1 = "1"
+    ID_2 = "2"
+    SYSTEM_ID = "3"
+    SYSTEM_PK = 7
+    ROUTE_ID_1 = "4"
+    ROUTE_ID_2 = "5"
+    AGENCY_ID = "6"
+
+    @mock.patch.object(sync, "_merge_entities")
+    def test_sync_alerts(self, _merge_entities):
+        """[Sync] Test sync alerts"""
+
+        feed = models.Feed()
+        feed.system = models.System(id=self.SYSTEM_ID, pk=self.SYSTEM_PK)
+        feed.system.routes = [
+            models.Route(id=self.ROUTE_ID_1),
+            models.Route(id=self.ROUTE_ID_2),
+        ]
+        feed_update = models.FeedUpdate(feed)
+
+        alerts = [
+            models.Alert(id=self.ID_1, route_ids=[self.ROUTE_ID_1]),
+            models.Alert(id=self.ID_2, agency_ids=[self.ROUTE_ID_1]),
+        ]
+
+        persisted_alerts = [models.Alert(id=self.ID_1), models.Alert(id=self.ID_2)]
+        _merge_entities.return_value = persisted_alerts
+
+        sync._sync_alerts(feed_update, alerts)
+
+        self.assertEqual([feed.system.routes[0]], persisted_alerts[0].routes)
+        self.assertEqual([], persisted_alerts[1].routes)
+
+        self.assertEqual(None, persisted_alerts[0].system_pk)
+        self.assertEqual(self.SYSTEM_PK, persisted_alerts[1].system_pk)
+
+
 class TestSyncTrips(testutil.TestCase(sync)):
+
     SYSTEM_ID = "8"
     ROUTE_1_ID = "1"
     ROUTE_1_PK = 2

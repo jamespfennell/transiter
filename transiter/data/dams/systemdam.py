@@ -92,18 +92,15 @@ def count_feeds_in_system(system_id):
     return _count_child_entity_in_system(system_id, models.Feed)
 
 
-def list_all_alerts_in_system(system_id):
+def list_all_alerts_associated_to_system(system_pk):
     """
-    List all of the alerts in a system.
+    List all of the alerts associated directly to a system.
+
+    This does *not* return alerts that are associated other entities in the system
 
     :param system_id: the system's ID
     :return: list of Alerts
     """
     session = dbconnection.get_session()
-    query = (
-        session.query(models.Alert)
-        .join(models.Route, models.Alert.routes)
-        .join(models.System)
-        .filter(models.System.id == system_id)
-    )
+    query = session.query(models.Alert).filter(models.Alert.system_pk == system_pk)
     return query.all()

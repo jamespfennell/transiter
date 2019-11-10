@@ -15,15 +15,34 @@ class Alert(Base, UpdatableEntity):
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
     class Cause(enum.Enum):
-        ACCIDENT = 1
-        MAINTENANCE = 2
+        UNKNOWN_CAUSE = 1
+        OTHER_CAUSE = 2
+        TECHNICAL_PROBLEM = 3
+        STRIKE = 4
+        DEMONSTRATION = 5
+        ACCIDENT = 6
+        HOLIDAY = 7
+        WEATHER = 8
+        MAINTENANCE = 9
+        CONSTRUCTION = 10
+        POLICE_ACTIVITY = 11
+        MEDICAL_EMERGENCY = 12
 
     class Effect(enum.Enum):
-        MODIFIED_SERVICE = 1
+        NO_SERVICE = 0
+        REDUCED_SERVICE = 1
         SIGNIFICANT_DELAYS = 2
+        DETOUR = 3
+        ADDITIONAL_SERVICE = 4
+        MODIFIED_SERVICE = 5
+        OTHER_EFFECT = 6
+        UNKNOWN_EFFECT = 7
+        STOP_MOVED = 8
 
     header = Column(String)
     description = Column(String)
+    url = Column(String)
+
     cause = Column(Enum(Cause))
     effect = Column(Enum(Effect))
     priority = Column(Integer)
@@ -31,7 +50,14 @@ class Alert(Base, UpdatableEntity):
     end_time = Column(TIMESTAMP(timezone=True))
     creation_time = Column(TIMESTAMP(timezone=True))
 
+    # NOTE: the following foreign key is *temporary*! It is used when, in a feed, the
+    # alert's selector references an agency. Pending the introduction of a
+    # models.Agency type with which we can many-to-many relate, we just relate such an
+    # alert to the system it is in.
+    system_pk = Column(Integer, ForeignKey("system.pk"), index=True)
+
     route_ids = set()
+    agency_ids = set()
 
     source = relationship("FeedUpdate", cascade="none")
     routes = relationship(
@@ -42,6 +68,17 @@ class Alert(Base, UpdatableEntity):
     )
 
     _short_repr_list = [id, start_time, end_time, creation_time, header, description]
+    _long_repr_list = [
+        id,
+        start_time,
+        end_time,
+        creation_time,
+        header,
+        description,
+        url,
+        cause,
+        effect,
+    ]
 
 
 alert_route = Table(

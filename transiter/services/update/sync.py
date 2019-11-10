@@ -257,11 +257,20 @@ def _sync_alerts(feed_update, alerts):
         return
     persisted_alerts = _merge_entities(models.Alert, feed_update, alerts)
     route_id_to_route = {route.id: route for route in feed_update.feed.system.routes}
-    alert_id_to_route_ids = {alert.id: alert.route_ids for alert in alerts}
+    alert_id_to_route_ids = {
+        alert.id: alert.route_ids for alert in alerts if alert.route_ids is not None
+    }
+    alert_id_to_agency_ids = {
+        alert.id: alert.agency_ids for alert in alerts if alert.agency_ids is not None
+    }
     for alert in persisted_alerts:
         alert.routes = [
-            route_id_to_route[route_id] for route_id in alert_id_to_route_ids[alert.id]
+            route_id_to_route[route_id]
+            for route_id in alert_id_to_route_ids.get(alert.id, [])
         ]
+        # NOTE: this is a temporary thing pending the creation of models.Agency
+        if len(alert_id_to_agency_ids.get(alert.id, [])) > 0:
+            alert.system_pk = feed_update.feed.system.pk
 
 
 # DbEntity is a class

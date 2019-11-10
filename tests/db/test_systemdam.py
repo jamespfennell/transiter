@@ -68,10 +68,3 @@ class TestSystemDAM(dbtestutil.TestCase):
         response = systemdam.delete_by_id(testdata.SYSTEM_THREE_ID)
 
         self.assertFalse(response)
-
-    def test_list_all_alerts_in_system(self):
-        """[System DAM] Get all alerts in system"""
-        self.assertEqual(
-            {testdata.alert_1, testdata.alert_2, testdata.alert_3, testdata.alert_4},
-            set(systemdam.list_all_alerts_in_system(testdata.SYSTEM_ONE_ID)),
-        )
