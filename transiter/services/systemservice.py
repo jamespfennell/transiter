@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @dbconnection.unit_of_work
-def list_all(return_links=False):
+def list_all(return_links=True):
     """
     List all installed systems.
     
@@ -40,7 +40,7 @@ def list_all(return_links=False):
 
 
 @dbconnection.unit_of_work
-def get_by_id(system_id, return_links=False):
+def get_by_id(system_id, return_links=True):
     """
     Get information on a specific system.
 
@@ -171,7 +171,10 @@ def _install_service_maps(system, service_maps_config):
         group.id = id_
         group.system = system
         group.source = config[systemconfigreader.SOURCE]
-        group.conditions = config.get(systemconfigreader.CONDITIONS)
+        json_conditions = config.get(systemconfigreader.CONDITIONS)
+        if json_conditions is not None:
+            print(json_conditions)
+            group.conditions = json.dumps(json_conditions, indent=2)
         group.threshold = config[systemconfigreader.THRESHOLD]
         group.use_for_routes_at_stop = config[systemconfigreader.USE_FOR_ROUTES_AT_STOP]
         group.use_for_stops_in_route = config[systemconfigreader.USE_FOR_STOPS_IN_ROUTE]

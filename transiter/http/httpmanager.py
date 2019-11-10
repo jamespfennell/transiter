@@ -16,6 +16,7 @@ Specifically, the HTTP Manager currently does three things:
    of the link_target decorator, which is used to identify which endpoints
    correspond to which Links.
 """
+import decimal
 import enum
 import json
 import logging
@@ -283,5 +284,8 @@ def _transiter_json_serializer(obj):
         if custom_host is not None:
             return custom_host + flask.url_for(target, _external=False, **obj.kwargs)
         return flask.url_for(target, _external=True, **obj.kwargs)
+
+    if isinstance(obj, decimal.Decimal):
+        return str(obj)
 
     raise TypeError("Type {} not serializable".format(type(obj)))

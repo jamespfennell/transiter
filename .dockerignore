@@ -4,6 +4,10 @@ venv2
 build
 dist
 Transiter.egg-info
+transiter.egg-info
 transiter_jamespfennell.egg-info
 sandbox
 .pyenv
+coverage
+.pytest_cache
+docs/build

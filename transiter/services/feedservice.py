@@ -39,7 +39,7 @@ def list_all_auto_updating():
 
 
 @dbconnection.unit_of_work
-def list_all_in_system(system_id, return_links=False):
+def list_all_in_system(system_id, return_links=True):
     """
     Get data on all feeds in a system.
 
@@ -67,7 +67,7 @@ def list_all_in_system(system_id, return_links=False):
 
 
 @dbconnection.unit_of_work
-def get_in_system_by_id(system_id, feed_id, return_links=False):
+def get_in_system_by_id(system_id, feed_id, return_links=True):
     """
     Get data on a specific feed in a system.
 

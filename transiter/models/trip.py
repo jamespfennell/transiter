@@ -32,8 +32,9 @@ class Trip(Base, UpdatableEntity):
 
     direction_id = Column(Boolean)
     start_time = Column(TIMESTAMP(timezone=True))
-    vehicle_id = Column(String)
+
     last_update_time = Column(TIMESTAMP(timezone=True))
+    vehicle_id = Column(String)
     current_status = Column(Enum(TripStatus))
     current_stop_sequence = Column(Integer)
 

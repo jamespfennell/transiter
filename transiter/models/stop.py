@@ -25,6 +25,7 @@ class Stop(Base, UpdatableEntity):
     name = Column(String)
     longitude = Column(Numeric(precision=9, scale=6))
     latitude = Column(Numeric(precision=9, scale=6))
+    url = Column(String)
     is_station = Column(Boolean)
 
     parent_stop_id = None
@@ -57,3 +58,4 @@ class Stop(Base, UpdatableEntity):
     __table_args__ = (UniqueConstraint("system_id", "id"),)
 
     _short_repr_list = [id, name]
+    _long_repr_list = [id, name, longitude, latitude, url]

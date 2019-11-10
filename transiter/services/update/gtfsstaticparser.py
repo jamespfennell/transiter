@@ -97,6 +97,7 @@ def parse_stops(gtfs_static_file: GtfsStaticFile):
         stop.name = row["stop_name"]
         stop.longitude = row["stop_lon"]
         stop.latitude = row["stop_lat"]
+        stop.url = row.get("stop_url")
         stop_id_to_stop[stop.id] = stop
         if row["location_type"] == "1":
             stop.is_station = True

@@ -177,6 +177,10 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
                 {**fake_trip_stop_time_response},
                 {**fake_trip_stop_time_response},
             ],
+            "latitude": None,
+            "longitude": None,
+            "url": None,
+            "name": None,
         }
 
         actual = stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)

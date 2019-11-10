@@ -7,10 +7,10 @@ import logging
 
 import flask
 
-from transiter import exceptions, metadata
+from transiter import exceptions, __version__
 from transiter.http import endpoints
 from transiter.http.httpmanager import http_endpoint, http_response
-from transiter.services import links
+from transiter.services import links, systemservice
 
 app = flask.Flask(__name__)
 
@@ -53,7 +53,7 @@ def page_not_found(__):
 
 
 @http_endpoint(app, "/")
-def root():
+def root(return_links=True):
     """Provides information about this Transiter instance and the Transit
     systems it contains.
 
@@ -75,13 +75,12 @@ def root():
             }
         }
     """
-    return_links = False
     response = {
         "transiter": {
-            "version": metadata.VERSION,
+            "version": __version__.__version__,
             "href": "https://github.com/jamespfennell/transiter",
         },
-        "systems": {"count": 0},
+        "systems": {"count": len(systemservice.list_all())},
     }
     if return_links:
         response["systems"]["href"] = links.SystemsIndexLink()

@@ -17,7 +17,7 @@ from transiter.services.servicemap import servicemapmanager
 
 
 @dbconnection.unit_of_work
-def list_all_in_system(system_id, return_links=False):
+def list_all_in_system(system_id, return_links=True):
     """
     Get information on all stops in a specific system.
 
@@ -45,7 +45,7 @@ def list_all_in_system(system_id, return_links=False):
 def get_in_system_by_id(
     system_id,
     stop_id,
-    return_links=False,
+    return_links=True,
     return_only_stations=True,
     earliest_time=None,
     latest_time=None,
@@ -90,6 +90,7 @@ def get_in_system_by_id(
     response = _build_stop_tree_response(
         stop, stop_pk_to_service_maps_response, return_links, return_only_stations
     )
+    response.update(stop.long_repr())
     response.update(
         {
             "direction_names": list(direction_name_matcher.all_names()),

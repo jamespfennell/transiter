@@ -24,9 +24,9 @@ You can get a sense for the data that's available by navigating through the
 
 The easiest way to get Transiter up and running is to
 use Docker compose with the configuration file at 
-`docker/docker-compose.yaml`. It references Docker images
+[docker/docker-compose.yaml](https://raw.githubusercontent.com/jamespfennell/transiter/master/docker/docker-compose.yml). It references Docker images
 that are stored in Docker Hub, so it will work immediately;
-assuming it's in the current working directory,
+assuming it's in your current working directory, just run:
 
     docker-compose up
 
@@ -37,7 +37,7 @@ Checkout the Git repo and run:
     
 Then launch using Docker compose:
 
-    docker-compose -f docker/docker-compose.yaml up
+    docker-compose -f docker/docker-compose.yml up
     
 Either approach will launch a Transiter service
 listening for HTTP requests on localhost's port 8000.
@@ -45,7 +45,7 @@ Running
 
     curl localhost:8000
     
-which should yield a response like,
+will yield a response like:
 
     {
       "transiter": {
@@ -53,33 +53,47 @@ which should yield a response like,
         "href": "https://github.com/jamespfennell/transiter"
       },
       "systems": {
-        "count": 0
+        "count": 0,
+        "href": "http://localhost:8000/systems"
       }
     }
     
 As you can see, there are no transit systems installed and the 
 next step is to install one.
-To try out Transiter we suggest installing the San Francisco BART
-system as it's fairly simple to install.
-Follow the instructions in that Github repo.
+The [San Francisco BART system](https://github.com/jamespfennell/transiter-sfbart)
+ is simple to install:
+assuming the above setup, simple execute:
 
+    curl -X PUT localhost:8000/systems/sfbart \
+        -F 'config_file=https://raw.githubusercontent.com/jamespfennell/transiter-sfbart/master/Transiter-SF-BART-config.yaml'
 
+The install will take a couple of seconds as the BART's 
+schedule is loaded into the database.
+
+If you are streaming the Docker compose 
+output you'll notice after the install
+ that realtime feed updates are now occurring every 5 seconds.
+At this point you're ready to navigate the HTTP API to
+access the BART's static and realtime data!
+For example, to get data at the BART station
+at San Francisco International Airport (stop ID `SFIA`), just execute:
+
+    curl localhost:8000/systems/sfbart/stops/SFIA
         
 
+## Possible next steps
 
-## Docs
-
-    pip install transiter
+- [Install the New York City Subway system.](https://github.com/jamespfennell/transiter-nycsubway)
+- [Learn how to write transit system config files in order to add other transit systems to Transiter (it's very easy!)](https://docs.transiter.io/en/latest/customfeedparser.html)
+- [Write a custom feed parser to import data in non-standard format into Transiter.](https://docs.transiter.io/en/latest/customfeedparser.html)
     
-The current focus is on producing documentation so
-Transiter can actually be used.
-
-[Documentation website](https://docs.transiter.io).
+The [documentation website](https://docs.transiter.io) has much more
+including advice on deployment.
 
 ## Development indicators
 
 [![Build Status](https://travis-ci.org/jamespfennell/transiter.svg?branch=master)](https://travis-ci.org/jamespfennell/transiter)
 [![Documentation Status](https://readthedocs.org/projects/transiter/badge/?version=latest)](https://docs.transiter.io)
 [![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master&service=github)](https://coveralls.io/github/jamespfennell/transiter?branch=master) 
-[![Requirements Status](https://requires.io/github/jamespfennell/transiter/requirements.svg?branch=master)](https://requires.io/github/jamespfennell/transiter/requirements/?branch=DockerAndPyPi)
+[![Requirements Status](https://requires.io/github/jamespfennell/transiter/requirements.svg?branch=master)](https://requires.io/github/jamespfennell/transiter/requirements/?branch=master)
 

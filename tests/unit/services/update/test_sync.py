@@ -130,7 +130,7 @@ class TestSyncTrips(testutil.TestCase(sync)):
         self.dbconnection.get_session.return_value = self.session
         self.tripdam = self.mockImportedModule(sync.tripdam)
         self.stopdam = self.mockImportedModule(sync.stopdam)
-
+        self.scheduledam = self.mockImportedModule(sync.scheduledam)
         self.routedam = self.mockImportedModule(sync.routedam)
         self.routedam.get_id_to_pk_map_in_system.return_value = {
             self.ROUTE_1_ID: self.ROUTE_1_PK,

@@ -1,6 +1,6 @@
 .PHONY: docs test
 
-DOCKER_BUILD=docker build --no-cache
+DOCKER_BUILD=docker build
 
 build-base:
 	${DOCKER_BUILD} -f docker/dockerfiles/base.Dockerfile -t jamespfennell/transiter:latest-base .

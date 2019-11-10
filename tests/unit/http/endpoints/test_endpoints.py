@@ -286,14 +286,13 @@ class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
 
 
 class TestFlaskApp(testutil.TestCase(flaskapp)):
-    COMMIT_HASH = "b7e35a125f4c539c37deaf3a6ac72bd408097131"
-
-    def test_root(self):
+    @mock.patch.object(flaskapp, "systemservice")
+    def test_root(self, __):
         """[Flask app] Test accessing root"""
 
         expected_code = 200
 
-        (__, actual_code, __) = flaskapp.root()
+        (__, actual_code, __) = flaskapp.root(return_links=False)
 
         self.assertEqual(expected_code, actual_code)
 

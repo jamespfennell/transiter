@@ -246,8 +246,8 @@ class IntegrationTest(unittest.TestCase):
                     {
                         "trip_id": stu["trip"]["id"],
                         "route_id": stu["trip"]["route"]["id"],
-                        "arrival_time": stu["arrival_time"],
-                        "departure_time": stu["departure_time"],
+                        "arrival_time": stu["arrival"]["time"],
+                        "departure_time": stu["departure"]["time"],
                     }
                 )
 

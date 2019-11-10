@@ -1,6 +1,6 @@
 import sqlalchemy.sql.expression as sql
 from sqlalchemy import func
-
+import typing
 from transiter import models
 from transiter.data import dbconnection
 
@@ -101,3 +101,25 @@ def get_trip_id_to_pk_map_by_feed_pk(feed_pk):
     for (id_, pk) in query.all():
         id_to_pk[id_] = pk
     return id_to_pk
+
+
+def list_trips_by_system_pk_and_trip_ids(
+    system_pk, trip_ids
+) -> typing.List[models.ScheduledTrip]:
+    """
+
+    :param system_pk:
+    :param trip_ids:
+    :return: list of models.ScheduledTrip
+    """
+
+    query = (
+        dbconnection.get_session()
+        .query(models.ScheduledTrip)
+        .filter(
+            models.ScheduledTrip.id.in_(trip_ids),
+            models.ScheduledService.pk == models.ScheduledTrip.service_pk,
+            models.ScheduledService.system_pk == system_pk,
+        )
+    )
+    return query.all()

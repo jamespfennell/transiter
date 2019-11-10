@@ -23,8 +23,11 @@ class TripStopTime(Base):
 
     future = Column(Boolean, default=True)
     arrival_time = Column(TIMESTAMP(timezone=True))
+    arrival_delay = Column(Integer)
+    arrival_uncertainty = Column(Integer)
     departure_time = Column(DateTime(timezone=True))
-    last_update_time = Column(TIMESTAMP(timezone=True))
+    departure_delay = Column(Integer)
+    departure_uncertainty = Column(Integer)
     stop_sequence = Column(Integer, nullable=False)
     track = Column(String)
 
@@ -41,3 +44,20 @@ class TripStopTime(Base):
     )
 
     _short_repr_list = [arrival_time, departure_time, track, future, stop_sequence]
+
+    def short_repr(self):
+        return {
+            "arrival": {
+                "time": self.arrival_time,
+                "delay": self.arrival_delay,
+                "uncertainty": self.arrival_uncertainty,
+            },
+            "departure": {
+                "time": self.departure_time,
+                "delay": self.departure_delay,
+                "uncertainty": self.departure_uncertainty,
+            },
+            "track": self.track,
+            "future": self.future,
+            "stop_sequence": self.stop_sequence,
+        }

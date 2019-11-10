@@ -8,7 +8,7 @@ import logging
 
 from transiter import models
 from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
-from transiter.services.servicemap import graphutils
+from transiter.services.servicemap import graphutils, conditions
 
 logger = logging.getLogger(__name__)
 
@@ -208,23 +208,27 @@ class _ScheduledTripMatcher:
         # Having these variables as class variables that are populated on the
         # first run is basically a form of caching
         if cls._logical_operators is None:
-            cls._logical_operators = {"one_of", "all_of", "none_of"}
+            cls._logical_operators = {
+                conditions.ALL_OF,
+                conditions.NONE_OF,
+                conditions.ONE_OF,
+            }
             cls._key_to_function = {
-                "one_of": cls.one_of_factory,
-                "all_of": cls.all_of_factory,
-                "none_of": cls.none_of_factory,
-                "starts_earlier_than": cls.order_factory,
-                "starts_later_than": cls.order_factory,
-                "ends_earlier_than": cls.order_factory,
-                "ends_later_than": cls.order_factory,
-                "weekend": cls.weekend_factory,
-                "weekday": cls.weekday_factory,
+                conditions.ALL_OF: cls.all_of_factory,
+                conditions.ENDS_EARLIER_THAN: cls.order_factory,
+                conditions.ENDS_LATER_THAN: cls.order_factory,
+                conditions.STARTS_EARLIER_THAN: cls.order_factory,
+                conditions.NONE_OF: cls.none_of_factory,
+                conditions.ONE_OF: cls.one_of_factory,
+                conditions.STARTS_LATER_THAN: cls.order_factory,
+                conditions.WEEKDAY: cls.weekday_factory,
+                conditions.WEEKEND: cls.weekend_factory,
             }
             cls._key_to_extra_args = {
-                "starts_earlier_than": ("start_time", True),
-                "starts_later_than": ("start_time", False),
-                "ends_earlier_than": ("end_time", True),
-                "ends_later_than": ("end_time", False),
+                conditions.ENDS_EARLIER_THAN: ("end_time", True),
+                conditions.ENDS_LATER_THAN: ("end_time", False),
+                conditions.STARTS_EARLIER_THAN: ("start_time", True),
+                conditions.STARTS_LATER_THAN: ("start_time", False),
             }
         if key in cls._logical_operators:
             value = cls._convert_raw_conditions(value)

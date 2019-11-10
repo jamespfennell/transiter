@@ -3,22 +3,22 @@ import enum
 import pytimeparse
 import strictyaml
 from strictyaml import (
-    Map,
-    Str,
-    Seq,
-    MapPattern,
-    Optional,
     Bool,
     EmptyList,
     EmptyDict,
     Float,
+    Map,
+    MapPattern,
+    Optional,
     ScalarValidator,
-    EmptyNone,
+    Seq,
+    Str,
 )
 from strictyaml.exceptions import YAMLSerializationError
 
 from transiter import exceptions
 from transiter import models
+from transiter.services.servicemap import conditions
 
 
 class HumanReadableTimePeriod(ScalarValidator):
@@ -82,6 +82,23 @@ class PyEnum(ScalarValidator):
         return u"PyEnum({0})".format(repr(self._enum))
 
 
+class ServiceMapConditions(Map):
+    def __init__(self):
+        super().__init__(
+            {
+                Optional(conditions.ALL_OF): self,
+                Optional(conditions.ENDS_EARLIER_THAN): Float(),
+                Optional(conditions.ENDS_LATER_THAN): Float(),
+                Optional(conditions.NONE_OF): self,
+                Optional(conditions.ONE_OF): self,
+                Optional(conditions.STARTS_EARLIER_THAN): Float(),
+                Optional(conditions.STARTS_LATER_THAN): Float(),
+                Optional(conditions.WEEKDAY): Bool(),
+                Optional(conditions.WEEKEND): Bool(),
+            }
+        )
+
+
 # These are all constants so that reading the JSON response is less fragile
 AUTO_UPDATE = "auto_update"
 BUILT_IN = "built_in"
@@ -106,6 +123,31 @@ URL = "url"
 USE_FOR_ROUTES_AT_STOP = "use_for_routes_at_stop"
 USE_FOR_STOPS_IN_ROUTE = "use_for_stops_in_route"
 
+
+default_service_map_config = {
+    "all-times": {
+        SOURCE: models.ServiceMapGroup.ServiceMapSource.SCHEDULE,
+        THRESHOLD: 0.1,
+        USE_FOR_STOPS_IN_ROUTE: True,
+    },
+    "weekday": {
+        SOURCE: models.ServiceMapGroup.ServiceMapSource.SCHEDULE,
+        THRESHOLD: 0.1,
+        CONDITIONS: {conditions.WEEKDAY: True},
+        USE_FOR_ROUTES_AT_STOP: True,
+    },
+    "weekend": {
+        SOURCE: models.ServiceMapGroup.ServiceMapSource.SCHEDULE,
+        THRESHOLD: 0.1,
+        CONDITIONS: {conditions.WEEKEND: True},
+        USE_FOR_ROUTES_AT_STOP: True,
+    },
+    "realtime": {
+        SOURCE: models.ServiceMapGroup.ServiceMapSource.REALTIME,
+        USE_FOR_STOPS_IN_ROUTE: True,
+        USE_FOR_ROUTES_AT_STOP: True,
+    },
+}
 
 _schema = Map(
     {
@@ -143,18 +185,19 @@ _schema = Map(
                 }
             ),
         ),
-        SERVICE_MAPS: MapPattern(
+        Optional(SERVICE_MAPS, default_service_map_config): MapPattern(
             Str(),
             Map(
                 {
                     SOURCE: PyEnum(models.ServiceMapGroup.ServiceMapSource),
                     Optional(THRESHOLD, 0): Float(),
-                    Optional(CONDITIONS, None): Str(),
+                    Optional(CONDITIONS, None): ServiceMapConditions(),
                     Optional(USE_FOR_STOPS_IN_ROUTE, False): Bool(),
                     Optional(USE_FOR_ROUTES_AT_STOP, False): Bool(),
                 }
             ),
-        ),
+        )
+        | EmptyDict(),
         Optional(DIRECTION_RULES_FILES, []): Seq(Map({HTTP: Map({URL: Str()})}))
         | EmptyList(),
     }

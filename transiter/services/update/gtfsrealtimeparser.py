@@ -10,6 +10,7 @@ import pytz
 from google.transit import gtfs_realtime_pb2
 
 from transiter import models
+import json
 
 
 def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None):
@@ -44,6 +45,7 @@ def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None)
     # noinspection PyUnusedLocal
     def parser(binary_content, *args, **kwargs):
         gtfs_data = read_gtfs_realtime(binary_content, gtfs_realtime_pb2_module)
+        # print(json.dumps(gtfs_data))
         if post_pb2_parsing_function is not None:
             post_pb2_parsing_function(gtfs_data)
         (feed_time, trips) = transform_to_transiter_structure(
@@ -208,16 +210,27 @@ class _GtfsRealtimeToTransiterTransformer:
             stop_time_updates = []
 
             for stop_time_update_data in trip_update.get("stop_time_update", []):
-                t = time.time()
                 stop_time_update = models.TripStopTime()
                 stop_time_update.stop_id = stop_time_update_data["stop_id"]
                 stop_time_update.track = stop_time_update_data.get("track", None)
                 stop_time_update.arrival_time = self._timestamp_to_datetime(
                     stop_time_update_data.get("arrival", {}).get("time", None)
                 )
+                stop_time_update.arrival_delay = stop_time_update_data.get(
+                    "arrival", {}
+                ).get("delay")
+                stop_time_update.arrival_uncertainty = stop_time_update_data.get(
+                    "arrival", {}
+                ).get("uncertainty")
                 stop_time_update.departure_time = self._timestamp_to_datetime(
                     stop_time_update_data.get("departure", {}).get("time", None)
                 )
+                stop_time_update.departure_delay = stop_time_update_data.get(
+                    "departure", {}
+                ).get("delay")
+                stop_time_update.departure_uncertainty = stop_time_update_data.get(
+                    "departure", {}
+                ).get("uncertainty")
                 stop_time_updates.append(stop_time_update)
             trip.stop_times = stop_time_updates
 

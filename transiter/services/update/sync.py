@@ -16,7 +16,7 @@ import typing
 from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
-from transiter.data.dams import stopdam, tripdam, routedam
+from transiter.data.dams import stopdam, tripdam, routedam, scheduledam
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.update import fastscheduleoperations
 
@@ -105,6 +105,8 @@ def _sync_scheduled_services(feed_update, services):
 def _sync_trips(feed_update, trips):
     if len(trips) == 0:
         return
+    _add_trip_data_from_schedule(feed_update.feed.system, trips)
+    _add_route_data_to_trips(feed_update.feed.system, trips)
     session = dbconnection.get_session()
     route_id_to_route = {
         route.id: route
@@ -118,10 +120,8 @@ def _sync_trips(feed_update, trips):
     for feed_trip in trips:
         if len(feed_trip.stop_times) == 0:
             continue
-        route = route_id_to_route.get(feed_trip.route_id)
-        if route is None:
+        if feed_trip.route_pk is None:
             continue
-        feed_trip.route_pk = route.pk
         feed_trip.source_pk = feed_update.pk
 
         # Used to ensure that duplicate stops are not put into the DB. This is a
@@ -177,9 +177,38 @@ def _sync_trips(feed_update, trips):
 
         session.merge(feed_trip)
 
+    # TODO: delete stale entities before this
     _trigger_service_map_calculations(
         trip_id_to_db_trip.values(), trips, route_id_to_route.values()
     )
+
+
+def _add_trip_data_from_schedule(system, trips):
+    trip_id_to_scheduled_trip = {
+        trip.id: trip
+        for trip in scheduledam.list_trips_by_system_pk_and_trip_ids(
+            system.pk, [trip.id for trip in trips]
+        )
+    }
+    for trip in trips:
+        scheduled_trip = trip_id_to_scheduled_trip.get(trip.id)
+        if scheduled_trip is None:
+            continue
+        trip.route_pk = scheduled_trip.route_pk
+        if trip.direction_id is None:
+            trip.direction_id = scheduled_trip.direction_id
+
+
+def _add_route_data_to_trips(system, trips):
+    route_id_to_pk = routedam.get_id_to_pk_map_in_system(
+        system.id, [trip.route_id for trip in trips if trip.route_id is not None]
+    )
+    for trip in trips:
+        if trip.route_pk is not None:
+            continue
+        if trip.route_id is None:
+            continue
+        trip.route_pk = route_id_to_pk.get(trip.route_id)
 
 
 def _trigger_service_map_calculations(old_trips, new_trips, routes):
@@ -194,6 +223,8 @@ def _calculate_changed_route_pks(old_trips, new_trips):
     def build_route_pk_to_trip_paths_map(trips):
         route_pk_to_trip_paths = {trip.route_pk: set() for trip in trips}
         for trip in trips:
+            if trip.route_pk is None:
+                continue
             if len(trip.stop_times) == 0:
                 continue
             if trip.direction_id:

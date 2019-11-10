@@ -81,6 +81,7 @@ def create_feed_update(system_id, feed_id):
 
 
 @http_endpoint(feed_endpoints, "/<feed_id>/updates")
+@link_target(links.FeedEntityUpdatesLink)
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def list_updates_in_feed(system_id, feed_id):
     """List recent feed updates.
