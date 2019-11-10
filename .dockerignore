@@ -11,3 +11,7 @@ sandbox
 coverage
 .pytest_cache
 docs/build
+*.jpg
+.git
+.idea
+__pycache__

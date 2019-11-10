@@ -379,6 +379,9 @@ class TripDataCleaner:
         """
         trips_to_keep = []
         for trip in trips:
+            if not isinstance(trip, models.Trip):
+                trips_to_keep.append(trip)
+                continue
             result = True
             for trip_cleaner in self._trip_cleaners:
                 result = trip_cleaner(trip)
