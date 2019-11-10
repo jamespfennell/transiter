@@ -108,7 +108,6 @@ class TestReadConfig(unittest.TestCase):
                     "required_for_install": False,
                 }
             },
-            "direction_rules_files": [],
         }
 
         actual = systemconfigreader.read(config)

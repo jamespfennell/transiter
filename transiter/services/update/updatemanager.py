@@ -87,7 +87,6 @@ def _execute_feed_update_helper(feed_update: models.FeedUpdate, content=None):
     """
     feed = feed_update.feed
     feed_update.status = feed_update.Status.IN_PROGRESS
-
     try:
         parser = _get_parser(feed)
     except _InvalidParser:

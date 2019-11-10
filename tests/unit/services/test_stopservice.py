@@ -1,4 +1,3 @@
-import datetime
 import unittest
 import unittest.mock as mock
 
@@ -22,7 +21,7 @@ class TestDirectionNamesMatcher(unittest.TestCase):
         self.stop_event.trip.direction_id = None
         self.stop_event.stop = self.stop
 
-        self.rule = models.DirectionNameRule()
+        self.rule = models.DirectionRule()
         self.rule.stop_pk = self.STOP_PK
         self.rule.direction_id = None
         self.rule.track = None
@@ -172,7 +171,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
 
         expected = {
             **fake_stop_tree_response,
-            "direction_names": [self.DIRECTION_NAME],
+            "directions": [self.DIRECTION_NAME],
             "stop_time_updates": [
                 {**fake_trip_stop_time_response},
                 {**fake_trip_stop_time_response},
@@ -205,7 +204,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
 
         expected = {
             "stop_id": self.STOP_ONE_ID,
-            "direction_name": self.DIRECTION_NAME,
+            "direction": self.DIRECTION_NAME,
             **trip_stop_time.short_repr(),
             "trip": {
                 **trip.long_repr(),

@@ -105,10 +105,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
     @mock.patch.object(systemservice.systemconfigreader, "read")
     @mock.patch.object(systemservice, "_install_service_maps")
     @mock.patch.object(systemservice, "_install_feeds")
-    @mock.patch.object(systemservice, "_install_direction_rules")
-    def test_install_success(
-        self, _install_direction_rules, _install_feeds, _install_service_maps, read
-    ):
+    def test_install_success(self, _install_feeds, _install_service_maps, read):
         """[System service] Successfully install a system"""
 
         self.systemdam.get_by_id.return_value = None
@@ -242,7 +239,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             ]
         )
 
-        direction_name_rule = models.DirectionNameRule()
+        direction_name_rule = models.DirectionRule()
         direction_name_rule.priority = 0
         direction_name_rule.direction_id = True
         direction_name_rule.track = None
@@ -250,4 +247,4 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
         systemservice._install_direction_rules(system, system_config)
 
-        self.assertEqual([direction_name_rule], stop_one.direction_name_rules)
+        self.assertEqual([direction_name_rule], stop_one.direction_rules)

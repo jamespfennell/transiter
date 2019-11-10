@@ -20,6 +20,7 @@ class TestSync(testutil.TestCase(sync)):
             "_sync_routes",
             "_sync_stops",
             "_sync_scheduled_services",
+            "_sync_direction_rules",
             "_sync_trips",
             "_sync_alerts",
         ]:
@@ -49,7 +50,7 @@ class TestSync(testutil.TestCase(sync)):
         """
         sync.sync(self.feed_update, [])
 
-        self._verify_entities_synced([], [], [], [], [])
+        self._verify_entities_synced([], [], [], [], [], [])
 
     def test_some_entities(self):
         """
@@ -62,7 +63,7 @@ class TestSync(testutil.TestCase(sync)):
         sync.sync(self.feed_update, [route_1_entity, stop_entity, route_2_entity])
 
         self._verify_entities_synced(
-            [route_1_entity, route_2_entity], [stop_entity], [], [], []
+            [route_1_entity, route_2_entity], [stop_entity], [], [], [], []
         )
 
     def _verify_entities_synced(
@@ -70,6 +71,7 @@ class TestSync(testutil.TestCase(sync)):
         expected_routes,
         expected_stops,
         expected_scheduled_services,
+        expected_direction_rules,
         expected_trips,
         expected_alerts,
     ):
@@ -85,12 +87,61 @@ class TestSync(testutil.TestCase(sync)):
                 mock.call._delete_stale_entities(
                     models.ScheduledService, self.feed_update
                 ),
+                mock.call._sync_direction_rules(
+                    self.feed_update, expected_direction_rules
+                ),
+                mock.call._delete_stale_entities(
+                    models.DirectionRule, self.feed_update
+                ),
                 mock.call._sync_trips(self.feed_update, expected_trips),
                 mock.call._delete_stale_entities(models.Trip, self.feed_update),
                 mock.call._sync_alerts(self.feed_update, expected_alerts),
                 mock.call._delete_stale_entities(models.Alert, self.feed_update),
             ]
         )
+
+
+class TestSyncDirectionRules(testutil.TestCase(sync)):
+
+    STOP_ID = "1"
+    STOP_PK = 2
+    SYSTEM_ID = "3"
+    STOP_ID_2 = "4"
+
+    def setUp(self):
+        self.stopdam = self.mockImportedModule(sync.stopdam)
+        self.stopdam.get_id_to_pk_map_in_system.return_value = {
+            self.STOP_ID: self.STOP_PK
+        }
+        self.feed_update = models.FeedUpdate(models.Feed())
+        self.feed_update.feed.system = models.System(id=self.SYSTEM_ID)
+
+    @mock.patch.object(sync, "_merge_entities")
+    def test_base_case(self, _merge_entities):
+        """[Sync] Test sync direction rules"""
+        direction_rule = models.DirectionRule(stop_id=self.STOP_ID)
+
+        sync._sync_direction_rules(self.feed_update, [direction_rule])
+
+        entity_to_merge = _merge_entities.call_args_list[0][0][2][0]
+        self.assertEqual(self.STOP_PK, entity_to_merge.stop_pk)
+
+    @mock.patch.object(sync, "_merge_entities")
+    def test_bad_stop_id(self, _merge_entities):
+        """[Sync] Test sync direction rules - bad stop ID"""
+        direction_rule = models.DirectionRule(stop_id=self.STOP_ID_2)
+
+        sync._sync_direction_rules(self.feed_update, [direction_rule])
+
+        entities_to_merge = _merge_entities.call_args_list[0][0][2]
+        self.assertEqual([], entities_to_merge)
+
+    @mock.patch.object(sync, "_merge_entities")
+    def test_no_direction_rules(self, _merge_entities):
+        """[Sync] Test sync direction rules - no entities"""
+        sync._sync_direction_rules(self.feed_update, [])
+
+        _merge_entities.assert_not_called()
 
 
 class TestSyncAlerts(testutil.TestCase(sync)):

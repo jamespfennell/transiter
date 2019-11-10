@@ -34,6 +34,7 @@ def sync(feed_update, entities):
         models.Route,
         models.Stop,
         models.ScheduledService,
+        models.DirectionRule,
         models.Trip,
         models.Alert,
     ]
@@ -42,6 +43,7 @@ def sync(feed_update, entities):
         models.Route: _sync_routes,
         models.Stop: _sync_stops,
         models.ScheduledService: _sync_scheduled_services,
+        models.DirectionRule: _sync_direction_rules,
         models.Trip: _sync_trips,
         models.Alert: _sync_alerts,
     }
@@ -273,6 +275,21 @@ def _sync_alerts(feed_update, alerts):
             alert.system_pk = feed_update.feed.system.pk
 
 
+def _sync_direction_rules(feed_update, direction_rules):
+    if len(direction_rules) == 0:
+        return
+    stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(feed_update.feed.system.id)
+    entities_to_merge = []
+    for direction_rule in direction_rules:
+        stop_pk = stop_id_to_pk.get(direction_rule.stop_id)
+        if stop_pk is None:
+            continue
+        direction_rule.stop_pk = stop_pk
+        entities_to_merge.append(direction_rule)
+
+    _merge_entities(models.DirectionRule, feed_update, entities_to_merge)
+
+
 # DbEntity is a class
 # noinspection PyPep8Naming
 def _merge_entities(DbObject: typing.Type[models.Base], feed_update, entities):
@@ -296,7 +313,6 @@ def _merge_entities(DbObject: typing.Type[models.Base], feed_update, entities):
             entity.pk = id_to_pk[entity.id]
         entity.source_pk = feed_update.pk
         persisted_entities.append(session.merge(entity))
-
     return persisted_entities
 
 

@@ -1,5 +1,5 @@
 from .base import Base
-from .directionnamerule import DirectionNameRule
+from .directionrule import DirectionRule
 from .feed import Feed
 from .feedupdate import FeedUpdate
 from .route import Route

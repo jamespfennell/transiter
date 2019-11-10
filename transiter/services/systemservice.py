@@ -100,9 +100,6 @@ def install_uow(system_id, config_str, extra_settings):
     # by install_required feed updates
     _install_service_maps(system, system_config[systemconfigreader.SERVICE_MAPS])
     _install_feeds(system, system_config[systemconfigreader.FEEDS])
-    _install_direction_rules(
-        system, system_config[systemconfigreader.DIRECTION_RULES_FILES]
-    )
     return True
 
 
@@ -182,44 +179,3 @@ def _install_service_maps(system, service_maps_config):
         group.threshold = config[systemconfigreader.THRESHOLD]
         group.use_for_routes_at_stop = config[systemconfigreader.USE_FOR_ROUTES_AT_STOP]
         group.use_for_stops_in_route = config[systemconfigreader.USE_FOR_STOPS_IN_ROUTE]
-
-
-def _install_direction_rules(system, direction_rules_files_config):
-    """
-    Install direction rules.
-
-    :param system: the system in install the direction names in
-    :type system: models.System
-    :param direction_rules_files_config: the config for the direction rules files
-    """
-    # For the moment, assume direction names involve a full reset
-    stop_id_to_stop = {stop.id: stop for stop in stopdam.list_all_in_system(system.id)}
-    priority = 0
-    for direction_rule_file_config in direction_rules_files_config:
-        url = direction_rule_file_config[systemconfigreader.HTTP][
-            systemconfigreader.URL
-        ]
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            raise exceptions.InstallError(
-                "Could not download direction rules from '{}'".format(url)
-            )
-        csv_reader = csv.DictReader(io.StringIO(response.text))
-        for row in csv_reader:
-            stop_id = row["stop_id"]
-            stop = stop_id_to_stop.get(stop_id, None)
-            if stop is None:
-                logger.info(f"No stop with ID {stop_id}; skipping this direction rule")
-                continue
-            direction_id = row.get("direction_id", None)
-            if direction_id is not None:
-                direction_id = direction_id == "0"
-            direction_name_rule = models.DirectionNameRule()
-            direction_name_rule.stop = stop
-            direction_name_rule.priority = priority
-            direction_name_rule.direction_id = direction_id
-            direction_name_rule.track = row.get("track", None)
-            direction_name_rule.name = row["direction_name"]
-            priority += 1

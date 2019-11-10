@@ -39,11 +39,11 @@ class Stop(Base, UpdatableEntity):
         cascade="none",
         backref=backref("parent_stop", remote_side=pk, cascade="none"),
     )
-    direction_name_rules = relationship(
-        "DirectionNameRule",
+    direction_rules = relationship(
+        "DirectionRule",
         back_populates="stop",
         cascade="all, delete-orphan",
-        order_by="DirectionNameRule.priority",
+        order_by="DirectionRule.priority",
     )
     trip_times = relationship(
         "TripStopTime", back_populates="stop", cascade="delete, delete-orphan"

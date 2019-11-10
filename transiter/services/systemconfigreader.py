@@ -198,8 +198,6 @@ _schema = Map(
             ),
         )
         | EmptyDict(),
-        Optional(DIRECTION_RULES_FILES, []): Seq(Map({HTTP: Map({URL: Str()})}))
-        | EmptyList(),
     }
 )
 

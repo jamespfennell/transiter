@@ -67,9 +67,7 @@ def get_in_system_by_id(
     # The descendant stops are used as the source of trip stop times
     descendant_stops = _get_stop_descendants(stop)
     direction_name_matcher = _DirectionNameMatcher(
-        itertools.chain.from_iterable(
-            stop.direction_name_rules for stop in descendant_stops
-        )
+        itertools.chain.from_iterable(stop.direction_rules for stop in descendant_stops)
     )
     trip_stop_times = stopdam.list_stop_time_updates_at_stops(
         (stop.pk for stop in descendant_stops),
@@ -93,7 +91,7 @@ def get_in_system_by_id(
     response.update(stop.long_repr())
     response.update(
         {
-            "direction_names": list(direction_name_matcher.all_names()),
+            "directions": list(direction_name_matcher.all_names()),
             "stop_time_updates": [],
         }
     )
@@ -123,7 +121,7 @@ def _build_trip_stop_time_response(
     last_stop = trip_pk_to_last_stop[trip.pk]
     trip_stop_time_response = {
         "stop_id": trip_stop_time.stop.id,
-        "direction_name": direction_name,
+        "direction": direction_name,
         **trip_stop_time.short_repr(),
         "trip": {
             **trip_stop_time.trip.long_repr(),
@@ -314,7 +312,7 @@ class _DirectionNameMatcher:
         Initialize a new matcher.
 
         :param rules: the rules to be used in the matcher.
-        :type rules: iterable of DirectionNameRule models.
+        :type rules: iterable of DirectionRule models.
         """
         self._rules = sorted(rules, key=lambda rule: rule.priority)
         self._cache = {}
