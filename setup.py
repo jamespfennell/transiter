@@ -16,7 +16,7 @@ setup(
     license="MIT",
     entry_points={"console_scripts": ["transiterclt = transiter.clt:transiter_clt"]},
     install_requires=[
-        "apscheduler==3.6.1",
+        "apscheduler==3.6.3",
         "click==7.0",
         "decorator==4.4.1",
         "flask==1.1.1",
@@ -27,6 +27,6 @@ setup(
         "requests==2.22.0",
         "rpyc==4.1.2",
         "sqlalchemy==1.3.10",
-        "strictyaml==1.0.5",
+        "strictyaml==1.0.6",
     ],
 )
