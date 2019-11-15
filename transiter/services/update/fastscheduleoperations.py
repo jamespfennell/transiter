@@ -35,23 +35,39 @@ def sync_trips(feed_update, services):
     stop_id_to_pk = genericqueries.get_id_to_pk_map(
         models.Stop, feed_update.feed.system.id
     )
-    stop_time_mappings = []
-    for trip in trips:
-        for stop_time in trip.stop_times_light:
-            if stop_time.stop_id not in stop_id_to_pk:
-                continue
-            stop_time_mappings.append(
-                {
-                    "trip_pk": trip_id_to_pk[trip.id],
-                    "stop_pk": stop_id_to_pk[stop_time.stop_id],
-                    "arrival_time": stop_time.arrival_time,
-                    "departure_time": stop_time.departure_time,
-                    "stop_sequence": stop_time.stop_sequence,
-                }
-            )
-    session.bulk_insert_mappings(models.ScheduledTripStopTime, stop_time_mappings)
+    # NOTE: SQL Alchemy's bulk_insert_mappings can take up a huge amount of memory if
+    # executed on a large collection of mappings. If executed on the NYC Subway's
+    # collection of stop times, it uses up to 750mb of memory. Chunking solves this
+    # and actually seems to make the process faster.
+    for chunk_of_trips in split(trips, 100):
+        stop_time_mappings = []
+        for trip in chunk_of_trips:
+            for stop_time in trip.stop_times_light:
+                if stop_time.stop_id not in stop_id_to_pk:
+                    continue
+                stop_time_mappings.append(
+                    {
+                        "trip_pk": trip_id_to_pk[trip.id],
+                        "stop_pk": stop_id_to_pk[stop_time.stop_id],
+                        "arrival_time": stop_time.arrival_time,
+                        "departure_time": stop_time.departure_time,
+                        "stop_sequence": stop_time.stop_sequence,
+                    }
+                )
+        session.bulk_insert_mappings(models.ScheduledTripStopTime, stop_time_mappings)
 
-    return num_entities_deleted > 0 or len(trips) > 0 or len(stop_time_mappings) > 0
+    return num_entities_deleted > 0 or len(trips) > 0
+
+
+def split(container, size):
+    chunk = []
+    for index, element in enumerate(container):
+        chunk.append(element)
+        if (index + 1) % size == 0:
+            yield chunk
+            chunk = []
+    if len(chunk) > 0:
+        yield chunk
 
 
 def delete_trips_associated_to_feed(feed_pk):
