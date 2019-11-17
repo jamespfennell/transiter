@@ -27,9 +27,10 @@ def list_groups_and_maps_for_stops_in_route(route_pk):
                 models.ServiceMap.group_pk == models.ServiceMapGroup.pk,
             ),
         )
-
         .filter(models.ServiceMapGroup.use_for_stops_in_route)
         .filter(models.Route.pk == route_pk)
+        .options(selectinload(models.ServiceMap.vertices))
+        .options(selectinload(models.ServiceMap.vertices, models.ServiceMapVertex.stop))
     )
     return [(group, map_) for (group, map_) in query]
 
@@ -71,8 +72,6 @@ def get_stop_pk_to_group_id_to_routes_map(stop_pks):
         )
         .outerjoin(models.Route, models.Route.pk == models.ServiceMap.route_pk)
         .filter(models.Stop.pk.in_(stop_pks))
-        .options(selectinload(models.ServiceMap.vertices))
-        .options(selectinload(models.ServiceMapVertex.stop))
     )
     response = {stop_pk: {} for stop_pk in stop_pks}
     for stop_pk, group_id, route in query:
