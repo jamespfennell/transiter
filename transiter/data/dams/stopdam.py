@@ -1,6 +1,7 @@
 import datetime
 
 from sqlalchemy import sql
+from sqlalchemy.orm import joinedload
 
 from transiter import models
 from transiter.data import dbconnection
@@ -46,12 +47,15 @@ def list_stop_time_updates_at_stops(stop_pks, earliest_time=None, latest_time=No
     The list is ordered by departure time and, in the case of ties, by
     the arrival time.
 
+    Note the Trip object is eagerly loaded.
+
     :param stop_pks: collection of stop PKs
     :return: list of future TripStopTimes
     """
     session = dbconnection.get_session()
     query = (
         session.query(models.TripStopTime)
+        .options(joinedload(models.TripStopTime.trip))
         .filter(models.TripStopTime.stop_pk.in_(stop_pks))
         .filter(models.TripStopTime.future)
         .order_by(models.TripStopTime.departure_time)
