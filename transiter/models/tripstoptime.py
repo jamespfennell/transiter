@@ -61,3 +61,8 @@ class TripStopTime(Base):
             "future": self.future,
             "stop_sequence": self.stop_sequence,
         }
+
+    def get_time(self):
+        if self.arrival_time is not None:
+            return self.arrival_time
+        return self.departure_time

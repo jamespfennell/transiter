@@ -115,5 +115,7 @@ def get_in_system_by_id(system_id, stop_id):
         }
 
     """
-    request_args = get_request_args(["earliest_time", "latest_time"])
+    request_args = get_request_args(
+        ["minimum_number_of_trips", "include_all_trips_within", "exclude_trips_before"]
+    )
     return stopservice.get_in_system_by_id(system_id, stop_id, **request_args)

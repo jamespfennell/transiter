@@ -204,7 +204,11 @@ class TestStopEndpoints(testutil.TestCase(stopendpoints), _TestEndpoints):
             stopendpoints.get_in_system_by_id,
             self.stopservice.get_in_system_by_id,
             (self.SYSTEM_ID, self.STOP_ID),
-            {"earliest_time": None, "latest_time": None},
+            {
+                "minimum_number_of_trips": None,
+                "include_all_trips_within": None,
+                "exclude_trips_before": None,
+            },
         )
 
 

@@ -49,6 +49,9 @@ def get_in_system_by_id(
     return_only_stations=True,
     earliest_time=None,
     latest_time=None,
+    minimum_number_of_trips=None,
+    include_all_trips_within=None,
+    exclude_trips_before=None,
 ):
     """
     Get information about a specific stop.
@@ -95,13 +98,31 @@ def get_in_system_by_id(
             "stop_time_updates": [],
         }
     )
+    current_time = time.time()
+    number_of_trips_returned = 0
     for trip_stop_time in trip_stop_times:
+        exclude_because_before = exclude_trips_before is not None and trip_stop_time.get_time().timestamp() <= current_time - float(
+            exclude_trips_before
+        )
+        if exclude_because_before:
+            continue
+        minimum_number_of_trips_reached = (
+            minimum_number_of_trips is not None
+            and number_of_trips_returned >= int(minimum_number_of_trips)
+        )
+        trip_not_within = include_all_trips_within is not None and (
+            trip_stop_time.get_time().timestamp()
+            >= current_time + float(include_all_trips_within)
+        )
+        if minimum_number_of_trips_reached and trip_not_within:
+            continue
         direction_name = direction_name_matcher.match(trip_stop_time)
         response["stop_time_updates"].append(
             _build_trip_stop_time_response(
                 trip_stop_time, direction_name, trip_pk_to_last_stop, return_links
             )
         )
+        number_of_trips_returned += 1
     return response
 
 
