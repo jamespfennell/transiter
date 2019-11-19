@@ -5,6 +5,63 @@ from transiter import models, exceptions
 from transiter.services import stopservice, links
 from .. import testutil
 
+import datetime
+
+
+class TestTripStopTimeFilter(testutil.TestCase(stopservice)):
+
+    TIME_1 = datetime.datetime(4, 4, 4, 4, 10, 0)
+    TIME_2 = datetime.datetime(4, 4, 4, 4, 15, 0)
+    TIME_3 = datetime.datetime(4, 4, 4, 4, 20, 0)
+    TIME_4 = datetime.datetime(4, 4, 4, 4, 25, 0)
+    DIRECTION = "Left"
+
+    def setUp(self):
+        self.time = self.mockImportedModule(stopservice.time)
+
+    def test_old_trips__exclude(self):
+
+        stop_time = models.TripStopTime(arrival_time=self.TIME_1)
+        self.time.time.return_value = self.TIME_4.timestamp()
+
+        stop_time_filter = stopservice._TripStopTimeFilter(0, 10, 0)
+
+        self.assertTrue(stop_time_filter.remove(stop_time, self.DIRECTION))
+
+    def test_old_trips__include_when_no_lower_bound(self):
+        stop_time = models.TripStopTime(arrival_time=self.TIME_1)
+        self.time.time.return_value = self.TIME_4.timestamp()
+
+        stop_time_filter = stopservice._TripStopTimeFilter(None, 10, 0)
+
+        self.assertFalse(stop_time_filter.remove(stop_time, self.DIRECTION))
+
+    def test_old_trips__include_selectively(self):
+
+        stop_times = [
+            models.TripStopTime(arrival_time=self.TIME_1),
+            models.TripStopTime(arrival_time=self.TIME_2),
+        ]
+        self.time.time.return_value = self.TIME_3.timestamp()
+
+        stop_time_filter = stopservice._TripStopTimeFilter(7.5, 10, 0)
+
+        self.assertTrue(stop_time_filter.remove(stop_times[0], self.DIRECTION))
+        self.assertFalse(stop_time_filter.remove(stop_times[1], self.DIRECTION))
+
+    def test_direction(self):
+
+        stop_times = [
+            models.TripStopTime(arrival_time=self.TIME_2),
+            models.TripStopTime(arrival_time=self.TIME_3),
+        ]
+        self.time.time.return_value = self.TIME_1.timestamp()
+
+        stop_time_filter = stopservice._TripStopTimeFilter(0, 0, 1)
+
+        self.assertFalse(stop_time_filter.remove(stop_times[0], self.DIRECTION))
+        self.assertTrue(stop_time_filter.remove(stop_times[1], self.DIRECTION))
+
 
 class TestDirectionNamesMatcher(unittest.TestCase):
     STOP_PK = 1

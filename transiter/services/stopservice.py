@@ -9,7 +9,7 @@ import enum
 import itertools
 import time
 
-from transiter import exceptions
+from transiter import exceptions, models
 from transiter.data import dbconnection
 from transiter.data.dams import stopdam, tripdam, systemdam
 from transiter.services import links
@@ -98,32 +98,62 @@ def get_in_system_by_id(
             "stop_time_updates": [],
         }
     )
-    current_time = time.time()
-    number_of_trips_returned = 0
+
+    stop_time_filter = _TripStopTimeFilter(
+        inclusion_interval_start=exclude_trips_before,
+        inclusion_interval_end=include_all_trips_within,
+        min_trips_per_direction=minimum_number_of_trips,
+    )
     for trip_stop_time in trip_stop_times:
-        exclude_because_before = exclude_trips_before is not None and trip_stop_time.get_time().timestamp() <= current_time - float(
-            exclude_trips_before
-        )
-        if exclude_because_before:
+        direction = direction_name_matcher.match(trip_stop_time)
+        if stop_time_filter.remove(trip_stop_time, direction):
             continue
-        minimum_number_of_trips_reached = (
-            minimum_number_of_trips is not None
-            and number_of_trips_returned >= int(minimum_number_of_trips)
-        )
-        trip_not_within = include_all_trips_within is not None and (
-            trip_stop_time.get_time().timestamp()
-            >= current_time + float(include_all_trips_within)
-        )
-        if minimum_number_of_trips_reached and trip_not_within:
-            continue
-        direction_name = direction_name_matcher.match(trip_stop_time)
         response["stop_time_updates"].append(
             _build_trip_stop_time_response(
-                trip_stop_time, direction_name, trip_pk_to_last_stop, return_links
+                trip_stop_time, direction, trip_pk_to_last_stop, return_links
             )
         )
-        number_of_trips_returned += 1
     return response
+
+
+class _TripStopTimeFilter:
+    def __init__(
+        self, inclusion_interval_start, inclusion_interval_end, min_trips_per_direction
+    ):
+        self._direction_to_num_trips_so_far = {}
+        self._min_trips_per_direction = min_trips_per_direction
+        self._inclusion_interval_start = inclusion_interval_start
+        self._inclusion_interval_end = inclusion_interval_end
+        self._current_time = time.time()
+
+    def remove(self, trip_stop_time: models.TripStopTime, direction):
+        result = self._remove_helper(trip_stop_time, direction)
+        if not result:
+            self._direction_to_num_trips_so_far[direction] = (
+                self._direction_to_num_trips_so_far.get(direction, 0) + 1
+            )
+        return result
+
+    def _remove_helper(self, trip_stop_time: models.TripStopTime, direction):
+        trip_time = trip_stop_time.get_time().timestamp()
+        # If the trip is before the inclusion interval, remove.
+        if self._inclusion_interval_start is not None and (
+            trip_time <= self._current_time - self._inclusion_interval_start * 60
+        ):
+            return True
+        # If the trip is within the inclusion interval, include.
+        if self._inclusion_interval_end is None or (
+            trip_time <= self._current_time + self._inclusion_interval_end * 60
+        ):
+            return False
+        # If an extra trip is needed for this direction, include.
+        if (
+            self._min_trips_per_direction is not None
+            and self._direction_to_num_trips_so_far.get(direction, 0)
+            < self._min_trips_per_direction
+        ):
+            return False
+        return True
 
 
 def _build_trip_stop_time_response(
