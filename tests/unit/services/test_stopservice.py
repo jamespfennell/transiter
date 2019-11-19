@@ -212,10 +212,14 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
             fake_service_map_response_map
         )
 
-        stop_time_one = models.TripStopTime()
-        stop_time_one.pk = self.TRIP_STOP_TIME_ONE_PK
-        stop_time_two = models.TripStopTime()
-        stop_time_two.pk = self.TRIP_STOP_TIME_TWO_PK
+        stop_time_one = models.TripStopTime(
+            pk=self.TRIP_STOP_TIME_ONE_PK,
+            arrival_time=datetime.datetime(2000, 1, 1, 0, 0, 0),
+        )
+        stop_time_two = models.TripStopTime(
+            pk=self.TRIP_STOP_TIME_TWO_PK,
+            arrival_time=datetime.datetime(2000, 1, 1, 0, 0, 0),
+        )
         self.stop_dao.list_stop_time_updates_at_stops.return_value = [
             stop_time_one,
             stop_time_two,
