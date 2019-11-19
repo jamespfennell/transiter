@@ -138,19 +138,19 @@ class _TripStopTimeFilter:
         trip_time = trip_stop_time.get_time().timestamp()
         # If the trip is before the inclusion interval, remove.
         if self._inclusion_interval_start is not None and (
-            trip_time <= self._current_time - self._inclusion_interval_start * 60
+            trip_time <= self._current_time - float(self._inclusion_interval_start) * 60
         ):
             return True
         # If the trip is within the inclusion interval, include.
         if self._inclusion_interval_end is None or (
-            trip_time <= self._current_time + self._inclusion_interval_end * 60
+            trip_time <= self._current_time + float(self._inclusion_interval_end) * 60
         ):
             return False
         # If an extra trip is needed for this direction, include.
         if (
             self._min_trips_per_direction is not None
             and self._direction_to_num_trips_so_far.get(direction, 0)
-            < self._min_trips_per_direction
+            < int(self._min_trips_per_direction)
         ):
             return False
         return True
