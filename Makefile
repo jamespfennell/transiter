@@ -19,7 +19,7 @@ build-all: build-ci build
 # The following commands are designed to be run in the CI Docker image as well as on bare metal
 
 docs:
-	cd docs; rm -r build; make html
+	cd docs; rm -r site; mkdocs build
 
 distribute:
 	twine upload /transiter/dist/*

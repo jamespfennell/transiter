@@ -1,6 +1,7 @@
 """
 Module containing all Exceptions that can be raised in Transiter.
 """
+import inflection
 
 
 # NOTE: All exceptions in this module have two requirements:
@@ -35,7 +36,7 @@ class _TransiterException(Exception):
         else:
             additional_info = {}
         return {
-            "type": type(self).__name__,
+            "type": inflection.underscore(type(self).__name__).upper(),
             "code": self.code,
             "message": self.message,
             **additional_info,
@@ -88,6 +89,15 @@ class IdNotFoundError(_TransiterException):
     message = "One of the requested entities could not be found."
 
 
+class PageNotFound(_TransiterException):
+    """
+    Exception that is raised when a page cannot be found.
+    """
+
+    code = "T051"
+    message = "The requested page could not be found"
+
+
 class InvalidPermissionsLevelInRequest(_TransiterException):
     """
     Raised when the HTTP requests contains an unknown permissions level.
@@ -116,3 +126,8 @@ class AccessDenied(_TransiterException):
             "required_permissions_level": required,
             "request_permissions_level": provided,
         }
+
+
+class InternalDocumentationMisconfigured(_TransiterException):
+    code = "T070"
+    message = "The documentation is currently unavailable"

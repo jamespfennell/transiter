@@ -1,10 +1,11 @@
-import unittest
-import unittest.mock as mock
+import json
+from unittest import mock
 
-from transiter.http import permissions
+import flask
+import pytest
 
-from transiter import exceptions
-from transiter.http import flaskapp
+from transiter import config
+from transiter.http import flaskapp, permissions
 from transiter.http.endpoints import (
     routeendpoints,
     stopendpoints,
@@ -12,298 +13,225 @@ from transiter.http.endpoints import (
     systemendpoints,
     feedendpoints,
 )
-from ... import testutil
+from transiter.http.httpmanager import HttpStatus
+from transiter.services import (
+    routeservice,
+    stopservice,
+    tripservice,
+    feedservice,
+    systemservice,
+)
+
+# NOTE: there are mostly two orthogonal things being tested here:
+#
+# 1. That the HTTP manager works correctly in enforcing permissions and converting
+#    service layer responses to HTTP responses.
+#
+# 2. Given a certain endpoint, the right service layer function is called.
+#
+# Number 2 is of dubious value. If it becomes hard to maintain, we can stop testing
+# that.
 
 
-class _TestEndpoints(unittest.TestCase):
-    SYSTEM_ID = "1"
-    ROUTE_ID = "2"
-    TRIP_ID = "3"
-    STOP_ID = "4"
-    FEED_ID = "5"
-    FEED_UPDATE_ID = "6"
-    SERVICE_RESPONSE = {"A": "B"}
-    JSON_RESPONSE = "C"
-    SERVICE_NO_RESPONSE = True
-    JSON_NO_RESPONSE = ""
+@pytest.mark.parametrize(
+    "request_permissions_level",
+    [
+        pytest.param(permissions.PermissionsLevel.USER_READ),
+        pytest.param(permissions.PermissionsLevel.ADMIN_READ),
+    ],
+)
+@pytest.mark.parametrize(
+    "endpoint_function,function_args",
+    [
+        pytest.param(systemendpoints.install, ["system_id"]),
+        pytest.param(systemendpoints.delete_by_id, ["system_id"]),
+        pytest.param(feedendpoints.create_feed_update, ["system_id", "feed_id"]),
+    ],
+)
+def test_permission_denied__admin_write_endpoints(
+    flask_request, endpoint_function, function_args, request_permissions_level
+):
+    """[Endpoints] Permission denied, admin write."""
+    flask_request.headers = {
+        "X-Transiter-PermissionsLevel": request_permissions_level.name
+    }
 
-    def setUp(self):
-        self.setUpSuper()
+    response = endpoint_function(*function_args)
 
-    def setUpSuper(self):
-        patcher = mock.patch("transiter.http.httpmanager._convert_to_json_str")
-        self.convert_to_json = patcher.start()
-        self.addCleanup(patcher.stop)
-
-        patcher = mock.patch.object(permissions, "ensure")
-        self.ensure = patcher.start()
-        self.addCleanup(patcher.stop)
-
-        patcher = mock.patch("transiter.http.httpmanager._get_all_request_args")
-        self.get_all_request_args = patcher.start()
-        self.get_all_request_args.return_value = {}
-        self.addCleanup(patcher.stop)
-
-    def _test_endpoint(
-        self,
-        endpoint_function,
-        service_function,
-        args,
-        kwargs,
-        service_response,
-        endpoint_response,
-    ):
-
-        service_function.return_value = service_response
-        if endpoint_response != "":
-            self.convert_to_json.return_value = endpoint_response
-
-        (actual, __, __) = endpoint_function(*args)
-
-        self.assertEqual(actual, endpoint_response)
-        if endpoint_response != "":
-            self.convert_to_json.assert_called_once_with(service_response)
-        service_function.assert_called_once_with(*args, **kwargs)
-
-    def _test_response_endpoint(
-        self, endpoint_function, service_function, args=(), kwargs={}
-    ):
-        self._test_endpoint(
-            endpoint_function,
-            service_function,
-            args,
-            kwargs,
-            self.SERVICE_RESPONSE,
-            self.JSON_RESPONSE,
-        )
-
-    def _test_no_response_endpoint(
-        self, endpoint_function, service_function, args=(), kwargs={}
-    ):
-        self._test_endpoint(
-            endpoint_function,
-            service_function,
-            args,
-            kwargs,
-            self.SERVICE_NO_RESPONSE,
-            self.JSON_NO_RESPONSE,
-        )
-
-    def _test_not_implemented_endpoint(self, endpoint_function, args=()):
-        (actual, http_code, __) = endpoint_function(*args)
-        self.assertEqual(actual, "")
-        self.assertEqual(http_code, 501)
-
-    def _test_access_denied(self, endpoint_function, args=()):
-        (actual, http_code, __) = endpoint_function(*args)
-        self.assertEqual(http_code, 403)
+    assert response.status_code == HttpStatus.FORBIDDEN
 
 
-class TestFeedEndpoints(testutil.TestCase(feedendpoints), _TestEndpoints):
-    def setUp(self):
-        self.setUpSuper()
-        self.feedservice = self.mockImportedModule(feedendpoints.feedservice)
+@pytest.mark.parametrize(
+    "endpoint_function,function_args",
+    [
+        pytest.param(feedendpoints.list_all_in_system, ["system_id"]),
+        pytest.param(feedendpoints.get_in_system_by_id, ["system_id", "feed_id"]),
+        pytest.param(feedendpoints.list_updates_in_feed, ["system_id", "feed_id"]),
+    ],
+)
+def test_permission_denied__admin_read_endpoints(
+    flask_request, endpoint_function, function_args
+):
+    """[Endpoints] Permission denied, admin read."""
+    flask_request.headers = {
+        "X-Transiter-PermissionsLevel": permissions.PermissionsLevel.USER_READ.name
+    }
 
-    def test_list_all_in_system(self):
-        """[Feed endpoints] List all feeds in a system"""
-        self._test_response_endpoint(
-            feedendpoints.list_all_in_system,
-            self.feedservice.list_all_in_system,
-            (self.SYSTEM_ID,),
-        )
+    response = endpoint_function(*function_args)
 
-    def test_list_all_in_system__no_permission(self):
-        """[Feed endpoints] List all feeds in a system - access denied"""
-        self.ensure.side_effect = exceptions.AccessDenied
-        self._test_access_denied(feedendpoints.list_all_in_system, (self.SYSTEM_ID,))
-
-    def test_get_in_system_by_id(self):
-        """[Feed endpoints] Get a specific feed in a system"""
-        self._test_response_endpoint(
-            feedendpoints.get_in_system_by_id,
-            self.feedservice.get_in_system_by_id,
-            (self.SYSTEM_ID, self.ROUTE_ID),
-        )
-
-    def test_get_in_system_by_id__no_permission(self):
-        """[Feed endpoints] Get a specific feed in a system - access denied"""
-        self.ensure.side_effect = exceptions.AccessDenied
-        self._test_access_denied(
-            feedendpoints.get_in_system_by_id, (self.SYSTEM_ID, self.FEED_ID)
-        )
-
-    def test_create_feed_update(self):
-        """[Feed endpoints] Create a new feed update for a specific feed"""
-        self._test_response_endpoint(
-            feedendpoints.create_feed_update,
-            self.feedservice.create_feed_update,
-            (self.SYSTEM_ID, self.FEED_ID),
-        )
-
-    def test_create_feed_update__access_denied(self):
-        """[Feed endpoints] Create a new feed update for a specific feed - access denied"""
-        self.ensure.side_effect = exceptions.AccessDenied
-        self._test_access_denied(
-            feedendpoints.get_in_system_by_id, (self.SYSTEM_ID, self.ROUTE_ID)
-        )
-
-    def test_list_updates_in_feed(self):
-        """[Feed endpoints] List all updates for a specific feed"""
-        self._test_response_endpoint(
-            feedendpoints.list_updates_in_feed,
-            self.feedservice.list_updates_in_feed,
-            (self.SYSTEM_ID, self.FEED_ID),
-        )
-
-    def test_list_updates_in_feed__access_denied(self):
-        """[Feed endpoints] List all updates for a specific feed - access denied"""
-        self.ensure.side_effect = exceptions.AccessDenied
-        self._test_access_denied(
-            feedendpoints.get_in_system_by_id, (self.SYSTEM_ID, self.ROUTE_ID)
-        )
+    assert response.status_code == HttpStatus.FORBIDDEN
 
 
-class TestRouteEndpoints(testutil.TestCase(routeendpoints), _TestEndpoints):
-    def setUp(self):
-        self.setUpSuper()
-        self.routeservice = self.mockImportedModule(routeendpoints.routeservice)
-
-    def test_list_all_in_system(self):
-        """[Route endpoints] List all routes in a system"""
-        self._test_response_endpoint(
-            routeendpoints.list_all_in_system,
-            self.routeservice.list_all_in_system,
-            self.SYSTEM_ID,
-        )
-
-    def test_get_in_system_by_id(self):
-        """[Route endpoints] Get a specific route in a system"""
-        self._test_response_endpoint(
-            routeendpoints.get_in_system_by_id,
-            self.routeservice.get_in_system_by_id,
-            (self.SYSTEM_ID, self.ROUTE_ID),
-        )
-
-
-class TestStopEndpoints(testutil.TestCase(stopendpoints), _TestEndpoints):
-    def setUp(self):
-        self.setUpSuper()
-        self.stopservice = self.mockImportedModule(stopendpoints.stopservice)
-
-    def test_list_all_in_route(self):
-        """[Stop endpoints] List all stop in a system"""
-        self._test_response_endpoint(
-            stopendpoints.list_all_in_system,
-            self.stopservice.list_all_in_system,
-            self.SYSTEM_ID,
-        )
-
-    def test_get_in_route_by_id(self):
-        """[Stop endpoints] Get a specific stop in a system"""
-        self._test_response_endpoint(
-            stopendpoints.get_in_system_by_id,
-            self.stopservice.get_in_system_by_id,
-            (self.SYSTEM_ID, self.STOP_ID),
-            {
-                "minimum_number_of_trips": None,
-                "include_all_trips_within": None,
-                "exclude_trips_before": None,
-            },
-        )
+@pytest.mark.parametrize(
+    "endpoints_module,service_module,function_name,function_args",
+    [
+        pytest.param(systemendpoints, systemservice, "list_all", []),
+        pytest.param(systemendpoints, systemservice, "get_by_id", ["system_id"]),
+        pytest.param(routeendpoints, routeservice, "list_all_in_system", ["system_id"]),
+        pytest.param(
+            routeendpoints,
+            routeservice,
+            "get_in_system_by_id",
+            ["system_id", "route_id"],
+        ),
+        pytest.param(feedendpoints, feedservice, "list_all_in_system", ["system_id"]),
+        pytest.param(
+            feedendpoints, feedservice, "get_in_system_by_id", ["system_id", "feed_id"]
+        ),
+        pytest.param(
+            feedendpoints, feedservice, "list_updates_in_feed", ["system_id", "feed_id"]
+        ),
+        pytest.param(stopendpoints, stopservice, "list_all_in_system", ["system_id"]),
+        pytest.param(
+            tripendpoints, tripservice, "list_all_in_route", ["system_id", "route_id"]
+        ),
+        pytest.param(
+            tripendpoints,
+            tripservice,
+            "get_in_route_by_id",
+            ["system_id", "route_id", "trip_id"],
+        ),
+    ],
+)
+def test_simple_endpoints(
+    monkeypatch, endpoints_module, service_module, function_name, function_args
+):
+    """[Endpoints] Test pass-through endpoints"""
+    endpoints_test_helper(
+        monkeypatch, endpoints_module, service_module, function_name, function_args
+    )
 
 
-class TestTripEndpoints(testutil.TestCase(tripendpoints), _TestEndpoints):
-    def setUp(self):
-        self.setUpSuper()
-        self.tripservice = self.mockImportedModule(tripendpoints.tripservice)
-
-    def test_list_all_in_route(self):
-        """[Trip endpoints] List all trips in a route"""
-        self._test_response_endpoint(
-            tripendpoints.list_all_in_route,
-            self.tripservice.list_all_in_route,
-            (self.SYSTEM_ID, self.ROUTE_ID),
-        )
-
-    def test_get_in_route_by_id(self):
-        """[Trip endpoints] Get a specific trip in a route"""
-        self._test_response_endpoint(
-            tripendpoints.get_in_route_by_id,
-            self.tripservice.get_in_route_by_id,
-            (self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ID),
-        )
+def test_stop_endpoints__get_in_system_by_id(monkeypatch):
+    """[Endpoints] stop.get_in_system_by_id"""
+    endpoints_test_helper(
+        monkeypatch,
+        stopendpoints,
+        stopservice,
+        "get_in_system_by_id",
+        ["system_id", "stop_id"],
+        {
+            "minimum_number_of_trips": None,
+            "include_all_trips_within": None,
+            "exclude_trips_before": None,
+        },
+    )
 
 
-class TestSystemEndpoints(testutil.TestCase(systemendpoints), _TestEndpoints):
-    def setUp(self):
-        self.setUpSuper()
-        self.flask = self.mockImportedModule(systemendpoints.flask)
-        self.systemservice = self.mockImportedModule(systemendpoints.systemservice)
-
-    def test_list_all(self):
-        """[System endpoints] List all systems installed"""
-        self._test_response_endpoint(
-            systemendpoints.list_all, self.systemservice.list_all
-        )
-
-    def test_get_by_id(self):
-        """[System endpoints] Get a specific system"""
-        self._test_response_endpoint(
-            systemendpoints.get_by_id, self.systemservice.get_by_id, self.SYSTEM_ID
-        )
-
-    def __install(self):
-        """[System endpoints] Install a system"""
-        request = self.flask.request
-        config_file_handle = mock.MagicMock()
-        second_file = mock.MagicMock()
-        request.files = {"config_file": config_file_handle, "second_file": second_file}
-        request.form.to_dict.return_value = {"extra_setting": "value"}
-        config_file_handle.read.return_value = b"ABCD"
-
-        systemendpoints.install(self.SYSTEM_ID)
-
-        self.systemservice.install.assert_called_once_with(
-            system_id=self.SYSTEM_ID,
-            config_str="ABCD",
-            extra_files={"second_file": second_file.stream},
-            extra_settings={"extra_setting": "value"},
-        )
-
-    def test_install__access_denied(self):
-        """[System endpoints] Install a system - access denied"""
-        self.ensure.side_effect = exceptions.AccessDenied
-        self._test_access_denied(systemendpoints.install, self.SYSTEM_ID)
-
-    def test_delete_by_id(self):
-        """[System endpoints] Uninstall a system"""
-        self._test_no_response_endpoint(
-            systemendpoints.delete_by_id,
-            self.systemservice.delete_by_id,
-            self.SYSTEM_ID,
-        )
-
-    def test_delete_by_id__access_denied(self):
-        """[System endpoints] Uninstall a system - access denied"""
-        self.ensure.side_effect = exceptions.AccessDenied
-        self._test_access_denied(systemendpoints.delete_by_id, self.SYSTEM_ID)
+def test_feed_endpoints__create_feed_update(monkeypatch):
+    """[Endpoints] feed / create_feed_update"""
+    endpoints_test_helper(
+        monkeypatch,
+        feedendpoints,
+        feedservice,
+        "create_feed_update",
+        ["system_id", "feed_id"],
+        expected_http_status=HttpStatus.CREATED,
+    )
 
 
-class TestFlaskApp(testutil.TestCase(flaskapp)):
-    @mock.patch.object(flaskapp, "systemservice")
-    def test_root(self, __):
-        """[Flask app] Test accessing root"""
+def test_system_endpoints__delete_by_id(monkeypatch):
+    """[Endpoints] system / delete_by_id"""
+    endpoints_test_helper(
+        monkeypatch,
+        systemendpoints,
+        systemservice,
+        "delete_by_id",
+        ["system_id"],
+        expected_http_status=HttpStatus.NO_CONTENT,
+        expected_content="",
+        expected_content_type="",
+    )
 
-        expected_code = 200
 
-        (__, actual_code, __) = flaskapp.root(return_links=False)
+def endpoints_test_helper(
+    monkeypatch,
+    endpoints_module,
+    service_module,
+    function_name,
+    function_args,
+    function_kwargs=None,
+    expected_http_status=HttpStatus.OK,
+    expected_content=None,
+    expected_content_type="application/json",
+):
+    if function_kwargs is None:
+        function_kwargs = {}
 
-        self.assertEqual(expected_code, actual_code)
+    monkeypatch.setattr(flask, "request", mock.MagicMock(headers={}, args={}))
 
-    def test_404(self):
-        """[Flask app] Test 404 error"""
-        expected_code = 404
+    service_layer_response = "TEST"
+    service_layer_function = mock.MagicMock()
+    service_layer_function.return_value = service_layer_response
+    monkeypatch.setattr(service_module, function_name, service_layer_function)
 
-        (__, actual_code, __) = flaskapp.page_not_found(None)
+    if expected_content is None:
+        expected_content = json.dumps(service_layer_response)
 
-        self.assertEqual(expected_code, actual_code)
+    response = getattr(endpoints_module, function_name)(*function_args)
+
+    assert expected_content == response.get_data(as_text=True)
+    assert expected_http_status == response.status_code
+    assert expected_content_type == response.content_type
+    service_layer_function.assert_called_once_with(*function_args, **function_kwargs)
+
+
+@pytest.mark.parametrize(
+    "return_links,internal_documentation_enabled",
+    [
+        pytest.param(True, True),
+        pytest.param(False, True),
+        pytest.param(True, False),
+        pytest.param(False, False),
+    ],
+)
+def test_flask_app_root(
+    monkeypatch, flask_request, flask_url, return_links, internal_documentation_enabled
+):
+    """[Endpoints] flask app root"""
+    num_systems = 2
+    monkeypatch.setattr(systemservice, "list_all", lambda: [None] * num_systems)
+    monkeypatch.setattr(config, "DOCUMENTATION_ENABLED", internal_documentation_enabled)
+
+    response = flaskapp.root(return_links=True)
+
+    json_response = json.loads(response.get_data(as_text=True))
+
+    assert num_systems == json_response["systems"]["count"]
+    assert HttpStatus.OK == response.status_code
+
+
+def test_404():
+    """[Flask app] Test 404 error"""
+    response = flaskapp.page_not_found(None)
+
+    assert HttpStatus.NOT_FOUND == response.status_code
+
+
+def test_launch(monkeypatch):
+    app = mock.MagicMock()
+    monkeypatch.setattr(flaskapp, "app", app)
+
+    flaskapp.launch()
+
+    app.run.assert_called_once_with(port=8000, debug=True)

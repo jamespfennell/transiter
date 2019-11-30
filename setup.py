@@ -21,6 +21,7 @@ setup(
         "decorator==4.4.1",
         "flask==1.1.1",
         "gtfs-realtime-bindings==0.0.6",
+        "inflection==0.3.1",
         "psycopg2-binary==2.8.4",
         "pytimeparse==1.1.8",
         "pytz==2019.3",

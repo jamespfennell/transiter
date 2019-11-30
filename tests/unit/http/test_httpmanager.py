@@ -1,10 +1,13 @@
 import datetime
-import unittest
+import enum
+import decimal
+
+import flask
+import pytest
 
 from transiter import exceptions
 from transiter.http import httpmanager
 from transiter.services import links
-from .. import testutil
 
 
 # NOTE: Most of the test coverage of the HTTP manager comes from the endpoint
@@ -12,99 +15,104 @@ from .. import testutil
 # designed to capture a few of the cases no captured in the endpoint testing.
 
 
-class TestHttpManager(testutil.TestCase(httpmanager), unittest.TestCase):
-    FAKE_URL = "http://www.transiter.io/entity"
-    TIMESTAMP = 24536456
+def test_unexpected_error():
+    """[HTTP Manager] Unexpected error"""
 
-    def setUp(self):
-        self.flask = self.mockImportedModule(httpmanager.flask)
+    @httpmanager.handle_exceptions
+    def bad_endpoint():
+        raise ValueError
 
-    def test_all_exceptions_inherit_from_transiter_exceptions(self):
-        """[HTTP Manager] Ensure every exception inherits from TransiterException"""
-        for exception_variable in exceptions.__dict__.values():
-            try:
-                if not issubclass(exception_variable, Exception):
-                    continue
-            except TypeError:
-                # NOTE: this happens if exception_variable is not a class.
+    response = bad_endpoint()
+
+    assert httpmanager.HttpStatus.INTERNAL_SERVER_ERROR == response.status_code
+
+
+def test_all_exceptions_inherit_from_transiter_exceptions():
+    """[HTTP Manager] Ensure every exception inherits from TransiterException"""
+    for exception_variable in exceptions.__dict__.values():
+        try:
+            if not issubclass(exception_variable, Exception):
                 continue
-            self.assertTrue(
-                issubclass(exception_variable, exceptions._TransiterException)
-            )
+        except TypeError:
+            # NOTE: this happens if exception_variable is not a class.
+            continue
+        assert issubclass(exception_variable, exceptions._TransiterException)
 
-    def test_all_exceptions_have_http_status(self):
-        """[HTTP Manager] Ensure every exception has a HTTP status"""
-        for transiter_exception in exceptions._TransiterException.__subclasses__():
-            print("Testing", transiter_exception)
-            self.assertTrue(
-                transiter_exception in httpmanager._exception_type_to_http_status
-            )
 
-    def test_unexpected_error(self):
-        """[HTTP Manager] Unexpected error"""
+def test_all_exceptions_have_http_status():
+    """[HTTP Manager] Ensure every exception has a HTTP status"""
+    for transiter_exception in exceptions._TransiterException.__subclasses__():
+        assert transiter_exception in httpmanager._exception_type_to_http_status
 
-        @httpmanager.http_response()
-        def bad_endpoint():
-            raise ValueError
 
-        __, status, __ = bad_endpoint()
+def test_get_request_args__extra_keys(flask_request):
+    """[HTTP Manager] Extra GET parameters"""
+    flask_request.args = {"key_1": "value_1", "key_2": "value_2"}
 
-        self.assertEqual(httpmanager.HttpStatus.INTERNAL_SERVER_ERROR, status)
+    with pytest.raises(exceptions.InvalidInput):
+        httpmanager.get_request_args(["key_1"])
 
-    def test_json_serialization__links(self):
-        """[HTTP Manager] JSON serialization of Links"""
 
-        class FakeLink(links.Link):
-            pass
+def test_json_serialization__links(flask_url, flask_request):
+    """[HTTP Manager] JSON serialization of Links"""
 
-        @httpmanager.link_target(FakeLink)
-        def entity():
-            pass
+    class FakeLink(links.Link):
+        pass
 
-        self.flask.request.headers = {}
-        self.flask.url_for.return_value = self.FAKE_URL
+    @httpmanager.link_target(FakeLink)
+    def entity():
+        pass
 
-        actual_url = httpmanager._transiter_json_serializer(FakeLink())
+    flask_request.headers = {}
 
-        self.assertEqual(self.FAKE_URL, actual_url)
+    assert flask_url == httpmanager._transiter_json_serializer(FakeLink())
 
-        self.flask.url_for.assert_called_once_with(
-            "{}.{}".format(__name__, entity.__name__), _external=True
-        )
 
-    def test_json_serialization__links_with_host(self):
-        """[HTTP Manager] JSON serialization of Links with custom host"""
+def test_json_serialization__links_with_host(flask_url, flask_request):
+    """[HTTP Manager] JSON serialization of Links with custom host"""
 
-        class FakeLink(links.Link):
-            pass
+    class FakeLink(links.Link):
+        pass
 
-        @httpmanager.link_target(FakeLink)
-        def entity():
-            pass
+    @httpmanager.link_target(FakeLink)
+    def entity():
+        pass
 
-        self.flask.request.headers = {"X-Transiter-Host": "myhost"}
-        self.flask.url_for.return_value = self.FAKE_URL
+    custom_host = "my_host"
+    flask_request.headers = {"X-Transiter-Host": custom_host}
 
-        actual_url = httpmanager._transiter_json_serializer(FakeLink())
+    assert custom_host + flask_url == httpmanager._transiter_json_serializer(FakeLink())
 
-        self.assertEqual("myhost" + self.FAKE_URL, actual_url)
 
-        self.flask.url_for.assert_called_once_with(
-            "{}.{}".format(__name__, entity.__name__), _external=False
-        )
+def test_json_serialization__datetime():
+    """[HTTP Manager] JSON serialization of datetimes"""
+    timestamp = 24536456
 
-    def test_json_serialization__datetimes(self):
-        """[HTTP Manager] JSON serialization of datetimes"""
+    dt = datetime.datetime.fromtimestamp(timestamp)
 
-        dt = datetime.datetime.fromtimestamp(self.TIMESTAMP)
+    assert timestamp == httpmanager._transiter_json_serializer(dt)
 
-        actual_timestamp = httpmanager._transiter_json_serializer(dt)
 
-        self.assertEqual(self.TIMESTAMP, actual_timestamp)
+def test_json_serialization__enum():
+    """[HTTP Manager] JSON serialization of enums"""
 
-    def test_json_serialization__unknown_object(self):
-        """[HTTP Manager] JSON serialization failure given unknown object"""
+    class MyEnum(enum.Enum):
+        FIRST = 1
+        SECOND = 2
 
-        self.assertRaises(
-            TypeError, lambda: httpmanager._transiter_json_serializer(unittest.TestCase)
-        )
+    assert "FIRST" == httpmanager._transiter_json_serializer(MyEnum.FIRST)
+
+
+def test_json_serialization__decimal():
+    """[HTTP Manager] JSON serialization of decimals"""
+
+    d = decimal.Decimal("0.54")
+
+    assert "0.54" == httpmanager._transiter_json_serializer(d)
+
+
+def test_json_serialization__unknown_object():
+    """[HTTP Manager] JSON serialization failure given unknown object"""
+
+    with pytest.raises(TypeError):
+        httpmanager._transiter_json_serializer(flask.Response())

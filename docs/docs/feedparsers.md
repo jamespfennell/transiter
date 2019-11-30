@@ -1,24 +1,24 @@
-Writing a custom feed parser
-============================
+# Custom feed parsers
 
+## Introduction
 
-Transiter has built-in support for GTFS static and GTFS realtime
-feed formats, but was also developed with the understanding that
+Transiter has built-in support for the GTFS static and GTFS realtime
+feed formats, but also has an API for users to provide custom feed parsers
+which enable Transiter to read data in arbitrary feed formats.
+This API was developed because
 transit agencies sometimes distribute data in alternative formats.
 For example, New York City Transit distributes NYC Subway alerts data
 in an ad-hoc XML format, rather than using GTFS realtime's alerts feature.
 
-To handle these cases, Transiter has an API for working with custom feed parsers.
-Custom feed parsers provide a mechanism for reading data of any format
-into Transiter.
 
-At a high level, a feed parser takes binary data in a feed
-(like the binary data in a GTFS realtime feed) and extracts
-the data inside it into a format Transiter can understand.
+Conceptually, a feed parser takes binary data in a feed
+(like the binary data in a GTFS realtime feed) and converts
+it into a format Transiter can understand.
 Concretely, a feed parser is a Python function that accepts
 a single `binary_content` argument and outputs an iterator
 containing objects that are subtypes of `transiter.models.UpdatableEntity`.
-There are currently five subtypes of `UpdatableEntity`:
+There are currently five subtypes of `UpdatableEntity`, and these determine
+which kind of data you can import:
 
 - `transiter.models.Route` - represents a transit route.
   Analogous to `routes.txt` in a GTFS static feed.
@@ -38,37 +38,37 @@ There are currently five subtypes of `UpdatableEntity`:
 Full documentation on these entities and the data you can place in them
 is given below in the reference section.
 
+## An example feed parser
+
 The feed parser API was designed so that the parsers themselves
-could be really simple.
+could be simple.
 Let's illustrate by way of example.
 Suppose that we have a transit agency that distributes
 alerts in CSV format, so that a version of the feed looks something like this:
 
-
-.. code-block:: text
-
-    alert_id,alert_name,alert_text,route_affected
-    12345,Delays,Delays in southbound A service,A
+```text
+alert_id,alert_name,alert_text,route_affected
+12345,Delays,Delays in southbound A service,A
+```
 
 
 A parser for this feed might look like this:
 
+```python
+import csv
+import transiter
 
-.. code-block:: python
-
-    import csv
-    import transiter
-
-    def parser(binary_content):
-        lines = binary_content.decode("utf-8")
-        csv_reader = csv.DictReader(lines)
-        for row in csv_reader:
-            alert = transiter.models.Alert()
-            alert.id = row["alert_id"],
-            alert.header = row["alert_name"]
-            alert.description = row["alert_text"]
-            alert.route_ids = [row["route_affects"]]
-            yield alert
+def parser(binary_content):
+    lines = binary_content.decode("utf-8")
+    csv_reader = csv.DictReader(lines)
+    for row in csv_reader:
+        alert = transiter.models.Alert()
+        alert.id = row["alert_id"],
+        alert.header = row["alert_name"]
+        alert.description = row["alert_text"]
+        alert.route_ids = [row["route_affects"]]
+        yield alert
+```
 
 By providing just this code to Transiter, it
 will be able to read feeds in this ad-hoc CSV format.
@@ -78,8 +78,7 @@ The custom feed parser for the NYC Subway's alerts
 feed is a good production example of a Transiter custom feed parser.
 
 
-Registering your feed parser with Transiter
--------------------------------------------
+## Registering your feed parser with Transiter
 
 After writing a custom feed parser, you need to instruct
 Transiter to use it for reading specific feeds.
@@ -89,16 +88,15 @@ is running in.
 Then, in the system configuration YAML file for the transit system
 you're working with, specify the custom parser:
 
+```yaml
+feeds:
 
-.. code-block:: yaml
-
-    feeds:
-
-      myfeed:
-        http:
-          url: 'http://www.transitagency.com/feed'  # the URL the feed is at
-        parser:
-          custom: 'mypackage.mymodule:parser'  # specifying the parser
+  myfeed:
+    http:
+      url: 'http://www.transitagency.com/feed'  # the URL the feed is at
+    parser:
+      custom: 'mypackage.mymodule:parser'  # specifying the parser
+```
 
 
 Note that parsers are specified in the form
@@ -106,8 +104,7 @@ Note that parsers are specified in the form
 
 
 
-Working with GTFS realtime extensions
--------------------------------------
+## Working with GTFS realtime extensions
 
 The GTFS realtime format supports extensions, which provide
 a mechanism for transit agencies to provide additional data
@@ -135,14 +132,14 @@ can use Transiter's GTFS realtime parsing factory to make
 a custom parser:
 
 
-.. code-block:: python
+```python
+from transiter.services.update import gtfsrealtimeparser
 
-    from transiter.services.update import gtfsrealtimeparser
-
-    parser = gtfsrealtimeparser.create_parser(
-        gtfs_realtime_module,
-        post_parsing_function
-    )
+parser = gtfsrealtimeparser.create_parser(
+    gtfs_realtime_module,
+    post_parsing_function
+)
+```
 
 
 An example of this in practice is the NYC Subway's realtime parser.
@@ -151,14 +148,12 @@ An example of this in practice is the NYC Subway's realtime parser.
 
 
 
-Reference
-------------------------------------
+## Reference
 
 This reference provides information
 on the entities that can be returned by a custom feed parser.
 
-Routes
-~~~~~~~~~~~~~~~
+### Routes
 
 The `transiter.models.Route` object
 supports setting the following attributes:
@@ -170,8 +165,7 @@ supports setting the following attributes:
 - `description`
 - `url`
 
-Stops
-~~~~~~~~~~~~~~~
+### Stops
 
 The `transiter.models.Stop` object
 supports setting the following attributes:
@@ -184,8 +178,7 @@ supports setting the following attributes:
 - `parent_stop` - a `Stop` object representing the parent stop.
   Unlike GTFS static, Transiter supports arbitrarily deep stop graphs.
 
-ScheduledServices (the timetable)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### ScheduledServices (the timetable)
 
 This object is used to communicate a portion of
 the timetable of a transit system.
@@ -219,8 +212,7 @@ supports setting the following attributes:
 - `arrival_time` - a `datetime.datetime` object.
 - `departure_time` - a `datetime.datetime` object.
 
-Trips
-~~~~~~~~~~~~~~~
+### Trips
 
 This object is used to communicate realtime data about
 a current trip in a transit system.
@@ -252,8 +244,7 @@ supports setting the following attributes:
 
 
 
-Alerts
-~~~~~~~~~~~~~~~
+### Alerts
 
 
 The `transiter.models.Alert` object

@@ -16,6 +16,10 @@ class Link:
         return type(self) == type(other) and self.kwargs == other.kwargs
 
 
+class InternalDocumentationLink(Link):
+    pass
+
+
 class SystemsIndexLink(Link):
     pass
 

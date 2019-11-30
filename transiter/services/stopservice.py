@@ -147,10 +147,10 @@ class _TripStopTimeFilter:
         ):
             return False
         # If an extra trip is needed for this direction, include.
-        if (
-            self._min_trips_per_direction is not None
-            and self._direction_to_num_trips_so_far.get(direction, 0)
-            < int(self._min_trips_per_direction)
+        if self._min_trips_per_direction is not None and self._direction_to_num_trips_so_far.get(
+            direction, 0
+        ) < int(
+            self._min_trips_per_direction
         ):
             return False
         return True

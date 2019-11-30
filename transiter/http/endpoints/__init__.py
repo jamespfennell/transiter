@@ -1,3 +1,4 @@
+from .docsendpoints import docs_endpoints
 from .feedendpoints import feed_endpoints
 from .routeendpoints import route_endpoints
 from .stopendpoints import stop_endpoints

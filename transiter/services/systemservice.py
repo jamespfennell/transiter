@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 def list_all(return_links=True):
     """
     List all installed systems.
-    
+
     :param return_links: whether to return links
     :type return_links: bool
     :return: A list dictionaries, one for each system, containing the system's
@@ -78,7 +78,6 @@ def get_by_id(system_id, return_links=True):
 
 
 def install(system_id, config_str, extra_settings):
-    delete_by_id(system_id, error_if_not_exists=False)
     install_success = install_uow(system_id, config_str, extra_settings)
     client.refresh_tasks()
     return install_success

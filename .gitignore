@@ -16,3 +16,5 @@ tests/integrationtest/output
 sandbox/*
 transiter.db
 __pycache__
+newdocs/site
+docs/site

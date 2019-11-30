@@ -31,10 +31,6 @@ from transiter.services import links
 logger = logging.getLogger(__name__)
 
 
-class HttpHeader(enum.Enum):
-    CONTENT_TYPE_JSON = {"Content-Type": "application/json"}
-
-
 class HttpStatus(enum.IntEnum):
     OK = 200
     CREATED = 201
@@ -44,16 +40,19 @@ class HttpStatus(enum.IntEnum):
     NOT_FOUND = 404
     INTERNAL_SERVER_ERROR = 500
     NOT_IMPLEMENTED = 501
+    SERVICE_UNAVAILABLE = 503
 
 
 _exception_type_to_http_status = {
     exceptions.AccessDenied: HttpStatus.FORBIDDEN,
     exceptions.IdNotFoundError: HttpStatus.NOT_FOUND,
+    exceptions.PageNotFound: HttpStatus.NOT_FOUND,
     exceptions.InstallError: HttpStatus.INTERNAL_SERVER_ERROR,
     exceptions.InvalidInput: HttpStatus.BAD_REQUEST,
     exceptions.InvalidSystemConfigFile: HttpStatus.BAD_REQUEST,
     exceptions.ConfigFileNotFoundError: HttpStatus.INTERNAL_SERVER_ERROR,
     exceptions.InvalidPermissionsLevelInRequest: HttpStatus.INTERNAL_SERVER_ERROR,
+    exceptions.InternalDocumentationMisconfigured: HttpStatus.SERVICE_UNAVAILABLE,
 }
 
 
@@ -64,54 +63,47 @@ class HttpMethod(enum.Enum):
     PUT = "PUT"
 
 
-class RequestType(enum.Enum):
+def http_endpoint(
+    flask_entity,
+    flask_rule,
+    method: HttpMethod = HttpMethod.GET,
+    returns_json_response: bool = True,
+    status_on_success: HttpStatus = HttpStatus.OK,
+):
     """
-    The request type simultaneously determines which HTTP method the function
-    being decorated should respond to, and how Transiter should convert the
-    service layer response to a HTTP response. The value of the enum is the
-    relevant HttpMethod.
-    """
-
-    CREATE = HttpMethod.PUT
-    DELETE = HttpMethod.DELETE
-    GET = HttpMethod.GET
-    UPDATE = HttpMethod.POST
-
-
-def http_endpoint(flask_entity, flask_rule, request_type=RequestType.GET):
-    """
-    Decorator factory used to register a Transiter HTTP endpoint.
-
-    This decorator factory simply composes the relevant Flask decorator, for the
-    HTTP routing, and the Transiter http_response decorator, for converting
-    service layer responses into HTTP responses.
+    Decorator factory used to easily register a Transiter HTTP endpoint.
 
     :param flask_entity: either the Flask app or a Flask blueprint
     :param flask_rule: the URL relative to the Flask entity
-    :param request_type: the endpoint type
-    :return: the composed decorator
+    :param method: which HTTP method this endpoint uses
+    :param returns_json_response: whether to format the response as JSON and apply
+        appropriate HTTP headers
+    :param status_on_success: the HTTP status to return on success
     """
-    http_method = request_type.value
-    flask_decorator = flask_entity.route(flask_rule, methods=[http_method.value])
-    custom_decorator = http_response(request_type)
+    decorators = [
+        flask_entity.route(flask_rule + "/", methods=[method.value]),
+        flask_entity.route(flask_rule, methods=[method.value]),
+        handle_exceptions,
+    ]
+    if returns_json_response:
+        decorators.append(json_response(status_on_success))
 
     def composed_decorator(func):
-        return flask_decorator(custom_decorator(func))
+        for decorator_ in reversed(decorators):
+            func = decorator_(func)
+        return func
 
     return composed_decorator
 
 
-def http_response(request_type=RequestType.GET):
-    """
-    Decorator factory used to create decorators that convert service layer
-    responses into HTTP responses.
-
-    :param request_type: the request type
-    """
-
+def json_response(http_status: HttpStatus = HttpStatus.OK):
     @decorator
     def decorator_(func, *args, **kwargs):
-        return _perform_request(request_type, func, *args, **kwargs)
+        return flask.Response(
+            response=_convert_to_json_str(func(*args, **kwargs)),
+            status=http_status,
+            content_type="application/json",
+        )
 
     return decorator_
 
@@ -143,7 +135,7 @@ def link_target(link_type):
 
 
 def get_request_args(keys):
-    all_request_args = _get_all_request_args()
+    all_request_args = flask.request.args
     extra_keys = set(all_request_args.keys()) - set(keys)
     if len(extra_keys) > 0:
         raise exceptions.InvalidInput(
@@ -153,109 +145,28 @@ def get_request_args(keys):
     return {key: all_request_args.get(key) for key in keys}
 
 
-def _get_all_request_args():
-    return flask.request.args
-
-
-def _perform_request(request_type, func, *args, **kwargs):
+@decorator
+def handle_exceptions(func, *args, **kwargs):
     """
-    Perform the request.
+    Decorator to place on a HTTP endpoint to provide graceful handling of exceptions.
 
-    This method is responsible for executing the function (usually just calling
-    a service layer function), and converting the response to a HTTP response.
-    This means converting the result to JSON, and returning relevant HTTP
-    status codes and headers - these tasks are actually delegated to a post
-    processor depending on the request type. The method also handles Exceptions
-    that are raised.
-
-    :param request_type: the request type
-    :param func: the function that was decorated with http_endpoint
-    :param args: args
-    :param kwargs: kwargs
-    :return: a three tuple for consumption by Flask: (response content,
-        response code, and response headers)
+    When in use, exceptions are converted to helpful JSON error message.
     """
     # NOTE: the nested try blocks are to ensure that any errors encountered
     # in handling Transiter exceptions are also handled gracefully in the HTTP
     # sense.
     try:
         try:
-            response = func(*args, **kwargs)
-            return _request_type_to_post_processor[request_type](response)
+            return func(*args, **kwargs)
         except exceptions._TransiterException as e:
-            return (
-                _convert_to_json_str(e.response()),
-                _exception_type_to_http_status[type(e)],
-                {**HttpHeader.CONTENT_TYPE_JSON.value},
+            return flask.Response(
+                response=_convert_to_json_str(e.response()),
+                status=_exception_type_to_http_status[type(e)],
+                content_type="application/json",
             )
     except Exception:
         logger.exception("Unexpected exception in processing HTTP request.")
-        return ("", HttpStatus.INTERNAL_SERVER_ERROR, {})
-
-
-_request_type_to_post_processor = {}
-
-
-def _post_processor(request_type: RequestType):
-    """
-    This decorator factory is used to attach post-processor methods to specific
-    RequestTypes.
-    """
-
-    def decorator_(func):
-        _request_type_to_post_processor[request_type] = func
-        return func
-
-    return decorator_
-
-
-@_post_processor(RequestType.CREATE)
-def _create_post_processor(response):
-    """
-    Post-process CREATE requests.
-
-    The current convention is that service layer functions return True if the
-    entity was created and False if the entity already existed, in which case
-    nothing was done. When Transiter's PUT requests become more sophisticated
-    this may change - see [Github #2].
-    """
-    return ("", HttpStatus.CREATED if response else HttpStatus.NO_CONTENT, {})
-
-
-@_post_processor(RequestType.DELETE)
-def _delete_post_processor(__):
-    """
-    Post-process DELETE requests.
-
-    The service layer function always returns True if the delete was successful.
-    In all other cases an Exception is raised which is handled in the main
-    _process_request method.
-    """
-    return ("", HttpStatus.NO_CONTENT, {})
-
-
-@_post_processor(RequestType.GET)
-def _get_post_processor(response):
-    """
-    Post-process GET requests.
-    """
-    return (
-        _convert_to_json_str(response),
-        HttpStatus.OK,
-        {**HttpHeader.CONTENT_TYPE_JSON.value},
-    )
-
-
-@_post_processor(RequestType.UPDATE)
-def _update_post_processor(response):
-    """
-    Post-process UPDATE requests.
-    """
-    return (
-        _convert_to_json_str(response),
-        HttpStatus.CREATED,
-        {**HttpHeader.CONTENT_TYPE_JSON.value},
-    )
+        return flask.Response(response="", status=HttpStatus.INTERNAL_SERVER_ERROR)
 
 
 def _convert_to_json_str(data):

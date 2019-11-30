@@ -7,13 +7,14 @@ import logging
 
 import flask
 
-from transiter import exceptions, __version__
+from transiter import config, exceptions, __version__
 from transiter.http import endpoints
-from transiter.http.httpmanager import http_endpoint, http_response
+from transiter.http.httpmanager import http_endpoint, handle_exceptions
 from transiter.services import links, systemservice
 
-app = flask.Flask(__name__)
+app = flask.Flask("transiter")
 
+app.register_blueprint(endpoints.docs_endpoints, url_prefix="/docs")
 app.register_blueprint(
     endpoints.feed_endpoints, url_prefix="/systems/<system_id>/feeds"
 )
@@ -38,8 +39,8 @@ handler.setFormatter(formatter)
 
 
 @app.errorhandler(404)
-@http_response()
-def page_not_found(__):
+@handle_exceptions
+def page_not_found(__=None):
     """
     What to return if a user requests an endpoint that doesn't exist.
 
@@ -49,31 +50,15 @@ def page_not_found(__):
     layer functions and we handle that in the HTTP manager. For this reason
     we don't need special configuration to handle those using Flask.
     """
-    raise exceptions.IdNotFoundError
+    raise exceptions.PageNotFound
 
 
 @http_endpoint(app, "/")
 def root(return_links=True):
-    """Provides information about this Transiter instance and the Transit
+    """HTTP/REST API entry point.
+
+    Provides basic information about this Transiter instance and the Transit
     systems it contains.
-
-    .. :quickref: Basic instance information
-
-    :status 200: always
-    :return: A JSON response like the following:
-
-    .. code-block:: json
-
-        {
-            "software": {
-                "name": "Transiter",
-                "version": "0.1",
-                "href": "https://github.com/jamespfennell/transiter"
-            },
-            "systems": {
-                "count": 1
-            }
-        }
     """
     response = {
         "transiter": {
@@ -83,6 +68,11 @@ def root(return_links=True):
         "systems": {"count": len(systemservice.list_all())},
     }
     if return_links:
+        if config.DOCUMENTATION_ENABLED:
+            documentation_link = links.InternalDocumentationLink()
+        else:
+            documentation_link = "https://docs.transiter.io"
+        response["transiter"]["docs"] = {"href": documentation_link}
         response["systems"]["href"] = links.SystemsIndexLink()
     return response
 
@@ -90,9 +80,6 @@ def root(return_links=True):
 def launch(force=False):
     """
     Launch the Flask app in debug mode.
-
-    :param force: unused currently. In future, if true, will force kill any
-        process listening on the target port
     """
     logger.setLevel(logging.DEBUG)
     app.run(port=8000, debug=True)

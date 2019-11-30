@@ -49,8 +49,11 @@ will yield a response like:
 
     {
       "transiter": {
-        "version": "0.2.0",
+        "version": "0.3.1",
         "href": "https://github.com/jamespfennell/transiter"
+        "docs": {
+            "href": "http://localhost:8000/docs/"
+        }
       },
       "systems": {
         "count": 0,
@@ -62,7 +65,7 @@ As you can see, there are no transit systems installed and the
 next step is to install one.
 The [San Francisco BART system](https://github.com/jamespfennell/transiter-sfbart)
  is simple to install:
-assuming the above setup, simple execute:
+assuming the steps above have been followed, simply execute:
 
     curl -X PUT localhost:8000/systems/sfbart \
         -F 'config_file=https://raw.githubusercontent.com/jamespfennell/transiter-sfbart/master/Transiter-SF-BART-config.yaml'
