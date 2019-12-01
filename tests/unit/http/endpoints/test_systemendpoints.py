@@ -1,12 +1,13 @@
 from unittest import mock
 
+import pytest
 import requests
 from werkzeug.datastructures import ImmutableMultiDict
 
+from transiter import exceptions
 from transiter.http.endpoints import systemendpoints
 from transiter.http.httpmanager import HttpStatus
 from transiter.services import systemservice
-import pytest
 
 
 @pytest.fixture
@@ -71,9 +72,9 @@ def test_install__config_file_from_url__failed_to_download(
     )
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: requests_response)
 
-    response = systemendpoints.install("system_id")
+    with pytest.raises(exceptions.InvalidInput):
+        systemendpoints.install("system_id")
 
-    assert HttpStatus.BAD_REQUEST == response.status_code
     install_service_function.assert_not_called()
 
 
@@ -115,7 +116,7 @@ def test_install__no_config_file(flask_request, install_service_function):
     flask_request.form = ImmutableMultiDict()
     flask_request.files = ImmutableMultiDict()
 
-    response = systemendpoints.install("system_id")
+    with pytest.raises(exceptions.InvalidInput):
+        systemendpoints.install("system_id")
 
-    assert HttpStatus.BAD_REQUEST == response.status_code
     install_service_function.assert_not_called()

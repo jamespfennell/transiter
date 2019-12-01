@@ -6,10 +6,15 @@ module.
 import logging
 
 import flask
+import werkzeug.exceptions as werkzeug_exceptions
 
 from transiter import config, exceptions, __version__
 from transiter.http import endpoints
-from transiter.http.httpmanager import http_endpoint, handle_exceptions
+from transiter.http.httpmanager import (
+    http_endpoint,
+    HttpStatus,
+    convert_exception_to_error_response,
+)
 from transiter.services import links, systemservice
 
 app = flask.Flask("transiter")
@@ -38,19 +43,32 @@ formatter = logging.Formatter("%(asctime)s WS %(levelname)-5s [%(module)s] %(mes
 handler.setFormatter(formatter)
 
 
-@app.errorhandler(404)
-@handle_exceptions
+@app.errorhandler(exceptions.TransiterException)
+def transiter_error_handler(exception: exceptions.TransiterException):
+    """
+    Error handler for Transiter exceptions.
+    """
+    return convert_exception_to_error_response(exception)
+
+
+@app.errorhandler(HttpStatus.NOT_FOUND)
 def page_not_found(__=None):
     """
     What to return if a user requests an endpoint that doesn't exist.
-
-    This 404 error is special in that it is the only error that can occur
-    outside of our usual endpoint handling. I.e., all other errors like 403
-    forbidden arise when we're processing a user request in one of the HTTP
-    layer functions and we handle that in the HTTP manager. For this reason
-    we don't need special configuration to handle those using Flask.
     """
-    raise exceptions.PageNotFound
+    return transiter_error_handler(exceptions.PageNotFound(flask.request.path))
+
+
+@app.errorhandler(HttpStatus.METHOD_NOT_ALLOWED)
+def method_not_allowed(werkzeug_exception: werkzeug_exceptions.MethodNotAllowed):
+    """
+    What to return if a user requests an endpoint with a disallowed method.
+    """
+    return transiter_error_handler(
+        exceptions.MethodNotAllowed(
+            flask.request.method, flask.request.path, werkzeug_exception.valid_methods
+        )
+    )
 
 
 @http_endpoint(app, "/")

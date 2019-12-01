@@ -4,7 +4,7 @@ from unittest import mock
 import flask
 import pytest
 
-from transiter import config
+from transiter import config, exceptions
 from transiter.http import flaskapp, permissions
 from transiter.http.endpoints import (
     routeendpoints,
@@ -21,6 +21,7 @@ from transiter.services import (
     feedservice,
     systemservice,
 )
+
 
 # NOTE: there are mostly two orthogonal things being tested here:
 #
@@ -56,9 +57,8 @@ def test_permission_denied__admin_write_endpoints(
         "X-Transiter-PermissionsLevel": request_permissions_level.name
     }
 
-    response = endpoint_function(*function_args)
-
-    assert response.status_code == HttpStatus.FORBIDDEN
+    with pytest.raises(exceptions.AccessDenied):
+        endpoint_function(*function_args)
 
 
 @pytest.mark.parametrize(
@@ -77,9 +77,8 @@ def test_permission_denied__admin_read_endpoints(
         "X-Transiter-PermissionsLevel": permissions.PermissionsLevel.USER_READ.name
     }
 
-    response = endpoint_function(*function_args)
-
-    assert response.status_code == HttpStatus.FORBIDDEN
+    with pytest.raises(exceptions.AccessDenied):
+        endpoint_function(*function_args)
 
 
 @pytest.mark.parametrize(
@@ -221,8 +220,10 @@ def test_flask_app_root(
     assert HttpStatus.OK == response.status_code
 
 
-def test_404():
+def test_404(flask_request):
     """[Flask app] Test 404 error"""
+    flask_request.path = "/missing/path"
+
     response = flaskapp.page_not_found(None)
 
     assert HttpStatus.NOT_FOUND == response.status_code

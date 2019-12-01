@@ -18,7 +18,7 @@ import inflection
 # ancestor of the exception to have a HTTP status.
 
 
-class _TransiterException(Exception):
+class TransiterException(Exception):
     """
     Base exception for all Transiter exceptions.
     """
@@ -32,7 +32,7 @@ class _TransiterException(Exception):
         Return structured information about this exception instance.
         """
         if len(self.additional_info) > 0:
-            additional_info = {"additional_info": self.additional_info}
+            additional_info = {"parameters": self.additional_info}
         else:
             additional_info = {}
         return {
@@ -47,7 +47,7 @@ class _TransiterException(Exception):
             self.message = message
 
 
-class InstallError(_TransiterException):
+class InstallError(TransiterException):
     """
     Exception that is thrown when there's a problem during install.
     """
@@ -56,7 +56,7 @@ class InstallError(_TransiterException):
     message = "There was an error installing the transit system."
 
 
-class InvalidInput(_TransiterException):
+class InvalidInput(TransiterException):
     """
     Exception that is thrown when the input to a service layer function is
     invalid. This is usually the result of an invalid user HTTP request.
@@ -66,12 +66,12 @@ class InvalidInput(_TransiterException):
     message = "The request contained invalid input."
 
 
-class InvalidSystemConfigFile(_TransiterException):
+class InvalidSystemConfigFile(TransiterException):
     code = "T029"
     message = "The system config file is invalid"
 
 
-class ConfigFileNotFoundError(_TransiterException):
+class ConfigFileNotFoundError(TransiterException):
     """
     Exception that is raised when the Transiter config file could not be found.
     """
@@ -80,7 +80,7 @@ class ConfigFileNotFoundError(_TransiterException):
     message = "The Transiter config file could not be found!"
 
 
-class IdNotFoundError(_TransiterException):
+class IdNotFoundError(TransiterException):
     """
     Exception that is raised when a specific DB entity could not be found.
     """
@@ -89,16 +89,39 @@ class IdNotFoundError(_TransiterException):
     message = "One of the requested entities could not be found."
 
 
-class PageNotFound(_TransiterException):
+class PageNotFound(TransiterException):
     """
     Exception that is raised when a page cannot be found.
     """
 
     code = "T051"
-    message = "The requested page could not be found"
+
+    def __init__(self, request_path):
+        self.message = "No page found at path '{}'.".format(request_path)
+        self.additional_info = {"request_path": request_path}
 
 
-class InvalidPermissionsLevelInRequest(_TransiterException):
+class MethodNotAllowed(TransiterException):
+    """
+    Exception that is raised when unsupported method is used.
+    """
+
+    code = "T052"
+    message = "The requested method is not allowed for this endpoint"
+
+    def __init__(self, request_method, request_path, allowed_methods):
+        self.message = (
+            "The method {} is not supported for path '{}'. "
+            "The allowed methods for this path are: {}."
+        ).format(request_method, request_path, ", ".join(allowed_methods))
+        self.additional_info = {
+            "request_method": request_method,
+            "request_path": request_path,
+            "allowed_methods": allowed_methods,
+        }
+
+
+class InvalidPermissionsLevelInRequest(TransiterException):
     """
     Raised when the HTTP requests contains an unknown permissions level.
     """
@@ -113,7 +136,7 @@ class InvalidPermissionsLevelInRequest(_TransiterException):
         }
 
 
-class AccessDenied(_TransiterException):
+class AccessDenied(TransiterException):
     """
     Raised when the HTTP request has insufficient permissions.
     """
@@ -128,6 +151,6 @@ class AccessDenied(_TransiterException):
         }
 
 
-class InternalDocumentationMisconfigured(_TransiterException):
+class InternalDocumentationMisconfigured(TransiterException):
     code = "T070"
     message = "The documentation is currently unavailable"

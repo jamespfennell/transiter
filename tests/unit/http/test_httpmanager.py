@@ -18,11 +18,7 @@ from transiter.services import links
 def test_unexpected_error():
     """[HTTP Manager] Unexpected error"""
 
-    @httpmanager.handle_exceptions
-    def bad_endpoint():
-        raise ValueError
-
-    response = bad_endpoint()
+    response = httpmanager.convert_exception_to_error_response(ValueError())
 
     assert httpmanager.HttpStatus.INTERNAL_SERVER_ERROR == response.status_code
 
@@ -36,12 +32,12 @@ def test_all_exceptions_inherit_from_transiter_exceptions():
         except TypeError:
             # NOTE: this happens if exception_variable is not a class.
             continue
-        assert issubclass(exception_variable, exceptions._TransiterException)
+        assert issubclass(exception_variable, exceptions.TransiterException)
 
 
 def test_all_exceptions_have_http_status():
     """[HTTP Manager] Ensure every exception has a HTTP status"""
-    for transiter_exception in exceptions._TransiterException.__subclasses__():
+    for transiter_exception in exceptions.TransiterException.__subclasses__():
         assert transiter_exception in httpmanager._exception_type_to_http_status
 
 

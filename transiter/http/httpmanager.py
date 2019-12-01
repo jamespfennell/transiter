@@ -38,6 +38,7 @@ class HttpStatus(enum.IntEnum):
     BAD_REQUEST = 400
     FORBIDDEN = 403
     NOT_FOUND = 404
+    METHOD_NOT_ALLOWED = 405
     INTERNAL_SERVER_ERROR = 500
     NOT_IMPLEMENTED = 501
     SERVICE_UNAVAILABLE = 503
@@ -47,6 +48,7 @@ _exception_type_to_http_status = {
     exceptions.AccessDenied: HttpStatus.FORBIDDEN,
     exceptions.IdNotFoundError: HttpStatus.NOT_FOUND,
     exceptions.PageNotFound: HttpStatus.NOT_FOUND,
+    exceptions.MethodNotAllowed: HttpStatus.METHOD_NOT_ALLOWED,
     exceptions.InstallError: HttpStatus.INTERNAL_SERVER_ERROR,
     exceptions.InvalidInput: HttpStatus.BAD_REQUEST,
     exceptions.InvalidSystemConfigFile: HttpStatus.BAD_REQUEST,
@@ -83,7 +85,6 @@ def http_endpoint(
     decorators = [
         flask_entity.route(flask_rule + "/", methods=[method.value]),
         flask_entity.route(flask_rule, methods=[method.value]),
-        handle_exceptions,
     ]
     if returns_json_response:
         decorators.append(json_response(status_on_success))
@@ -145,26 +146,15 @@ def get_request_args(keys):
     return {key: all_request_args.get(key) for key in keys}
 
 
-@decorator
-def handle_exceptions(func, *args, **kwargs):
-    """
-    Decorator to place on a HTTP endpoint to provide graceful handling of exceptions.
-
-    When in use, exceptions are converted to helpful JSON error message.
-    """
-    # NOTE: the nested try blocks are to ensure that any errors encountered
-    # in handling Transiter exceptions are also handled gracefully in the HTTP
-    # sense.
+def convert_exception_to_error_response(exception):
+    # noinspection PyBroadException
     try:
-        try:
-            return func(*args, **kwargs)
-        except exceptions._TransiterException as e:
-            return flask.Response(
-                response=_convert_to_json_str(e.response()),
-                status=_exception_type_to_http_status[type(e)],
-                content_type="application/json",
-            )
-    except Exception:
+        return flask.Response(
+            response=_convert_to_json_str(exception.response()),
+            status=_exception_type_to_http_status[type(exception)],
+            content_type="application/json",
+        )
+    except:
         logger.exception("Unexpected exception in processing HTTP request.")
         return flask.Response(response="", status=HttpStatus.INTERNAL_SERVER_ERROR)
 

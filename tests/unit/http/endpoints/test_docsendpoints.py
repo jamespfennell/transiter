@@ -1,12 +1,14 @@
-from unittest import mock
-from transiter.http.endpoints import docsendpoints
-from transiter.http.httpmanager import HttpStatus
-import flask
-from transiter import config
-import pytest
-import werkzeug.exceptions as werkzeug_exceptions
 import builtins
 from contextlib import contextmanager
+from unittest import mock
+
+import flask
+import pytest
+import werkzeug.exceptions as werkzeug_exceptions
+
+from transiter import config, exceptions
+from transiter.http.endpoints import docsendpoints
+from transiter.http.httpmanager import HttpStatus
 
 
 @pytest.fixture
@@ -67,15 +69,13 @@ def test_get_documentation__404_missing(
 ):
     flask_send_from_directory.path_to_content = {}
 
-    response = docsendpoints.docs("my/path")
-
-    assert HttpStatus.SERVICE_UNAVAILABLE == response.status_code
+    with pytest.raises(exceptions.InternalDocumentationMisconfigured):
+        docsendpoints.docs("my/path")
 
 
 def test_documentation_disabled():
-    response = docsendpoints.docs()
-
-    assert HttpStatus.NOT_FOUND == response.status_code
+    with pytest.raises(werkzeug_exceptions.HTTPException):
+        docsendpoints.docs()
 
 
 def test_documentation__misconfigured(
@@ -83,9 +83,8 @@ def test_documentation__misconfigured(
 ):
     monkeypatch.setattr(docsendpoints, "_documentation_root_is_valid", lambda: False)
 
-    response = docsendpoints.docs()
-
-    assert HttpStatus.SERVICE_UNAVAILABLE == response.status_code
+    with pytest.raises(exceptions.InternalDocumentationMisconfigured):
+        docsendpoints.docs()
 
 
 # docs root is absolute vs relative
