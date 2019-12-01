@@ -86,9 +86,9 @@ at San Francisco International Airport (stop ID `SFIA`), just execute:
 
 ## Possible next steps
 
-- [Install the New York City Subway system.](https://github.com/jamespfennell/transiter-nycsubway)
-- [Learn how to write transit system config files in order to add other transit systems to Transiter (it's very easy!)](https://docs.transiter.io/en/latest/customfeedparser.html)
-- [Write a custom feed parser to import data in non-standard format into Transiter.](https://docs.transiter.io/en/latest/customfeedparser.html)
+- Install [the New York City Subway system](https://github.com/jamespfennell/transiter-nycsubway).
+- Learn how to write [transit system config files](https://docs.transiter.io/docs/systems/) in order to add other transit systems to Transiter (it's very easy!)
+- Write a [custom feed parser](https://docs.transiter.io/docs/feedparsers/) to import data in non-standard format into Transiter.
     
 The [documentation website](https://docs.transiter.io) has much more
 including advice on deployment.
@@ -96,7 +96,6 @@ including advice on deployment.
 ## Development indicators
 
 [![Build Status](https://travis-ci.org/jamespfennell/transiter.svg?branch=master)](https://travis-ci.org/jamespfennell/transiter)
-[![Documentation Status](https://readthedocs.org/projects/transiter/badge/?version=latest)](https://docs.transiter.io)
 [![Coverage Status](https://coveralls.io/repos/github/jamespfennell/transiter/badge.svg?branch=master&service=github)](https://coveralls.io/github/jamespfennell/transiter?branch=master) 
 [![Requirements Status](https://requires.io/github/jamespfennell/transiter/requirements.svg?branch=master)](https://requires.io/github/jamespfennell/transiter/requirements/?branch=master)
 
