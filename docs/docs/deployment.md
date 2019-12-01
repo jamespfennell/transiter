@@ -35,7 +35,37 @@ The `latest` and `dev-latest` versions may introduce breaking API changes at any
 
 ### Kubernetes: the Transiter Helm Chart
 
-(Coming soon)
+The Transiter Helm Chart enables easy installation of 
+Transiter on a Kubernetes cluster.
+
+The Helm chart can be installed by referencing the built `tgz` file 
+in GitHub:
+```sh
+helm install https://github.com/jamespfennell/transiter/raw/master/docker/helmchart-0.1.0.tgz
+```
+Or, by checking out the Git repository and installing from the file system:
+```sh
+helm install ./docker/helmchart
+```
+
+
+The Helm chart contains many configuration options.
+These are defined and described in the 
+[Helm Chart's values file](https://github.com/jamespfennell/transiter/blob/master/docker/helmchart/values.yaml).
+Some particularly important options are as follows.
+
+- The `version` is, by default, `latest`. As per the above, in production this should usually
+    be overridden with a fixed version.
+    
+- If you are using custom feed parsers distributed as Python packages,
+    these packages can be made available to Transiter using the 
+    `pythonPackagesToProvide` option.
+
+- By default the Postgres container does *not* use a persistent volume. 
+    In production a persistent volume should be used so that data lives
+    beyond the lifecycle of the container.
+    This is configured in the `postgres.persistentVolume` configuration.
+
 
 ### Docker compose
 
@@ -126,10 +156,88 @@ It can be launched using:
 ```sh
 transiterclt launch task-server
 ```
-The task server contains an RPyC interfact and by default listens on localhost's port 5000.
+The task server contains an RPyC interface and by default listens on localhost's port 5000.
 The host and port can be changed using the environment variables
 `TRANSITER_TASKSERVER_HOST` and `TRANSITER_TASKSERVER_PORT` respectively.
 It is critical that these variables are also set for the web server; otherwise,
 the web server will be unable to contact the task server which can result
 in feeds not being auto updated after a transit system install.
  
+### Documentation
+
+Transiter can be configured to serve the documentation 
+on the `/docs` path.
+This requires that the documentation has been built into static
+files using `mkdocs`; Transiter then serves files directly from 
+the documentation build directory.
+
+#### Security and performance notes
+
+Please be aware that there is an inherent security concern here.
+If the documentation is misconfigured, Transiter may serve
+files from a random directory on the host machine and may thus leak 
+data and files on the machine. 
+To address this concern,
+
+1. The documentation is disabled by default. A person setting up a Transiter instance
+    has to explicitly enable it by setting the environment variable
+    `TRANSITER_DOCUMENTATION_ENABLED` to be true.
+    If the documentation is disabled any path on `/docs` returns a
+    `404 NOT FOUND` response.
+    
+2. When serving documentation, Transiter will make an effort to ensure that the
+    configuration is correct and that it is really serving the documentation
+    and not some other directory. 
+    To do this, Transiter embeds a 96 character hex string in each documentation page
+    and before serving files verifies that the hex string is in the `index.html`
+    file at the root of the directory.
+    This security mechanism addresses accidental mistakes.
+    If the security check fails, a `503 SERVICE UNAVAILABLE` response is sent.
+    
+In addition to the security concern, there is also a performance concern.
+The files are served using Python's Flask and Werkzeug libraries; this 
+is a highly non-performant way to serve static content.
+In addition, the security check described above entails an additional fixed computational
+cost for serving each file.
+For these performance reasons, consider not enabling the documentation
+in production if malicious users could access it and use it as the basis
+for a DoS attack.
+
+
+#### Setting up the documentation.
+
+First, to enable the documentation set the environment 
+variable
+    `TRANSITER_DOCUMENTATION_ENABLED` to be true.
+    
+Next, you need to compile the documentation.
+In the Python environment you're working in, ensure 
+the Transiter developer requirements have been installed;
+in the root of the Github repo, run
+```sh
+pip install -r dev-requirements.txt
+```
+Then `cd` into the `docs` directory and run
+```sh
+mkdocs build
+```
+This will result in the documentation static files being built
+and placed in the `site` subdirectory.
+
+Finally, configure the 
+`TRANSITER_DOCUMENTATION_ROOT` environment variable.
+This should point to the `site` subdirectory. 
+This can be either:
+
+1. An absolute path.
+
+2. A relative path, relative to the location of the Flask application.
+
+If you're launching the Flask app based on the checked out Github
+repo, it is located in `transiter/http` and hence the 
+environment variable should be set
+to `../../docs/site`. (This is, in fact, the default.)
+
+Verify it's working by visiting the `/docs` path.
+If it's not working, consult the console output which will detail
+exactly what's happening.
