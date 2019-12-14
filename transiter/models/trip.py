@@ -13,10 +13,11 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from .base import Base
-from .updatableentity import UpdatableEntity
+from .updatableentity import updatable_entity
 
 
-class Trip(Base, UpdatableEntity):
+@updatable_entity
+class Trip(Base):
     __tablename__ = "trip"
 
     pk = Column(Integer, primary_key=True)

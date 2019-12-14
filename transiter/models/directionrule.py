@@ -2,10 +2,11 @@ from sqlalchemy import Index, Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base
-from .updatableentity import UpdatableEntity
+from .updatableentity import updatable_entity
 
 
-class DirectionRule(Base, UpdatableEntity):
+@updatable_entity
+class DirectionRule(Base):
     __tablename__ = "direction_name_rule"
 
     pk = Column(Integer, primary_key=True)

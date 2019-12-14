@@ -2,10 +2,11 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base
-from .updatableentity import UpdatableEntity
+from .updatableentity import updatable_entity
 
 
-class ScheduledService(Base, UpdatableEntity):
+@updatable_entity
+class ScheduledService(Base):
     __tablename__ = "scheduled_service"
 
     pk = Column(Integer, primary_key=True)

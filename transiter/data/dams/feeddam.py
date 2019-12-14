@@ -5,6 +5,10 @@ from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
 
 
+def list_all_feed_pks():
+    return list(pk_ for (pk_,) in dbconnection.get_session().query(models.Feed.pk))
+
+
 def list_all_autoupdating():
     """
     List all auto-updating Feeds.
@@ -71,19 +75,30 @@ def list_updates_in_feed(feed_pk):
     return query.all()
 
 
-def trim_feed_updates(before_datetime):
+def trim_feed_updates(feed_pk, before_datetime):
     """
-    Trip all FeedUpdates in the system whose last action time was before
+    Trip all FeedUpdates for a feed whose last action time was before
     a certain cut-off point.
 
+    :feed_pk: pk of the feed
     :param before_datetime: the cut-off point
-    :return: None
     """
-    session = dbconnection.get_session()
+    not_exists_conditions = [
+        ~sql.exists(
+            sql.select([sql.literal_column("1")]).where(
+                UpdatableEntity.source_pk == models.FeedUpdate.pk
+            )
+        )
+        for UpdatableEntity in models.list_updatable_entities()
+    ]
     query = sql.delete(models.FeedUpdate).where(
-        models.FeedUpdate.last_action_time <= before_datetime
+        sql.and_(
+            models.FeedUpdate.feed_pk == feed_pk,
+            models.FeedUpdate.last_action_time <= before_datetime,
+            *not_exists_conditions
+        )
     )
-    session.execute(query)
+    dbconnection.get_session().execute(query)
 
 
 def aggregate_feed_updates(before_datetime):

@@ -1,7 +1,12 @@
+import datetime
 import unittest
+from unittest import mock
 
-from transiter.services import feedservice, links
+import pytest
+
 from transiter import models, exceptions
+from transiter.data.dams import feeddam
+from transiter.services import feedservice, links
 from .. import testutil
 
 
@@ -176,4 +181,33 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
 
         self.feeddam.get_in_system_by_id.assert_called_once_with(
             self.SYSTEM_ID, self.FEED_ONE_ID
+        )
+
+
+@pytest.mark.parametrize(
+    "feed_pks", [pytest.param([]), pytest.param([1]), pytest.param([1, 2])],
+)
+def test_trip_feed_updates(monkeypatch, datetime_now, feed_pks):
+
+    before_datetime = datetime.datetime(
+        year=datetime_now.year,
+        month=datetime_now.month,
+        day=datetime_now.day,
+        hour=datetime_now.hour - 1,
+        minute=datetime_now.minute,
+        second=0,
+        microsecond=0,
+    )
+
+    dam_trip_feed_updates = mock.Mock()
+    monkeypatch.setattr(feeddam, "list_all_feed_pks", lambda: feed_pks)
+    monkeypatch.setattr(feeddam, "trim_feed_updates", dam_trip_feed_updates)
+
+    feedservice.trim_feed_updates()
+
+    if len(feed_pks) == 0:
+        dam_trip_feed_updates.assert_not_called()
+    else:
+        dam_trip_feed_updates.assert_has_calls(
+            [mock.call(feed_pk, before_datetime) for feed_pk in feed_pks]
         )

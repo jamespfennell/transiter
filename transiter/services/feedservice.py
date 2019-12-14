@@ -131,97 +131,30 @@ def list_updates_in_feed(system_id, feed_id):
     return response
 
 
-@dbconnection.unit_of_work
 def trim_feed_updates():
     """
     Delete old feed updates.
 
-    This method deletes feed updates that were created more than 60 minutes
-    ago. Before deleting the updates, it prints some aggregate statistics
-    such as the proportion of feed updates that were successful.
-
-    This method is designed to be called hourly by the task server. It is only
-    meant to be a short term solution to the problem of cleaning and documenting
-    old feed updates: in the future, aggregate feed update reports should be
-    persisted in the database.
+    This method is designed to be called hourly by the task server.
     """
+
+    @dbconnection.unit_of_work
+    def _list_all_feed_pks():
+        return feeddam.list_all_feed_pks()
+
+    @dbconnection.unit_of_work
+    def _trim_feed_updates_helper(feed_pk_, before_datetime_):
+        logger.info(
+            "Deleting feed updates with feed_pk={} and last updated before {}".format(
+                feed_pk_, before_datetime_
+            )
+        )
+        feeddam.trim_feed_updates(feed_pk_, before_datetime_)
+
     logger.info("Trimming old feed updates.")
     before_datetime = (
         datetime.datetime.now() - datetime.timedelta(minutes=60)
     ).replace(microsecond=0, second=0)
-    logger.info("\n" + _build_feed_updates_report(before_datetime))
-    logger.info("Deleting feed updates in DB before {}".format(before_datetime))
-    feeddam.trim_feed_updates(before_datetime)
 
-
-def _build_feed_updates_report(before_datetime):
-    table_row_template = "{delimiter}".join(
-        [
-            "{system_id:13}",
-            "{feed_id:20}",
-            "{status:10}",
-            "{explanation:20}",
-            "{count:>5}",
-            "{avg_execution_duration:>6}",
-        ]
-    )
-    table_rows = [
-        "Aggregated feed update report for updates in the database before {}".format(
-            before_datetime
-        ),
-        "",
-        "Column explanations:",
-        "+ number of feed updates of this type",
-        "* average execution time for feed updates of this type",
-        "",
-        table_row_template.format(
-            delimiter=" | ",
-            system_id="system_id",
-            feed_id="feed_id",
-            status="status",
-            explanation="explanation",
-            count="*",
-            avg_execution_duration="+",
-        ),
-    ]
-    feed_id = None
-    status = None
-    for feed_update_data in feeddam.aggregate_feed_updates(before_datetime):
-        if feed_update_data["feed_id"] != feed_id:
-            table_rows.append(
-                table_row_template.format(
-                    delimiter="-+-",
-                    system_id="-" * 13,
-                    feed_id="-" * 20,
-                    status="-" * 10,
-                    explanation="-" * 20,
-                    count="-" * 5,
-                    avg_execution_duration="-" * 6,
-                )
-            )
-            feed_id = table_feed_id = feed_update_data["feed_id"]
-            table_system_id = feed_update_data["system_id"]
-        else:
-            table_feed_id = ""
-            table_system_id = ""
-
-        if feed_update_data["status"] != status or table_feed_id != "":
-            status = table_status = feed_update_data["status"].name
-        else:
-            table_status = ""
-
-        table_rows.append(
-            table_row_template.format(
-                delimiter=" | ",
-                system_id=table_system_id,
-                feed_id=table_feed_id,
-                status=table_status,
-                explanation=feed_update_data["explanation"].name,
-                count=feed_update_data["count"],
-                avg_execution_duration="{:.2f}".format(
-                    feed_update_data["avg_execution_duration"]
-                ),
-            )
-        )
-
-    return "\n".join(table_rows)
+    for feed_pk in _list_all_feed_pks():
+        _trim_feed_updates_helper(feed_pk, before_datetime)

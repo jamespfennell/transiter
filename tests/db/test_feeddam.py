@@ -47,29 +47,3 @@ class TestFeedDAM(dbtestutil.TestCase):
             ],
             feeddam.list_updates_in_feed(testdata.FEED_ONE_PK),
         )
-
-    def test_trim_updates(self):
-        """[Feed DAM] Trim updates"""
-        feeddam.trim_feed_updates(datetime.datetime(2011, 1, 1, 1, 30, 0))
-
-        self.assertEqual(
-            [testdata.feed_1_update_3, testdata.feed_1_update_2],
-            feeddam.list_updates_in_feed(testdata.FEED_ONE_PK),
-        )
-
-    def test_aggregate_updates(self):
-        """[Feed DAM] Aggregate updates"""
-        expected = [
-            (
-                testdata.SYSTEM_ONE_ID,
-                testdata.FEED_ONE_ID,
-                models.FeedUpdate.Status.SUCCESS,
-                None,
-                1,
-                None,
-            )
-        ]
-
-        actual = feeddam.aggregate_feed_updates(datetime.datetime(2011, 1, 1, 1, 30, 0))
-
-        self.assertEqual(expected, actual)

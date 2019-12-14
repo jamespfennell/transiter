@@ -33,7 +33,7 @@ class TestSync(testutil.TestCase(sync)):
         """
         [Sync] Can sync all types up updatable entity
         """
-        for UpdatableEntityClass in models.UpdatableEntity.__subclasses__():
+        for UpdatableEntityClass in models.list_updatable_entities():
             sync.sync(self.feed_update, [UpdatableEntityClass()])
 
     def test_invalid_entity(self):

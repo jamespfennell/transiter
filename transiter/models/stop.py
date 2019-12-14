@@ -10,10 +10,11 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, backref
 
 from .base import Base
-from .updatableentity import UpdatableEntity
+from .updatableentity import updatable_entity
 
 
-class Stop(Base, UpdatableEntity):
+@updatable_entity
+class Stop(Base):
     __tablename__ = "stop"
 
     pk = Column(Integer, primary_key=True)

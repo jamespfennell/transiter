@@ -4,10 +4,11 @@ from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, ForeignKey, En
 from sqlalchemy.orm import relationship
 
 from .base import Base
-from .updatableentity import UpdatableEntity
+from .updatableentity import updatable_entity
 
 
-class Alert(Base, UpdatableEntity):
+@updatable_entity
+class Alert(Base):
     __tablename__ = "alert"
 
     pk = Column(Integer, primary_key=True)

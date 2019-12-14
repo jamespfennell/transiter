@@ -1,12 +1,14 @@
+import enum
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
 from .base import Base
-from .updatableentity import UpdatableEntity
-import enum
+from .updatableentity import updatable_entity
 
 
-class Route(Base, UpdatableEntity):
+@updatable_entity
+class Route(Base):
     __tablename__ = "route"
 
     pk = Column(Integer, primary_key=True)
