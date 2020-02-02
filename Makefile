@@ -26,7 +26,7 @@ distribute:
 	# For testing add  --repository-url https://test.pypi.org/legacy/ to the previous command
 
 unit-tests:
-	pytest --cov=transiter --cov-config=.coveragerc --cov-append tests/unit
+	coverage run -m pytest tests/unit
 
 db-tests:
 	./docker/wait-for-it.sh $$TRANSITER_DB_HOST:$$TRANSITER_DB_PORT

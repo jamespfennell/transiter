@@ -1,3 +1,1 @@
-from . import graphdatastructs
-from . import pathstitcher
-from . import topologicalsort
+from . import topologicalsort, datastructures, operations

@@ -5,7 +5,7 @@ maps
 import datetime
 import json
 import logging
-
+from typing import List, Set, Tuple
 from transiter import models
 from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
 from transiter.services.servicemap import graphutils, conditions
@@ -145,39 +145,54 @@ def _build_service_map_from_paths(paths):
     """
     Given a list of paths build the service map.
     """
-    return _convert_sorted_graph_to_service_pattern(
-        _build_sorted_graph_from_paths(paths)
-    )
+    labels = []
+    for graph in _build_sorted_graph_from_paths(paths):
+        for node in graph.nodes():
+            labels.append(node.label)
+    return _convert_sorted_graph_to_service_pattern(labels)
 
 
-def _convert_sorted_graph_to_service_pattern(sorted_graph):
+def _convert_sorted_graph_to_service_pattern(sorted_labels):
     """
     Convert a sorted graph object to a service map object.
     """
     service_pattern = models.ServiceMap()
-    for index, vertex in enumerate(sorted_graph.vertices()):
+    for index, label in enumerate(sorted_labels):
         sp_vertex = models.ServiceMapVertex()
-        sp_vertex.stop_pk = vertex.label
+        sp_vertex.stop_pk = label
         sp_vertex.map = service_pattern
         sp_vertex.position = index
     return service_pattern
 
 
-def _build_sorted_graph_from_paths(paths):
+def _build_sorted_graph_from_paths(
+    paths: Set[Tuple],
+) -> List[graphutils.datastructures.AbstractGraph]:
     """
     Given a list of paths build the sorted graph.
     """
     if len(paths) == 0:
-        return graphutils.graphdatastructs.DirectedPath([])
+        return [graphutils.datastructures.Graph()]
     if len(paths) == 1:
-        unique_element = next(iter(paths))
-        return graphutils.graphdatastructs.DirectedPath(unique_element)
-    paths = [graphutils.graphdatastructs.DirectedPath(path_list) for path_list in paths]
-    graph = graphutils.pathstitcher.stitch(paths)
-    # short circuit if the route_graph is actually a path
-    if graph.is_path():
-        return graph.cast_to_path()
-    return graphutils.topologicalsort.sort(graph)
+        unique_path = next(iter(paths))
+        return [graphutils.datastructures.Path.build_from_label_list(unique_path)]
+    additional_nodes = set()
+    edge_tuples = set()
+    for path in paths:
+        if len(path) == 1:
+            additional_nodes.add(path[0])
+            continue
+        for i in range(len(path) - 1):
+            edge_tuples.add((path[i], path[i + 1]))
+    graph = graphutils.datastructures.MutableGraph.build_from_edge_label_tuples(
+        edge_tuples, additional_nodes
+    )
+    return list(
+        map(
+            graphutils.topologicalsort.tgt_sort,
+            graphutils.operations.split_into_connected_components(graph),
+        )
+    )
 
 
 class _ScheduledTripMatcher:

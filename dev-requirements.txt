@@ -3,6 +3,6 @@ coverage==4.5.4
 docker==4.1.0
 mkdocs==1.0.4
 mkdocs-cinder==0.17.0
-pytest==5.2.2
+pytest==5.3.5
 pytest-cov==2.8.1
 twine==2.0.0

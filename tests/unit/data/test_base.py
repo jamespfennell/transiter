@@ -25,7 +25,7 @@ class TestBasicModel(unittest.TestCase):
         self.assertEqual(expected_short_repr, actual_short_repr)
 
     def test_long_repr(self):
-        class TestModel(base.Base):
+        class TestModel2(base.Base):
             __tablename__ = "blak2"
             pk = Column(Integer, primary_key=True)
             id = Column(String)
@@ -34,7 +34,7 @@ class TestBasicModel(unittest.TestCase):
             _long_repr_list = [id]
             _long_repr_dict = {"full_name": name}
 
-        test_model = TestModel()
+        test_model = TestModel2()
         test_model.id = "L"
         test_model.name = "James"
 
