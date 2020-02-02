@@ -186,10 +186,10 @@ def test_build_sorted_graph_from_paths__path():
 
 
 def test_build_sorted_graph_from_paths__full_case():
-    raw_paths = [("a", "b", "c"), ("c", "d"), ("x", "y", "z")]
+    raw_paths = [("a", "b", "c"), ("a", "c", "d"), ("x", "y", "z")]
 
     path_1 = datastructures.Graph.build_from_edge_label_tuples(
-        [("a", "b"), ("b", "c"), ("c", "d")]
+        [("a", "b"), ("b", "c"), ("c", "d"), ("a", "c")]
     )
     path_2 = datastructures.Graph.build_from_edge_label_tuples([("x", "y"), ("y", "z")])
 
