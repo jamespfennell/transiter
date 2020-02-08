@@ -27,7 +27,6 @@ after_success:
   #    directory. Necessary for correct coverage reporting.
   - pip install coverage==4.5.4
   - pip install coveralls
-  - ls -lah coverage
   - sudo chmod -R 0777 coverage
   - coverage combine coverage/.coverage
   - coveralls

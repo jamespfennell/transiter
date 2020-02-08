@@ -35,8 +35,7 @@ class Task:
         self._job.modify(next_run_time=datetime.datetime.now())
 
     def __del__(self):
-        pass
-        # self._job.remove()
+        self._job.remove()
 
 
 class IntervalTask(Task):
@@ -91,6 +90,7 @@ def refresh_feed_auto_update_tasks():
             feed_pk_to_auto_update_task[feed_data["pk"]] = auto_update_task
         stale_feed_pks.discard(feed_data["pk"])
 
+    logger.info("Cancelling {} feed auto update tasks".format(len(stale_feed_pks)))
     for feed_pk in stale_feed_pks:
         del feed_pk_to_auto_update_task[feed_pk]
 

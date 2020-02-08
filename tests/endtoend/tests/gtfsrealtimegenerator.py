@@ -91,30 +91,4 @@ class GtfsRealtimeFeed:
                         "departure_time": time + 15,
                     }
                 )
-        return (stop_sequences, trip_data)
-
-
-"""
-
-trip_1_stops = {
-    '1AS': 0,
-    '1BS': 300
-}
-trip = FeedTrip("trip_1", 'A', trip_1_stops, 0)
-
-feed = GtfsRealtimeFeed(00, [trip]).build_feed()
-
-import requests
-
-#requests.put('http://localhost:5001', data=feed)
-#print(requests.get('http://localhost:5001').content)
-
-
-
-gtfs = gtfs_realtime_pb2.FeedMessage()
-gtfs.ParseFromString(feed)
-print(gtfs)
-
-
-
-"""
+        return stop_sequences, trip_data

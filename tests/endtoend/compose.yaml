@@ -1,0 +1,21 @@
+version: '3.5'
+
+services:
+
+  sourceserver:
+    image: transiter-endtoend-sourceserver
+    build: ./sourceserver
+    expose:
+      - "5001"
+    ports:
+      - "5001:5001"
+    restart: always
+
+  testrunner:
+    image: transiter-endtoend-testrunner
+    build: ./tests
+    environment:
+      - TRANSITER_HOST=http://webserver:80
+      - SOURCE_SERVER_HOST=http://sourceserver:5001
+      - SOURCE_SERVER_HOST_WITHIN_TRANSITER=http://sourceserver:5001
+    restart: always

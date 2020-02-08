@@ -29,6 +29,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
     def setUp(self):
         self.systemdam = self.mockImportedModule(systemservice.systemdam)
+        self.feeddam = self.mockImportedModule(systemservice.feeddam)
         self.updatemanager = self.mockImportedModule(systemservice.updatemanager)
         self.stopdam = self.mockImportedModule(systemservice.stopdam)
 
@@ -142,6 +143,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
     def test_delete_success(self):
         """[System service] Successfully delete a system"""
+        self.feeddam.list_all_in_system.return_value = []
         self.systemdam.delete_by_id.return_value = True
 
         actual = systemservice.delete_by_id(self.SYSTEM_ONE_ID)
@@ -151,6 +153,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
     def test_delete_failure(self):
         """[System service] Fail to delete a nonexistent system"""
+        self.feeddam.list_all_in_system.return_value = []
         self.systemdam.delete_by_id.return_value = False
 
         self.assertRaises(

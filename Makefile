@@ -47,7 +47,9 @@ containerized-db-tests:
 	docker-compose -p ci -f docker/ci-docker-compose.yml up --exit-code-from db-tests db-tests
 
 end-to-end-tests:
-	cd tests/endtoend; python dockerdriver.py
+	docker-compose -p transiter -f tests/endtoend/compose.yaml up -d sourceserver
+	docker-compose -p transiter -f tests/endtoend/compose.yaml run testrunner
+
 
 
 # Misc commands

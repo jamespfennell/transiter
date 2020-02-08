@@ -8,7 +8,7 @@ import logging
 
 from transiter import models, exceptions
 from transiter.data import dbconnection
-from transiter.data.dams import systemdam, stopdam
+from transiter.data.dams import systemdam, stopdam, feeddam
 from transiter.services import links, systemconfigreader
 from transiter.services.update import updatemanager
 from transiter.taskserver import client
@@ -102,7 +102,6 @@ def install_uow(system_id, config_str, extra_settings):
     return True
 
 
-@dbconnection.unit_of_work
 def delete_by_id(system_id, error_if_not_exists=True):
     """
     Delete a transit system
@@ -112,10 +111,24 @@ def delete_by_id(system_id, error_if_not_exists=True):
     :return: whether the delete succeeded
     :rtype: bool
     """
-    deleted = systemdam.delete_by_id(system_id)
+    stop_auto_updating_tasks(system_id)
+    client.refresh_tasks()
+    deleted = delete_by_id_uow(system_id)
     if not deleted and error_if_not_exists:
         raise exceptions.IdNotFoundError
     return True
+
+
+@dbconnection.unit_of_work
+def stop_auto_updating_tasks(system_id):
+    feeds = feeddam.list_all_in_system(system_id)
+    for feed in feeds:
+        feed.auto_update_on = False
+
+
+@dbconnection.unit_of_work
+def delete_by_id_uow(system_id):
+    return systemdam.delete_by_id(system_id)
 
 
 def _install_feeds(system, feeds_config):

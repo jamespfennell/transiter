@@ -1,13 +1,11 @@
 FROM python:3.7
 
-RUN pip install flask
+RUN pip install Flask==1.1.1
 
 WORKDIR sourceserver
 
-COPY main.py main.py
-
-ENV SOURCE_SERVER_PORT 5001
+COPY new.py new.py
 
 EXPOSE 5001
 
-ENTRYPOINT ["python", "main.py"]
+ENTRYPOINT ["python", "new.py"]

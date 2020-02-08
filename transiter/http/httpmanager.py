@@ -149,6 +149,7 @@ def get_request_args(keys):
 def convert_exception_to_error_response(exception):
     # noinspection PyBroadException
     try:
+        logger.debug("Exception", exc_info=True)
         return flask.Response(
             response=_convert_to_json_str(exception.response()),
             status=_exception_type_to_http_status[type(exception)],

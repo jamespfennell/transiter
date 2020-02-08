@@ -1,16 +1,11 @@
 
 name: Test System
 
-requirements:
-
-  settings:
-  - source_server_url
-
 feeds:
 
   gtfsstatic:
     http:
-      url: "{source_server_url}/gtfsstatic"
+      url: "{static_feed_url}"
     parser:
       built_in: GTFS_STATIC
     required_for_install: true
@@ -19,11 +14,11 @@ feeds:
 
   GtfsRealtimeFeed:
     http:
-      url: "{source_server_url}/gtfsrealtime"
+      url: "{realtime_feed_url}"
     parser:
       built_in: GTFS_REALTIME
     auto_update:
-      period: 1 day
+      period: "{realtime_auto_update_period}"
 
 service_maps:
   any_time:
