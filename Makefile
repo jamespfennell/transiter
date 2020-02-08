@@ -26,11 +26,11 @@ distribute:
 	# For testing add  --repository-url https://test.pypi.org/legacy/ to the previous command
 
 unit-tests:
-	coverage run -m pytest tests/unit
+	coverage run -a -m pytest tests/unit
 
 db-tests:
 	./docker/wait-for-it.sh $$TRANSITER_DB_HOST:$$TRANSITER_DB_PORT
-	pytest --cov=transiter --cov-config=.coveragerc --cov-append tests/db
+	coverage run -a -m pytest tests/db
 
 nothing:
 	echo "Available Transiter CI Docker image commands: docs, distribute, unit-tests, db-tests"
