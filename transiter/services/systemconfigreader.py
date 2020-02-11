@@ -70,7 +70,7 @@ class PyEnum(ScalarValidator):
             return val
 
     def to_yaml(self, data):
-        if data not in self._enum:
+        if not isinstance(data, self._enum):
             raise YAMLSerializationError(
                 "Got '{0}' when  expecting one of: {1}".format(
                     data, ", ".join(str(elem) for elem in self._enum)

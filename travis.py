@@ -112,19 +112,17 @@ def upload_to_docker_hub():
         username=os.environ.get("DOCKER_USERNAME"),
         password=os.environ.get("DOCKER_PASSWORD"),
     )
-    image_names = ["webserver", "taskserver", "postgres"]
 
     prefixes = ["latest-dev", calculate_version()]
     if is_release():
         prefixes.append("latest")
     for prefix in prefixes:
-        for image_name in image_names:
-            full_image_name = "jamespfennell/transiter:{}-{}".format(prefix, image_name)
-            image = client.images.get(
-                "jamespfennell/transiter:latest-{}".format(image_name)
-            )
-            image.tag(full_image_name)
-            print(client.images.push(full_image_name))
+        full_image_name = "jamespfennell/transiter:{}".format(prefix)
+        image = client.images.get(
+            "jamespfennell/transiter:latest"
+        )
+        image.tag(full_image_name)
+        print(client.images.push(full_image_name))
 
 
 command = sys.argv[1]

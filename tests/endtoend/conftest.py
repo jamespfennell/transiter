@@ -7,9 +7,10 @@ import requests
 
 
 class SourceServerClient:
-    def __init__(self, base_url):
+    def __init__(self, base_url, add_finalizer):
         self._created_urls = []
         self._base_url = base_url
+        self._add_finalizer = add_finalizer
 
     def put(self, url, content):
         requests.put(self._base_url + "/" + url, data=content).raise_for_status()
@@ -20,18 +21,24 @@ class SourceServerClient:
         )
         response.raise_for_status()
         created_url = response.text
+        self._add_finalizer(self._delete_factory(created_url))
         self._created_urls.append(created_url)
         return created_url
 
-    def __del__(self):
-        for url in self._created_urls:
-            requests.delete(self._base_url + "/" + url)
+    def _delete_factory(self, url):
+        full_url = self._base_url + "/" + url
+
+        def delete():
+            requests.delete(full_url)
+
+        return delete
 
 
 @pytest.fixture
-def source_server():
+def source_server(request):
     return SourceServerClient(
-        os.environ.get("SOURCE_SERVER_HOST", "http://localhost:5001")
+        os.environ.get("SOURCE_SERVER_HOST", "http://localhost:5001"),
+        request.addfinalizer,
     )
 
 

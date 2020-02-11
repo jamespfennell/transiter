@@ -52,7 +52,7 @@ directory is the root of the Transiter repo.
 In this setup, the processes composing the Transiter instance
 are run using the appropriate `transiterclt launch` command.
 The Transiter instance will listen on `localhost`'s 8000 port.
-The source server is run using the command `python sourceserver/new.py`,
+The source server is run using the command `python sourceserver.py`,
  and will listen on `localhost`'s 5001 port.
 As such, for this setup, the environment variables should be set to their defaults.
 
@@ -62,7 +62,7 @@ unlike the Docker based solutions below.
 
 The tests are run using,
 
-    pytest tests/endtoend/tests
+    pytest tests/endtoend
 
 
 ### Partial Docker compose setup
@@ -73,8 +73,9 @@ This setup is ideal when writing new end to end tests that
     won't involve code changes to the Transiter production code.
 
 First, the Docker compose network is launched using,
-
-    docker-compose -f tests/endtoend/compose.yaml -f docker/docker-compose.yml up sourceserver webserver taskserver postgres
+    
+    docker-compose -p transiter docker/docker-compose.yml -d up 
+    docker-compose -p transiter tests/endtoend/compose.yaml up -d sourceserver
 
 The non-default environment variables should be set as follows:
 
@@ -82,15 +83,16 @@ The non-default environment variables should be set as follows:
     
 The tests are then run using,
 
-    pytest tests/endtoend/tests
+    pytest tests/endtoend
 
 ### Full Docker compose 
 
 This is the setup the tests run under in Travis CI.
 
 First, the Docker compose network is launched using,
-
-    docker-compose -f tests/endtoend/compose.yaml -f docker/docker-compose.yml up sourceserver webserver taskserver postgres -d
+    
+    docker-compose -p transiter docker/docker-compose.yml up -d 
+    docker-compose -p transiter tests/endtoend/compose.yaml up -d sourceserver
 
 And then the tests are run using,
 

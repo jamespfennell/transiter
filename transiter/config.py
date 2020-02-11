@@ -17,8 +17,8 @@ DB_USERNAME = "transiter"
 DB_PASSWORD = "transiter"
 
 
-TASKSERVER_HOST = "localhost"
-TASKSERVER_PORT = "5000"
+SCHEDULER_HOST = "localhost"
+SCHEDULER_PORT = "5000"
 
 DOCUMENTATION_ENABLED = False
 DOCUMENTATION_ROOT = "../../docs/site"

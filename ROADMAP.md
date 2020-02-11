@@ -23,22 +23,30 @@
 
 Roughly in order of priority:
 
-- More maintainable and scalable integration testing
+- ~~More maintainable and scalable integration testing~~
     ([#18](https://github.com/jamespfennell/transiter/issues/18)).
 
-- Introduce a Celery cluster and async endpoints.
 
-- Migrate the "task server" to be a scheduler where tasks are
-    executed on the Celery cluster.
+- ~~Migrate the "task server" to be a scheduler where tasks are
+    executed on the Celery cluster.~~
     (will resolve
     [#27](https://github.com/jamespfennell/transiter/issues/27) and
     [#28](https://github.com/jamespfennell/transiter/issues/28)
     ).
+
+- New schema installation procedure - remove the more custom Postgres Docker image.
+
+- Clean up the Docker image structure: 
+    use a unique Transiter image for the Python containers
+    and stop using a custom Postgres image.
+    Will require an `install` command.
+
+- Introduce an alembic DB migrations systems.
     
 - Introduce a settings DB table
     ([#22](https://github.com/jamespfennell/transiter/issues/22)).
 
-- New schema installation procedure - remove the more custom Postgres Docker image.
+- Implement async endpoints using the celery cluster.
 
 - Refactor the DB tests be to less global and based on pytest fixtures.
 
@@ -54,7 +62,6 @@ Roughly in order of priority:
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).
 
-- Introduce an alembic DB migrations systems.
 
 All other 0.4 labelled tickets will be addressed or closed without action.
 

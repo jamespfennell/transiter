@@ -2,10 +2,15 @@
 This module contains the code for the transiterclt (Transiter command line
 tools) command line program.
 """
-import click
+import time
 
+import click
+from sqlalchemy import exc
+
+from transiter import config
 from transiter.data import dbconnection
-from transiter.taskserver import server as taskserver
+from transiter.executor import celeryapp
+from transiter.scheduler import server as scheduler
 
 
 @click.group()
@@ -23,42 +28,63 @@ def transiter_clt():
     is_flag=True,
     help="Force start by killing any process listening on the target port.",
 )
-@click.argument("server", type=click.Choice(["http-debug-server", "task-server"]))
+@click.argument(
+    "server", type=click.Choice(["webservice", "scheduler", "executor"])
+)
 def launch(force, server):
     """
-    Launch a Transiter server.
-
-    - The http-debug-server is a Flask debug server for testing HTTP endpoints.
-    It should not be used in production!
-
-    - The task-server is designed to be used in production.
+    Launch a Transiter service in debug mode.
     """
-    if server == "http-debug-server":
+    if server == "webservice":
         # NOTE: the flask app is imported here because otherwise the task server will
         # use the app's logging configuration.
         from transiter.http import flaskapp
-
         flaskapp.launch(force)
-    if server == "task-server":
-        taskserver.launch(force)
+    if server == "scheduler":
+        app = scheduler.create_app()
+        app.run(host="0.0.0.0", port=config.SCHEDULER_PORT, debug=False)
+    if server == "executor":
+        celeryapp.run()
 
 
-@transiter_clt.command()
-def generate_schema():
+@transiter_clt.group()
+def db():
     """
-    Generate a SQL file that builds the Transiter schema.
+    Perform Transiter database operation.
+    """
+
+
+@db.command()
+def schema():
+    """
+    Dump the Transiter database's schema in SQL.
     """
     dbconnection.generate_schema()
 
 
-@transiter_clt.command()
+@db.command()
+def init():
+    """
+    Initialize the Transiter database.
+    """
+    while True:
+        try:
+            dbconnection.init_db()
+            print("DB ready")
+            return
+        except exc.SQLAlchemyError:
+            print("Failed to connect to the DB; Waiting 1 second")
+            time.sleep(1)
+
+
+@db.command()
 @click.confirmation_option(
     prompt="This will result in all data in the current database being lost.\n"
     "Are you sure?"
 )
-def rebuild_db():
+def reset():
     """
-    Build or rebuild the Transiter database.
+    Reset the Transiter database.
 
     This operation drops all of the Transiter tables in the database, if they
     exist, and then creates them. All existing data will be lost.

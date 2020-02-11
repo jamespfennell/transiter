@@ -2,36 +2,78 @@ version: '3.5'
 
 services:
 
-  webserver:
+  webservice:
     environment:
-      - TRANSITER_TASKSERVER_HOST=taskserver
-      - TRANSITER_TASKSERVER_PORT=18812
+      - TRANSITER_SCHEDULER_HOST=scheduler
+      - TRANSITER_SCHEDULER_PORT=5000
       - TRANSITER_DB_HOST=postgres
       - TRANSITER_DB_PORT=5432
-    image: jamespfennell/transiter:latest-webserver
-    container_name: transiter-webserver
+    image: jamespfennell/transiter:latest
     expose:
       - "80"
     ports:
       - "8000:80"
     restart: always
+    entrypoint:
+      - gunicorn
+      - -b
+      - 0.0.0.0:80
+      - "transiter.http:wsgi_app"
 
-  taskserver:
-    image: jamespfennell/transiter:latest-taskserver
+  scheduler:
+    image: jamespfennell/transiter:latest
     environment:
+      - TRANSITER_RABBITMQ_HOST=rabbitmq
       - TRANSITER_DB_HOST=postgres
       - TRANSITER_DB_PORT=5432
     expose:
-      - "18812"
+      - "5000"
     restart: always
+    entrypoint:
+      - gunicorn
+      - -b
+      - 0.0.0.0:5000
+      - "transiter.scheduler.server:create_app()"
 
   postgres:
-    image: jamespfennell/transiter:latest-postgres
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=transiter
+      - POSTGRES_PASSWORD=transiter
+      - POSTGRES_DB=transiter
     volumes:
       - data-volume:/var/lib/postgresql/data-not-used
     expose:
       - "5432"
     restart: always
+
+  rabbitmq:
+    image: rabbitmq:3
+    expose:
+      - "5672"
+    restart: always
+
+  executor:
+    image: jamespfennell/transiter:latest
+    restart: always
+    environment:
+      - TRANSITER_RABBITMQ_HOST=rabbitmq
+      - TRANSITER_DB_HOST=postgres
+      - TRANSITER_DB_PORT=5432
+    entrypoint:
+      - transiterclt
+      - launch
+      - executor
+
+  installer:
+    image: jamespfennell/transiter:latest
+    environment:
+      - TRANSITER_DB_HOST=postgres
+      - TRANSITER_DB_PORT=5432
+    entrypoint:
+      - transiterclt
+      - db
+      - init
 
 volumes:
   data-volume:

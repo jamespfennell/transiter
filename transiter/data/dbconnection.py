@@ -95,6 +95,15 @@ def unit_of_work(func, *args, **kw):
     return result
 
 
+def init_db():
+    """
+    Initialize the Transiter database.
+    """
+    global engine
+    ensure_db_connection()
+    models.Base.metadata.create_all(engine)
+
+
 def rebuild_db():
     """
     Erase the Transiter schema if it exists and then rebuild it.

@@ -3,15 +3,12 @@
 DOCKER_BUILD=docker build
 
 build-base:
-	${DOCKER_BUILD} -f docker/dockerfiles/base.Dockerfile -t jamespfennell/transiter:latest-base .
+	${DOCKER_BUILD} -f docker/Dockerfile -t jamespfennell/transiter:latest .
 
 build-ci: build-base
-	${DOCKER_BUILD} -f docker/dockerfiles/ci.Dockerfile -t jamespfennell/transiter:latest-ci .
+	${DOCKER_BUILD} -f docker/ci.Dockerfile -t jamespfennell/transiter:latest-ci .
 
 build: build-base
-	${DOCKER_BUILD} -f docker/dockerfiles/webserver.Dockerfile -t jamespfennell/transiter:latest-webserver .
-	${DOCKER_BUILD} -f docker/dockerfiles/taskserver.Dockerfile -t jamespfennell/transiter:latest-taskserver .
-	${DOCKER_BUILD} -f docker/dockerfiles/postgres.Dockerfile -t jamespfennell/transiter:latest-postgres .
 
 build-all: build-ci build
 

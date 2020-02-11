@@ -31,7 +31,6 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         self.systemdam = self.mockImportedModule(systemservice.systemdam)
         self.feeddam = self.mockImportedModule(systemservice.feeddam)
         self.updatemanager = self.mockImportedModule(systemservice.updatemanager)
-        self.stopdam = self.mockImportedModule(systemservice.stopdam)
 
         self.system_1 = models.System()
         self.system_1.id = self.SYSTEM_ONE_ID

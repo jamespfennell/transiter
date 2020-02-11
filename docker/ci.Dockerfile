@@ -10,20 +10,14 @@
 # over relevent files from the base image after those dev requirements
 # have been installed.
 
-FROM jamespfennell/transiter:latest-base AS transiter-base
 
-FROM python:3.7
+FROM jamespfennell/transiter:latest
 
 # We intentionally work in a separate directory to the source and
 # distribution to avoid any cross-contamination.
 WORKDIR /transiter-ci
 COPY dev-requirements.txt dev-requirements.txt
-RUN pip install -r dev-requirements.txt
-
-# Bring in the base image using composition.
-# The site-packages directory is determined using `python -m site`.
-COPY --from=transiter-base /usr/local/lib/python3.7/site-packages /usr/local/lib/python3.7/site-packages/
-COPY --from=transiter-base /transiter /transiter
+RUN pip install --quiet -r dev-requirements.txt
 
 COPY docker/wait-for-it.sh docker/wait-for-it.sh
 COPY .coveragerc .coveragerc

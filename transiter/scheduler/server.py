@@ -7,13 +7,12 @@ has an RPyC interface that enables a Transiter HTTP server to communicate with i
 import datetime
 import logging
 import random
-import signal
 import time
 
 import apscheduler.schedulers.background
-import rpyc.utils.server
+import flask
 
-from transiter import config
+from transiter.executor import celeryapp
 from transiter.services import feedservice
 
 logger = logging.getLogger("transiter")
@@ -64,9 +63,14 @@ class CronTask(Task):
         super().__init__(func, args, "cron", **job_kwargs)
 
 
+@celeryapp.app.task
+def create_feed_update(*args, **kwargs):
+    return feedservice.create_feed_update(*args, **kwargs)
+
+
 class FeedAutoUpdateTask(IntervalTask):
     def __init__(self, system_id, feed_id, period):
-        super().__init__(feedservice.create_feed_update, [system_id, feed_id], period)
+        super().__init__(create_feed_update.delay, [system_id, feed_id], period)
 
 
 def refresh_feed_auto_update_tasks():
@@ -106,25 +110,24 @@ def initialize_feed_auto_update_tasks():
             time.sleep(1)
 
 
-class TaskServer(rpyc.Service):
-    """
-    RPyC interface for the task server.
-    """
-
-    def exposed_refresh_tasks(self):
-        logger.info("Received external refresh tasks command")
-        refresh_feed_auto_update_tasks()
-        return True
-
-    def exposed_update_feed(self, feed_pk):
-        auto_update_task = feed_pk_to_auto_update_task.get(feed_pk, None)
-        auto_update_task.run_now()
+@celeryapp.app.task
+def trim_feed_updates(*args, **kwargs):
+    return feedservice.trim_feed_updates()
 
 
-def launch(__):
+def create_app():
     """
     Launch the task server.
     """
+
+    app = flask.Flask(__name__)
+
+    @app.route("/", methods=["POST"])
+    def refresh_tasks():
+        logger.info("Received external refresh tasks command (HTTP)")
+        refresh_feed_auto_update_tasks()
+        return "", 204
+
     logger.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     logger.addHandler(handler)
@@ -137,19 +140,9 @@ def launch(__):
     logger.info("Launching background scheduler")
     global feed_update_trim_task, scheduler
     scheduler.start()
-    feed_update_trim_task = CronTask(feedservice.trim_feed_updates, [], minute="*/15")
+    feed_update_trim_task = CronTask(trim_feed_updates.delay, [], minute="*/15")
     initialize_feed_auto_update_tasks()
 
     logger.info("Launching RPyC server")
-    server = rpyc.utils.server.ThreadedServer(
-        TaskServer, port=int(config.TASKSERVER_PORT)
-    )
+    return app
 
-    def shutdown(_, __):
-        logger.info("Performing orderly shutdown.")
-        server.close()
-        return
-
-    signal.signal(signal.SIGTERM, shutdown)
-
-    server.start()

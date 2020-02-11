@@ -3,18 +3,15 @@ The system service is used to install, delete and retrieve information about
 (transit) systems.
 """
 
-import csv
+import json
 import logging
 
 from transiter import models, exceptions
 from transiter.data import dbconnection
-from transiter.data.dams import systemdam, stopdam, feeddam
+from transiter.data.dams import systemdam, feeddam
 from transiter.services import links, systemconfigreader
 from transiter.services.update import updatemanager
-from transiter.taskserver import client
-import requests
-import io
-import json
+from transiter.scheduler import client
 
 logger = logging.getLogger(__name__)
 
