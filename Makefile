@@ -1,16 +1,11 @@
-.PHONY: docs test
+.PHONY: docs test docker
 
-DOCKER_BUILD=docker build
 
-build-base:
-	${DOCKER_BUILD} -f docker/Dockerfile -t jamespfennell/transiter:latest .
+docker:
+	docker build -f docker/Dockerfile -t jamespfennell/transiter:latest .
 
-build-ci: build-base
-	${DOCKER_BUILD} -f docker/ci.Dockerfile -t jamespfennell/transiter:latest-ci .
-
-build: build-base
-
-build-all: build-ci build
+docker-ci: docker
+	docker build -f docker/ci.Dockerfile -t jamespfennell/transiter-ci:latest .
 
 
 # The following commands are designed to be run in the CI Docker image as well as on bare metal
@@ -46,7 +41,6 @@ containerized-db-tests:
 end-to-end-tests:
 	docker-compose -p transiter -f tests/endtoend/compose.yaml up -d sourceserver
 	docker-compose -p transiter -f tests/endtoend/compose.yaml run testrunner
-
 
 
 # Misc commands

@@ -28,9 +28,7 @@ def transiter_clt():
     is_flag=True,
     help="Force start by killing any process listening on the target port.",
 )
-@click.argument(
-    "server", type=click.Choice(["webservice", "scheduler", "executor"])
-)
+@click.argument("server", type=click.Choice(["webservice", "scheduler", "executor"]))
 def launch(force, server):
     """
     Launch a Transiter service in debug mode.
@@ -39,6 +37,7 @@ def launch(force, server):
         # NOTE: the flask app is imported here because otherwise the task server will
         # use the app's logging configuration.
         from transiter.http import flaskapp
+
         flaskapp.launch(force)
     if server == "scheduler":
         app = scheduler.create_app()

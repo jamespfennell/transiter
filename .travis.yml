@@ -6,13 +6,14 @@ python: "3.6"
 install:
   - pip install --quiet docker
   - python travis.py before
-  - make build-all
+  - make docker-ci
   - docker-compose -p transiter -f docker/docker-compose.yml up -d
 
 script:
   - make containerized-unit-tests
   - make containerized-db-tests
   - make end-to-end-tests
+  - docker run --entrypoint black jamespfennell/transiter-ci:latest --check {/transiter/source/transiter,/transiter-ci/tests}
 
 after_success:
   - python travis.py after

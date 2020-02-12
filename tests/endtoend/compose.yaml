@@ -3,8 +3,7 @@ version: '3.5'
 services:
 
   sourceserver:
-    image: jamespfennell/transiter:latest-ci
-    # build: ./sourceserver
+    image: jamespfennell/transiter-ci:latest
     expose:
       - "5001"
     ports:
@@ -15,7 +14,7 @@ services:
       - tests/endtoend/sourceserver.py
 
   testrunner:
-    image: jamespfennell/transiter:latest-ci
+    image: jamespfennell/transiter-ci:latest
     environment:
       - TRANSITER_HOST=http://webservice:80
       - SOURCE_SERVER_HOST=http://sourceserver:5001

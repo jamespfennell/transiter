@@ -122,6 +122,11 @@ def create_app():
 
     app = flask.Flask(__name__)
 
+    @app.route("/", methods=["GET"])
+    def ping():
+        logger.info("Received external ping (HTTP)")
+        return str(len(feed_pk_to_auto_update_task))
+
     @app.route("/", methods=["POST"])
     def refresh_tasks():
         logger.info("Received external refresh tasks command (HTTP)")
@@ -145,4 +150,3 @@ def create_app():
 
     logger.info("Launching RPyC server")
     return app
-

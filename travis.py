@@ -93,7 +93,7 @@ def upload_to_py_pi():
             "TWINE_USERNAME=" + os.environ.get("TWINE_USERNAME"),
             "--env",
             "TWINE_PASSWORD=" + os.environ.get("TWINE_PASSWORD"),
-            "jamespfennell/transiter:latest-ci",
+            "jamespfennell/transiter-ci:latest",
             "distribute",
         ]
     )
@@ -118,9 +118,7 @@ def upload_to_docker_hub():
         prefixes.append("latest")
     for prefix in prefixes:
         full_image_name = "jamespfennell/transiter:{}".format(prefix)
-        image = client.images.get(
-            "jamespfennell/transiter:latest"
-        )
+        image = client.images.get("jamespfennell/transiter:latest")
         image.tag(full_image_name)
         print(client.images.push(full_image_name))
 

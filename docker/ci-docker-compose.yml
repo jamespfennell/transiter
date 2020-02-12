@@ -3,7 +3,7 @@ version: '3.5'
 services:
 
   unit-tests:
-    image: jamespfennell/transiter:latest-ci
+    image: jamespfennell/transiter-ci:latest
     container_name: unit-tests
     command: unit-tests
     tty: true
@@ -11,7 +11,7 @@ services:
       - ${PWD}/coverage:/transiter-ci/coverage
 
   db-tests:
-    image: jamespfennell/transiter:latest-ci
+    image: jamespfennell/transiter-ci:latest
     container_name: db-tests
     command: db-tests
     tty: true

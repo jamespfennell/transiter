@@ -1,7 +1,7 @@
 import io
 import os
 import zipfile
-
+import time
 import pytest
 import requests
 
@@ -42,9 +42,18 @@ def source_server(request):
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def transiter_host():
-    return os.environ.get("TRANSITER_HOST", "http://localhost:8000")
+    host = os.environ.get("TRANSITER_HOST", "http://localhost:8000")
+    for __ in range(20):
+        try:
+            response = requests.get(host + "/admin/health", timeout=1).json()
+            if response["up"]:
+                return host
+        except requests.RequestException:
+            pass
+        time.sleep(0.5)
+    assert False, "Transiter instance is not at available at {}".format(host)
 
 
 @pytest.fixture

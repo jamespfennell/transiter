@@ -20,19 +20,20 @@ from transiter.services import links, systemservice
 app = flask.Flask("transiter")
 
 app.register_blueprint(endpoints.docs_endpoints, url_prefix="/docs")
+app.register_blueprint(endpoints.admin_endpoints, url_prefix="/admin")
 app.register_blueprint(
     endpoints.feed_endpoints, url_prefix="/systems/<system_id>/feeds"
-)
-app.register_blueprint(
-    endpoints.stop_endpoints, url_prefix="/systems/<system_id>/stops"
 )
 app.register_blueprint(
     endpoints.route_endpoints, url_prefix="/systems/<system_id>/routes"
 )
 app.register_blueprint(
-    endpoints.trip_endpoints, url_prefix="/systems/<system_id>/routes/<route_id>/trips"
+    endpoints.stop_endpoints, url_prefix="/systems/<system_id>/stops"
 )
 app.register_blueprint(endpoints.system_endpoints, url_prefix="/systems")
+app.register_blueprint(
+    endpoints.trip_endpoints, url_prefix="/systems/<system_id>/routes/<route_id>/trips"
+)
 app.url_map.strict_slashes = False
 
 logger = logging.getLogger("transiter")
