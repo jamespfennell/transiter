@@ -34,12 +34,14 @@ Roughly in order of priority:
     [#28](https://github.com/jamespfennell/transiter/issues/28)
     ).
 
-- New schema installation procedure - remove the more custom Postgres Docker image.
+- ~New schema installation procedure - remove the more custom Postgres Docker image.~
 
-- Clean up the Docker image structure: 
+- ~Clean up the Docker image structure: 
     use a unique Transiter image for the Python containers
     and stop using a custom Postgres image.
-    Will require an `install` command.
+    Will require an `install` command.~
+    
+- Fix the Helm Chart to match the Docker compose configuration.
 
 - Introduce an alembic DB migrations systems.
     
