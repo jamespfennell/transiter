@@ -99,7 +99,14 @@ Return code | Description
 
 `PUT /systems/<system_id>`
 
-This endpoint is used to install transit systems. It accepts `multipart/form-data` requests.
+`PUT /systems/<system_id>?sync=true`
+
+This endpoint is used to install transit systems. 
+Installs can be performed asynchronously (recommended)
+or synchronously (using `sync=true`; not recommended); 
+see below for more information.
+
+The endpoint accepts `multipart/form-data` requests.
 There is a single required parameter, `config_file`, which 
 specifies the YAML configuration file for the Transit system.
 (There is a [dedicated documentation page](systems.md) concerned with creating transit system configuration files.)
@@ -118,17 +125,31 @@ If you are installing a system using a YAML configuration provided by someone el
 If you attempt to install a system without the required parameters, the install will fail and 
 the response will detail which parameters you're missing.
  
-Often the install process is long because it often involves performing large feed updates
-of static feeds - for example, in the case of the New York City Subway, an install takes close to two minutes.
-This may cause issues if any servers processing the request impose timeouts.
-(Version 0.4 of Transiter will introduce asynchronous system installs, which will avoid this problem.)
+#### Async versus sync
+
+Often the install process is long because it often involves performing
+large feed updates
+of static feeds - for example, in the case of the New York City Subway,
+an install takes close to two minutes.
+If you perform a synchronous install, the install request is liable
+to timeout - for example, Gunicorn by default terminates HTTP
+requests that take over 60 seconds.
+For this reason you should generally install asynchronously.
+
+After triggering the install asynchronously, you can track its
+progress by hitting the `GET` system endpoint repeatedly.
+
+Synchronous installs are supported and useful when writing new 
+transit system configs, in which case getting feedback from a single request
+is quicker.
 
 
 Return code         | Description
 --------------------|-------------
-`201 CREATED`       | Returned if the transit system was successfully installed. No content is returned.
-`204 NO CONTENT`    | If the transit system already exists, nothing happens. (Supporting updating transit systems is scheduled for version 0.4 of Transiter.)
-`400 BAD REQUEST`   | Returned if the the YAML configuration file is malformed, or required parameters were not provided.
+`200 OK`            | Returned if the system already exists, in which case this is a no-op.
+`201 CREATED`       | For synchronous installs, returned if the transit system was successfully installed.
+`202 ACCEPTED`      | For asynchronous installs, returned if the install is successfully triggered.
+`400 BAD REQUEST`   | Returned if the the YAML configuration file cannot be retrieved. For synchronous installs, this code is also returned if there is any kind of install error.
 
 
 ### Delete a system 

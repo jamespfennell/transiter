@@ -1,4 +1,7 @@
 import requests
+import time
+
+import pytest
 
 STOP_IDS = {
     "1A",
@@ -37,9 +40,10 @@ STOP_ID_TO_USUAL_ROUTES = {
 ROUTE_ID_TO_USUAL_ROUTE = {"A": ["1A", "1D", "1E", "1G"], "B": []}
 
 
-def test_install_system(install_system_1, transiter_host):
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system(install_system_1, transiter_host, sync):
 
-    install_system_1("test_install_system")
+    install_system_1("test_install_system", sync=sync)
 
     # (1) Verify all of the stops were installed
     system_response = requests.get(
@@ -104,3 +108,44 @@ def test_install_system(install_system_1, transiter_host):
             actual_stops = [stop["id"] for stop in service_map["stops"]]
             assert usual_stops == actual_stops
             break
+
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system__fail(
+    request, source_server, source_server_host_within_transiter, transiter_host, sync
+):
+    system_id = "test_install_system__fail"
+
+    def delete():
+        requests.delete(transiter_host + "/systems/" + system_id)
+
+    delete()
+
+    system_config_url = source_server.create(
+        "", "/" + system_id + "/system-config.yaml.jinja"
+    )
+    source_server.put(system_config_url, "This is not a valid Transiter YAML config!")
+
+    response = requests.put(
+        transiter_host + "/systems/" + system_id + "?sync=" + str(sync).lower(),
+        data={
+            "config_file": source_server_host_within_transiter + "/" + system_config_url
+        },
+    )
+    request.addfinalizer(delete)
+    if not sync:
+        assert response.status_code == 202
+        for _ in range(20):
+            response = requests.get(transiter_host + "/systems/" + system_id)
+            response.raise_for_status()
+            if response.json()["status"] == "INSTALL_FAILED":
+                break
+            time.sleep(0.6)
+    else:
+        assert response.status_code == 400
+
+    for sub_entity in ["stops", "routes", "feeds"]:
+        sub_entity_response = requests.get(
+            transiter_host + "/systems/" + system_id + "/" + sub_entity
+        )
+        assert sub_entity_response.status_code == 404

@@ -78,3 +78,11 @@ class _BaseModel:
 
 
 Base = declarative_base(cls=_BaseModel)
+
+
+class ReprMixin:
+    def _short_repr(self):
+        pass
+
+    def _long_repr(self):
+        pass

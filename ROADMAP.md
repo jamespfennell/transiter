@@ -43,6 +43,9 @@ Roughly in order of priority:
     
 - Fix the Helm Chart to match the Docker compose configuration.
 
+- When the scheduler schedules a task, put an expiration equal to say 80%
+    of the auto update period.
+
 - Introduce an alembic DB migrations systems.
     
 - Introduce a settings DB table

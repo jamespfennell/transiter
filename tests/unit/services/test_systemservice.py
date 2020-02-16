@@ -1,9 +1,20 @@
 import unittest
 import unittest.mock as mock
 
-from transiter.services import systemservice, links
+import pytest
+
 from transiter import models, exceptions
+from transiter.data.dams import systemdam
+from transiter.services import systemservice, links, systemconfigreader
 from .. import testutil
+
+PARSED_SYSTEM_CONFIG = {
+    "name": "Name",
+    "requirements": {"packages": [], "extra_settings": {}},
+    "feeds": "Blah blah blah",
+    "service_maps": "ser",
+    "direction_rules_files": [],
+}
 
 
 class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
@@ -33,8 +44,10 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         self.updatemanager = self.mockImportedModule(systemservice.updatemanager)
 
         self.system_1 = models.System()
+        self.system_1.status = self.system_1.SystemStatus.ACTIVE
         self.system_1.id = self.SYSTEM_ONE_ID
         self.system_2 = models.System()
+        self.system_2.status = self.system_1.SystemStatus.ACTIVE
         self.system_2.id = self.SYSTEM_TWO_ID
 
     def test_list_all(self):
@@ -101,44 +114,6 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             self.SYSTEM_ONE_ID
         )
         self.systemdam.count_feeds_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
-
-    @mock.patch.object(systemservice.systemconfigreader, "read")
-    @mock.patch.object(systemservice, "_install_service_maps")
-    @mock.patch.object(systemservice, "_install_feeds")
-    def test_install_success(self, _install_feeds, _install_service_maps, read):
-        """[System service] Successfully install a system"""
-
-        self.systemdam.get_by_id.return_value = None
-        self.systemdam.create.return_value = self.system_1
-        read.return_value = self.SYSTEM_CONFIG_STR
-        extra_settings = mock.MagicMock()
-
-        actual = systemservice.install(
-            self.SYSTEM_TWO_ID, self.SYSTEM_CONFIG_STR, extra_settings
-        )
-
-        self.assertEqual(actual, True)
-        self.assertEqual(self.system_1.id, self.SYSTEM_TWO_ID)
-
-        self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_TWO_ID)
-        self.systemdam.create.assert_called_once_with()
-        read.assert_called_once_with(self.SYSTEM_CONFIG_STR, extra_settings)
-        _install_feeds.assert_called_once_with(
-            self.system_1, self.SYSTEM_CONFIG_STR["feeds"]
-        )
-        _install_service_maps.assert_called_once_with(
-            self.system_1, self.SYSTEM_CONFIG_STR["service_maps"]
-        )
-
-    def test_install_already_exists(self):
-        """[System service] Fail to install because system id already taken"""
-        self.systemdam.get_by_id.return_value = self.system_1
-
-        actual = systemservice.install(self.SYSTEM_ONE_ID, "", {})
-
-        self.assertFalse(actual)
-
-        self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
 
     def test_delete_success(self):
         """[System service] Successfully delete a system"""
@@ -222,31 +197,59 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
         self.updatemanager.execute_feed_update.assert_called_once()
 
-    def __import_static_data__direction_names(self):
-        """[System service] Install direction names"""
-        system = models.System()
-        stop_one = models.Stop()
-        stop_one.id = self.STOP_ONE_ID
-        self.stopdam.list_all_in_system.return_value = [stop_one]
 
-        file = mock.MagicMock()
-        system_config = mock.MagicMock()
-        system_config.direction_name_files = [file]
-        file.readlines.return_value = (
-            s.encode("utf-8")
-            for s in [
-                "stop_id,direction_id,direction_name",
-                "{},0,{}".format(self.STOP_ONE_ID, self.DIRECTION_NAME_ONE),
-                "{},1,{}".format("Unknown", self.DIRECTION_NAME_ONE),
-            ]
-        )
+@pytest.fixture
+def mock_systemdam():
+    class SystemDam:
+        def __init__(self):
+            self._system = None
 
-        direction_name_rule = models.DirectionRule()
-        direction_name_rule.priority = 0
-        direction_name_rule.direction_id = True
-        direction_name_rule.track = None
-        direction_name_rule.name = self.DIRECTION_NAME_ONE
+        def get_by_id(self, *args, **kwargs):
+            return self._system
 
-        systemservice._install_direction_rules(system, system_config)
+        def create(self):
+            self._system = models.System()
+            return self._system
 
-        self.assertEqual([direction_name_rule], stop_one.direction_rules)
+    return SystemDam()
+
+
+def test_install(mock_systemdam, monkeypatch):
+
+    monkeypatch.setattr(systemdam, "get_by_id", mock_systemdam.get_by_id)
+    monkeypatch.setattr(systemdam, "create", mock_systemdam.create)
+
+    _install_service_maps = mock.MagicMock()
+    monkeypatch.setattr(systemservice, "_install_service_maps", _install_service_maps)
+    _install_feeds = mock.MagicMock()
+    monkeypatch.setattr(systemservice, "_install_feeds", _install_feeds)
+
+    read = mock.MagicMock()
+    monkeypatch.setattr(systemconfigreader, "read", read)
+    read.return_value = PARSED_SYSTEM_CONFIG
+    extra_settings = mock.MagicMock()
+
+    actual = systemservice.install("system_id_2", "config_str", extra_settings)
+
+    assert True is actual
+    assert mock_systemdam.get_by_id().id == "system_id_2"
+
+    read.assert_called_once_with("config_str", extra_settings)
+    _install_feeds.assert_called_once_with(
+        mock_systemdam.get_by_id(), PARSED_SYSTEM_CONFIG["feeds"]
+    )
+    _install_service_maps.assert_called_once_with(
+        mock_systemdam.get_by_id(), PARSED_SYSTEM_CONFIG["service_maps"]
+    )
+
+
+def test_install__already_exists(mock_systemdam, monkeypatch):
+
+    monkeypatch.setattr(systemdam, "get_by_id", mock_systemdam.get_by_id)
+    monkeypatch.setattr(systemdam, "create", mock_systemdam.create)
+    system = mock_systemdam.create()
+    system.status = system.SystemStatus.ACTIVE
+
+    actual = systemservice.install("system_id_2", "config_str", mock.MagicMock)
+
+    assert False is actual

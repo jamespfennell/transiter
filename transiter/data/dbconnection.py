@@ -2,6 +2,7 @@
 This module is responsible for the database session and transaction scope.
 """
 import logging
+from contextlib import contextmanager
 
 import sqlalchemy.exc
 from decorator import decorator
@@ -73,10 +74,10 @@ def get_session():
     return Session()
 
 
-@decorator
-def unit_of_work(func, *args, **kw):
+@contextmanager
+def inline_unit_of_work():
     """
-    Decorator that handles beginning and ending a unit of work.
+    Context manager that handles beginning and ending a unit of work.
     """
     global Session
     ensure_db_connection()
@@ -84,7 +85,7 @@ def unit_of_work(func, *args, **kw):
         raise NestedUnitOfWorkError
     session = Session()
     try:
-        result = func(*args, **kw)
+        yield session
         session.commit()
     except Exception:
         session.rollback()
@@ -92,7 +93,14 @@ def unit_of_work(func, *args, **kw):
     finally:
         Session.remove()
 
-    return result
+
+@decorator
+def unit_of_work(func, *args, **kw):
+    """
+    Decorator that handles beginning and ending a unit of work.
+    """
+    with inline_unit_of_work():
+        return func(*args, **kw)
 
 
 def init_db():

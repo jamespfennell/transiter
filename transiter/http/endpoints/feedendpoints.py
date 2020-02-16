@@ -32,12 +32,12 @@ def get_in_system_by_id(system_id, feed_id):
     feed_endpoints,
     "/<feed_id>",
     method=HttpMethod.POST,
-    status_on_success=HttpStatus.CREATED,
+    # status_on_success=HttpStatus.CREATED,
 )
 @requires_permissions(PermissionsLevel.ALL)
 def create_feed_update(system_id, feed_id):
     """Create a new feed update."""
-    return feedservice.create_feed_update(system_id, feed_id)
+    return feedservice.create_feed_update(system_id, feed_id), HttpStatus.CREATED
 
 
 @http_endpoint(feed_endpoints, "/<feed_id>/updates")

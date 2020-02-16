@@ -70,7 +70,9 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
 
         self.assertListEqual(actual, expected)
 
-        self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_ID)
+        self.systemdam.get_by_id.assert_called_once_with(
+            self.SYSTEM_ID, only_return_active=True
+        )
         self.feeddam.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
 
     def test_list_all_in_system__no_such_system(self):
@@ -82,7 +84,9 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
             lambda: feedservice.list_all_in_system(self.SYSTEM_ID),
         )
 
-        self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_ID)
+        self.systemdam.get_by_id.assert_called_once_with(
+            self.SYSTEM_ID, only_return_active=True
+        )
 
     def test_get_in_system_by_id(self):
         """[Feed service] Get a feed in a system"""

@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 class HttpStatus(enum.IntEnum):
     OK = 200
     CREATED = 201
+    ACCEPTED = 202
     NO_CONTENT = 204
     BAD_REQUEST = 400
     FORBIDDEN = 403
@@ -70,7 +71,6 @@ def http_endpoint(
     flask_rule,
     method: HttpMethod = HttpMethod.GET,
     returns_json_response: bool = True,
-    status_on_success: HttpStatus = HttpStatus.OK,
 ):
     """
     Decorator factory used to easily register a Transiter HTTP endpoint.
@@ -80,14 +80,13 @@ def http_endpoint(
     :param method: which HTTP method this endpoint uses
     :param returns_json_response: whether to format the response as JSON and apply
         appropriate HTTP headers
-    :param status_on_success: the HTTP status to return on success
     """
     decorators = [
         flask_entity.route(flask_rule + "/", methods=[method.value]),
         flask_entity.route(flask_rule, methods=[method.value]),
     ]
     if returns_json_response:
-        decorators.append(json_response(status_on_success))
+        decorators.append(_json_response)
 
     def composed_decorator(func):
         for decorator_ in reversed(decorators):
@@ -97,16 +96,21 @@ def http_endpoint(
     return composed_decorator
 
 
-def json_response(http_status: HttpStatus = HttpStatus.OK):
-    @decorator
-    def decorator_(func, *args, **kwargs):
-        return flask.Response(
-            response=_convert_to_json_str(func(*args, **kwargs)),
-            status=http_status,
-            content_type="application/json",
-        )
-
-    return decorator_
+@decorator
+def _json_response(func, *args, **kwargs):
+    response = func(*args, **kwargs)
+    status = HttpStatus.OK
+    if (
+        isinstance(response, tuple)
+        and len(response) == 2
+        and isinstance(response[1], HttpStatus)
+    ):
+        response, status = response
+    return flask.Response(
+        response=_convert_to_json_str(response),
+        status=status,
+        content_type="application/json",
+    )
 
 
 _link_type_to_target = {}
@@ -135,12 +139,15 @@ def link_target(link_type):
     return decorator_
 
 
+# TODO: rename URL parameters or something
 def get_request_args(keys):
     all_request_args = flask.request.args
     extra_keys = set(all_request_args.keys()) - set(keys)
     if len(extra_keys) > 0:
         raise exceptions.InvalidInput(
-            "Unknown GET parameters: {}. Valid parameters: {}".format(extra_keys, keys)
+            "Unknown URL parameters: {}. Valid URL parameters for this endpoint: {}".format(
+                extra_keys, keys
+            )
         )
 
     return {key: all_request_args.get(key) for key in keys}
@@ -155,7 +162,7 @@ def convert_exception_to_error_response(exception):
             status=_exception_type_to_http_status[type(exception)],
             content_type="application/json",
         )
-    except:
+    except Exception:
         logger.exception("Unexpected exception in processing HTTP request.")
         return flask.Response(response="", status=HttpStatus.INTERNAL_SERVER_ERROR)
 

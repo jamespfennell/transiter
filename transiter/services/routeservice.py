@@ -29,7 +29,7 @@ def list_all_in_system(system_id, return_links=True):
     :return: the list described above
     :rtype: list
     """
-    system = systemdam.get_by_id(system_id)
+    system = systemdam.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError
     response = []

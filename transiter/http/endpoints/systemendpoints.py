@@ -7,7 +7,9 @@ from transiter.http.httpmanager import (
     link_target,
     HttpMethod,
     HttpStatus,
+    get_request_args,
 )
+from transiter.http import httpmanager
 from transiter.http.permissions import requires_permissions, PermissionsLevel
 from transiter.services import systemservice, links
 
@@ -29,16 +31,13 @@ def get_by_id(system_id):
 
 
 @http_endpoint(
-    system_endpoints,
-    "/<system_id>",
-    method=HttpMethod.PUT,
-    status_on_success=HttpStatus.CREATED,
-    returns_json_response=False,
+    system_endpoints, "/<system_id>", method=HttpMethod.PUT,
 )
 @requires_permissions(PermissionsLevel.ALL)
 def install(system_id):
     """Install a system."""
-
+    request_args = httpmanager.get_request_args(["sync"])
+    sync = request_args["sync"] == "true"
     form_key_to_value = flask.request.form.to_dict()
     form_key_to_file_storage = flask.request.files.to_dict()
 
@@ -60,12 +59,23 @@ def install(system_id):
     else:
         raise exceptions.InvalidInput("YAML config file not provided!")
 
-    response = systemservice.install(
-        system_id=system_id, config_str=config_str, extra_settings=form_key_to_value
+    if sync:
+        install_method = systemservice.install
+    else:
+        install_method = systemservice.install_async
+    response = install_method(
+        system_id=system_id, config_str=config_str, extra_settings=form_key_to_value,
     )
 
-    status = HttpStatus.CREATED if response else HttpStatus.NO_CONTENT
-    return flask.Response(response="", status=status)
+    # This means the system already exists and nothing was done.
+    if not response:
+        status = HttpStatus.OK
+    else:
+        if sync:
+            status = HttpStatus.CREATED
+        else:
+            status = HttpStatus.ACCEPTED
+    return systemservice.get_by_id(system_id), status
 
 
 @http_endpoint(

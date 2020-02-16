@@ -11,8 +11,12 @@ SYSTEM_ONE_PACKAGE = "5"
 SYSTEM_TWO_PACKAGE = "6"
 SYSTEM_THREE_PACKAGE = "7"
 
-system_one = models.System(pk=SYSTEM_ONE_PK, id=SYSTEM_ONE_ID)
-system_two = models.System(pk=SYSTEM_TWO_PK, id=SYSTEM_TWO_ID)
+system_one = models.System(
+    pk=SYSTEM_ONE_PK, id=SYSTEM_ONE_ID, status=models.System.SystemStatus.ACTIVE
+)
+system_two = models.System(
+    pk=SYSTEM_TWO_PK, id=SYSTEM_TWO_ID, status=models.System.SystemStatus.ACTIVE
+)
 
 ROUTE_ONE_ID = "11"
 ROUTE_ONE_PK = 12

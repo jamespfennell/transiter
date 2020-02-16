@@ -89,7 +89,7 @@ def install_system_1(
     transiter_host,
     source_server_host_within_transiter,
 ):
-    def install(system_id, realtime_auto_update_period="1 day"):
+    def install(system_id, realtime_auto_update_period="1 day", sync=True):
         def delete():
             requests.delete(transiter_host + "/systems/" + system_id)
 
@@ -118,7 +118,7 @@ def install_system_1(
         )
 
         response = requests.put(
-            transiter_host + "/systems/" + system_id,
+            transiter_host + "/systems/" + system_id + "?sync=" + str(sync).lower(),
             data={
                 "config_file": source_server_host_within_transiter
                 + "/"
@@ -126,6 +126,14 @@ def install_system_1(
             },
         )
         response.raise_for_status()
+        if not sync:
+            for _ in range(20):
+                response = requests.get(transiter_host + "/systems/" + system_id)
+                response.raise_for_status()
+                if response.json()["status"] == "ACTIVE":
+                    break
+                time.sleep(0.6)
+            assert response.json()["status"] == "ACTIVE"
 
         request.addfinalizer(delete)
 

@@ -67,7 +67,7 @@ The [San Francisco BART system](https://github.com/jamespfennell/transiter-sfbar
  is simple to install:
 assuming the steps above have been followed, simply execute:
 
-    curl -X PUT localhost:8000/systems/sfbart \
+    curl -X PUT "localhost:8000/systems/sfbart?sync=true" \
         -F 'config_file=https://raw.githubusercontent.com/jamespfennell/transiter-sfbart/master/Transiter-SF-BART-config.yaml'
 
 The install will take a couple of seconds as the BART's 

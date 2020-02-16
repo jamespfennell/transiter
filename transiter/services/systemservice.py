@@ -9,9 +9,10 @@ import logging
 from transiter import models, exceptions
 from transiter.data import dbconnection
 from transiter.data.dams import systemdam, feeddam
+from transiter.executor import celeryapp
+from transiter.scheduler import client
 from transiter.services import links, systemconfigreader
 from transiter.services.update import updatemanager
-from transiter.scheduler import client
 
 logger = logging.getLogger(__name__)
 
@@ -53,16 +54,23 @@ def get_by_id(system_id, return_links=True):
     system = systemdam.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError
-    response = {
-        **system.short_repr(),
-        "stops": {"count": systemdam.count_stops_in_system(system_id)},
-        "routes": {"count": systemdam.count_routes_in_system(system_id)},
-        "feeds": {"count": systemdam.count_feeds_in_system(system_id)},
-        "agency_alerts": [
-            alert.long_repr()
-            for alert in systemdam.list_all_alerts_associated_to_system(system.pk)
-        ],
-    }
+    response = system.short_repr()
+    if system.status != system.SystemStatus.ACTIVE:
+        if system.error_message is not None:
+            response["error"] = json.loads(system.error_message)
+        return response
+    response.update(
+        {
+            **system.short_repr(),
+            "stops": {"count": systemdam.count_stops_in_system(system_id)},
+            "routes": {"count": systemdam.count_routes_in_system(system_id)},
+            "feeds": {"count": systemdam.count_feeds_in_system(system_id)},
+            "agency_alerts": [
+                alert.long_repr()
+                for alert in systemdam.list_all_alerts_associated_to_system(system.pk)
+            ],
+        }
+    )
     if return_links:
         entity_type_to_link = {
             "stops": links.StopsInSystemIndexLink(system),
@@ -74,21 +82,92 @@ def get_by_id(system_id, return_links=True):
     return response
 
 
+def install_async(system_id, config_str, extra_settings):
+    """
+    Install a transit system asynchronously.
+
+    This is a no-op if the system is already installed.
+
+    This method first adds the system to the DB with status SCHEDULED. It then queues
+    the actual install on the executor cluster.
+    """
+    with dbconnection.inline_unit_of_work():
+        system = systemdam.get_by_id(system_id)
+        if system is None:
+            system = systemdam.create()
+            system.id = system_id
+        elif system.status != system.SystemStatus.INSTALL_FAILED:
+            return False
+        system.status = system.SystemStatus.SCHEDULED
+
+    _execute_install_async.delay(system_id, config_str, extra_settings)
+    return True
+
+
+@celeryapp.app.task
+def _execute_install_async(system_id, config_str, extra_settings):
+    return install(system_id, config_str, extra_settings)
+
+
 def install(system_id, config_str, extra_settings):
-    install_success = install_uow(system_id, config_str, extra_settings)
-    client.refresh_tasks()
-    return install_success
+    """
+    Install a transit system synchronously; i.e., in the current thread.
+
+    This is a no-op if the system is already installed.
+
+    This method is designed to be called both in a sync HTTP install request and as
+    the main install method called by the executor of a async HTTP install request.
+
+    If the transit system does not have a record in the DB when this method is called
+    (as in the sync case), the install will take place in a single unit of work. One
+    consequence of this is that if the install failed there will be no record of it
+    in the DB.
+
+    Otherwise a number of unit of works will be used to update the systems's status as
+    it progresses through the install
+    """
+    with dbconnection.inline_unit_of_work():
+        system = systemdam.get_by_id(system_id)
+        if system is not None and system.status == models.System.SystemStatus.ACTIVE:
+            return False
+    _set_status(system_id, models.System.SystemStatus.INSTALLING)
+    try:
+        install_success = _execute_install_uow(system_id, config_str, extra_settings)
+        client.refresh_tasks()
+        return install_success
+    except exceptions.TransiterException as e:
+        _set_status(
+            system_id,
+            models.System.SystemStatus.INSTALL_FAILED,
+            json.dumps(e.response()),
+        )
+        raise e
+    except Exception as e:
+        _set_status(system_id, models.System.SystemStatus.INSTALL_FAILED, str(e))
+        raise e
 
 
 @dbconnection.unit_of_work
-def install_uow(system_id, config_str, extra_settings):
-    if systemdam.get_by_id(system_id) is not None:
-        return False
+def _set_status(system_id, status, error_message=None):
+    """
+    Set the status of a transit system, if that system exists in the DB.
+    """
+    system = systemdam.get_by_id(system_id)
+    if system is not None:
+        system.status = status
+        if error_message is not None:
+            system.error_message = error_message
 
+
+@dbconnection.unit_of_work
+def _execute_install_uow(system_id, config_str, extra_settings):
     system_config = systemconfigreader.read(config_str, extra_settings)
 
-    system = systemdam.create()
-    system.id = system_id
+    system = systemdam.get_by_id(system_id)
+    if system is None:
+        system = systemdam.create()
+        system.id = system_id
+    system.status = system.SystemStatus.ACTIVE
     system.name = system_config[systemconfigreader.NAME]
     system.raw_config = config_str
 
@@ -102,30 +181,20 @@ def install_uow(system_id, config_str, extra_settings):
 def delete_by_id(system_id, error_if_not_exists=True):
     """
     Delete a transit system
-
-    :param system_id: the ID of the system
-    :type system_id: str
-    :return: whether the delete succeeded
-    :rtype: bool
     """
-    stop_auto_updating_tasks(system_id)
+    # First, stop all of the update tasks for this system.
+    with dbconnection.inline_unit_of_work():
+        feeds = feeddam.list_all_in_system(system_id)
+        for feed in feeds:
+            feed.auto_update_on = False
     client.refresh_tasks()
-    deleted = delete_by_id_uow(system_id)
+
+    with dbconnection.inline_unit_of_work():
+        deleted = systemdam.delete_by_id(system_id)
     if not deleted and error_if_not_exists:
         raise exceptions.IdNotFoundError
+
     return True
-
-
-@dbconnection.unit_of_work
-def stop_auto_updating_tasks(system_id):
-    feeds = feeddam.list_all_in_system(system_id)
-    for feed in feeds:
-        feed.auto_update_on = False
-
-
-@dbconnection.unit_of_work
-def delete_by_id_uow(system_id):
-    return systemdam.delete_by_id(system_id)
 
 
 def _install_feeds(system, feeds_config):

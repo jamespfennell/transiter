@@ -1,3 +1,4 @@
+from transiter import models
 from transiter.data.dams import systemdam
 from . import dbtestutil, testdata
 
@@ -46,6 +47,7 @@ class TestSystemDAM(dbtestutil.TestCase):
         db_system = systemdam.create()
         db_system.id = testdata.SYSTEM_THREE_ID
         db_system.name = testdata.SYSTEM_THREE_NAME
+        db_system.status = models.System.SystemStatus.ACTIVE
         db_system.package = testdata.SYSTEM_THREE_PACKAGE
         self.session.flush()
 

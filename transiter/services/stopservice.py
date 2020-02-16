@@ -28,7 +28,7 @@ def list_all_in_system(system_id, return_links=True):
     :return: a list of dictionaries, one for each stop, containing the stop's
              short representation and optionally a link.
     """
-    system = systemdam.get_by_id(system_id)
+    system = systemdam.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError
 

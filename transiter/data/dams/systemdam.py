@@ -1,7 +1,10 @@
+from typing import Optional
+
+from sqlalchemy import func
+
+from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
-from transiter import models
-from sqlalchemy import func
 
 
 def create(entity=None):
@@ -39,14 +42,20 @@ def list_all():
     return genericqueries.list_all(models.System, models.System.id)
 
 
-def get_by_id(id_):
+def get_by_id(id_, only_return_active=False) -> Optional[models.System]:
     """
     Get a system by its ID.
 
     :param id_: the ID
+    :param only_return_active:
     :return: the System
     """
-    return genericqueries.get_by_id(models.System, id_)
+    system = genericqueries.get_by_id(models.System, id_)
+    if system is None:
+        return None
+    if only_return_active and system.status != system.SystemStatus.ACTIVE:
+        return None
+    return system
 
 
 def _count_child_entity_in_system(system_id, Model):
