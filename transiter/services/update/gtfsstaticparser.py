@@ -66,7 +66,7 @@ class GtfsStaticFile:
         file_name = file_name.value
         try:
             with self._zip_file.open(file_name) as raw_csv_file:
-                csv_file = io.TextIOWrapper(raw_csv_file, "utf-8")
+                csv_file = io.TextIOWrapper(raw_csv_file, "utf-8-sig")
                 csv_reader = csv.DictReader(csv_file)
                 for row in csv_reader:
                     yield row
