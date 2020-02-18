@@ -33,7 +33,7 @@ assuming it's in your current working directory, just run:
 Building the Docker images themselves is also easy.
 Checkout the Git repo and run:
 
-    make build
+    make docker
     
 Then launch using Docker compose:
 

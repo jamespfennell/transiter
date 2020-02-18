@@ -58,6 +58,8 @@ services:
     image: jamespfennell/transiter:latest
     restart: always
     environment:
+      - TRANSITER_SCHEDULER_HOST=scheduler
+      - TRANSITER_SCHEDULER_PORT=5000
       - TRANSITER_RABBITMQ_HOST=rabbitmq
       - TRANSITER_DB_HOST=postgres
       - TRANSITER_DB_PORT=5432

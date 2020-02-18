@@ -179,6 +179,7 @@ def _sync_trips(feed_update, trips):
 
         session.merge(feed_trip)
 
+    _delete_stale_entities(models.Trip, feed_update)
     # TODO: delete stale entities before this
     _trigger_service_map_calculations(
         trip_id_to_db_trip.values(), trips, route_id_to_route.values()

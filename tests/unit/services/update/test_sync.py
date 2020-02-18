@@ -230,7 +230,8 @@ class TestSyncTrips(testutil.TestCase(sync)):
         self.routedam.list_all_in_system.return_value = [self.route_1, self.route_2]
         self.servicemapmanager = self.mockImportedModule(sync.servicemapmanager)
 
-    def test_sync_trips_in_route__new_trip(self):
+    @mock.patch.object(sync, "_delete_stale_entities")
+    def test_sync_trips_in_route__new_trip(self, __):
         """[Trip updater] Sync trips in routes - new trip"""
         self.tripdam.list_all_in_system.return_value = []
 
@@ -258,8 +259,9 @@ class TestSyncTrips(testutil.TestCase(sync)):
 
         sync._sync_trips(self.feed_update, [])
 
+    @mock.patch.object(sync, "_delete_stale_entities")
     @mock.patch.object(sync, "_trigger_service_map_calculations")
-    def test_sync_trips_in_route__updated_trip_same_map(self, __):
+    def test_sync_trips_in_route__updated_trip_same_map(self, __, __1):
         """[Trip updater] Sync trips in routes - updated trip, same map"""
 
         self.tripdam.list_all_from_feed.return_value = [self.trip_1]
@@ -281,8 +283,9 @@ class TestSyncTrips(testutil.TestCase(sync)):
         )
         self.assertFalse(feed_trip.stop_times[0].future)
 
+    @mock.patch.object(sync, "_delete_stale_entities")
     @mock.patch.object(sync, "_trigger_service_map_calculations")
-    def test_sync_trips_in_route__updated_trip_new_map(self, __):
+    def test_sync_trips_in_route__updated_trip_new_map(self, __, __1):
         """[Trip updater] Sync trips in routes - update trip new map"""
 
         self.tripdam.list_all_from_feed.return_value = [self.trip_1]
