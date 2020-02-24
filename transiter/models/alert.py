@@ -3,12 +3,12 @@ import enum
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, ToDictMixin
 from .updatableentity import updatable_entity
 
 
 @updatable_entity
-class Alert(Base):
+class Alert(ToDictMixin, Base):
     __tablename__ = "alert"
 
     pk = Column(Integer, primary_key=True)
@@ -68,8 +68,8 @@ class Alert(Base):
         cascade="none",
     )
 
-    _short_repr_list = [id, start_time, end_time, creation_time, header, description]
-    _long_repr_list = [
+    __dict_columns__ = [id, start_time, end_time, creation_time, header, description]
+    __large_dict_columns__ = [
         id,
         start_time,
         end_time,

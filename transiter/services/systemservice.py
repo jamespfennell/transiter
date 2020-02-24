@@ -30,7 +30,7 @@ def list_all(return_links=True):
     """
     response = []
     for system in systemdam.list_all():
-        system_response = system.short_repr()
+        system_response = system.to_dict()
         if return_links:
             system_response["href"] = links.SystemEntityLink(system)
         response.append(system_response)
@@ -54,19 +54,19 @@ def get_by_id(system_id, return_links=True):
     system = systemdam.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError
-    response = system.short_repr()
+    response = system.to_dict()
     if system.status != system.SystemStatus.ACTIVE:
         if system.error_message is not None:
             response["error"] = json.loads(system.error_message)
         return response
     response.update(
         {
-            **system.short_repr(),
+            **system.to_dict(),
             "stops": {"count": systemdam.count_stops_in_system(system_id)},
             "routes": {"count": systemdam.count_routes_in_system(system_id)},
             "feeds": {"count": systemdam.count_feeds_in_system(system_id)},
             "agency_alerts": [
-                alert.long_repr()
+                alert.to_large_dict()
                 for alert in systemdam.list_all_alerts_associated_to_system(system.pk)
             ],
         }

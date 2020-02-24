@@ -9,12 +9,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, backref
 
-from .base import Base
+from .base import Base, ToDictMixin
 from .updatableentity import updatable_entity
 
 
 @updatable_entity
-class Stop(Base):
+class Stop(ToDictMixin, Base):
     __tablename__ = "stop"
 
     pk = Column(Integer, primary_key=True)
@@ -58,5 +58,5 @@ class Stop(Base):
 
     __table_args__ = (UniqueConstraint("system_id", "id"),)
 
-    _short_repr_list = [id, name]
-    _long_repr_list = [id, name, longitude, latitude, url]
+    __dict_columns__ = [id, name]
+    __large_dict_columns__ = [id, name, longitude, latitude, url]

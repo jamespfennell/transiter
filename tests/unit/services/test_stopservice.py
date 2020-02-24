@@ -1,11 +1,10 @@
+import datetime
 import unittest
 import unittest.mock as mock
 
 from transiter import models, exceptions
 from transiter.services import stopservice, links
 from .. import testutil
-
-import datetime
 
 
 class TestTripStopTimeFilter(testutil.TestCase(stopservice)):
@@ -155,7 +154,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         self.stop_dao.list_all_in_system.return_value = [self.stop_one]
 
         expected = [
-            {"href": links.StopEntityLink(self.stop_one), **self.stop_one.short_repr()}
+            {"href": links.StopEntityLink(self.stop_one), **self.stop_one.to_dict()}
         ]
 
         actual = stopservice.list_all_in_system(self.SYSTEM_ID, True)
@@ -266,13 +265,13 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         expected = {
             "stop_id": self.STOP_ONE_ID,
             "direction": self.DIRECTION_NAME,
-            **trip_stop_time.short_repr(),
+            **trip_stop_time.to_dict(),
             "trip": {
-                **trip.long_repr(),
+                **trip.to_large_dict(),
                 "href": links.TripEntityLink(trip),
-                "route": {"href": links.RouteEntityLink(route), **route.short_repr()},
+                "route": {"href": links.RouteEntityLink(route), **route.to_dict()},
                 "last_stop": {
-                    **last_stop.short_repr(),
+                    **last_stop.to_dict(),
                     "href": links.StopEntityLink(last_stop),
                 },
             },
@@ -308,17 +307,17 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         stop_pk_to_service_maps_response = {pk: pk for pk in range(4)}
 
         expected = {
-            **stops[1].short_repr(),
+            **stops[1].to_dict(),
             "service_maps": 1,
             "href": links.StopEntityLink(stops[1]),
             "parent_stop": {
-                **stops[0].short_repr(),
+                **stops[0].to_dict(),
                 "service_maps": 0,
                 "href": links.StopEntityLink(stops[0]),
                 "parent_stop": None,
                 "child_stops": [
                     {
-                        **stops[2].short_repr(),
+                        **stops[2].to_dict(),
                         "service_maps": 2,
                         "href": links.StopEntityLink(stops[2]),
                         "child_stops": [],

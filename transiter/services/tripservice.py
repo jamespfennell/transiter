@@ -25,7 +25,7 @@ def list_all_in_route(system_id, route_id, return_links=False):
     )
     for trip in trips:
         last_stop = trip_pk_to_last_stop.get(trip.pk)
-        trip_response = {**trip.short_repr(), "last_stop": last_stop.short_repr()}
+        trip_response = {**trip.to_dict(), "last_stop": last_stop.to_dict()}
         if return_links:
             trip_response["href"] = links.TripEntityLink(trip)
             trip_response["last_stop"]["href"] = links.StopEntityLink(last_stop)
@@ -47,16 +47,16 @@ def get_in_route_by_id(system_id, route_id, trip_id, return_links=False):
     if trip is None:
         raise exceptions.IdNotFoundError
     trip_response = {
-        **trip.long_repr(),
-        "route": trip.route.short_repr(),
+        **trip.to_large_dict(),
+        "route": trip.route.to_dict(),
         "stop_time_updates": [],
     }
     if return_links:
         trip_response["route"]["href"] = links.RouteEntityLink(trip.route)
     for stop_time in trip.stop_times:
         stop_time_response = {
-            **stop_time.short_repr(),
-            "stop": stop_time.stop.short_repr(),
+            **stop_time.to_dict(),
+            "stop": stop_time.stop.to_dict(),
         }
         if return_links:
             stop_time_response["stop"]["href"] = links.StopEntityLink(stop_time.stop)

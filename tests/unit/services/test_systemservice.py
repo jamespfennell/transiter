@@ -53,14 +53,8 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
     def test_list_all(self):
         """[System service] List all installed systems"""
         expected = [
-            {
-                **self.system_1.short_repr(),
-                "href": links.SystemEntityLink(self.system_1),
-            },
-            {
-                **self.system_2.short_repr(),
-                "href": links.SystemEntityLink(self.system_2),
-            },
+            {**self.system_1.to_dict(), "href": links.SystemEntityLink(self.system_1),},
+            {**self.system_2.to_dict(), "href": links.SystemEntityLink(self.system_2),},
         ]
         self.systemdam.list_all.return_value = [self.system_1, self.system_2]
 
@@ -96,8 +90,8 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             name: {"count": count, "href": hrefs_dict[name]}
             for (name, count) in child_entities_dict.items()
         }
-        expected.update(**self.system_1.short_repr())
-        expected["agency_alerts"] = [alert.long_repr()]
+        expected.update(**self.system_1.to_dict())
+        expected["agency_alerts"] = [alert.to_large_dict()]
 
         self.systemdam.get_by_id.return_value = self.system_1
         self.systemdam.count_stops_in_system.return_value = self.SYSTEM_ONE_NUM_STOPS

@@ -59,7 +59,7 @@ def list_all_in_system(system_id, return_links=True):
         raise exceptions.IdNotFoundError
     response = []
     for feed in feeddam.list_all_in_system(system_id):
-        feed_response = feed.short_repr()
+        feed_response = feed.to_dict()
         if return_links:
             feed_response["href"] = links.FeedEntityLink(feed)
         response.append(feed_response)
@@ -83,7 +83,7 @@ def get_in_system_by_id(system_id, feed_id, return_links=True):
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         raise exceptions.IdNotFoundError
-    response = feed.short_repr()
+    response = feed.to_dict()
     if return_links:
         response["updates"] = {"href": links.FeedEntityUpdatesLink(feed)}
     return response
@@ -107,7 +107,7 @@ def create_feed_update(system_id, feed_id, content=None):
         raise exceptions.IdNotFoundError
     feed_update = models.FeedUpdate(feed)
     updatemanager.execute_feed_update(feed_update, content)
-    return {**feed_update.long_repr()}
+    return {**feed_update.to_dict()}
 
 
 @dbconnection.unit_of_work
@@ -127,7 +127,7 @@ def list_updates_in_feed(system_id, feed_id):
         raise exceptions.IdNotFoundError
     response = []
     for feed_update in feeddam.list_updates_in_feed(feed.pk):
-        response.append(feed_update.short_repr())
+        response.append(feed_update.to_dict())
     return response
 
 

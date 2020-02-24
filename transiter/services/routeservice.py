@@ -4,11 +4,11 @@ The route service is used to retrieve data about routes.
 
 import enum
 
+from transiter import exceptions
 from transiter.data import dbconnection
 from transiter.data.dams import routedam, systemdam, servicemapdam
-from transiter import exceptions
-from transiter.services import links
 from transiter.models import Alert
+from transiter.services import links
 
 
 @dbconnection.unit_of_work
@@ -36,7 +36,7 @@ def list_all_in_system(system_id, return_links=True):
     routes = list(routedam.list_all_in_system(system_id))
     route_pk_to_status = _construct_route_pk_to_status_map(route.pk for route in routes)
     for route in routes:
-        route_response = {**route.short_repr(), "status": route_pk_to_status[route.pk]}
+        route_response = {**route.to_dict(), "status": route_pk_to_status[route.pk]}
         if return_links:
             route_response["href"] = links.RouteEntityLink(route)
         response.append(route_response)
@@ -74,7 +74,7 @@ def get_in_system_by_id(system_id, route_id, return_links=True):
     if periodicity is not None:
         periodicity = int(periodicity / 6) / 10
     response = {
-        **route.long_repr(),
+        **route.to_large_dict(),
         "periodicity": periodicity,
         "status": status,
         "alerts": [alert.long_repr() for alert in route.route_statuses],
@@ -87,7 +87,7 @@ def get_in_system_by_id(system_id, route_id, return_links=True):
         service_map_response = {"group_id": group.id, "stops": []}
         if service_map is not None:
             for entry in service_map.vertices:
-                stop_response = entry.stop.short_repr()
+                stop_response = entry.stop.to_dict()
                 if return_links:
                     stop_response["href"] = links.StopEntityLink(entry.stop)
                 service_map_response["stops"].append(stop_response)

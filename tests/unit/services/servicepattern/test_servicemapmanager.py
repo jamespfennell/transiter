@@ -2,8 +2,6 @@ import datetime
 import unittest
 from unittest import mock
 
-import pytest
-
 from transiter import models
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
@@ -157,7 +155,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
             self.STOP_1_PK: [
                 {
                     "group_id": self.GROUP_ID,
-                    "routes": [route_1.short_repr(), route_2.short_repr()],
+                    "routes": [route_1.to_dict(), route_2.to_dict()],
                 }
             ]
         }

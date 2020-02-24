@@ -45,7 +45,7 @@ class TripStopTime(Base):
 
     _short_repr_list = [arrival_time, departure_time, track, future, stop_sequence]
 
-    def short_repr(self):
+    def to_dict(self):
         return {
             "arrival": {
                 "time": self.arrival_time,

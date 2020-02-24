@@ -35,54 +35,22 @@ class _BaseModel:
     def __hash__(self):
         return id(self)
 
-    _short_repr_list = []
-    _short_repr_dict = {}
-    _long_repr_list = []
-    _long_repr_dict = {}
-
-    def short_repr(self):
-        """
-        Get the short representation of the entity.
-
-        :return: dictionary
-        """
-        return self._repr(self._short_repr_list, self._short_repr_dict)
-
-    def long_repr(self):
-        """
-        Get the long representation of the entity.
-
-        :return: dictionary
-        """
-        return self._repr(self._long_repr_list, self._long_repr_dict)
-
-    def _repr(self, repr_list, repr_dict):
-        """
-        Get a representation of the entity.
-
-        :param repr_list: a list of SQL Alchemy columns types
-        :param repr_dict: map of string to SQL Alchemy column types
-        :return: map where the keys are the keys in the dict combined with the column
-             names in the list, and the values are values of associated columns.
-        :raises NotImplementedError: if the list and dict have length 0
-        """
-        full_repr_dict = {
-            **{key: column.key for key, column in repr_dict.items()},
-            **{column.key: column.key for column in repr_list},
-        }
-        if len(full_repr_dict) == 0:
-            raise NotImplementedError
-        return {
-            key: getattr(self, value, None) for (key, value) in full_repr_dict.items()
-        }
-
 
 Base = declarative_base(cls=_BaseModel)
 
 
-class ReprMixin:
-    def _short_repr(self):
-        pass
+class ToDictMixin:
 
-    def _long_repr(self):
-        pass
+    __dict_columns__ = None
+    __large_dict_columns__ = None
+
+    def to_dict(self) -> dict:
+        return self._to_dict(self.__dict_columns__)
+
+    def to_large_dict(self) -> dict:
+        return self._to_dict(self.__large_dict_columns__)
+
+    def _to_dict(self, columns) -> dict:
+        if columns is None:
+            raise NotImplementedError
+        return {column.key: getattr(self, column.key, None) for column in columns}

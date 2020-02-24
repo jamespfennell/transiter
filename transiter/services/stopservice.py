@@ -34,7 +34,7 @@ def list_all_in_system(system_id, return_links=True):
 
     response = []
     for stop in stopdam.list_all_in_system(system_id):
-        stop_response = stop.short_repr()
+        stop_response = stop.to_dict()
         if return_links:
             stop_response["href"] = links.StopEntityLink(stop)
         response.append(stop_response)
@@ -91,7 +91,7 @@ def get_in_system_by_id(
     response = _build_stop_tree_response(
         stop, stop_pk_to_service_maps_response, return_links, return_only_stations
     )
-    response.update(stop.long_repr())
+    response.update(stop.to_large_dict())
     response.update(
         {
             "directions": list(direction_name_matcher.all_names()),
@@ -173,11 +173,11 @@ def _build_trip_stop_time_response(
     trip_stop_time_response = {
         "stop_id": trip_stop_time.stop.id,
         "direction": direction_name,
-        **trip_stop_time.short_repr(),
+        **trip_stop_time.to_dict(),
         "trip": {
-            **trip_stop_time.trip.long_repr(),
-            "route": trip_stop_time.trip.route.short_repr(),
-            "last_stop": last_stop.short_repr(),
+            **trip_stop_time.trip.to_large_dict(),
+            "route": trip_stop_time.trip.route.to_dict(),
+            "last_stop": last_stop.to_dict(),
         },
     }
     if return_links:
@@ -300,7 +300,7 @@ def _build_stop_tree_response(
 
     def node_function(stop, visited_parent, parent_return, children_return):
         response = {
-            **stop.short_repr(),
+            **stop.to_dict(),
             "service_maps": stop_pk_to_service_maps_response[stop.pk],
         }
         if return_links:

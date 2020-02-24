@@ -1,8 +1,27 @@
 import unittest
 
+import pytest
+
 from transiter import models, exceptions
+from transiter.data.dams import routedam
 from transiter.services import routeservice, links
 from .. import testutil
+
+SYSTEM_ID = "1"
+
+ROUTE_ONE_PK = 2
+ROUTE_ONE_ID = "3"
+ROUTE_ONE_STATUS = routeservice.Status.PLANNED_SERVICE_CHANGE
+
+ROUTE_TWO_PK = 4
+ROUTE_TWO_ID = "5"
+ROUTE_TWO_STATUS = routeservice.Status.GOOD_SERVICE
+
+RAW_FREQUENCY = 700
+
+SERVICE_MAP_ONE_GROUP_ID = "1000"
+SERVICE_MAP_TWO_GROUP_ID = "1001"
+STOP_ID = "1002"
 
 
 class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
@@ -75,12 +94,12 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
 
         expected = [
             {
-                **self.route_one.short_repr(),
+                **self.route_one.to_dict(),
                 "status": self.ROUTE_ONE_STATUS,
                 "href": links.RouteEntityLink(self.route_one),
             },
             {
-                **self.route_two.short_repr(),
+                **self.route_two.to_dict(),
                 "status": self.ROUTE_TWO_STATUS,
                 "href": links.RouteEntityLink(self.route_two),
             },
@@ -114,7 +133,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
         ]
 
         expected = {
-            **self.route_one.long_repr(),
+            **self.route_one.to_large_dict(),
             "periodicity": int(self.RAW_FREQUENCY / 6) / 10,
             "status": self.ROUTE_ONE_STATUS,
             "alerts": [],
@@ -123,7 +142,7 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
                     "group_id": self.SERVICE_MAP_ONE_GROUP_ID,
                     "stops": [
                         {
-                            **self.stop.short_repr(),
+                            **self.stop.to_dict(),
                             "href": links.StopEntityLink(self.stop),
                         }
                     ],
@@ -156,62 +175,62 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
             routeservice._construct_route_status(self.ROUTE_ONE_PK),
         )
 
-    def test_construct_route_statuses__no_service(self):
-        """[Route service] Construct route status - NO_SERVICE"""
-        self._test_construct_route_statuses_runner(
-            routeservice.Status.NO_SERVICE, [], False
-        )
 
-    def test_construct_route_statuses__good_service(self):
-        """[Route service] Construct route status - GOOD_SERVICE"""
-        self._test_construct_route_statuses_runner(
-            routeservice.Status.GOOD_SERVICE, [], True
-        )
+@pytest.mark.parametrize(
+    "alerts,current_service,expected_status",
+    [
+        [[], False, routeservice.Status.NO_SERVICE],
+        [[], True, routeservice.Status.GOOD_SERVICE],
+        [
+            [
+                models.Alert(
+                    cause=models.Alert.Cause.MAINTENANCE,
+                    effect=models.Alert.Effect.MODIFIED_SERVICE,
+                )
+            ],
+            True,
+            routeservice.Status.PLANNED_SERVICE_CHANGE,
+        ],
+        [
+            [
+                models.Alert(
+                    cause=models.Alert.Cause.ACCIDENT,
+                    effect=models.Alert.Effect.MODIFIED_SERVICE,
+                )
+            ],
+            True,
+            routeservice.Status.UNPLANNED_SERVICE_CHANGE,
+        ],
+        [
+            [models.Alert(effect=models.Alert.Effect.SIGNIFICANT_DELAYS)],
+            True,
+            routeservice.Status.DELAYS,
+        ],
+    ],
+)
+def test_construct_route_statuses_runner(
+    monkeypatch, alerts, current_service, expected_status
+):
+    monkeypatch.setattr(
+        routedam,
+        "get_route_pk_to_highest_priority_alerts_map",
+        lambda *args, **kwargs: {ROUTE_ONE_PK: alerts},
+    )
 
-    def test_construct_route_statuses__planned_service_change(self):
-        """[Route service] Construct route status - PLANNED_SERVICE_CHANGE"""
-        self.alert.cause = self.alert.Cause.MAINTENANCE
-        self.alert.effect = self.alert.Effect.MODIFIED_SERVICE
-        self._test_construct_route_statuses_runner(
-            routeservice.Status.PLANNED_SERVICE_CHANGE, [self.alert], True
-        )
-
-    def test_construct_route_statuses__unplanned_service_change(self):
-        """[Route service] Construct route status - UNPLANNED_SERVICE_CHANGE"""
-        self.alert.cause = self.alert.Cause.ACCIDENT
-        self.alert.effect = self.alert.Effect.MODIFIED_SERVICE
-        self._test_construct_route_statuses_runner(
-            routeservice.Status.UNPLANNED_SERVICE_CHANGE, [self.alert], True
-        )
-
-    def test_construct_route_statuses__delays(self):
-        """[Route service] Construct route status - DELAYS"""
-        self.alert.effect = self.alert.Effect.SIGNIFICANT_DELAYS
-        self._test_construct_route_statuses_runner(
-            routeservice.Status.DELAYS, [self.alert], True
-        )
-
-    def _test_construct_route_statuses_runner(
-        self, expected_status, alerts, current_service
-    ):
-
-        self.routedam.get_route_pk_to_highest_priority_alerts_map.return_value = {
-            self.ROUTE_ONE_PK: alerts
-        }
-        if current_service and len(alerts) == 0:
-            self.routedam.list_route_pks_with_current_service.return_value = [
-                self.ROUTE_ONE_PK
-            ]
+    def list_route_pks_with_current_service(route_pks):
+        if current_service:
+            return route_pks
         else:
-            self.routedam.list_route_pks_with_current_service.return_value = []
+            return []
 
-        expected = {self.ROUTE_ONE_PK: expected_status}
+    monkeypatch.setattr(
+        routedam,
+        "list_route_pks_with_current_service",
+        list_route_pks_with_current_service,
+    )
 
-        actual = routeservice._construct_route_pk_to_status_map([self.ROUTE_ONE_PK])
+    expected = {ROUTE_ONE_PK: expected_status}
 
-        self.assertDictEqual(expected, actual)
+    actual = routeservice._construct_route_pk_to_status_map([ROUTE_ONE_PK])
 
-        self.routedam.get_route_pk_to_highest_priority_alerts_map.assert_called_once()
-        self.routedam.list_route_pks_with_current_service.assert_called_once_with(
-            {self.ROUTE_ONE_PK} if len(alerts) == 0 else set()
-        )
+    assert expected == actual

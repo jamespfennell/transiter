@@ -62,8 +62,8 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         self.feeddam.list_all_in_system.return_value = [self.feed_one, self.feed_two]
 
         expected = [
-            {**self.feed_one.short_repr(), "href": links.FeedEntityLink(self.feed_one)},
-            {**self.feed_two.short_repr(), "href": links.FeedEntityLink(self.feed_two)},
+            {**self.feed_one.to_dict(), "href": links.FeedEntityLink(self.feed_one)},
+            {**self.feed_two.to_dict(), "href": links.FeedEntityLink(self.feed_two)},
         ]
 
         actual = feedservice.list_all_in_system(self.SYSTEM_ID, True)
@@ -93,7 +93,7 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         self.feeddam.get_in_system_by_id.return_value = self.feed_one
 
         expected = {
-            **self.feed_one.short_repr(),
+            **self.feed_one.to_dict(),
             "updates": {"href": links.FeedEntityUpdatesLink(self.feed_one)},
         }
 
@@ -122,7 +122,7 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         """[Feed service] Create a feed update"""
         self.feeddam.get_in_system_by_id.return_value = self.feed_one
 
-        expected = {**self.feed_update_one.long_repr()}
+        expected = {**self.feed_update_one.to_dict()}
 
         actual = feedservice.create_feed_update(self.SYSTEM_ID, self.FEED_ONE_ID)
 
@@ -161,8 +161,8 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         ]
 
         expected = [
-            self.feed_update_one.short_repr(),
-            self.feed_update_two.short_repr(),
+            self.feed_update_one.to_dict(),
+            self.feed_update_two.to_dict(),
         ]
 
         actual = feedservice.list_updates_in_feed(self.SYSTEM_ID, self.FEED_ONE_ID)

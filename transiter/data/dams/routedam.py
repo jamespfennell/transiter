@@ -1,3 +1,5 @@
+from typing import Optional
+
 import sqlalchemy.sql.expression as sql
 
 from transiter import models
@@ -15,7 +17,7 @@ def list_all_in_system(system_id):
     return genericqueries.list_all_in_system(models.Route, system_id, models.Route.id)
 
 
-def get_in_system_by_id(system_id, route_id):
+def get_in_system_by_id(system_id, route_id) -> Optional[models.Route]:
     """
     Get a specific route in a system.
 

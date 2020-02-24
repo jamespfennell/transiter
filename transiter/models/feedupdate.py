@@ -13,10 +13,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import functions as sql_functions
 
-from .base import Base
+from .base import Base, ToDictMixin
 
 
-class FeedUpdate(Base):
+class FeedUpdate(ToDictMixin, Base):
     __tablename__ = "feed_update"
 
     pk = Column(Integer, primary_key=True)
@@ -57,8 +57,7 @@ class FeedUpdate(Base):
         Index("feed_updates_last_successful_idx", feed_pk, last_action_time, status),
     )
 
-    _short_repr_dict = {"id": pk}
-    _short_repr_list = [
+    __dict_columns__ = [
         status,
         explanation,
         failure_message,
@@ -66,8 +65,9 @@ class FeedUpdate(Base):
         content_length,
         last_action_time,
     ]
-    _long_repr_dict = _short_repr_dict
-    _long_repr_list = _short_repr_list
+
+    def to_dict(self) -> dict:
+        return {"id": self.pk, **self._to_dict(self.__dict_columns__)}
 
     def __init__(self, feed, *args, **kwargs):
         self.status = self.Status.SCHEDULED

@@ -12,12 +12,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, ToDictMixin
 from .updatableentity import updatable_entity
 
 
 @updatable_entity
-class Trip(Base):
+class Trip(ToDictMixin, Base):
     __tablename__ = "trip"
 
     pk = Column(Integer, primary_key=True)
@@ -54,8 +54,8 @@ class Trip(Base):
 
     __table_args__ = (UniqueConstraint(route_pk, id),)
 
-    _short_repr_list = [id]
-    _long_repr_list = [
+    __dict_columns__ = [id]
+    __large_dict_columns__ = [
         id,
         direction_id,
         start_time,

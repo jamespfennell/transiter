@@ -1,123 +1,110 @@
-import unittest
+import pytest
 
 from transiter import models, exceptions
+from transiter.data.dams import tripdam, routedam
 from transiter.services import tripservice, links
-from .. import testutil
+
+SYSTEM_ID = "1"
+ROUTE_ID = "2"
+TRIP_ONE_ID = "3"
+TRIP_ONE_PK = 4
+TRIP_TWO_ID = "5"
+TRIP_TWO_PK = 6
+STOP_ONE_ID = "7"
+STOP_TWO_ID = "8"
 
 
-class TestTripService(testutil.TestCase(tripservice), unittest.TestCase):
-    SYSTEM_ID = "1"
-    ROUTE_ID = "2"
-    TRIP_ONE_ID = "3"
-    TRIP_ONE_PK = 4
-    TRIP_TWO_ID = "5"
-    TRIP_TWO_PK = 6
-    STOP_ONE_ID = "7"
-    STOP_TWO_ID = "8"
+@pytest.fixture
+def route():
+    return models.Route(id=ROUTE_ID)
 
-    def setUp(self):
-        self.tripdam = self.mockImportedModule(tripservice.tripdam)
-        self.routedam = self.mockImportedModule(tripservice.routedam)
 
-        self.route = models.Route()
+@pytest.fixture
+def trip_1(route):
+    return models.Trip(pk=TRIP_ONE_PK, id=TRIP_ONE_ID, route=route)
 
-        self.trip_one = models.Trip()
-        self.trip_one.pk = self.TRIP_ONE_PK
-        self.trip_one.id = self.TRIP_ONE_ID
-        self.trip_one.route = self.route
 
-        self.trip_two = models.Trip()
-        self.trip_two.pk = self.TRIP_TWO_PK
-        self.trip_two.id = self.TRIP_ONE_ID
-        self.trip_two.route = self.route
+@pytest.fixture
+def trip_2(route):
+    return models.Trip(pk=TRIP_TWO_PK, id=TRIP_TWO_ID, route=route)
 
-        self.stop_one = models.Stop()
-        self.stop_one.id = self.STOP_ONE_ID
-        self.stop_two = models.Stop()
-        self.stop_two.id = self.STOP_TWO_ID
 
-    def test_list_all_in_route__route_not_found(self):
-        """[Trip service] List all in route - route not found"""
-        self.routedam.get_in_system_by_id.return_value = None
+@pytest.fixture
+def stop_1():
+    return models.Stop(id=STOP_ONE_ID)
 
-        self.assertRaises(
-            exceptions.IdNotFoundError,
-            lambda: tripservice.list_all_in_route(self.SYSTEM_ID, self.ROUTE_ID),
-        )
 
-    def test_list_all_in_route(self):
-        """[Trip service] List all trips in a route"""
-        self.tripdam.list_all_in_route_by_pk.return_value = [
-            self.trip_one,
-            self.trip_two,
-        ]
-        self.tripdam.get_trip_pk_to_last_stop_map.return_value = {
-            self.TRIP_ONE_PK: self.stop_one,
-            self.TRIP_TWO_PK: self.stop_two,
-        }
+@pytest.fixture
+def stop_2():
+    return models.Stop(id=STOP_TWO_ID)
 
-        expected = [
+
+def test_list_all_in_route__route_not_found(monkeypatch):
+    """[Trip service] List all in route - route not found"""
+    monkeypatch.setattr(routedam, "get_in_system_by_id", lambda *args, **kwargs: None)
+
+    with pytest.raises(exceptions.IdNotFoundError):
+        tripservice.list_all_in_route(SYSTEM_ID, ROUTE_ID),
+
+
+def test_list_all_in_route(monkeypatch, route, trip_1, trip_2, stop_1, stop_2):
+    """[Trip service] List all trips in a route"""
+    monkeypatch.setattr(routedam, "get_in_system_by_id", lambda *args, **kwargs: route)
+    monkeypatch.setattr(
+        tripdam, "list_all_in_route_by_pk", lambda *args, **kwargs: [trip_1, trip_2]
+    )
+    monkeypatch.setattr(
+        tripdam,
+        "get_trip_pk_to_last_stop_map",
+        lambda *args, **kwargs: {trip_1.pk: stop_1, trip_2.pk: stop_2},
+    )
+
+    expected = [
+        {
+            **trip_1.to_dict(),
+            "last_stop": {**stop_1.to_dict(), "href": links.StopEntityLink(stop_1)},
+            "href": links.TripEntityLink(trip_1),
+        },
+        {
+            **trip_2.to_dict(),
+            "last_stop": {**stop_2.to_dict(), "href": links.StopEntityLink(stop_2)},
+            "href": links.TripEntityLink(trip_2),
+        },
+    ]
+
+    actual = tripservice.list_all_in_route(SYSTEM_ID, ROUTE_ID, True)
+
+    assert expected == actual
+
+
+def test_get_in_route_by_id__trip_not_found(monkeypatch):
+    """[Trip service] Get in route - trip not found"""
+    monkeypatch.setattr(tripdam, "get_in_route_by_id", lambda *args, **kwargs: None)
+
+    with pytest.raises(exceptions.IdNotFoundError):
+        tripservice.get_in_route_by_id(SYSTEM_ID, ROUTE_ID, TRIP_ONE_ID),
+
+
+def test_get_in_route_by_id(monkeypatch, route, trip_1, stop_1):
+    """[Trip service] Get in in route"""
+
+    monkeypatch.setattr(tripdam, "get_in_route_by_id", lambda *args, **kwargs: trip_1)
+
+    stop_time = models.TripStopTime()
+    stop_time.stop = stop_1
+    trip_1.stop_times = [stop_time]
+
+    expected = {
+        **trip_1.to_large_dict(),
+        "route": {**route.to_dict(), "href": links.RouteEntityLink(route)},
+        "stop_time_updates": [
             {
-                **self.trip_one.short_repr(),
-                "last_stop": {
-                    **self.stop_one.short_repr(),
-                    "href": links.StopEntityLink(self.stop_one),
-                },
-                "href": links.TripEntityLink(self.trip_one),
-            },
-            {
-                **self.trip_two.short_repr(),
-                "last_stop": {
-                    **self.stop_two.short_repr(),
-                    "href": links.StopEntityLink(self.stop_two),
-                },
-                "href": links.TripEntityLink(self.trip_two),
-            },
-        ]
+                **stop_time.to_dict(),
+                "stop": {**stop_1.to_dict(), "href": links.StopEntityLink(stop_1)},
+            }
+        ],
+    }
 
-        actual = tripservice.list_all_in_route(self.SYSTEM_ID, self.ROUTE_ID, True)
+    actual = tripservice.get_in_route_by_id(SYSTEM_ID, ROUTE_ID, TRIP_ONE_ID, True)
 
-        self.assertEqual(expected, actual)
-
-    def test_get_in_route_by_id__trip_not_found(self):
-        """[Trip service] Get in route - trip not found"""
-        self.tripdam.get_in_route_by_id.return_value = None
-
-        self.assertRaises(
-            exceptions.IdNotFoundError,
-            lambda: tripservice.get_in_route_by_id(
-                self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ONE_ID
-            ),
-        )
-
-    def test_get_in_route_by_id(self):
-        """[Trip service] Get in in route"""
-        self.tripdam.get_in_route_by_id.return_value = self.trip_one
-
-        stop_time = models.TripStopTime()
-        stop_time.stop = self.stop_one
-        self.trip_one.stop_times = [stop_time]
-
-        excpected = {
-            **self.trip_one.long_repr(),
-            "route": {
-                **self.route.short_repr(),
-                "href": links.RouteEntityLink(self.route),
-            },
-            "stop_time_updates": [
-                {
-                    **stop_time.short_repr(),
-                    "stop": {
-                        **self.stop_one.short_repr(),
-                        "href": links.StopEntityLink(self.stop_one),
-                    },
-                }
-            ],
-        }
-
-        actual = tripservice.get_in_route_by_id(
-            self.SYSTEM_ID, self.ROUTE_ID, self.TRIP_ONE_ID, True
-        )
-
-        self.maxDiff = None
-        self.assertDictEqual(excpected, actual)
+    assert expected == actual

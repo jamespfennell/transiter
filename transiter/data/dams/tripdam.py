@@ -1,3 +1,5 @@
+from typing import Optional
+
 import sqlalchemy
 import sqlalchemy.sql.expression as sql
 from sqlalchemy.orm import selectinload
@@ -35,7 +37,7 @@ def list_all_in_route_by_pk(route_pk):
     return query.all()
 
 
-def get_in_route_by_id(system_id, route_id, trip_id):
+def get_in_route_by_id(system_id, route_id, trip_id) -> Optional[models.Trip]:
     """
     Get a Trip using IDs.
 

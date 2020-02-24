@@ -1,3 +1,5 @@
+from typing import Dict, Iterable
+
 import sqlalchemy.sql.expression as sql
 from sqlalchemy.orm import selectinload
 
@@ -35,7 +37,9 @@ def list_groups_and_maps_for_stops_in_route(route_pk):
     return [(group, map_) for (group, map_) in query]
 
 
-def get_stop_pk_to_group_id_to_routes_map(stop_pks):
+def get_stop_pk_to_group_id_to_routes_map(
+    stop_pks,
+) -> Dict[int, Dict[str, Iterable[models.Route]]]:
     """
     This function is used to get service map information for stops; namely,
     which routes call at the stop based on the service maps.

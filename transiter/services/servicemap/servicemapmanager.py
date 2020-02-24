@@ -6,6 +6,7 @@ import datetime
 import json
 import logging
 from typing import List, Set, Tuple
+
 from transiter import models
 from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
 from transiter.services.servicemap import graphutils, conditions
@@ -28,7 +29,7 @@ def build_stop_pk_to_service_maps_response(stop_pks):
     for stop_pk in stop_pks:
         group_id_to_routes = stop_pk_to_service_map_group_id_to_routes[stop_pk]
         stop_pk_to_service_maps_response[stop_pk] = [
-            {"group_id": group_id, "routes": [route.short_repr() for route in routes]}
+            {"group_id": group_id, "routes": [route.to_dict() for route in routes]}
             for group_id, routes in group_id_to_routes.items()
         ]
     return stop_pk_to_service_maps_response

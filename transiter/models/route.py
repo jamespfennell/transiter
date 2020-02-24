@@ -3,12 +3,12 @@ import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from .base import Base, ToDictMixin
 from .updatableentity import updatable_entity
 
 
 @updatable_entity
-class Route(Base):
+class Route(ToDictMixin, Base):
     __tablename__ = "route"
 
     pk = Column(Integer, primary_key=True)
@@ -48,5 +48,5 @@ class Route(Base):
         "Alert", secondary="alert_route", back_populates="routes", cascade="all"
     )
 
-    _short_repr_list = [id, color]
-    _long_repr_list = [id, short_name, long_name, color, description, url, type]
+    __dict_columns__ = [id, color]
+    __large_dict_columns__ = [id, short_name, long_name, color, description, url, type]
