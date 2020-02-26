@@ -28,7 +28,7 @@ def test_auto_update(install_system_1, transiter_host, source_server):
 
 def _wait_for_update(transiter_host, expected_status, expected_sub_status):
 
-    for __ in range(20):
+    for __ in range(40):
         updates = requests.get(
             transiter_host + "/systems/test_auto_update/feeds/GtfsRealtimeFeed/updates"
         ).json()

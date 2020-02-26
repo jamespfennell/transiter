@@ -5,6 +5,7 @@ The task server is Python process that runs tasks periodically using APScheduler
 has an RPyC interface that enables a Transiter HTTP server to communicate with it.
 """
 import datetime
+from sqlalchemy.exc import SQLAlchemyError
 import logging
 import random
 import time
@@ -27,29 +28,32 @@ feed_update_trim_task = None
 
 
 class Task:
-    def __init__(self, func, args, trigger, **job_kwargs):
-        self._job = scheduler.add_job(func, args=args, trigger=trigger, **job_kwargs)
+    def __init__(self, trigger, **job_kwargs):
+        self._job = scheduler.add_job(self.run, trigger=trigger, **job_kwargs)
 
-    def run_now(self):
-        self._job.modify(next_run_time=datetime.datetime.now())
+    def run(self):
+        raise NotImplementedError
 
-    def __del__(self):
+    def stop(self):
         self._job.remove()
 
 
 class IntervalTask(Task):
-    def __init__(self, func, args, period):
+    def __init__(self, period):
+        self.period = period
         super().__init__(
-            func,
-            args,
             "interval",
             seconds=period,
             next_run_time=self._calculate_next_run_time(period),
         )
 
+    def run(self):
+        raise NotImplementedError
+
     def set_period(self, period):
-        self._job.reschedule("interval", seconds=period)
-        self._job.modify(next_run_time=self._calculate_next_run_time(period))
+        self.period = period
+        self._job.reschedule("interval", seconds=self.period)
+        self._job.modify(next_run_time=self._calculate_next_run_time(self.period))
 
     @staticmethod
     def _calculate_next_run_time(period):
@@ -59,18 +63,34 @@ class IntervalTask(Task):
 
 
 class CronTask(Task):
-    def __init__(self, func, args, **job_kwargs):
-        super().__init__(func, args, "cron", **job_kwargs)
+    def __init__(self, func, **job_kwargs):
+        self.func = func
+        super().__init__("cron", **job_kwargs)
 
-
-@celeryapp.app.task
-def create_feed_update(*args, **kwargs):
-    return feedservice.create_and_execute_feed_update(*args, **kwargs)
+    def run(self):
+        self.func()
 
 
 class FeedAutoUpdateTask(IntervalTask):
     def __init__(self, system_id, feed_id, period):
-        super().__init__(create_feed_update.delay, [system_id, feed_id], period)
+        self.system_id = system_id
+        self.feed_id = feed_id
+        super().__init__(period)
+
+    def run(self):
+        create_feed_update.apply_async(
+            args=(self.system_id, self.feed_id), expires=self.period * 0.8
+        )
+
+
+@celeryapp.app.task
+def create_feed_update(system_id, feed_id):
+    return feedservice.create_and_execute_feed_update(system_id, feed_id)
+
+
+@celeryapp.app.task
+def trim_feed_updates():
+    return feedservice.trim_feed_updates()
 
 
 def refresh_feed_auto_update_tasks():
@@ -96,23 +116,21 @@ def refresh_feed_auto_update_tasks():
 
     logger.info("Cancelling {} feed auto update tasks".format(len(stale_feed_pks)))
     for feed_pk in stale_feed_pks:
+        feed_pk_to_auto_update_task[feed_pk].stop()
         del feed_pk_to_auto_update_task[feed_pk]
 
 
 def initialize_feed_auto_update_tasks():
-
     while True:
         try:
             refresh_feed_auto_update_tasks()
             return
-        except Exception:
-            logger.info("Failed to update tasks; trying again in 1 second.")
+        except SQLAlchemyError:
+            logger.info("Failed to connect to DB; trying again in 1 second.")
             time.sleep(1)
-
-
-@celeryapp.app.task
-def trim_feed_updates(*args, **kwargs):
-    return feedservice.trim_feed_updates()
+        except Exception as e:
+            logger.exception("Unexpected error", e)
+            exit(1)
 
 
 def create_app():
@@ -145,7 +163,7 @@ def create_app():
     logger.info("Launching background scheduler")
     global feed_update_trim_task, scheduler
     scheduler.start()
-    feed_update_trim_task = CronTask(trim_feed_updates.delay, [], minute="*/15")
+    feed_update_trim_task = CronTask(trim_feed_updates.delay, minute="*/15")
     initialize_feed_auto_update_tasks()
 
     logger.info("Launching RPyC server")

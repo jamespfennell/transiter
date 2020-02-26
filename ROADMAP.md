@@ -34,24 +34,17 @@ Roughly in order of priority:
     [#28](https://github.com/jamespfennell/transiter/issues/28)
     ).
 
-- ~New schema installation procedure - remove the more custom Postgres Docker image.~
+- ~~New schema installation procedure - remove the more custom Postgres Docker image.~~
 
-- ~Clean up the Docker image structure: 
+- ~~Clean up the Docker image structure: 
     use a unique Transiter image for the Python containers
     and stop using a custom Postgres image.
-    Will require an `install` command.~
+    Will require an `install` command.~~
     
-- Fix the Helm Chart to match the Docker compose configuration.
+- ~~When the scheduler schedules a task, put an expiration equal to say 80%
+    of the auto update period.~~
 
-- When the scheduler schedules a task, put an expiration equal to say 80%
-    of the auto update period.
-
-- Introduce an alembic DB migrations systems.
-    
-- Introduce a settings DB table
-    ([#22](https://github.com/jamespfennell/transiter/issues/22)).
-
-- Implement async endpoints using the celery cluster.
+- Implement feed update async endpoints using the celery cluster.
 
 - Refactor the DB tests be to less global and based on pytest fixtures.
 
@@ -67,6 +60,15 @@ Roughly in order of priority:
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).
 
+- Fix the Helm Chart to match the Docker compose configuration.
+
+- Introduce an alembic DB migrations systems.
+    
+- Introduce a settings DB table
+    ([#22](https://github.com/jamespfennell/transiter/issues/22))?
+    Or perhaps continue to use env variables. 
+    What settings do we need?
+   
 
 All other 0.4 labelled tickets will be addressed or closed without action.
 
