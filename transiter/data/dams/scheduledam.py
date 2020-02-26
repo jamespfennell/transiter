@@ -1,6 +1,8 @@
+import typing
+
 import sqlalchemy.sql.expression as sql
 from sqlalchemy import func
-import typing
+
 from transiter import models
 from transiter.data import dbconnection
 

@@ -2,14 +2,13 @@ import flask
 import requests
 
 from transiter import exceptions
+from transiter.http import httpmanager
 from transiter.http.httpmanager import (
     http_endpoint,
     link_target,
     HttpMethod,
     HttpStatus,
-    get_request_args,
 )
-from transiter.http import httpmanager
 from transiter.http.permissions import requires_permissions, PermissionsLevel
 from transiter.services import systemservice, links
 

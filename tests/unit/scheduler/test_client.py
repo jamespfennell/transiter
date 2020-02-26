@@ -1,7 +1,8 @@
 import unittest.mock as mock
 
-import requests
 import pytest
+import requests
+
 from transiter.scheduler import client
 
 

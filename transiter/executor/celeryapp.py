@@ -1,5 +1,6 @@
-from celery import Celery
 import os
+
+from celery import Celery
 
 host = os.environ.get("TRANSITER_RABBITMQ_HOST", "127.0.0.1")
 

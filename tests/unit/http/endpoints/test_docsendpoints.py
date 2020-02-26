@@ -8,7 +8,6 @@ import werkzeug.exceptions as werkzeug_exceptions
 
 from transiter import config, exceptions
 from transiter.http.endpoints import docsendpoints
-from transiter.http.httpmanager import HttpStatus
 
 
 @pytest.fixture

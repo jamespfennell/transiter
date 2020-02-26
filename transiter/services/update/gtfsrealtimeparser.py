@@ -4,13 +4,11 @@ The GTFS Realtime Util contains the logic for reading feeds of this format.
 The official reference is here: https://gtfs.org/reference/realtime/v2/
 """
 import datetime
-import time
 
 import pytz
 from google.transit import gtfs_realtime_pb2
 
 from transiter import models
-import json
 
 
 def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None):

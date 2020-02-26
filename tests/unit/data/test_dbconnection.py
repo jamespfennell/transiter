@@ -1,5 +1,6 @@
-from transiter.data import dbconnection
 import unittest
+
+from transiter.data import dbconnection
 
 
 class TestDBConnection(unittest.TestCase):

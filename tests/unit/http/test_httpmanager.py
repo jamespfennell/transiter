@@ -1,6 +1,6 @@
 import datetime
-import enum
 import decimal
+import enum
 
 import flask
 import pytest

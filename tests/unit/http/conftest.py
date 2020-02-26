@@ -1,6 +1,7 @@
-import pytest
-import flask
 from unittest import mock
+
+import flask
+import pytest
 
 
 @pytest.fixture

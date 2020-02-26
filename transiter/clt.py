@@ -11,7 +11,6 @@ from transiter import config
 from transiter.data import dbconnection
 from transiter.executor import celeryapp
 from transiter.scheduler import server as scheduler
-
 # TODO: figure this out
 #  maybe use autodiscover_tasks
 # noinspection PyUnresolvedReferences

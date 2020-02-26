@@ -1,4 +1,5 @@
 import flask
+
 from transiter.http.httpmanager import http_endpoint, link_target, get_request_args
 from transiter.services import stopservice, links
 

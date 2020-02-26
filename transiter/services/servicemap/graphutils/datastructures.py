@@ -44,8 +44,6 @@ from abc import abstractmethod, ABCMeta
 from collections import defaultdict
 from typing import Iterator, Set, FrozenSet, Iterable, Tuple, Optional, Dict, Collection
 
-from decorator import decorator
-
 
 class AbstractNode(metaclass=ABCMeta):
     """

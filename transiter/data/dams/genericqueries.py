@@ -1,10 +1,10 @@
 """
 This module provides some abstract methods to remove code duplication in the DAMs.
 """
-from transiter.data import dbconnection
-from transiter import models
-
 import typing
+
+from transiter import models
+from transiter.data import dbconnection
 
 
 def create(DbEntity: models.Base, entity=None):

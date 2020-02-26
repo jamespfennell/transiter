@@ -2,10 +2,10 @@ import logging
 
 from flask import Blueprint
 
-from transiter.scheduler import client
 from transiter.executor.celeryapp import app as celery_app
 from transiter.http.httpmanager import http_endpoint
 from transiter.http.permissions import requires_permissions, PermissionsLevel
+from transiter.scheduler import client
 
 admin_endpoints = Blueprint(__name__, __name__)
 

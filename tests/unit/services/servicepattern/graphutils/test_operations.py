@@ -1,6 +1,6 @@
-from transiter.services.servicemap.graphutils import operations, datastructures
-
 import pytest
+
+from transiter.services.servicemap.graphutils import operations, datastructures
 
 
 def test_split_into_connected_components__tree(tree):

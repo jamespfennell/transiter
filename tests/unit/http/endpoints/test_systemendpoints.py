@@ -5,9 +5,9 @@ import requests
 from werkzeug.datastructures import ImmutableMultiDict
 
 from transiter import exceptions
+from transiter.http import httpmanager
 from transiter.http.endpoints import systemendpoints
 from transiter.http.httpmanager import HttpStatus
-from transiter.http import httpmanager
 from transiter.services import systemservice
 
 
