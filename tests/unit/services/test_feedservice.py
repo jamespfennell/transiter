@@ -34,8 +34,8 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         self.feed_two = models.Feed()
         self.feed_two.id = self.FEED_TWO_ID
 
-        self.feed_update_one = models.FeedUpdate(self.feed_one)
-        self.feed_update_two = models.FeedUpdate(self.feed_one)
+        self.feed_update_one = models.FeedUpdate(feed=self.feed_one)
+        self.feed_update_two = models.FeedUpdate(feed=self.feed_one)
 
     def test_list_all_auto_updating(self):
         """[Feed service] List all auto updating feed in system"""
@@ -120,36 +120,25 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
 
     def test_create_feed_update(self):
         """[Feed service] Create a feed update"""
-        self.feeddam.get_in_system_by_id.return_value = self.feed_one
+        self.updatemanager.create_feed_update.return_value = 3
 
-        expected = {**self.feed_update_one.to_dict()}
+        expected = 3
 
-        actual = feedservice.create_feed_update(self.SYSTEM_ID, self.FEED_ONE_ID)
-
-        self.assertDictEqual(actual, expected)
-        self.assertEqual(self.feed_update_one.feed, self.feed_one)
-        self.assertEqual(
-            self.feed_update_one.status, models.FeedUpdate.Status.SCHEDULED
-        )
-
-        self.feeddam.get_in_system_by_id.assert_called_once_with(
+        actual = feedservice.create_and_execute_feed_update(
             self.SYSTEM_ID, self.FEED_ONE_ID
         )
-        self.updatemanager.execute_feed_update.assert_called_once_with(
-            self.feed_update_one, None
-        )
+
+        self.assertEqual(actual, expected)
 
     def test_create_feed_update__no_such_feed(self):
         """[Feed service] Create a feed update - no such feed"""
-        self.feeddam.get_in_system_by_id.return_value = None
+        self.updatemanager.create_feed_update.return_value = None
 
         self.assertRaises(
             exceptions.IdNotFoundError,
-            lambda: feedservice.create_feed_update(self.SYSTEM_ID, self.FEED_ONE_ID),
-        )
-
-        self.feeddam.get_in_system_by_id.assert_called_once_with(
-            self.SYSTEM_ID, self.FEED_ONE_ID
+            lambda: feedservice.create_and_execute_feed_update(
+                self.SYSTEM_ID, self.FEED_ONE_ID
+            ),
         )
 
     def test_list_updates_in_feed(self):

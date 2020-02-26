@@ -1,5 +1,18 @@
-import pytest
+import contextlib
 import datetime
+
+import pytest
+
+from transiter.data import dbconnection
+
+
+@pytest.fixture
+def no_op_unit_of_work(monkeypatch):
+    @contextlib.contextmanager
+    def no_op_context_manager():
+        yield ""
+
+    monkeypatch.setattr(dbconnection, "inline_unit_of_work", no_op_context_manager)
 
 
 @pytest.fixture

@@ -1,5 +1,6 @@
-from transiter import models
 import datetime
+
+from transiter import models
 
 SYSTEM_ONE_PK = 8
 SYSTEM_TWO_PK = 9
@@ -132,17 +133,18 @@ feed_two = models.Feed(
 feed_3 = models.Feed(pk=FEED_3_PK, id=FEED_3_ID, system=system_two, auto_update_on=True)
 
 feed_1_update_1 = models.FeedUpdate(
-    feed_one,
+    feed=feed_one,
     status=models.FeedUpdate.Status.SUCCESS,
     last_action_time=datetime.datetime(2011, 1, 1, 1, 0, 0),
 )
 feed_1_update_2 = models.FeedUpdate(
-    feed_one,
+    feed=feed_one,
     status=models.FeedUpdate.Status.SUCCESS,
     last_action_time=datetime.datetime(2011, 1, 1, 2, 0, 0),
+    raw_data_hash="BLAH",
 )
 feed_1_update_3 = models.FeedUpdate(
-    feed_one,
+    feed=feed_one,
     status=models.FeedUpdate.Status.FAILURE,
     last_action_time=datetime.datetime(2011, 1, 1, 3, 0, 0),
 )

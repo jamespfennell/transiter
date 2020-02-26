@@ -11,7 +11,9 @@ class TestSync(testutil.TestCase(sync)):
     STOP_1_ID = "3"
 
     def setUp(self):
-        self.feed_update = models.FeedUpdate(models.Feed())
+        self.feed_update = models.FeedUpdate(feed=models.Feed())
+        self.feeddam = self.mockImportedModule(sync.feeddam)
+        self.feeddam.get_update_by_pk.return_value = self.feed_update
 
         # Attaching the class methods to a master mock allows us to verify the call
         # order: https://stackoverflow.com/questions/22677280/checking-call-order-across-multiple-mocks/22677452#22677452
@@ -113,7 +115,7 @@ class TestSyncDirectionRules(testutil.TestCase(sync)):
         self.stopdam.get_id_to_pk_map_in_system.return_value = {
             self.STOP_ID: self.STOP_PK
         }
-        self.feed_update = models.FeedUpdate(models.Feed())
+        self.feed_update = models.FeedUpdate(feed=models.Feed())
         self.feed_update.feed.system = models.System(id=self.SYSTEM_ID)
 
     @mock.patch.object(sync, "_merge_entities")
@@ -164,7 +166,7 @@ class TestSyncAlerts(testutil.TestCase(sync)):
             models.Route(id=self.ROUTE_ID_1),
             models.Route(id=self.ROUTE_ID_2),
         ]
-        feed_update = models.FeedUpdate(feed)
+        feed_update = models.FeedUpdate(feed=feed)
 
         alerts = [
             models.Alert(id=self.ID_1, route_ids=[self.ROUTE_ID_1]),
@@ -198,7 +200,7 @@ class TestSyncTrips(testutil.TestCase(sync)):
     def setUp(self):
 
         self.system = models.System(id=self.SYSTEM_ID)
-        self.feed_update = models.FeedUpdate(models.Feed())
+        self.feed_update = models.FeedUpdate(feed=models.Feed())
         self.feed_update.feed.system = self.system
         self.route_1 = models.Route(id=self.ROUTE_1_ID, pk=self.ROUTE_1_PK)
         self.route_2 = models.Route(id=self.ROUTE_2_ID, pk=self.ROUTE_2_PK)

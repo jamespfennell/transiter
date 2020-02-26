@@ -33,6 +33,7 @@ class GtfsRealtimeFeed:
             trip_descr = trip_update.trip
             trip_descr.trip_id = trip.trip_id
             trip_descr.route_id = trip.route_id
+            trip_descr.direction_id = True
 
             num_ignored_stops = 0
             for stop_id, time in trip.stops_dict.items():
@@ -47,6 +48,7 @@ class GtfsRealtimeFeed:
 
             vehicle_position = trip_entity.vehicle
             trip_descr = vehicle_position.trip
+            trip_descr.direction_id = True
             trip_descr.trip_id = trip.trip_id
             trip_descr.route_id = trip.route_id
             vehicle_position.current_stop_sequence = num_ignored_stops

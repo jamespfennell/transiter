@@ -132,9 +132,19 @@ def install(system_id, config_str, extra_settings):
             return False
     _set_status(system_id, models.System.SystemStatus.INSTALLING)
     try:
-        install_success = _execute_install_uow(system_id, config_str, extra_settings)
+        feed_ids_to_update = _install_system_configuration(
+            system_id, config_str, extra_settings
+        )
+        for feed_id in feed_ids_to_update:
+            feed_update_pk = updatemanager.create_feed_update(system_id, feed_id)
+            update_status, __ = updatemanager.execute_feed_update(feed_update_pk)
+            if update_status != models.FeedUpdate.Status.SUCCESS:
+                raise exceptions.TransiterException(
+                    message="Failed to update feed with id={}".format(feed_id)
+                )
+        _set_status(system_id, models.System.SystemStatus.ACTIVE)
         client.refresh_tasks()
-        return install_success
+        return feed_ids_to_update
     except exceptions.TransiterException as e:
         _set_status(
             system_id,
@@ -160,22 +170,23 @@ def _set_status(system_id, status, error_message=None):
 
 
 @dbconnection.unit_of_work
-def _execute_install_uow(system_id, config_str, extra_settings):
+def _install_system_configuration(system_id, config_str, extra_settings):
     system_config = systemconfigreader.read(config_str, extra_settings)
 
     system = systemdam.get_by_id(system_id)
     if system is None:
         system = systemdam.create()
         system.id = system_id
-    system.status = system.SystemStatus.ACTIVE
+    system.status = system.SystemStatus.INSTALLING
     system.name = system_config[systemconfigreader.NAME]
     system.raw_config = config_str
 
     # Service maps must come first in case calculations are triggered
     # by install_required feed updates
-    _install_service_maps(system, system_config[systemconfigreader.SERVICE_MAPS])
-    _install_feeds(system, system_config[systemconfigreader.FEEDS])
-    return True
+    _install_service_map_configuration(
+        system, system_config[systemconfigreader.SERVICE_MAPS]
+    )
+    return _install_feed_configuration(system, system_config[systemconfigreader.FEEDS])
 
 
 def delete_by_id(system_id, error_if_not_exists=True):
@@ -197,7 +208,7 @@ def delete_by_id(system_id, error_if_not_exists=True):
     return True
 
 
-def _install_feeds(system, feeds_config):
+def _install_feed_configuration(system, feeds_config):
     """
     Install feeds. This method persists feeds in the databases and then
     performs feed updates for those feeds whose update is required for
@@ -207,7 +218,7 @@ def _install_feeds(system, feeds_config):
     :type system: models.System
     :param feeds_config: the feeds config from the system config file
     """
-
+    feed_ids_to_update = list()
     for id_, config in feeds_config.items():
         feed = models.Feed()
         feed.id = id_
@@ -231,13 +242,11 @@ def _install_feeds(system, feeds_config):
 
         if not config[systemconfigreader.REQUIRED_FOR_INSTALL]:
             continue
-        feed_update = models.FeedUpdate(feed)
-        updatemanager.execute_feed_update(feed_update)
-        if feed_update.status != feed_update.Status.SUCCESS:
-            raise exceptions.InstallError("Update failed!")
+        feed_ids_to_update.append(feed.id)
+    return feed_ids_to_update
 
 
-def _install_service_maps(system, service_maps_config):
+def _install_service_map_configuration(system, service_maps_config):
     """
     Install service maps.
 
@@ -252,7 +261,6 @@ def _install_service_maps(system, service_maps_config):
         group.source = config[systemconfigreader.SOURCE]
         json_conditions = config.get(systemconfigreader.CONDITIONS)
         if json_conditions is not None:
-            print(json_conditions)
             group.conditions = json.dumps(json_conditions, indent=2)
         group.threshold = config[systemconfigreader.THRESHOLD]
         group.use_for_routes_at_stop = config[systemconfigreader.USE_FOR_ROUTES_AT_STOP]

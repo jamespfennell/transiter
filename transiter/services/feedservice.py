@@ -6,7 +6,7 @@ operations.
 import datetime
 import logging
 
-from transiter import models, exceptions
+from transiter import exceptions
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam
 from transiter.services import links
@@ -89,8 +89,7 @@ def get_in_system_by_id(system_id, feed_id, return_links=True):
     return response
 
 
-@dbconnection.unit_of_work
-def create_feed_update(system_id, feed_id, content=None):
+def create_and_execute_feed_update(system_id, feed_id, content=None):
     """
     Create a feed update for a feed in a system.
 
@@ -102,12 +101,11 @@ def create_feed_update(system_id, feed_id, content=None):
     :return: the feed update's long representation.
     :rtype: dict
     """
-    feed = feeddam.get_in_system_by_id(system_id, feed_id)
-    if feed is None:
+    feed_update_pk = updatemanager.create_feed_update(system_id, feed_id)
+    if feed_update_pk is None:
         raise exceptions.IdNotFoundError
-    feed_update = models.FeedUpdate(feed)
-    updatemanager.execute_feed_update(feed_update, content)
-    return {**feed_update.to_dict()}
+    updatemanager.execute_feed_update(feed_update_pk, content)
+    return feed_update_pk
 
 
 @dbconnection.unit_of_work
@@ -129,6 +127,14 @@ def list_updates_in_feed(system_id, feed_id):
     for feed_update in feeddam.list_updates_in_feed(feed.pk):
         response.append(feed_update.to_dict())
     return response
+
+
+@dbconnection.unit_of_work
+def get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk):
+    feed_update = feeddam.get_update_by_pk(feed_update_pk)
+    if feed_update is None:
+        raise exceptions.IdNotFoundError
+    return feed_update.to_dict()
 
 
 def trim_feed_updates():

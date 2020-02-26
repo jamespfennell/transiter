@@ -87,7 +87,7 @@ def inline_unit_of_work():
     try:
         yield session
         session.commit()
-    except Exception:
+    except BaseException:
         session.rollback()
         raise
     finally:

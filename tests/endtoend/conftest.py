@@ -1,7 +1,8 @@
 import io
 import os
-import zipfile
 import time
+import zipfile
+
 import pytest
 import requests
 
@@ -83,13 +84,13 @@ def get_config():
 
 
 @pytest.fixture
-def install_system_1(
+def install_system(
     request,
     source_server: SourceServerClient,
     transiter_host,
     source_server_host_within_transiter,
 ):
-    def install(system_id, realtime_auto_update_period="1 day", sync=True):
+    def install(system_id, system_config, sync=True, expected_status="ACTIVE"):
         def delete():
             requests.delete(transiter_host + "/systems/" + system_id)
 
@@ -98,24 +99,8 @@ def install_system_1(
         system_config_url = source_server.create(
             "", "/" + system_id + "/system-config.yaml.jinja"
         )
-        static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
-        realtime_feed_url = source_server.create(
-            "", "/" + system_id + "/gtfs-realtime.gtfs"
-        )
 
-        source_server.put(static_feed_url, get_zip())
-        source_server.put(
-            system_config_url,
-            get_config().format(
-                static_feed_url=source_server_host_within_transiter
-                + "/"
-                + static_feed_url,
-                realtime_feed_url=source_server_host_within_transiter
-                + "/"
-                + realtime_feed_url,
-                realtime_auto_update_period=realtime_auto_update_period,
-            ),
-        )
+        source_server.put(system_config_url, system_config)
 
         response = requests.put(
             transiter_host + "/systems/" + system_id + "?sync=" + str(sync).lower(),
@@ -125,18 +110,45 @@ def install_system_1(
                 + system_config_url
             },
         )
-        response.raise_for_status()
+        if expected_status == "ACTIVE":
+            response.raise_for_status()
         if not sync:
             for _ in range(20):
                 response = requests.get(transiter_host + "/systems/" + system_id)
                 response.raise_for_status()
-                if response.json()["status"] == "ACTIVE":
+                if response.json()["status"] == expected_status:
                     break
                 time.sleep(0.6)
-            assert response.json()["status"] == "ACTIVE"
+            assert response.json()["status"] == expected_status
 
         request.addfinalizer(delete)
 
+    return install
+
+
+@pytest.fixture
+def install_system_1(
+    source_server: SourceServerClient,
+    transiter_host,
+    source_server_host_within_transiter,
+    install_system,
+):
+    def install(system_id, realtime_auto_update_period="1 day", sync=True):
+        static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
+        source_server.put(static_feed_url, get_zip())
+        realtime_feed_url = source_server.create(
+            "", "/" + system_id + "/gtfs-realtime.gtfs"
+        )
+
+        system_config = get_config().format(
+            static_feed_url=source_server_host_within_transiter + "/" + static_feed_url,
+            realtime_feed_url=source_server_host_within_transiter
+            + "/"
+            + realtime_feed_url,
+            realtime_auto_update_period=realtime_auto_update_period,
+        )
+
+        install_system(system_id, system_config, sync=sync)
         return static_feed_url, realtime_feed_url
 
     return install

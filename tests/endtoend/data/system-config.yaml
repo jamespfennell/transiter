@@ -45,4 +45,5 @@ service_maps:
 
   realtime:
     source: REALTIME
+    use_for_stops_in_route: true
 

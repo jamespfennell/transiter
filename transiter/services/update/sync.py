@@ -16,12 +16,12 @@ import typing
 from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
-from transiter.data.dams import stopdam, tripdam, routedam, scheduledam
+from transiter.data.dams import stopdam, tripdam, routedam, scheduledam, feeddam
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.update import fastscheduleoperations
 
 
-def sync(feed_update, entities):
+def sync(feed_update_pk, entities):
     """
     Sync entities to the database.
 
@@ -29,6 +29,7 @@ def sync(feed_update, entities):
       performed
     :param entities: the entities to sync
     """
+    feed_update = feeddam.get_update_by_pk(feed_update_pk)
 
     model_types_sync_order = [
         models.Route,
@@ -180,7 +181,6 @@ def _sync_trips(feed_update, trips):
         session.merge(feed_trip)
 
     _delete_stale_entities(models.Trip, feed_update)
-    # TODO: delete stale entities before this
     _trigger_service_map_calculations(
         trip_id_to_db_trip.values(), trips, route_id_to_route.values()
     )

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import func, sql
 
 from transiter import models
@@ -41,7 +43,17 @@ def get_in_system_by_id(system_id, feed_id):
     return genericqueries.get_in_system_by_id(models.Feed, system_id, feed_id)
 
 
-def get_last_successful_update(feed_pk):
+def get_update_by_pk(feed_update_pk) -> Optional[models.FeedUpdate]:
+    # TODO: greedily add the feed
+    session = dbconnection.get_session()
+    return (
+        session.query(models.FeedUpdate)
+        .filter(models.FeedUpdate.pk == feed_update_pk)
+        .one_or_none()
+    )
+
+
+def get_last_successful_update(feed_pk) -> Optional[str]:
     """
     Get the last successful FeedUpdate for a Feed.
 
@@ -50,13 +62,16 @@ def get_last_successful_update(feed_pk):
     """
     session = dbconnection.get_session()
     query = (
-        session.query(models.FeedUpdate)
+        session.query(models.FeedUpdate.raw_data_hash)
         .filter(models.FeedUpdate.feed_pk == feed_pk)
         .order_by(models.FeedUpdate.last_action_time.desc())
         .filter(models.FeedUpdate.status == "SUCCESS")
         .limit(1)
     )
-    return query.first()
+    result = query.first()
+    if result is None:
+        return None
+    return result[0]
 
 
 def list_updates_in_feed(feed_pk):

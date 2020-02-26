@@ -65,7 +65,7 @@ class CronTask(Task):
 
 @celeryapp.app.task
 def create_feed_update(*args, **kwargs):
-    return feedservice.create_feed_update(*args, **kwargs)
+    return feedservice.create_and_execute_feed_update(*args, **kwargs)
 
 
 class FeedAutoUpdateTask(IntervalTask):
@@ -105,7 +105,7 @@ def initialize_feed_auto_update_tasks():
         try:
             refresh_feed_auto_update_tasks()
             return
-        except:
+        except Exception:
             logger.info("Failed to update tasks; trying again in 1 second.")
             time.sleep(1)
 

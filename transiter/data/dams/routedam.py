@@ -56,7 +56,7 @@ def calculate_periodicity(route_pk):
         .select_from(sql.join(models.Stop, models.TripStopTime).join(models.Trip))
         .where(models.Trip.route_pk == route_pk)
         .where(models.TripStopTime.future)
-        .where(models.TripStopTime.arrival_time != None)
+        .where(models.TripStopTime.arrival_time is not None)
         .distinct()
     )
     stop_data_stmt = (

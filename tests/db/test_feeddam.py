@@ -1,6 +1,3 @@
-import datetime
-
-from transiter import models
 from transiter.data.dams import feeddam
 from . import dbtestutil, testdata
 
@@ -29,7 +26,7 @@ class TestFeedDAM(dbtestutil.TestCase):
     def test__feed_dao__get_last_successful_update(self):
         """[Feed DAM] Last successful update"""
         self.assertEqual(
-            testdata.feed_1_update_2,
+            testdata.feed_1_update_2.raw_data_hash,
             feeddam.get_last_successful_update(testdata.FEED_ONE_PK),
         )
 

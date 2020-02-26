@@ -17,7 +17,7 @@ The documentation appears to be misconfigured.
 
 Please ensure that you have performed the following steps:
 
-1. Generated the HTML documentation by executing `mkdocs build` in the 
+1. Generated the HTML documentation by executing `mkdocs build` in the
    Transiter documentation directory (./docs in the Git repo).
 
 2. Set TRANSITER_DOCUMENTATION to point to the 'site' directory created by
@@ -39,7 +39,7 @@ The full absolute file path is:
 Note that if TRANSITER_DOCUMENTATION_ROOT is a relative path, the absolute path is
 calculated relative to the Transiter WSGI app's directory, which is:
 
-    {} 
+    {}
 """
 
 

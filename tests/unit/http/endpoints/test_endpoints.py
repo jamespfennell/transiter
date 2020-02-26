@@ -137,18 +137,6 @@ def test_stop_endpoints__get_in_system_by_id(monkeypatch):
     )
 
 
-def test_feed_endpoints__create_feed_update(monkeypatch):
-    """[Endpoints] feed / create_feed_update"""
-    endpoints_test_helper(
-        monkeypatch,
-        feedendpoints,
-        feedservice,
-        "create_feed_update",
-        ["system_id", "feed_id"],
-        expected_http_status=HttpStatus.CREATED,
-    )
-
-
 def test_system_endpoints__delete_by_id(monkeypatch):
     """[Endpoints] system / delete_by_id"""
     endpoints_test_helper(

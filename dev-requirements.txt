@@ -1,5 +1,6 @@
 black==19.10b0
 coverage==4.5.4
+pycodestyle==2.5.0
 pytest==5.3.5
 pytest-xdist==1.31.0
 twine==2.0.0

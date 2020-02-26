@@ -36,6 +36,7 @@ class FeedUpdate(ToDictMixin, Base):
         INVALID_PARSER = 5
         EMPTY_FEED = 6
         SYNC_ERROR = 7
+        UNEXPECTED_ERROR = 8
 
     status = Column(Enum(Status))
     explanation = Column(Enum(Explanation))
@@ -68,8 +69,3 @@ class FeedUpdate(ToDictMixin, Base):
 
     def to_dict(self) -> dict:
         return {"id": self.pk, **self._to_dict(self.__dict_columns__)}
-
-    def __init__(self, feed, *args, **kwargs):
-        self.status = self.Status.SCHEDULED
-        super().__init__(*args, **kwargs)
-        self.feed = feed

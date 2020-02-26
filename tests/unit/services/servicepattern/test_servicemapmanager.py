@@ -3,6 +3,7 @@ import unittest
 from unittest import mock
 
 from transiter import models
+from transiter.data import dbconnection
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
 from ... import testutil
@@ -77,9 +78,10 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
             self.service_map_group_realtime,
         ]
 
+    @mock.patch.object(dbconnection, "get_session")
     @mock.patch.object(servicemapmanager, "_build_service_map_from_paths")
     def test_calculate_realtime_service_map_for_route(
-        self, _build_service_map_from_paths
+        self, _build_service_map_from_paths, inline_unit_of_work
     ):
         """[Service map manager] Calculate realtime service map for route"""
 
@@ -112,7 +114,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
     @mock.patch.object(servicemapmanager, "_ScheduledTripMatcher")
     @mock.patch.object(servicemapmanager, "_build_service_map_from_paths")
     def test_calculate_schedule_service_map_for_route(
-        self, _build_service_map_from_paths, _ScheduledTripMatcher
+        self, _build_service_map_from_paths, _ScheduledTripMatcher,
     ):
         """[Service map manager] Calculate schedule service maps for system"""
         self.scheduledam.get_scheduled_trip_pk_to_path_in_system.return_value = {

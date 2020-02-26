@@ -53,8 +53,8 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
     def test_list_all(self):
         """[System service] List all installed systems"""
         expected = [
-            {**self.system_1.to_dict(), "href": links.SystemEntityLink(self.system_1),},
-            {**self.system_2.to_dict(), "href": links.SystemEntityLink(self.system_2),},
+            {**self.system_1.to_dict(), "href": links.SystemEntityLink(self.system_1)},
+            {**self.system_2.to_dict(), "href": links.SystemEntityLink(self.system_2)},
         ]
         self.systemdam.list_all.return_value = [self.system_1, self.system_2]
 
@@ -142,7 +142,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
             }
         }
 
-        systemservice._install_feeds(self.system_1, feeds_config)
+        systemservice._install_feed_configuration(self.system_1, feeds_config)
 
         self.updatemanager.assert_not_called()
 
@@ -163,33 +163,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
 
         self.updatemanager.execute_feed_update.side_effect = execute_feed_update
 
-        systemservice._install_feeds(self.system_1, feeds_config)
-
-        self.updatemanager.execute_feed_update.assert_called_once()
-
-    def test_install_feeds__failed_to_update(self):
-        """[System service] Install feed - failed to update"""
-
-        feeds_config = {
-            "feed": {
-                "parser": {"built_in": models.Feed.BuiltInParser.GTFS_REALTIME},
-                "http": {"url": "URL", "headers": {}},
-                "auto_update": {"enabled": True, "period": 5},
-                "required_for_install": True,
-            }
-        }
-
-        def execute_feed_update(feed_update, __=None):
-            feed_update.status = models.FeedUpdate.Status.FAILURE
-
-        self.updatemanager.execute_feed_update.side_effect = execute_feed_update
-
-        self.assertRaises(
-            exceptions.InstallError,
-            lambda: systemservice._install_feeds(self.system_1, feeds_config),
-        )
-
-        self.updatemanager.execute_feed_update.assert_called_once()
+        systemservice._install_feed_configuration(self.system_1, feeds_config)
 
 
 @pytest.fixture
@@ -214,18 +188,19 @@ def test_install(mock_systemdam, monkeypatch):
     monkeypatch.setattr(systemdam, "create", mock_systemdam.create)
 
     _install_service_maps = mock.MagicMock()
-    monkeypatch.setattr(systemservice, "_install_service_maps", _install_service_maps)
+    monkeypatch.setattr(
+        systemservice, "_install_service_map_configuration", _install_service_maps
+    )
     _install_feeds = mock.MagicMock()
-    monkeypatch.setattr(systemservice, "_install_feeds", _install_feeds)
+    monkeypatch.setattr(systemservice, "_install_feed_configuration", _install_feeds)
 
     read = mock.MagicMock()
     monkeypatch.setattr(systemconfigreader, "read", read)
     read.return_value = PARSED_SYSTEM_CONFIG
     extra_settings = mock.MagicMock()
 
-    actual = systemservice.install("system_id_2", "config_str", extra_settings)
+    systemservice.install("system_id_2", "config_str", extra_settings)
 
-    assert True is actual
     assert mock_systemdam.get_by_id().id == "system_id_2"
 
     read.assert_called_once_with("config_str", extra_settings)

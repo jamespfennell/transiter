@@ -8,6 +8,7 @@ import logging
 from typing import List, Set, Tuple
 
 from transiter import models
+from transiter.data import dbconnection
 from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
 from transiter.services.servicemap import graphutils, conditions
 
@@ -52,11 +53,10 @@ def calculate_realtime_service_map_for_route(route):
     if realtime_service_map is None:
         return
 
-    # Delete the old service map for this route. This works by using SQL
-    # Alchemy's delete orphan cascade.
+    old_service_map = None
     for service_map in list(realtime_service_map.maps):
         if service_map.route_pk == route.pk:
-            service_map.group = None
+            old_service_map = service_map
             break
 
     # Now actually build the map.
@@ -74,12 +74,15 @@ def calculate_realtime_service_map_for_route(route):
     try:
         service_map = _build_service_map_from_paths(paths)
     except graphutils.topologicalsort.ImpossibleToTopologicallySortGraph:
-        logger.exception(
-            "Could not topologically sort:\n{}".format(
-                json.dumps(list(paths))
-            )  # list(paths), indent=2))
-        )
-        raise
+        logger.info("Could not topologically sort:\n{}".format(json.dumps(list(paths))))
+        return
+
+    # Delete the old service map for this route. This works by using SQL
+    # Alchemy's delete orphan cascade.
+    if old_service_map is not None:
+        old_service_map.group = None
+        dbconnection.get_session().flush()
+
     service_map.route = route
     service_map.group = realtime_service_map
 

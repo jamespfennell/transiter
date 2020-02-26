@@ -5,8 +5,8 @@ import strictyaml
 from strictyaml import Map
 from strictyaml.exceptions import YAMLValidationError, YAMLSerializationError
 
-from transiter.services import systemconfigreader
 from transiter import models, exceptions
+from transiter.services import systemconfigreader
 
 
 class TestHumanReadableTimePeriod(unittest.TestCase):
@@ -88,7 +88,7 @@ class TestReadConfig(unittest.TestCase):
 
         config = f"""
         {systemconfigreader.NAME}: "{self.SYSTEM_NAME}"
-        
+
         {systemconfigreader.FEEDS}:
           {self.FEED_ID}:
             http:
@@ -148,7 +148,7 @@ class TestReadConfig(unittest.TestCase):
 
         config = f"""
         {systemconfigreader.NAME}: "{self.SYSTEM_NAME}"
-        
+
         {systemconfigreader.REQUIREMENTS}:
           {systemconfigreader.SETTINGS}:
             -setting_name
