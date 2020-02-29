@@ -53,9 +53,9 @@ def get_update_by_pk(feed_update_pk) -> Optional[models.FeedUpdate]:
     )
 
 
-def get_last_successful_update(feed_pk) -> Optional[str]:
+def get_last_successful_update_hash(feed_pk) -> Optional[str]:
     """
-    Get the last successful FeedUpdate for a Feed.
+    Get the last successful FeedUpdate content hash for a Feed.
 
     :param feed_pk: the feed's PK
     :return: FeedUpdate, or None if it doesn't exist
@@ -95,7 +95,7 @@ def trim_feed_updates(feed_pk, before_datetime):
     Trip all FeedUpdates for a feed whose last action time was before
     a certain cut-off point.
 
-    :feed_pk: pk of the feed
+    :param feed_pk: pk of the feed
     :param before_datetime: the cut-off point
     """
     not_exists_conditions = [
@@ -114,49 +114,3 @@ def trim_feed_updates(feed_pk, before_datetime):
         )
     )
     dbconnection.get_session().execute(query)
-
-
-def aggregate_feed_updates(before_datetime):
-    """
-    Return aggregate data about FeedUpdates in the system before a certain
-    cut-off time.
-
-    This function groups FeedUpdates into bins based on their (1) Feed
-    (2) status and (3) explanation. The result of this function is a list of
-    tuples, one tuple for each bin. Each tuple has 6 elements:
-
-    (1) the system ID of FeedUpdates in this bin
-    (2) the feed ID
-    (3) the status
-    (4) the explanation
-    (5) the number of FeedUpdates in this bin
-    (6) the average execution duration for FeedUpdates in this bin
-
-    :param before_datetime: the cut-off time
-    :return: the list described above
-    """
-    session = dbconnection.get_session()
-    query = (
-        sql.select(
-            [
-                models.Feed.system_id,
-                models.Feed.id.label("feed_id"),
-                models.FeedUpdate.status,
-                models.FeedUpdate.explanation,
-                func.count().label("count"),
-                func.avg(models.FeedUpdate.execution_duration).label(
-                    "avg_execution_duration"
-                ),
-            ]
-        )
-        .select_from(sql.join(models.Feed, models.FeedUpdate))
-        .group_by(
-            models.Feed.system_id,
-            models.Feed.id,
-            models.FeedUpdate.status,
-            models.FeedUpdate.explanation,
-        )
-        .where(models.FeedUpdate.last_action_time <= before_datetime)
-        .order_by(models.Feed.system_id, models.Feed.id, models.FeedUpdate.status)
-    )
-    return [row for row in session.execute(query)]

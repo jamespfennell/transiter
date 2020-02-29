@@ -107,7 +107,7 @@ def test_execute_feed_update(
 
     monkeypatch.setattr(feeddam, "get_update_by_pk", get_update_by_pk)
     monkeypatch.setattr(
-        feeddam, "get_last_successful_update", get_last_successful_update
+        feeddam, "get_last_successful_update_hash", get_last_successful_update
     )
 
     def _update_status(feed_update_pk, status, explanation, *args, **kwargs):

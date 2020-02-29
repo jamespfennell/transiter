@@ -19,6 +19,7 @@ WORKDIR /transiter/source
 # the actual package gives us faster Docker builds when just the files
 # in the package have changed.
 COPY setup.py setup.py
+COPY README.md README.md
 COPY transiter/__version__.py transiter/__version__.py
 RUN python setup.py --quiet egg_info
 RUN pip install --quiet -r *.egg-info/requires.txt

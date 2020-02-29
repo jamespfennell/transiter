@@ -21,7 +21,6 @@ unit-tests:
 	coverage run -a -m pytest tests/unit
 
 db-tests:
-	./docker/wait-for-it.sh $$TRANSITER_DB_HOST:$$TRANSITER_DB_PORT
 	coverage run -a -m pytest tests/db
 
 nothing:

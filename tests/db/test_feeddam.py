@@ -1,46 +1,101 @@
+import datetime
+
 from transiter.data.dams import feeddam
-from . import dbtestutil, testdata
 
 
-class TestFeedDAM(dbtestutil.TestCase):
-    def test_list_all_in_system(self):
-        """[Feed DAM] List all in system"""
-        self.assertListEqual(
-            [testdata.feed_one, testdata.feed_two],
-            feeddam.list_all_in_system(testdata.SYSTEM_ONE_ID),
-        )
+def test_list_all_feed_pks(feed_1_1, feed_1_2, feed_2_1):
+    expected_pks = set(feed.pk for feed in [feed_1_1, feed_1_2, feed_2_1])
 
-    def test__feeddam__get_in_system_by_id(self):
-        """[Feed DAM] Get in system by ID"""
-        self.assertEqual(
-            testdata.feed_one,
-            feeddam.get_in_system_by_id(testdata.SYSTEM_ONE_ID, testdata.FEED_ONE_ID),
-        )
+    actual_pks = set(feeddam.list_all_feed_pks())
 
-    def test_list_all_auto_updated(self):
-        """[Feed DAM] List all auto updated"""
-        self.assertListEqual(
-            [testdata.feed_one, testdata.feed_3], feeddam.list_all_autoupdating()
-        )
+    assert expected_pks == actual_pks
 
-    def test__feed_dao__get_last_successful_update(self):
-        """[Feed DAM] Last successful update"""
-        self.assertEqual(
-            testdata.feed_1_update_2.raw_data_hash,
-            feeddam.get_last_successful_update(testdata.FEED_ONE_PK),
-        )
 
-    def test_get_last_successful_update__no_update(self):
-        """[Feed DAM] Last successful update - no update"""
-        self.assertEqual(None, feeddam.get_last_successful_update(testdata.FEED_TWO_PK))
+def test_list_all_auto_updating(feed_1_1, feed_1_2, feed_2_1):
+    assert [feed_1_1, feed_2_1] == feeddam.list_all_autoupdating()
 
-    def test_list_updates_in_feed(self):
-        """[Feed DAM] List updates in feed"""
-        self.assertEqual(
-            [
-                testdata.feed_1_update_3,
-                testdata.feed_1_update_2,
-                testdata.feed_1_update_1,
-            ],
-            feeddam.list_updates_in_feed(testdata.FEED_ONE_PK),
-        )
+
+def test_list_all_in_system(system_1, feed_1_1, feed_1_2, feed_2_1):
+    assert [feed_1_1, feed_1_2] == feeddam.list_all_in_system(system_1.id)
+
+
+def test_list_all_in_system__no_feeds(system_1, feed_2_1):
+    assert [] == feeddam.list_all_in_system(system_1.id)
+
+
+def test_get_in_system_by_id(system_1, feed_1_1):
+    assert feed_1_1 == feeddam.get_in_system_by_id(system_1.id, feed_1_1.id)
+
+
+def test_get_in_system_by_id__no_feed(system_1, feed_1_1):
+    assert None is feeddam.get_in_system_by_id(system_1.id, "unknown_id")
+
+
+def test_get_in_system_by_id__no_system(system_1, feed_1_1):
+    assert None is feeddam.get_in_system_by_id("unknown_id", feed_1_1.id)
+
+
+def test_get_update_by_pk(feed_1_1_update_1):
+    assert feed_1_1_update_1 == feeddam.get_update_by_pk(feed_1_1_update_1.pk)
+
+
+def test_get_update_by_pk__unknown_pk(feed_1_1_update_1):
+    assert None is feeddam.get_update_by_pk(1)
+
+
+def test_get_last_successful_update(
+    feed_1_1, feed_1_1_update_1, feed_1_1_update_2, feed_1_1_update_3
+):
+    assert feed_1_1_update_2.raw_data_hash == feeddam.get_last_successful_update_hash(
+        feed_1_1.pk
+    )
+
+
+def test_get_last_successful_update__no_update(feed_1_1):
+    assert None is feeddam.get_last_successful_update_hash(feed_1_1.pk)
+
+
+def test_list_updates_in_feed(
+    feed_1_1, feed_1_1_update_1, feed_1_1_update_2, feed_1_1_update_3
+):
+    assert [
+        feed_1_1_update_3,
+        feed_1_1_update_2,
+        feed_1_1_update_1,
+    ] == feeddam.list_updates_in_feed(feed_1_1.pk)
+
+
+def test_list_updates_in_feed__no_updates(feed_1_1):
+    assert [] == feeddam.list_updates_in_feed(feed_1_1.pk)
+
+
+def test_trim_feed_updates__all_trimmed(
+    db_session, feed_1_1, feed_1_1_update_1, feed_1_1_update_2, feed_1_1_update_3
+):
+    feeddam.trim_feed_updates(feed_1_1.pk, datetime.datetime(2018, 1, 1, 2, 0, 0))
+
+    assert [] == feeddam.list_updates_in_feed(feed_1_1.pk)
+
+
+def test_trim_feed_updates__some_after_date(
+    feed_1_1, feed_1_1_update_1, feed_1_1_update_2, feed_1_1_update_3
+):
+    feeddam.trim_feed_updates(feed_1_1.pk, datetime.datetime(2011, 1, 1, 4, 0, 0))
+
+    assert [feed_1_1_update_3] == feeddam.list_updates_in_feed(feed_1_1.pk)
+
+
+def test_trim_feed_updates__some_still_used_as_source(
+    db_session,
+    feed_1_1,
+    feed_1_1_update_1,
+    feed_1_1_update_2,
+    feed_1_1_update_3,
+    route_1_1,
+):
+    route_1_1.source = feed_1_1_update_2
+    db_session.flush()
+
+    feeddam.trim_feed_updates(feed_1_1.pk, datetime.datetime(2018, 1, 1, 2, 0, 0))
+
+    assert [feed_1_1_update_2] == feeddam.list_updates_in_feed(feed_1_1.pk)

@@ -156,7 +156,7 @@ def _execute_feed_update_helper(
     with dbconnection.inline_unit_of_work():
         feed_update = feeddam.get_update_by_pk(feed_update_pk)
         feed_update.raw_data_hash = content_hash
-        previous_hash = feeddam.get_last_successful_update(feed_pk)
+        previous_hash = feeddam.get_last_successful_update_hash(feed_pk)
     if previous_hash is not None and previous_hash == content_hash:
         return _update_status(
             feed_update_pk,

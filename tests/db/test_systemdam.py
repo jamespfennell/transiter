@@ -1,72 +1,98 @@
 from transiter import models
 from transiter.data.dams import systemdam
-from . import dbtestutil, testdata
 
 
-class TestSystemDAM(dbtestutil.TestCase):
-    def test__system_dao__count_stops_in_system(self):
-        """[System DAM] Count number of stops"""
-        count = systemdam.count_stops_in_system(testdata.SYSTEM_ONE_ID)
+def test_create(db_session):
+    new_system = systemdam.create()
+    new_system.id = "new_id"
+    new_system.status = models.System.SystemStatus.ACTIVE
+    db_session.flush()
 
-        self.assertEqual(7, count)
+    assert new_system == systemdam.get_by_id("new_id")
 
-    def test__system_dao__count_routes_in_system(self):
-        """[System DAM] Count number of stops"""
-        count = systemdam.count_routes_in_system(testdata.SYSTEM_ONE_ID)
 
-        self.assertEqual(3, count)
+def test_delete_by_id(system_1):
+    system_1_id = system_1.id
 
-    def test__system_dao__count_feeds_in_system(self):
-        """[System DAM] Count number of stops"""
-        count = systemdam.count_feeds_in_system(testdata.SYSTEM_ONE_ID)
+    result = systemdam.delete_by_id(system_1_id)
 
-        self.assertEqual(2, count)
+    assert True is result
+    assert None is systemdam.get_by_id(system_1_id)
 
-    def test__base_entity_dao__list_all(self):
-        """[System DAM] List all systems"""
-        self.assertListEqual(
-            [testdata.system_one, testdata.system_two], systemdam.list_all()
-        )
 
-    def test__base_entity_dao__get_by_id(self):
-        """[System DAM] Get by ID"""
-        db_system = systemdam.get_by_id(testdata.SYSTEM_ONE_ID)
+def test_delete_by_id__invalid_id(system_1):
+    result = systemdam.delete_by_id("unknown_id")
 
-        self.assertEqual(testdata.system_one, db_system)
+    assert False is result
 
-    def test__base_entity_dao__get_by_id__no_result(self):
-        """[System DAM] Get by ID - no result"""
-        db_system = systemdam.get_by_id(testdata.SYSTEM_THREE_ID)
 
-        self.assertEqual(None, db_system)
+def test_list_all(system_1, system_2):
+    assert [system_1, system_2] == systemdam.list_all()
 
-    def test__base_entity_dao__create(self):
-        """[System DAM] Create new system"""
-        self.assertEqual(None, systemdam.get_by_id(testdata.SYSTEM_THREE_ID))
 
-        db_system = systemdam.create()
-        db_system.id = testdata.SYSTEM_THREE_ID
-        db_system.name = testdata.SYSTEM_THREE_NAME
-        db_system.status = models.System.SystemStatus.ACTIVE
-        db_system.package = testdata.SYSTEM_THREE_PACKAGE
-        self.session.flush()
+def test_list_all__no_systems(db_session):
+    assert [] == systemdam.list_all()
 
-        self.assertEqual(db_system, systemdam.get_by_id(testdata.SYSTEM_THREE_ID))
 
-    def test__base_entity_dao__delete(self):
-        """[System DAM] Delete a system"""
-        self.assertEqual(
-            testdata.system_two, systemdam.get_by_id(testdata.SYSTEM_TWO_ID)
-        )
+def test_get_by_id(system_1):
+    assert system_1 == systemdam.get_by_id(system_1.id)
 
-        response = systemdam.delete_by_id(testdata.SYSTEM_TWO_ID)
-        self.session.flush()
 
-        self.assertTrue(response)
-        self.assertEqual(None, systemdam.get_by_id(testdata.SYSTEM_TWO_ID))
+def test_get_by_id__unknown(system_1):
+    assert None is systemdam.get_by_id("unknown_id")
 
-    def test__base_entity_dao__delete__none_to_delete(self):
-        """[System DAM] Delete a system - none to delete"""
-        response = systemdam.delete_by_id(testdata.SYSTEM_THREE_ID)
 
-        self.assertFalse(response)
+def test_get_by_id__not_active(installing_system):
+    assert None is systemdam.get_by_id(installing_system.id, only_return_active=True)
+
+
+def test_count_stops_in_system(system_1, stop_1_1, stop_1_2, stop_2_1):
+    count = systemdam.count_stops_in_system(system_1.id)
+
+    assert 2 == count
+
+
+def test_count_stops_in_system__no_stops(system_1, stop_2_1):
+    count = systemdam.count_stops_in_system(system_1.id)
+
+    assert 0 == count
+
+
+def test_count_routes_in_system(system_1, route_1_1, route_1_2, route_1_3, route_2_1):
+    count = systemdam.count_routes_in_system(system_1.id)
+
+    assert 3 == count
+
+
+def test_count_routes_in_system__no_routes(system_1, route_2_1):
+    count = systemdam.count_routes_in_system(system_1.id)
+
+    assert 0 == count
+
+
+def test_count_feeds_in_system(system_1, feed_1_1, feed_1_2, feed_2_1):
+    count = systemdam.count_feeds_in_system(system_1.id)
+
+    assert 2 == count
+
+
+def test_count_feeds_in_system__no_feeds(system_1, feed_2_1):
+    count = systemdam.count_routes_in_system(system_1.id)
+
+    assert 0 == count
+
+
+def test_list_all_alerts_associated_to_system(
+    db_session, add_model, system_1, system_2
+):
+    alert_1 = add_model(models.Alert(pk=703))
+    alert_2 = add_model(models.Alert(pk=704))
+    alert_1.system_pk = system_1.pk
+    alert_2.system_pk = system_2.pk
+    db_session.flush()
+
+    assert [alert_1] == systemdam.list_all_alerts_associated_to_system(system_1.pk)
+
+
+def test_list_all_alerts_associated_to_system__no_alerts(system_1, system_2):
+    assert [] == systemdam.list_all_alerts_associated_to_system(system_1.pk)

@@ -46,7 +46,7 @@ Roughly in order of priority:
 
 - Implement feed update async endpoints using the celery cluster.
 
-- Refactor the DB tests be to less global and based on pytest fixtures.
+- ~~Refactor the DB tests be to less global and based on pytest fixtures.~~
 
 - Jinja templating for transit system configs
     ([#47](https://github.com/jamespfennell/transiter/issues/47)).
@@ -59,6 +59,9 @@ Roughly in order of priority:
 
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).
+    
+- Enable pausing the feed updates for a system for specific updates,
+    and allow specific updates to follow a cron schedule.
 
 - Fix the Helm Chart to match the Docker compose configuration.
 

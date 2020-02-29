@@ -1,66 +1,65 @@
+from transiter import models
 from transiter.data.dams import tripdam
-from . import dbtestutil, testdata
 
 
-class TestTripDAM(dbtestutil.TestCase):
-    def test__trip_dao__list_all_in_route(self):
-        """[Trip DAM] List all in route"""
-        self.assertEqual(
-            [testdata.trip_one, testdata.trip_two, testdata.trip_three],
-            tripdam.list_all_in_route_by_pk(testdata.ROUTE_ONE_PK),
-        )
+def test_list_all_from_feed(
+    db_session, add_model, feed_1_1, feed_1_2, trip_1, trip_2, trip_3
+):
+    feed_update_1_1 = add_model(models.FeedUpdate(feed=feed_1_1))
+    feed_update_1_2 = add_model(models.FeedUpdate(feed=feed_1_2))
+    trip_1.source = feed_update_1_1
+    trip_2.source = feed_update_1_1
+    trip_3.source = feed_update_1_2
+    db_session.flush()
 
-    def test__trip_dao__list_all_in_route__no_trips(self):
-        """[Trip DAM] List all in route"""
-        self.assertEqual([], tripdam.list_all_in_route_by_pk(testdata.ROUTE_TWO_PK))
+    assert [trip_1, trip_2] == tripdam.list_all_from_feed(feed_1_1.pk)
 
-    def test_get_in_route_by_id(self):
-        """[Trip DAM] Get in route by ID"""
-        self.assertEqual(
-            testdata.trip_three,
-            tripdam.get_in_route_by_id(
-                testdata.SYSTEM_ONE_ID, testdata.ROUTE_ONE_ID, testdata.TRIP_THREE_ID
-            ),
-        )
 
-    def test_get_in_route_by_id__no_system(self):
-        """[Trip DAM] Get in route by ID - unknown system"""
-        self.assertEqual(
-            None,
-            tripdam.get_in_route_by_id(
-                "fake_id", testdata.ROUTE_ONE_ID, testdata.TRIP_THREE_ID
-            ),
-        )
+def test_list_all_in_route(route_1_1, trip_1, trip_2, trip_3):
+    assert [trip_1, trip_2, trip_3] == tripdam.list_all_in_route_by_pk(route_1_1.pk)
 
-    def test_get_in_route_by_id__no_route(self):
-        """[Trip DAM] Get in route by ID - unknown route"""
-        self.assertEqual(
-            None,
-            tripdam.get_in_route_by_id(
-                testdata.SYSTEM_ONE_ID, "fake_id", testdata.TRIP_THREE_ID
-            ),
-        )
 
-    def test_get_trip_pk_to_last_stop_map(self):
-        """[Trip DAM] Get trip PK to last stop map"""
-        expected = {
-            testdata.TRIP_ONE_PK: testdata.stop_four,
-            testdata.TRIP_TWO_PK: testdata.stop_four,
-            testdata.TRIP_THREE_PK: testdata.stop_four,
-        }
+def test_list_all_in_route__no_trips(route_1_1, route_1_2):
+    assert [] == tripdam.list_all_in_route_by_pk(route_1_2.pk)
 
-        actual = tripdam.get_trip_pk_to_last_stop_map(expected.keys())
 
-        self.assertEqual(expected, actual)
+def test_get_in_route_by_id(system_1, route_1_1, trip_1):
+    assert trip_1 == tripdam.get_in_route_by_id(system_1.id, route_1_1.id, trip_1.id)
 
-    def test_get_trip_pk_to_path_map(self):
-        """[Trip DAM] Get trip PK to path map"""
-        expected = {
-            testdata.TRIP_ONE_PK: [stop.pk for stop in testdata.TRIP_ONE_PATH],
-            testdata.TRIP_TWO_PK: [stop.pk for stop in testdata.TRIP_TWO_PATH],
-            testdata.TRIP_THREE_PK: [stop.pk for stop in testdata.TRIP_THREE_PATH],
-        }
 
-        actual = tripdam.get_trip_pk_to_path_map(testdata.ROUTE_ONE_PK)
+def test_get_in_route_by_id__no_system(system_1, route_1_1, trip_1):
+    assert None is tripdam.get_in_route_by_id("unknown_id", route_1_1.id, trip_1.id)
 
-        self.assertEqual(expected, actual)
+
+def test_get_in_route_by_id__no_route(system_1, route_1_1, trip_1):
+    assert None is tripdam.get_in_route_by_id(system_1.id, "unknown_id", trip_1.id)
+
+
+def test_get_in_route_by_id__no_trip(system_1, route_1_1, trip_1):
+    assert None is tripdam.get_in_route_by_id(system_1.id, route_1_1.id, "unknown_id")
+
+
+def test_get_trip_pk_to_last_stop_map(route_1_1, stop_1_4, trip_1, trip_2, trip_3):
+    expected = {
+        trip_1.pk: stop_1_4,
+        trip_2.pk: stop_1_4,
+        trip_3.pk: stop_1_4,
+    }
+
+    actual = tripdam.get_trip_pk_to_last_stop_map(expected.keys())
+
+    assert expected == actual
+
+
+def test_get_trip_pk_to_path_map(
+    route_1_1, stop_1_1, stop_1_2, stop_1_3, stop_1_4, trip_1, trip_2, trip_3
+):
+    expected = {
+        trip_1.pk: [stop_1_1.pk, stop_1_2.pk, stop_1_3.pk, stop_1_4.pk],
+        trip_2.pk: [stop_1_1.pk, stop_1_2.pk, stop_1_4.pk],
+        trip_3.pk: [stop_1_1.pk, stop_1_4.pk],
+    }
+
+    actual = tripdam.get_trip_pk_to_path_map(route_1_1.pk)
+
+    assert expected == actual

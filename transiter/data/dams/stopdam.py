@@ -1,5 +1,3 @@
-import datetime
-
 from sqlalchemy import sql
 from sqlalchemy.orm import joinedload
 
@@ -63,7 +61,7 @@ def list_stop_time_updates_at_stops(stop_pks, earliest_time=None, latest_time=No
     )
 
     if earliest_time is not None:
-        earliest_datetime = datetime.datetime.fromtimestamp(float(earliest_time))
+        earliest_datetime = earliest_time
         query = query.filter(
             sql.or_(
                 models.TripStopTime.departure_time >= earliest_datetime,
@@ -71,7 +69,7 @@ def list_stop_time_updates_at_stops(stop_pks, earliest_time=None, latest_time=No
             )
         )
     if latest_time is not None:
-        latest_datetime = datetime.datetime.fromtimestamp(float(latest_time))
+        latest_datetime = latest_time
         query = query.filter(
             sql.or_(
                 models.TripStopTime.departure_time <= latest_datetime,

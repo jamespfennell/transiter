@@ -19,7 +19,6 @@ WORKDIR /transiter-ci
 COPY dev-requirements.txt dev-requirements.txt
 RUN pip install --quiet -r dev-requirements.txt
 
-COPY docker/wait-for-it.sh docker/wait-for-it.sh
 COPY .coveragerc .coveragerc
 RUN mkdir coverage
 COPY Makefile Makefile
