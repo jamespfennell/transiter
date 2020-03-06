@@ -5,13 +5,13 @@ The scheduler is a Python process that runs tasks periodically using APScheduler
 has a HTTP interface that enables a Transiter webserver to communicate with it.
 """
 import datetime
-from sqlalchemy.exc import SQLAlchemyError
 import logging
 import random
 import time
 
 import apscheduler.schedulers.background
 import flask
+from sqlalchemy.exc import SQLAlchemyError
 
 from transiter.executor import celeryapp
 from transiter.services import feedservice

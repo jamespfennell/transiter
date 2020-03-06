@@ -71,15 +71,10 @@ Roughly in order of priority:
 - Enable pausing the feed updates for a system for specific updates,
     and allow specific updates to follow a cron schedule.
 
-- Fix the Helm Chart to match the Docker compose configuration.
+- ~~Fix the Helm Chart to match the Docker compose configuration.~~
 
 - Introduce an alembic DB migrations systems, would be really nice in fairness.
     
-- Introduce a settings DB table
-    ([#22](https://github.com/jamespfennell/transiter/issues/22))?
-    Or perhaps continue to use env variables. 
-    What settings do we need?
-   
 
 All other 0.4 labelled tickets will be addressed or closed without action.
 

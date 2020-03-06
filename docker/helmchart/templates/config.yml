@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-config
+data:
+  TRANSITER_DB_HOST: "{{ .Values.name }}-postgres"
+  TRANSITER_DB_PORT: "5432"
+  TRANSITER_RABBITMQ_HOST: "{{ .Values.name }}-rabbitmq"
+  TRANSITER_SCHEDULER_HOST: "{{ .Values.name }}-scheduler"
+  TRANSITER_SCHEDULER_PORT: "80"
+{{ if .Values.documentationEnabled }}
+  TRANSITER_DOCUMENTATION_ENABLED: "true"
+{{ end }}

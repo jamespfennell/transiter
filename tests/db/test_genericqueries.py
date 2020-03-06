@@ -1,7 +1,3 @@
-import pytest
-
-from transiter import models
-from transiter.data.dams import servicemapdam
 from transiter import models
 from transiter.data.dams import genericqueries
 

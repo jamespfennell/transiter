@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import func, sql
+from sqlalchemy import sql
 
 from transiter import models
 from transiter.data import dbconnection

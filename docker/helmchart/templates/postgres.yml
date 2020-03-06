@@ -20,9 +20,16 @@ spec:
     spec:
       containers:
       - name: {{ .Values.name }}-postgres
-        image: jamespfennell/transiter:{{ .Values.version }}-postgres
+        image: postgres:12
         ports:
         - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: transiter
+        - name: POSTGRES_PASSWORD
+          value: transiter
+        - name: POSTGRES_DB
+          value: transiter
 {{ if .Values.postgres.persistentVolume.enabled }}
         volumeMounts:
         - name: {{ .Values.name }}-postgres-persistent-storage

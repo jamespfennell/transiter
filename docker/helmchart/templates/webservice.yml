@@ -20,28 +20,31 @@ spec:
     spec:
       containers:
       - name: {{ .Values.name }}-webservice
-        image: jamespfennell/transiter:{{ .Values.version }}-webserver
+        image: jamespfennell/transiter:{{ .Values.version }}
+        command:
+        - gunicorn
+        - -b
+        - 0.0.0.0:80
+        - "-w"
+        - "{{ .Values.webservice.workersPerReplica }}"
+        - "transiter.http:wsgi_app"
         imagePullPolicy: Always
         ports:
         - containerPort: 80
-        args: ["-w", "{{ .Values.webservice.workersPerReplica }}", "-t", "{{ .Values.webservice.timeout }}"]
-        env:
-        - name: TRANSITER_TASKSERVER_HOST
-          value: "{{ .Values.name }}-taskserver"
-        - name: TRANSITER_TASKSERVER_PORT
-          value: "18812"
-        - name: TRANSITER_DB_HOST
-          value: "{{ .Values.name }}-postgres"
-        - name: TRANSITER_DB_PORT
-          value: "5432"
-        {{ if .Values.documentationEnabled }}
-        - name: TRANSITER_DOCUMENTATION_ENABLED
-          value: "true"
-        {{ end }}
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.name }}-config
+{{- if .Values.pythonPackagesToProvide }}
         lifecycle:
           postStart:
             exec:
-              command: ["pip", "install", "transiter-nycsubway"]
+              command:
+              - "pip"
+              - "install"
+{{- range $index, $element := .Values.pythonPackagesToProvide }}
+              - "{{ $element }}"
+{{- end}}
+{{- end }}
 
 
 ---

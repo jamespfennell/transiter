@@ -1,0 +1,41 @@
+
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  name: {{ .Values.name }}-executor
+  labels:
+    app: {{ .Values.name }}-executor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}-executor-pod
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}-executor-pod
+    spec:
+      containers:
+      - name: {{ .Values.name }}-executor
+        image: jamespfennell/transiter:{{ .Values.version }}
+        command:
+        - transiterclt
+        - launch
+        - executor
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: {{ .Values.name }}-config
+{{- if .Values.pythonPackagesToProvide }}
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - "pip"
+                - "install"
+{{- range $index, $element := .Values.pythonPackagesToProvide }}
+                - "{{ $element }}"
+{{- end}}
+{{- end }}

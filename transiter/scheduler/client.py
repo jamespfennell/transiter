@@ -1,5 +1,5 @@
 """
-The task server client module is used by the HTTP server to talk with the scheduler.
+The scheduler client module is used to talk with the scheduler.
 """
 import logging
 

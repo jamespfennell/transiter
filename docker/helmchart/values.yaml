@@ -33,10 +33,6 @@ webservice:
   # The number of workers each web service container will run.
   # The standard formula is (2 * number of CPUs + 1).
   workersPerReplica: 3
-  # The number of seconds to hold each HTTP connection open before terminating.
-  # As of Transiter 0.3.x this needs to be long enough for a system install
-  # initiated through the web service API to conclude successfully.
-  timeout: 120
 
 # Transiter supports custom feed parsers, wherein a Transiter user will
 # provide a Python function that is used to parse a feed type that is not
@@ -49,7 +45,7 @@ webservice:
 # Transiter each time it performs a feed update.
 #
 pythonPackagesToProvide:
-  - "transiter_nycsubway==0.3.2"
+  - "transiter_nycsubway"
 
 postgres:
   persistentVolume:
