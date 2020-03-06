@@ -1,8 +1,8 @@
 """
-Transiter Task Server
+Transiter Scheduler
 
-The task server is Python process that runs tasks periodically using APScheduler. It
-has an RPyC interface that enables a Transiter HTTP server to communicate with it.
+The scheduler is a Python process that runs tasks periodically using APScheduler. It
+has a HTTP interface that enables a Transiter webserver to communicate with it.
 """
 import datetime
 from sqlalchemy.exc import SQLAlchemyError
@@ -158,13 +158,11 @@ def create_app():
         "%(asctime)s TS %(levelname)-5s [%(module)s] %(message)s"
     )
     handler.setFormatter(formatter)
-    logger.info("Launching Transiter task server")
-
     logger.info("Launching background scheduler")
     global feed_update_trim_task, scheduler
     scheduler.start()
     feed_update_trim_task = CronTask(trim_feed_updates.delay, minute="*/15")
     initialize_feed_auto_update_tasks()
 
-    logger.info("Launching RPyC server")
+    logger.info("Launching HTTP server")
     return app

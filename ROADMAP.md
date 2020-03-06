@@ -51,11 +51,19 @@ Roughly in order of priority:
 - Jinja templating for transit system configs
     ([#47](https://github.com/jamespfennell/transiter/issues/47)).
 
+- Ensure that GTFS static feeds can be updated; they currently can't be
+    because of scheduled trip foreign keys.
+    Add end to end test.
+
 - Feed flush and auto-flush feature
     ([#45](https://github.com/jamespfennell/transiter/issues/45)).
+    May ticket off auto-flush to later.
+    Add end to end test.
 
 - Fast transit system deletes
     ([#21](https://github.com/jamespfennell/transiter/issues/21)).
+    Should probably just go with the id rename approach for simplicity?
+    Can ticket out a better solution.
 
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).
@@ -65,7 +73,7 @@ Roughly in order of priority:
 
 - Fix the Helm Chart to match the Docker compose configuration.
 
-- Introduce an alembic DB migrations systems.
+- Introduce an alembic DB migrations systems, would be really nice in fairness.
     
 - Introduce a settings DB table
     ([#22](https://github.com/jamespfennell/transiter/issues/22))?
