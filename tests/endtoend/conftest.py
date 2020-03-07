@@ -126,6 +126,32 @@ def install_system(
     return install
 
 
+SYSTEM_1_CONFIG = """
+
+name: Test System
+
+feeds:
+
+  gtfsstatic:
+    http:
+      url: "{static_feed_url}"
+    parser:
+      built_in: GTFS_STATIC
+    required_for_install: true
+    auto_update:
+      period: 1 day
+
+  GtfsRealtimeFeed:
+    http:
+      url: "{realtime_feed_url}"
+    parser:
+      built_in: GTFS_REALTIME
+    auto_update:
+      period: "{realtime_auto_update_period}"
+
+"""
+
+
 @pytest.fixture
 def install_system_1(
     source_server: SourceServerClient,
@@ -140,7 +166,7 @@ def install_system_1(
             "", "/" + system_id + "/gtfs-realtime.gtfs"
         )
 
-        system_config = get_config().format(
+        system_config = SYSTEM_1_CONFIG.format(
             static_feed_url=source_server_host_within_transiter + "/" + static_feed_url,
             realtime_feed_url=source_server_host_within_transiter
             + "/"
