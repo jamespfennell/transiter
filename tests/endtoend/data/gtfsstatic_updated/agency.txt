@@ -1,0 +1,2 @@
+agency_name,agency_url,agency_timezone
+Transiter Transit Agency,https://github.com/jamespfennell/transiter,America/New York

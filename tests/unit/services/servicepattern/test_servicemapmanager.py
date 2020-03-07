@@ -84,8 +84,16 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
         self, _build_service_map_from_paths, inline_unit_of_work
     ):
         """[Service map manager] Calculate realtime service map for route"""
+        trip_one = models.Trip(pk=self.TRIP_1_PK)
+        trip_one.stop_ids = []
+        trip_one.route_id = "C"
+        trip_one.direction_id = True
+        trip_two = models.Trip(pk=self.TRIP_2_PK)
+        trip_two.stop_ids = ["1", "2"]
+        trip_two.route_id = "A"
+        trip_two.direction_id = False
 
-        self.route_1.trips = [self.trip_one, self.trip_two]
+        self.route_1.trips = [trip_one, trip_two]
 
         self.tripdam.get_trip_pk_to_path_map.return_value = {
             self.TRIP_1_PK: [1, 2, 3, 4],

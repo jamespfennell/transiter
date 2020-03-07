@@ -65,22 +65,15 @@ def source_server_host_within_transiter():
     )
 
 
-def get_zip():
+def get_zip(directory):
     output_bytes = io.BytesIO()
     # writing files to a zipfile
-    data_dir = os.path.join(os.path.dirname(__file__), "data", "gtfsstatic")
+    data_dir = os.path.join(os.path.dirname(__file__), "data", directory)
     with zipfile.ZipFile(output_bytes, "w") as zip_file:
         for file_name in os.listdir(data_dir):
             full_path = os.path.join(data_dir, file_name)
             zip_file.write(full_path, arcname=file_name)
     return output_bytes.getvalue()
-
-
-def get_config():
-    file_path = os.path.join(os.path.dirname(__file__), "data", "system-config.yaml")
-    with open(file_path, "r") as f:
-        config = f.read()
-    return config
 
 
 @pytest.fixture
@@ -161,7 +154,7 @@ def install_system_1(
 ):
     def install(system_id, realtime_auto_update_period="1 day", sync=True):
         static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
-        source_server.put(static_feed_url, get_zip())
+        source_server.put(static_feed_url, get_zip("gtfsstatic"))
         realtime_feed_url = source_server.create(
             "", "/" + system_id + "/gtfs-realtime.gtfs"
         )
@@ -178,3 +171,8 @@ def install_system_1(
         return static_feed_url, realtime_feed_url
 
     return install
+
+
+@pytest.fixture
+def updated_gtfs_zip():
+    return get_zip("gtfsstatic_updated")

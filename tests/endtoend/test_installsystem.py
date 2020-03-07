@@ -149,3 +149,18 @@ def test_install_system__bad_update(install_system, transiter_host, sync):
             transiter_host + "/systems/" + system_id + "/" + sub_entity
         )
         assert sub_entity_response.status_code == 404
+
+
+def test_update_static_entities(
+    install_system_1, transiter_host, source_server, updated_gtfs_zip
+):
+    system_id = "test_update_static_entities"
+    static_feed_url, __ = install_system_1(system_id)
+
+    source_server.put(static_feed_url, updated_gtfs_zip)
+
+    response = requests.post(
+        transiter_host + "/systems/test_update_static_entities/feeds/gtfsstatic"
+    ).json()
+
+    assert response["status"] != "FAILURE"

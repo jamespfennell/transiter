@@ -38,6 +38,9 @@ class Route(ToDictMixin, Base):
     system = relationship("System", back_populates="routes")
     source = relationship("FeedUpdate", cascade="none")
     trips = relationship("Trip", back_populates="route", cascade="all, delete-orphan")
+    scheduled_trips = relationship(
+        "ScheduledTrip", back_populates="route", cascade="all, delete-orphan"
+    )
     service_maps = relationship(
         "ServiceMap",
         back_populates="route",
