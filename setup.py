@@ -24,6 +24,7 @@ setup(
         "gunicorn==20.0.4",
         "gtfs-realtime-bindings==0.0.6",
         "inflection==0.3.1",
+        "Jinja2==2.11.1",
         "psycopg2-binary==2.8.4",
         "pytimeparse==1.1.8",
         "pytz==2019.3",

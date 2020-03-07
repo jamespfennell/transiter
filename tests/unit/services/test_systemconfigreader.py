@@ -1,6 +1,7 @@
 import enum
 import unittest
 
+import pytest
 import strictyaml
 from strictyaml import Map
 from strictyaml.exceptions import YAMLValidationError, YAMLSerializationError
@@ -77,115 +78,131 @@ class TestPyEnum(unittest.TestCase):
         self.assertRaises(AssertionError, lambda: systemconfigreader.PyEnum(DummyClass))
 
 
-class TestReadConfig(unittest.TestCase):
-    SYSTEM_NAME = "Test System"
-    FEED_ID = "GTFS"
-    URL = "https://transiter.io"
-    SETTING_VALUE = "value"
+SYSTEM_NAME = "Test System"
+FEED_ID = "GTFS"
+URL = "https://transiter.io"
+SETTING_VALUE = "value"
 
-    def test_base_case(self):
-        """[System config reader] Base case"""
 
-        config = f"""
-        {systemconfigreader.NAME}: "{self.SYSTEM_NAME}"
+def test_base_case():
+    """[System config reader] Base case"""
 
-        {systemconfigreader.FEEDS}:
-          {self.FEED_ID}:
-            http:
-              url: {self.URL}
-            parser:
-              built_in: GTFS_STATIC
-        """
+    config = f"""
+    {systemconfigreader.NAME}: "{SYSTEM_NAME}"
 
-        expected = {
-            systemconfigreader.NAME: self.SYSTEM_NAME,
-            "requirements": {"packages": [], "settings": []},
-            "feeds": {
-                self.FEED_ID: {
-                    "http": {"url": self.URL, "headers": {}},
-                    "parser": {"built_in": models.Feed.BuiltInParser.GTFS_STATIC},
-                    "auto_update": {"enabled": False, "period": -1},
-                    "required_for_install": False,
-                }
-            },
-        }
+    {systemconfigreader.FEEDS}:
+      {FEED_ID}:
+        http:
+          url: {URL}
+        parser:
+          built_in: GTFS_STATIC
+    """
 
-        actual = systemconfigreader.read(config)
-        del actual["service_maps"]
+    expected = {
+        systemconfigreader.NAME: SYSTEM_NAME,
+        "requirements": {"packages": [], "settings": []},
+        "feeds": {
+            FEED_ID: {
+                "http": {"url": URL, "headers": {}},
+                "parser": {"built_in": models.Feed.BuiltInParser.GTFS_STATIC},
+                "auto_update": {"enabled": False, "period": -1},
+                "required_for_install": False,
+            }
+        },
+    }
 
-        self.maxDiff = None
-        self.assertDictEqual(expected, actual)
+    actual = systemconfigreader.read(config)
+    del actual["service_maps"]
 
-    def test_yaml_schema_error(self):
-        """[System config reader] Yaml schema error"""
+    assert expected == actual
 
-        config = """
-        random_key:
-          and_again: 2
-        """
 
-        self.assertRaises(
-            exceptions.InvalidSystemConfigFile, lambda: systemconfigreader.read(config)
-        )
+def test_yaml_schema_error():
+    """[System config reader] Yaml schema error"""
 
-    def test_yaml_parser_error(self):
-        """[System config reader] Yaml parser error"""
+    config = """
+    random_key:
+      and_again: 2
+    """
 
-        config = """
-        random_key:
-        <HTML TAG>
-            Ramon ind
-          and_again: 2
-        """
+    with pytest.raises(exceptions.InvalidSystemConfigFile):
+        systemconfigreader.read(config)
 
-        self.assertRaises(
-            exceptions.InvalidSystemConfigFile, lambda: systemconfigreader.read(config)
-        )
-        pass
 
-    def test_missing_settings(self):
-        """[System config reader] Missing setting"""
+def test_yaml_parser_error():
 
-        config = f"""
-        {systemconfigreader.NAME}: "{self.SYSTEM_NAME}"
+    config = """
+    random_key:
+    <HTML TAG>
+        Ramon ind
+      and_again: 2
+    """
 
-        {systemconfigreader.REQUIREMENTS}:
-          {systemconfigreader.SETTINGS}:
-            -setting_name
+    with pytest.raises(exceptions.InvalidSystemConfigFile):
+        systemconfigreader.read(config)
 
-        {systemconfigreader.FEEDS}:
-          {self.FEED_ID}:
-            http:
-              url: "{{setting_name}}"
-            parser:
-              built_in: GTFS_STATIC
-        """
 
-        self.assertRaises(
-            exceptions.InvalidSystemConfigFile, lambda: systemconfigreader.read(config)
-        )
+def test_missing_settings():
 
-    def test_substitute_settings(self):
-        """[System config reader] Substitute setting"""
+    config = f"""
+    {systemconfigreader.NAME}: "{SYSTEM_NAME}"
 
-        config = f"""
-        {systemconfigreader.NAME}: "{self.SYSTEM_NAME}"
+    {systemconfigreader.REQUIREMENTS}:
+      {systemconfigreader.SETTINGS}:
+        -setting_name
 
-        {systemconfigreader.REQUIREMENTS}:
-          {systemconfigreader.SETTINGS}:
-            - setting_name
+    {systemconfigreader.FEEDS}:
+      {FEED_ID}:
+        http:
+          url: "{{setting_name}}"
+        parser:
+          built_in: GTFS_STATIC
+    """
 
-        {systemconfigreader.FEEDS}:
-          {self.FEED_ID}:
-            http:
-              url: "{{setting_name}}"
-            parser:
-              built_in: GTFS_STATIC
-        """
+    with pytest.raises(exceptions.InvalidSystemConfigFile):
+        systemconfigreader.read(config)
 
-        self.assertEqual(
-            self.SETTING_VALUE,
-            systemconfigreader.read(config, {"setting_name": self.SETTING_VALUE})[
-                systemconfigreader.FEEDS
-            ][self.FEED_ID][systemconfigreader.HTTP][systemconfigreader.URL],
-        )
+
+def test_substitute_settings():
+
+    config = f"""
+    {systemconfigreader.NAME}: "{SYSTEM_NAME}"
+
+    {systemconfigreader.REQUIREMENTS}:
+      {systemconfigreader.SETTINGS}:
+        - setting_name
+
+    {systemconfigreader.FEEDS}:
+      {FEED_ID}:
+        http:
+          url: "{{{{setting_name}}}}"
+        parser:
+          built_in: GTFS_STATIC
+    """
+
+    assert SETTING_VALUE == (
+        systemconfigreader.read(config, {"setting_name": SETTING_VALUE})[
+            systemconfigreader.FEEDS
+        ][FEED_ID][systemconfigreader.HTTP][systemconfigreader.URL]
+    )
+
+
+def test_invalid_jinja_template():
+
+    config = f"""
+    {systemconfigreader.NAME}: "{SYSTEM_NAME}"
+
+    {systemconfigreader.REQUIREMENTS}:
+      {systemconfigreader.SETTINGS}:
+        - setting_name
+
+    {systemconfigreader.FEEDS}:
+      {FEED_ID}:
+        http:
+          url: "{{{{setting_name}}"
+        parser:
+          built_in: GTFS_STATIC
+    """
+
+    with pytest.raises(exceptions.InvalidSystemConfigFile):
+        systemconfigreader.read(config)

@@ -19,6 +19,7 @@ from strictyaml.exceptions import YAMLSerializationError
 from transiter import exceptions
 from transiter import models
 from transiter.services.servicemap import conditions
+import jinja2
 
 
 class HumanReadableTimePeriod(ScalarValidator):
@@ -202,10 +203,18 @@ _schema = Map(
 )
 
 
-def read(yaml, setting_to_value=None, label="transit system config"):
+def read(jinja_yaml_template, setting_to_value=None, label="transit system config"):
+    if setting_to_value is None:
+        setting_to_value = {}
+    try:
+        yaml_string = jinja2.Template(jinja_yaml_template).render(**setting_to_value)
+    except jinja2.TemplateError as error:
+        raise exceptions.InvalidSystemConfigFile(
+            "The Jinja template is invalid\n" + str(error)
+        )
 
     try:
-        raw_config = strictyaml.load(yaml, _schema, label=label).data
+        config = strictyaml.load(yaml_string, _schema, label=label).data
     except strictyaml.YAMLValidationError as error:
         raise exceptions.InvalidSystemConfigFile(
             "System config is valid YAML but is not a valid system config\n"
@@ -216,31 +225,11 @@ def read(yaml, setting_to_value=None, label="transit system config"):
             "Provided system config file cannot be parsed as YAML\n" + str(error)
         )
 
-    if setting_to_value is None:
-        setting_to_value = {}
-    required_settings = raw_config[REQUIREMENTS][SETTINGS]
-
+    required_settings = config[REQUIREMENTS][SETTINGS]
     missing_settings = set(required_settings) - set(setting_to_value.keys())
     if len(missing_settings) > 0:
         raise exceptions.InstallError(
             "Missing required settings: {}".format(", ".join(missing_settings))
         )
 
-    required_setting_to_value = {
-        required_setting: setting_to_value[required_setting]
-        for required_setting in required_settings
-    }
-    return _substitute_settings(raw_config, required_setting_to_value)
-
-
-def _substitute_settings(root_element, setting_to_value):
-    def traverse(element):
-        if isinstance(element, dict):
-            return {key: traverse(value) for key, value in element.items()}
-        if isinstance(element, list):
-            return [traverse(value) for value in element]
-        if isinstance(element, str):
-            return element.format(**setting_to_value)
-        return element
-
-    return traverse(root_element)
+    return config

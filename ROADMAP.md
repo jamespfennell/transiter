@@ -44,21 +44,22 @@ Roughly in order of priority:
 - ~~When the scheduler schedules a task, put an expiration equal to say 80%
     of the auto update period.~~
 
-- Implement feed update async endpoints using the celery cluster.
-
 - ~~Refactor the DB tests be to less global and based on pytest fixtures.~~
 
-- Jinja templating for transit system configs
-    ([#47](https://github.com/jamespfennell/transiter/issues/47)).
+- ~~Jinja templating for transit system configs
+    ([#47](https://github.com/jamespfennell/transiter/issues/47)).~~
 
-- Ensure that GTFS static feeds can be updated; they currently can't be
-    because of scheduled trip foreign keys.
-    Add end to end test.
+- Implement feed update async endpoints using the celery cluster.
 
 - Feed flush and auto-flush feature
     ([#45](https://github.com/jamespfennell/transiter/issues/45)).
     May ticket off auto-flush to later.
     Add end to end test.
+
+- Ensure that GTFS static feeds can be updated; they currently can't be
+    because of scheduled trip foreign keys.  
+  - For the moment, feed flush will capture this case.
+  - However it's important, so a genuine update test is likely called for
 
 - Fast transit system deletes
     ([#21](https://github.com/jamespfennell/transiter/issues/21)).
@@ -70,6 +71,7 @@ Roughly in order of priority:
     
 - Enable pausing the feed updates for a system for specific updates,
     and allow specific updates to follow a cron schedule.
+  - Should first test if this is an actual issue
 
 - ~~Fix the Helm Chart to match the Docker compose configuration.~~
 
