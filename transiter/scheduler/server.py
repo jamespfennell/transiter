@@ -85,7 +85,9 @@ class FeedAutoUpdateTask(IntervalTask):
 
 @celeryapp.app.task
 def create_feed_update(system_id, feed_id):
-    return feedservice.create_and_execute_feed_update(system_id, feed_id)
+    return feedservice.create_and_execute_feed_update(
+        system_id, feed_id, execute_async=False
+    )
 
 
 @celeryapp.app.task

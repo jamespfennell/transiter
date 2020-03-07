@@ -89,22 +89,19 @@ def get_in_system_by_id(system_id, feed_id, return_links=True):
     return response
 
 
-def create_and_execute_feed_update(system_id, feed_id, content=None):
+def create_and_execute_feed_update(
+    system_id, feed_id, content=None, execute_async=False
+):
     """
     Create a feed update for a feed in a system.
-
-    :param system_id: the system ID
-    :type system_id: str
-    :param feed_id: the feed ID
-    :type feed_id: str
-    :param content: the content to use for the feed update.
-    :return: the feed update's long representation.
-    :rtype: dict
     """
     feed_update_pk = updatemanager.create_feed_update(system_id, feed_id)
     if feed_update_pk is None:
         raise exceptions.IdNotFoundError
-    updatemanager.execute_feed_update(feed_update_pk, content)
+    if execute_async:
+        updatemanager.execute_feed_update_async.delay(feed_update_pk, content)
+    else:
+        updatemanager.execute_feed_update(feed_update_pk, content)
     return feed_update_pk
 
 

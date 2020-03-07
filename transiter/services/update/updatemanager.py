@@ -39,6 +39,7 @@ from requests import RequestException
 from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam
+from transiter.executor import celeryapp
 from transiter.services.update import sync
 from . import gtfsrealtimeparser, gtfsstaticparser
 
@@ -55,6 +56,11 @@ def create_feed_update(system_id, feed_id) -> Optional[int]:
     feed_update.feed = feed
     dbconnection.get_session().flush()
     return feed_update.pk
+
+
+@celeryapp.app.task
+def execute_feed_update_async(feed_update_pk, content=None):
+    return execute_feed_update(feed_update_pk, content)
 
 
 def execute_feed_update(

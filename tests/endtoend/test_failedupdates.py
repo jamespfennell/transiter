@@ -1,3 +1,5 @@
+import time
+
 import pytest
 import requests
 
@@ -13,6 +15,7 @@ feeds:
 """
 
 
+@pytest.mark.parametrize("sync", [True, False])
 @pytest.mark.parametrize(
     "custom_parser,feed_content,expected_explanation",
     [
@@ -28,12 +31,13 @@ def test_invalid_parser(
     install_system,
     source_server,
     source_server_host_within_transiter,
+    sync,
     custom_parser,
     feed_content,
     expected_explanation,
 ):
     system_id = "test_invalid_parser__" + str(
-        abs(hash((custom_parser, feed_content, expected_explanation)))
+        abs(hash((sync, custom_parser, feed_content, expected_explanation)))
     )
     if feed_content is not None:
         feed_url = source_server.create("", "/" + system_id + "/feed_1")
@@ -46,9 +50,21 @@ def test_invalid_parser(
     )
     install_system(system_id, system_config)
 
-    feed_update = requests.post(
-        transiter_host + "/systems/" + system_id + "/feeds/feed_1"  # /feed_1"
-    ).json()
+    if sync:
+        feed_update = requests.post(
+            transiter_host + "/systems/" + system_id + "/feeds/feed_1?sync=true"
+        ).json()
+    else:
+        feed_update = requests.post(
+            transiter_host + "/systems/" + system_id + "/feeds/feed_1"
+        ).json()
+        for __ in range(20):
+            feed_update = requests.get(
+                transiter_host + "/systems/" + system_id + "/feeds/feed_1/updates"
+            ).json()[0]
+            if feed_update["status"] == "FAILURE":
+                break
+            time.sleep(0.05)
 
     assert feed_update["status"] == "FAILURE"
     assert feed_update["explanation"] == expected_explanation

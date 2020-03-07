@@ -33,7 +33,8 @@ def _perform_feed_update_trip_test(
     for feed in feeds:
         source_server.put(realtime_feed_url, feed.build_feed())
         requests.post(
-            transiter_host + "/systems/test_update_trips/feeds/GtfsRealtimeFeed"
+            transiter_host
+            + "/systems/test_update_trips/feeds/GtfsRealtimeFeed?sync=true"
         )
 
     all_sss = []

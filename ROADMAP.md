@@ -49,17 +49,12 @@ Roughly in order of priority:
 - ~~Jinja templating for transit system configs
     ([#47](https://github.com/jamespfennell/transiter/issues/47)).~~
 
-- Implement feed update async endpoints using the celery cluster.
+- ~~Implement feed update async endpoints using the celery cluster.~~
 
 - Feed flush and auto-flush feature
     ([#45](https://github.com/jamespfennell/transiter/issues/45)).
     May ticket off auto-flush to later.
     Add end to end test.
-
-- Ensure that GTFS static feeds can be updated; they currently can't be
-    because of scheduled trip foreign keys.  
-  - For the moment, feed flush will capture this case.
-  - However it's important, so a genuine update test is likely called for
 
 - Fast transit system deletes
     ([#21](https://github.com/jamespfennell/transiter/issues/21)).
@@ -71,12 +66,13 @@ Roughly in order of priority:
     
 - Enable pausing the feed updates for a system for specific updates,
     and allow specific updates to follow a cron schedule.
-  - Should first test if this is an actual issue
+  - Should first test if this is an actual issue using the SF Bart.
 
 - ~~Fix the Helm Chart to match the Docker compose configuration.~~
 
 - Introduce an alembic DB migrations systems, would be really nice in fairness.
-    
+
+- Update documentation for the 0.4 release.
 
 All other 0.4 labelled tickets will be addressed or closed without action.
 

@@ -106,7 +106,9 @@ def _perform_feed_update_stop_test(
 ):
     source_server.put(realtime_feed_url, feed_1.build_feed())
 
-    requests.post(transiter_host + "/systems/test_update_stops/feeds/GtfsRealtimeFeed")
+    requests.post(
+        transiter_host + "/systems/test_update_stops/feeds/GtfsRealtimeFeed?sync=true"
+    )
 
     all_stop_data = feed_1.stop_data()
     for stop_id, stop_data in all_stop_data.items():

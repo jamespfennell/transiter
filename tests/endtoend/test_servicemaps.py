@@ -104,13 +104,10 @@ def _perform_service_map_test(
     expected_trip_ids,
 ):
     source_server.put(realtime_feed_url, feed.build_feed())
-    respone = requests.post(
-        transiter_host + "/systems/test_service_maps/feeds/GtfsRealtimeFeed"
+    requests.post(
+        transiter_host + "/systems/test_service_maps/feeds/GtfsRealtimeFeed?sync=true"
     )
-    print(respone.json())
-    import time
 
-    time.sleep(1)
     route_data = requests.get(
         transiter_host + "/systems/test_service_maps/routes/A"
     ).json()

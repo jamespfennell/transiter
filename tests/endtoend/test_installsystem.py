@@ -160,7 +160,8 @@ def test_update_static_entities(
     source_server.put(static_feed_url, updated_gtfs_zip)
 
     response = requests.post(
-        transiter_host + "/systems/test_update_static_entities/feeds/gtfsstatic"
+        transiter_host
+        + "/systems/test_update_static_entities/feeds/gtfsstatic?sync=true"
     ).json()
 
     assert response["status"] != "FAILURE"

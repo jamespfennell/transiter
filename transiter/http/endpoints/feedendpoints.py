@@ -5,6 +5,7 @@ from transiter.http.httpmanager import (
     link_target,
     HttpMethod,
     HttpStatus,
+    get_request_args,
 )
 from transiter.http.permissions import requires_permissions, PermissionsLevel
 from transiter.services import feedservice, links
@@ -34,7 +35,11 @@ def get_in_system_by_id(system_id, feed_id):
 @requires_permissions(PermissionsLevel.ALL)
 def create_feed_update(system_id, feed_id):
     """Create a new feed update."""
-    feed_update_pk = feedservice.create_and_execute_feed_update(system_id, feed_id)
+    request_args = get_request_args(["sync"])
+    sync = request_args["sync"] == "true"
+    feed_update_pk = feedservice.create_and_execute_feed_update(
+        system_id, feed_id, execute_async=not sync
+    )
     return (
         feedservice.get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk),
         HttpStatus.CREATED,
