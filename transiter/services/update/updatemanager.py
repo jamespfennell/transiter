@@ -46,12 +46,25 @@ from . import gtfsrealtimeparser, gtfsstaticparser
 logger = logging.getLogger(__name__)
 
 
-@dbconnection.unit_of_work
 def create_feed_update(system_id, feed_id) -> Optional[int]:
+    return _create_feed_update_helper(
+        system_id, feed_id, update_type=models.FeedUpdate.Type.REGULAR
+    )
+
+
+def create_feed_flush(system_id, feed_id) -> Optional[int]:
+    return _create_feed_update_helper(
+        system_id, feed_id, update_type=models.FeedUpdate.Type.FLUSH
+    )
+
+
+@dbconnection.unit_of_work
+def _create_feed_update_helper(system_id, feed_id, update_type) -> Optional[int]:
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         return None
     feed_update = models.FeedUpdate()
+    feed_update.update_type = update_type
     feed_update.status = feed_update.Status.SCHEDULED
     feed_update.feed = feed
     dbconnection.get_session().flush()
@@ -120,6 +133,7 @@ def _execute_feed_update_helper(
     """
     with dbconnection.inline_unit_of_work():
         feed_update = feeddam.get_update_by_pk(feed_update_pk)
+        update_type = feed_update.update_type
         feed = feed_update.feed
         feed_update.status = feed_update.Status.IN_PROGRESS
 
@@ -128,6 +142,9 @@ def _execute_feed_update_helper(
         custom_parser = feed.custom_parser
         feed_url = feed.url
         feed_headers = feed.headers
+
+    if update_type == models.FeedUpdate.Type.FLUSH:
+        return _sync_entities(feed_update_pk, [])
 
     try:
         parser = _get_parser(built_in_parser, custom_parser)
@@ -182,7 +199,10 @@ def _execute_feed_update_helper(
             models.FeedUpdate.Explanation.PARSE_ERROR,
             str(traceback.format_exc()),
         )
+    return _sync_entities(feed_update_pk, entities)
 
+
+def _sync_entities(feed_update_pk, entities):
     # noinspection PyBroadException
     try:
         with dbconnection.inline_unit_of_work():

@@ -51,10 +51,10 @@ Roughly in order of priority:
 
 - ~~Implement feed update async endpoints using the celery cluster.~~
 
-- Feed flush and auto-flush feature
+- ~~Feed flush and auto-flush feature
     ([#45](https://github.com/jamespfennell/transiter/issues/45)).
     May ticket off auto-flush to later.
-    Add end to end test.
+    Add end to end test.~~
 
 - Fast transit system deletes
     ([#21](https://github.com/jamespfennell/transiter/issues/21)).

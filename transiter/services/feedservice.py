@@ -7,6 +7,7 @@ import datetime
 import logging
 
 from transiter import exceptions
+from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam
 from transiter.services import links
@@ -92,10 +93,32 @@ def get_in_system_by_id(system_id, feed_id, return_links=True):
 def create_and_execute_feed_update(
     system_id, feed_id, content=None, execute_async=False
 ):
+    return _create_and_execute_feed_update_helper(
+        system_id,
+        feed_id,
+        update_manager_function=updatemanager.create_feed_update,
+        content=content,
+        execute_async=execute_async,
+    )
+
+
+def create_and_execute_feed_flush(system_id, feed_id, execute_async=False):
+    return _create_and_execute_feed_update_helper(
+        system_id,
+        feed_id,
+        update_manager_function=updatemanager.create_feed_flush,
+        content=None,
+        execute_async=execute_async,
+    )
+
+
+def _create_and_execute_feed_update_helper(
+    system_id, feed_id, update_manager_function, content=None, execute_async=False,
+):
     """
     Create a feed update for a feed in a system.
     """
-    feed_update_pk = updatemanager.create_feed_update(system_id, feed_id)
+    feed_update_pk = update_manager_function(system_id, feed_id)
     if feed_update_pk is None:
         raise exceptions.IdNotFoundError
     if execute_async:

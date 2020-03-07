@@ -22,6 +22,10 @@ class FeedUpdate(ToDictMixin, Base):
     pk = Column(Integer, primary_key=True)
     feed_pk = Column(Integer, ForeignKey("feed.pk"))
 
+    class Type(enum.Enum):
+        REGULAR = 1
+        FLUSH = 2
+
     class Status(enum.Enum):
         SCHEDULED = 1
         IN_PROGRESS = 2
@@ -38,6 +42,9 @@ class FeedUpdate(ToDictMixin, Base):
         SYNC_ERROR = 7
         UNEXPECTED_ERROR = 8
 
+    update_type = Column(
+        Enum(Type, name="update_type"), nullable=False, default=Type.REGULAR
+    )
     status = Column(Enum(Status))
     explanation = Column(Enum(Explanation))
     failure_message = Column(String)
@@ -59,6 +66,7 @@ class FeedUpdate(ToDictMixin, Base):
     )
 
     __dict_columns__ = [
+        update_type,
         status,
         explanation,
         failure_message,

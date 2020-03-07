@@ -47,6 +47,7 @@ from transiter.services import (
         pytest.param(systemendpoints.install, ["system_id"]),
         pytest.param(systemendpoints.delete_by_id, ["system_id"]),
         pytest.param(feedendpoints.create_feed_update, ["system_id", "feed_id"]),
+        pytest.param(feedendpoints.create_feed_update_flush, ["system_id", "feed_id"]),
     ],
 )
 def test_permission_denied__admin_write_endpoints(
