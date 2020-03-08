@@ -23,6 +23,10 @@ services:
 
   postgres-db-tests:
     image: postgres:12
+    environment:
+      - POSTGRES_USER=transiter
+      - POSTGRES_PASSWORD=transiter
+      - POSTGRES_DB=transiter
     expose:
       - "5432"
 
