@@ -22,7 +22,7 @@ services:
       - ${PWD}/coverage:/transiter-ci/coverage
 
   postgres-db-tests:
-    image: jamespfennell/transiter:latest-postgres
+    image: postgres:12
     expose:
       - "5432"
 
