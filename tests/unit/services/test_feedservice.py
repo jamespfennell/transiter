@@ -33,6 +33,7 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
 
         self.feed_two = models.Feed()
         self.feed_two.id = self.FEED_TWO_ID
+        self.feed_two.system = self.system
 
         self.feed_update_one = models.FeedUpdate(feed=self.feed_one)
         self.feed_update_two = models.FeedUpdate(feed=self.feed_one)

@@ -46,7 +46,7 @@ def test_get_request_args__extra_keys(flask_request):
     flask_request.args = {"key_1": "value_1", "key_2": "value_2"}
 
     with pytest.raises(exceptions.InvalidInput):
-        httpmanager.get_request_args(["key_1"])
+        httpmanager.get_url_parameters(["key_1"])
 
 
 def test_json_serialization__links(flask_url, flask_request):

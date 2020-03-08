@@ -19,7 +19,7 @@ class Feed(ToDictMixin, Base):
 
     pk = Column(Integer, primary_key=True)
     id = Column(String)
-    system_id = Column(String, ForeignKey("system.id"))
+    system_pk = Column(Integer, ForeignKey("system.pk"))
 
     class BuiltInParser(enum.Enum):
         GTFS_STATIC = 1
@@ -37,6 +37,6 @@ class Feed(ToDictMixin, Base):
         "FeedUpdate", back_populates="feed", cascade="all, delete-orphan"
     )
 
-    __table_args__ = (UniqueConstraint("system_id", "id"),)
+    __table_args__ = (UniqueConstraint("system_pk", "id"),)
 
     __dict_columns__ = [id]

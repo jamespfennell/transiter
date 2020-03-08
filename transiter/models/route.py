@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base, ToDictMixin
@@ -12,8 +12,8 @@ class Route(ToDictMixin, Base):
     __tablename__ = "route"
 
     pk = Column(Integer, primary_key=True)
-    id = Column(String, index=True)
-    system_id = Column(String, ForeignKey("system.id"), index=True)
+    id = Column(String)
+    system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
     class Type(enum.Enum):
@@ -50,6 +50,8 @@ class Route(ToDictMixin, Base):
     route_statuses = relationship(
         "Alert", secondary="alert_route", back_populates="routes", cascade="all"
     )
+
+    __table_args__ = (UniqueConstraint("system_pk", "id"),)
 
     __dict_columns__ = [id, color]
     __large_dict_columns__ = [id, short_name, long_name, color, description, url, type]

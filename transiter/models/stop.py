@@ -19,7 +19,7 @@ class Stop(ToDictMixin, Base):
 
     pk = Column(Integer, primary_key=True)
     id = Column(String)
-    system_id = Column(String, ForeignKey("system.id"))  # , nullable=False)
+    system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
     parent_stop_pk = Column(Integer, ForeignKey("stop.pk"), index=True)
 
@@ -56,7 +56,7 @@ class Stop(ToDictMixin, Base):
         "ScheduledTripStopTime", back_populates="stop", cascade="delete, delete-orphan"
     )
 
-    __table_args__ = (UniqueConstraint("system_id", "id"),)
+    __table_args__ = (UniqueConstraint("system_pk", "id"),)
 
     __dict_columns__ = [id, name]
     __large_dict_columns__ = [id, name, longitude, latitude, url]

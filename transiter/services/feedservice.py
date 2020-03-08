@@ -7,7 +7,6 @@ import datetime
 import logging
 
 from transiter import exceptions
-from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam
 from transiter.services import links

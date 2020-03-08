@@ -39,6 +39,8 @@ def sync(feed_update_pk, entities):
         models.Trip,
         models.Alert,
     ]
+    if feed_update.update_type == feed_update.Type.FLUSH:
+        model_types_sync_order.reverse()
     model_types = set(model_types_sync_order)
     model_type_to_sync_func = {
         models.Route: _sync_routes,
@@ -48,7 +50,6 @@ def sync(feed_update_pk, entities):
         models.Trip: _sync_trips,
         models.Alert: _sync_alerts,
     }
-
     model_type_to_entities = {model_type: [] for model_type in model_types}
     for entity in entities:
         type_ = type(entity)
@@ -68,12 +69,12 @@ def sync(feed_update_pk, entities):
 def _sync_routes(feed_update, routes):
     if len(routes) == 0:
         return
-    persisted_routes = _merge_entities(models.Route, feed_update, routes)
-    for route in persisted_routes:
-        route.system = feed_update.feed.system
+    for route in routes:
+        route.system_pk = feed_update.feed.system_pk
+    _merge_entities(models.Route, feed_update, routes)
 
 
-def _sync_stops(feed_update, stops):
+def _sync_stops(feed_update, stops: typing.List[models.Stop]):
     if len(stops) == 0:
         return
     # NOTE: the stop tree is manually linked together because otherwise SQL Alchemy's
@@ -82,13 +83,14 @@ def _sync_stops(feed_update, stops):
     stop_id_to_parent_stop_id = {
         stop.id: stop.parent_stop.id for stop in stops if stop.parent_stop is not None
     }
+    for stop in stops:
+        stop.system_pk = feed_update.feed.system_pk
     persisted_stops = _merge_entities(models.Stop, feed_update, stops)
     stop_id_to_persisted_stops = {stop.id: stop for stop in persisted_stops}
     for stop in persisted_stops:
         stop.parent_stop = stop_id_to_persisted_stops.get(
             stop_id_to_parent_stop_id.get(stop.id)
         )
-        stop.system = feed_update.feed.system
 
 
 def _sync_scheduled_services(feed_update, services):

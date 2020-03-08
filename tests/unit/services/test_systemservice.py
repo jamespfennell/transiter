@@ -39,6 +39,7 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
     DIRECTION_NAME_ONE = "Uptown"
 
     def setUp(self):
+        self.dbconnection = self.mockImportedModule(systemservice.dbconnection)
         self.systemdam = self.mockImportedModule(systemservice.systemdam)
         self.feeddam = self.mockImportedModule(systemservice.feeddam)
         self.updatemanager = self.mockImportedModule(systemservice.updatemanager)
@@ -114,21 +115,18 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         self.feeddam.list_all_in_system.return_value = []
         self.systemdam.delete_by_id.return_value = True
 
-        actual = systemservice.delete_by_id(self.SYSTEM_ONE_ID)
+        systemservice.delete_by_id(self.SYSTEM_ONE_ID)
 
-        self.assertEqual(actual, True)
         self.systemdam.delete_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
 
     def test_delete_failure(self):
         """[System service] Fail to delete a nonexistent system"""
         self.feeddam.list_all_in_system.return_value = []
-        self.systemdam.delete_by_id.return_value = False
+        self.systemdam.get_by_id.return_value = None
 
         self.assertRaises(
             exceptions.IdNotFoundError, systemservice.delete_by_id, self.SYSTEM_ONE_ID
         )
-
-        self.systemdam.delete_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
 
     def test_install_feeds__not_required(self):
         """[System service] Install feed - not required for install"""

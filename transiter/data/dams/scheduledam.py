@@ -1,3 +1,5 @@
+import logging
+import time
 import typing
 
 import sqlalchemy.sql.expression as sql
@@ -5,6 +7,8 @@ from sqlalchemy import func
 
 from transiter import models
 from transiter.data import dbconnection
+
+logger = logging.getLogger(__name__)
 
 
 def get_scheduled_trip_pk_to_path_in_system(system_pk):
@@ -16,6 +20,7 @@ def get_scheduled_trip_pk_to_path_in_system(system_pk):
     :param system_pk: the system's PK
     :return: map of trip PK to list of stop PKs
     """
+    start_time = time.time()
     session = dbconnection.get_session()
     query = (
         session.query(
@@ -42,6 +47,11 @@ def get_scheduled_trip_pk_to_path_in_system(system_pk):
         if trip_pk not in trip_pk_to_stop_pks:
             trip_pk_to_stop_pks[trip_pk] = []
         trip_pk_to_stop_pks[trip_pk].append(stop_pk)
+    logger.info(
+        "Query get_scheduled_trip_pk_to_path_in_system took {:.2} seconds".format(
+            time.time() - start_time
+        )
+    )
     return trip_pk_to_stop_pks
 
 
@@ -54,7 +64,7 @@ def list_scheduled_trips_with_times_in_system(system_pk):
     :param system_pk: the system's PK
     :return: list of three tuples (ScheduledTrip, start time, end time)
     """
-
+    start_time = time.time()
     session = dbconnection.get_session()
     first_stop_query = (
         session.query(
@@ -86,7 +96,13 @@ def list_scheduled_trips_with_times_in_system(system_pk):
         .join(first_stop_query, models.ScheduledTrip.pk == first_stop_query.c.trip_pk)
         .join(last_stop_query, models.ScheduledTrip.pk == last_stop_query.c.trip_pk)
     )
-    return query.all()
+    result = query.all()
+    logger.info(
+        "Query list_scheduled_trips_with_times_in_system took {:.2} seconds".format(
+            time.time() - start_time
+        )
+    )
+    return result
 
 
 def get_trip_id_to_pk_map_by_feed_pk(feed_pk):

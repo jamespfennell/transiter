@@ -39,7 +39,7 @@ def get_service_function(monkeypatch):
 def get_request_args(monkeypatch):
     function = mock.MagicMock()
     function.return_value = {}
-    monkeypatch.setattr(httpmanager, "get_request_args", function)
+    monkeypatch.setattr(httpmanager, "get_url_parameters", function)
     return function
 
 

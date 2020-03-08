@@ -35,8 +35,6 @@ def get_by_id(system_id):
 @requires_permissions(PermissionsLevel.ALL)
 def install(system_id):
     """Install a system."""
-    request_args = httpmanager.get_request_args(["sync"])
-    sync = request_args["sync"] == "true"
     form_key_to_value = flask.request.form.to_dict()
     form_key_to_file_storage = flask.request.files.to_dict()
 
@@ -58,6 +56,7 @@ def install(system_id):
     else:
         raise exceptions.InvalidInput("YAML config file not provided!")
 
+    sync = httpmanager.is_sync_request()
     if sync:
         install_method = systemservice.install
     else:
@@ -86,5 +85,7 @@ def install(system_id):
 @requires_permissions(PermissionsLevel.ALL)
 def delete_by_id(system_id):
     """Uninstall a system."""
-    systemservice.delete_by_id(system_id)
+    systemservice.delete_by_id(
+        system_id, error_if_not_exists=True, sync=httpmanager.is_sync_request()
+    )
     return flask.Response(response="", status=HttpStatus.NO_CONTENT, content_type="")

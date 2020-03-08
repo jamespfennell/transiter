@@ -43,23 +43,24 @@ class TestRouteService(testutil.TestCase(routeservice), unittest.TestCase):
     STOP_ID = "1002"
 
     def setUp(self):
-        self.route_one = models.Route()
+        system = models.System(id=SYSTEM_ID)
+        self.route_one = models.Route(system=system)
         self.route_one.id = self.ROUTE_ONE_ID
         self.route_one.pk = self.ROUTE_ONE_PK
         self.route_one.service_patterns = []
         self.route_one.alerts = []
 
-        self.route_two = models.Route()
+        self.route_two = models.Route(system=system)
         self.route_two.id = self.ROUTE_TWO_ID
         self.route_two.pk = self.ROUTE_TWO_PK
 
-        self.service_map_one_group = models.ServiceMapGroup()
+        self.service_map_one_group = models.ServiceMapGroup(system=system)
         self.service_map_one_group.id = self.SERVICE_MAP_ONE_GROUP_ID
 
-        self.service_map_two_group = models.ServiceMapGroup()
+        self.service_map_two_group = models.ServiceMapGroup(system=system)
         self.service_map_two_group.id = self.SERVICE_MAP_TWO_GROUP_ID
 
-        self.stop = models.Stop()
+        self.stop = models.Stop(system=system)
         self.stop.id = self.STOP_ID
         vertex = models.ServiceMapVertex()
         vertex.stop = self.stop

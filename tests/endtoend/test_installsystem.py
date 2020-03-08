@@ -165,3 +165,17 @@ def test_update_static_entities(
     ).json()
 
     assert response["status"] != "FAILURE"
+
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_delete(install_system_1, transiter_host, sync):
+    system_id = "test_delete_" + str(sync)
+    install_system_1(system_id)
+
+    response = requests.delete(
+        transiter_host + "/systems/" + system_id + "?sync=" + str(sync).lower()
+    )
+    assert response.status_code == 204
+
+    response = requests.get(transiter_host + "/systems/" + system_id)
+    assert response.status_code == 404

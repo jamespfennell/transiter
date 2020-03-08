@@ -5,10 +5,11 @@ The system service is used to install, delete and retrieve information about
 
 import json
 import logging
+import uuid
 
 from transiter import models, exceptions
 from transiter.data import dbconnection
-from transiter.data.dams import systemdam, feeddam
+from transiter.data.dams import systemdam
 from transiter.executor import celeryapp
 from transiter.scheduler import client
 from transiter.services import links, systemconfigreader
@@ -126,6 +127,7 @@ def install(system_id, config_str, extra_settings):
     Otherwise a number of unit of works will be used to update the systems's status as
     it progresses through the install
     """
+    logger.info("Received system install request for id={}".format(system_id))
     with dbconnection.inline_unit_of_work():
         system = systemdam.get_by_id(system_id)
         if system is not None and system.status == models.System.SystemStatus.ACTIVE:
@@ -139,8 +141,10 @@ def install(system_id, config_str, extra_settings):
             feed_update_pk = updatemanager.create_feed_update(system_id, feed_id)
             update_status, __ = updatemanager.execute_feed_update(feed_update_pk)
             if update_status != models.FeedUpdate.Status.SUCCESS:
-                raise exceptions.TransiterException(
-                    message="Failed to update feed with id={}".format(feed_id)
+                raise exceptions.InstallError(
+                    message="Failed to update feed with id={}; reason: {}".format(
+                        feed_id, update_status
+                    )
                 )
         _set_status(system_id, models.System.SystemStatus.ACTIVE)
         client.refresh_tasks()
@@ -153,7 +157,11 @@ def install(system_id, config_str, extra_settings):
         )
         raise e
     except Exception as e:
-        _set_status(system_id, models.System.SystemStatus.INSTALL_FAILED, str(e))
+        _set_status(
+            system_id,
+            models.System.SystemStatus.INSTALL_FAILED,
+            json.dumps(exceptions.UnexpectedError(str(e)).response()),
+        )
         raise e
 
 
@@ -189,23 +197,48 @@ def _install_system_configuration(system_id, config_str, extra_settings):
     return _install_feed_configuration(system, system_config[systemconfigreader.FEEDS])
 
 
-def delete_by_id(system_id, error_if_not_exists=True):
+def delete_by_id(system_id, error_if_not_exists=True, sync=True):
     """
     Delete a transit system
     """
-    # First, stop all of the update tasks for this system.
     with dbconnection.inline_unit_of_work():
-        feeds = feeddam.list_all_in_system(system_id)
-        for feed in feeds:
-            feed.auto_update_on = False
+        system = systemdam.get_by_id(system_id)
+        if system is not None:
+            system.status = models.System.SystemStatus.DELETING
+            if not sync:
+                system.id = system.id + "_deleting_" + str(uuid.uuid4())
+                system_id = system.id
+        elif error_if_not_exists:
+            raise exceptions.IdNotFoundError
+        else:
+            return
     client.refresh_tasks()
 
-    with dbconnection.inline_unit_of_work():
-        deleted = systemdam.delete_by_id(system_id)
-    if not deleted and error_if_not_exists:
-        raise exceptions.IdNotFoundError
+    if sync:
+        _complete_delete_operation(system_id)
+    else:
+        _complete_delete_operation_async.delay(system_id)
 
-    return True
+
+@celeryapp.app.task
+def _complete_delete_operation_async(system_id):
+    return _complete_delete_operation(system_id)
+
+
+def _complete_delete_operation(system_id):
+    feed_ids = set()
+    with dbconnection.inline_unit_of_work():
+        system = systemdam.get_by_id(system_id)
+        for feed in system.feeds:
+            feed_ids.add(feed.id)
+
+    for feed_id in feed_ids:
+        updatemanager.execute_feed_update(
+            updatemanager.create_feed_flush(system_id, feed_id)
+        )
+
+    with dbconnection.inline_unit_of_work():
+        systemdam.delete_by_id(system_id)
 
 
 def _install_feed_configuration(system, feeds_config):
@@ -218,6 +251,10 @@ def _install_feed_configuration(system, feeds_config):
     :type system: models.System
     :param feeds_config: the feeds config from the system config file
     """
+    session = dbconnection.get_session()
+    for feed in system.feeds:
+        session.delete(feed)
+    session.flush()
     feed_ids_to_update = list()
     for id_, config in feeds_config.items():
         feed = models.Feed()
@@ -254,6 +291,10 @@ def _install_service_map_configuration(system, service_maps_config):
     :type system: models.System
     :param service_maps_config: the service maps config
     """
+    session = dbconnection.get_session()
+    for service_map_groups in system.service_map_groups:
+        session.delete(service_map_groups)
+    session.flush()
     for id_, config in service_maps_config.items():
         group = models.ServiceMapGroup()
         group.id = id_

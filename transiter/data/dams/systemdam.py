@@ -25,10 +25,10 @@ def delete_by_id(id_):
     :return: True if an entity was found and deleted, false if no such
      entity exists
     """
+    session = dbconnection.get_session()
     entity = get_by_id(id_)
     if entity is None:
         return False
-    session = dbconnection.get_session()
     session.delete(entity)
     return True
 
@@ -67,7 +67,11 @@ def _count_child_entity_in_system(system_id, Model):
     :return: the integer count
     """
     session = dbconnection.get_session()
-    query = session.query(func.count(Model.pk)).filter(Model.system_id == system_id)
+    query = (
+        session.query(func.count(Model.pk))
+        .filter(Model.system_pk == models.System.pk)
+        .filter(models.System.id == system_id)
+    )
     return query.one()[0]
 
 

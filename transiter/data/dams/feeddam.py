@@ -18,7 +18,12 @@ def list_all_autoupdating():
     :return: list of Feeds
     """
     session = dbconnection.get_session()
-    query = session.query(models.Feed).filter(models.Feed.auto_update_on)
+    query = (
+        session.query(models.Feed)
+        .join(models.System, models.System.pk == models.Feed.system_pk)
+        .filter(models.Feed.auto_update_on)
+        .filter(models.System.status == models.System.SystemStatus.ACTIVE)
+    )
     return query.all()
 
 

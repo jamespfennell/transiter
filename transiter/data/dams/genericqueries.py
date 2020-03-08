@@ -61,7 +61,11 @@ def list_all_in_system(DbEntity: models.Base, system_id, order_by_field=None):
     :return: list of entities of type DbEntity
     """
     session = dbconnection.get_session()
-    query = session.query(DbEntity).filter(DbEntity.system_id == system_id)
+    query = (
+        session.query(DbEntity)
+        .filter(DbEntity.system_pk == models.System.pk)
+        .filter(models.System.id == system_id)
+    )
     if order_by_field is not None:
         query = query.order_by(order_by_field)
     return query.all()
@@ -80,7 +84,8 @@ def get_in_system_by_id(DbEntity: models.Base, system_id, id_):
     session = dbconnection.get_session()
     return (
         session.query(DbEntity)
-        .filter(DbEntity.system_id == system_id)
+        .filter(DbEntity.system_pk == models.System.pk)
+        .filter(models.System.id == system_id)
         .filter(DbEntity.id == id_)
         .one_or_none()
     )
@@ -103,7 +108,9 @@ def get_id_to_pk_map(DbEntity: models.Base, system_id=None, ids=None):
     session = dbconnection.get_session()
     query = session.query(DbEntity.id, DbEntity.pk)
     if system_id is not None:
-        query = query.filter(DbEntity.system_id == system_id)
+        query = query.filter(DbEntity.system_pk == models.System.pk).filter(
+            models.System.id == system_id
+        )
     if ids is not None:
         query = query.filter(DbEntity.id.in_(ids))
     for (id_, pk) in query.all():
@@ -124,6 +131,20 @@ def get_id_to_pk_map_by_feed_pk(DbEntity: typing.Type[models.Base], feed_pk):
     for (id_, pk) in query.all():
         id_to_pk[id_] = pk
     return id_to_pk
+
+
+# DbEntity is a class
+# noinspection PyPep8Naming
+def delete_stale_entities(
+    DbEntity: typing.Type[models.Base], feed_update: models.FeedUpdate
+):
+    session = dbconnection.get_session()
+    (
+        session.query(DbEntity)
+        .filter(DbEntity.source_pk == models.FeedUpdate.pk)
+        .filter(models.FeedUpdate.feed_pk == feed_update.feed_pk)
+        .filter(models.FeedUpdate.pk != feed_update.pk)
+    ).delete(synchronize_session=False)
 
 
 # DbEntity is a class

@@ -47,6 +47,7 @@ class HttpStatus(enum.IntEnum):
 
 _exception_type_to_http_status = {
     exceptions.AccessDenied: HttpStatus.FORBIDDEN,
+    exceptions.UnexpectedError: HttpStatus.INTERNAL_SERVER_ERROR,
     exceptions.IdNotFoundError: HttpStatus.NOT_FOUND,
     exceptions.PageNotFound: HttpStatus.NOT_FOUND,
     exceptions.MethodNotAllowed: HttpStatus.METHOD_NOT_ALLOWED,
@@ -139,18 +140,24 @@ def link_target(link_type):
     return decorator_
 
 
-# TODO: rename URL parameters or something
-def get_request_args(keys):
+def get_url_parameters(expected_keys, error_if_extra_keys=True):
     all_request_args = flask.request.args
-    extra_keys = set(all_request_args.keys()) - set(keys)
-    if len(extra_keys) > 0:
-        raise exceptions.InvalidInput(
-            "Unknown URL parameters: {}. Valid URL parameters for this endpoint: {}".format(
-                extra_keys, keys
+    if error_if_extra_keys:
+        extra_keys = set(all_request_args.keys()) - set(expected_keys)
+        if len(extra_keys) > 0:
+            raise exceptions.InvalidInput(
+                "Unknown URL parameters: {}. Valid URL parameters for this endpoint: {}".format(
+                    extra_keys, expected_keys
+                )
             )
-        )
+    return {key: all_request_args.get(key) for key in expected_keys}
 
-    return {key: all_request_args.get(key) for key in keys}
+
+def is_sync_request():
+    return (
+        get_url_parameters(["sync"], error_if_extra_keys=False).get("sync", "false")
+        == "true"
+    )
 
 
 def convert_exception_to_error_response(exception):

@@ -21,7 +21,7 @@ def list_groups_and_maps_for_stops_in_route(route_pk):
     query = (
         session.query(models.ServiceMapGroup, models.ServiceMap)
         .join(models.System, models.System.pk == models.ServiceMapGroup.system_pk)
-        .join(models.Route, models.Route.system_id == models.System.id)
+        .join(models.Route, models.Route.system_pk == models.System.pk)
         .outerjoin(
             models.ServiceMap,
             sql.and_(
@@ -55,7 +55,7 @@ def get_stop_pk_to_group_id_to_routes_map(
     session = dbconnection.get_session()
     query = (
         session.query(models.Stop.pk, models.ServiceMapGroup.id, models.Route)
-        .join(models.System, models.System.id == models.Stop.system_id)
+        .join(models.System, models.System.pk == models.Stop.system_pk)
         .join(
             models.ServiceMapGroup,
             sql.and_(

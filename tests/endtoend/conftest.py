@@ -85,7 +85,7 @@ def install_system(
 ):
     def install(system_id, system_config, sync=True, expected_status="ACTIVE"):
         def delete():
-            requests.delete(transiter_host + "/systems/" + system_id)
+            requests.delete(transiter_host + "/systems/" + system_id + "?sync=true")
 
         delete()
 

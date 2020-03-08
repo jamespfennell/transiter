@@ -56,21 +56,21 @@ Roughly in order of priority:
     May ticket off auto-flush to later.
     Add end to end test.~~
 
-- Fast transit system deletes
+- ~~Fast transit system deletes
     ([#21](https://github.com/jamespfennell/transiter/issues/21)).
     Should probably just go with the id rename approach for simplicity?
-    Can ticket out a better solution.
+    Can ticket out a better solution.~~
 
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).
     
-- Enable pausing the feed updates for a system for specific updates,
-    and allow specific updates to follow a cron schedule.
-  - Should first test if this is an actual issue using the SF Bart.
-
 - ~~Fix the Helm Chart to match the Docker compose configuration.~~
 
 - Introduce an alembic DB migrations systems, would be really nice in fairness.
+
+- Make relevant API breaking changes
+
+- Fix logging in the celery cluster
 
 - Update documentation for the 0.4 release.
 

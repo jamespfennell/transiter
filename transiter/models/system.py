@@ -17,6 +17,7 @@ class System(ToDictMixin, Base):
         INSTALLING = 2
         ACTIVE = 3
         INSTALL_FAILED = 4
+        DELETING = 5
 
     name = Column(String, nullable=True)
     status = Column(Enum(SystemStatus), nullable=False)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, UniqueConstraint, Time, Integer, ForeignKey
+from sqlalchemy import Column, UniqueConstraint, Index, Time, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -18,7 +18,14 @@ class ScheduledTripStopTime(Base):
     stop = relationship("Stop", back_populates="scheduled_trip_times", cascade="")
     trip = relationship("ScheduledTrip", back_populates="stop_times", cascade="")
 
-    __table_args__ = (UniqueConstraint("trip_pk", "stop_sequence"),)
+    __table_args__ = (
+        UniqueConstraint("trip_pk", "stop_sequence"),
+        Index(
+            "scheduled_trip_stop_time_trip_pk_departure_time_idx",
+            "trip_pk",
+            "departure_time",
+        ),
+    )
 
 
 class ScheduledTripStopTimeLight:

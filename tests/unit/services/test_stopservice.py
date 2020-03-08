@@ -148,6 +148,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         self.stop_one = models.Stop()
         self.stop_one.pk = self.STOP_ONE_PK
         self.stop_one.id = self.STOP_ONE_ID
+        self.stop_one.system = models.System(id=self.SYSTEM_ID)
 
     def test_list_all_in_system(self):
         """[Stop service] List all in system"""
@@ -248,7 +249,8 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
 
     def test_build_trip_stop_time_response(self):
         """[Stop service] Test build trip stop time response"""
-        stop = models.Stop()
+        system = models.System(id=self.SYSTEM_ID)
+        stop = models.Stop(system=system)
         stop.id = self.STOP_ONE_ID
         trip = models.Trip()
         trip.pk = self.TRIP_PK
@@ -256,10 +258,10 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         trip_stop_time = models.TripStopTime()
         trip_stop_time.trip = trip
         trip_stop_time.stop = stop
-        route = models.Route()
+        route = models.Route(system=system)
         route.id = self.ROUTE_ID
         trip.route = route
-        last_stop = models.Stop()
+        last_stop = models.Stop(system=system)
         last_stop.id = self.STOP_TWO_ID
 
         expected = {
@@ -293,13 +295,15 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         #  /
         # 3*
         # * not a station
-        stops = [models.Stop()] * 4
+        system = models.System(id=self.SYSTEM_ID)
+        stops = [models.Stop(system=system) for _ in range(4)]
         for i in range(4):
             stops[i] = models.Stop()
             stops[i].pk = i
             stops[i].id = str(i)
             stops[i].is_station = True
             stops[i].system_id = "system"
+            stops[i].system = system
         stops[0].child_stops = [stops[1], stops[2]]
         stops[1].child_stops = [stops[3]]
         stops[3].is_station = False

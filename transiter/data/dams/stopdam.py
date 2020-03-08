@@ -90,9 +90,13 @@ def get_stop_pk_to_station_pk_map_in_system(system_id):
     :return: map of stop PK to stop PK
     """
     session = dbconnection.get_session()
-    query = session.query(
-        models.Stop.pk, models.Stop.parent_stop_pk, models.Stop.is_station
-    ).filter(models.Stop.system_id == system_id)
+    query = (
+        session.query(
+            models.Stop.pk, models.Stop.parent_stop_pk, models.Stop.is_station
+        )
+        .filter(models.Stop.system_pk == models.System.pk)
+        .filter(models.System.id == system_id)
+    )
     stop_pk_to_station_pk = {}
     for stop_pk, parent_stop_pk, is_station in query:
         if is_station or parent_stop_pk is None:

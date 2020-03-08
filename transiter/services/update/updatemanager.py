@@ -211,7 +211,8 @@ def _sync_entities(feed_update_pk, entities):
             feed_update.status = models.FeedUpdate.Status.SUCCESS
             feed_update.explanation = models.FeedUpdate.Explanation.UPDATED
             return feed_update.status, feed_update.explanation
-    except Exception:
+    except Exception as e:
+        logger.exception("Unexpected sync error", e)
         return _update_status(
             feed_update_pk,
             models.FeedUpdate.Status.FAILURE,

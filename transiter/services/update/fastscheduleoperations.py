@@ -92,4 +92,5 @@ def delete_trips_associated_to_feed(feed_pk):
         )
         .delete(synchronize_session=False)
     )
+    # session.flush()
     return num_stop_times_deleted + num_trips_deleted

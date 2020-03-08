@@ -1,12 +1,11 @@
 from flask import Blueprint
 
-from transiter import models
 from transiter.http.httpmanager import (
     http_endpoint,
     link_target,
     HttpMethod,
     HttpStatus,
-    get_request_args,
+    is_sync_request,
 )
 from transiter.http.permissions import requires_permissions, PermissionsLevel
 from transiter.services import feedservice, links
@@ -34,7 +33,7 @@ def get_in_system_by_id(system_id, feed_id):
 @requires_permissions(PermissionsLevel.ALL)
 def create_feed_update(system_id, feed_id):
     feed_update_pk = feedservice.create_and_execute_feed_update(
-        system_id, feed_id, execute_async=get_request_args(["sync"])["sync"] != "true"
+        system_id, feed_id, execute_async=not is_sync_request()
     )
     return (
         feedservice.get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk),
@@ -46,7 +45,7 @@ def create_feed_update(system_id, feed_id):
 @requires_permissions(PermissionsLevel.ALL)
 def create_feed_update_flush(system_id, feed_id):
     feed_update_pk = feedservice.create_and_execute_feed_flush(
-        system_id, feed_id, execute_async=get_request_args(["sync"])["sync"] != "true"
+        system_id, feed_id, execute_async=not is_sync_request()
     )
     return (
         feedservice.get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk),

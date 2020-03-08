@@ -15,8 +15,13 @@ STOP_TWO_ID = "8"
 
 
 @pytest.fixture
-def route():
-    return models.Route(id=ROUTE_ID)
+def system():
+    return models.System(id=SYSTEM_ID)
+
+
+@pytest.fixture
+def route(system):
+    return models.Route(id=ROUTE_ID, system=system)
 
 
 @pytest.fixture
@@ -30,13 +35,13 @@ def trip_2(route):
 
 
 @pytest.fixture
-def stop_1():
-    return models.Stop(id=STOP_ONE_ID)
+def stop_1(system):
+    return models.Stop(id=STOP_ONE_ID, system=system)
 
 
 @pytest.fixture
-def stop_2():
-    return models.Stop(id=STOP_TWO_ID)
+def stop_2(system):
+    return models.Stop(id=STOP_TWO_ID, system=system)
 
 
 def test_list_all_in_route__route_not_found(monkeypatch):

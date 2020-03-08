@@ -56,6 +56,21 @@ class InstallError(TransiterException):
     message = "There was an error installing the transit system."
 
 
+class UnexpectedError(TransiterException):
+    """
+    Exception that is thrown when there's a problem during install.
+    """
+
+    code = "T011"
+    message = (
+        "There was an unexpected error. This generally indicates a bug in Transiter"
+    )
+
+    def __init__(self, exception=None):
+        if exception is not None:
+            self.additional_info = {"original_error_message": str(exception)}
+
+
 class InvalidInput(TransiterException):
     """
     Exception that is thrown when the input to a service layer function is

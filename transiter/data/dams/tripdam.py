@@ -50,7 +50,8 @@ def get_in_route_by_id(system_id, route_id, trip_id) -> Optional[models.Trip]:
     return (
         session.query(models.Trip)
         .join(models.Route, models.Route.pk == models.Trip.route_pk)
-        .filter(models.Route.system_id == system_id)
+        .join(models.System, models.System.pk == models.Route.system_pk)
+        .filter(models.System.id == system_id)
         .filter(models.Route.id == route_id)
         .filter(models.Trip.id == trip_id)
         .one_or_none()

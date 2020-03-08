@@ -26,12 +26,12 @@ class SystemsIndexLink(Link):
 
 class FeedEntityLink(Link):
     def __init__(self, feed: models.Feed):
-        self.kwargs = {"system_id": feed.system_id, "feed_id": feed.id}
+        self.kwargs = {"system_id": feed.system.id, "feed_id": feed.id}
 
 
 class FeedEntityUpdatesLink(Link):
     def __init__(self, feed: models.Feed):
-        self.kwargs = {"system_id": feed.system_id, "feed_id": feed.id}
+        self.kwargs = {"system_id": feed.system.id, "feed_id": feed.id}
 
 
 class FeedsInSystemIndexLink(Link):
@@ -41,7 +41,7 @@ class FeedsInSystemIndexLink(Link):
 
 class StopEntityLink(Link):
     def __init__(self, stop: models.Stop):
-        self.kwargs = {"system_id": stop.system_id, "stop_id": stop.id}
+        self.kwargs = {"system_id": stop.system.id, "stop_id": stop.id}
 
 
 class StopsInSystemIndexLink(Link):
@@ -56,7 +56,7 @@ class SystemEntityLink(Link):
 
 class RouteEntityLink(Link):
     def __init__(self, route: models.Route):
-        self.kwargs = {"system_id": route.system_id, "route_id": route.id}
+        self.kwargs = {"system_id": route.system.id, "route_id": route.id}
 
 
 class RoutesInSystemIndexLink(Link):
@@ -67,7 +67,7 @@ class RoutesInSystemIndexLink(Link):
 class TripEntityLink(Link):
     def __init__(self, trip: models.Trip):
         self.kwargs = {
-            "system_id": trip.route.system_id,
+            "system_id": trip.route.system.id,
             "route_id": trip.route.id,
             "trip_id": trip.id,
         }
