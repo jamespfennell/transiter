@@ -65,7 +65,7 @@ Roughly in order of priority:
 
 - ~~Introduce an alembic DB migrations systems, would be really nice in fairness.~~
 
-- Make relevant API breaking changes
+- ~~Make relevant API breaking changes~~
 
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).

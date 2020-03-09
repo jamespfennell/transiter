@@ -12,7 +12,7 @@ from transiter.data import dbconnection
 from transiter.data.dams import systemdam
 from transiter.executor import celeryapp
 from transiter.scheduler import client
-from transiter.services import links, systemconfigreader
+from transiter.services import links, systemconfigreader, constants as c
 from transiter.services.update import updatemanager
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ def list_all(return_links=True):
     for system in systemdam.list_all():
         system_response = system.to_dict()
         if return_links:
-            system_response["href"] = links.SystemEntityLink(system)
+            system_response[c.HREF] = links.SystemEntityLink(system)
         response.append(system_response)
     return response
 
@@ -58,14 +58,14 @@ def get_by_id(system_id, return_links=True):
     response = system.to_dict()
     if system.status != system.SystemStatus.ACTIVE:
         if system.error_message is not None:
-            response["error"] = json.loads(system.error_message)
+            response[c.ERROR] = json.loads(system.error_message)
         return response
     response.update(
         {
             **system.to_dict(),
-            "stops": {"count": systemdam.count_stops_in_system(system_id)},
-            "routes": {"count": systemdam.count_routes_in_system(system_id)},
-            "feeds": {"count": systemdam.count_feeds_in_system(system_id)},
+            c.STOPS: {c.COUNT: systemdam.count_stops_in_system(system_id)},
+            c.ROUTES: {c.COUNT: systemdam.count_routes_in_system(system_id)},
+            c.FEEDS: {c.COUNT: systemdam.count_feeds_in_system(system_id)},
             "agency_alerts": [
                 alert.to_large_dict()
                 for alert in systemdam.list_all_alerts_associated_to_system(system.pk)
@@ -74,12 +74,12 @@ def get_by_id(system_id, return_links=True):
     )
     if return_links:
         entity_type_to_link = {
-            "stops": links.StopsInSystemIndexLink(system),
-            "routes": links.RoutesInSystemIndexLink(system),
-            "feeds": links.FeedsInSystemIndexLink(system),
+            c.STOPS: links.StopsInSystemIndexLink(system),
+            c.ROUTES: links.RoutesInSystemIndexLink(system),
+            c.FEEDS: links.FeedsInSystemIndexLink(system),
         }
         for entity_type, link in entity_type_to_link.items():
-            response[entity_type]["href"] = link
+            response[entity_type][c.HREF] = link
     return response
 
 

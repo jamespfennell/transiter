@@ -12,7 +12,7 @@ import time
 from transiter import exceptions, models
 from transiter.data import dbconnection
 from transiter.data.dams import stopdam, tripdam, systemdam
-from transiter.services import links
+from transiter.services import links, constants as c
 from transiter.services.servicemap import servicemapmanager
 
 
@@ -36,7 +36,7 @@ def list_all_in_system(system_id, return_links=True):
     for stop in stopdam.list_all_in_system(system_id):
         stop_response = stop.to_dict()
         if return_links:
-            stop_response["href"] = links.StopEntityLink(stop)
+            stop_response[c.HREF] = links.StopEntityLink(stop)
         response.append(stop_response)
     return response
 
@@ -93,10 +93,7 @@ def get_in_system_by_id(
     )
     response.update(stop.to_large_dict())
     response.update(
-        {
-            "directions": list(direction_name_matcher.all_names()),
-            "stop_time_updates": [],
-        }
+        {c.DIRECTIONS: list(direction_name_matcher.all_names()), c.STOP_TIMES: []}
     )
 
     stop_time_filter = _TripStopTimeFilter(
@@ -108,7 +105,7 @@ def get_in_system_by_id(
         direction = direction_name_matcher.match(trip_stop_time)
         if stop_time_filter.remove(trip_stop_time, direction):
             continue
-        response["stop_time_updates"].append(
+        response[c.STOP_TIMES].append(
             _build_trip_stop_time_response(
                 trip_stop_time, direction, trip_pk_to_last_stop, return_links
             )
@@ -171,23 +168,23 @@ def _build_trip_stop_time_response(
     trip = trip_stop_time.trip
     last_stop = trip_pk_to_last_stop[trip.pk]
     trip_stop_time_response = {
-        "stop_id": trip_stop_time.stop.id,
-        "direction": direction_name,
+        c.STOP_ID: trip_stop_time.stop.id,
+        c.DIRECTION: direction_name,
         **trip_stop_time.to_dict(),
-        "trip": {
+        c.TRIP: {
             **trip_stop_time.trip.to_large_dict(),
-            "route": trip_stop_time.trip.route.to_dict(),
-            "last_stop": last_stop.to_dict(),
+            c.ROUTE: trip_stop_time.trip.route.to_dict(),
+            c.LAST_STOP: last_stop.to_dict(),
         },
     }
     if return_links:
-        trip_stop_time_response["trip"]["href"] = links.TripEntityLink(
+        trip_stop_time_response[c.TRIP][c.HREF] = links.TripEntityLink(
             trip_stop_time.trip
         )
-        trip_stop_time_response["trip"]["route"]["href"] = links.RouteEntityLink(
+        trip_stop_time_response[c.TRIP][c.ROUTE][c.HREF] = links.RouteEntityLink(
             trip_stop_time.trip.route
         )
-        trip_stop_time_response["trip"]["last_stop"]["href"] = links.StopEntityLink(
+        trip_stop_time_response[c.TRIP][c.LAST_STOP][c.HREF] = links.StopEntityLink(
             last_stop
         )
     return trip_stop_time_response
@@ -301,16 +298,16 @@ def _build_stop_tree_response(
     def node_function(stop, visited_parent, parent_return, children_return):
         response = {
             **stop.to_dict(),
-            "service_maps": stop_pk_to_service_maps_response[stop.pk],
+            c.SERVICE_MAPS: stop_pk_to_service_maps_response[stop.pk],
         }
         if return_links:
-            response["href"] = links.StopEntityLink(stop)
+            response[c.HREF] = links.StopEntityLink(stop)
         if visited_parent:
-            response["parent_stop"] = parent_return
+            response[c.PARENT_STOP] = parent_return
         if stop.parent_stop is None:
-            response["parent_stop"] = None
+            response[c.PARENT_STOP] = None
         if children_return is not None:
-            response["child_stops"] = children_return
+            response[c.CHILD_STOPS] = children_return
         return response
 
     return _traverse_stops_tree(

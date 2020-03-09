@@ -1,7 +1,7 @@
 from transiter import exceptions
 from transiter.data import dbconnection
 from transiter.data.dams import tripdam, routedam
-from transiter.services import links
+from transiter.services import links, constants as c
 
 
 @dbconnection.unit_of_work
@@ -25,10 +25,10 @@ def list_all_in_route(system_id, route_id, return_links=False):
     )
     for trip in trips:
         last_stop = trip_pk_to_last_stop.get(trip.pk)
-        trip_response = {**trip.to_dict(), "last_stop": last_stop.to_dict()}
+        trip_response = {**trip.to_dict(), c.LAST_STOP: last_stop.to_dict()}
         if return_links:
-            trip_response["href"] = links.TripEntityLink(trip)
-            trip_response["last_stop"]["href"] = links.StopEntityLink(last_stop)
+            trip_response[c.HREF] = links.TripEntityLink(trip)
+            trip_response[c.LAST_STOP][c.HREF] = links.StopEntityLink(last_stop)
         response.append(trip_response)
     return response
 
@@ -48,17 +48,17 @@ def get_in_route_by_id(system_id, route_id, trip_id, return_links=False):
         raise exceptions.IdNotFoundError
     trip_response = {
         **trip.to_large_dict(),
-        "route": trip.route.to_dict(),
-        "stop_time_updates": [],
+        c.ROUTE: trip.route.to_dict(),
+        c.STOP_TIMES: [],
     }
     if return_links:
-        trip_response["route"]["href"] = links.RouteEntityLink(trip.route)
+        trip_response[c.ROUTE][c.HREF] = links.RouteEntityLink(trip.route)
     for stop_time in trip.stop_times:
         stop_time_response = {
             **stop_time.to_dict(),
-            "stop": stop_time.stop.to_dict(),
+            c.STOP: stop_time.stop.to_dict(),
         }
         if return_links:
-            stop_time_response["stop"]["href"] = links.StopEntityLink(stop_time.stop)
-        trip_response["stop_time_updates"].append(stop_time_response)
+            stop_time_response[c.STOP][c.HREF] = links.StopEntityLink(stop_time.stop)
+        trip_response[c.STOP_TIMES].append(stop_time_response)
     return trip_response

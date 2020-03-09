@@ -8,7 +8,7 @@ from transiter import exceptions
 from transiter.data import dbconnection
 from transiter.data.dams import routedam, systemdam, servicemapdam
 from transiter.models import Alert
-from transiter.services import links
+from transiter.services import links, constants as c
 
 
 @dbconnection.unit_of_work
@@ -36,9 +36,9 @@ def list_all_in_system(system_id, return_links=True):
     routes = list(routedam.list_all_in_system(system_id))
     route_pk_to_status = _construct_route_pk_to_status_map(route.pk for route in routes)
     for route in routes:
-        route_response = {**route.to_dict(), "status": route_pk_to_status[route.pk]}
+        route_response = {**route.to_dict(), c.STATUS: route_pk_to_status[route.pk]}
         if return_links:
-            route_response["href"] = links.RouteEntityLink(route)
+            route_response[c.HREF] = links.RouteEntityLink(route)
         response.append(route_response)
     return response
 
@@ -75,23 +75,23 @@ def get_in_system_by_id(system_id, route_id, return_links=True):
         periodicity = int(periodicity / 6) / 10
     response = {
         **route.to_large_dict(),
-        "periodicity": periodicity,
-        "status": status,
-        "alerts": [alert.to_large_dict() for alert in route.route_statuses],
-        "service_maps": [],
+        c.PERIODICITY: periodicity,
+        c.STATUS: status,
+        c.ALERTS: [alert.to_large_dict() for alert in route.route_statuses],
+        c.SERVICE_MAPS: [],
     }
 
     for group, service_map in servicemapdam.list_groups_and_maps_for_stops_in_route(
         route.pk
     ):
-        service_map_response = {"group_id": group.id, "stops": []}
+        service_map_response = {c.GROUP_ID: group.id, c.STOPS: []}
         if service_map is not None:
             for entry in service_map.vertices:
                 stop_response = entry.stop.to_dict()
                 if return_links:
-                    stop_response["href"] = links.StopEntityLink(entry.stop)
-                service_map_response["stops"].append(stop_response)
-        response["service_maps"].append(service_map_response)
+                    stop_response[c.HREF] = links.StopEntityLink(entry.stop)
+                service_map_response[c.STOPS].append(stop_response)
+        response[c.SERVICE_MAPS].append(service_map_response)
 
     return response
 

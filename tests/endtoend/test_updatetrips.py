@@ -83,7 +83,7 @@ def _perform_feed_update_trip_test(
         ).json()
 
         actual_stop_list = []
-        for stop_data in actual_data["stop_time_updates"]:
+        for stop_data in actual_data["stop_times"]:
             actual_stop_list.append((stop_data["stop"]["id"], stop_data["future"]))
 
         assert expected_stop_list == actual_stop_list

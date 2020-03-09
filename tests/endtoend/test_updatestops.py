@@ -116,7 +116,7 @@ def _perform_feed_update_stop_test(
         response = requests.get(
             transiter_host + "/systems/test_update_stops/stops/{}".format(stop_id)
         ).json()
-        for stu in response["stop_time_updates"]:
+        for stu in response["stop_times"]:
             actual_stop_data.append(
                 {
                     "trip_id": stu["trip"]["id"],
@@ -134,4 +134,4 @@ def _perform_feed_update_stop_test(
         response = requests.get(
             transiter_host + "/systems/test_update_stops/stops/{}".format(stop_id)
         ).json()
-        assert [] == response["stop_time_updates"]
+        assert [] == response["stop_times"]

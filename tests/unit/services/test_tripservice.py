@@ -102,7 +102,7 @@ def test_get_in_route_by_id(monkeypatch, route, trip_1, stop_1):
     expected = {
         **trip_1.to_large_dict(),
         "route": {**route.to_dict(), "href": links.RouteEntityLink(route)},
-        "stop_time_updates": [
+        "stop_times": [
             {
                 **stop_time.to_dict(),
                 "stop": {**stop_1.to_dict(), "href": links.StopEntityLink(stop_1)},

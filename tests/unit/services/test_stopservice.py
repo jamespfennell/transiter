@@ -233,7 +233,7 @@ class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
         expected = {
             **fake_stop_tree_response,
             "directions": [self.DIRECTION_NAME],
-            "stop_time_updates": [
+            "stop_times": [
                 {**fake_trip_stop_time_response},
                 {**fake_trip_stop_time_response},
             ],

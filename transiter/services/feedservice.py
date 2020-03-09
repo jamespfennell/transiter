@@ -9,7 +9,7 @@ import logging
 from transiter import exceptions
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam
-from transiter.services import links
+from transiter.services import links, constants as c
 from transiter.services.update import updatemanager
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def list_all_in_system(system_id, return_links=True):
     for feed in feeddam.list_all_in_system(system_id):
         feed_response = feed.to_dict()
         if return_links:
-            feed_response["href"] = links.FeedEntityLink(feed)
+            feed_response[c.HREF] = links.FeedEntityLink(feed)
         response.append(feed_response)
     return response
 
@@ -85,7 +85,7 @@ def get_in_system_by_id(system_id, feed_id, return_links=True):
         raise exceptions.IdNotFoundError
     response = feed.to_dict()
     if return_links:
-        response["updates"] = {"href": links.FeedEntityUpdatesLink(feed)}
+        response[c.UPDATES] = {c.HREF: links.FeedEntityUpdatesLink(feed)}
     return response
 
 
