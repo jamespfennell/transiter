@@ -5,6 +5,8 @@ import logging
 from contextlib import contextmanager
 
 import sqlalchemy.exc
+from alembic import command
+from alembic.config import Config
 from decorator import decorator
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -103,30 +105,35 @@ def unit_of_work(func, *args, **kw):
         return func(*args, **kw)
 
 
-def init_db():
+def delete_all_tables():
     """
-    Initialize the Transiter database.
-    """
-    global engine
-    ensure_db_connection()
-    models.Base.metadata.create_all(engine)
-
-
-def rebuild_db():
-    """
-    Erase the Transiter schema if it exists and then rebuild it.
+    Delete all Transiter tables in the database.
     """
     global engine
     ensure_db_connection()
     models.Base.metadata.drop_all(engine)
-    models.Base.metadata.create_all(engine)
+    alembic_config = _get_alembic_config()
+    command.stamp(alembic_config, None)
 
 
-def generate_schema():
-    def dump(sql, *args, **kwargs):
-        sql_string = str(sql.compile(dialect=engine.dialect)).strip()
+def upgrade_database():
+    command.upgrade(_get_alembic_config(), "head")
 
-        print("{};\n\n".format(sql_string))
 
-    engine = sqlalchemy.create_engine("postgresql://", strategy="mock", executor=dump)
-    models.Base.metadata.create_all(engine, checkfirst=False)
+def get_current_database_revision():
+    captured_text = None
+
+    def print_stdout(text, *arg, **kwargs):
+        nonlocal captured_text
+        captured_text = text
+
+    alembic_config = _get_alembic_config()
+    alembic_config.print_stdout = print_stdout
+    command.current(alembic_config)
+    return captured_text
+
+
+def _get_alembic_config() -> Config:
+    alembic_config = Config()
+    alembic_config.set_main_option("script_location", "transiter:alembic")
+    return alembic_config

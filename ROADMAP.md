@@ -60,15 +60,15 @@ Roughly in order of priority:
     ([#21](https://github.com/jamespfennell/transiter/issues/21)).
     Should probably just go with the id rename approach for simplicity?
     Can ticket out a better solution.~~
+ 
+- ~~Fix the Helm Chart to match the Docker compose configuration.~~
+
+- ~~Introduce an alembic DB migrations systems, would be really nice in fairness.~~
+
+- Make relevant API breaking changes
 
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).
-    
-- ~~Fix the Helm Chart to match the Docker compose configuration.~~
-
-- Introduce an alembic DB migrations systems, would be really nice in fairness.
-
-- Make relevant API breaking changes
 
 - Fix logging in the celery cluster
 

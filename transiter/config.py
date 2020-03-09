@@ -31,13 +31,13 @@ for env_variable_name, value in os.environ.items():
         continue
     variable_name = env_variable_name[len(prefix) :]
     if variable_name not in globals():
-        logger.error(
+        logger.debug(
             "Skipping unknown Transiter environment setting '{}'.".format(variable_name)
         )
         continue
     if isinstance(globals()[variable_name], bool):
         value = bool(strtobool(value))
-    logger.error(
+    logger.debug(
         "Setting Transiter environment variable '{}' to be '{}'.".format(
             variable_name, value
         )

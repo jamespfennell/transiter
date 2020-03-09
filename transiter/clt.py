@@ -62,26 +62,39 @@ def db():
 
 
 @db.command()
-def schema():
-    """
-    Dump the Transiter database's schema in SQL.
-    """
-    dbconnection.generate_schema()
-
-
-@db.command()
 def init():
     """
     Initialize the Transiter database.
+
+    This is a no-op if the database is already initialized to any version of the
+    database. It is designed to safely avoid accidental upgrades.
     """
     while True:
         try:
-            dbconnection.init_db()
-            print("DB ready")
-            return
+            if dbconnection.get_current_database_revision() is not None:
+                print(
+                    "The database has already been initialized and "
+                    "no upgrade will be attempted."
+                )
+                print(
+                    "In order to upgrade the database use the "
+                    "`transiterclt db upgrade` command. "
+                )
+                return
+            print("Initializing the database")
+            dbconnection.upgrade_database()
+            print("Database initialized!")
         except exc.SQLAlchemyError:
-            print("Failed to connect to the DB; Waiting 1 second")
+            print("Failed to connect to the database; Waiting 1 second")
             time.sleep(1)
+
+
+@db.command()
+def upgrade():
+    """
+    Upgrade the Transiter database to its latest version.
+    """
+    dbconnection.upgrade_database()
 
 
 @db.command()
@@ -96,4 +109,5 @@ def reset():
     This operation drops all of the Transiter tables in the database, if they
     exist, and then creates them. All existing data will be lost.
     """
-    dbconnection.rebuild_db()
+    dbconnection.delete_all_tables()
+    dbconnection.upgrade_database()

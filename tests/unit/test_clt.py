@@ -32,14 +32,14 @@ class TestClr(testutil.TestCase(clt), unittest.TestCase):
         """[CLT] Rebuild DB"""
         self._run(["rebuild-db", "--yes"])
 
-        self.database.rebuild_db.assert_called_once_with()
+        self.database.delete_all_tables.assert_called_once_with()
 
     # TODO: re-enable
     def _test_rebuild_db_require_verification(self):
         """[CLT] Rebuild DB - requires verification"""
         self._run(["rebuild-db"])
 
-        self.database.rebuild_db.assert_not_called()
+        self.database.delete_all_tables.assert_not_called()
 
     def _run(self, options):
         return self.runner.invoke(clt.transiter_clt, options)

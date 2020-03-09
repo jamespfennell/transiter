@@ -12,7 +12,8 @@ from .data import *
 def test_db():
     for __ in range(100):
         try:
-            dbconnection.rebuild_db()
+            dbconnection.delete_all_tables()
+            dbconnection.upgrade_database()
             return
         except Exception as e:
             print("Could not initialize DB, trying again soon. Reason: ", e)

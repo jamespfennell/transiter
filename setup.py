@@ -16,6 +16,7 @@ setup(
     license="MIT",
     entry_points={"console_scripts": ["transiterclt = transiter.clt:transiter_clt"]},
     install_requires=[
+        "alembic==1.4.1",
         "apscheduler==3.6.3",
         "celery==4.4.0",
         "click==7.0",
