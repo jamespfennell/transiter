@@ -67,12 +67,14 @@ Roughly in order of priority:
 
 - ~~Make relevant API breaking changes~~
 
-- Enable updating transit systems
-    ([#2](https://github.com/jamespfennell/transiter/issues/2)).
-
 - ~~Fix logging in the celery cluster~~
 
 - Update documentation for the 0.4 release.
+
+### Version 0.4.1
+
+- Enable updating transit systems
+    ([#2](https://github.com/jamespfennell/transiter/issues/2)).
 
 All other 0.4 labelled tickets will be addressed or closed without action.
 
