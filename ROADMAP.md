@@ -70,7 +70,7 @@ Roughly in order of priority:
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).
 
-- Fix logging in the celery cluster
+- ~~Fix logging in the celery cluster~~
 
 - Update documentation for the 0.4 release.
 

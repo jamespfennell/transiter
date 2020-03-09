@@ -36,8 +36,15 @@ def transiter_clt():
     is_flag=True,
     help="Force start by killing any process listening on the target port.",
 )
+@click.option(
+    "-l",
+    "--log-level",
+    default="warning",
+    type=click.Choice(["debug", "info", "warning", "error", "fatal"]),
+    help="The log level.",
+)
 @click.argument("server", type=click.Choice(["webservice", "scheduler", "executor"]))
-def launch(force, server):
+def launch(force, log_level, server):
     """
     Launch a Transiter service in debug mode.
     """
@@ -51,7 +58,7 @@ def launch(force, server):
         app = scheduler.create_app()
         app.run(host="0.0.0.0", port=config.SCHEDULER_PORT, debug=False)
     if server == "executor":
-        celeryapp.run()
+        celeryapp.run(log_level=log_level)
 
 
 @transiter_clt.group()
