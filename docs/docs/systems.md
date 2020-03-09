@@ -3,7 +3,9 @@
 
 Transit systems are added to Transiter using
 a YAML configuration file.
-This file contains information such as:
+The configuration file can be plain, or it can be a
+ [Jinja template](https://jinja.palletsprojects.com/en/2.11.x/).
+It contains information such as:
 
 - The transit system's name,
 - The internet location of its data feeds and instructions on how to parse them,
@@ -11,6 +13,7 @@ This file contains information such as:
 
 The transit system is installed by sending the YAML
 configuration file to the [system install endpoint](api.md#install-a-system).
+
 
 ## Basic configuration
 
@@ -169,32 +172,26 @@ needs to be personalized for each individual installation.
 For example, if one of the feeds requires an API key,
 it's best to have that provided by the person installing the transit
 system rather than hard-coding a specific key into the configuration.
+That way configurations can be safely shared without also sharing private keys.
 
-To support these situations, Transiter 0.3 has some support for customizing
-the configuration with user provided parameters. 
-These parameters are provided by the person
-installing the system using the [system install endpoint](api.md#install-a-system).
+To support these situations, Transiter interprets every configuration
+file as a Jinja template and processes the template before parsing the YAML.
+Variables can be provided to the template using URL parameters in the
+[system install endpoint](api.md#install-a-system).
 
-
-The parameters system in version 0.3 uses Python's `format` system.
-When parsing the configuration, every value in the YAML file is
- passed through Python's `format` function with the user provided
- parameters as variable values.
-This allows variables to be substituted.
-For example:
+The following is a simple example of providing an API key using Jinja:
 ```yaml
     http:
-      url: "https://www.transitsystem.com/feed_1?api_key={api_key}"
+      url: "https://www.transitsystem.com/feed_1?api_key={{ user_api_key }}"
 ```
-Here the user provided parameter is `api_key`,
-and during parsing the value provided by the user will be substituted in.
+Here the user provided parameter is `api_key`.
+The user instals the system by sending a `POST` request to
+
+    /systems/system_id?user_api_key=123456789
 
 The [NYC Subway system configuration](https://github.com/jamespfennell/transiter-nycsubway) 
  is a good example
-of a configuration using a user parameter.
-
-**Note**: this ad-hoc system formatting will be replaced in Transiter 0.4
-by a more robust and flexible system based on Jinja templates.
+of a configuration using Jinja templates.
 
 ## Service maps
 

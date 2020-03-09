@@ -81,7 +81,7 @@ def get_last_successful_update_hash(feed_pk) -> Optional[str]:
 
 def list_updates_in_feed(feed_pk):
     """
-    List the updates in a feed, order descending in time.
+    List the most recent updates in a feed, ordered descending in time.
 
     :param feed_pk: the Feed's PK
     :return: list of FeedUpdates
@@ -91,6 +91,7 @@ def list_updates_in_feed(feed_pk):
         session.query(models.FeedUpdate)
         .filter(models.FeedUpdate.feed_pk == feed_pk)
         .order_by(models.FeedUpdate.last_action_time.desc())
+        .limit(100)
     )
     return query.all()
 

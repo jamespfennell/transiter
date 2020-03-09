@@ -33,6 +33,9 @@ which kind of data you can import:
 - `transiter.models.Alert` - represents an alert or status update
   for an entity in a transit system.
   Analogous to the alert entity entity in a GTFS realtime feed.
+- `transiter.models.DirectionRule` - represents a rule for 
+    determining the direction (or headsign) of a trip at a stop.
+    This is a Transiter-only entity that has no analog in the GTFS specs.
 
 
 Full documentation on these entities and the data you can place in them
@@ -212,6 +215,7 @@ supports setting the following attributes:
 - `arrival_time` - a `datetime.datetime` object.
 - `departure_time` - a `datetime.datetime` object.
 
+
 ### Trips
 
 This object is used to communicate realtime data about
@@ -246,7 +250,6 @@ supports setting the following attributes:
 
 ### Alerts
 
-
 The `transiter.models.Alert` object
 supports setting the following attributes:
 
@@ -259,3 +262,25 @@ supports setting the following attributes:
 - `end_time` - a `datetime.datetime` object.
 - `creation_time` - a `datetime.datetime` object.
 - `route_ids` - a list IDs for the routes the alert is associated to.
+
+
+### Direction rules
+
+Direction rules are used to compensate for the lack of a per-stop
+headsign field in the GTFS realtime spec.
+The direction rules system is used to determine the direction
+ of a trip at a given stop (for example, "uptown" versus "downtown").
+Of all direction rules that match, the rule with the highest priority is used
+for provide the direction.
+
+The New York City Subway uses a [https://github.com/jamespfennell/transiter-nycsubway/blob/master/transiter_nycsubway/stationscsvparser.py](custom direction rules parser).
+
+The `transiter.models.DirectionRule` object
+supports setting the following attributes:
+
+- `priority` - an integer, the priority of the rule. Lower integers are favored.
+- `stop_id` - the stop this rule is for.
+- `direction_id` - boolean corresponding to the trip's direction ID.
+- `track` - the track.
+- `name` - the name of the direction to be applied to trips matching this rule.
+

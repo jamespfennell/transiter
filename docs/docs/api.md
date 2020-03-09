@@ -28,6 +28,7 @@ Operation                                           | API endpoint
 [List feeds in a system](#list-feeds-in-a-system)   | `GET /systems/<system_id>/feeds`
 [Get a feed](#get-a-feed-in-a-system)               | `GET /systems/<system_id>/feeds/<feed_id>`
 [Perform a feed update](#perform-a-feed-update)     | `POST /systems/<system_id>/feeds/<feed_id>`
+[Perform a feed flush](#perform-a-feed-flush)       | `POST /systems/<system_id>/feeds/<feed_id>/flush`
 [List updates in a feed](#list-updates-for-a-feed)  | `GET /systems/<system_id>/feeds/<feed_id>/updates`
 **Stops**
 [List stops in a system](#list-stops-in-a-system)   | `GET /systems/<system_id>/stops`
@@ -156,15 +157,22 @@ Return code         | Description
 
 `DELETE /systems/<system_id>`
 
+`DELETE /systems/<system_id>?sync=true`
+
 Delete a transit system.
 
-Unfortunately this endpoint is currently very slow.
-If appropriate, consider just resetting the Transiter database.
-Version 0.4 is scheduled to include fast system deletes.
+You should almost always use the asynchronous version of this endpoint.
+It works by changing the system ID to be a new "random" ID, and then performs
+the delete asynchronously. 
+This means that at soon as the asynchronous request ends (within a few milliseconds)
+ the system ID is available. 
+ 
+The actual delete takes about one minute for the NYC subway system.
 
 Return code         | Description
 --------------------|-------------
-`204 NO CONTENT`    | If the system previously existed, and was successfully deleted. No content is returned.
+`202 ACCEPTED`      | For asynchronous deletes, returned if the delete is successfully triggered.
+`204 NO CONTENT`    | For synchronous deletes, returned if the system was successfully deleted. 
 `404 NOT FOUND`     | Returned if the system does not exist.
 
 ## Feed endpoints
@@ -195,21 +203,34 @@ Return code         | Description
 
 `POST /systems/<system_id>/feeds/<feed_id>`
 
+`POST /systems/<system_id>/feeds/<feed_id>?sync=true`
+
 Perform a feed update of the given feed. 
-The response is a description of the completed feed update.
+The response is a description of the feed update.
 
 This endpoint is provided for one-off feed updates and development work.
 In general feed updates should instead be scheduled periodically using the transit system configuration;
 see the [transit system documentation](systems.md) for more information.
 
-Currently, this endpoint is synchronous and the feed update will either be successful or failed
-when the response is received. 
-As with system installs, the update process can potentially be very long and server timeouts may interrupt it.
-A future version of Transiter will make this endpoint asynchronous to get around this known issue.
+Return code         | Description
+--------------------|-------------
+`201 CREATED`       | Returned if the system and feed exist, in which case the update is _scheduled_ (and executed in the same thread, if sync).
+`404 NOT FOUND`     | Returned if either the system or the feed does not exist.
+
+
+### Perform a feed flush
+
+`POST /systems/<system_id>/feeds/<feed_id>/flush`
+
+`POST /systems/<system_id>/feeds/<feed_id>/flush?sync=true`
+
+The feed flush operation removes all entities from Transiter
+that were added through updates for the given feed.
+The operation is useful for removing stale data from the database.
 
 Return code         | Description
 --------------------|-------------
-`201 CREATED`       | Returned if the system and feed exist, in which case the update is performed.
+`201 CREATED`       | Returned if the system and feed exist, in which case the flush is _scheduled_ (and executed in the same thread, if sync).
 `404 NOT FOUND`     | Returned if either the system or the feed does not exist.
 
 
@@ -217,7 +238,8 @@ Return code         | Description
 
 `GET /systems/<system_id>/feeds/<feed_id>/updates`
 
-List all of the updates for a feed.
+List the most recent updates for a feed.
+Up to one hundred updates will be listed.
 
 Return code         | Description
 --------------------|-------------

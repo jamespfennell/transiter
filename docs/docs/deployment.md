@@ -7,20 +7,9 @@ The simplest way to deploy Transiter is to use
 containers along with the included configurations
 for either Kubernetes (using the Transiter Helm Chart) or Docker compose.
 
-During Transiter's continuous integration process, three 
-Docker images are built and uploaded to Docker hub: 
-
-- `jamespfennell/transiter:<version>-webserver` -
-    the Transiter web service for responding to HTTP requests through the API.
-    This image uses Gunicorn for serving the WSGI app.
-    In deployment you can run as many replicas of this image as you please.
-
-- `jamespfennell/transiter:<version>-taskserver` -
-    the process that performs automatic feed updates.
-    This is a scheduling process and, as such, only one should be running at any time.
-    
-- `jamespfennell/transiter:<version>-postgres` -
-    this is the standard Postgres Docker image with Transiter database schema pre-loaded.
+During Transiter's continuous integration process, a
+Docker image `jamespfennell/transiter:<version>`
+ is built and uploaded to Docker hub.
     
 Here `<version>` can be any of the following:
 
@@ -32,6 +21,7 @@ Here `<version>` can be any of the following:
 
 For production settings, pinning to a fixed stable release is, of course, recommended.
 The `latest` and `dev-latest` versions may introduce breaking API changes at any time.
+
 
 ### Kubernetes: the Transiter Helm Chart
 
@@ -91,9 +81,41 @@ to
 ```
 and configure the volume `data-volume` appropriately.
 
+## Interlude: Transiter service topology
+
+As of version 0.4, Transiter uses five Docker containers to run, as
+well as an sixth init container:
+
+1. The web service, which is a Gunicorn process 
+    running inside of the Transiter Docker image.
+    This can be replicated to support more HTTP traffic.
+    
+1. The scheduler, which is also a Gunicorn process 
+    running inside of the Transiter Docker image.
+    The scheduler can _not_ be replicated, as this will result in
+     duplicated updates being executed.    
+     
+1. The executor, which is a Celery process
+    running inside of the Transiter Docker image.
+    This can be replicated to support more feed update processing throughput.
+     
+1. A Postgres instance, using the vanilla Postgres Docker image.
+    This is where all the data lives.
+
+1. A RabbitMQ instance, for the Celery cluster.
+    This uses the vanilla rabbitmq Docker image.
+
+1. The init container, which is based on the the Transiter Docker image.
+    This container just initializes the database schema and then exits.
+    
+The topology is identical for non-Docker deployments, described below,
+though of course Docker images are not used.
 
 ## Running Transiter without containers
 
+Transiter can be run on "bare metal" and in development often is.
+You system needs to have the following things installed:
+Python 3.6+, Postgres and RabbitMQ.
 
 ### Setting up Postgres
 
@@ -121,7 +143,7 @@ initialize the database with the Transiter schema.
 Assuming you're in a (virtual) environment in which the `transiter`
 Python package has been installed, this can be done by running:
 ```sh
-transiterclt rebuild-db
+transiterclt db reset
 ```
 
 ### Running the web service
@@ -144,25 +166,32 @@ Assuming you're in a Python (virtual) environment in which Transiter has
 been installed, run:
 
 ```sh
-transiterclt launch http-debug-server
+transiterclt launch webservice
 ```
 This launches the Flask debugging server.
 
 
-### Running the task server
+### Running the scheduler
 
-The task server is responsible for performing periodic feed updates.
-It can be launched using:
+The task server is responsible for scheduler periodic feed updates.
+It is launched using:
 ```sh
-transiterclt launch task-server
+transiterclt launch scheduler
 ```
-The task server contains an RPyC interface and by default listens on localhost's port 5000.
+The scheduler contains an HTTP interface and by default listens on localhost's port 5000.
 The host and port can be changed using the environment variables
-`TRANSITER_TASKSERVER_HOST` and `TRANSITER_TASKSERVER_PORT` respectively.
-It is critical that these variables are also set for the web server; otherwise,
-the web server will be unable to contact the task server which can result
+`TRANSITER_SCHEDULER_HOST` and `TRANSITER_SCHEDULER_PORT` respectively.
+It is critical that these variables are also set for the web service and executor; otherwise,
+the web service will be unable to contact the scheduler server which can result
 in feeds not being auto updated after a transit system install.
  
+### Running the executor
+
+Simply:
+```sh
+transiterclt launch executor --logging-level info
+```
+
 ### Documentation
 
 Transiter can be configured to serve the documentation 
