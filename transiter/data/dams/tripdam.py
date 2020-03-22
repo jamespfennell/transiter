@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, NamedTuple, Dict, List
 
 import sqlalchemy
 import sqlalchemy.sql.expression as sql
@@ -10,15 +10,41 @@ from transiter.data import dbconnection
 
 def list_all_from_feed(feed_pk):
     session = dbconnection.get_session()
-    query = (
-        session.query(models.Trip)
-        .filter(
-            models.Trip.source_pk == models.FeedUpdate.pk,
-            models.FeedUpdate.feed_pk == feed_pk,
-        )
-        .options(selectinload(models.Trip.stop_times))
+    query = session.query(models.Trip).filter(
+        models.Trip.source_pk == models.FeedUpdate.pk,
+        models.FeedUpdate.feed_pk == feed_pk,
     )
     return query.all()
+
+
+class StopTimeData(NamedTuple):
+    pk: int
+    stop_sequence: int
+    stop_pk: int
+
+
+def get_trip_pk_to_stop_time_data_list(feed_pk) -> Dict[int, List[StopTimeData]]:
+    session = dbconnection.get_session()
+    query = (
+        session.query(
+            models.TripStopTime.trip_pk,
+            models.TripStopTime.pk,
+            models.TripStopTime.stop_sequence,
+            models.TripStopTime.stop_pk,
+        )
+        .join(models.Trip, models.Trip.pk == models.TripStopTime.trip_pk)
+        .join(models.FeedUpdate, models.FeedUpdate.pk == models.Trip.source_pk)
+        .filter(models.FeedUpdate.feed_pk == feed_pk)
+        .order_by(models.TripStopTime.trip_pk, models.TripStopTime.stop_sequence)
+    )
+    trip_pk_to_stop_time_data_list = {}
+    for (trip_pk, stop_time_pk, stop_sequence, stop_pk,) in query.all():
+        if trip_pk not in trip_pk_to_stop_time_data_list:
+            trip_pk_to_stop_time_data_list[trip_pk] = []
+        trip_pk_to_stop_time_data_list[trip_pk].append(
+            StopTimeData(pk=stop_time_pk, stop_sequence=stop_sequence, stop_pk=stop_pk)
+        )
+    return trip_pk_to_stop_time_data_list
 
 
 def list_all_in_route_by_pk(route_pk):

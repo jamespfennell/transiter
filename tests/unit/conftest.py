@@ -1,9 +1,33 @@
 import contextlib
 import datetime
+from unittest import mock
 
 import pytest
 
 from transiter.data import dbconnection
+
+
+@pytest.fixture
+def inline_unit_of_work(monkeypatch):
+
+    session_started = False
+    session = mock.MagicMock()
+
+    @contextlib.contextmanager
+    def inline_unit_of_work():
+        nonlocal session_started
+        session_started = True
+        yield session
+
+    def get_session():
+        nonlocal session_started
+        if not session_started:
+            raise dbconnection.OutsideUnitOfWorkError
+        return session
+
+    monkeypatch.setattr(dbconnection, "inline_unit_of_work", inline_unit_of_work)
+    monkeypatch.setattr(dbconnection, "get_session", get_session)
+    return session
 
 
 @pytest.fixture

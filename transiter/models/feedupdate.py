@@ -1,3 +1,4 @@
+import datetime
 import enum
 
 from sqlalchemy import (
@@ -11,7 +12,6 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import functions as sql_functions
 
 from .base import Base, ToDictMixin
 
@@ -32,7 +32,7 @@ class FeedUpdate(ToDictMixin, Base):
         SUCCESS = 3
         FAILURE = 4
 
-    class Explanation(enum.Enum):
+    class Result(enum.Enum):
         UPDATED = 1
         NOT_NEEDED = 2
         PARSE_ERROR = 3
@@ -46,33 +46,39 @@ class FeedUpdate(ToDictMixin, Base):
         Enum(Type, name="update_type"), nullable=False, default=Type.REGULAR
     )
     status = Column(Enum(Status))
-    explanation = Column(Enum(Explanation))
-    failure_message = Column(String)
-    raw_data_hash = Column(String)
+    result = Column(Enum(Result, native_enum=False))
+    result_message = Column(String)
+    content_hash = Column(String)
     content_length = Column(Integer)
-    execution_duration = Column(Float)
-    last_action_time = Column(
-        TIMESTAMP(timezone=True),
-        server_default=sql_functions.now(),
-        onupdate=sql_functions.current_timestamp(),
-        index=True,
-    )
-    feed_time = Column(TIMESTAMP(timezone=True))
+    content_created_at = Column(TIMESTAMP(timezone=True))
+    download_duration = Column(Float)
+    total_duration = Column(Float)
+    scheduled_at = Column(TIMESTAMP(timezone=True), default=datetime.datetime.utcnow)
+    completed_at = Column(TIMESTAMP(timezone=True))
+    num_parsed_entities = Column(Integer)
+    num_added_entities = Column(Integer)
+    num_updated_entities = Column(Integer)
+    num_deleted_entities = Column(Integer)
 
     feed = relationship("Feed", back_populates="updates")
 
     __table_args__ = (
-        Index("feed_updates_last_successful_idx", feed_pk, last_action_time, status),
+        Index(
+            "feed_update_success_pk_completed_at_idx",
+            feed_pk,
+            completed_at,
+            postgresql_where=(status == Status.SUCCESS),
+        ),
+        Index("feed_update_feed_pk_feed_update_pk_idx", feed_pk, pk),
     )
 
     __dict_columns__ = [
         update_type,
         status,
-        explanation,
-        failure_message,
-        raw_data_hash,
+        result,
+        result_message,
+        content_hash,
         content_length,
-        last_action_time,
     ]
 
     def to_dict(self) -> dict:

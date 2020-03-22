@@ -1,9 +1,16 @@
+import pytest
 import requests
 
 from . import gtfsrealtimegenerator
 
 
-def test_update_stops(install_system_1, transiter_host, source_server):
+# TODO: break these up into different tests
+#  add trip, change times, add extra stop,
+#  remove a stop, put some in the past, change stops
+
+
+@pytest.mark.parametrize("num_steps", [6])
+def test_update_stops(install_system_1, transiter_host, source_server, num_steps):
 
     __, realtime_feed_url = install_system_1("test_update_stops")
 
@@ -22,8 +29,10 @@ def test_update_stops(install_system_1, transiter_host, source_server):
     _perform_feed_update_stop_test(
         transiter_host, source_server, realtime_feed_url, feed_1
     )
+    if num_steps <= 1:
+        return
 
-    # (2)
+    # (2) Change the stop times
     trip_1_stops = {
         "1AS": 200,
         "1BS": 600,
@@ -38,8 +47,10 @@ def test_update_stops(install_system_1, transiter_host, source_server):
     _perform_feed_update_stop_test(
         transiter_host, source_server, realtime_feed_url, feed_1
     )
+    if num_steps <= 2:
+        return
 
-    # (3)
+    # (3) Add a new stop
     trip_1_stops = {
         "1AS": 200,
         "1BS": 600,
@@ -55,8 +66,10 @@ def test_update_stops(install_system_1, transiter_host, source_server):
     _perform_feed_update_stop_test(
         transiter_host, source_server, realtime_feed_url, feed_1
     )
+    if num_steps <= 3:
+        return
 
-    # (4)
+    # (4) Delete a stop from the end
     trip_1_stops = {"1AS": 200, "1BS": 600, "1CS": 800, "1DS": 900, "1ES": 1800}
 
     feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(
@@ -65,8 +78,10 @@ def test_update_stops(install_system_1, transiter_host, source_server):
     _perform_feed_update_stop_test(
         transiter_host, source_server, realtime_feed_url, feed_1
     )
+    if num_steps <= 4:
+        return
 
-    # (5)
+    # (5) Add the stop back in ... probably don't need this case?
     trip_1_stops = {
         "1AS": 300,
         "1BS": 600,
@@ -82,8 +97,10 @@ def test_update_stops(install_system_1, transiter_host, source_server):
     _perform_feed_update_stop_test(
         transiter_host, source_server, realtime_feed_url, feed_1
     )
+    if num_steps <= 5:
+        return
 
-    # (6)
+    # (6) Swap the ordering of the stops
     trip_1_stops = {
         "1AS": 300,
         "1BS": 600,

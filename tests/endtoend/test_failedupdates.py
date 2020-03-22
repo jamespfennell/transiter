@@ -17,7 +17,7 @@ feeds:
 
 @pytest.mark.parametrize("sync", [True, False])
 @pytest.mark.parametrize(
-    "custom_parser,feed_content,expected_explanation",
+    "custom_parser,feed_content,expected_result",
     [
         ["unknown_package:unknown_function", None, "INVALID_PARSER"],
         ["json:dump", None, "DOWNLOAD_ERROR"],
@@ -34,10 +34,10 @@ def test_invalid_parser(
     sync,
     custom_parser,
     feed_content,
-    expected_explanation,
+    expected_result,
 ):
     system_id = "test_invalid_parser__" + str(
-        abs(hash((sync, custom_parser, feed_content, expected_explanation)))
+        abs(hash((sync, custom_parser, feed_content, expected_result)))
     )
     if feed_content is not None:
         feed_url = source_server.create("", "/" + system_id + "/feed_1")
@@ -67,4 +67,4 @@ def test_invalid_parser(
             time.sleep(0.05)
 
     assert feed_update["status"] == "FAILURE"
-    assert feed_update["explanation"] == expected_explanation
+    assert feed_update["result"] == expected_result

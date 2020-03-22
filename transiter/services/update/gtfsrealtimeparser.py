@@ -247,7 +247,7 @@ class _GtfsRealtimeToTransiterTransformer:
         for trip_id, entity in self._trip_id_to_raw_entities.items():
             trip_data = entity.get("trip", {})
 
-            trip = models.Trip()
+            trip = models.TripLight()
             trip.id = trip_id
             trip.route_id = trip_data.get("route_id", None)
             trip.direction_id = trip_data.get("direction_id", None)
@@ -274,7 +274,7 @@ class _GtfsRealtimeToTransiterTransformer:
                 )
             raw_current_status = vehicle_data.get("current_status", None)
             if raw_current_status is not None:
-                trip.current_status = trip.TripStatus[raw_current_status]
+                trip.current_status = models.Trip.TripStatus[raw_current_status]
             trip.current_stop_sequence = vehicle_data.get("current_stop_sequence", 0)
             trip.current_stop_id = vehicle_data.get("stop_id", None)
             self._trip_id_to_trip_model[trip_id] = trip
@@ -287,27 +287,27 @@ class _GtfsRealtimeToTransiterTransformer:
             stop_time_updates = []
 
             for stop_time_update_data in trip_update.get("stop_time_update", []):
-                stop_time_update = models.TripStopTime()
-                stop_time_update.stop_id = stop_time_update_data["stop_id"]
-                stop_time_update.track = stop_time_update_data.get("track", None)
-                stop_time_update.arrival_time = self._timestamp_to_datetime(
-                    stop_time_update_data.get("arrival", {}).get("time", None)
+                stop_time_update = models.TripStopTime.from_feed(
+                    trip_id=trip_id,
+                    stop_id=stop_time_update_data["stop_id"],
+                    arrival_time=self._timestamp_to_datetime(
+                        stop_time_update_data.get("arrival", {}).get("time", None)
+                    ),
+                    arrival_delay=stop_time_update_data.get("arrival", {}).get("delay"),
+                    arrival_uncertainty=stop_time_update_data.get("arrival", {}).get(
+                        "uncertainty"
+                    ),
+                    departure_time=self._timestamp_to_datetime(
+                        stop_time_update_data.get("departure", {}).get("time", None)
+                    ),
+                    departure_delay=stop_time_update_data.get("departure", {}).get(
+                        "delay"
+                    ),
+                    departure_uncertainty=stop_time_update_data.get(
+                        "departure", {}
+                    ).get("uncertainty"),
+                    track=stop_time_update_data.get("track", None),
                 )
-                stop_time_update.arrival_delay = stop_time_update_data.get(
-                    "arrival", {}
-                ).get("delay")
-                stop_time_update.arrival_uncertainty = stop_time_update_data.get(
-                    "arrival", {}
-                ).get("uncertainty")
-                stop_time_update.departure_time = self._timestamp_to_datetime(
-                    stop_time_update_data.get("departure", {}).get("time", None)
-                )
-                stop_time_update.departure_delay = stop_time_update_data.get(
-                    "departure", {}
-                ).get("delay")
-                stop_time_update.departure_uncertainty = stop_time_update_data.get(
-                    "departure", {}
-                ).get("uncertainty")
                 stop_time_updates.append(stop_time_update)
             trip.stop_times = stop_time_updates
 

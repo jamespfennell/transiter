@@ -2,13 +2,6 @@
 # image is used, on Travis, to run the Python tests, build the
 # documentation and distribute the Python package. It enables
 # developers to fully replicate the CI environment locally.
-#
-# This image imports the Transiter base image using, essentially,
-# composition instead of inheritence. The main consideration is
-# avoiding a costly pip install of the developer requirements
-# every time the base image is changed. Therefore, we instead copy
-# over relevent files from the base image after those dev requirements
-# have been installed.
 
 
 FROM jamespfennell/transiter:latest

@@ -1,5 +1,6 @@
 import enum
 
+import jinja2
 import pytimeparse
 import strictyaml
 from strictyaml import (
@@ -19,7 +20,6 @@ from strictyaml.exceptions import YAMLSerializationError
 from transiter import exceptions
 from transiter import models
 from transiter.services.servicemap import conditions
-import jinja2
 
 
 class HumanReadableTimePeriod(ScalarValidator):

@@ -9,3 +9,4 @@ source =
 [run]
 data_file = coverage/.coverage
 source = transiter
+omit = *transiter/alembic/*

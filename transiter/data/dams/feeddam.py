@@ -49,7 +49,7 @@ def get_in_system_by_id(system_id, feed_id):
 
 
 def get_update_by_pk(feed_update_pk) -> Optional[models.FeedUpdate]:
-    # TODO: greedily add the feed
+    # TODO: greedily add the feed and the system if not already
     session = dbconnection.get_session()
     return (
         session.query(models.FeedUpdate)
@@ -67,9 +67,9 @@ def get_last_successful_update_hash(feed_pk) -> Optional[str]:
     """
     session = dbconnection.get_session()
     query = (
-        session.query(models.FeedUpdate.raw_data_hash)
+        session.query(models.FeedUpdate.content_hash)
         .filter(models.FeedUpdate.feed_pk == feed_pk)
-        .order_by(models.FeedUpdate.last_action_time.desc())
+        .order_by(models.FeedUpdate.completed_at.desc())
         .filter(models.FeedUpdate.status == "SUCCESS")
         .limit(1)
     )
@@ -90,7 +90,7 @@ def list_updates_in_feed(feed_pk):
     query = (
         session.query(models.FeedUpdate)
         .filter(models.FeedUpdate.feed_pk == feed_pk)
-        .order_by(models.FeedUpdate.last_action_time.desc())
+        .order_by(models.FeedUpdate.pk.desc())
         .limit(100)
     )
     return query.all()
@@ -115,7 +115,7 @@ def trim_feed_updates(feed_pk, before_datetime):
     query = sql.delete(models.FeedUpdate).where(
         sql.and_(
             models.FeedUpdate.feed_pk == feed_pk,
-            models.FeedUpdate.last_action_time <= before_datetime,
+            models.FeedUpdate.completed_at <= before_datetime,
             *not_exists_conditions
         )
     )

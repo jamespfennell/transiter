@@ -46,7 +46,7 @@ def test_get_update_by_pk__unknown_pk(feed_1_1_update_1):
 def test_get_last_successful_update(
     feed_1_1, feed_1_1_update_1, feed_1_1_update_2, feed_1_1_update_3
 ):
-    assert feed_1_1_update_2.raw_data_hash == feeddam.get_last_successful_update_hash(
+    assert feed_1_1_update_2.content_hash == feeddam.get_last_successful_update_hash(
         feed_1_1.pk
     )
 

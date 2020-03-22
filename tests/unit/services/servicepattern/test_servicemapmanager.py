@@ -2,6 +2,8 @@ import datetime
 import unittest
 from unittest import mock
 
+import pytest
+
 from transiter import models
 from transiter.data import dbconnection
 from transiter.services.servicemap import servicemapmanager
@@ -366,3 +368,34 @@ class TestTripMatcher(unittest.TestCase):
             else:
                 trip.__setattr__(key, value)
         return trip
+
+
+@pytest.mark.parametrize(
+    "paths_1,paths_2,should_match",
+    [
+        [[(1, 3, 4)], [(1, 3, 4), (1, 3)], True],
+        [[(1, 3, 4)], [(1, 3)], True],
+        [[(1, 3, 4)], [(1, 3, 4)], True],
+        [[(1, 3, 4)], [(1, 4)], False],
+    ],
+)
+def test_calculate_paths_hash(paths_1, paths_2, should_match):
+    paths_1 = [(1, 3, 4)]
+    paths_2 = [(1, 3, 4), (1, 3)]
+    should_match = True
+
+    hash_1 = servicemapmanager.calculate_paths_hash(paths_1)
+    hash_2 = servicemapmanager.calculate_paths_hash(paths_2)
+    hashes_match = hash_1 == hash_2
+
+    assert hashes_match == should_match
+
+
+def test_calculate_changed_route_pks_from_hashes():
+
+    dict_1 = {3: "hash_a", 4: "hash_b", 5: "hash_f"}
+    dict_2 = {2: "hash_c", 3: "hash_a", 4: "hash_e"}
+
+    assert {2, 4, 5} == servicemapmanager.calculate_changed_route_pks_from_hashes(
+        dict_1, dict_2
+    )

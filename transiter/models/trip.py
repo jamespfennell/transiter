@@ -43,7 +43,7 @@ class Trip(ToDictMixin, Base):
     stop_id = None
 
     source = relationship("FeedUpdate", cascade="none")
-    route = relationship("Route", back_populates="trips", cascade="")
+    route = relationship("Route", back_populates="trips", cascade="none")
     stop_times = relationship(
         "TripStopTime",
         back_populates="trip",
@@ -64,3 +64,41 @@ class Trip(ToDictMixin, Base):
         current_stop_sequence,
         vehicle_id,
     ]
+
+    __mapping_columns__ = [pk, route_pk, source_pk] + __large_dict_columns__
+
+    def to_mapping(self):
+        return self._to_dict(self.__mapping_columns__)
+
+    @classmethod
+    def from_feed(cls, *args, **kwargs):
+        return TripLight()
+
+
+class TripLight:
+
+    route_pk = None
+
+    def to_mapping(self):
+        attrs = [
+            "pk",
+            "route_pk",
+            "source_pk",
+            "id",
+            "direction_id",
+            "start_time",
+            "last_update_time",
+            "current_status",
+            "current_stop_sequence",
+            "vehicle_id",
+        ]
+        d = {}
+        for attr in attrs:
+            d[attr] = getattr(self, attr, None)
+        return d
+
+    def __repr__(self):
+        return str(self.to_mapping())
+
+    def __eq__(self, other):
+        return self.to_mapping() == other.to_mapping()

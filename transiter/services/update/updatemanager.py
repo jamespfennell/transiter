@@ -25,6 +25,7 @@ This algorithm performs the following steps in order:
 
 (6) Otherwise, the update is deemed to be successful with explanation UPDATED.
 """
+import datetime
 import hashlib
 import importlib
 import json
@@ -78,39 +79,37 @@ def execute_feed_update_async(feed_update_pk, content=None):
 
 def execute_feed_update(
     feed_update_pk, content=None
-) -> Tuple[models.FeedUpdate.Status, models.FeedUpdate.Explanation]:
+) -> Tuple[models.FeedUpdate.Status, models.FeedUpdate.Result]:
     """
     Execute a feed update with logging and timing.
 
     For a description of what feed updates involve consult the module docs.
-
-    :param feed_update_pk: the feed update's pk
-    :param content: binary data to use for the update instead of downloading
-                    data
     """
 
     start_time = time.time()
     try:
-        status, explanation = _execute_feed_update_helper(feed_update_pk, content)
+        feed_update = _execute_feed_update_helper(feed_update_pk, content)
     except Exception as e:
-        status, explanation = _update_status(
-            feed_update_pk,
-            models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.UNEXPECTED_ERROR,
-            str(traceback.format_exc()),
+        feed_update = models.FeedUpdate(
+            pk=feed_update_pk,
+            status=models.FeedUpdate.Status.FAILURE,
+            result=models.FeedUpdate.Result.UNEXPECTED_ERROR,
+            result_message=str(traceback.format_exc()),
         )
         logger.exception("Unexpected error", e)
-    execution_duration = time.time() - start_time
-    with dbconnection.inline_unit_of_work():
-        feed_update = feeddam.get_update_by_pk(feed_update_pk)
-        feed_update.execution_duration = execution_duration
-        log_prefix = "[{}/{}]".format(feed_update.feed.system.id, feed_update.feed.id)
+    feed_update.total_duration = time.time() - start_time
+    feed_update.completed_at = datetime.datetime.utcnow()
+    with dbconnection.inline_unit_of_work() as session:
+        session.merge(feed_update)
     logger.info(
-        "Feed update: {:7} / {:13} {:.2f} seconds  {}.".format(
-            status.name, explanation.name, execution_duration, log_prefix,
+        "{:7} / {:13} {:.2f} seconds / feed pk = {}.".format(
+            feed_update.status.name,
+            feed_update.result.name,
+            feed_update.total_duration,
+            feed_update.feed_pk,
         )
     )
-    return status, explanation
+    return feed_update.status, feed_update.result
 
 
 class _InvalidParser(ValueError):
@@ -119,72 +118,63 @@ class _InvalidParser(ValueError):
     pass
 
 
-def _execute_feed_update_helper(
-    feed_update_pk, content=None
-) -> Tuple[models.FeedUpdate.Status, models.FeedUpdate.Explanation]:
+def _execute_feed_update_helper(feed_update_pk: int, content=None) -> models.FeedUpdate:
     """
     Execute a feed update.
 
     For a description of what feed updates involve consult the module docs.
-
-    :param feed_update_pk: the feed update
-    :param content: binary data to use for the update instead of downloading
-                    data
     """
-    with dbconnection.inline_unit_of_work():
+    with dbconnection.inline_unit_of_work() as session:
         feed_update = feeddam.get_update_by_pk(feed_update_pk)
-        update_type = feed_update.update_type
         feed = feed_update.feed
         feed_update.status = feed_update.Status.IN_PROGRESS
+        # We need to flush the session to persist the status change.
+        session.flush()
+        session.expunge(feed_update)
+        session.expunge(feed)
 
-        feed_pk = feed.pk
-        built_in_parser = feed.built_in_parser
-        custom_parser = feed.custom_parser
-        feed_url = feed.url
-        feed_headers = feed.headers
-
-    if update_type == models.FeedUpdate.Type.FLUSH:
-        return _sync_entities(feed_update_pk, [])
+    if feed_update.update_type == models.FeedUpdate.Type.FLUSH:
+        return _sync_entities(feed_update, [])
 
     try:
-        parser = _get_parser(built_in_parser, custom_parser)
+        parser = _get_parser(feed.built_in_parser, feed.custom_parser)
     except _InvalidParser:
         return _update_status(
-            feed_update_pk,
+            feed_update,
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.INVALID_PARSER,
+            models.FeedUpdate.Result.INVALID_PARSER,
             str(traceback.format_exc()),
         )
 
     if content is None:
         try:
-            content = _get_content(feed_url, feed_headers)
+            download_start_time = time.time()
+            content = _get_content(feed.url, feed.headers)
         except RequestException as download_error:
             return _update_status(
-                feed_update_pk,
+                feed_update,
                 models.FeedUpdate.Status.FAILURE,
-                models.FeedUpdate.Explanation.DOWNLOAD_ERROR,
+                models.FeedUpdate.Result.DOWNLOAD_ERROR,
                 str(download_error),
             )
+        feed_update.download_duration = time.time() - download_start_time
 
     feed_update.content_length = len(content)
-    if len(content) == 0:
+    if feed_update.content_length == 0:
         return _update_status(
-            feed_update_pk,
+            feed_update,
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.EMPTY_FEED,
+            models.FeedUpdate.Result.EMPTY_FEED,
         )
 
-    content_hash = _calculate_content_hash(content)
+    feed_update.content_hash = _calculate_content_hash(content)
     with dbconnection.inline_unit_of_work():
-        feed_update = feeddam.get_update_by_pk(feed_update_pk)
-        feed_update.raw_data_hash = content_hash
-        previous_hash = feeddam.get_last_successful_update_hash(feed_pk)
-    if previous_hash is not None and previous_hash == content_hash:
+        previous_hash = feeddam.get_last_successful_update_hash(feed.pk)
+    if previous_hash is not None and previous_hash == feed_update.content_hash:
         return _update_status(
-            feed_update_pk,
-            feed_update.Status.SUCCESS,
-            feed_update.Explanation.NOT_NEEDED,
+            feed_update,
+            models.FeedUpdate.Status.SUCCESS,
+            models.FeedUpdate.Result.NOT_NEEDED,
         )
 
     # We catch any exception that can be thrown in the feed parser as, from our
@@ -194,29 +184,35 @@ def _execute_feed_update_helper(
         entities = parser(binary_content=content)
     except Exception:
         return _update_status(
-            feed_update_pk,
+            feed_update,
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.PARSE_ERROR,
+            models.FeedUpdate.Result.PARSE_ERROR,
             str(traceback.format_exc()),
         )
-    return _sync_entities(feed_update_pk, entities)
+
+    return _sync_entities(feed_update, entities)
 
 
-def _sync_entities(feed_update_pk, entities):
-    # noinspection PyBroadException
+def _sync_entities(feed_update: models.FeedUpdate, entities):
+    entities_iter = IteratorWithConsumedCount(entities)
     try:
-        with dbconnection.inline_unit_of_work():
-            sync.sync(feed_update_pk, entities)
-            feed_update = feeddam.get_update_by_pk(feed_update_pk)
+        with dbconnection.inline_unit_of_work() as session:
+            (
+                feed_update.num_added_entities,
+                feed_update.num_updated_entities,
+                feed_update.num_deleted_entities,
+            ) = sync.sync(feed_update.pk, entities_iter)
+            feed_update.num_parsed_entities = entities_iter.num_consumed()
             feed_update.status = models.FeedUpdate.Status.SUCCESS
-            feed_update.explanation = models.FeedUpdate.Explanation.UPDATED
-            return feed_update.status, feed_update.explanation
+            feed_update.result = models.FeedUpdate.Result.UPDATED
+            session.merge(feed_update)
+            return feed_update
     except Exception as e:
         logger.exception("Unexpected sync error", e)
         return _update_status(
-            feed_update_pk,
+            feed_update,
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.SYNC_ERROR,
+            models.FeedUpdate.Result.SYNC_ERROR,
             str(traceback.format_exc()),
         )
 
@@ -227,28 +223,17 @@ _built_in_parser_to_function = {
 }
 
 
-@dbconnection.unit_of_work
-def _update_status(
-    feed_update_pk, status, explanation, failure_message=None, execution_duration=None
-):
-    # TODO: use an update query for this b/c it will happen a lot
-    feed_update = feeddam.get_update_by_pk(feed_update_pk)
+def _update_status(feed_update: models.FeedUpdate, status, result, result_message=None):
     feed_update.status = status
-    feed_update.explanation = explanation
-    if failure_message is not None:
-        feed_update.failure_message = failure_message
-    if execution_duration is not None:
-        feed_update.execution_duration = execution_duration
-    return status, explanation
+    feed_update.result = result
+    if result_message is not None:
+        feed_update.result_message = result_message
+    return feed_update
 
 
 def _get_parser(built_in_parser, custom_parser):
     """
     Get the parser for a feed.
-
-    :param feed: the feed
-    :return: the parser
-    :rtype: func
     """
     if built_in_parser is not None:
         return _built_in_parser_to_function[built_in_parser]
@@ -285,10 +270,6 @@ def _import_module(module_str, invalidate_caches=True):
 
     With invalidate caches True, if the import fails caches will be invalidated
     and the import attempted once more. Otherwise only one attempt is made.
-
-    :param module_str: the module's name
-    :param invalidate_caches: described above
-    :return: the module
     """
     try:
         return importlib.import_module(module_str)
@@ -302,10 +283,7 @@ def _import_module(module_str, invalidate_caches=True):
 
 def _get_content(feed_url, feed_headers):
     """
-    Download data from the Feed's URL.
-
-    :param feed: the Feed
-    :return: binary data
+    Download data from the feed's URL.
     """
     request = requests.get(feed_url, timeout=4, headers=json.loads(feed_headers))
     request.raise_for_status()
@@ -315,10 +293,30 @@ def _get_content(feed_url, feed_headers):
 def _calculate_content_hash(content):
     """
     Calculate the MD5 hash of binary data.
-
-    :param content: binary data
-    :return: MD5 hash
     """
     m = hashlib.md5()
     m.update(content)
     return m.hexdigest()
+
+
+class IteratorWithConsumedCount:
+    """
+    Class that wraps around iterators and tracks the number of items consumed; i.e.,
+    the number of elements that have been iterated over.
+    """
+
+    def __init__(self, iterable):
+        self._num_consumed = None
+        self._iterator = iter(iterable)
+
+    def __iter__(self):
+        self._num_consumed = 0
+        return self
+
+    def __next__(self):
+        element = self._iterator.__next__()
+        self._num_consumed += 1
+        return element
+
+    def num_consumed(self):
+        return self._num_consumed

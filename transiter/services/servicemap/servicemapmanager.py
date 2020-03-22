@@ -10,8 +10,8 @@ from typing import List, Set, Tuple
 from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
-from transiter.services.servicemap import graphutils, conditions
 from transiter.services import constants as c
+from transiter.services.servicemap import graphutils, conditions
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,33 @@ def build_stop_pk_to_service_maps_response(stop_pks):
             for group_id, routes in group_id_to_routes.items()
         ]
     return stop_pk_to_service_maps_response
+
+
+def calculate_paths_hash(paths):
+    string_edges = set()
+    for path in paths:
+        if len(path) <= 1:
+            continue
+        for k in range(len(path) - 1):
+            string_edges.add(str(path[k]) + "," + str(path[k + 1]))
+    return str(tuple(sorted(string_edges)))
+
+
+def calculate_changed_route_pks_from_hashes(
+    route_pk_to_previous_hash, route_pk_to_new_hash
+):
+    all_route_pks = set(route_pk_to_new_hash.keys()).union(
+        route_pk_to_previous_hash.keys()
+    )
+    changed_route_pks = set()
+    for route_pk in all_route_pks:
+        previous_hash = route_pk_to_previous_hash.get(route_pk, None)
+        new_hash = route_pk_to_new_hash.get(route_pk, None)
+        if previous_hash is not None and new_hash is not None:
+            if previous_hash == new_hash:
+                continue
+        changed_route_pks.add(route_pk)
+    return changed_route_pks
 
 
 def calculate_realtime_service_map_for_route(route):

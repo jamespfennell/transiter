@@ -26,7 +26,7 @@ def test_auto_update(install_system_1, transiter_host, source_server):
     _wait_for_update(transiter_host, "SUCCESS", "UPDATED")
 
 
-def _wait_for_update(transiter_host, expected_status, expected_sub_status):
+def _wait_for_update(transiter_host, expected_status, expected_result):
 
     for __ in range(40):
         updates = requests.get(
@@ -36,10 +36,10 @@ def _wait_for_update(transiter_host, expected_status, expected_sub_status):
             latest_update = updates[0]
             if (
                 expected_status == latest_update["status"]
-                and expected_sub_status == latest_update["explanation"]
+                and expected_result == latest_update["result"]
             ):
                 return
         time.sleep(0.1)
-    assert False, "No feed update with status={} and explanation={}".format(
-        expected_status, expected_sub_status
+    assert False, "No feed update with status={} and result={}".format(
+        expected_status, expected_result
     )

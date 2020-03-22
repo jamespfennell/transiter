@@ -5,10 +5,11 @@ import requests
 
 from transiter import models
 from transiter.data.dams import feeddam
-from transiter.services.update import updatemanager
+from transiter.services.update import updatemanager, sync
 
 FEED_ID = "1"
 SYSTEM_ID = "2"
+FEED_UPDATE_PK = 3
 MODULE_NAME = "module"
 METHOD_NAME = "method"
 CUSTOM_PARSER = "{}:{}".format(MODULE_NAME, METHOD_NAME)
@@ -18,62 +19,125 @@ OLD_FEED_CONTENT = "BlahBah2"
 
 
 @pytest.mark.parametrize(
+    "manager_function,expected_type",
+    [
+        [updatemanager.create_feed_update, models.FeedUpdate.Type.REGULAR],
+        [updatemanager.create_feed_flush, models.FeedUpdate.Type.FLUSH],
+    ],
+)
+@pytest.mark.parametrize(
+    "feed_exists,expected_result", [[False, None], [True, FEED_UPDATE_PK]],
+)
+def test_create_feed_update(
+    monkeypatch,
+    inline_unit_of_work,
+    manager_function,
+    feed_exists,
+    expected_result,
+    expected_type,
+):
+    if feed_exists:
+        feed = models.Feed(id=FEED_ID)
+    else:
+        feed = None
+    monkeypatch.setattr(feeddam, "get_in_system_by_id", lambda *args, **kwargs: feed)
+
+    def flush():
+        nonlocal feed
+        feed.updates[0].pk = FEED_UPDATE_PK
+
+    inline_unit_of_work.flush.side_effect = flush
+
+    actual_result = manager_function(SYSTEM_ID, FEED_ID)
+
+    assert actual_result == expected_result
+
+    if actual_result is None:
+        return
+
+    feed_update = feed.updates[0]
+    assert feed_update.status == models.FeedUpdate.Status.SCHEDULED
+    assert feed_update.update_type == expected_type
+
+
+@pytest.mark.parametrize(
     "custom_parser,feed_content,previous_content,expected_status,expected_explanation",
     [
+        [
+            "invalid_package_definition",
+            None,
+            None,
+            models.FeedUpdate.Status.FAILURE,
+            models.FeedUpdate.Result.INVALID_PARSER,
+        ],
         [
             "invalid_package:invalid_function",
             None,
             None,
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.INVALID_PARSER,
+            models.FeedUpdate.Result.INVALID_PARSER,
         ],
         [
             "collections:invalid_function",
             None,
             None,
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.INVALID_PARSER,
+            models.FeedUpdate.Result.INVALID_PARSER,
         ],
         [
             "collections:OrderedDict",
             None,
             None,
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.DOWNLOAD_ERROR,
+            models.FeedUpdate.Result.DOWNLOAD_ERROR,
         ],
         [
             "collections:OrderedDict",
             b"",
             None,
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.EMPTY_FEED,
+            models.FeedUpdate.Result.EMPTY_FEED,
         ],
         [
             "collections:OrderedDict",
             b"content",
             b"content",
             models.FeedUpdate.Status.SUCCESS,
-            models.FeedUpdate.Explanation.NOT_NEEDED,
+            models.FeedUpdate.Result.NOT_NEEDED,
         ],
         [
             "json:dumps",
             b"content",
             b"old_content",
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.PARSE_ERROR,
+            models.FeedUpdate.Result.PARSE_ERROR,
         ],
         [
             "collections:OrderedDict",
             b"content",
             b"old_content",
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Explanation.SYNC_ERROR,
+            models.FeedUpdate.Result.SYNC_ERROR,
+        ],
+        [
+            "collections:OrderedDict",
+            b"content",
+            b"old_content",
+            models.FeedUpdate.Status.SUCCESS,
+            models.FeedUpdate.Result.UPDATED,
+        ],
+        [
+            1,
+            None,
+            None,
+            models.FeedUpdate.Status.FAILURE,
+            models.FeedUpdate.Result.UNEXPECTED_ERROR,
         ],
     ],
 )
 def test_execute_feed_update(
     monkeypatch,
-    no_op_unit_of_work,
+    inline_unit_of_work,
     custom_parser,
     feed_content,
     previous_content,
@@ -110,12 +174,42 @@ def test_execute_feed_update(
         feeddam, "get_last_successful_update_hash", get_last_successful_update
     )
 
-    def _update_status(feed_update_pk, status, explanation, *args, **kwargs):
-        return status, explanation
+    def sync_func(feed_update_pk, entities):
+        if expected_explanation == models.FeedUpdate.Result.SYNC_ERROR:
+            raise ValueError
+        return 0, 0, 0
 
-    monkeypatch.setattr(updatemanager, "_update_status", _update_status)
+    monkeypatch.setattr(sync, "sync", sync_func)
 
     actual_status, actual_explanation = updatemanager.execute_feed_update(1)
 
     assert actual_status == expected_status
     assert actual_explanation == expected_explanation
+
+
+@pytest.mark.parametrize(
+    "built_in_parser", [parser for parser in models.Feed.BuiltInParser]
+)
+def test_get_parser__built_in_parser(built_in_parser):
+    assert updatemanager._built_in_parser_to_function[
+        built_in_parser
+    ] == updatemanager._get_parser(built_in_parser, None)
+
+
+def iterator():
+    yield 5
+    yield 2
+    yield 30
+
+
+@pytest.mark.parametrize("iterable", [iterator(), [5, 2, 30]])
+def test_iterable_len(iterable):
+
+    iterable = updatemanager.IteratorWithConsumedCount(iterable)
+
+    assert iterable.num_consumed() is None
+
+    actual_num_consumed = 0
+    for __ in iterable:
+        actual_num_consumed += 1
+        assert iterable.num_consumed() == actual_num_consumed

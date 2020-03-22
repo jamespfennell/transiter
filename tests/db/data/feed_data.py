@@ -33,7 +33,7 @@ def feed_1_1_update_1(add_model, feed_1_1):
             pk=351,
             feed=feed_1_1,
             status=models.FeedUpdate.Status.SUCCESS,
-            last_action_time=datetime.datetime(2011, 1, 1, 1, 0, 0),
+            completed_at=datetime.datetime(2011, 1, 1, 1, 0, 0),
         )
     )
 
@@ -45,8 +45,8 @@ def feed_1_1_update_2(add_model, feed_1_1):
             pk=353,
             feed=feed_1_1,
             status=models.FeedUpdate.Status.SUCCESS,
-            last_action_time=datetime.datetime(2011, 1, 1, 3, 0, 0),
-            raw_data_hash="BLAH",
+            completed_at=datetime.datetime(2011, 1, 1, 3, 0, 0),
+            content_hash="BLAH",
         )
     )
 
@@ -58,6 +58,6 @@ def feed_1_1_update_3(add_model, feed_1_1):
             pk=355,
             feed=feed_1_1,
             status=models.FeedUpdate.Status.FAILURE,
-            last_action_time=datetime.datetime(2011, 1, 1, 5, 0, 0),
+            completed_at=datetime.datetime(2011, 1, 1, 5, 0, 0),
         )
     )
