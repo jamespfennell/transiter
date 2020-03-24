@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import func
+from sqlalchemy import func, sql
 
 from transiter import models
 from transiter.data import dbconnection
@@ -21,7 +21,6 @@ def delete_by_id(id_):
     """
     Delete a System from the DB whose ID is given.
 
-    :param id_:
     :return: True if an entity was found and deleted, false if no such
      entity exists
     """
@@ -36,8 +35,6 @@ def delete_by_id(id_):
 def list_all():
     """
     List all Systems in the database.
-
-    :return: list of Systems
     """
     return genericqueries.list_all(models.System, models.System.id)
 
@@ -45,10 +42,6 @@ def list_all():
 def get_by_id(id_, only_return_active=False) -> Optional[models.System]:
     """
     Get a system by its ID.
-
-    :param id_: the ID
-    :param only_return_active:
-    :return: the System
     """
     system = genericqueries.get_by_id(models.System, id_)
     if system is None:
@@ -56,6 +49,26 @@ def get_by_id(id_, only_return_active=False) -> Optional[models.System]:
     if only_return_active and system.status != system.SystemStatus.ACTIVE:
         return None
     return system
+
+
+def set_auto_update_enabled(system_id, auto_update_enabled) -> bool:
+    """
+    Set the auto update enabled flag for a system.
+
+    Returns a boolean denoting whether the system exists.
+    """
+    session = dbconnection.get_session()
+    system_exists = session.query(
+        sql.exists().where(models.System.id == system_id)
+    ).scalar()
+    if not system_exists:
+        return False
+    (
+        session.query(models.System)
+        .filter(models.System.id == system_id)
+        .update({"auto_update_enabled": auto_update_enabled})
+    )
+    return True
 
 
 def _count_child_entity_in_system(system_id, Model):

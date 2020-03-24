@@ -1,5 +1,6 @@
 from transiter import models
 from transiter.data.dams import systemdam
+import pytest
 
 
 def test_create(db_session):
@@ -96,3 +97,21 @@ def test_list_all_alerts_associated_to_system(
 
 def test_list_all_alerts_associated_to_system__no_alerts(system_1, system_2):
     assert [] == systemdam.list_all_alerts_associated_to_system(system_1.pk)
+
+
+@pytest.mark.parametrize("old_value", [True, False])
+@pytest.mark.parametrize("new_value", [True, False])
+def test_set_auto_update_enabled(db_session, system_1, system_2, old_value, new_value):
+    system_1.auto_update_enabled = old_value
+    db_session.flush()
+
+    system_exists = systemdam.set_auto_update_enabled(system_1.id, new_value)
+
+    assert system_exists is True
+    assert systemdam.get_by_id(system_1.id).auto_update_enabled is new_value
+
+
+def test_set_auto_update_enabled__system_does_not_exist(db_session):
+    system_exists = systemdam.set_auto_update_enabled("does_not_exist", True)
+
+    assert system_exists is False

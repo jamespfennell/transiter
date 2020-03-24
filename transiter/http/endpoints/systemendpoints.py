@@ -89,3 +89,25 @@ def delete_by_id(system_id):
         system_id, error_if_not_exists=True, sync=httpmanager.is_sync_request()
     )
     return flask.Response(response="", status=HttpStatus.NO_CONTENT, content_type="")
+
+
+@http_endpoint(
+    system_endpoints, "/<system_id>/auto-update", method=HttpMethod.PUT,
+)
+@requires_permissions(PermissionsLevel.ALL)
+def set_auto_update_enabled(system_id):
+    form_key_to_value = flask.request.form.to_dict()
+    enabled = form_key_to_value.get("enabled")
+    if enabled is None:
+        raise exceptions.InvalidInput("The form variable 'enabled' is required")
+    enabled = enabled.lower()
+    if enabled not in {"false", "true"}:
+        raise exceptions.InvalidInput(
+            "The form variable 'enabled' has to be 'true' or 'false', not '{}'".format(
+                enabled
+            )
+        )
+    systemservice.set_auto_update_enabled(
+        system_id, form_key_to_value["enabled"].lower() == "true"
+    )
+    return "", HttpStatus.NO_CONTENT

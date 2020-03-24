@@ -29,7 +29,7 @@ class Feed(ToDictMixin, Base):
     custom_parser = Column(String)
     url = Column(String)
     headers = Column(String)
-    auto_update_on = Column(Boolean)
+    auto_update_enabled = Column(Boolean, nullable=False)
     auto_update_period = Column(Integer)
 
     system = relationship("System", back_populates="feeds")

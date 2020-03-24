@@ -24,6 +24,7 @@ Operation                                           | API endpoint
 [Get a system](#get-a-system)                       | `GET /systems/<system_id>`
 [Install a system](#install-a-system)               | `PUT /systems/<system_id>`
 [Delete a system](#delete-a-system)                 | `DELETE /systems/<system_id>`
+[Configure system auto update](#configure-system-auto-update)   | `PUT /systems/<system_id>/auto-update`
 **Feeds**   
 [List feeds in a system](#list-feeds-in-a-system)   | `GET /systems/<system_id>/feeds`
 [Get a feed](#get-a-feed-in-a-system)               | `GET /systems/<system_id>/feeds/<feed_id>`
@@ -150,7 +151,7 @@ Return code         | Description
 `200 OK`            | Returned if the system already exists, in which case this is a no-op.
 `201 CREATED`       | For synchronous installs, returned if the transit system was successfully installed.
 `202 ACCEPTED`      | For asynchronous installs, returned if the install is successfully triggered.
-`400 BAD REQUEST`   | Returned if the the YAML configuration file cannot be retrieved. For synchronous installs, this code is also returned if there is any kind of install error.
+`400 BAD REQUEST`   | Returned if the YAML configuration file cannot be retrieved. For synchronous installs, this code is also returned if there is any kind of install error.
 
 
 ### Delete a system 
@@ -174,6 +175,24 @@ Return code         | Description
 `202 ACCEPTED`      | For asynchronous deletes, returned if the delete is successfully triggered.
 `204 NO CONTENT`    | For synchronous deletes, returned if the system was successfully deleted. 
 `404 NOT FOUND`     | Returned if the system does not exist.
+
+
+### Configure system auto-update
+
+`PUT /systems/<system_id>/auto-update`
+
+Configure whether auto-update is enabled for
+ auto-updatable feeds in a system.
+
+The endpoint takes a single form parameter `enabled`
+which can either be `true` or `false` (case insensitive).
+
+Return code         | Description
+--------------------|-------------
+`204 NO CONTENT`    | The configuration was applied successfully.
+`400 BAD REQUEST`   | Returned if the form parameter is not provided or is invalied.
+`404 NOT FOUND`     | Returned if the system does not exist.
+
 
 ## Feed endpoints
 

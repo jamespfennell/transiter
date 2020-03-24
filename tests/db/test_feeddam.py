@@ -1,5 +1,6 @@
 import datetime
 
+from transiter import models
 from transiter.data.dams import feeddam
 
 
@@ -12,7 +13,25 @@ def test_list_all_feed_pks(feed_1_1, feed_1_2, feed_2_1):
 
 
 def test_list_all_auto_updating(feed_1_1, feed_1_2, feed_2_1):
-    assert [feed_1_1, feed_2_1] == feeddam.list_all_autoupdating()
+    assert [feed_1_1, feed_2_1] == feeddam.list_all_auto_updating()
+
+
+def test_list_all_auto_updating__system_off(
+    db_session, system_1, feed_1_1, feed_1_2, feed_2_1
+):
+    system_1.auto_update_enabled = False
+    db_session.flush()
+
+    assert [feed_2_1] == feeddam.list_all_auto_updating()
+
+
+def test_list_all_auto_updating__system_not_active(
+    db_session, system_1, feed_1_1, feed_1_2, feed_2_1
+):
+    system_1.status = models.System.SystemStatus.INSTALLING
+    db_session.flush()
+
+    assert [feed_2_1] == feeddam.list_all_auto_updating()
 
 
 def test_list_all_in_system(system_1, feed_1_1, feed_1_2, feed_2_1):

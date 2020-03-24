@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import Column, Integer, String, Enum, Boolean
 from sqlalchemy.orm import relationship
 
 from .base import Base, ToDictMixin
@@ -24,6 +24,7 @@ class System(ToDictMixin, Base):
     error_message = Column(String, nullable=True)
     timezone = Column(String, nullable=True)
     raw_config = Column(String)
+    auto_update_enabled = Column(Boolean, nullable=False, server_default="True")
 
     routes = relationship(
         "Route", back_populates="system", cascade="all, delete-orphan"

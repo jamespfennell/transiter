@@ -26,7 +26,7 @@ def list_all_auto_updating():
     :rtype: list
     """
     response = []
-    for feed in feeddam.list_all_autoupdating():
+    for feed in feeddam.list_all_auto_updating():
         response.append(
             {
                 "pk": feed.pk,

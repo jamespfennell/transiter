@@ -11,7 +11,7 @@ def list_all_feed_pks():
     return list(pk_ for (pk_,) in dbconnection.get_session().query(models.Feed.pk))
 
 
-def list_all_autoupdating():
+def list_all_auto_updating():
     """
     List all auto-updating Feeds.
 
@@ -21,7 +21,8 @@ def list_all_autoupdating():
     query = (
         session.query(models.Feed)
         .join(models.System, models.System.pk == models.Feed.system_pk)
-        .filter(models.Feed.auto_update_on)
+        .filter(models.Feed.auto_update_enabled)
+        .filter(models.System.auto_update_enabled)
         .filter(models.System.status == models.System.SystemStatus.ACTIVE)
     )
     return query.all()

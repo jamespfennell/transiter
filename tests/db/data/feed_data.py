@@ -8,21 +8,21 @@ from transiter import models
 @pytest.fixture
 def feed_1_1(add_model, system_1):
     return add_model(
-        models.Feed(pk=301, id="302", system=system_1, auto_update_on=True)
+        models.Feed(pk=301, id="302", system=system_1, auto_update_enabled=True)
     )
 
 
 @pytest.fixture
 def feed_1_2(add_model, system_1):
     return add_model(
-        models.Feed(pk=303, id="304", system=system_1, auto_update_on=False)
+        models.Feed(pk=303, id="304", system=system_1, auto_update_enabled=False)
     )
 
 
 @pytest.fixture
 def feed_2_1(add_model, system_2):
     return add_model(
-        models.Feed(pk=311, id="312", system=system_2, auto_update_on=True)
+        models.Feed(pk=311, id="312", system=system_2, auto_update_enabled=True)
     )
 
 

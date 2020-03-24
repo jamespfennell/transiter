@@ -83,6 +83,13 @@ def get_by_id(system_id, return_links=True):
     return response
 
 
+def set_auto_update_enabled(system_id, auto_update):
+    with dbconnection.inline_unit_of_work():
+        response = systemdam.set_auto_update_enabled(system_id, auto_update)
+    client.refresh_tasks()
+    return response
+
+
 def install_async(system_id, config_str, extra_settings):
     """
     Install a transit system asynchronously.
@@ -270,7 +277,7 @@ def _install_feed_configuration(system, feeds_config):
         feed.headers = json.dumps(
             dict(config[systemconfigreader.HTTP][systemconfigreader.HEADERS])
         )
-        feed.auto_update_on = config[systemconfigreader.AUTO_UPDATE][
+        feed.auto_update_enabled = config[systemconfigreader.AUTO_UPDATE][
             systemconfigreader.ENABLED
         ]
         feed.auto_update_period = config[systemconfigreader.AUTO_UPDATE][
