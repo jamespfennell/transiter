@@ -148,6 +148,7 @@ def calculate_scheduled_service_maps_for_system(system):
             continue
         # Delete the old maps, using SQL Alchemy's delete-orphan cascade
         service_map_group.maps = []
+        dbconnection.get_session().flush()
         if service_map_group.conditions is not None:
             conditions = json.loads(service_map_group.conditions)
         else:

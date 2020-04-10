@@ -33,6 +33,7 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
         self.scheduledam = self.mockImportedModule(servicemapmanager.scheduledam)
         self.stopdam = self.mockImportedModule(servicemapmanager.stopdam)
         self.tripdam = self.mockImportedModule(servicemapmanager.tripdam)
+        self.dbconnection = self.mockImportedModule(servicemapmanager.dbconnection)
 
         self.trip_one = models.ScheduledTrip(pk=self.TRIP_1_PK)
         self.trip_one.stop_ids = []

@@ -69,9 +69,9 @@ Roughly in order of priority:
 
 - ~~Fix logging in the celery cluster~~
 
-- Update documentation for the 0.4 release.
+- ~~Update documentation for the 0.4 release.~~
 
-### Version 0.4.1
+### Version 0.4.2
 
 - Enable updating transit systems
     ([#2](https://github.com/jamespfennell/transiter/issues/2)).

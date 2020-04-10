@@ -121,3 +121,18 @@ def trim_feed_updates(feed_pk, before_datetime):
         )
     )
     dbconnection.get_session().execute(query)
+
+
+def delete_in_system_by_id(system_id, feed_id):
+    """
+    Delete a Feed from the DB whose ID is given.
+
+    :return: True if an entity was found and deleted, false if no such
+     entity exists
+    """
+    session = dbconnection.get_session()
+    entity = get_in_system_by_id(system_id, feed_id)
+    if entity is None:
+        return False
+    session.delete(entity)
+    return True

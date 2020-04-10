@@ -203,16 +203,20 @@ _schema = Map(
 )
 
 
-def read(jinja_yaml_template, setting_to_value=None, label="transit system config"):
+def render_template(jinja_yaml_template, setting_to_value=None):
     if setting_to_value is None:
         setting_to_value = {}
     try:
-        yaml_string = jinja2.Template(jinja_yaml_template).render(**setting_to_value)
+        return jinja2.Template(jinja_yaml_template).render(**setting_to_value)
     except jinja2.TemplateError as error:
         raise exceptions.InvalidSystemConfigFile(
             "The Jinja template is invalid\n" + str(error)
         )
 
+
+def read(yaml_string, setting_to_value=None, label="transit system config"):
+    if setting_to_value is None:
+        setting_to_value = {}
     try:
         config = strictyaml.load(yaml_string, _schema, label=label).data
     except strictyaml.YAMLValidationError as error:

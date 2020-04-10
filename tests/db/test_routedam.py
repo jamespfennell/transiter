@@ -26,7 +26,7 @@ def test_get_id_to_pk_map_in_system(system_1, route_1_1, route_1_2, route_2_1):
         "unknown": None,
     }
 
-    actual = routedam.get_id_to_pk_map_in_system(system_1.id, expected.keys())
+    actual = routedam.get_id_to_pk_map_in_system(system_1.pk, expected.keys())
 
     assert expected == actual
 
@@ -39,7 +39,7 @@ def test_get_id_to_pk_map_in_system__all_routes(
         route_1_2.id: route_1_2.pk,
     }
 
-    actual = routedam.get_id_to_pk_map_in_system(system_1.id)
+    actual = routedam.get_id_to_pk_map_in_system(system_1.pk)
 
     assert expected == actual
 

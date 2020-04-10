@@ -39,7 +39,7 @@ ROUTE_ID_TO_USUAL_ROUTE = {"A": ["1A", "1D", "1E", "1G"], "B": []}
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def test_install_system(install_system_1, transiter_host, sync):
+def test_install_system__success(install_system_1, transiter_host, sync):
 
     system_id = "test_install_system_" + str(sync)
     install_system_1(system_id, sync=sync)
@@ -179,3 +179,34 @@ def test_delete(install_system_1, transiter_host, sync):
 
     response = requests.get(transiter_host + "/systems/" + system_id)
     assert response.status_code == 404
+
+
+def test_update_system(install_system, transiter_host):
+    system_id = "test_update_system"
+
+    config = """
+    name: test update system
+
+    feeds:
+      feed_1:
+        parser:
+          built_in: GTFS_STATIC
+        http:
+          url: transiter.io
+        auto_update:
+          period: {} seconds
+    """
+
+    install_system(system_id, config.format(5))
+
+    feed_data = requests.get(
+        transiter_host + "/systems/" + system_id + "/feeds/feed_1"
+    ).json()
+    assert 5 == feed_data["auto_update_period"]
+
+    install_system(system_id, config.format(15))
+
+    feed_data = requests.get(
+        transiter_host + "/systems/" + system_id + "/feeds/feed_1"
+    ).json()
+    assert 15 == feed_data["auto_update_period"]

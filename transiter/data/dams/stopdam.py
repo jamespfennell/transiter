@@ -1,3 +1,5 @@
+from typing import Dict, Iterable
+
 from sqlalchemy import sql
 from sqlalchemy.orm import joinedload
 
@@ -27,7 +29,9 @@ def get_in_system_by_id(system_id, stop_id):
     return genericqueries.get_in_system_by_id(models.Stop, system_id, stop_id)
 
 
-def get_id_to_pk_map_in_system(system_id, stop_ids=None):
+def get_id_to_pk_map_in_system(
+    system_pk: int, stop_ids: Iterable[str] = None
+) -> Dict[str, int]:
     """
     Get a map of stop ID to stop PK for all stops in a system.
 
@@ -35,7 +39,7 @@ def get_id_to_pk_map_in_system(system_id, stop_ids=None):
     :param stop_ids: an optional collection that limits the keys in the dict
     :return: map of ID to PK
     """
-    return genericqueries.get_id_to_pk_map(models.Stop, system_id, stop_ids)
+    return genericqueries.get_id_to_pk_map(models.Stop, system_pk, stop_ids)
 
 
 def list_stop_time_updates_at_stops(stop_pks, earliest_time=None, latest_time=None):

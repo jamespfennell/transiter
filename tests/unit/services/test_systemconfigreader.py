@@ -181,9 +181,12 @@ def test_substitute_settings():
     """
 
     assert SETTING_VALUE == (
-        systemconfigreader.read(config, {"setting_name": SETTING_VALUE})[
-            systemconfigreader.FEEDS
-        ][FEED_ID][systemconfigreader.HTTP][systemconfigreader.URL]
+        systemconfigreader.read(
+            systemconfigreader.render_template(config, {"setting_name": SETTING_VALUE}),
+            {"setting_name": SETTING_VALUE},
+        )[systemconfigreader.FEEDS][FEED_ID][systemconfigreader.HTTP][
+            systemconfigreader.URL
+        ]
     )
 
 
@@ -205,4 +208,4 @@ def test_invalid_jinja_template():
     """
 
     with pytest.raises(exceptions.InvalidSystemConfigFile):
-        systemconfigreader.read(config)
+        systemconfigreader.render_template(config)

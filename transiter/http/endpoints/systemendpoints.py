@@ -38,15 +38,16 @@ def install(system_id):
     form_key_to_value = flask.request.form.to_dict()
     form_key_to_file_storage = flask.request.files.to_dict()
 
+    config_source_url = None
     if "config_file" in form_key_to_value:
-        config_file_location = form_key_to_value["config_file"]
+        config_source_url = form_key_to_value["config_file"]
         try:
-            response = requests.get(config_file_location)
+            response = requests.get(config_source_url)
             response.raise_for_status()
         except requests.exceptions.RequestException:
             raise exceptions.InvalidInput(
                 "Could not download YAML config file from '{}'".format(
-                    config_file_location
+                    config_source_url
                 )
             )
         config_str = response.text
@@ -56,16 +57,18 @@ def install(system_id):
     else:
         raise exceptions.InvalidInput("YAML config file not provided!")
 
+    # TODO: replace with httpmanager.get_boolean_url_parameter("sync")
     sync = httpmanager.is_sync_request()
-    if sync:
-        install_method = systemservice.install
-    else:
-        install_method = systemservice.install_async
-    response = install_method(
-        system_id=system_id, config_str=config_str, extra_settings=form_key_to_value,
+    response = systemservice.install(
+        system_id=system_id,
+        config_str=config_str,
+        extra_settings=form_key_to_value,
+        config_source_url=config_source_url,
+        sync=sync,
     )
 
     # This means the system already exists and nothing was done.
+    # TODO: this is all wrong
     if not response:
         status = HttpStatus.OK
     else:
@@ -73,7 +76,27 @@ def install(system_id):
             status = HttpStatus.CREATED
         else:
             status = HttpStatus.ACCEPTED
+    # TODO return a representation of the update instead
     return systemservice.get_by_id(system_id), status
+
+
+# TODO: use this method
+def _get_config_file(config_source_url, uploaded_config_file):
+    if config_source_url is not None:
+        try:
+            response = requests.get(config_source_url)
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            raise exceptions.InvalidInput(
+                "Could not download YAML config file from '{}'".format(
+                    config_source_url
+                )
+            )
+        return response.text
+    elif uploaded_config_file is not None:
+        return uploaded_config_file.read().decode("utf-8")
+    else:
+        raise exceptions.InvalidInput("YAML config file not provided!")
 
 
 @http_endpoint(

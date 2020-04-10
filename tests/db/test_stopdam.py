@@ -34,7 +34,7 @@ def test_get_id_to_pk_map_in_system(system_1, stop_1_1, stop_1_2, stop_2_1):
         "unknown_id": None,
     }
 
-    actual = stopdam.get_id_to_pk_map_in_system(system_1.id, expected.keys())
+    actual = stopdam.get_id_to_pk_map_in_system(system_1.pk, expected.keys())
 
     assert expected == actual
 
@@ -45,7 +45,7 @@ def test_get_id_to_pk_map_in_system__all_stops(system_1, stop_1_1, stop_1_2, sto
         stop_1_2.id: stop_1_2.pk,
     }
 
-    actual = stopdam.get_id_to_pk_map_in_system(system_1.id)
+    actual = stopdam.get_id_to_pk_map_in_system(system_1.pk)
 
     assert expected == actual
 

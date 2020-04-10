@@ -2,6 +2,7 @@
 This module provides some abstract methods to remove code duplication in the DAMs.
 """
 import typing
+from typing import Dict, Iterable
 
 from transiter import models
 from transiter.data import dbconnection
@@ -91,15 +92,12 @@ def get_in_system_by_id(DbEntity: models.Base, system_id, id_):
     )
 
 
-def get_id_to_pk_map(DbEntity: models.Base, system_id=None, ids=None):
+def get_id_to_pk_map(
+    DbEntity: models.Base, system_pk: int = None, ids: Iterable[str] = None
+) -> Dict[str, int]:
     """
     Get an map of entity ID to entity PK for all entities of a given type in a system.
     Note this method only works with entities that are direct children of the system.
-
-    :param DbEntity: the entity's type
-    :param system_id: the system's ID
-    :param ids_: optional, the entity's IDs
-    :return: map of ID to PK
     """
     if ids is not None:
         id_to_pk = {id_: None for id_ in ids}
@@ -107,10 +105,8 @@ def get_id_to_pk_map(DbEntity: models.Base, system_id=None, ids=None):
         id_to_pk = {}
     session = dbconnection.get_session()
     query = session.query(DbEntity.id, DbEntity.pk)
-    if system_id is not None:
-        query = query.filter(DbEntity.system_pk == models.System.pk).filter(
-            models.System.id == system_id
-        )
+    if system_pk is not None:
+        query = query.filter(DbEntity.system_pk == system_pk)
     if ids is not None:
         query = query.filter(DbEntity.id.in_(ids))
     for (id_, pk) in query.all():
@@ -120,6 +116,7 @@ def get_id_to_pk_map(DbEntity: models.Base, system_id=None, ids=None):
 
 # DbEntity is a class
 # noinspection PyPep8Naming
+# TODO: is there a valid use case for this?? Perhaps only for deleting stale entities
 def get_id_to_pk_map_by_feed_pk(DbEntity: typing.Type[models.Base], feed_pk):
     id_to_pk = {}
     session = dbconnection.get_session()

@@ -51,6 +51,18 @@ def get_by_id(id_, only_return_active=False) -> Optional[models.System]:
     return system
 
 
+def get_update_by_pk(pk) -> Optional[models.SystemUpdate]:
+    # TODO greedily add the system if not already
+    # Maybe it's eagerly loaded??
+    # Can also configure this on the model in this case
+    return (
+        dbconnection.get_session()
+        .query(models.SystemUpdate)
+        .filter(models.SystemUpdate.pk == pk)
+        .one_or_none()
+    )
+
+
 def set_auto_update_enabled(system_id, auto_update_enabled) -> bool:
     """
     Set the auto update enabled flag for a system.

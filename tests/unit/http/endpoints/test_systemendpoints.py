@@ -20,14 +20,6 @@ def install_service_function(monkeypatch):
 
 
 @pytest.fixture
-def install_async_service_function(monkeypatch):
-    function = mock.MagicMock()
-    function.return_value = True
-    monkeypatch.setattr(systemservice, "install_async", function)
-    return function
-
-
-@pytest.fixture
 def get_service_function(monkeypatch):
     function = mock.MagicMock()
     function.return_value = {}
@@ -57,7 +49,6 @@ def test_install__config_file_from_url(
     monkeypatch,
     flask_request,
     install_service_function,
-    install_async_service_function,
     get_service_function,
     get_request_args,
     sync,
@@ -68,10 +59,7 @@ def test_install__config_file_from_url(
     if extra_params is None:
         extra_params = {}
 
-    if sync:
-        install_method = install_service_function
-    else:
-        install_method = install_async_service_function
+    install_method = install_service_function
 
     get_request_args.return_value = {"sync": str(sync).lower()}
     flask_request.form = ImmutableMultiDict(
@@ -89,7 +77,11 @@ def test_install__config_file_from_url(
 
     assert expected_http_status == response.status_code
     install_method.assert_called_once_with(
-        system_id="system_id", config_str="config_string", extra_settings=extra_params,
+        system_id="system_id",
+        config_str="config_string",
+        extra_settings=extra_params,
+        config_source_url="config_file_url",
+        sync=sync,
     )
 
 
@@ -133,7 +125,6 @@ def test_install__config_file_from_url__failed_to_download(
 def test_install__config_file_from_file_upload(
     flask_request,
     install_service_function,
-    install_async_service_function,
     get_service_function,
     get_request_args,
     sync,
@@ -141,10 +132,7 @@ def test_install__config_file_from_file_upload(
     expected_http_status,
     extra_params,
 ):
-    if sync:
-        install_method = install_service_function
-    else:
-        install_method = install_async_service_function
+    install_method = install_service_function
 
     flask_request.form = ImmutableMultiDict(list(extra_params.items()))
     get_request_args.return_value = {"sync": str(sync).lower()}
@@ -160,7 +148,11 @@ def test_install__config_file_from_file_upload(
 
     assert expected_http_status == response.status_code
     install_method.assert_called_once_with(
-        system_id="system_id", config_str=file_contents, extra_settings=extra_params,
+        system_id="system_id",
+        config_str=file_contents,
+        extra_settings=extra_params,
+        config_source_url=None,
+        sync=sync,
     )
 
 

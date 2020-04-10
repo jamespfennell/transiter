@@ -7,11 +7,29 @@ import pytest
 from transiter.data import dbconnection
 
 
+# TODO: can the class be a fixture?
+class SessionFactory:
+    def __init__(self):
+        self.merged = []
+        self.deleted = []
+
+    def merge(self, entity):
+        self.merged.append(entity)
+
+    def delete(self, entity):
+        self.deleted.append(entity)
+
+
+@pytest.fixture
+def session_factory():
+    return SessionFactory
+
+
 @pytest.fixture
 def inline_unit_of_work(monkeypatch):
 
     session_started = False
-    session = mock.MagicMock()
+    session = mock.MagicMock()  # TODO: use the session fixture?
 
     @contextlib.contextmanager
     def inline_unit_of_work():

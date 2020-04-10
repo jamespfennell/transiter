@@ -21,11 +21,12 @@ class System(ToDictMixin, Base):
 
     name = Column(String, nullable=True)
     status = Column(Enum(SystemStatus), nullable=False)
-    error_message = Column(String, nullable=True)
     timezone = Column(String, nullable=True)
-    raw_config = Column(String)
     auto_update_enabled = Column(Boolean, nullable=False, server_default="True")
 
+    updates = relationship(
+        "SystemUpdate", back_populates="system", cascade="all, delete-orphan"
+    )
     routes = relationship(
         "Route", back_populates="system", cascade="all, delete-orphan"
     )

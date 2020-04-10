@@ -128,9 +128,7 @@ class Syncer:
         """
 
         persisted_entities = []
-        id_to_pk = genericqueries.get_id_to_pk_map_by_feed_pk(
-            self.__db_entity__, self.feed_update.feed.pk
-        )
+        id_to_pk = self._get_id_to_pk_map()
         session = dbconnection.get_session()
         num_updated_entities = 0
         for entity in entities:
@@ -143,6 +141,11 @@ class Syncer:
             persisted_entities,
             len(entities) - num_updated_entities,
             num_updated_entities,
+        )
+
+    def _get_id_to_pk_map(self):
+        return genericqueries.get_id_to_pk_map(
+            self.__db_entity__, self.feed_update.feed.system.pk
         )
 
 
@@ -217,7 +220,7 @@ class DirectionRuleSyncer(Syncer):
 
     def sync(self, direction_rules):
         stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(
-            self.feed_update.feed.system.id
+            self.feed_update.feed.system.pk
         )
         entities_to_merge = []
         for direction_rule in direction_rules:
@@ -229,6 +232,11 @@ class DirectionRuleSyncer(Syncer):
 
         __, num_added, num_updated = self._merge_entities(entities_to_merge)
         return num_added, num_updated
+
+    def _get_id_to_pk_map(self):
+        return genericqueries.get_id_to_pk_map_by_feed_pk(
+            self.__db_entity__, self.feed_update.feed.pk
+        )
 
 
 class TripSyncer(Syncer):
@@ -286,7 +294,7 @@ class TripSyncer(Syncer):
         """
         trips = list(trips)
         route_id_to_pk = routedam.get_id_to_pk_map_in_system(
-            self.feed_update.feed.system.id,
+            self.feed_update.feed.system.pk,
             [trip.route_id for trip in trips if trip.route_id is not None],
         )
         for trip in trips:
@@ -302,7 +310,7 @@ class TripSyncer(Syncer):
         invalid stop IDs and are missing stop PKs are filtered out.
         """
         stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(
-            self.feed_update.feed.system.id
+            self.feed_update.feed.system.pk
         )
 
         def process_stop_times(stop_times):

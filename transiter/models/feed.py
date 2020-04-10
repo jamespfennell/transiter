@@ -31,6 +31,7 @@ class Feed(ToDictMixin, Base):
     headers = Column(String)
     auto_update_enabled = Column(Boolean, nullable=False)
     auto_update_period = Column(Integer)
+    required_for_install = Column(Boolean, nullable=False, default=False)
 
     system = relationship("System", back_populates="feeds")
     updates = relationship(
@@ -39,4 +40,4 @@ class Feed(ToDictMixin, Base):
 
     __table_args__ = (UniqueConstraint("system_pk", "id"),)
 
-    __dict_columns__ = [id]
+    __dict_columns__ = [id, auto_update_period]

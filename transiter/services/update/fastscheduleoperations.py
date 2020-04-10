@@ -21,7 +21,7 @@ def sync_trips(feed_update, services):
         models.ScheduledService, feed_update.feed.pk
     )
     route_id_to_pk = genericqueries.get_id_to_pk_map(
-        models.Route, feed_update.feed.system.id
+        models.Route, feed_update.feed.system.pk
     )
     trips = []
     for service in services:
@@ -33,7 +33,7 @@ def sync_trips(feed_update, services):
 
     trip_id_to_pk = scheduledam.get_trip_id_to_pk_map_by_feed_pk(feed_update.feed.pk)
     stop_id_to_pk = genericqueries.get_id_to_pk_map(
-        models.Stop, feed_update.feed.system.id
+        models.Stop, feed_update.feed.system.pk
     )
     # NOTE: SQL Alchemy's bulk_insert_mappings can take up a huge amount of memory if
     # executed on a large collection of mappings. If executed on the NYC Subway's

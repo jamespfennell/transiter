@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Iterable
 
 import sqlalchemy.sql.expression as sql
 
@@ -28,15 +28,13 @@ def get_in_system_by_id(system_id, route_id) -> Optional[models.Route]:
     return genericqueries.get_in_system_by_id(models.Route, system_id, route_id)
 
 
-def get_id_to_pk_map_in_system(system_id, route_ids=None):
+def get_id_to_pk_map_in_system(
+    system_pk: int, route_ids: Iterable[str] = None
+) -> Dict[str, int]:
     """
     Get a map of route ID to route PK for all routes in a system.
-
-    :param system_id: the system's ID
-    :param route_ids: an optional collection that limits the keys in the dict
-    :return: map of ID to PK
     """
-    return genericqueries.get_id_to_pk_map(models.Route, system_id, route_ids)
+    return genericqueries.get_id_to_pk_map(models.Route, system_pk, route_ids)
 
 
 def calculate_periodicity(route_pk):
