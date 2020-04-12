@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 metadata = {}
-with open("transiter/__version__.py") as f:
+with open("transiter/__metadata__.py") as f:
     exec(f.read(), metadata)
 version = metadata["__version__"]
 

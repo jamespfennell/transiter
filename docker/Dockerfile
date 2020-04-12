@@ -20,7 +20,7 @@ WORKDIR /transiter/source
 # in the package have changed.
 COPY setup.py setup.py
 COPY README.md README.md
-COPY transiter/__version__.py transiter/__version__.py
+COPY transiter/__metadata__.py transiter/__metadata__.py
 RUN python setup.py --quiet egg_info
 RUN pip install --quiet -r *.egg-info/requires.txt
 

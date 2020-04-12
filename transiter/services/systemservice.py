@@ -10,7 +10,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Iterator
 
-from transiter import models, exceptions, __version__
+from transiter import models, exceptions, __metadata__
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam, genericqueries
 from transiter.executor import celeryapp
@@ -149,7 +149,7 @@ def _create_system_update(system_id, config_str, extra_settings, config_source_u
         config_template=config_str,
         config_parameters=json.dumps(extra_settings, indent=2),
         config_source_url=config_source_url,
-        transiter_version=__version__.__version__,
+        transiter_version=__metadata__.__version__,
     )
     dbconnection.get_session().flush()
     return update.pk

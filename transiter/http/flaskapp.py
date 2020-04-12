@@ -3,12 +3,14 @@ This module contains the actual Flask app and is a such the 'root' of the HTTP
 server. All other HTTP endpoints are linked to the app via blueprints in this
 module.
 """
+import datetime
 import logging
 
 import flask
+import pytz
 import werkzeug.exceptions as werkzeug_exceptions
 
-from transiter import config, exceptions, __version__
+from transiter import config, exceptions, __metadata__
 from transiter.http import endpoints
 from transiter.http.httpmanager import (
     http_endpoint,
@@ -81,8 +83,9 @@ def root(return_links=True):
     """
     response = {
         "transiter": {
-            "version": __version__.__version__,
+            "version": __metadata__.__version__,
             "href": "https://github.com/jamespfennell/transiter",
+            "build": _generate_build_response(),
         },
         "systems": {"count": len(systemservice.list_all())},
     }
@@ -94,6 +97,25 @@ def root(return_links=True):
         response["transiter"]["docs"] = {"href": documentation_link}
         response["systems"]["href"] = links.SystemsIndexLink()
     return response
+
+
+def _generate_build_response():
+    if __metadata__.__build_number__ is None:
+        return None
+    human_time = (
+        datetime.datetime.fromtimestamp(
+            __metadata__.__build_timestamp__, pytz.timezone("US/Eastern")
+        ).isoformat()
+        if __metadata__.__build_timestamp__ is not None
+        else None
+    )
+    return {
+        "number": __metadata__.__build_number__,
+        "built_at": human_time,
+        "built_at_timestamp": __metadata__.__build_timestamp__,
+        "git_commit_hash": __metadata__.__git_commit_hash__,
+        "href": __metadata__.__build_href__,
+    }
 
 
 def launch(force=False):
