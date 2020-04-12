@@ -60,7 +60,7 @@ def set_version(new_version):
     new_content = METADATA_FILE_TEMPLATE.format(
         version=new_version,
         build_number=os.environ.get("TRAVIS_BUILD_NUMBER"),
-        build_timestamp=time.time(),
+        build_timestamp=int(time.time()),
         build_href=os.environ.get("TRAVIS_JOB_WEB_URL"),
         git_commit_hash=os.environ.get("TRAVIS_COMMIT"),
     )
