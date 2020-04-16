@@ -5,6 +5,8 @@ operations.
 
 import datetime
 import logging
+from dataclasses import dataclass
+from typing import Iterable
 
 from transiter import exceptions
 from transiter.data import dbconnection
@@ -15,27 +17,23 @@ from transiter.services.update import updatemanager
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class Feed:
+    system_id: str
+    feed_id: str
+    auto_update_period: int
+
+
 @dbconnection.unit_of_work
-def list_all_auto_updating():
+def list_all_auto_updating() -> Iterable[Feed]:
     """
     List all auto updating feeds. This method is designed for use by the task
     server.
-
-    :return: a list of dictionaries containing keys pk, id, system_id and
-             auto_update_period.
-    :rtype: list
     """
-    response = []
-    for feed in feeddam.list_all_auto_updating():
-        response.append(
-            {
-                "pk": feed.pk,
-                "id": feed.id,
-                "system_id": feed.system.id,
-                "auto_update_period": feed.auto_update_period,
-            }
-        )
-    return response
+    return [
+        Feed(feed.system.id, feed.id, feed.auto_update_period)
+        for feed in feeddam.list_all_auto_updating()
+    ]
 
 
 @dbconnection.unit_of_work

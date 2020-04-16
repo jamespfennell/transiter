@@ -6,13 +6,17 @@ import logging
 import requests
 
 from transiter import config
+import json
 
 logger = logging.getLogger(__name__)
 
 
 def ping():
     """
-    Ping the scheduler and, if it is alive, return the number of update tasks.
+    Ping the scheduler.
+
+    If it cannot be reached return None; otherwise, return a JSON representation of the
+    tasks that are currently being scheduled.
     """
     try:
         response = requests.get(
@@ -20,7 +24,7 @@ def ping():
             timeout=0.25,
         )
         response.raise_for_status()
-        return int(response.text)
+        return json.loads(response.text)
     except requests.RequestException:
         return None
 

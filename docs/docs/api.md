@@ -22,7 +22,7 @@ Operation                                           | API endpoint
 **Transit systems**
 [List all systems](#list-all-systems)               | `GET /systems`
 [Get a system](#get-a-system)                       | `GET /systems/<system_id>`
-[Install a system](#install-a-system)               | `PUT /systems/<system_id>`
+[Install or update a system](#install-or-update-a-system)     | `PUT /systems/<system_id>`
 [Delete a system](#delete-a-system)                 | `DELETE /systems/<system_id>`
 [Configure system auto update](#configure-system-auto-update)   | `PUT /systems/<system_id>/auto-update`
 **Feeds**   
@@ -39,7 +39,10 @@ Operation                                           | API endpoint
 [Get a route](#get-a-route-in-a-system)             | `GET /systems/<system_id>/routes/<route_id>`
 [List trips in a route](#list-trips-in-a-route)     | `GET /systems/<system_id>/routes/<route_id>/trips`
 [Get a trip](#get-a-trip-in-a-route)                | `GET /systems/<system_id>/routes/<route_id>/trips/<trip_id>`
-
+**Admin**
+[Transiter health status](#transiter-health-status) | `GET /admin/health`
+[List scheduler tasks](#list-scheduler-tasks)       | `GET /admin/scheduler`
+[Refresh scheduler tasks](#refresh-scheduler-tasks) | `POST /admin/scheduler`
 
 ## Basic endpoints
 
@@ -97,13 +100,13 @@ Return code | Description
 `200 OK` | Returned if the system with this ID exists. The response contains data about the system and links to contained entities.
 `404 NOT FOUND` | Returned if no system with the provided ID is installed.
 
-### Install a system 
+### Install or update a system 
 
 `PUT /systems/<system_id>`
 
 `PUT /systems/<system_id>?sync=true`
 
-This endpoint is used to install transit systems. 
+This endpoint is used to install or update transit systems. 
 Installs can be performed asynchronously (recommended)
 or synchronously (using `sync=true`; not recommended); 
 see below for more information.
@@ -339,3 +342,32 @@ Return code         | Description
 --------------------|-------------
 `200 OK`            | Returned if the system, route and trip exist.
 `404 NOT FOUND`     | Returned if the system, route or trip do not exist.
+
+## Administration endpoints
+
+### Transiter health status
+
+`GET /admin/health`
+
+Return Transiter's health status.
+This describes whether or not the scheduler and executor cluster are up.
+
+### List scheduler tasks
+
+`GET /admin/scheduler`
+
+List all tasks that are currently being scheduled by the scheduler.
+
+This contains the feed auto update tasks as well as the cron task that trims old feed updates.
+
+### Refresh scheduler tasks
+
+`POST /admin/scheduler`
+
+When this endpoint is hit the scheduler inspects the database and ensures that the right tasks are being scheduled
+and with the right periodicity, etc.
+This process happens automatically when an event occurs that
+potentially requires the tasks list to be changed, like a system install or delete.
+This endpoint is designed for the case when an admin manually edits something in the database and
+wants the scheduler to reflect that edit.
+

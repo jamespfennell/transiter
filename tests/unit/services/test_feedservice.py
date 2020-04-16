@@ -45,12 +45,9 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         self.feeddam.list_all_auto_updating.return_value = [self.feed_one]
 
         expected = [
-            {
-                "pk": self.FEED_ONE_PK,
-                "id": self.FEED_ONE_ID,
-                "system_id": self.SYSTEM_ID,
-                "auto_update_period": self.FEED_ONE_AUTO_UPDATE_PERIOD,
-            }
+            feedservice.Feed(
+                self.SYSTEM_ID, self.FEED_ONE_ID, self.FEED_ONE_AUTO_UPDATE_PERIOD
+            )
         ]
 
         actual = feedservice.list_all_auto_updating()
