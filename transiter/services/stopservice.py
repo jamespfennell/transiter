@@ -5,15 +5,17 @@ In terms of information retrieval, the get_in_system_by_id method is
 probably the most important in Transiter. It returns a significant amount
 of data, and this is reflected in the amount of code executed.
 """
+import collections
 import enum
-import itertools
 import time
+import typing
 
 from transiter import exceptions, models
 from transiter.data import dbconnection
 from transiter.data.dams import stopdam, tripdam, systemdam
 from transiter.services import links, constants as c
 from transiter.services.servicemap import servicemapmanager
+from transiter.services.servicemap.graphutils import datastructures
 
 
 @dbconnection.unit_of_work
@@ -55,27 +57,20 @@ def get_in_system_by_id(
 ):
     """
     Get information about a specific stop.
-
-    :param system_id: the system ID
-    :param stop_id: the stop ID
-    :param return_links: whether to return links
-    :param return_only_stations: whether to return only stations in the stops
-                                 graph
     """
-
     stop = stopdam.get_in_system_by_id(system_id, stop_id)
     if stop is None:
         raise exceptions.IdNotFoundError
 
+    stop_tree = _StopTree(stop, stopdam.list_all_stops_in_stop_tree(stop.pk))
+
     # The descendant stops are used as the source of trip stop times
-    descendant_stops = _get_stop_descendants(stop)
+    descendant_stop_pks = list(stop.pk for stop in stop_tree.descendents())
     direction_name_matcher = _DirectionNameMatcher(
-        itertools.chain.from_iterable(stop.direction_rules for stop in descendant_stops)
+        stopdam.list_direction_rules_for_stops(descendant_stop_pks)
     )
     trip_stop_times = stopdam.list_stop_time_updates_at_stops(
-        (stop.pk for stop in descendant_stops),
-        earliest_time=earliest_time,
-        latest_time=latest_time,
+        descendant_stop_pks, earliest_time=earliest_time, latest_time=latest_time,
     )
     trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
         trip_stop_time.trip.pk for trip_stop_time in trip_stop_times
@@ -84,12 +79,12 @@ def get_in_system_by_id(
     # On the other hand, the stop tree graph that is returned consists of all
     # stations in the stop's tree
     stop_pk_to_service_maps_response = servicemapmanager.build_stop_pk_to_service_maps_response(
-        stop.pk for stop in _get_all_stations(stop)
+        stop.pk for stop in stop_tree.all_stations()
     )
 
     # Using the data retrieved, we then build the response
     response = _build_stop_tree_response(
-        stop, stop_pk_to_service_maps_response, return_links, return_only_stations
+        stop_tree, stop_pk_to_service_maps_response, return_links, return_only_stations
     )
     response.update(stop.to_large_dict())
     response.update(
@@ -158,12 +153,6 @@ def _build_trip_stop_time_response(
 ):
     """
     Build the response for a specific trip stop time.
-
-    :param trip_stop_time: the trip stop time
-    :param direction_name: the direction name
-    :param trip_pk_to_last_stop: map giving the last stop of trips
-    :param return_links: whether to return links
-    :return:
     """
     trip = trip_stop_time.trip
     last_stop = trip_pk_to_last_stop[trip.pk]
@@ -190,91 +179,141 @@ def _build_trip_stop_time_response(
     return trip_stop_time_response
 
 
-class _TraversalMode(enum.Enum):
+class _StopTree:
     """
-    Different ways in which the stop tree can be traversed starting from a
-    base node.
-    """
+    An class to represent the stop tree and desired operations on it.
 
-    DESCENDANTS = 4
-    ALL = 5
+    The main motivation of this data structure is to get around unavoidable lazy loading
+    of tree data structures in SQLAlchemy (in fact, ORMs in general). Lazy loading means
+    traversing the stops tree by using models.Stop.parent and models.Stop.children is
+    inefficient: N SQL queries will be emitted where N is the number of stops in the
+    tree.
 
-
-def _traverse_stops_tree(
-    base, node_function, base_traversal_mode: _TraversalMode, only_visit_stations: bool
-):
-    """
-    This method provides a mechanism for traversing the stops tree.
-    There are multiple traversal modes available: currently ALL, which
-    traverses the whole tree, and DESCENDANTS, which traverses the descendants
-    of the base node.
-
-    The method applies a function to each node in the traversal. It uses a
-    depth-first search, so when evaluating the function at a given node
-    the results of evaluating the function at the nodes the next level
-    deep are available. The return of this function is the value of the node
-    function at the base.
-
-    The node function provided must have the following signature:
-
-    def node_function(stop, visited_parent, parent_return, children_return):
-        pass
-
-    The arguments passed to the node function are:
-    - stop: the current node being evaluated
-    - visited_parent: a boolean denoting whether the parent has been traversed
-       already. This being False does not mean the parent won't be traversed;
-       it means that in the relevant depth first search starting from base,
-       the parent node won't be visited before the current node.
-    - parent_return: the result of the node_function applied ot the parent.
-       If visited_parent is False, this is None.
-    - child_returns: a list containing the results of the node_function
-       applied to child nodes of this node. If the child nodes were
-       not traversed, this will be None.
-
-    :param base: the base node to start at
-    :param node_function: the node function
-    :param base_traversal_mode: the traversal mode
-    :param only_visit_stations: whether to only visit stations
-    :return: the result of the node_function at the base
+    This data structure under the hood uses an adjacency list method of traversing the
+    tree. The adjacency lists are constructed when the object is initialized using the
+    collection of all stops in the tree. In Postgres, at least, the collection of all
+    stops can be retrieved in one recursive SQL query.
     """
 
-    def visit_node(stop, traversal_mode, previous=None):
-        visit_parent = (
-            traversal_mode is _TraversalMode.ALL and stop.parent_stop is not None
-        )
-        visit_children = (
-            traversal_mode is _TraversalMode.DESCENDANTS
-            or traversal_mode is _TraversalMode.ALL
-        )
+    class TraversalMode(enum.Enum):
+        """
+        Ways in which the tree can be traversed starting from the base node.
+        """
 
-        if visit_parent:
-            parent_traversal_mode = _TraversalMode.ALL
-            parent_return = visit_node(
-                stop.parent_stop, parent_traversal_mode, previous=stop
+        DESCENDANTS = 0
+        ALL = 1
+
+    def __init__(self, base: models.Stop, stops: typing.Iterable[models.Stop]):
+        """
+        Initialize a new StopTrue.
+
+        :param base: the base of the tree. This is not necessarily the root.
+        :param stops: an iterable of all stops in the tree. If stops are missing from
+                      this iterable, and error will be raised.
+        """
+        self._base = base
+        self._stop_pk_to_stop = {stop.pk: stop for stop in stops}
+        self._stop_pk_to_parent_pk = {
+            stop.pk: stop.parent_stop_pk for stop in self._stop_pk_to_stop.values()
+        }
+        self._stop_pk_to_child_pks = collections.defaultdict(list)
+        for stop_pk, parent_pk in self._stop_pk_to_parent_pk.items():
+            if parent_pk is not None:
+                self._stop_pk_to_child_pks[parent_pk].append(stop_pk)
+
+    def descendents(self) -> typing.Iterator[models.Stop]:
+        """
+        Get all descendents of the base stop, including the stop itself.
+        """
+        yield from self._dfs_traverse(_StopTree.TraversalMode.DESCENDANTS, False)
+
+    def all_stations(self) -> typing.Iterator[models.Stop]:
+        """
+        Get all stations in the tree.
+
+        The base stop is always returned irrespective of whether it is a station.
+        """
+        yield from self._dfs_traverse(_StopTree.TraversalMode.ALL, True)
+
+    _T = typing.TypeVar("_T")
+
+    def apply_function(
+        self,
+        function: typing.Callable[
+            [models.Stop, typing.Optional[_T], typing.List[_T]], _T
+        ],
+        only_stations: bool,
+    ) -> _T:
+        """
+        The method applies a function to each node in the traversal. It uses a
+        depth-first search, so when evaluating the function at a given node
+        the results of evaluating the function at the nodes the next level
+        deep are available. The return of this function is the value of the node
+        function at the base.
+
+        The function signature is described above. The arguments passed to it are:
+
+        - stop: the current node being evaluated
+        - parent_result: the result of the function applied to the parent.
+                         If the parent hasn't been visited in the traversal yet, this
+                         will be None.
+        - children_results: a list of results for the function applied to the children
+                            of the current stop. Given the DFS nature of the traversal,
+                            at most one child will have not been visited when the parent
+                            is visited. The result of this child will, of course, be
+                            missing from this list.
+        """
+        stop_pk_to_response = {}
+        for stop in self._dfs_traverse(
+            _StopTree.TraversalMode.ALL, only_stations=only_stations
+        ):
+            parent_response = stop_pk_to_response.get(stop.parent_stop_pk)
+            children_responses = [
+                stop_pk_to_response[child_pk]
+                for child_pk in self._stop_pk_to_child_pks[stop.pk]
+                if child_pk in stop_pk_to_response
+            ]
+            stop_pk_to_response[stop.pk] = function(
+                stop, parent_response, children_responses
             )
-        else:
-            parent_return = None
+        return stop_pk_to_response[self._base.pk]
 
-        if visit_children:
-            children_traversal_mode = _TraversalMode.DESCENDANTS
+    def _dfs_traverse(
+        self, traversal_mode, only_stations=False
+    ) -> typing.Iterator[models.Stop]:
 
-            children_returns = []
-            for child_stop in stop.child_stops:
-                if previous is not None and child_stop.pk == previous.pk:
+        stack = datastructures.Stack()
+        stack.push((self._base.pk, False))
+        visited_pks = set()
+        visited_pks.add(self._base.pk)
+
+        while len(stack) > 0:
+            stop_pk, neighbors_added = stack.pop()
+            if neighbors_added:
+                stop = self._stop_pk_to_stop[stop_pk]
+                if only_stations and not stop.is_station and stop.pk != self._base.pk:
                     continue
-                if only_visit_stations and not child_stop.is_station:
-                    continue
-                children_returns.append(visit_node(child_stop, children_traversal_mode))
-        else:
-            children_returns = None
-        return node_function(stop, visit_parent, parent_return, children_returns)
+                yield stop
+                continue
 
-    return visit_node(base, base_traversal_mode)
+            stack.push((stop_pk, True))
+            neighbors = list(self._stop_pk_to_child_pks[stop_pk])
+            neighbors.sort(reverse=True)  # Give the traversal a deterministic result
+            parent_pk = self._stop_pk_to_parent_pk[stop_pk]
+            if parent_pk is not None and (
+                stop_pk != self._base.pk
+                or traversal_mode is _StopTree.TraversalMode.ALL
+            ):
+                neighbors.append(parent_pk)
+            for neighbor in neighbors:
+                if neighbor in visited_pks:
+                    continue
+                visited_pks.add(neighbor)
+                stack.push((neighbor, False))
 
 
 def _build_stop_tree_response(
-    base, stop_pk_to_service_maps_response, return_links, return_only_stations
+    stop_tree, stop_pk_to_service_maps_response, return_links, return_only_stations
 ):
     """
     Build the stop tree response.
@@ -286,67 +325,24 @@ def _build_stop_tree_response(
 
     Each stop appearing also contains its short representation, its service
     map representation and, optionally, a link to the stop.
-
-    :param base: the base node for the representation
-    :param stop_pk_to_service_maps_response: a map containing the service map
-                                             response
-    :param return_links: whether to return links
-    :param return_only_stations: whether to only return stations
-    :return: the dictionary described above.
     """
 
-    def node_function(stop, visited_parent, parent_return, children_return):
+    def node_function(stop, parent_return, children_return):
         response = {
             **stop.to_dict(),
             c.SERVICE_MAPS: stop_pk_to_service_maps_response[stop.pk],
         }
         if return_links:
             response[c.HREF] = links.StopEntityLink(stop)
-        if visited_parent:
+        if parent_return is not None:
             response[c.PARENT_STOP] = parent_return
-        if stop.parent_stop is None:
+        if stop.parent_stop_pk is None:
             response[c.PARENT_STOP] = None
         if children_return is not None:
             response[c.CHILD_STOPS] = children_return
         return response
 
-    return _traverse_stops_tree(
-        base, node_function, _TraversalMode.ALL, return_only_stations
-    )
-
-
-def _stop_accumulator(stop, is_parent, parent_stops, child_stops_list):
-    """
-    If the stop tree is traversed with this method, each node returns
-    a list containing itself and all of the stops deeper in the traversal.
-    Consequently, the result of the complete traversal is the list of all
-    stops traversed.
-    """
-    response = [stop]
-    if is_parent:
-        response.extend(parent_stops)
-    if child_stops_list is not None:
-        for child_stop in child_stops_list:
-            response.extend(child_stop)
-    return response
-
-
-def _get_stop_descendants(base):
-    """
-    List all stop descendants of the given base stop.
-
-    The response includes the base.
-    """
-    return _traverse_stops_tree(
-        base, _stop_accumulator, _TraversalMode.DESCENDANTS, False
-    )
-
-
-def _get_all_stations(base):
-    """
-    Get all stations in the stop tree containing base.
-    """
-    return _traverse_stops_tree(base, _stop_accumulator, _TraversalMode.ALL, True)
+    return stop_tree.apply_function(node_function, only_stations=return_only_stations)
 
 
 class _DirectionNameMatcher:
@@ -382,8 +378,11 @@ class _DirectionNameMatcher:
         :param trip_stop_time: the TripStopTime
         :return: the direction name
         """
-        stop = trip_stop_time.stop
-        cache_key = (stop.pk, trip_stop_time.trip.direction_id, trip_stop_time.track)
+        cache_key = (
+            trip_stop_time.stop_pk,
+            trip_stop_time.trip.direction_id,
+            trip_stop_time.track,
+        )
         if cache_key not in self._cache:
             self._cache[cache_key] = None
             for rule in self._rules:

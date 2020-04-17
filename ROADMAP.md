@@ -73,8 +73,8 @@ Roughly in order of priority:
 
 ### Version 0.4.2
 
-- Enable updating transit systems
-    ([#2](https://github.com/jamespfennell/transiter/issues/2)).
+- ~~Enable updating transit systems
+    ([#2](https://github.com/jamespfennell/transiter/issues/2)).~~
 
 All other 0.4 labelled tickets will be addressed or closed without action.
 

@@ -1,5 +1,8 @@
 import datetime
 
+import pytest
+
+from transiter import models
 from transiter.data.dams import stopdam
 
 
@@ -111,3 +114,37 @@ def test_get_stop_pk_to_station_pk(
     actual = stopdam.get_stop_pk_to_station_pk_map_in_system(system_1.id)
 
     assert expected == actual
+
+
+@pytest.mark.parametrize("base_pk", [1000, 1001, 1002, 1003, 1004, 1005])
+def test_list_all_stops_in_stop_tree(add_model, system_1, base_pk):
+    #      2
+    #    / | \
+    #   1  3  4
+    #  /   |
+    # 0    5
+    add_model(models.Stop(pk=1002, system=system_1))
+    add_model(models.Stop(pk=1001, parent_stop_pk=1002, system=system_1))
+    add_model(models.Stop(pk=1000, parent_stop_pk=1001, system=system_1))
+    add_model(models.Stop(pk=1003, parent_stop_pk=1002, system=system_1))
+    add_model(models.Stop(pk=1005, parent_stop_pk=1003, system=system_1))
+    add_model(models.Stop(pk=1004, parent_stop_pk=1002, system=system_1))
+
+    # Red herring
+    add_model(models.Stop(pk=1012, system=system_1))
+
+    expected_pks = {1000, 1001, 1002, 1003, 1004, 1005}
+
+    actual_pks = {stop.pk for stop in stopdam.list_all_stops_in_stop_tree(base_pk)}
+
+    assert expected_pks == actual_pks
+
+
+def test_list_direction_rules(add_model, stop_1_1, stop_1_2, stop_1_3):
+    rule_1 = add_model(models.DirectionRule(stop=stop_1_1))
+    rule_2 = add_model(models.DirectionRule(stop=stop_1_2))
+    add_model(models.DirectionRule(stop=stop_1_3))
+
+    assert [rule_1, rule_2] == stopdam.list_direction_rules_for_stops(
+        [stop_1_1.pk, stop_1_2.pk]
+    )

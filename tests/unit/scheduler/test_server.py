@@ -27,7 +27,7 @@ def test_transiter_registry(scheduler):
 
     scheduler.add_job.assert_called_once_with(
         server.transiter_registry.all_tasks()[0].run,
-        **server.CronSchedule(minute="*/1").job_kwargs()
+        **server.CronSchedule(minute="*/15").job_kwargs()
     )
 
 

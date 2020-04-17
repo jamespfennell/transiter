@@ -4,6 +4,8 @@ This module provides some abstract methods to remove code duplication in the DAM
 import typing
 from typing import Dict, Iterable
 
+from sqlalchemy.orm import joinedload
+
 from transiter import models
 from transiter.data import dbconnection
 
@@ -88,6 +90,7 @@ def get_in_system_by_id(DbEntity: models.Base, system_id, id_):
         .filter(DbEntity.system_pk == models.System.pk)
         .filter(models.System.id == system_id)
         .filter(DbEntity.id == id_)
+        .options(joinedload(DbEntity.system))  # TODO: should this be optional?
         .one_or_none()
     )
 

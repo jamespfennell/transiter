@@ -15,6 +15,12 @@ class Link:
     def __eq__(self, other):
         return type(self) == type(other) and self.kwargs == other.kwargs
 
+    def __repr__(self):
+        return "{}({})".format(
+            type(self).__name__,
+            ", ".join("{}={}".format(*item) for item in self.kwargs.items()),
+        )
+
 
 class InternalDocumentationLink(Link):
     pass

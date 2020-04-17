@@ -2,7 +2,7 @@ from typing import Optional, NamedTuple, Dict, List
 
 import sqlalchemy
 import sqlalchemy.sql.expression as sql
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 from transiter import models
 from transiter.data import dbconnection
@@ -65,12 +65,10 @@ def list_all_in_route_by_pk(route_pk):
 
 def get_in_route_by_id(system_id, route_id, trip_id) -> Optional[models.Trip]:
     """
-    Get a Trip using IDs.
+    Get a trip using IDs.
 
-    :param system_id: the system's ID
-    :param route_id: the route's ID
-    :param trip_id: the trip's ID
-    :return: the Trip
+    This method greedily loads the trip's route, its stop times, and the stops
+    associated to those stop times.
     """
     session = dbconnection.get_session()
     return (
@@ -80,6 +78,9 @@ def get_in_route_by_id(system_id, route_id, trip_id) -> Optional[models.Trip]:
         .filter(models.System.id == system_id)
         .filter(models.Route.id == route_id)
         .filter(models.Trip.id == trip_id)
+        .options(joinedload(models.Trip.route))
+        .options(selectinload(models.Trip.stop_times))
+        .options(selectinload(models.Trip.stop_times, models.TripStopTime.stop))
         .one_or_none()
     )
 

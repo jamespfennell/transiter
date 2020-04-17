@@ -140,7 +140,7 @@ class FeedAutoUpdateTask(Task):
 class TrimFeedUpdatesTask(Task):
     def __init__(self):
         super().__init__()
-        self.schedule = CronSchedule(minute="*/1")
+        self.schedule = CronSchedule(minute="*/15")
 
     def run(self):
         # NOTE: access the task like a static method to avoid the current instance

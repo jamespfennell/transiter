@@ -1,394 +1,387 @@
 import datetime
-import unittest
+import time
 import unittest.mock as mock
 
+import pytest
+
 from transiter import models, exceptions
+from transiter.data.dams import stopdam, systemdam, tripdam
 from transiter.services import stopservice, links
-from .. import testutil
+from transiter.services.servicemap import servicemapmanager
+
+SYSTEM_ID = "1"
+STOP_ONE_ID = "2"
+STOP_ONE_PK = 3
+TRIP_PK = 100
+TRIP_ID = "101"
+ROUTE_ID = "103"
+STOP_TWO_ID = "102"
+DIRECTION_NAME = "Uptown"
+TRIP_STOP_TIME_ONE_PK = 201
+TRIP_STOP_TIME_TWO_PK = 202
+DIRECTION = "Left"
+TIME_1 = datetime.datetime(4, 4, 4, 4, 10, 0)
+TIME_2 = datetime.datetime(4, 4, 4, 4, 15, 0)
+TIME_3 = datetime.datetime(4, 4, 4, 4, 20, 0)
+TIME_4 = datetime.datetime(4, 4, 4, 4, 25, 0)
 
 
-class TestTripStopTimeFilter(testutil.TestCase(stopservice)):
-
-    TIME_1 = datetime.datetime(4, 4, 4, 4, 10, 0)
-    TIME_2 = datetime.datetime(4, 4, 4, 4, 15, 0)
-    TIME_3 = datetime.datetime(4, 4, 4, 4, 20, 0)
-    TIME_4 = datetime.datetime(4, 4, 4, 4, 25, 0)
-    DIRECTION = "Left"
-
-    def setUp(self):
-        self.time = self.mockImportedModule(stopservice.time)
-
-    def test_old_trips__exclude(self):
-
-        stop_time = models.TripStopTime(arrival_time=self.TIME_1)
-        self.time.time.return_value = self.TIME_4.timestamp()
-
-        stop_time_filter = stopservice._TripStopTimeFilter("0", "10", "0")
-
-        self.assertTrue(stop_time_filter.remove(stop_time, self.DIRECTION))
-
-    def test_old_trips__include_when_no_lower_bound(self):
-        stop_time = models.TripStopTime(arrival_time=self.TIME_1)
-        self.time.time.return_value = self.TIME_4.timestamp()
-
-        stop_time_filter = stopservice._TripStopTimeFilter(None, "10", "0")
-
-        self.assertFalse(stop_time_filter.remove(stop_time, self.DIRECTION))
-
-    def test_old_trips__include_selectively(self):
-
-        stop_times = [
-            models.TripStopTime(arrival_time=self.TIME_1),
-            models.TripStopTime(arrival_time=self.TIME_2),
-        ]
-        self.time.time.return_value = self.TIME_3.timestamp()
-
-        stop_time_filter = stopservice._TripStopTimeFilter("7.5", "10", "0")
-
-        self.assertTrue(stop_time_filter.remove(stop_times[0], self.DIRECTION))
-        self.assertFalse(stop_time_filter.remove(stop_times[1], self.DIRECTION))
-
-    def test_direction(self):
-
-        stop_times = [
-            models.TripStopTime(arrival_time=self.TIME_2),
-            models.TripStopTime(arrival_time=self.TIME_3),
-        ]
-        self.time.time.return_value = self.TIME_1.timestamp()
-
-        stop_time_filter = stopservice._TripStopTimeFilter("0", "0", "1")
-
-        self.assertFalse(stop_time_filter.remove(stop_times[0], self.DIRECTION))
-        self.assertTrue(stop_time_filter.remove(stop_times[1], self.DIRECTION))
+@pytest.fixture
+def time_dot_time(monkeypatch):
+    mocked_time_dot_time = mock.MagicMock()
+    monkeypatch.setattr(time, "time", mocked_time_dot_time)
+    return mocked_time_dot_time
 
 
-class TestDirectionNamesMatcher(unittest.TestCase):
-    STOP_PK = 1
-    DIRECTION_NAME = "Direction Name"
+def test_old_trips__exclude(time_dot_time):
 
-    def setUp(self):
-        self.stop = models.Stop()
-        self.stop.pk = self.STOP_PK
+    stop_time = models.TripStopTime(arrival_time=TIME_1)
+    time_dot_time.return_value = TIME_4.timestamp()
 
-        self.stop_event = models.TripStopTime()
-        self.stop_event.track = None
-        self.stop_event.stop_id_alias = None
-        self.stop_event.trip = models.Trip()
-        self.stop_event.trip.direction_id = None
-        self.stop_event.stop = self.stop
+    stop_time_filter = stopservice._TripStopTimeFilter("0", "10", "0")
 
-        self.rule = models.DirectionRule()
-        self.rule.stop_pk = self.STOP_PK
-        self.rule.direction_id = None
-        self.rule.track = None
-        self.rule.name = self.DIRECTION_NAME
-
-    def test_all_names(self):
-        """[Stop service] List all names in direction name matcher"""
-        dnm = stopservice._DirectionNameMatcher([self.rule])
-
-        self.assertEqual({self.DIRECTION_NAME}, dnm.all_names())
-
-    def test_no_matching_stop_pk(self):
-        """[Stop service] Direction matcher, no match"""
-        self.rule.stop_pk = 2
-        dnm = stopservice._DirectionNameMatcher([self.rule])
-
-        direction_name = dnm.match(self.stop_event)
-
-        self.assertEqual(direction_name, None)
-
-    def test_no_matching_direction_id(self):
-        """[Stop service] Direction matcher, no matching direction ID"""
-        self.rule.direction_id = True
-        dnm = stopservice._DirectionNameMatcher([self.rule])
-
-        direction_name = dnm.match(self.stop_event)
-
-        self.assertEqual(direction_name, None)
-
-    def test_no_matching_track(self):
-        """[Stop service] Direction matcher, no matching track"""
-        self.rule.track = "Track"
-        dnm = stopservice._DirectionNameMatcher([self.rule])
-
-        direction_name = dnm.match(self.stop_event)
-
-        self.assertEqual(direction_name, None)
-
-    def test_match(self):
-        """[Stop service] Direction matcher, match"""
-        dnm = stopservice._DirectionNameMatcher([self.rule])
-
-        direction_name = dnm.match(self.stop_event)
-
-        self.assertEqual(direction_name, self.DIRECTION_NAME)
+    assert stop_time_filter.remove(stop_time, DIRECTION) is True
 
 
-class TestStopService(testutil.TestCase(stopservice), unittest.TestCase):
-    SYSTEM_ID = "1"
-    STOP_ONE_ID = "2"
-    STOP_ONE_PK = 3
-    TRIP_PK = 100
-    TRIP_ID = "101"
-    ROUTE_ID = "103"
-    STOP_TWO_ID = "102"
-    DIRECTION_NAME = "Uptown"
-    TRIP_STOP_TIME_ONE_PK = 201
-    TRIP_STOP_TIME_TWO_PK = 202
+def test_old_trips__include_when_no_lower_bound(time_dot_time):
+    stop_time = models.TripStopTime(arrival_time=TIME_1)
+    time_dot_time.return_value = TIME_4.timestamp()
 
-    def setUp(self):
-        self.stop_dao = self.mockImportedModule(stopservice.stopdam)
-        self.systemdam = self.mockImportedModule(stopservice.systemdam)
-        self.tripdam = self.mockImportedModule(stopservice.tripdam)
-        self.servicepatternmanager = self.mockImportedModule(
-            stopservice.servicemapmanager
-        )
+    stop_time_filter = stopservice._TripStopTimeFilter(None, "10", "0")
 
-        self.stop_one = models.Stop()
-        self.stop_one.pk = self.STOP_ONE_PK
-        self.stop_one.id = self.STOP_ONE_ID
-        self.stop_one.system = models.System(id=self.SYSTEM_ID)
+    assert stop_time_filter.remove(stop_time, DIRECTION) is False
 
-    def test_list_all_in_system(self):
-        """[Stop service] List all in system"""
-        self.stop_dao.list_all_in_system.return_value = [self.stop_one]
 
-        expected = [
-            {"href": links.StopEntityLink(self.stop_one), **self.stop_one.to_dict()}
-        ]
+def test_old_trips__include_selectively(time_dot_time):
+    stop_times = [
+        models.TripStopTime(arrival_time=TIME_1),
+        models.TripStopTime(arrival_time=TIME_2),
+    ]
+    time_dot_time.return_value = TIME_3.timestamp()
 
-        actual = stopservice.list_all_in_system(self.SYSTEM_ID, True)
+    stop_time_filter = stopservice._TripStopTimeFilter("7.5", "10", "0")
 
-        self.assertListEqual(actual, expected)
-        self.stop_dao.list_all_in_system.assert_called_once_with(self.SYSTEM_ID)
+    assert stop_time_filter.remove(stop_times[0], DIRECTION) is True
+    assert stop_time_filter.remove(stop_times[1], DIRECTION) is False
 
-    def test_list_all_in_system__system_not_found(self):
-        """[Stop service] List all in system - system not found"""
-        self.systemdam.get_by_id.return_value = None
 
-        self.assertRaises(
-            exceptions.IdNotFoundError,
-            lambda: stopservice.list_all_in_system(self.SYSTEM_ID),
-        )
+def test_direction(time_dot_time):
 
-    def test_get_in_system_by_id__stop_not_found(self):
-        """[Stop service] Get stop - stop not found"""
-        self.stop_dao.get_in_system_by_id.return_value = None
+    stop_times = [
+        models.TripStopTime(arrival_time=TIME_2),
+        models.TripStopTime(arrival_time=TIME_3),
+    ]
+    time_dot_time.return_value = TIME_1.timestamp()
 
-        self.assertRaises(
-            exceptions.IdNotFoundError,
-            lambda: stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID),
-        )
+    stop_time_filter = stopservice._TripStopTimeFilter("0", "0", "1")
 
-    @mock.patch.object(stopservice, "_DirectionNameMatcher")
-    @mock.patch.object(stopservice, "_build_trip_stop_time_response")
-    @mock.patch.object(stopservice, "_build_stop_tree_response")
-    def test_get_in_system_by_id(
-        self,
-        _build_stop_tree_response,
-        _build_trip_stop_time_response,
-        _DirectionNameMatcher,
-    ):
-        """[Stop service] Get stop"""
+    assert stop_time_filter.remove(stop_times[0], DIRECTION) is False
+    assert stop_time_filter.remove(stop_times[1], DIRECTION) is True
 
-        fake_stop_tree_response = {"id": self.STOP_ONE_ID}
-        fake_trip_stop_time_response = {"id": self.TRIP_ID}
-        fake_trip_pk_to_last_stop_map = mock.MagicMock()
-        fake_service_map_response_map = mock.MagicMock()
 
-        direction_name_matcher = mock.MagicMock()
-        _DirectionNameMatcher.return_value = direction_name_matcher
-        direction_name_matcher.match.return_value = self.DIRECTION_NAME
-        direction_name_matcher.all_names.return_value = [self.DIRECTION_NAME]
+def test_direction_name_matcher__all_names():
+    matcher = stopservice._DirectionNameMatcher(
+        [models.DirectionRule(stop_pk=1, name=DIRECTION_NAME)]
+    )
 
-        _build_stop_tree_response.return_value = fake_stop_tree_response
-        _build_trip_stop_time_response.return_value = fake_trip_stop_time_response
+    assert {DIRECTION_NAME} == matcher.all_names()
 
-        self.tripdam.get_trip_pk_to_last_stop_map.return_value = (
-            fake_trip_pk_to_last_stop_map
-        )
-        self.servicepatternmanager.build_stop_pk_to_service_maps_response = (
-            fake_service_map_response_map
-        )
 
-        stop_time_one = models.TripStopTime(
-            pk=self.TRIP_STOP_TIME_ONE_PK,
-            arrival_time=datetime.datetime(2000, 1, 1, 0, 0, 0),
-        )
-        stop_time_two = models.TripStopTime(
-            pk=self.TRIP_STOP_TIME_TWO_PK,
-            arrival_time=datetime.datetime(2000, 1, 1, 0, 0, 0),
-        )
-        self.stop_dao.list_stop_time_updates_at_stops.return_value = [
-            stop_time_one,
-            stop_time_two,
-        ]
+@pytest.mark.parametrize(
+    "direction_rule,expected",
+    [
+        [models.DirectionRule(stop_pk=1, name=DIRECTION_NAME), DIRECTION_NAME],
+        [models.DirectionRule(stop_pk=2, name=DIRECTION_NAME), None],
+        [models.DirectionRule(stop_pk=1, name=DIRECTION_NAME, direction_id=True), None],
+        [models.DirectionRule(stop_pk=1, name=DIRECTION_NAME, track="track"), None],
+    ],
+)
+def test_direction_name_matcher__match(direction_rule, expected):
+    matcher = stopservice._DirectionNameMatcher([direction_rule])
+    stop_time = models.TripStopTime(stop_pk=1, trip=models.Trip())
 
-        stop = self.stop_one
-        stop.child_stops = []
-        stop.parent_stop = None
-        self.stop_dao.get_in_system_by_id.return_value = stop
+    actual = matcher.match(stop_time)
 
-        expected = {
-            **fake_stop_tree_response,
-            "directions": [self.DIRECTION_NAME],
-            "stop_times": [
-                {**fake_trip_stop_time_response},
-                {**fake_trip_stop_time_response},
+    assert expected == actual
+
+
+def test_list_all_in_system(monkeypatch):
+    system = models.System(id=SYSTEM_ID)
+    stop_one = models.Stop(pk=STOP_ONE_PK, id=STOP_ONE_ID, system=system)
+    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: system)
+    monkeypatch.setattr(stopdam, "list_all_in_system", lambda *args: [stop_one])
+
+    expected = [{"href": links.StopEntityLink(stop_one), **stop_one.to_dict()}]
+
+    actual = stopservice.list_all_in_system(SYSTEM_ID, True)
+
+    assert expected == actual
+
+
+def test_list_all_in_system__system_not_found(monkeypatch):
+
+    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: None)
+
+    with pytest.raises(exceptions.IdNotFoundError):
+        stopservice.list_all_in_system(SYSTEM_ID)
+
+
+def test_get_in_system_by_id__stop_not_found(monkeypatch):
+    monkeypatch.setattr(stopdam, "get_in_system_by_id", lambda *args: None)
+
+    with pytest.raises(exceptions.IdNotFoundError):
+        stopservice.get_in_system_by_id(SYSTEM_ID, STOP_ONE_ID),
+
+
+def test_get_in_system_by_id(monkeypatch):
+    stop_one = models.Stop(
+        pk=STOP_ONE_PK, id=STOP_ONE_ID, system=models.System(id=SYSTEM_ID),
+    )
+    stop_time_one = models.TripStopTime(
+        pk=TRIP_STOP_TIME_ONE_PK, arrival_time=datetime.datetime(2000, 1, 1, 0, 0, 0),
+    )
+    stop_time_two = models.TripStopTime(
+        pk=TRIP_STOP_TIME_TWO_PK, arrival_time=datetime.datetime(2137, 1, 1, 0, 0, 0),
+    )
+    monkeypatch.setattr(stopdam, "get_in_system_by_id", lambda *args: stop_one)
+    monkeypatch.setattr(
+        stopdam, "list_all_stops_in_stop_tree", lambda *args: [stop_one]
+    )
+    monkeypatch.setattr(stopdam, "list_direction_rules_for_stops", lambda *args: [])
+    monkeypatch.setattr(
+        stopdam,
+        "list_stop_time_updates_at_stops",
+        lambda *args, **kwargs: [stop_time_one, stop_time_two],
+    )
+
+    monkeypatch.setattr(tripdam, "get_trip_pk_to_last_stop_map", mock.MagicMock())
+    monkeypatch.setattr(
+        servicemapmanager, "build_stop_pk_to_service_maps_response", mock.MagicMock()
+    )
+
+    monkeypatch.setattr(
+        stopservice._DirectionNameMatcher, "match", lambda *args: DIRECTION_NAME
+    )
+    monkeypatch.setattr(
+        stopservice._DirectionNameMatcher, "all_names", lambda *args: [DIRECTION_NAME]
+    )
+    fake_stop_tree_response = {"id": STOP_ONE_ID}
+    monkeypatch.setattr(
+        stopservice, "_build_stop_tree_response", lambda *args: fake_stop_tree_response
+    )
+    fake_trip_stop_time_response = {"id": TRIP_ID}
+    monkeypatch.setattr(
+        stopservice,
+        "_build_trip_stop_time_response",
+        lambda *args: fake_trip_stop_time_response,
+    )
+
+    expected = {
+        **fake_stop_tree_response,
+        "directions": [DIRECTION_NAME],
+        "stop_times": [{**fake_trip_stop_time_response}],
+        "latitude": None,
+        "longitude": None,
+        "url": None,
+        "name": None,
+    }
+
+    actual = stopservice.get_in_system_by_id(
+        SYSTEM_ID, STOP_ONE_ID, exclude_trips_before=1
+    )
+
+    assert expected == actual
+
+
+def test_build_trip_stop_time_response():
+    system = models.System(id=SYSTEM_ID)
+    stop = models.Stop(system=system)
+    stop.id = STOP_ONE_ID
+    trip = models.Trip()
+    trip.pk = TRIP_PK
+    trip.id = TRIP_ID
+    trip_stop_time = models.TripStopTime()
+    trip_stop_time.trip = trip
+    trip_stop_time.stop = stop
+    route = models.Route(system=system)
+    route.id = ROUTE_ID
+    trip.route = route
+    last_stop = models.Stop(system=system)
+    last_stop.id = STOP_TWO_ID
+
+    expected = {
+        "stop_id": STOP_ONE_ID,
+        "direction": DIRECTION_NAME,
+        **trip_stop_time.to_dict(),
+        "trip": {
+            **trip.to_large_dict(),
+            "href": links.TripEntityLink(trip),
+            "route": {"href": links.RouteEntityLink(route), **route.to_dict()},
+            "last_stop": {
+                **last_stop.to_dict(),
+                "href": links.StopEntityLink(last_stop),
+            },
+        },
+    }
+
+    actual = stopservice._build_trip_stop_time_response(
+        trip_stop_time, DIRECTION_NAME, {trip.pk: last_stop}, True
+    )
+
+    assert expected == actual
+
+
+def tree_factory(number_of_stops, adjacency_tuples, not_stations=None):
+    system = models.System(id="system_id")
+    stops = [
+        models.Stop(pk=i, id=str(i), is_station=True, system=system)
+        for i in range(number_of_stops)
+    ]
+    for stop_pk, parent_pk in adjacency_tuples:
+        stops[stop_pk].parent_stop_pk = parent_pk
+    if not_stations is not None:
+        for not_station in not_stations:
+            stops[not_station].is_station = False
+    return stops
+
+
+@pytest.fixture
+def tree_1():
+    #     0
+    #    / \
+    #   1   2
+    #  /
+    # 3*
+    # * not a station
+    return tree_factory(4, [(1, 0), (2, 0), (3, 1)], [3])
+
+
+@pytest.fixture
+def tree_2():
+    #      2
+    #    / | \
+    #   1  3  4
+    #  /   |
+    # 0    5*
+    # * not a station
+    return tree_factory(6, [(1, 2), (0, 1), (3, 2), (5, 3), (4, 2)], [5])
+
+
+@pytest.fixture
+def trees(tree_1, tree_2):
+    return [tree_1, tree_2]
+
+
+def test_build_stop_tree_response(tree_1):
+    stop_tree = stopservice._StopTree(tree_1[1], tree_1)
+
+    stop_pk_to_service_maps_response = {pk: pk for pk in range(4)}
+
+    expected = {
+        **tree_1[1].to_dict(),
+        "service_maps": 1,
+        "href": links.StopEntityLink(tree_1[1]),
+        "parent_stop": {
+            **tree_1[0].to_dict(),
+            "service_maps": 0,
+            "href": links.StopEntityLink(tree_1[0]),
+            "parent_stop": None,
+            "child_stops": [
+                {
+                    **tree_1[2].to_dict(),
+                    "service_maps": 2,
+                    "href": links.StopEntityLink(tree_1[2]),
+                    "child_stops": [],
+                }
             ],
-            "latitude": None,
-            "longitude": None,
-            "url": None,
-            "name": None,
-        }
+        },
+        "child_stops": [],
+    }
 
-        actual = stopservice.get_in_system_by_id(self.SYSTEM_ID, self.STOP_ONE_ID)
+    actual = stopservice._build_stop_tree_response(
+        stop_tree, stop_pk_to_service_maps_response, True, True
+    )
 
-        self.assertDictEqual(expected, actual)
+    assert expected == actual
 
-    def test_build_trip_stop_time_response(self):
-        """[Stop service] Test build trip stop time response"""
-        system = models.System(id=self.SYSTEM_ID)
-        stop = models.Stop(system=system)
-        stop.id = self.STOP_ONE_ID
-        trip = models.Trip()
-        trip.pk = self.TRIP_PK
-        trip.id = self.TRIP_ID
-        trip_stop_time = models.TripStopTime()
-        trip_stop_time.trip = trip
-        trip_stop_time.stop = stop
-        route = models.Route(system=system)
-        route.id = self.ROUTE_ID
-        trip.route = route
-        last_stop = models.Stop(system=system)
-        last_stop.id = self.STOP_TWO_ID
 
-        expected = {
-            "stop_id": self.STOP_ONE_ID,
-            "direction": self.DIRECTION_NAME,
-            **trip_stop_time.to_dict(),
-            "trip": {
-                **trip.to_large_dict(),
-                "href": links.TripEntityLink(trip),
-                "route": {"href": links.RouteEntityLink(route), **route.to_dict()},
-                "last_stop": {
-                    **last_stop.to_dict(),
-                    "href": links.StopEntityLink(last_stop),
+# fmt: off
+@pytest.mark.parametrize(
+    "tree_number,base_index,expected",
+    [
+        [1, 0, [3, 1, 2, 0]],
+        [1, 1, [3, 1]],
+        [2, 2, [0, 1, 5, 3, 4, 2]],
+        [2, 0, [0]]
+    ],
+)
+# fmt: on
+def test_stop_tree__descendent(tree_number, base_index, expected, trees):
+    tree = trees[tree_number - 1]
+
+    actual = [
+        stop.pk for stop in stopservice._StopTree(tree[base_index], tree).descendents()
+    ]
+
+    assert expected == actual
+
+
+@pytest.mark.parametrize(
+    "tree_number,base_index,expected",
+    [
+        [1, 0, [1, 2, 0]],
+        [1, 1, [2, 0, 1]],
+        [1, 3, [2, 0, 1, 3]],
+        [2, 2, [0, 1, 3, 4, 2]],
+        [2, 1, [3, 4, 2, 0, 1]],
+        [2, 0, [3, 4, 2, 1, 0]],
+        [2, 3, [0, 1, 4, 2, 3]],
+    ],
+)
+def test_stop_tree__all_stations(tree_number, base_index, expected, trees):
+    tree = trees[tree_number - 1]
+
+    actual = [
+        stop.pk for stop in stopservice._StopTree(tree[base_index], tree).all_stations()
+    ]
+
+    assert expected == actual
+
+
+@pytest.mark.parametrize("only_stations", [True, False])
+def test_stop_tree__apply_function(tree_1, only_stations):
+    def function(stop, parent_response, children_responses):
+        response = {"pk": stop.pk, "children": children_responses}
+        if stop.parent_stop_pk is None:
+            response["parent"] = None
+        elif parent_response is not None:
+            response["parent"] = parent_response
+        return response
+
+    # fmt: off
+    expected = {
+        "pk": 1,
+        "parent": {
+            "pk": 0,
+            "children": [
+                {
+                    "pk": 2,
+                    "children": [],
                 },
-            },
-        }
-
-        actual = stopservice._build_trip_stop_time_response(
-            trip_stop_time, self.DIRECTION_NAME, {trip.pk: last_stop}, True
+            ],
+            "parent": None
+        },
+        "children": []
+    }
+    if not only_stations:
+        expected["children"].append(
+            {
+                "pk": 3,
+                "children": []
+            }
         )
+    # fmt: on
 
-        self.maxDiff = None
-        self.assertDictEqual(expected, actual)
-
-    def test_build_stop_tree_response(self):
-        """[Stop service] Build stop tree response"""
-        # Stops tree in this test:
-        #     0
-        #    / \
-        #   1   2
-        #  /
-        # 3*
-        # * not a station
-        system = models.System(id=self.SYSTEM_ID)
-        stops = [models.Stop(system=system) for _ in range(4)]
-        for i in range(4):
-            stops[i] = models.Stop()
-            stops[i].pk = i
-            stops[i].id = str(i)
-            stops[i].is_station = True
-            stops[i].system_id = "system"
-            stops[i].system = system
-        stops[0].child_stops = [stops[1], stops[2]]
-        stops[1].child_stops = [stops[3]]
-        stops[3].is_station = False
-
-        stop_pk_to_service_maps_response = {pk: pk for pk in range(4)}
-
-        expected = {
-            **stops[1].to_dict(),
-            "service_maps": 1,
-            "href": links.StopEntityLink(stops[1]),
-            "parent_stop": {
-                **stops[0].to_dict(),
-                "service_maps": 0,
-                "href": links.StopEntityLink(stops[0]),
-                "parent_stop": None,
-                "child_stops": [
-                    {
-                        **stops[2].to_dict(),
-                        "service_maps": 2,
-                        "href": links.StopEntityLink(stops[2]),
-                        "child_stops": [],
-                    }
-                ],
-            },
-            "child_stops": [],
-        }
-
-        actual = stopservice._build_stop_tree_response(
-            stops[1], stop_pk_to_service_maps_response, True, True
-        )
-
-        self.maxDiff = None
-        self.assertDictEqual(expected, actual)
-
-    def test_get_stop_descendants(self):
-        """[Stop service] Get all stop descendants"""
-        # Stops tree in this test:
-        #     0
-        #    / \
-        #   1   2
-        #  /
-        # 3*
-        # * not a station
-        stops = [models.Stop()] * 4
-        for i in range(4):
-            stops[i] = models.Stop()
-            stops[i].pk = i
-            stops[i].id = str(i)
-            stops[i].is_station = True
-        stops[0].child_stops = [stops[1], stops[2]]
-        stops[1].child_stops = [stops[3]]
-        stops[3].is_station = False
-
-        expected_pks = {0, 1, 2, 3}
-
-        actual_pks = {stop.pk for stop in stopservice._get_stop_descendants(stops[0])}
-
-        self.assertEqual(expected_pks, actual_pks)
-
-    def test_get_stop_ancestors(self):
-        """[Stop service] Get all stop ancestors and ancestor siblings that are stations"""
-        # Stops tree in this test:
-        #      2
-        #    / | \
-        #   1  3  4
-        #  /   |
-        # 0    5*
-        # * not a station
-        stops = [None] * 6
-        for i in range(6):
-            stops[i] = models.Stop()
-            stops[i].pk = i
-            stops[i].id = str(i)
-            stops[i].is_station = True
-        stops[0].parent_stop = stops[1]
-        stops[1].parent_stop = stops[2]
-        stops[2].child_stops = [stops[1], stops[3], stops[4]]
-        stops[3].child_stops = [stops[5]]
-        stops[4].is_station = False
-
-        expected_pks = {0, 1, 2, 3, 5}
-
-        for stop in stops:
-            if not stop.is_station:
-                continue
-            actual_pks = {stop.pk for stop in stopservice._get_all_stations(stop)}
-
-            self.assertEqual(expected_pks, actual_pks)
+    assert expected == stopservice._StopTree(tree_1[1], tree_1).apply_function(
+        function, only_stations=only_stations
+    )
