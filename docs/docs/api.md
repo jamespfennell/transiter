@@ -43,6 +43,7 @@ Operation                                           | API endpoint
 [Transiter health status](#transiter-health-status) | `GET /admin/health`
 [List scheduler tasks](#list-scheduler-tasks)       | `GET /admin/scheduler`
 [Refresh scheduler tasks](#refresh-scheduler-tasks) | `POST /admin/scheduler`
+[Upgrade database](#upgrade-database)               | `POST /admin/upgrade`
 
 ## Basic endpoints
 
@@ -370,4 +371,17 @@ This process happens automatically when an event occurs that
 potentially requires the tasks list to be changed, like a system install or delete.
 This endpoint is designed for the case when an admin manually edits something in the database and
 wants the scheduler to reflect that edit.
+
+### Upgrade database
+
+`POST /admin/upgrade`
+
+Upgrades the Transiter database to the schema/version associated to
+the Transiter version of the webservice.
+This endpoint is used during Transiter updates: after first updating
+the Python code (or Docker contains), this endpoint can be hit to
+upgrade the database schema.
+It has the same effect as the terminal command:
+
+    transiterclt db upgrade
 

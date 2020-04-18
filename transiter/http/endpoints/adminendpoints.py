@@ -2,6 +2,7 @@ import logging
 
 from flask import Blueprint
 
+from transiter.data import dbconnection
 from transiter.executor.celeryapp import app as celery_app
 from transiter.http.httpmanager import http_endpoint, HttpMethod
 from transiter.http.permissions import requires_permissions, PermissionsLevel
@@ -44,3 +45,9 @@ def scheduler_ping():
 @requires_permissions(PermissionsLevel.ALL)
 def scheduler_refresh_tasks():
     return client.refresh_tasks()
+
+
+@http_endpoint(admin_endpoints, "upgrade", method=HttpMethod.POST)
+@requires_permissions(PermissionsLevel.ALL)
+def upgrade_database():
+    return dbconnection.upgrade_database()
