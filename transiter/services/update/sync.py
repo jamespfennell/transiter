@@ -62,7 +62,7 @@ def sync(feed_update_pk, entities):
         result = syncer(feed_update).run(model_type_to_entities[syncer.feed_entity()])
         for i in range(3):
             totals[i] += result[i]
-    return totals
+    return tuple(totals)
 
 
 class Syncer:

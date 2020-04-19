@@ -6,20 +6,18 @@ class _BaseModel:
     """
     Basic model that all Transiter models inherit from.
 
-    This class defines an equals method for use in testing, and representation
-    functions for outputting dictionary representations of entities in the service
-    layer.
+    This class defines an equals method for use in testing.
     """
 
     # The equals method is designed for testing purposes only.
     def __eq__(self, other):
         for column in inspect(type(self)).columns.keys():
             if getattr(self, column) != getattr(other, column):
-                # print(
-                #    'Values for attribute "{}" don\'t match: "{}" != "{}"'.format(
-                #        column, str(getattr(self, column)), str(getattr(other, column))
-                #    )
-                # )
+                print(
+                    'Values for attribute "{}" don\'t match: "{}" != "{}"'.format(
+                        column, str(getattr(self, column)), str(getattr(other, column))
+                    )
+                )
                 return False
         return True
 

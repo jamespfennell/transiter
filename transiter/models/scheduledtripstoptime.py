@@ -49,3 +49,6 @@ class ScheduledTripStopTimeLight:
                 continue
             props.append("{}={}".format(key, value))
         return "ScheduledTripStopTimeLight({})".format(", ".join(sorted(props)))
+
+    def __hash__(self):
+        return hash(str(self))
