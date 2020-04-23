@@ -1,4 +1,4 @@
-from transiter import exceptions
+from transiter import exceptions, models
 from transiter.data import dbconnection
 from transiter.data.dams import tripdam, routedam
 from transiter.services import links, constants as c
@@ -16,7 +16,9 @@ def list_all_in_route(system_id, route_id, return_links=False):
     """
     route = routedam.get_in_system_by_id(system_id, route_id)
     if route is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(
+            models.Route, system_id=system_id, route_id=route_id
+        )
 
     response = []
     trips = tripdam.list_all_in_route_by_pk(route.pk)
@@ -45,7 +47,9 @@ def get_in_route_by_id(system_id, route_id, trip_id, return_links=False):
     """
     trip = tripdam.get_in_route_by_id(system_id, route_id, trip_id)
     if trip is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(
+            models.Trip, system_id=system_id, route_id=route_id, trip_id=trip_id
+        )
     trip_response = {
         **trip.to_large_dict(),
         c.ROUTE: trip.route.to_dict(),

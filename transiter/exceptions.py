@@ -93,15 +93,6 @@ class InvalidSystemConfigFile(TransiterException):
     message = "The system config file is invalid"
 
 
-class ConfigFileNotFoundError(TransiterException):
-    """
-    Exception that is raised when the Transiter config file could not be found.
-    """
-
-    code = "T030"
-    message = "The Transiter config file could not be found!"
-
-
 class IdNotFoundError(TransiterException):
     """
     Exception that is raised when a specific DB entity could not be found.
@@ -109,6 +100,13 @@ class IdNotFoundError(TransiterException):
 
     code = "T050"
     message = "One of the requested entities could not be found."
+
+    def __init__(self, entity_type=None, **kwargs):
+        if entity_type is None:
+            return
+        self.message = f"The {entity_type.__name__.lower()} does not exist."
+        self.additional_info = kwargs
+        self.additional_info["entity_type"] = entity_type.__name__.lower()
 
 
 class PageNotFound(TransiterException):

@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass
 from typing import Iterable
 
-from transiter import exceptions
+from transiter import exceptions, models
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam
 from transiter.services import links, constants as c
@@ -43,18 +43,10 @@ def list_all_in_system(system_id, return_links=True):
 
     The result is list of dictionaries, one for each feed, containing the
     feed's short representation and (optionally) a link to the feed.
-
-    :param system_id: the system ID
-    :type system_id: str
-    :param return_links: whether to return links
-    :type return_links: bool
-    :type system_id: str
-    :return: the list described above
-    :rtype: list
     """
     system = systemdam.get_by_id(system_id, only_return_active=True)
     if system is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(models.System, system_id=system_id)
     response = []
     for feed in feeddam.list_all_in_system(system_id):
         feed_response = feed.to_dict()
@@ -68,19 +60,12 @@ def list_all_in_system(system_id, return_links=True):
 def get_in_system_by_id(system_id, feed_id, return_links=True):
     """
     Get data on a specific feed in a system.
-
-    :param system_id: the system ID
-    :type system_id: str
-    :param feed_id: the feed ID
-    :type feed_id: str
-    :param return_links: whether to return a link to the feed's updates page.
-    :type return_links: bool
-    :return: the feed's short representation.
-    :rtype: dict
     """
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
     if feed is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(
+            models.Feed, system_id=system_id, feed_id=feed_id
+        )
     response = feed.to_dict()
     if return_links:
         response[c.UPDATES] = {c.HREF: links.FeedEntityUpdatesLink(feed)}
@@ -117,7 +102,9 @@ def _create_and_execute_feed_update_helper(
     """
     feed_update_pk = update_manager_function(system_id, feed_id)
     if feed_update_pk is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(
+            models.Feed, system_id=system_id, feed_id=feed_id
+        )
     if execute_async:
         updatemanager.execute_feed_update_async.delay(feed_update_pk, content)
     else:
@@ -129,17 +116,12 @@ def _create_and_execute_feed_update_helper(
 def list_updates_in_feed(system_id, feed_id):
     """
     List all of the updates for a feed.
-
-    :param system_id: the system ID
-    :type system_id: str
-    :param feed_id: the feed ID
-    :type feed_id: str
-    :return: a list of short representations of the feed updates.
-    :rtype: list
     """
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
     if feed is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(
+            models.Feed, system_id=system_id, feed_id=feed_id
+        )
     response = []
     for feed_update in feeddam.list_updates_in_feed(feed.pk):
         response.append(feed_update.to_dict())
@@ -150,7 +132,12 @@ def list_updates_in_feed(system_id, feed_id):
 def get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk):
     feed_update = feeddam.get_update_by_pk(feed_update_pk)
     if feed_update is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(
+            models.Feed,
+            system_id=system_id,
+            feed_id=feed_id,
+            feed_update_id=str(feed_update_pk),
+        )
     return feed_update.to_dict()
 
 

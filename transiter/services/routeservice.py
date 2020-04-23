@@ -4,7 +4,7 @@ The route service is used to retrieve data about routes.
 
 import enum
 
-from transiter import exceptions
+from transiter import exceptions, models
 from transiter.data import dbconnection
 from transiter.data.dams import routedam, systemdam, servicemapdam
 from transiter.models import Alert
@@ -21,17 +21,10 @@ def list_all_in_system(system_id, return_links=True):
      * the route's short representation,
      * its status under key 'status',
      * and optionally a link to the route.
-
-    :param system_id: the ID of the system
-    :type system_id: str
-    :param return_links: whether to return links
-    :type return_links: bool
-    :return: the list described above
-    :rtype: list
     """
     system = systemdam.get_by_id(system_id, only_return_active=True)
     if system is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(models.System, system_id=system_id)
     response = []
     routes = list(routedam.list_all_in_system(system_id))
     route_pk_to_status = _construct_route_pk_to_status_map(route.pk for route in routes)
@@ -56,19 +49,12 @@ def get_in_system_by_id(system_id, route_id, return_links=True):
      * all of its service maps for whose group use_for_stops_in_route is true,
        under key 'service_maps',
      * and optionally a link to the route.
-
-    :param system_id: the system ID
-    :type system_id: str
-    :param route_id: the route ID
-    :type route_id: str
-    :param return_links: whether to return links
-    :type return_links: bool
-    :return: the dictionary described above
-    :rtype: dict
     """
     route = routedam.get_in_system_by_id(system_id, route_id)
     if route is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(
+            models.Route, system_id=system_id, route_id=route_id
+        )
     status = _construct_route_status(route.pk)
     periodicity = routedam.calculate_periodicity(route.pk)
     if periodicity is not None:

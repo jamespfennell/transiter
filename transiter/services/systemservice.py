@@ -57,7 +57,7 @@ def get_by_id(system_id, return_links=True):
     """
     system = systemdam.get_by_id(system_id)
     if system is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(models.System, system_id=system_id)
     response = system.to_dict()
     if system.status != system.SystemStatus.ACTIVE:
         return response

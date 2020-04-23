@@ -32,7 +32,7 @@ def list_all_in_system(system_id, return_links=True):
     """
     system = systemdam.get_by_id(system_id, only_return_active=True)
     if system is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(models.System, system_id=system_id)
 
     response = []
     for stop in stopdam.list_all_in_system(system_id):
@@ -60,7 +60,9 @@ def get_in_system_by_id(
     """
     stop = stopdam.get_in_system_by_id(system_id, stop_id)
     if stop is None:
-        raise exceptions.IdNotFoundError
+        raise exceptions.IdNotFoundError(
+            models.Stop, system_id=system_id, stop_id=stop_id
+        )
 
     stop_tree = _StopTree(stop, stopdam.list_all_stops_in_stop_tree(stop.pk))
 
