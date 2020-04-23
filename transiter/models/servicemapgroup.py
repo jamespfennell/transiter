@@ -17,7 +17,7 @@ class ServiceMapGroup(Base):
         SCHEDULE = 1
         REALTIME = 2
 
-    source = Column(Enum(ServiceMapSource), nullable=False)
+    source = Column(Enum(ServiceMapSource, native_enum=False), nullable=False)
     conditions = Column(String)
     threshold = Column(Float, nullable=False, default=0)
     use_for_routes_at_stop = Column(Boolean, nullable=False, default=False)

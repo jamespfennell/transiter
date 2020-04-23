@@ -20,7 +20,7 @@ class System(ToDictMixin, Base):
         DELETING = 5
 
     name = Column(String, nullable=True)
-    status = Column(Enum(SystemStatus), nullable=False)
+    status = Column(Enum(SystemStatus, native_enum=False), nullable=False)
     timezone = Column(String, nullable=True)
     auto_update_enabled = Column(Boolean, nullable=False, server_default="True")
 

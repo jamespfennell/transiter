@@ -23,7 +23,7 @@ class Route(ToDictMixin, Base):
     long_name = Column(String)
     description = Column(String)
     url = Column(String)
-    type = Column(Enum(Type, name="route_type"))
+    type = Column(Enum(Type, name="route_type", native_enum=False))
     sort_order = Column(Integer)
 
     system = relationship("System", back_populates="routes")

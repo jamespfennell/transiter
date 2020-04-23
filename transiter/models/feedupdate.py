@@ -43,9 +43,11 @@ class FeedUpdate(ToDictMixin, Base):
         UNEXPECTED_ERROR = 8
 
     update_type = Column(
-        Enum(Type, name="update_type"), nullable=False, default=Type.REGULAR
+        Enum(Type, name="update_type", native_enum=False),
+        nullable=False,
+        default=Type.REGULAR,
     )
-    status = Column(Enum(Status))
+    status = Column(Enum(Status, native_enum=False))
     result = Column(Enum(Result, native_enum=False))
     result_message = Column(String)
     content_hash = Column(String)

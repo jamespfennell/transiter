@@ -21,8 +21,8 @@ class Alert(ToDictMixin, Base):
     description = Column(String)
     url = Column(String)
 
-    cause = Column(Enum(Cause))
-    effect = Column(Enum(Effect))
+    cause = Column(Enum(Cause, native_enum=False))
+    effect = Column(Enum(Effect, native_enum=False))
     priority = Column(Integer)
     start_time = Column(TIMESTAMP(timezone=True))
     end_time = Column(TIMESTAMP(timezone=True))

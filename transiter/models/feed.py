@@ -25,7 +25,7 @@ class Feed(ToDictMixin, Base):
         GTFS_STATIC = 1
         GTFS_REALTIME = 2
 
-    built_in_parser = Column(Enum(BuiltInParser))
+    built_in_parser = Column(Enum(BuiltInParser, native_enum=False))
     custom_parser = Column(String)
     url = Column(String)
     headers = Column(String)

@@ -31,7 +31,7 @@ class Trip(ToDictMixin, Base):
 
     last_update_time = Column(TIMESTAMP(timezone=True))
     vehicle_id = Column(String)
-    current_status = Column(Enum(TripStatus, name="tripstatus"))
+    current_status = Column(Enum(TripStatus, name="tripstatus", native_enum=False))
     current_stop_sequence = Column(Integer)
 
     source = relationship("FeedUpdate", cascade="none")
