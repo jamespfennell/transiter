@@ -4,316 +4,315 @@ import unittest
 import zipfile
 from unittest import mock
 
-from transiter import models
+import pytest
+
+from transiter import models, parse
 from transiter.services.update import gtfsstaticparser
-from ... import testutil
+
+ROUTE_ID = "L"
+ROUTE_COLOR = "red"
+ROUTE_DESCRIPTION = "All times"
+
+STOP_ID = "N1"
+STOP_NAME = "This stop"
+STOP_ID_2 = "N2"
+STOP_NAME_2 = "This stop 2"
+STOP_LON = "3.67"
+STOP_LAT = "4.003"
+
+SERVICE_ID = "M"
+TRIP_ID = "Z"
 
 
-class TestGtfsStaticUtil(testutil.TestCase(gtfsstaticparser), unittest.TestCase):
-    ROUTE_ID = "L"
-    ROUTE_COLOR = "red"
-    ROUTE_DESCRIPTION = "All times"
+def test_parse_routes():
+    gtfs_static_file = mock.Mock()
+    gtfs_static_file.routes.return_value = [
+        {
+            "route_id": ROUTE_ID,
+            "route_color": ROUTE_COLOR,
+            "route_desc": ROUTE_DESCRIPTION,
+            "route_type": models.Route.Type.RAIL.value,
+        }
+    ]
 
-    STOP_ID = "N1"
-    STOP_NAME = "This stop"
-    STOP_ID_2 = "N2"
-    STOP_NAME_2 = "This stop 2"
-    STOP_LON = "3"
-    STOP_LAT = "4"
+    expected_route = parse.Route(
+        id=ROUTE_ID,
+        color=ROUTE_COLOR,
+        description=ROUTE_DESCRIPTION,
+        text_color="000000",
+        type=models.Route.Type.RAIL,
+    )
 
-    SERVICE_ID = "M"
-    TRIP_ID = "Z"
+    assert [expected_route] == list(gtfsstaticparser.parse_routes(gtfs_static_file))
 
-    def setUp(self):
-        self.GtfsStaticFile = self.mockModuleAttribute("GtfsStaticFile")
 
-    def test_parse(self):
-        binary_content = mock.MagicMock()
+def test_parse(monkeypatch):
+    monkeypatch.setattr(gtfsstaticparser, "parse_routes", lambda *args, **kwargs: [1])
+    monkeypatch.setattr(gtfsstaticparser, "parse_stops", lambda *args, **kwargs: [2])
+    monkeypatch.setattr(gtfsstaticparser, "parse_schedule", lambda *args, **kwargs: [3])
+    monkeypatch.setattr(gtfsstaticparser, "GtfsStaticFile", mock.MagicMock())
 
-        parse_routes = self.mockModuleAttribute("parse_routes")
-        parse_routes.return_value = [1]
-        parse_stops = self.mockModuleAttribute("parse_stops")
-        parse_stops.return_value = [2]
-        parse_schedule = self.mockModuleAttribute("parse_schedule")
-        parse_schedule.return_value = [3]
+    binary_content = mock.MagicMock()
 
-        gtfs_static_file = mock.MagicMock()
-        self.GtfsStaticFile.return_value = gtfs_static_file
+    assert [1, 2, 3] == list(gtfsstaticparser.parse_gtfs_static(binary_content))
 
-        self.assertEqual(
-            [1, 2, 3], list(gtfsstaticparser.parse_gtfs_static(binary_content))
-        )
 
-        self.GtfsStaticFile.assert_called_once_with(binary_content)
-        parse_routes.assert_called_once_with(gtfs_static_file)
-        parse_stops.assert_called_once_with(gtfs_static_file)
-        parse_schedule.assert_called_once_with(gtfs_static_file)
+@pytest.fixture
+def mock_create_station(monkeypatch):
+    mock_create = mock.MagicMock()
+    monkeypatch.setattr(
+        gtfsstaticparser, "create_station_from_child_stops", mock_create
+    )
+    return mock_create
 
-    def test_parse_routes(self):
-        gtfs_static_file = mock.Mock()
-        gtfs_static_file.routes.return_value = [
-            {
-                "route_id": self.ROUTE_ID,
-                "route_color": self.ROUTE_COLOR,
-                "route_desc": self.ROUTE_DESCRIPTION,
-                "route_type": models.Route.Type.RAIL.value,
-            }
-        ]
 
-        expected_route = models.Route(
-            id=self.ROUTE_ID,
-            color=self.ROUTE_COLOR,
-            description=self.ROUTE_DESCRIPTION,
-            text_color="000000",
-            type=models.Route.Type.RAIL,
-        )
+def test_parse_stops__single_stop(mock_create_station):
+    gtfs_static_file = mock.Mock()
+    gtfs_static_file.stops.return_value = [
+        {
+            "stop_id": STOP_ID,
+            "stop_name": STOP_NAME,
+            "stop_lon": STOP_LON,
+            "stop_lat": STOP_LAT,
+            "location_type": "0",
+        }
+    ]
+    gtfs_static_file.transfers.return_value = []
 
-        self.assertEqual(
-            list(gtfsstaticparser.parse_routes(gtfs_static_file)), [expected_route]
-        )
+    expected_stop = parse.Stop(
+        id=STOP_ID,
+        name=STOP_NAME,
+        longitude=float(STOP_LON),
+        latitude=float(STOP_LAT),
+        is_station=True,
+    )
 
-    @mock.patch.object(gtfsstaticparser, "create_station_from_child_stops")
-    def test_parse_stops__single_stop(self, create_station):
-        """[GTFS Static Util] Parse stops - single stop"""
-        gtfs_static_file = mock.Mock()
-        gtfs_static_file.stops.return_value = [
-            {
-                "stop_id": self.STOP_ID,
-                "stop_name": self.STOP_NAME,
-                "stop_lon": self.STOP_LON,
-                "stop_lat": self.STOP_LAT,
-                "location_type": "0",
-            }
-        ]
-        gtfs_static_file.transfers.return_value = []
+    assert [expected_stop] == list(gtfsstaticparser.parse_stops(gtfs_static_file))
 
-        expected_stop = models.Stop(
-            id=self.STOP_ID,
-            name=self.STOP_NAME,
-            longitude=self.STOP_LON,
-            latitude=self.STOP_LAT,
-            is_station=True,
-        )
 
-        self.assertEqual(
-            list(gtfsstaticparser.parse_stops(gtfs_static_file)), [expected_stop]
-        )
+def test_parse_stops__parent_and_child_stop(mock_create_station):
+    gtfs_static_file = mock.Mock()
+    gtfs_static_file.stops.return_value = [
+        {
+            "stop_id": STOP_ID,
+            "stop_name": STOP_NAME,
+            "stop_lon": STOP_LON,
+            "stop_lat": STOP_LAT,
+            "location_type": "0",
+            "parent_station": STOP_ID_2,
+        },
+        {
+            "stop_id": STOP_ID_2,
+            "stop_name": STOP_NAME_2,
+            "stop_lon": STOP_LON,
+            "stop_lat": STOP_LAT,
+            "location_type": "1",
+            "parent_station": "",
+        },
+    ]
+    gtfs_static_file.transfers.return_value = []
 
-    @mock.patch.object(gtfsstaticparser, "create_station_from_child_stops")
-    def test_parse_stops__parent_and_child_stop(self, create_station):
-        """[GTFS Static Util] Parse stops - parent and child stop"""
-        gtfs_static_file = mock.Mock()
-        gtfs_static_file.stops.return_value = [
-            {
-                "stop_id": self.STOP_ID,
-                "stop_name": self.STOP_NAME,
-                "stop_lon": self.STOP_LON,
-                "stop_lat": self.STOP_LAT,
-                "location_type": "0",
-                "parent_station": self.STOP_ID_2,
-            },
-            {
-                "stop_id": self.STOP_ID_2,
-                "stop_name": self.STOP_NAME_2,
-                "stop_lon": self.STOP_LON,
-                "stop_lat": self.STOP_LAT,
-                "location_type": "1",
-                "parent_station": None,
-            },
-        ]
-        gtfs_static_file.transfers.return_value = []
+    expected_stop_2 = parse.Stop(
+        id=STOP_ID_2,
+        name=STOP_NAME_2,
+        longitude=float(STOP_LON),
+        latitude=float(STOP_LAT),
+        is_station=True,
+    )
+    expected_stop_1 = parse.Stop(
+        id=STOP_ID,
+        name=STOP_NAME,
+        longitude=float(STOP_LON),
+        latitude=float(STOP_LAT),
+        is_station=False,
+        parent_stop=expected_stop_2,
+    )
 
-        expected_stop_1 = models.Stop(
-            id=self.STOP_ID,
-            name=self.STOP_NAME,
-            longitude=self.STOP_LON,
-            latitude=self.STOP_LAT,
-            is_station=False,
-        )
-        expected_stop_2 = models.Stop(
-            id=self.STOP_ID_2,
-            name=self.STOP_NAME_2,
-            longitude=self.STOP_LON,
-            latitude=self.STOP_LAT,
-            is_station=True,
-        )
+    actual_stops = list(gtfsstaticparser.parse_stops(gtfs_static_file))
 
-        actual_stops = list(gtfsstaticparser.parse_stops(gtfs_static_file))
+    assert [expected_stop_1, expected_stop_2] == actual_stops
 
-        self.assertEqual([expected_stop_1, expected_stop_2], actual_stops)
-        self.assertEqual(expected_stop_2, actual_stops[0].parent_stop)
 
-    @mock.patch.object(gtfsstaticparser, "create_station_from_child_stops")
-    def test_parse_stops__siblings_by_transfer(self, create_station):
-        """[GTFS Static Util] Parse stops - parent and child stop"""
-        gtfs_static_file = mock.Mock()
-        gtfs_static_file.stops.return_value = [
-            {
-                "stop_id": self.STOP_ID,
-                "stop_name": self.STOP_NAME,
-                "stop_lon": self.STOP_LON,
-                "stop_lat": self.STOP_LAT,
-                "location_type": "1",
-            },
-            {
-                "stop_id": self.STOP_ID_2,
-                "stop_name": self.STOP_NAME_2,
-                "stop_lon": self.STOP_LON,
-                "stop_lat": self.STOP_LAT,
-                "location_type": "1",
-            },
-        ]
-        gtfs_static_file.transfers.return_value = [
-            {"from_stop_id": self.STOP_ID, "to_stop_id": self.STOP_ID_2},
-            {"from_stop_id": self.STOP_ID, "to_stop_id": self.STOP_ID},
-        ]
+def test_parse_stops__siblings_by_transfer(mock_create_station):
+    gtfs_static_file = mock.Mock()
+    gtfs_static_file.stops.return_value = [
+        {
+            "stop_id": STOP_ID,
+            "stop_name": STOP_NAME,
+            "stop_lon": STOP_LON,
+            "stop_lat": STOP_LAT,
+            "location_type": "1",
+        },
+        {
+            "stop_id": STOP_ID_2,
+            "stop_name": STOP_NAME_2,
+            "stop_lon": STOP_LON,
+            "stop_lat": STOP_LAT,
+            "location_type": "1",
+        },
+    ]
+    gtfs_static_file.transfers.return_value = [
+        {"from_stop_id": STOP_ID, "to_stop_id": STOP_ID_2},
+        {"from_stop_id": STOP_ID, "to_stop_id": STOP_ID},
+    ]
 
-        expected_stop_1 = models.Stop(
-            id=self.STOP_ID,
-            name=self.STOP_NAME,
-            longitude=self.STOP_LON,
-            latitude=self.STOP_LAT,
-            is_station=True,
-        )
-        expected_stop_2 = models.Stop(
-            id=self.STOP_ID_2,
-            name=self.STOP_NAME_2,
-            longitude=self.STOP_LON,
-            latitude=self.STOP_LAT,
-            is_station=True,
-        )
-        expected_station = models.Stop(id="FakeID")
-        create_station.return_value = expected_station
+    expected_station = parse.Stop(
+        id="FakeID", name="", longitude=0, latitude=0, is_station=False
+    )
+    mock_create_station.return_value = expected_station
+    expected_stop_1 = parse.Stop(
+        id=STOP_ID,
+        name=STOP_NAME,
+        longitude=float(STOP_LON),
+        latitude=float(STOP_LAT),
+        is_station=True,
+        parent_stop=expected_station,
+    )
+    expected_stop_2 = parse.Stop(
+        id=STOP_ID_2,
+        name=STOP_NAME_2,
+        longitude=float(STOP_LON),
+        latitude=float(STOP_LAT),
+        is_station=True,
+        parent_stop=expected_station,
+    )
 
-        actual_stops = list(gtfsstaticparser.parse_stops(gtfs_static_file))
+    actual_stops = list(gtfsstaticparser.parse_stops(gtfs_static_file))
 
-        self.assertEqual(
-            [expected_stop_1, expected_stop_2, expected_station], actual_stops
-        )
-        self.assertEqual(expected_station, actual_stops[0].parent_stop)
-        self.assertEqual(expected_station, actual_stops[1].parent_stop)
+    assert [expected_stop_1, expected_stop_2, expected_station] == actual_stops
 
-    def test_create_station_from_child_stops(self):
-        """[GTFS Static Util] Create parent from child stops"""
 
-        child_1 = models.Stop(id="A", name="Name 1", latitude=4, longitude=1)
-        child_2 = models.Stop(id="B", name="Name 1", latitude=1, longitude=1)
-        child_3 = models.Stop(id="C", name="Name 2", latitude=1, longitude=1)
+def test_create_station_from_child_stops():
+    child_1 = parse.Stop(
+        id="A", name="Name 1", latitude=4, longitude=1, is_station=True
+    )
+    child_2 = parse.Stop(
+        id="B", name="Name 1", latitude=1, longitude=1, is_station=True
+    )
+    child_3 = parse.Stop(
+        id="C", name="Name 2", latitude=1, longitude=1, is_station=True
+    )
 
-        expected_station = models.Stop(
-            id="A-B-C", name="Name 1", latitude=2, longitude=1, is_station=True
-        )
+    expected_station = parse.Stop(
+        id="A-B-C", name="Name 1", latitude=2, longitude=1, is_station=True
+    )
 
-        actual_station = gtfsstaticparser.create_station_from_child_stops(
-            [child_1, child_2, child_3]
-        )
+    actual_station = gtfsstaticparser.create_station_from_child_stops(
+        [child_1, child_2, child_3]
+    )
 
-        self.assertEqual(expected_station, actual_station)
+    assert expected_station == actual_station
 
-    def test_create_station_from_child_stops_hybrid_name(self):
-        """[GTFS Static Util] Create parent from child stops - hybrid name"""
 
-        child_1 = models.Stop(id="A", name="Name 1", latitude=3, longitude=1)
-        child_2 = models.Stop(id="B", name="Name 2", latitude=1, longitude=1)
+def test_create_station_from_child_stops_hybrid_name():
+    child_1 = parse.Stop(
+        id="A", name="Name 1", latitude=3, longitude=1, is_station=True
+    )
+    child_2 = parse.Stop(
+        id="B", name="Name 2", latitude=1, longitude=1, is_station=True
+    )
 
-        expected_station = models.Stop(
-            id="A-B", name="Name 1 / Name 2", latitude=2, longitude=1, is_station=True
-        )
+    expected_station = parse.Stop(
+        id="A-B", name="Name 1 / Name 2", latitude=2, longitude=1, is_station=True
+    )
 
-        actual_station = gtfsstaticparser.create_station_from_child_stops(
-            [child_1, child_2]
-        )
+    actual_station = gtfsstaticparser.create_station_from_child_stops(
+        [child_1, child_2]
+    )
 
-        self.assertEqual(expected_station, actual_station)
+    assert expected_station == actual_station
 
-    def test_create_station_from_child_stops_substring_case(self):
-        """[GTFS Static Util] Create parent from child stops - substring name case"""
 
-        child_1 = models.Stop(id="A", name="Name 1", latitude=3, longitude=1)
-        child_2 = models.Stop(id="B", name="Name 1 (and more)", latitude=1, longitude=1)
+def test_create_station_from_child_stops_substring_case():
+    child_1 = parse.Stop(
+        id="A", name="Name 1", latitude=3, longitude=1, is_station=True
+    )
+    child_2 = parse.Stop(
+        id="B", name="Name 1 (and more)", latitude=1, longitude=1, is_station=True
+    )
 
-        expected_station = models.Stop(
-            id="A-B", name="Name 1 (and more)", latitude=2, longitude=1, is_station=True
-        )
+    expected_station = parse.Stop(
+        id="A-B", name="Name 1 (and more)", latitude=2, longitude=1, is_station=True
+    )
 
-        actual_station = gtfsstaticparser.create_station_from_child_stops(
-            [child_1, child_2]
-        )
+    actual_station = gtfsstaticparser.create_station_from_child_stops(
+        [child_1, child_2]
+    )
 
-        self.assertEqual(expected_station, actual_station)
+    assert expected_station == actual_station
 
-    def test_parse_services(self):
-        """[GTFS static util] Parse services"""
 
-        gtfs_static_file = mock.Mock()
+def test_parse_services():
+    gtfs_static_file = mock.Mock()
 
-        gtfs_static_file.calendar.return_value = [
-            {
-                "service_id": self.SERVICE_ID,
-                "monday": "1",
-                "tuesday": "1",
-                "wednesday": "1",
-                "thursday": "0",
-                "friday": "0",
-                "saturday": "0",
-                "sunday": "0",
-            }
-        ]
-        service = models.ScheduledService(
-            id=self.SERVICE_ID,
-            monday=True,
-            tuesday=True,
-            wednesday=True,
-            thursday=False,
-            friday=False,
-            saturday=False,
-            sunday=False,
-        )
+    gtfs_static_file.stop_times.return_value = [
+        {
+            "trip_id": TRIP_ID,
+            "stop_id": STOP_ID,
+            "stop_sequence": "1",
+            "departure_time": "11:12:13",
+            "arrival_time": "11:12:13",
+        },
+        {
+            "trip_id": "Unknown trip ID",
+            "stop_id": STOP_ID_2,
+            "stop_sequence": "1",
+            "departure_time": "11:12:13",
+            "arrival_time": "11:12:13",
+        },
+    ]
+    stop_time = parse.ScheduledTripStopTime(
+        stop_sequence=1,
+        stop_id=STOP_ID,
+        departure_time=datetime.time(hour=11, minute=12, second=13),
+        arrival_time=datetime.time(hour=11, minute=12, second=13),
+    )
 
-        gtfs_static_file.trips.return_value = [
-            {
-                "service_id": self.SERVICE_ID,
-                "trip_id": self.TRIP_ID,
-                "route_id": self.ROUTE_ID,
-                "direction_id": "1",
-            },
-            {
-                "service_id": "Unknown service ID",
-                "trip_id": self.TRIP_ID,
-                "route_id": self.ROUTE_ID,
-                "direction_id": "1",
-            },
-        ]
-        trip = models.ScheduledTrip(id=self.TRIP_ID, direction_id=True)
+    gtfs_static_file.trips.return_value = [
+        {
+            "service_id": SERVICE_ID,
+            "trip_id": TRIP_ID,
+            "route_id": ROUTE_ID,
+            "direction_id": "1",
+        },
+        {
+            "service_id": "Unknown service ID",
+            "trip_id": TRIP_ID,
+            "route_id": ROUTE_ID,
+            "direction_id": "1",
+        },
+    ]
+    trip = parse.ScheduledTrip(
+        id=TRIP_ID, route_id=ROUTE_ID, direction_id=True, stop_times=[stop_time]
+    )
 
-        gtfs_static_file.stop_times.return_value = [
-            {
-                "trip_id": self.TRIP_ID,
-                "stop_id": self.STOP_ID,
-                "stop_sequence": "1",
-                "departure_time": "11:12:13",
-                "arrival_time": "11:12:13",
-            },
-            {
-                "trip_id": "Unknown trip ID",
-                "stop_id": self.STOP_ID_2,
-                "stop_sequence": "1",
-                "departure_time": "11:12:13",
-                "arrival_time": "11:12:13",
-            },
-        ]
-        stop_time = models.ScheduledTripStopTimeLight()
-        stop_time.stop_sequence = 1
-        stop_time.stop_id = self.STOP_ID
-        stop_time.departure_time = datetime.time(hour=11, minute=12, second=13)
-        stop_time.arrival_time = datetime.time(hour=11, minute=12, second=13)
+    gtfs_static_file.calendar.return_value = [
+        {
+            "service_id": SERVICE_ID,
+            "monday": "1",
+            "tuesday": "1",
+            "wednesday": "1",
+            "thursday": "0",
+            "friday": "0",
+            "saturday": "0",
+            "sunday": "0",
+        }
+    ]
+    service = parse.ScheduledService(
+        id=SERVICE_ID,
+        monday=True,
+        tuesday=True,
+        wednesday=True,
+        thursday=False,
+        friday=False,
+        saturday=False,
+        sunday=False,
+        trips=[trip],
+    )
 
-        actual_services = list(gtfsstaticparser.parse_schedule(gtfs_static_file))
+    actual_services = list(gtfsstaticparser.parse_schedule(gtfs_static_file))
 
-        self.assertEqual([service], actual_services)
-        self.assertEqual([trip], actual_services[0].trips)
-        self.assertEqual(self.ROUTE_ID, actual_services[0].trips[0].route_id)
-        self.assertEqual([stop_time], actual_services[0].trips[0].stop_times_light)
+    assert [service] == actual_services
 
 
 class TestReadZipFile(unittest.TestCase):

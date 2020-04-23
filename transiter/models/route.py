@@ -1,13 +1,12 @@
-import enum
-
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 
+from transiter import parse
 from .base import Base, ToDictMixin
-from .updatableentity import updatable_entity
+from .updatableentity import updatable_from
 
 
-@updatable_entity
+@updatable_from(parse.Route)
 class Route(ToDictMixin, Base):
     __tablename__ = "route"
 
@@ -16,15 +15,7 @@ class Route(ToDictMixin, Base):
     system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
-    class Type(enum.Enum):
-        LIGHT_RAIL = 0
-        SUBWAY = 1
-        RAIL = 2
-        BUS = 3
-        FERRY = 4
-        CABLE_CAR = 5
-        GONDOLA = 6
-        FUNICULAR = 7
+    Type = parse.Route.Type
 
     color = Column(String)
     text_color = Column(String)
@@ -55,3 +46,17 @@ class Route(ToDictMixin, Base):
 
     __dict_columns__ = [id, color]
     __large_dict_columns__ = [id, short_name, long_name, color, description, url, type]
+
+    @staticmethod
+    def from_parsed_route(route: parse.Route) -> "Route":
+        return Route(
+            id=route.id,
+            type=route.type,
+            short_name=route.short_name,
+            long_name=route.long_name,
+            description=route.description,
+            color=route.color,
+            text_color=route.text_color,
+            url=route.url,
+            sort_order=route.sort_order,
+        )

@@ -1,13 +1,12 @@
-import enum
-
 from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
+from transiter import parse
 from .base import Base, ToDictMixin
-from .updatableentity import updatable_entity
+from .updatableentity import updatable_from
 
 
-@updatable_entity
+@updatable_from(parse.Alert)
 class Alert(ToDictMixin, Base):
     __tablename__ = "alert"
 
@@ -15,30 +14,8 @@ class Alert(ToDictMixin, Base):
     id = Column(String)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
-    class Cause(enum.Enum):
-        UNKNOWN_CAUSE = 1
-        OTHER_CAUSE = 2
-        TECHNICAL_PROBLEM = 3
-        STRIKE = 4
-        DEMONSTRATION = 5
-        ACCIDENT = 6
-        HOLIDAY = 7
-        WEATHER = 8
-        MAINTENANCE = 9
-        CONSTRUCTION = 10
-        POLICE_ACTIVITY = 11
-        MEDICAL_EMERGENCY = 12
-
-    class Effect(enum.Enum):
-        NO_SERVICE = 0
-        REDUCED_SERVICE = 1
-        SIGNIFICANT_DELAYS = 2
-        DETOUR = 3
-        ADDITIONAL_SERVICE = 4
-        MODIFIED_SERVICE = 5
-        OTHER_EFFECT = 6
-        UNKNOWN_EFFECT = 7
-        STOP_MOVED = 8
+    Cause = parse.Alert.Cause
+    Effect = parse.Alert.Effect
 
     header = Column(String)
     description = Column(String)
@@ -80,6 +57,20 @@ class Alert(ToDictMixin, Base):
         cause,
         effect,
     ]
+
+    @staticmethod
+    def from_parsed_alert(alert: parse.Alert) -> "Alert":
+        return Alert(
+            id=alert.id,
+            cause=alert.cause,
+            effect=alert.effect,
+            header=alert.header,
+            description=alert.description,
+            url=alert.url,
+            start_time=alert.start_time,
+            end_time=alert.end_time,
+            priority=alert.priority,
+        )
 
 
 alert_route = Table(

@@ -1,21 +1,16 @@
-import pytest
+import datetime
+import itertools
 
-from transiter import models
+import pytest
+import pytz
+
+from transiter import models, parse
 from transiter.services.update import sync
 
 
 # TODO
-#  stop graph linking tests
 #  route and stop feed stealing?
 #  direction rules no feed stealing?
-#  trip:
-#  - add with route coming from schedule
-#  - add with invalid route
-#  - add with invalid stops in stop times
-#  - add with pre-existing data, make past stops, make new stops
-#  - regular add new trip
-#  - delete trip
-#  - scheduler - basic add, update, delete
 
 
 @pytest.fixture
@@ -33,19 +28,40 @@ def current_update(add_model, feed):
     return add_model(models.FeedUpdate(feed=feed))
 
 
+new_alert = parse.Alert(id="alert", header="header", description="description")
+new_route = parse.Route(id="route", type=parse.Route.Type.RAIL, description="new_route")
+new_stop = parse.Stop(
+    id="route", name="new stop", latitude=0, longitude=0, is_station=True
+)
+
+
 @pytest.mark.parametrize(
     "entity_type,previous,current,expected_counts",
     [
+        [models.Alert, [], [new_alert], (1, 0, 0)],
         [
-            models.Route,
+            models.Alert,
+            [models.Alert(id="alert", header="old header", description="old route")],
+            [new_alert],
+            (0, 1, 0),
+        ],
+        [
+            models.Alert,
+            [models.Alert(id="alert", header="old header", description="old route")],
             [],
-            [models.Route(id="route", description="new route")],
-            (1, 0, 0),
+            (0, 0, 1),
         ],
         [
             models.Route,
             [models.Route(id="route", description="old route")],
-            [models.Route(id="route", description="new route")],
+            [new_route],
+            (0, 1, 0),
+        ],
+        [models.Route, [], [new_route], (1, 0, 0)],
+        [
+            models.Route,
+            [models.Route(id="route", description="old route")],
+            [new_route],
             (0, 1, 0),
         ],
         [
@@ -54,17 +70,17 @@ def current_update(add_model, feed):
             [],
             (0, 0, 1),
         ],
-        [models.Stop, [], [models.Stop(id="route", name="new stop")], (1, 0, 0)],
+        [models.Stop, [], [new_stop], (1, 0, 0)],
         [
             models.Stop,
             [models.Stop(id="route", name="old stop")],
-            [models.Stop(id="route", name="new stop")],
+            [new_stop],
             (0, 1, 0),
         ],
         [models.Stop, [models.Stop(id="route", name="old stop")], [], (0, 0, 1)],
     ],
 )
-def test_sync__simple_create_update_delete(
+def test_simple_create_update_delete(
     db_session,
     add_model,
     system_1,
@@ -76,7 +92,7 @@ def test_sync__simple_create_update_delete(
     expected_counts,
 ):
     for entity in previous:
-        entity.system = system_1
+        entity.system_pk = system_1.pk
         entity.source = previous_update
         add_model(entity)
 
@@ -87,6 +103,8 @@ def test_sync__simple_create_update_delete(
             return entity.id, entity.description, entity.source_pk
         if entity_type is models.Stop:
             return entity.id, entity.name, entity.source_pk
+        if entity_type is models.Alert:
+            return entity.id, entity.description, entity.header
         raise NotImplementedError
 
     assert set(map(fields_to_compare, current)) == set(
@@ -96,21 +114,102 @@ def test_sync__simple_create_update_delete(
 
 
 @pytest.mark.parametrize(
+    "old_id_to_parent_id,expected_id_to_parent_id",
+    [
+        [{}, {"1": "2", "2": None}],
+        [{"1": "2", "2": None}, {}],
+        [{"1": "2", "2": None}, {"1": None, "2": None}],
+        [{"1": "2", "2": None}, {"1": None, "2": "1"}],
+        [{"1": "2", "2": "3", "3": None}, {"1": None, "2": "1", "3": "2"}],
+        [{"1": "2", "2": None}, {"2": None}],
+        [{"1": "2", "2": None}, {"1": None}],
+    ],
+)
+def test_stop__tree_linking(
+    db_session,
+    system_1,
+    add_model,
+    previous_update,
+    current_update,
+    old_id_to_parent_id,
+    expected_id_to_parent_id,
+):
+    stop_id_to_stop = {
+        id_: add_model(
+            models.Stop(
+                id=id_,
+                name=id_,
+                system=system_1,
+                source=previous_update,
+                longitude=0,
+                latitude=0,
+                is_station=True,
+            )
+        )
+        for id_ in old_id_to_parent_id.keys()
+    }
+    for id_, parent_id in old_id_to_parent_id.items():
+        if parent_id is None:
+            continue
+        stop_id_to_stop[id_].parent_stop = stop_id_to_stop[parent_id]
+    db_session.flush()
+
+    stop_id_to_stop = {
+        id_: parse.Stop(id=id_, name=id_, longitude=0, latitude=0, is_station=True)
+        for id_ in expected_id_to_parent_id.keys()
+    }
+    for id_, parent_id in expected_id_to_parent_id.items():
+        if parent_id is None:
+            continue
+        stop_id_to_stop[id_].parent_stop = stop_id_to_stop[parent_id]
+
+    sync.sync(current_update.pk, list(stop_id_to_stop.values()))
+
+    actual_stop_id_parent_id = {}
+    for stop in db_session.query(models.Stop).all():
+        if stop.parent_stop is not None:
+            actual_stop_id_parent_id[stop.id] = stop.parent_stop.id
+        else:
+            actual_stop_id_parent_id[stop.id] = None
+
+    assert expected_id_to_parent_id == actual_stop_id_parent_id
+
+
+def test_alert__route_linking(db_session, previous_update, current_update, route_1_1):
+    alert = parse.Alert(
+        id="alert", header="header", description="description", route_ids=[route_1_1.id]
+    )
+
+    sync.sync(current_update.pk, [alert])
+
+    persisted_alert = db_session.query(models.Alert).all()[0]
+
+    assert persisted_alert.routes == [route_1_1]
+
+
+@pytest.mark.parametrize(
     "previous,current,expected_counts",
     [
-        [[], [models.DirectionRule(id="route", track="new track")], (1, 0, 0)],
         [
-            [models.DirectionRule(id="route", track="old track")],
-            [models.DirectionRule(id="route", track="new track")],
+            [],
+            [parse.DirectionRule(name="Rule", id="route", track="new track")],
+            (1, 0, 0),
+        ],
+        [
+            [models.DirectionRule(name="Rule", id="route", track="old track")],
+            [parse.DirectionRule(name="Rule", id="route", track="new track")],
             (0, 1, 0),
         ],
-        [[models.DirectionRule(id="route", track="old track")], [], (0, 0, 1)],
+        [
+            [models.DirectionRule(name="Rule", id="route", track="old track")],
+            [],
+            (0, 0, 1),
+        ],
     ],
 )
 def test_direction_rules(
     db_session,
     add_model,
-    system_1,
     stop_1_1,
     previous_update,
     current_update,
@@ -142,18 +241,25 @@ def test_direction_rules(
 
 
 def test_schedule(db_session, stop_1_1, route_1_1, previous_update, current_update):
-    stop_time = models.ScheduledTripStopTimeLight()
-    stop_time.stop_id = stop_1_1.id
-    stop_time.stop_sequence = 3
+    stop_time = parse.ScheduledTripStopTime(
+        stop_id=stop_1_1.id, stop_sequence=3, departure_time=None, arrival_time=None
+    )
 
-    trip = models.ScheduledTrip(id="trid_id")
-    trip.route_id = route_1_1.id
-    trip.stop_times_light = []
-    trip.stop_times_light.append(stop_time)
+    trip = parse.ScheduledTrip(
+        id="trid_id", route_id=route_1_1.id, direction_id=True, stop_times=[stop_time]
+    )
 
-    schedule = models.ScheduledService(id="schedule")
-    schedule.trips = []
-    schedule.trips.append(trip)
+    schedule = parse.ScheduledService(
+        id="schedule",
+        monday=True,
+        tuesday=True,
+        wednesday=True,
+        thursday=True,
+        friday=True,
+        saturday=True,
+        sunday=True,
+        trips=[trip],
+    )
 
     actual_counts = sync.sync(current_update.pk, [schedule])
 
@@ -166,7 +272,9 @@ def test_schedule(db_session, stop_1_1, route_1_1, previous_update, current_upda
 def test_direction_rules__skip_unknown_stop(
     db_session, system_1, current_update,
 ):
-    current = [models.DirectionRule(id="blah", track="new track", stop_pk=104401)]
+    current = [
+        parse.DirectionRule(name="Rule", id="blah", track="new track", stop_id="104401")
+    ]
 
     actual_counts = sync.sync(current_update.pk, current)
 
@@ -188,3 +296,143 @@ def test_flush(db_session, add_model, system_1, previous_update, current_update)
     sync.sync(current_update.pk, [])
 
     assert [] == db_session.query(models.Route).all()
+
+
+def test_trip__route_from_schedule(
+    db_session, add_model, system_1, route_1_1, current_update
+):
+    add_model(
+        models.ScheduledTrip(
+            id="trip",
+            route=route_1_1,
+            service=add_model(models.ScheduledService(id="service", system=system_1)),
+        )
+    )
+
+    new_trip = parse.Trip(id="trip", route_id=None, direction_id=True)
+
+    sync.sync(current_update.pk, [new_trip])
+
+    all_trips = db_session.query(models.Trip).all()
+
+    assert 1 == len(all_trips)
+    assert "trip" == all_trips[0].id
+    assert route_1_1 == all_trips[0].route
+
+
+def test_trip__invalid_route(db_session, system_1, route_1_1, current_update):
+    new_trip = parse.Trip(id="trip", route_id="unknown_route", direction_id=True)
+
+    sync.sync(current_update.pk, [new_trip])
+
+    all_trips = db_session.query(models.Trip).all()
+
+    assert [] == all_trips
+
+
+def test_trip__invalid_stops_in_stop_times(
+    db_session, system_1, route_1_1, stop_1_1, current_update
+):
+    new_trip = parse.Trip(
+        id="trip",
+        route_id=route_1_1.id,
+        direction_id=True,
+        stop_times=[
+            parse.TripStopTime(stop_id=stop_1_1.id, stop_sequence=2),
+            parse.TripStopTime(stop_id=stop_1_1.id + "blah_bla", stop_sequence=3),
+        ],
+    )
+
+    sync.sync(current_update.pk, [new_trip])
+
+    all_trips = db_session.query(models.Trip).all()
+
+    assert 1 == len(all_trips)
+    assert 1 == len(all_trips[0].stop_times)
+
+
+def test_trip__stop_time_reconciliation(
+    db_session, add_model, system_1, route_1_1, previous_update, current_update
+):
+
+    old_stop_time_data = [
+        parse.TripStopTime(
+            stop_sequence=1,
+            stop_id="stop_id_1",
+            arrival_time=datetime.datetime.fromtimestamp(1000100),
+            future=True,
+        ),
+        parse.TripStopTime(
+            stop_sequence=2,
+            stop_id="stop_id_2",
+            arrival_time=datetime.datetime.fromtimestamp(1000200),
+            future=True,
+        ),
+    ]
+    new_stop_time_data = [
+        parse.TripStopTime(
+            stop_sequence=2,
+            stop_id="stop_id_2",
+            arrival_time=datetime.datetime.fromtimestamp(1000300),
+            future=True,
+        ),
+    ]
+
+    expected_stop_time_data = [
+        parse.TripStopTime(
+            stop_sequence=1,
+            stop_id="stop_id_1",
+            arrival_time=datetime.datetime.fromtimestamp(
+                1000100, tz=pytz.timezone("UTC")
+            ),
+            future=False,
+        ),
+        parse.TripStopTime(
+            stop_sequence=2,
+            stop_id="stop_id_2",
+            arrival_time=datetime.datetime.fromtimestamp(
+                1000300, tz=pytz.timezone("UTC")
+            ),
+            future=True,
+        ),
+    ]
+
+    stop_pk_to_stop = {}
+    all_stop_ids = set(
+        trip_stop_time.stop_id
+        for trip_stop_time in itertools.chain(old_stop_time_data, new_stop_time_data)
+    )
+    for stop_id in all_stop_ids:
+        stop = add_model(models.Stop(id=stop_id, system=system_1))
+        stop_pk_to_stop[stop.pk] = stop
+
+    trip = parse.Trip(
+        id="trip",
+        route_id=route_1_1.id,
+        direction_id=True,
+        stop_times=old_stop_time_data,
+    )
+
+    sync.sync(previous_update.pk, [trip])
+
+    trip.stop_times = new_stop_time_data
+
+    sync.sync(current_update.pk, [trip])
+
+    actual_stop_times = [
+        convert_trip_stop_time_model_to_parse(trip_stop_time, stop_pk_to_stop)
+        for trip_stop_time in db_session.query(models.Trip).all()[0].stop_times
+    ]
+
+    assert expected_stop_time_data == actual_stop_times
+
+
+def convert_trip_stop_time_model_to_parse(
+    trip_stop_time: models.TripStopTime, stop_pk_to_stop
+):
+    return parse.TripStopTime(
+        stop_sequence=trip_stop_time.stop_sequence,
+        future=trip_stop_time.future,
+        arrival_time=trip_stop_time.arrival_time,
+        stop_id=stop_pk_to_stop[trip_stop_time.stop_pk].id,
+    )

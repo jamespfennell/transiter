@@ -8,7 +8,7 @@ import datetime
 import pytz
 from google.transit import gtfs_realtime_pb2
 
-from transiter import models
+from transiter import parse
 
 
 def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None):
@@ -183,17 +183,18 @@ class _GtfsRealtimeToTransiterTransformer:
             alert_data = entity.get(ALERT)
             if alert_id is None or alert_data is None:
                 continue
-            alert = models.Alert(
+            informed_entities = alert_data.get(INFORMED_ENTITY, {})
+            alert = parse.Alert(
                 id=alert_id,
                 cause=get_enum_value(
-                    models.Alert.Cause,
+                    parse.Alert.Cause,
                     alert_data.get(CAUSE),
-                    models.Alert.Cause.UNKNOWN_CAUSE,
+                    parse.Alert.Cause.UNKNOWN_CAUSE,
                 ),
                 effect=get_enum_value(
-                    models.Alert.Effect,
+                    parse.Alert.Effect,
                     alert_data.get(EFFECT),
-                    models.Alert.Effect.UNKNOWN_EFFECT,
+                    parse.Alert.Effect.UNKNOWN_EFFECT,
                 ),
                 header=get_text(alert_data, HEADER_TEXT),
                 description=get_text(alert_data, DESCRIPTION_TEXT),
@@ -204,18 +205,17 @@ class _GtfsRealtimeToTransiterTransformer:
                 end_time=self._timestamp_to_datetime(
                     alert_data.get(ACTIVE_PERIOD, {}).get(START)
                 ),
+                agency_ids=[
+                    informed_entity[AGENCY_ID]
+                    for informed_entity in informed_entities
+                    if AGENCY_ID in informed_entity
+                ],
+                route_ids=[
+                    informed_entity[ROUTE_ID]
+                    for informed_entity in informed_entities
+                    if ROUTE_ID in informed_entity
+                ],
             )
-            informed_entities = alert_data.get(INFORMED_ENTITY, {})
-            alert.agency_ids = [
-                informed_entity[AGENCY_ID]
-                for informed_entity in informed_entities
-                if AGENCY_ID in informed_entity
-            ]
-            alert.route_ids = [
-                informed_entity[ROUTE_ID]
-                for informed_entity in informed_entities
-                if ROUTE_ID in informed_entity
-            ]
             alerts.append(alert)
         return alerts
 
@@ -246,11 +246,8 @@ class _GtfsRealtimeToTransiterTransformer:
     def _transform_trip_base_data(self):
         for trip_id, entity in self._trip_id_to_raw_entities.items():
             trip_data = entity.get("trip", {})
+            vehicle_data = entity.get("vehicle", {})
 
-            trip = models.TripLight()
-            trip.id = trip_id
-            trip.route_id = trip_data.get("route_id", None)
-            trip.direction_id = trip_data.get("direction_id", None)
             start_date_str = trip_data.get("start_date", None)
             if start_date_str is not None:
                 start_dt = datetime.datetime(
@@ -258,25 +255,31 @@ class _GtfsRealtimeToTransiterTransformer:
                     month=int(start_date_str[4:6]),
                     day=int(start_date_str[6:8]),
                 )
-                trip.start_time = self._localize_datetime(start_dt, naive=True)
+                trip_start_time = self._localize_datetime(start_dt, naive=True)
+            else:
+                trip_start_time = None
 
-            trip.vehicle_id = (
-                entity.get("trip_update", {}).get("vehicle", {}).get("id", None)
-            )
-
-            vehicle_data = entity.get("vehicle", {})
-            trip.last_update_time = self._timestamp_to_datetime(
-                vehicle_data.get("timestamp", None)
-            )
-            if trip.last_update_time is None:
-                trip.last_update_time = self._transformed_metadata.get(
-                    "timestamp", None
-                )
             raw_current_status = vehicle_data.get("current_status", None)
             if raw_current_status is not None:
-                trip.current_status = models.Trip.TripStatus[raw_current_status]
-            trip.current_stop_sequence = vehicle_data.get("current_stop_sequence", 0)
-            trip.current_stop_id = vehicle_data.get("stop_id", None)
+                current_status = parse.Trip.Status[raw_current_status]
+            else:
+                current_status = None
+
+            trip = parse.Trip(
+                id=trip_id,
+                route_id=trip_data.get("route_id", None),
+                direction_id=trip_data.get("direction_id", None),
+                start_time=trip_start_time,
+                train_id=entity.get("trip_update", {})
+                .get("vehicle", {})
+                .get("id", None),
+                updated_at=self._timestamp_to_datetime(
+                    vehicle_data.get("timestamp", None)
+                ),
+                current_status=current_status,
+                current_stop_sequence=vehicle_data.get("current_stop_sequence", 0),
+                current_stop_id=vehicle_data.get("stop_id", None),
+            )
             self._trip_id_to_trip_model[trip_id] = trip
 
     def _transform_trip_stop_events(self):
@@ -287,8 +290,7 @@ class _GtfsRealtimeToTransiterTransformer:
             stop_time_updates = []
 
             for stop_time_update_data in trip_update.get("stop_time_update", []):
-                stop_time_update = models.TripStopTime.from_feed(
-                    trip_id=trip_id,
+                stop_time_update = parse.TripStopTime(
                     stop_id=stop_time_update_data["stop_id"],
                     arrival_time=self._timestamp_to_datetime(
                         stop_time_update_data.get("arrival", {}).get("time", None)
@@ -377,7 +379,7 @@ class TripDataCleaner:
         """
         trips_to_keep = []
         for trip in trips:
-            if not isinstance(trip, models.Trip):
+            if not isinstance(trip, parse.Trip):
                 trips_to_keep.append(trip)
                 continue
             result = True

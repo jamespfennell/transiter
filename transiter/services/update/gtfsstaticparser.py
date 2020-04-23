@@ -10,7 +10,7 @@ import enum
 import io
 import zipfile
 
-from transiter import models
+from transiter import parse
 
 
 # Additional arguments are accepted for forwards compatibility
@@ -76,51 +76,49 @@ class GtfsStaticFile:
 
 def parse_routes(gtfs_static_file: GtfsStaticFile):
     for row in gtfs_static_file.routes():
-        route = models.Route()
-        route.id = row["route_id"]
-        if "route_type" in row:
-            route.type = models.Route.Type(int(row["route_type"]))
-        route.color = row.get("route_color", "FFFFF")
-        route.text_color = row.get("route_text_color", "000000")
-        route.url = row.get("route_url")
-        route.short_name = row.get("route_short_name")
-        route.long_name = row.get("route_long_name")
-        route.description = row.get("route_desc")
-        route.sort_order = row.get("route_sort_order")
-        yield route
+        yield parse.Route(
+            id=row["route_id"],
+            type=parse.Route.Type(int(row["route_type"])),
+            color=row.get("route_color", "FFFFF"),
+            text_color=row.get("route_text_color", "000000"),
+            url=row.get("route_url"),
+            short_name=row.get("route_short_name"),
+            long_name=row.get("route_long_name"),
+            description=row.get("route_desc"),
+            sort_order=row.get("route_sort_order"),
+        )
 
 
 def parse_stops(gtfs_static_file: GtfsStaticFile):
 
     stop_id_to_stop = {}
+    stop_id_to_parent_stop_id = {}
 
     # Step 1: read the basic stops in the GTFS feed into Stop objects.
     for row in gtfs_static_file.stops():
-        stop = models.Stop()
-        stop.id = row["stop_id"]
-        stop.name = row["stop_name"]
-        stop.longitude = row["stop_lon"]
-        stop.latitude = row["stop_lat"]
-        stop.url = row.get("stop_url")
+        stop = parse.Stop(
+            id=row["stop_id"],
+            name=row["stop_name"],
+            longitude=float(row["stop_lon"]),
+            latitude=float(row["stop_lat"]),
+            url=row.get("stop_url"),
+            is_station=row["location_type"] == "1",
+        )
+        parent_stop_id = row.get("parent_station", "")
+        if parent_stop_id != "":
+            stop_id_to_parent_stop_id[stop.id] = parent_stop_id
         stop_id_to_stop[stop.id] = stop
-        if row["location_type"] == "1":
-            stop.is_station = True
-            stop.parent_stop_id = None
-            continue
-        stop.is_station = False
-        stop.parent_stop_id = row.get("parent_station", None)
+
+    for stop_id, parent_stop_id in stop_id_to_parent_stop_id.items():
+        stop_id_to_stop[stop_id].parent_stop = stop_id_to_stop[parent_stop_id]
 
     # Step 2: replace the parent stop IDs with the actual parent stop. If a stop does
     # not have a parent, make it a station.
     stop_id_to_station_id = {}
     station_sets_by_stop_id = {}
     for stop in stop_id_to_stop.values():
-        if not stop.is_station:
-            parent_stop = stop_id_to_stop.get(stop.parent_stop_id, None)
-            if parent_stop is None:
-                stop.is_station = True
-            else:
-                stop.parent_stop = parent_stop
+        if stop.parent_stop is None:
+            stop.is_station = True
         if stop.is_station:
             station_sets_by_stop_id[stop.id] = {stop.id}
         else:
@@ -167,18 +165,15 @@ def create_station_from_child_stops(child_stops):
     :param child_stops: list of child stops
     :return: the parent station
     """
-    parent_stop = models.Stop()
-    parent_stop.is_station = True
-
-    parent_stop.latitude = sum(
-        float(child_stop.latitude) for child_stop in child_stops
-    ) / len(child_stops)
-    parent_stop.longitude = sum(
-        float(child_stop.longitude) for child_stop in child_stops
-    ) / len(child_stops)
+    latitude = sum(float(child_stop.latitude) for child_stop in child_stops) / len(
+        child_stops
+    )
+    longitude = sum(float(child_stop.longitude) for child_stop in child_stops) / len(
+        child_stops
+    )
 
     child_stop_ids = [child_stop.id for child_stop in child_stops]
-    parent_stop.id = "-".join(sorted(child_stop_ids))
+    stop_id = "-".join(sorted(child_stop_ids))
 
     child_stop_names = {child_stop.name: 0 for child_stop in child_stops}
     for child_stop in child_stops:
@@ -197,9 +192,11 @@ def create_station_from_child_stops(child_stops):
                 remove = True
         if remove:
             most_frequent_names.remove(name)
-    parent_stop.name = " / ".join(sorted(most_frequent_names))
+    name = " / ".join(sorted(most_frequent_names))
 
-    return parent_stop
+    return parse.Stop(
+        id=stop_id, name=name, longitude=longitude, latitude=latitude, is_station=True
+    )
 
 
 def parse_schedule(gtfs_static_file: GtfsStaticFile):
@@ -207,28 +204,28 @@ def parse_schedule(gtfs_static_file: GtfsStaticFile):
 
     service_id_to_service = {}
     for row in gtfs_static_file.calendar():
-        service = models.ScheduledService()
-        service.id = row["service_id"]
-        service.monday = str_to_bool[row["monday"]]
-        service.tuesday = str_to_bool[row["tuesday"]]
-        service.wednesday = str_to_bool[row["wednesday"]]
-        service.thursday = str_to_bool[row["thursday"]]
-        service.friday = str_to_bool[row["friday"]]
-        service.saturday = str_to_bool[row["saturday"]]
-        service.sunday = str_to_bool[row["sunday"]]
-        service.trips = []
-        service_id_to_service[service.id] = service
+        service_id = row["service_id"]
+        service_id_to_service[service_id] = parse.ScheduledService(
+            id=service_id,
+            monday=str_to_bool[row["monday"]],
+            tuesday=str_to_bool[row["tuesday"]],
+            wednesday=str_to_bool[row["wednesday"]],
+            thursday=str_to_bool[row["thursday"]],
+            friday=str_to_bool[row["friday"]],
+            saturday=str_to_bool[row["saturday"]],
+            sunday=str_to_bool[row["sunday"]],
+        )
 
     trip_id_to_trip = {}
     for row in gtfs_static_file.trips():
         service_id = row["service_id"]
         if service_id not in service_id_to_service:
             continue
-        trip = models.ScheduledTrip()
-        trip.id = row["trip_id"]
-        trip.route_id = row["route_id"]
-        trip.direction_id = str_to_bool[row["direction_id"]]
-        trip.stop_times_light = []
+        trip = parse.ScheduledTrip(
+            id=row["trip_id"],
+            route_id=row["route_id"],
+            direction_id=str_to_bool[row["direction_id"]],
+        )
         service_id_to_service[service_id].trips.append(trip)
         trip_id_to_trip[trip.id] = trip
 
@@ -250,11 +247,12 @@ def parse_schedule(gtfs_static_file: GtfsStaticFile):
         trip_id = row["trip_id"]
         if trip_id not in trip_id_to_trip:
             continue
-        stop_time = models.ScheduledTripStopTimeLight()
-        stop_time.stop_id = row["stop_id"]
-        stop_time.stop_sequence = int(row["stop_sequence"])
-        stop_time.departure_time = time_string_to_datetime_time(row["departure_time"])
-        stop_time.arrival_time = time_string_to_datetime_time(row["arrival_time"])
-        trip_id_to_trip[trip_id].stop_times_light.append(stop_time)
+        stop_time = parse.ScheduledTripStopTime(
+            stop_id=row["stop_id"],
+            stop_sequence=int(row["stop_sequence"]),
+            departure_time=time_string_to_datetime_time(row["departure_time"]),
+            arrival_time=time_string_to_datetime_time(row["arrival_time"]),
+        )
+        trip_id_to_trip[trip_id].stop_times.append(stop_time)
 
     yield from service_id_to_service.values()

@@ -9,11 +9,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, backref
 
+from transiter import parse
 from .base import Base, ToDictMixin
-from .updatableentity import updatable_entity
+from .updatableentity import updatable_from
 
 
-@updatable_entity
+@updatable_from(parse.Stop)
 class Stop(ToDictMixin, Base):
     __tablename__ = "stop"
 
@@ -28,8 +29,6 @@ class Stop(ToDictMixin, Base):
     latitude = Column(Numeric(precision=9, scale=6))
     url = Column(String)
     is_station = Column(Boolean)
-
-    parent_stop_id = None
 
     system = relationship("System", back_populates="stops")
     source = relationship("FeedUpdate", cascade="none")
@@ -60,3 +59,14 @@ class Stop(ToDictMixin, Base):
 
     __dict_columns__ = [id, name]
     __large_dict_columns__ = [id, name, longitude, latitude, url]
+
+    @staticmethod
+    def from_parsed_stop(stop: parse.Stop) -> "Stop":
+        return Stop(
+            id=stop.id,
+            name=stop.name,
+            latitude=stop.latitude,
+            longitude=stop.longitude,
+            url=stop.url,
+            is_station=stop.is_station,
+        )

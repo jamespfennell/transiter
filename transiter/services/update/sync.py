@@ -12,14 +12,17 @@ This involves:
 """
 import collections
 import logging
+import dataclasses
+import typing
 from typing import Iterable, List, Tuple
 
-from transiter import models
+from transiter import models, parse
 from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
 from transiter.data.dams import stopdam, tripdam, routedam, scheduledam, feeddam
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.update import fastscheduleoperations
+from transiter.models import updatableentity
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +68,7 @@ def sync(feed_update_pk, entities):
     return tuple(totals)
 
 
-class Syncer:
+class SyncerBase:
 
     __feed_entity__ = None
     __db_entity__ = None
@@ -87,7 +90,7 @@ class Syncer:
         pass
 
     def sync(self, entities):
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def delete_stale_entities(self):
         """
@@ -149,44 +152,59 @@ class Syncer:
         )
 
 
-class RouteSyncer(Syncer):
+def syncer(entity_type) -> typing.Type[SyncerBase]:
+    class _Syncer(SyncerBase):
+        __db_entity__ = entity_type
+        __feed_entity__ = updatableentity.get_feed_entity(entity_type)
 
-    __db_entity__ = models.Route
+        def sync(self, entities):
+            raise NotImplementedError
 
-    def sync(self, routes):
+    return _Syncer
+
+
+class RouteSyncer(syncer(models.Route)):
+    def sync(self, parsed_routes):
+        routes = list(map(models.Route.from_parsed_route, parsed_routes))
         for route in routes:
             route.system_pk = self.feed_update.feed.system_pk
         __, num_added, num_updated = self._merge_entities(routes)
         return num_added, num_updated
 
 
-class StopSyncer(Syncer):
-
-    __db_entity__ = models.Stop
-
-    def sync(self, stops):
+class StopSyncer(syncer(models.Stop)):
+    def sync(self, parsed_stops: typing.Iterable[parse.Stop]):
         # NOTE: the stop tree is manually linked together because otherwise SQL
         # Alchemy's cascades will result in duplicate entries in the DB because the
         # models do not have PKs yet.
-        stop_id_to_parent_stop_id = {
-            stop.id: stop.parent_stop.id
-            for stop in stops
-            if stop.parent_stop is not None
-        }
-        for stop in stops:
+        stop_id_to_parent_stop_id = {}
+        stops = []
+        for parsed_stop in parsed_stops:
+            stop = models.Stop.from_parsed_stop(parsed_stop)
             stop.system_pk = self.feed_update.feed.system_pk
+            if parsed_stop.parent_stop is not None:
+                stop_id_to_parent_stop_id[parsed_stop.id] = parsed_stop.parent_stop.id
+            else:
+                stop_id_to_parent_stop_id[parsed_stop.id] = None
+            stops.append(stop)
         persisted_stops, num_added, num_updated = self._merge_entities(stops)
         stop_id_to_persisted_stops = {stop.id: stop for stop in persisted_stops}
-        for stop in persisted_stops:
-            stop.parent_stop = stop_id_to_persisted_stops.get(
+
+        # NOTE: flush the session the session to populate the primary keys
+        dbconnection.get_session().flush()
+        for stop_id in stop_id_to_parent_stop_id.keys():
+            stop = stop_id_to_persisted_stops[stop_id]
+            parent_stop = stop_id_to_persisted_stops.get(
                 stop_id_to_parent_stop_id.get(stop.id)
             )
+            if parent_stop is not None:
+                stop.parent_stop_pk = parent_stop.pk
+            else:
+                stop.parent_stop_pk = None
         return num_added, num_updated
 
 
-class ScheduleSyncer(Syncer):
-
-    __db_entity__ = models.ScheduledService
+class ScheduleSyncer(syncer(models.ScheduledService)):
 
     recalculate_service_maps = False
 
@@ -197,11 +215,15 @@ class ScheduleSyncer(Syncer):
         if num_entities_deleted > 0:
             self.recalculate_service_maps = True
 
-    def sync(self, services):
-        persisted_services, num_added, num_updated = self._merge_entities(services)
+    def sync(self, parsed_services):
+        persisted_services, num_added, num_updated = self._merge_entities(
+            list(map(models.ScheduledService.from_parsed_service, parsed_services))
+        )
         for service in persisted_services:
             service.system = self.feed_update.feed.system
-        schedule_updated = fastscheduleoperations.sync_trips(self.feed_update, services)
+        schedule_updated = fastscheduleoperations.sync_trips(
+            self.feed_update, parsed_services
+        )
         if schedule_updated:
             self.recalculate_service_maps = True
         return num_added, num_updated
@@ -214,17 +236,17 @@ class ScheduleSyncer(Syncer):
         )
 
 
-class DirectionRuleSyncer(Syncer):
-
-    __db_entity__ = models.DirectionRule
-
-    def sync(self, direction_rules):
+class DirectionRuleSyncer(syncer(models.DirectionRule)):
+    def sync(self, parsed_direction_rules):
         stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(
             self.feed_update.feed.system.pk
         )
         entities_to_merge = []
-        for direction_rule in direction_rules:
-            stop_pk = stop_id_to_pk.get(direction_rule.stop_id)
+        for parsed_direction_rule in parsed_direction_rules:
+            direction_rule = models.DirectionRule.from_parsed_direction_rule(
+                parsed_direction_rule
+            )
+            stop_pk = stop_id_to_pk.get(parsed_direction_rule.stop_id)
             if stop_pk is None:
                 continue
             direction_rule.stop_pk = stop_pk
@@ -239,16 +261,79 @@ class DirectionRuleSyncer(Syncer):
         )
 
 
-class TripSyncer(Syncer):
-    __feed_entity__ = models.TripLight
-    __db_entity__ = models.Trip
+@dataclasses.dataclass
+class _TripStopTime(parse.TripStopTime):
+    pk: int = None
+    stop_pk: int = None
+    trip_pk: int = None
+    is_from_parsing: bool = True
+
+    def is_new(self):
+        return self.pk is None
+
+    def to_db_mapping(self):
+        result = dataclasses.asdict(self)
+        del result["stop_id"]
+        del result["is_from_parsing"]
+        if not self.is_from_parsing:
+            null_keys = {key for key, value in result.items() if value is None}
+            for null_key in null_keys:
+                del result[null_key]
+        if self.is_new():
+            del result["pk"]
+        return result
+
+
+@dataclasses.dataclass
+class _Trip(parse.Trip):
+    pk: int = None
+    route_pk: int = None
+    source_pk: int = None
+    stop_times: typing.List[_TripStopTime] = dataclasses.field(default_factory=list)
+
+    @classmethod
+    def from_parsed_trip(cls, parsed_trip: parse.Trip) -> "_Trip":
+        parsed_trip_dict = dataclasses.asdict(parsed_trip)
+        parsed_stop_times_dict = parsed_trip_dict.pop("stop_times")
+        return cls(
+            **parsed_trip_dict,
+            stop_times=[
+                _TripStopTime(**parsed_stop_time_dict, is_from_parsing=True)
+                for parsed_stop_time_dict in parsed_stop_times_dict
+            ]
+        )
+
+    def is_new(self):
+        return self.pk is None
+
+    def to_db_mapping(self):
+        result = {
+            "pk": self.pk,
+            "id": self.id,
+            "route_pk": self.route_pk,
+            "source_pk": self.source_pk,
+            "direction_id": self.direction_id,
+            "start_time": self.start_time,
+            "last_update_time": self.updated_at,
+            "vehicle_id": self.train_id,
+            "current_status": self.current_status,
+            "current_stop_sequence": self.current_stop_sequence,
+        }
+        if self.is_new():
+            del result["pk"]
+        return result
+
+
+class TripSyncer(syncer(models.Trip)):
 
     route_pk_to_previous_service_map_hash = {}
     route_pk_to_new_service_map_hash = {}
     stop_time_pks_to_delete = set()
 
-    def sync(self, trips):
+    def sync(self, parsed_trips):
+        trips = map(_Trip.from_parsed_trip, parsed_trips)
         for data_adder in (
+            self._add_source,
             self._add_schedule_data,  # Must come before route data
             self._add_route_data,
             self._add_stop_data,  # Must come before existing trip data
@@ -258,14 +343,19 @@ class TripSyncer(Syncer):
         self._calculate_route_pk_to_new_service_map_hash(trips)
         return self._fast_merge(trips)
 
-    def _add_schedule_data(self, trips: Iterable[models.Trip]) -> Iterable[models.Trip]:
+    def _add_source(self, trips: Iterable[_Trip]) -> Iterable[_Trip]:
+        for trip in trips:
+            trip.source_pk = self.feed_update.pk
+            yield trip
+
+    def _add_schedule_data(self, trips: Iterable[_Trip]) -> Iterable[_Trip]:
         """
         Add data to the trip, such as the route, from the schedule.
         """
         trips = list(trips)
         trip_ids_needing_schedule = set()
         for trip in trips:
-            route_set = trip.route_pk is not None or trip.route_id is not None
+            route_set = trip.route_id is not None
             direction_id_set = trip.direction_id is not None
             if route_set and direction_id_set:
                 continue
@@ -287,7 +377,7 @@ class TripSyncer(Syncer):
                 trip.direction_id = scheduled_trip.direction_id
         return trips
 
-    def _add_route_data(self, trips: Iterable[models.Trip]) -> Iterable[models.Trip]:
+    def _add_route_data(self, trips: Iterable[_Trip]) -> Iterable[_Trip]:
         """
         Convert route_ids on the trip into route_pks. Trips that are have invalid
         route IDs and are missing route PKs are filtered out.
@@ -304,7 +394,7 @@ class TripSyncer(Syncer):
                     continue
             yield trip
 
-    def _add_stop_data(self, trips: Iterable[models.Trip]) -> Iterable[models.Trip]:
+    def _add_stop_data(self, trips: Iterable[_Trip]) -> Iterable[_Trip]:
         """
         Convert stop_ids on the trip stop times into stop_pks. Trip stop times that have
         invalid stop IDs and are missing stop PKs are filtered out.
@@ -325,9 +415,7 @@ class TripSyncer(Syncer):
             trip.stop_times = list(process_stop_times(trip.stop_times))
             yield trip
 
-    def _add_existing_trip_data(
-        self, trips: Iterable[models.Trip]
-    ) -> Iterable[models.Trip]:
+    def _add_existing_trip_data(self, trips: Iterable[_Trip]) -> Iterable[_Trip]:
         """
         Add data to the feed trips from data already in the database; i.e., from
         previous feed updates.
@@ -363,7 +451,7 @@ class TripSyncer(Syncer):
     @staticmethod
     def _build_past_stop_times(
         trip, db_trip, db_stop_time_data_list: List[tripdam.StopTimeData]
-    ) -> Iterable[models.TripStopTimeLight]:
+    ) -> Iterable[_TripStopTime]:
         """
         Build stop times that have already passed and are not in the feed.
         """
@@ -380,14 +468,14 @@ class TripSyncer(Syncer):
                 return
             if stop_time_data.stop_pk in future_stop_pks:
                 return
-            past_stop_time = models.TripStopTime.from_feed(
-                trip_id=trip.id,
-                stop_id="temporary_placeholder",
+            past_stop_time = _TripStopTime(
+                pk=stop_time_data.pk,
+                stop_pk=stop_time_data.stop_pk,
                 stop_sequence=stop_time_data.stop_sequence,
                 future=False,
+                stop_id="",
+                is_from_parsing=False,
             )
-            past_stop_time.stop_pk = stop_time_data.stop_pk
-            past_stop_time.pk = stop_time_data.pk
             yield past_stop_time
 
     @staticmethod
@@ -493,12 +581,10 @@ class TripSyncer(Syncer):
         new_mappings = []
         updated_mappings = []
         for entity in entities:
-            mapping = entity.to_mapping()
-            if mapping["pk"] is not None:
-                updated_mappings.append(mapping)
+            if entity.is_new():
+                new_mappings.append(entity.to_db_mapping())
             else:
-                del mapping["pk"]
-                new_mappings.append(mapping)
+                updated_mappings.append(entity.to_db_mapping())
         session = dbconnection.get_session()
         session.bulk_insert_mappings(db_model, new_mappings)
         session.bulk_update_mappings(db_model, updated_mappings)
@@ -522,23 +608,16 @@ class TripSyncer(Syncer):
             )
 
 
-class AlertSyncer(Syncer):
-
-    __db_entity__ = models.Alert
-
-    def sync(self, alerts):
-        persisted_alerts, num_added, num_updated = self._merge_entities(alerts)
+class AlertSyncer(syncer(models.Alert)):
+    def sync(self, parsed_alerts):
+        persisted_alerts, num_added, num_updated = self._merge_entities(
+            list(map(models.Alert.from_parsed_alert, parsed_alerts))
+        )
         route_id_to_route = {
             route.id: route for route in self.feed_update.feed.system.routes
         }
-        alert_id_to_route_ids = {
-            alert.id: alert.route_ids for alert in alerts if alert.route_ids is not None
-        }
-        alert_id_to_agency_ids = {
-            alert.id: alert.agency_ids
-            for alert in alerts
-            if alert.agency_ids is not None
-        }
+        alert_id_to_route_ids = {alert.id: alert.route_ids for alert in parsed_alerts}
+        alert_id_to_agency_ids = {alert.id: alert.agency_ids for alert in parsed_alerts}
         for alert in persisted_alerts:
             alert.routes = [
                 route_id_to_route[route_id]

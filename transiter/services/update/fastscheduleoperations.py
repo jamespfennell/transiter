@@ -1,9 +1,12 @@
-from transiter import models
+import itertools
+import typing
+
+from transiter import models, parse
 from transiter.data import dbconnection
 from transiter.data.dams import scheduledam, genericqueries
 
 
-def sync_trips(feed_update, services):
+def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]):
     """
 
     :param feed_update:
@@ -12,7 +15,7 @@ def sync_trips(feed_update, services):
     """
 
     num_entities_deleted = delete_trips_associated_to_feed(feed_update.feed.pk)
-    if len(services) == 0:
+    if len(parsed_services) == 0:
         return num_entities_deleted > 0
 
     session = dbconnection.get_session()
@@ -23,13 +26,18 @@ def sync_trips(feed_update, services):
     route_id_to_pk = genericqueries.get_id_to_pk_map(
         models.Route, feed_update.feed.system.pk
     )
-    trips = []
-    for service in services:
-        for trip in service.trips:
-            trip.route_pk = route_id_to_pk[trip.route_id]
-            trip.service_pk = service_id_to_pk[service.id]
-        trips.extend(service.trips)
-    session.bulk_save_objects(trips)
+    trip_mappings = []
+    for parsed_service in parsed_services:
+        for trip in parsed_service.trips:
+            trip_mappings.append(
+                {
+                    "id": trip.id,
+                    "route_pk": route_id_to_pk[trip.route_id],
+                    "service_pk": service_id_to_pk[parsed_service.id],
+                    "direction_id": trip.direction_id,
+                }
+            )
+    session.bulk_insert_mappings(models.ScheduledTrip, trip_mappings)
 
     trip_id_to_pk = scheduledam.get_trip_id_to_pk_map_by_feed_pk(feed_update.feed.pk)
     stop_id_to_pk = genericqueries.get_id_to_pk_map(
@@ -39,10 +47,13 @@ def sync_trips(feed_update, services):
     # executed on a large collection of mappings. If executed on the NYC Subway's
     # collection of stop times, it uses up to 750mb of memory. Chunking solves this
     # and actually seems to make the process faster.
-    for chunk_of_trips in split(trips, 100):
+    all_trips_iter = itertools.chain.from_iterable(
+        parsed_service.trips for parsed_service in parsed_services
+    )
+    for chunk_of_trips in split(all_trips_iter, 100):
         stop_time_mappings = []
         for trip in chunk_of_trips:
-            for stop_time in trip.stop_times_light:
+            for stop_time in trip.stop_times:
                 if stop_time.stop_id not in stop_id_to_pk:
                     continue
                 stop_time_mappings.append(
@@ -56,7 +67,7 @@ def sync_trips(feed_update, services):
                 )
         session.bulk_insert_mappings(models.ScheduledTripStopTime, stop_time_mappings)
 
-    return num_entities_deleted > 0 or len(trips) > 0
+    return num_entities_deleted > 0 or len(trip_mappings) > 0
 
 
 def split(container, size):

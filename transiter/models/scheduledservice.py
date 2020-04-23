@@ -2,10 +2,11 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base
-from .updatableentity import updatable_entity
+from .updatableentity import updatable_from
+from transiter import parse
 
 
-@updatable_entity
+@updatable_from(parse.ScheduledService)
 class ScheduledService(Base):
     __tablename__ = "scheduled_service"
 
@@ -27,3 +28,16 @@ class ScheduledService(Base):
     trips = relationship(
         "ScheduledTrip", back_populates="service", cascade="delete, delete-orphan"
     )
+
+    @staticmethod
+    def from_parsed_service(service: parse.ScheduledService) -> "ScheduledService":
+        return ScheduledService(
+            id=service.id,
+            monday=service.monday,
+            tuesday=service.tuesday,
+            wednesday=service.wednesday,
+            thursday=service.thursday,
+            friday=service.friday,
+            saturday=service.saturday,
+            sunday=service.sunday,
+        )

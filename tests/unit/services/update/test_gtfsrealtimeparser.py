@@ -5,7 +5,7 @@ from unittest import mock
 from google.protobuf.message import DecodeError
 from google.transit import gtfs_realtime_pb2 as gtfs
 
-from transiter import models
+from transiter import parse
 from transiter.services.update import gtfsrealtimeparser
 from ... import testutil
 
@@ -106,9 +106,10 @@ class TestReadProtobufMessage(unittest.TestCase):
 class TestParseAlerts(unittest.TestCase):
 
     ID = "1"
-    CAUSE = models.Alert.Cause.CONSTRUCTION
-    EFFECT = models.Alert.Effect.SIGNIFICANT_DELAYS
+    CAUSE = parse.Alert.Cause.CONSTRUCTION
+    EFFECT = parse.Alert.Effect.SIGNIFICANT_DELAYS
     HEADER = "2"
+    DESCRIPTION = "3"
 
     def setUp(self):
         self.parser = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer("")
@@ -136,13 +137,20 @@ class TestParseAlerts(unittest.TestCase):
                         "cause": self.CAUSE.name,
                         "effect": self.EFFECT.name,
                         "header_text": {"translation": [{"text": self.HEADER}]},
+                        "description_text": {
+                            "translation": [{"text": self.DESCRIPTION}]
+                        },
                     },
                 }
             ]
         }
 
-        expected_alert = models.Alert(
-            id=self.ID, cause=self.CAUSE, effect=self.EFFECT, header=self.HEADER
+        expected_alert = parse.Alert(
+            id=self.ID,
+            cause=self.CAUSE,
+            effect=self.EFFECT,
+            header=self.HEADER,
+            description=self.DESCRIPTION,
         )
 
         self.assertEqual([expected_alert], self.parser.build_alerts(raw_data))
@@ -154,16 +162,22 @@ class TestParseAlerts(unittest.TestCase):
             "entity": [
                 {
                     "id": self.ID,
-                    "alert": {"header_text": {"translation": [{"text": self.HEADER}]}},
+                    "alert": {
+                        "header_text": {"translation": [{"text": self.HEADER}]},
+                        "description_text": {
+                            "translation": [{"text": self.DESCRIPTION}]
+                        },
+                    },
                 }
             ]
         }
 
-        expected_alert = models.Alert(
+        expected_alert = parse.Alert(
             id=self.ID,
-            cause=models.Alert.Cause.UNKNOWN_CAUSE,
-            effect=models.Alert.Effect.UNKNOWN_EFFECT,
+            cause=parse.Alert.Cause.UNKNOWN_CAUSE,
+            effect=parse.Alert.Effect.UNKNOWN_EFFECT,
             header=self.HEADER,
+            description=self.DESCRIPTION,
         )
 
         self.assertEqual([expected_alert], self.parser.build_alerts(raw_data))
@@ -238,27 +252,28 @@ def test_transform_trip_base_data():
     transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
     transformer._trip_id_to_raw_entities = {
         TRIP_ID: {
+            "trip_update": {"vehicle": {"id": TRAIN_ID}},
             "trip": {
                 "trip_id": TRIP_ID,
                 "route_id": ROUTE_ID,
                 "start_date": START_DATE,
-                "train_id": TRAIN_ID,
                 "direction_id": TRIP_DIRECTION_ID,
-            }
+            },
         }
     }
     transformer._feed_time = FEED_UPDATE_TIMESTAMP
 
-    trip = models.TripLight()
-    trip.id = TRIP_ID
-    trip.route_id = ROUTE_ID
-    trip.start_time = datetime.datetime(year=1990, month=3, day=26)
-    trip.train_id = TRAIN_ID
-    trip.direction_id = TRIP_DIRECTION_ID
-    trip.current_status = None
-    trip.current_stop_sequence = 0
-    trip.last_update_time = None
-    trip.feed_update_time = None
+    trip = parse.Trip(
+        id=TRIP_ID,
+        route_id=ROUTE_ID,
+        start_time=datetime.datetime(year=1990, month=3, day=26),
+        train_id=TRAIN_ID,
+        direction_id=TRIP_DIRECTION_ID,
+        current_status=None,
+        current_stop_sequence=0,
+        updated_at=None,
+    )
+
     expected_transformed_base_data = {TRIP_ID: trip}
 
     transformer._transform_trip_base_data()
@@ -271,11 +286,11 @@ def test_transform_trip_base_data_with_vehicle():
     transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
     transformer._trip_id_to_raw_entities = {
         TRIP_ID: {
+            "trip_update": {"vehicle": {"id": TRAIN_ID}},
             "trip": {
                 "trip_id": TRIP_ID,
                 "route_id": ROUTE_ID,
                 "start_date": START_DATE,
-                "train_id": TRAIN_ID,
                 "direction_id": TRIP_DIRECTION_ID,
             },
             "vehicle": {
@@ -287,16 +302,16 @@ def test_transform_trip_base_data_with_vehicle():
     }
     transformer._feed_time = FEED_UPDATE_TIMESTAMP
 
-    trip = models.TripLight()
-    trip.id = TRIP_ID
-    trip.route_id = ROUTE_ID
-    trip.start_time = datetime.datetime(year=1990, month=3, day=26)
-    trip.train_id = TRAIN_ID
-    trip.direction_id = TRIP_DIRECTION_ID
-    trip.current_status = models.Trip.TripStatus.STOPPED_AT
-    trip.current_stop_sequence = CURRENT_STOP_SEQUENCE
-    trip.last_update_time = timestamp_to_datetime(TRIP_UPDATE_TIMESTAMP)
-    trip.feed_update_time = None
+    trip = parse.Trip(
+        id=TRIP_ID,
+        route_id=ROUTE_ID,
+        start_time=datetime.datetime(year=1990, month=3, day=26),
+        train_id=TRAIN_ID,
+        direction_id=TRIP_DIRECTION_ID,
+        current_status=parse.Trip.Status.STOPPED_AT,
+        current_stop_sequence=CURRENT_STOP_SEQUENCE,
+        updated_at=timestamp_to_datetime(TRIP_UPDATE_TIMESTAMP),
+    )
     expected_transformed_base_data = {TRIP_ID: trip}
 
     transformer._transform_trip_base_data()
@@ -307,7 +322,7 @@ def test_transform_trip_base_data_with_vehicle():
 def test_transform_trip_stop_events_short_circuit():
     """[GTFS Realtime transformer] Transform trip base data with no stops"""
     transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
-    trip = models.Trip()
+    trip = parse.Trip(id="trip", route_id="L", direction_id=True)
     transformer._trip_id_to_trip_model = {TRIP_ID: trip}
     transformer._trip_id_to_raw_entities = {TRIP_ID: {"trip": "Data"}}
 
@@ -319,9 +334,13 @@ def test_transform_trip_stop_events_short_circuit():
 def test_update_stop_event_indices():
     """[GTFS Realtime transformer] Update stop event indices"""
     transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
-    trip = models.Trip()
-    trip.current_stop_sequence = 15
-    trip.stop_times = [models.TripStopTime(), models.TripStopTime()]
+    trip = parse.Trip(
+        id="trip",
+        route_id="L",
+        direction_id=True,
+        current_stop_sequence=15,
+        stop_times=[parse.TripStopTime(stop_id="1"), parse.TripStopTime(stop_id="2")],
+    )
     transformer._trip_id_to_trip_model = {TRIP_ID: trip}
 
     transformer._update_stop_event_indices()
@@ -376,31 +395,35 @@ def test_start_to_finish_parse():
         ],
     }
 
-    trip = models.TripLight()
-    trip.id = "trip_id"
-    trip.train_id = None
-    trip.route_id = "4"
-    trip.start_time = datetime.datetime(year=2018, month=9, day=15)
-    trip.current_status = models.Trip.TripStatus.IN_TRANSIT_TO
-    trip.current_stop_sequence = 16
-    trip.direction_id = None
-    trip.last_update_time = timestamp_to_datetime(TRIP_UPDATE_TIMESTAMP)
+    trip = parse.Trip(
+        id="trip_id",
+        train_id=None,
+        route_id="4",
+        start_time=datetime.datetime(year=2018, month=9, day=15),
+        current_status=parse.Trip.Status.IN_TRANSIT_TO,
+        current_stop_sequence=16,
+        direction_id=None,
+        updated_at=timestamp_to_datetime(TRIP_UPDATE_TIMESTAMP),
+        current_stop_id="626S",
+    )
 
-    stu_1 = models.TripStopTimeLight()
-    stu_1.stop_id = STOP_ONE_ID
-    stu_1.stop_sequence = 16
-    stu_1.future = True
-    stu_1.arrival_time = timestamp_to_datetime(STOP_ONE_ARR_TIMESTAMP)
-    stu_1.departure_time = timestamp_to_datetime(STOP_ONE_DEP_TIMESTAMP)
-    stu_1.track = None
+    stu_1 = parse.TripStopTime(
+        stop_id=STOP_ONE_ID,
+        stop_sequence=16,
+        future=True,
+        arrival_time=timestamp_to_datetime(STOP_ONE_ARR_TIMESTAMP),
+        departure_time=timestamp_to_datetime(STOP_ONE_DEP_TIMESTAMP),
+        track=None,
+    )
 
-    stu_2 = models.TripStopTimeLight()
-    stu_2.stop_id = STOP_ONE_ID
-    stu_2.stop_sequence = 17
-    stu_2.future = True
-    stu_2.arrival_time = timestamp_to_datetime(STOP_TWO_ARR_TIMESTAMP)
-    stu_2.departure_time = None
-    stu_2.track = None
+    stu_2 = parse.TripStopTime(
+        stop_id=STOP_TWO_ID,
+        stop_sequence=17,
+        future=True,
+        arrival_time=timestamp_to_datetime(STOP_TWO_ARR_TIMESTAMP),
+        departure_time=None,
+        track=None,
+    )
 
     trip.stop_times = [stu_1, stu_2]
 
@@ -441,9 +464,12 @@ def test_clean_all_good():
         trip_cleaners, stop_event_cleaners
     )
 
-    stop_event = models.TripStopTime()
-    trip = models.Trip()
-    trip.stop_times.append(stop_event)
+    trip = parse.Trip(
+        id="trip",
+        route_id="L",
+        direction_id=True,
+        stop_times=[parse.TripStopTime(stop_id="L03")],
+    )
 
     clean_trips = gtfs_cleaner.clean([trip])
 
@@ -452,7 +478,7 @@ def test_clean_all_good():
     for cleaner in trip_cleaners:
         cleaner.assert_called_once_with(trip)
     for cleaner in stop_event_cleaners:
-        cleaner.assert_called_once_with(stop_event)
+        cleaner.assert_called_once_with(trip.stop_times[0])
 
 
 def test_clean_buggy_trip():
@@ -467,9 +493,12 @@ def test_clean_buggy_trip():
         trip_cleaners, stop_event_cleaners
     )
 
-    stop_event = models.TripStopTime()
-    trip = models.Trip()
-    trip.stop_times.append(stop_event)
+    trip = parse.Trip(
+        id="trip",
+        route_id="L",
+        direction_id=True,
+        stop_times=[parse.TripStopTime(stop_id="L03")],
+    )
 
     clean_trips = gtfs_cleaner.clean([trip])
 
@@ -485,7 +514,7 @@ def test_transform_trip_stop_events():
     """[GTFS Realtime transformer] Transform trip stop events"""
 
     transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
-    trip = models.Trip.from_feed()
+    trip = parse.Trip(id="trip", route_id="L", direction_id=True)
     trip.id = TRIP_ID
     transformer._trip_id_to_trip_model = {TRIP_ID: trip}
     transformer._trip_id_to_raw_entities = {
@@ -507,16 +536,14 @@ def test_transform_trip_stop_events():
         }
     }
 
-    stu_1 = models.TripStopTime.from_feed(
-        trip_id="trip_id",
+    stu_1 = parse.TripStopTime(
         stop_id=STOP_ONE_ID,
         arrival_time=timestamp_to_datetime(STOP_ONE_ARR_TIMESTAMP),
         departure_time=timestamp_to_datetime(STOP_ONE_DEP_TIMESTAMP),
         track=None,
     )
 
-    stu_2 = models.TripStopTime.from_feed(
-        trip_id="trip_id",
+    stu_2 = parse.TripStopTime(
         stop_id=STOP_TWO_ID,
         arrival_time=timestamp_to_datetime(STOP_TWO_ARR_TIMESTAMP),
         departure_time=None,

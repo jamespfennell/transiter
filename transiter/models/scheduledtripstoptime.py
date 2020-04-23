@@ -26,29 +26,3 @@ class ScheduledTripStopTime(Base):
             "departure_time",
         ),
     )
-
-
-class ScheduledTripStopTimeLight:
-    arrival_time = None
-    departure_time = None
-    stop_sequence = None
-    stop_id = None
-
-    def __eq__(self, other):
-        return (
-            str(self.arrival_time) == str(other.arrival_time)
-            and str(self.departure_time) == str(other.departure_time)
-            and self.stop_sequence == other.stop_sequence
-            and self.stop_id == other.stop_id
-        )
-
-    def __repr__(self):
-        props = []
-        for key, value in self.__dict__.items():
-            if key[0] == "_":
-                continue
-            props.append("{}={}".format(key, value))
-        return "ScheduledTripStopTimeLight({})".format(", ".join(sorted(props)))
-
-    def __hash__(self):
-        return hash(str(self))

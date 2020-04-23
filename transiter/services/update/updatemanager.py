@@ -320,3 +320,19 @@ class IteratorWithConsumedCount:
 
     def num_consumed(self):
         return self._num_consumed
+
+
+# TODO
+"""
+class FunctionBasedParser(TransiterParser):
+
+    def __init__(self, parse_function):
+        self._parse_function = parse_function
+        self._type_to_entities = None
+
+    def load_content(self, content):
+        self._type_to_entities = self._parse_function(content)
+
+    def get_routes(self) -> Iterable[parse.Route]:
+        return self._type_to_entities.get(parse.Route, [])
+"""

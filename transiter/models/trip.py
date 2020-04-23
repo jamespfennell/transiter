@@ -1,5 +1,3 @@
-import enum
-
 from sqlalchemy import (
     Column,
     Enum,
@@ -12,11 +10,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+from transiter import parse
 from .base import Base, ToDictMixin
-from .updatableentity import updatable_entity
+from .updatableentity import updatable_from
 
 
-@updatable_entity
+@updatable_from(parse.Trip)
 class Trip(ToDictMixin, Base):
     __tablename__ = "trip"
 
@@ -25,22 +24,15 @@ class Trip(ToDictMixin, Base):
     route_pk = Column(Integer, ForeignKey("route.pk"), nullable=False)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
-    class TripStatus(enum.Enum):
-        SCHEDULED = 1
-        INCOMING_AT = 2
-        STOPPED_AT = 3
-        IN_TRANSIT_TO = 4
+    TripStatus = parse.Trip.Status
 
     direction_id = Column(Boolean)
     start_time = Column(TIMESTAMP(timezone=True))
 
     last_update_time = Column(TIMESTAMP(timezone=True))
     vehicle_id = Column(String)
-    current_status = Column(Enum(TripStatus))
+    current_status = Column(Enum(TripStatus, name="tripstatus"))
     current_stop_sequence = Column(Integer)
-
-    route_id = None
-    stop_id = None
 
     source = relationship("FeedUpdate", cascade="none")
     route = relationship("Route", back_populates="trips", cascade="none")
@@ -64,41 +56,3 @@ class Trip(ToDictMixin, Base):
         current_stop_sequence,
         vehicle_id,
     ]
-
-    __mapping_columns__ = [pk, route_pk, source_pk] + __large_dict_columns__
-
-    def to_mapping(self):
-        return self._to_dict(self.__mapping_columns__)
-
-    @classmethod
-    def from_feed(cls, *args, **kwargs):
-        return TripLight()
-
-
-class TripLight:
-
-    route_pk = None
-
-    def to_mapping(self):
-        attrs = [
-            "pk",
-            "route_pk",
-            "source_pk",
-            "id",
-            "direction_id",
-            "start_time",
-            "last_update_time",
-            "current_status",
-            "current_stop_sequence",
-            "vehicle_id",
-        ]
-        d = {}
-        for attr in attrs:
-            d[attr] = getattr(self, attr, None)
-        return d
-
-    def __repr__(self):
-        return str(self.to_mapping())
-
-    def __eq__(self, other):
-        return self.to_mapping() == other.to_mapping()
