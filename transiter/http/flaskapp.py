@@ -46,11 +46,13 @@ formatter = logging.Formatter("%(asctime)s WS %(levelname)-5s [%(module)s] %(mes
 handler.setFormatter(formatter)
 
 
-@app.errorhandler(exceptions.TransiterException)
-def transiter_error_handler(exception: exceptions.TransiterException):
+@app.errorhandler(Exception)
+def transiter_error_handler(exception: Exception):
     """
-    Error handler for Transiter exceptions.
+    Error handler for exceptions.
     """
+    if not isinstance(exception, exceptions.TransiterException):
+        exception = exceptions.UnexpectedError(exception)
     return convert_exception_to_error_response(exception)
 
 

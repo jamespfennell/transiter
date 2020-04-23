@@ -1,6 +1,8 @@
 """
 Module containing all Exceptions that can be raised in Transiter.
 """
+import traceback
+
 import inflection
 
 
@@ -68,7 +70,12 @@ class UnexpectedError(TransiterException):
 
     def __init__(self, exception=None):
         if exception is not None:
-            self.additional_info = {"original_error_message": str(exception)}
+            self.additional_info = {
+                "type": type(exception).__name__,
+                "message": str(exception),
+                # The following formatting makes the stack readable in a browser
+                "stack_trace": traceback.format_exc().strip().split("\n"),
+            }
 
 
 class InvalidInput(TransiterException):
