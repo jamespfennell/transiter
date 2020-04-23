@@ -1,2 +1,2 @@
-mkdocs==1.0.4
-mkdocs-cinder==1.0.2
+mkdocs==1.1
+mkdocs-cinder==1.0.3

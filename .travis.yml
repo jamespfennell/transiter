@@ -27,8 +27,8 @@ after_success:
   # 2. Transform paths in the .coverage file from being relative
   #    to the Docker container to be relative to the Travis CI build
   #    directory. Necessary for correct coverage reporting.
-  - pip install --quiet coverage==4.5.4
+  - pip install --quiet coverage==5.1
   - pip install --quiet coveralls
   - sudo chmod -R 0777 coverage
-  - coverage combine coverage/.coverage
+  - coverage combine
   - coveralls
