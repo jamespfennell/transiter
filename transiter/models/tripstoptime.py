@@ -65,6 +65,4 @@ class TripStopTime(ToDictMixin, Base):
         }
 
     def get_time(self):
-        if self.arrival_time is not None:
-            return self.arrival_time
-        return self.departure_time
+        return self.arrival_time or self.departure_time

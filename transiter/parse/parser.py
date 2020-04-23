@@ -28,19 +28,19 @@ class TransiterParser:
 
         However many parsers have more logic at this point.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def get_timestamp(self) -> typing.Optional[datetime.datetime]:
-        pass
+        pass  # pragma: no cover
 
     def get_routes(self) -> typing.Iterable[parse.Route]:
-        pass
+        pass  # pragma: no cover
 
     def get_stops(self) -> typing.Iterable[parse.Stop]:
-        pass
+        pass  # pragma: no cover
 
     def get_scheduled_services(self) -> typing.Iterable[parse.ScheduledService]:
-        pass
+        pass  # pragma: no cover
 
     # The rest of this class is not a part of the public API, and may be changed!
     # Developers are strongly discouraged from changing any data types or methods

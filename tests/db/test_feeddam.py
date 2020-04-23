@@ -118,3 +118,17 @@ def test_trim_feed_updates__some_still_used_as_source(
     feeddam.trim_feed_updates(feed_1_1.pk, datetime.datetime(2018, 1, 1, 2, 0, 0))
 
     assert [feed_1_1_update_2] == feeddam.list_updates_in_feed(feed_1_1.pk)
+
+
+def test__delete_in_system_by_id(db_session, system_1, feed_1_1):
+    response = feeddam.delete_in_system_by_id(system_1.id, feed_1_1.id)
+
+    assert response is True
+    assert [] == db_session.query(models.Feed).all()
+
+
+def test__delete_in_system_by_id__unknown_feed(db_session, system_1, feed_1_1):
+    response = feeddam.delete_in_system_by_id(system_1.id, "unknown")
+
+    assert response is False
+    assert [feed_1_1] == db_session.query(models.Feed).all()

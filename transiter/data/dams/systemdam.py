@@ -1,6 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import func, sql
+from sqlalchemy.orm import joinedload
 
 from transiter import models
 from transiter.data import dbconnection
@@ -52,13 +53,11 @@ def get_by_id(id_, only_return_active=False) -> Optional[models.System]:
 
 
 def get_update_by_pk(pk) -> Optional[models.SystemUpdate]:
-    # TODO greedily add the system if not already
-    # Maybe it's eagerly loaded??
-    # Can also configure this on the model in this case
     return (
         dbconnection.get_session()
         .query(models.SystemUpdate)
         .filter(models.SystemUpdate.pk == pk)
+        .options(joinedload(models.SystemUpdate.system))
         .one_or_none()
     )
 

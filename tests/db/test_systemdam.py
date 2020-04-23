@@ -115,3 +115,19 @@ def test_set_auto_update_enabled__system_does_not_exist(db_session):
     system_exists = systemdam.set_auto_update_enabled("does_not_exist", True)
 
     assert system_exists is False
+
+
+def test_get_update_by_pk(add_model, system_1):
+    update = add_model(
+        models.SystemUpdate(system=system_1, status=models.SystemUpdate.Status.SUCCESS)
+    )
+
+    assert update == systemdam.get_update_by_pk(update.pk)
+
+
+def test_get_update_by_pk__unknown(add_model, system_1):
+    update = add_model(
+        models.SystemUpdate(system=system_1, status=models.SystemUpdate.Status.SUCCESS)
+    )
+
+    assert None is systemdam.get_update_by_pk(-100)

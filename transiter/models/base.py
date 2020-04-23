@@ -22,7 +22,7 @@ class _BaseModel:
         return True
 
     # The __repr__ method is designed for testing purposes only.
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         attributes = []
         for column in inspect(type(self)).columns.keys():
             attributes.append("{}={}".format(column, getattr(self, column)))
@@ -49,6 +49,6 @@ class ToDictMixin:
         return self._to_dict(self.__large_dict_columns__)
 
     def _to_dict(self, columns) -> dict:
-        if columns is None:
+        if columns is None:  # pragma: no cover
             raise NotImplementedError
         return {column.key: getattr(self, column.key, None) for column in columns}
