@@ -13,6 +13,10 @@ def list_updatable_entities():
     return list(_db_entity_to_feed_entity.keys())
 
 
+def list_feed_entities():
+    return list(_db_entity_to_feed_entity.values())
+
+
 def get_feed_entity(db_entity):
     return _db_entity_to_feed_entity[db_entity]
 

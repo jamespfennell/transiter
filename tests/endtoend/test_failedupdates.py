@@ -23,7 +23,7 @@ feeds:
         ["json:dump", None, "DOWNLOAD_ERROR"],
         ["json:dump", "", "EMPTY_FEED"],
         ["json:dump", "somethings", "PARSE_ERROR"],
-        ["collections:OrderedDict", "somethings", "SYNC_ERROR"],
+        ["collections:OrderedDict", "somethings", "PARSE_ERROR"],
     ],
 )
 def test_invalid_parser(

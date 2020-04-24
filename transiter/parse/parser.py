@@ -42,6 +42,15 @@ class TransiterParser:
     def get_scheduled_services(self) -> typing.Iterable[parse.ScheduledService]:
         pass  # pragma: no cover
 
+    def get_trips(self) -> typing.Iterable[parse.Trip]:
+        pass  # pragma: no cover
+
+    def get_alerts(self) -> typing.Iterable[parse.Alert]:
+        pass  # pragma: no cover
+
+    def get_direction_rules(self) -> typing.Iterable[parse.DirectionRule]:
+        pass  # pragma: no cover
+
     # The rest of this class is not a part of the public API, and may be changed!
     # Developers are strongly discouraged from changing any data types or methods
     # below when implementing this class.
@@ -50,6 +59,9 @@ class TransiterParser:
         parse.Route: get_routes,
         parse.Stop: get_stops,
         parse.ScheduledService: get_scheduled_services,
+        parse.Trip: get_trips,
+        parse.Alert: get_alerts,
+        parse.DirectionRule: get_direction_rules,
     }
 
     @property
@@ -123,17 +135,20 @@ class CallableBasedParser(TransiterParser):
     def get_entities(self, entity_type):
         return self._type_to_entities[entity_type]
 
+    def __eq__(self, other):
+        return self._callable is other._callable
 
-def cast_object_to_transiter_parser(object_):
+
+def cast_object_to_instantiated_transiter_parser(object_):
     """
-    Given an object, return a Transiter parser associated to that object.
+    Given an object, return an instantiated Transiter parser associated to that object.
 
     If the object is a TransiterParser type, the object itself is returned.
     Otherwise, if it is a callable, a CallableBasedParser using that callable is
     returned. Otherwise, a ValueError will be raised.
     """
-    if isinstance(object_, TransiterParser):
-        return object_
+    if isinstance(object_, type) and issubclass(object_, TransiterParser):
+        return object_()
     if callable(object_):
         return CallableBasedParser(object_)
-    raise ValueError("Cannot cast {} to a Transiter parser.".format(object_))
+    raise ValueError("Cannot instantiate {} as a Transiter parser.".format(object_))

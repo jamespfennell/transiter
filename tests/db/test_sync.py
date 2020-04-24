@@ -8,9 +8,14 @@ from transiter import models, parse
 from transiter.services.update import sync
 
 
-# TODO
-#  route and stop feed stealing?
-#  direction rules no feed stealing?
+class ParserForTesting(parse.parser.CallableBasedParser):
+    def __init__(self, entities):
+        self.entities = entities
+        super().__init__(self.retrieve_entities)
+        self.load_content(b"")
+
+    def retrieve_entities(self, content):
+        return self.entities
 
 
 @pytest.fixture
@@ -96,7 +101,7 @@ def test_simple_create_update_delete(
         entity.source = previous_update
         add_model(entity)
 
-    actual_counts = sync.sync(current_update.pk, current)
+    actual_counts = sync.sync(current_update.pk, ParserForTesting(current))
 
     def fields_to_compare(entity):
         if entity_type is models.Route:
@@ -163,7 +168,7 @@ def test_stop__tree_linking(
             continue
         stop_id_to_stop[id_].parent_stop = stop_id_to_stop[parent_id]
 
-    sync.sync(current_update.pk, list(stop_id_to_stop.values()))
+    sync.sync(current_update.pk, ParserForTesting(list(stop_id_to_stop.values())))
 
     actual_stop_id_parent_id = {}
     for stop in db_session.query(models.Stop).all():
@@ -180,7 +185,7 @@ def test_alert__route_linking(db_session, previous_update, current_update, route
         id="alert", header="header", description="description", route_ids=[route_1_1.id]
     )
 
-    sync.sync(current_update.pk, [alert])
+    sync.sync(current_update.pk, ParserForTesting([alert]))
 
     persisted_alert = db_session.query(models.Alert).all()[0]
 
@@ -229,7 +234,7 @@ def test_direction_rules(
     for rule in current:
         rule.stop_id = stop_1_1.id
 
-    actual_counts = sync.sync(current_update.pk, current)
+    actual_counts = sync.sync(current_update.pk, ParserForTesting(current))
 
     def fields_to_compare(entity):
         return entity.stop_pk, entity.track, entity.source_pk
@@ -261,7 +266,7 @@ def test_schedule(db_session, stop_1_1, route_1_1, previous_update, current_upda
         trips=[trip],
     )
 
-    actual_counts = sync.sync(current_update.pk, [schedule])
+    actual_counts = sync.sync(current_update.pk, ParserForTesting([schedule]))
 
     assert 1 == len(db_session.query(models.ScheduledService).all())
     assert 1 == len(db_session.query(models.ScheduledTrip).all())
@@ -276,7 +281,7 @@ def test_direction_rules__skip_unknown_stop(
         parse.DirectionRule(name="Rule", id="blah", track="new track", stop_id="104401")
     ]
 
-    actual_counts = sync.sync(current_update.pk, current)
+    actual_counts = sync.sync(current_update.pk, ParserForTesting(current))
 
     assert [] == db_session.query(models.DirectionRule).all()
     assert (0, 0, 0) == actual_counts
@@ -284,7 +289,7 @@ def test_direction_rules__skip_unknown_stop(
 
 def test_unknown_type(current_update):
     with pytest.raises(TypeError):
-        sync.sync(current_update.pk, ["string"])
+        sync.sync(current_update.pk, ParserForTesting(["string"]))
 
 
 def test_flush(db_session, add_model, system_1, previous_update, current_update):
@@ -293,7 +298,7 @@ def test_flush(db_session, add_model, system_1, previous_update, current_update)
     add_model(models.Stop(system=system_1, source_pk=previous_update.pk))
     add_model(models.Route(system=system_1, source_pk=previous_update.pk))
 
-    sync.sync(current_update.pk, [])
+    sync.sync(current_update.pk, ParserForTesting([]))
 
     assert [] == db_session.query(models.Route).all()
 
@@ -311,7 +316,7 @@ def test_trip__route_from_schedule(
 
     new_trip = parse.Trip(id="trip", route_id=None, direction_id=True)
 
-    sync.sync(current_update.pk, [new_trip])
+    sync.sync(current_update.pk, ParserForTesting([new_trip]))
 
     all_trips = db_session.query(models.Trip).all()
 
@@ -323,7 +328,7 @@ def test_trip__route_from_schedule(
 def test_trip__invalid_route(db_session, system_1, route_1_1, current_update):
     new_trip = parse.Trip(id="trip", route_id="unknown_route", direction_id=True)
 
-    sync.sync(current_update.pk, [new_trip])
+    sync.sync(current_update.pk, ParserForTesting([new_trip]))
 
     all_trips = db_session.query(models.Trip).all()
 
@@ -343,7 +348,7 @@ def test_trip__invalid_stops_in_stop_times(
         ],
     )
 
-    sync.sync(current_update.pk, [new_trip])
+    sync.sync(current_update.pk, ParserForTesting([new_trip]))
 
     all_trips = db_session.query(models.Trip).all()
 
@@ -413,11 +418,11 @@ def test_trip__stop_time_reconciliation(
         stop_times=old_stop_time_data,
     )
 
-    sync.sync(previous_update.pk, [trip])
+    sync.sync(previous_update.pk, ParserForTesting([trip]))
 
     trip.stop_times = new_stop_time_data
 
-    sync.sync(current_update.pk, [trip])
+    sync.sync(current_update.pk, ParserForTesting([trip]))
 
     actual_stop_times = [
         convert_trip_stop_time_model_to_parse(trip_stop_time, stop_pk_to_stop)
@@ -436,3 +441,26 @@ def convert_trip_stop_time_model_to_parse(
         arrival_time=trip_stop_time.arrival_time,
         stop_id=stop_pk_to_stop[trip_stop_time.stop_pk].id,
     )
+
+
+def test_entities_skipped(db_session, current_update):
+    class BuggyParser(parse.parser.CallableBasedParser):
+        @property
+        def supported_types(self):
+            return {parse.Stop}
+
+    parser = BuggyParser(lambda: [new_route])
+
+    result = sync.sync(current_update.pk, parser)
+
+    assert [] == db_session.query(models.Route).all()
+    assert (0, 0, 0) == result
+
+
+def test_parse_error(current_update):
+    class BuggyParser(parse.TransiterParser):
+        def get_routes(self):
+            raise ValueError
+
+    with pytest.raises(ValueError):
+        sync.sync(current_update.pk, BuggyParser())

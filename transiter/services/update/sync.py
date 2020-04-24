@@ -27,13 +27,13 @@ from transiter.models import updatableentity
 logger = logging.getLogger(__name__)
 
 
-def sync(feed_update_pk, entities):
+def sync(feed_update_pk, parser_object: parse.TransiterParser):
     """
     Sync entities to the database.
 
     :param feed_update_pk: the feed update event in which this sync operation is being
       performed
-    :param entities: the entities to sync
+    :param parser_object: the parser object
     """
     feed_update = feeddam.get_update_by_pk(feed_update_pk)
 
@@ -48,21 +48,15 @@ def sync(feed_update_pk, entities):
     if feed_update.update_type == feed_update.Type.FLUSH:
         syncers_in_order.reverse()
 
-    model_types = set(syncer.feed_entity() for syncer in syncers_in_order)
-    model_type_to_entities = collections.defaultdict(list)
-    for entity in entities:
-        type_ = type(entity)
-        if type_ not in model_types:
-            raise TypeError(
-                "Object of type {} cannot be synced to the Transiter DB.".format(type_)
-            )
-        model_type_to_entities[type_].append(entity)
-        entity.source_pk = feed_update_pk
-
     totals = [0, 0, 0]
-    for syncer in syncers_in_order:
-        logger.debug("Syncing {}".format(syncer.feed_entity()))
-        result = syncer(feed_update).run(model_type_to_entities[syncer.feed_entity()])
+    for syncer_class in syncers_in_order:
+        if syncer_class.feed_entity() not in parser_object.supported_types:
+            continue
+        logger.debug("Syncing {}".format(syncer_class.feed_entity()))
+        entities = list(parser_object.get_entities(syncer_class.feed_entity()))
+        for entity in entities:
+            entity.source_pk = feed_update.pk
+        result = syncer_class(feed_update).run(entities)
         for i in range(3):
             totals[i] += result[i]
     return tuple(totals)
@@ -115,8 +109,6 @@ class SyncerBase:
 
     @classmethod
     def feed_entity(cls):
-        if cls.__feed_entity__ is None:
-            return cls.__db_entity__
         return cls.__feed_entity__
 
     def _merge_entities(self, entities) -> Tuple[list, int, int]:

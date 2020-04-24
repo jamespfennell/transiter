@@ -32,12 +32,13 @@ import json
 import logging
 import time
 import traceback
-from typing import Tuple, Optional
+import typing
 
 import requests
 from requests import RequestException
 
 from transiter import models
+from transiter.parse import parser
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam
 from transiter.executor import celeryapp
@@ -47,20 +48,20 @@ from . import gtfsrealtimeparser, gtfsstaticparser
 logger = logging.getLogger(__name__)
 
 
-def create_feed_update(system_id, feed_id) -> Optional[int]:
+def create_feed_update(system_id, feed_id) -> typing.Optional[int]:
     return _create_feed_update_helper(
         system_id, feed_id, update_type=models.FeedUpdate.Type.REGULAR
     )
 
 
-def create_feed_flush(system_id, feed_id) -> Optional[int]:
+def create_feed_flush(system_id, feed_id) -> typing.Optional[int]:
     return _create_feed_update_helper(
         system_id, feed_id, update_type=models.FeedUpdate.Type.FLUSH
     )
 
 
 @dbconnection.unit_of_work
-def _create_feed_update_helper(system_id, feed_id, update_type) -> Optional[int]:
+def _create_feed_update_helper(system_id, feed_id, update_type) -> typing.Optional[int]:
     feed = feeddam.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         return None
@@ -79,7 +80,7 @@ def execute_feed_update_async(feed_update_pk, content=None):
 
 def execute_feed_update(
     feed_update_pk, content=None
-) -> Tuple[models.FeedUpdate.Status, models.FeedUpdate.Result]:
+) -> typing.Tuple[models.FeedUpdate.Status, models.FeedUpdate.Result]:
     """
     Execute a feed update with logging and timing.
 
@@ -134,10 +135,10 @@ def _execute_feed_update_helper(feed_update_pk: int, content=None) -> models.Fee
         session.expunge(feed)
 
     if feed_update.update_type == models.FeedUpdate.Type.FLUSH:
-        return _sync_entities(feed_update, [])
+        return _sync_entities(feed_update, parser.CallableBasedParser(lambda: []))
 
     try:
-        parser = _get_parser(feed.built_in_parser, feed.custom_parser)
+        parser_object = _get_parser(feed.built_in_parser, feed.custom_parser)
     except _InvalidParser:
         return _update_status(
             feed_update,
@@ -181,7 +182,7 @@ def _execute_feed_update_helper(feed_update_pk: int, content=None) -> models.Fee
     # perspective, the feed parser is foreign code.
     # noinspection PyBroadException
     try:
-        entities = parser(binary_content=content)
+        parser_object.load_content(content)
     except Exception:
         return _update_status(
             feed_update,
@@ -190,19 +191,18 @@ def _execute_feed_update_helper(feed_update_pk: int, content=None) -> models.Fee
             str(traceback.format_exc()),
         )
 
-    return _sync_entities(feed_update, entities)
+    return _sync_entities(feed_update, parser_object)
 
 
-def _sync_entities(feed_update: models.FeedUpdate, entities):
-    entities_iter = IteratorWithConsumedCount(entities)
+def _sync_entities(feed_update: models.FeedUpdate, parser_object):
     try:
         with dbconnection.inline_unit_of_work() as session:
             (
                 feed_update.num_added_entities,
                 feed_update.num_updated_entities,
                 feed_update.num_deleted_entities,
-            ) = sync.sync(feed_update.pk, entities_iter)
-            feed_update.num_parsed_entities = entities_iter.num_consumed()
+            ) = sync.sync(feed_update.pk, parser_object)
+            feed_update.num_parsed_entities = -1
             feed_update.status = models.FeedUpdate.Status.SUCCESS
             feed_update.result = models.FeedUpdate.Result.UPDATED
             session.merge(feed_update)
@@ -231,12 +231,14 @@ def _update_status(feed_update: models.FeedUpdate, status, result, result_messag
     return feed_update
 
 
-def _get_parser(built_in_parser, custom_parser):
+def _get_parser(built_in_parser, custom_parser) -> parser.TransiterParser:
     """
     Get the parser for a feed.
     """
     if built_in_parser is not None:
-        return _built_in_parser_to_function[built_in_parser]
+        return parser.cast_object_to_instantiated_transiter_parser(
+            _built_in_parser_to_function[built_in_parser]
+        )
 
     colon_char = custom_parser.find(":")
     if colon_char == -1:
@@ -257,10 +259,19 @@ def _get_parser(built_in_parser, custom_parser):
         raise _InvalidParser(f"Failed to import module {module_str}")
 
     try:
-        return getattr(module, method_str)
+        module_attr = getattr(module, method_str)
     except AttributeError:
         raise _InvalidParser(
             "Module '{}' has no method '{}'.".format(module_str, method_str)
+        )
+
+    try:
+        return parser.cast_object_to_instantiated_transiter_parser(module_attr)
+    except ValueError:
+        raise _InvalidParser(
+            "Attribute '{}' of module '{}' is not a valid Transiter parser.".format(
+                method_str, module_str
+            )
         )
 
 
@@ -320,19 +331,3 @@ class IteratorWithConsumedCount:
 
     def num_consumed(self):
         return self._num_consumed
-
-
-# TODO
-"""
-class FunctionBasedParser(TransiterParser):
-
-    def __init__(self, parse_function):
-        self._parse_function = parse_function
-        self._type_to_entities = None
-
-    def load_content(self, content):
-        self._type_to_entities = self._parse_function(content)
-
-    def get_routes(self) -> Iterable[parse.Route]:
-        return self._type_to_entities.get(parse.Route, [])
-"""

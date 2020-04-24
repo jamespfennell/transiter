@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 import requests
 
-from transiter import models
+from transiter import models, parse
 from transiter.data.dams import feeddam
 from transiter.services.update import updatemanager, sync
 
@@ -113,18 +113,11 @@ def test_create_feed_update(
             models.FeedUpdate.Result.PARSE_ERROR,
         ],
         [
-            "collections:OrderedDict",
+            "builtins:list",
             b"content",
             b"old_content",
             models.FeedUpdate.Status.FAILURE,
-            models.FeedUpdate.Result.SYNC_ERROR,
-        ],
-        [
-            "collections:OrderedDict",
-            b"content",
-            b"old_content",
-            models.FeedUpdate.Status.SUCCESS,
-            models.FeedUpdate.Result.UPDATED,
+            models.FeedUpdate.Result.PARSE_ERROR,
         ],
         [
             1,
@@ -173,11 +166,48 @@ def test_execute_feed_update(
     monkeypatch.setattr(
         feeddam, "get_last_successful_update_hash", get_last_successful_update
     )
+    monkeypatch.setattr(sync, "sync", lambda: (0, 0, 0))
+
+    actual_status, actual_explanation = updatemanager.execute_feed_update(1)
+
+    assert actual_status == expected_status
+    assert actual_explanation == expected_explanation
+
+
+@pytest.mark.parametrize(
+    "sync_error,expected_status,expected_explanation",
+    [
+        [True, models.FeedUpdate.Status.FAILURE, models.FeedUpdate.Result.SYNC_ERROR],
+        [False, models.FeedUpdate.Status.SUCCESS, models.FeedUpdate.Result.UPDATED],
+    ],
+)
+def test_execute_feed_update__success_or_sync_error(
+    inline_unit_of_work, monkeypatch, sync_error, expected_status, expected_explanation
+):
+
+    system = models.System(id=SYSTEM_ID)
+    feed = models.Feed(
+        id=FEED_ID, system=system, custom_parser="custom_parser", url=URL, headers="{}"
+    )
+    feed_update = models.FeedUpdate(feed=feed)
+
+    response = mock.MagicMock()
+    response.content = b"a"
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
+
+    monkeypatch.setattr(feeddam, "get_update_by_pk", lambda *args: feed_update)
+    monkeypatch.setattr(feeddam, "get_last_successful_update_hash", lambda *args: None)
+
+    class Parser(parse.TransiterParser):
+        def load_content(self, content: bytes):
+            pass
+
+    monkeypatch.setattr(updatemanager, "_get_parser", lambda *args: Parser())
 
     def sync_func(feed_update_pk, entities):
-        if expected_explanation == models.FeedUpdate.Result.SYNC_ERROR:
+        if sync_error:
             raise ValueError
-        return 0, 0, 0
+        return 1, 2, 3
 
     monkeypatch.setattr(sync, "sync", sync_func)
 
@@ -191,9 +221,9 @@ def test_execute_feed_update(
     "built_in_parser", [parser for parser in models.Feed.BuiltInParser]
 )
 def test_get_parser__built_in_parser(built_in_parser):
-    assert updatemanager._built_in_parser_to_function[
-        built_in_parser
-    ] == updatemanager._get_parser(built_in_parser, None)
+    assert parse.parser.cast_object_to_instantiated_transiter_parser(
+        updatemanager._built_in_parser_to_function[built_in_parser]
+    ) == updatemanager._get_parser(built_in_parser, None)
 
 
 def iterator():

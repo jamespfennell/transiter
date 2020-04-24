@@ -1,5 +1,7 @@
-from transiter import parse
 import pytest
+
+from transiter import parse
+from transiter.models import updatableentity
 
 route = parse.Route(id="route", type=parse.Route.Type.RAIL)
 
@@ -59,20 +61,21 @@ def test_callable_based_parser__supported_types():
 
     parser = parse.parser.CallableBasedParser(entities)
 
-    assert parser.supported_types == {parse.Route, parse.Stop, parse.ScheduledService}
+    assert parser.supported_types == set(updatableentity.list_feed_entities())
 
 
 def test_cast__transiter_parser():
-    parser = ImplementedParser()
-
-    assert parser is parse.parser.cast_object_to_transiter_parser(parser)
+    assert isinstance(
+        parse.parser.cast_object_to_instantiated_transiter_parser(ImplementedParser),
+        ImplementedParser,
+    )
 
 
 def test_cast__callable():
     def entities(content_):
         return []
 
-    result = parse.parser.cast_object_to_transiter_parser(entities)
+    result = parse.parser.cast_object_to_instantiated_transiter_parser(entities)
 
     assert isinstance(result, parse.parser.CallableBasedParser)
     assert result._callable is entities
@@ -80,4 +83,4 @@ def test_cast__callable():
 
 def test_cast__error():
     with pytest.raises(ValueError):
-        parse.parser.cast_object_to_transiter_parser("")
+        parse.parser.cast_object_to_instantiated_transiter_parser("")
