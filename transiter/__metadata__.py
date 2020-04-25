@@ -1,3 +1,4 @@
+# When updating the version, also update it in the docs.
 __version__ = "0.4.4"
 
 # The following are set by Travis CI at build time.
