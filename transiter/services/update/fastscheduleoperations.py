@@ -7,13 +7,6 @@ from transiter.data.dams import scheduledam, genericqueries
 
 
 def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]):
-    """
-
-    :param feed_update:
-    :param services:
-    :return: True if the schedule was updated
-    """
-
     num_entities_deleted = delete_trips_associated_to_feed(feed_update.feed.pk)
     if len(parsed_services) == 0:
         return num_entities_deleted > 0

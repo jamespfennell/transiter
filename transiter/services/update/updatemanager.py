@@ -308,26 +308,3 @@ def _calculate_content_hash(content):
     m = hashlib.md5()
     m.update(content)
     return m.hexdigest()
-
-
-class IteratorWithConsumedCount:
-    """
-    Class that wraps around iterators and tracks the number of items consumed; i.e.,
-    the number of elements that have been iterated over.
-    """
-
-    def __init__(self, iterable):
-        self._num_consumed = None
-        self._iterator = iter(iterable)
-
-    def __iter__(self):
-        self._num_consumed = 0
-        return self
-
-    def __next__(self):
-        element = self._iterator.__next__()
-        self._num_consumed += 1
-        return element
-
-    def num_consumed(self):
-        return self._num_consumed

@@ -4,11 +4,6 @@ import requests
 from . import gtfsrealtimegenerator
 
 
-# TODO: break these up into different tests
-#  add trip, change times, add extra stop,
-#  remove a stop, put some in the past, change stops
-
-
 @pytest.mark.parametrize("num_steps", [6])
 def test_update_stops(install_system_1, transiter_host, source_server, num_steps):
 

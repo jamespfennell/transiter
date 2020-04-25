@@ -90,7 +90,7 @@ def get_in_system_by_id(DbEntity: models.Base, system_id, id_):
         .filter(DbEntity.system_pk == models.System.pk)
         .filter(models.System.id == system_id)
         .filter(DbEntity.id == id_)
-        .options(joinedload(DbEntity.system))  # TODO: should this be optional?
+        .options(joinedload(DbEntity.system))
         .one_or_none()
     )
 
@@ -119,7 +119,6 @@ def get_id_to_pk_map(
 
 # DbEntity is a class
 # noinspection PyPep8Naming
-# TODO: is there a valid use case for this?? Perhaps only for deleting stale entities
 def get_id_to_pk_map_by_feed_pk(DbEntity: typing.Type[models.Base], feed_pk):
     id_to_pk = {}
     session = dbconnection.get_session()

@@ -7,7 +7,6 @@ import pytest
 from transiter.data import dbconnection
 
 
-# TODO: can the class be a fixture?
 class SessionFactory:
     def __init__(self):
         self.merged = []
@@ -29,7 +28,7 @@ def session_factory():
 def inline_unit_of_work(monkeypatch):
 
     session_started = False
-    session = mock.MagicMock()  # TODO: use the session fixture?
+    session = mock.MagicMock()
 
     @contextlib.contextmanager
     def inline_unit_of_work():

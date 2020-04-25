@@ -224,22 +224,3 @@ def test_get_parser__built_in_parser(built_in_parser):
     assert parse.parser.cast_object_to_instantiated_transiter_parser(
         updatemanager._built_in_parser_to_function[built_in_parser]
     ) == updatemanager._get_parser(built_in_parser, None)
-
-
-def iterator():
-    yield 5
-    yield 2
-    yield 30
-
-
-@pytest.mark.parametrize("iterable", [iterator(), [5, 2, 30]])
-def test_iterable_len(iterable):
-
-    iterable = updatemanager.IteratorWithConsumedCount(iterable)
-
-    assert iterable.num_consumed() is None
-
-    actual_num_consumed = 0
-    for __ in iterable:
-        actual_num_consumed += 1
-        assert iterable.num_consumed() == actual_num_consumed

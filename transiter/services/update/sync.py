@@ -552,6 +552,10 @@ class TripSyncer(syncer(models.Trip)):
 
     def _fast_merge(self, trips):
         num_added, num_updated = self._fast_mappings_merge(models.Trip, trips)
+        # TODO: this next query looks wrong.
+        #  We should be able to 'steal' Trips across feeds
+        #  Should be possible to test this bug actually, just create a Trip in a
+        #  different feed
         trip_id_to_db_trip_pk = genericqueries.get_id_to_pk_map_by_feed_pk(
             models.Trip, self.feed_update.feed.pk
         )

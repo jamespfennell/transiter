@@ -74,7 +74,6 @@ class FeedUpdate(ToDictMixin, Base):
         Index("feed_update_feed_pk_feed_update_pk_idx", feed_pk, pk),
     )
 
-    # TODO: add a datetime here, at least
     __dict_columns__ = [
         update_type,
         status,
@@ -82,6 +81,7 @@ class FeedUpdate(ToDictMixin, Base):
         result_message,
         content_hash,
         content_length,
+        completed_at,
     ]
 
     def to_dict(self) -> dict:

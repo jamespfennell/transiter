@@ -1,6 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import sql
+from sqlalchemy.orm import joinedload
 
 from transiter import models
 from transiter.data import dbconnection
@@ -50,11 +51,12 @@ def get_in_system_by_id(system_id, feed_id):
 
 
 def get_update_by_pk(feed_update_pk) -> Optional[models.FeedUpdate]:
-    # TODO: greedily add the feed and the system if not already
     session = dbconnection.get_session()
     return (
         session.query(models.FeedUpdate)
         .filter(models.FeedUpdate.pk == feed_update_pk)
+        .options(joinedload(models.FeedUpdate.feed))
+        .options(joinedload(models.FeedUpdate.feed, models.Feed.system))
         .one_or_none()
     )
 
