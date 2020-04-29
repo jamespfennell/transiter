@@ -1,5 +1,3 @@
-import datetime
-
 from sqlalchemy import (
     Column,
     TIMESTAMP,

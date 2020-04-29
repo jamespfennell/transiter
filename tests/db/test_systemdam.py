@@ -1,6 +1,7 @@
+import pytest
+
 from transiter import models
 from transiter.data.dams import systemdam
-import pytest
 
 
 def test_create(db_session):

@@ -8,13 +8,13 @@ from transiter.http.httpmanager import (
     is_sync_request,
 )
 from transiter.http.permissions import requires_permissions, PermissionsLevel
-from transiter.services import feedservice, links
+from transiter.services import feedservice, views
 
 feed_endpoints = Blueprint(__name__, __name__)
 
 
 @http_endpoint(feed_endpoints, "")
-@link_target(links.FeedsInSystemIndexLink)
+@link_target(views.FeedsInSystem, ["_system_id"])
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def list_all_in_system(system_id):
     """List all feeds for a specific system."""
@@ -22,7 +22,7 @@ def list_all_in_system(system_id):
 
 
 @http_endpoint(feed_endpoints, "/<feed_id>")
-@link_target(links.FeedEntityLink)
+@link_target(views.Feed, ["_system_id", "id"])
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def get_in_system_by_id(system_id, feed_id):
     """Retrieve a specific feed."""
@@ -54,7 +54,7 @@ def create_feed_update_flush(system_id, feed_id):
 
 
 @http_endpoint(feed_endpoints, "/<feed_id>/updates")
-@link_target(links.FeedEntityUpdatesLink)
+@link_target(views.UpdatesInFeedLink, ["_system_id", "_feed_id"])
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def list_updates_in_feed(system_id, feed_id):
     """List recent feed updates."""

@@ -11,8 +11,8 @@ This involves:
 - Deleting existing entities that no longer appear in the feed.
 """
 import collections
-import logging
 import dataclasses
+import logging
 import typing
 from typing import Iterable, List, Tuple
 
@@ -20,9 +20,9 @@ from transiter import models, parse
 from transiter.data import dbconnection
 from transiter.data.dams import genericqueries
 from transiter.data.dams import stopdam, tripdam, routedam, scheduledam, feeddam
+from transiter.models import updatableentity
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.update import fastscheduleoperations
-from transiter.models import updatableentity
 
 logger = logging.getLogger(__name__)
 
@@ -615,9 +615,11 @@ class AlertSyncer(syncer(models.Alert)):
         alert_id_to_route_ids = {alert.id: alert.route_ids for alert in parsed_alerts}
         alert_id_to_agency_ids = {alert.id: alert.agency_ids for alert in parsed_alerts}
         for alert in persisted_alerts:
+            # TODO: add a unit test for the case when the route doesn't exist!
             alert.routes = [
-                route_id_to_route[route_id]
+                route_id_to_route.get(route_id)
                 for route_id in alert_id_to_route_ids.get(alert.id, [])
+                if route_id in route_id_to_route
             ]
             # NOTE: this is a temporary thing pending the creation of models.Agency
             if len(alert_id_to_agency_ids.get(alert.id, [])) > 0:

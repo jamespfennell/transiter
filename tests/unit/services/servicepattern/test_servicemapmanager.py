@@ -6,9 +6,25 @@ import pytest
 
 from transiter import models
 from transiter.data import dbconnection
+from transiter.data.dams import servicemapdam
+from transiter.services import views
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
 from ... import testutil
+
+SYSTEM_ID = "system_id"
+STOP_1_PK = 1
+GROUP_ID = "2"
+ROUTE_1_ID = "3"
+ROUTE_1_PK = 6
+ROUTE_2_ID = "4"
+ROUTE_2_PK = 7
+TRIP_1_PK = 10
+TRIP_2_PK = 11
+TRIP_1_START_TIME = datetime.datetime(1, 5, 9)
+TRIP_1_END_TIME = datetime.datetime(2, 6, 10)
+TRIP_2_START_TIME = datetime.datetime(3, 7, 11)
+TRIP_2_END_TIME = datetime.datetime(4, 8, 12)
 
 
 class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
@@ -155,29 +171,33 @@ class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
 
         _build_service_map_from_paths.assert_has_calls([mock.call(expected_paths)])
 
-    def test_build_stop_pk_to_service_maps_response(self):
-        """[Service map manager] Build service maps response"""
 
-        route_1 = models.Route(id=self.ROUTE_1_ID)
-        route_2 = models.Route(id=self.ROUTE_2_ID)
-        self.servicemapdam.get_stop_pk_to_group_id_to_routes_map.return_value = {
-            self.STOP_1_PK: {self.GROUP_ID: [route_1, route_2]}
-        }
+def test_build_stop_pk_to_service_maps_response(monkeypatch):
+    system = models.System(id=SYSTEM_ID)
+    route_1 = models.Route(id=ROUTE_1_ID, system=system)
+    route_2 = models.Route(id=ROUTE_2_ID, system=system)
 
-        expected = {
-            self.STOP_1_PK: [
-                {
-                    "group_id": self.GROUP_ID,
-                    "routes": [route_1.to_dict(), route_2.to_dict()],
-                }
-            ]
-        }
+    monkeypatch.setattr(
+        servicemapdam,
+        "get_stop_pk_to_group_id_to_routes_map",
+        lambda *args: {STOP_1_PK: {GROUP_ID: [route_1, route_2]}},
+    )
 
-        actual = servicemapmanager.build_stop_pk_to_service_maps_response(
-            [self.STOP_1_PK]
-        )
+    expected = {
+        STOP_1_PK: [
+            views.ServiceMapWithRoutes(
+                GROUP_ID,
+                [
+                    views.Route(ROUTE_1_ID, None, SYSTEM_ID),
+                    views.Route(ROUTE_2_ID, None, SYSTEM_ID),
+                ],
+            )
+        ]
+    }
 
-        self.assertEqual(expected, actual)
+    actual = servicemapmanager.build_stop_pk_to_service_maps_response([STOP_1_PK])
+
+    assert expected == actual
 
 
 def test_build_sorted_graph_from_paths__empty_graph():

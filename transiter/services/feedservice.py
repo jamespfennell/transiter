@@ -5,18 +5,20 @@ operations.
 
 import datetime
 import logging
+import typing
 from dataclasses import dataclass
 from typing import Iterable
 
 from transiter import exceptions, models
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam
-from transiter.services import links, constants as c
+from transiter.services import views
 from transiter.services.update import updatemanager
 
 logger = logging.getLogger(__name__)
 
 
+# TODO: just use the view instead
 @dataclass
 class Feed:
     system_id: str
@@ -27,8 +29,9 @@ class Feed:
 @dbconnection.unit_of_work
 def list_all_auto_updating() -> Iterable[Feed]:
     """
-    List all auto updating feeds. This method is designed for use by the task
-    server.
+    List all auto updating feeds.
+
+    This method is designed for use by the scheduler.
     """
     return [
         Feed(feed.system.id, feed.id, feed.auto_update_period)
@@ -37,27 +40,18 @@ def list_all_auto_updating() -> Iterable[Feed]:
 
 
 @dbconnection.unit_of_work
-def list_all_in_system(system_id, return_links=True):
+def list_all_in_system(system_id) -> typing.List[views.Feed]:
     """
     Get data on all feeds in a system.
-
-    The result is list of dictionaries, one for each feed, containing the
-    feed's short representation and (optionally) a link to the feed.
     """
     system = systemdam.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
-    response = []
-    for feed in feeddam.list_all_in_system(system_id):
-        feed_response = feed.to_dict()
-        if return_links:
-            feed_response[c.HREF] = links.FeedEntityLink(feed)
-        response.append(feed_response)
-    return response
+    return list(map(views.Feed.from_model, feeddam.list_all_in_system(system_id)))
 
 
 @dbconnection.unit_of_work
-def get_in_system_by_id(system_id, feed_id, return_links=True):
+def get_in_system_by_id(system_id, feed_id) -> views.Feed:
     """
     Get data on a specific feed in a system.
     """
@@ -66,9 +60,8 @@ def get_in_system_by_id(system_id, feed_id, return_links=True):
         raise exceptions.IdNotFoundError(
             models.Feed, system_id=system_id, feed_id=feed_id
         )
-    response = feed.to_dict()
-    if return_links:
-        response[c.UPDATES] = {c.HREF: links.FeedEntityUpdatesLink(feed)}
+    response = views.FeedLarge.from_model(feed)
+    response.updates = views.UpdatesInFeedLink.from_model(feed)
     return response
 
 

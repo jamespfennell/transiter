@@ -5,8 +5,8 @@ import flask
 from werkzeug import exceptions as werkzeug_exceptions
 
 from transiter import config, exceptions
+from transiter.http import httpviews
 from transiter.http.httpmanager import link_target, HttpStatus
-from transiter.services import links
 
 docs_endpoints = flask.Blueprint(__name__, __name__)
 
@@ -47,7 +47,7 @@ calculated relative to the Transiter WSGI app's directory, which is:
 # links. We need to redirect onto the URL with the slash in order for these to work.
 @docs_endpoints.route("/", strict_slashes=True)
 @docs_endpoints.route("/<path:path>", strict_slashes=True)
-@link_target(links.InternalDocumentationLink)
+@link_target(httpviews.InternalDocumentationLink)
 def docs(path="index.html", retry_with_index_dot_html=True, perform_validation=True):
     if not config.DOCUMENTATION_ENABLED:
         flask.abort(HttpStatus.NOT_FOUND)

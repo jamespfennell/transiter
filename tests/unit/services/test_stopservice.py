@@ -6,16 +6,18 @@ import pytest
 
 from transiter import models, exceptions
 from transiter.data.dams import stopdam, systemdam, tripdam
-from transiter.services import stopservice, links
+from transiter.services import stopservice, views
 from transiter.services.servicemap import servicemapmanager
 
 SYSTEM_ID = "1"
 STOP_ONE_ID = "2"
 STOP_ONE_PK = 3
+STOP_ONE_NAME = "Name"
 TRIP_PK = 100
 TRIP_ID = "101"
 ROUTE_ID = "103"
 STOP_TWO_ID = "102"
+STOP_TWO_NAME = "102-NAME"
 DIRECTION_NAME = "Uptown"
 TRIP_STOP_TIME_ONE_PK = 201
 TRIP_STOP_TIME_TWO_PK = 202
@@ -107,13 +109,15 @@ def test_direction_name_matcher__match(direction_rule, expected):
 
 def test_list_all_in_system(monkeypatch):
     system = models.System(id=SYSTEM_ID)
-    stop_one = models.Stop(pk=STOP_ONE_PK, id=STOP_ONE_ID, system=system)
+    stop_one = models.Stop(
+        pk=STOP_ONE_PK, id=STOP_ONE_ID, name=STOP_ONE_NAME, system=system
+    )
     monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: system)
     monkeypatch.setattr(stopdam, "list_all_in_system", lambda *args: [stop_one])
 
-    expected = [{"href": links.StopEntityLink(stop_one), **stop_one.to_dict()}]
+    expected = [views.Stop(id=STOP_ONE_ID, name=STOP_ONE_NAME, _system_id=SYSTEM_ID)]
 
-    actual = stopservice.list_all_in_system(SYSTEM_ID, True)
+    actual = stopservice.list_all_in_system(SYSTEM_ID)
 
     assert expected == actual
 
@@ -143,6 +147,10 @@ def test_get_in_system_by_id(monkeypatch):
     stop_time_two = models.TripStopTime(
         pk=TRIP_STOP_TIME_TWO_PK, arrival_time=datetime.datetime(2137, 1, 1, 0, 0, 0),
     )
+
+    child_stops = mock.MagicMock()
+    parent_stop = mock.MagicMock()
+
     monkeypatch.setattr(stopdam, "get_in_system_by_id", lambda *args: stop_one)
     monkeypatch.setattr(
         stopdam, "list_all_stops_in_stop_tree", lambda *args: [stop_one]
@@ -165,26 +173,35 @@ def test_get_in_system_by_id(monkeypatch):
     monkeypatch.setattr(
         stopservice._DirectionNameMatcher, "all_names", lambda *args: [DIRECTION_NAME]
     )
-    fake_stop_tree_response = {"id": STOP_ONE_ID}
+    fake_stop_tree_response = views.Stop(
+        id=STOP_TWO_ID,
+        name=None,
+        _system_id=SYSTEM_ID,
+        child_stops=child_stops,
+        parent_stop=parent_stop,
+    )
     monkeypatch.setattr(
         stopservice, "_build_stop_tree_response", lambda *args: fake_stop_tree_response
     )
-    fake_trip_stop_time_response = {"id": TRIP_ID}
+    fake_trip_stop_time_response = mock.MagicMock()
     monkeypatch.setattr(
         stopservice,
         "_build_trip_stop_time_response",
         lambda *args: fake_trip_stop_time_response,
     )
 
-    expected = {
-        **fake_stop_tree_response,
-        "directions": [DIRECTION_NAME],
-        "stop_times": [{**fake_trip_stop_time_response}],
-        "latitude": None,
-        "longitude": None,
-        "url": None,
-        "name": None,
-    }
+    expected = views.StopLarge(
+        id=STOP_ONE_ID,
+        name=None,
+        latitude=None,
+        longitude=None,
+        url=None,
+        _system_id=SYSTEM_ID,
+        parent_stop=parent_stop,
+        child_stops=child_stops,
+        directions=[DIRECTION_NAME],
+        stop_times=[fake_trip_stop_time_response],
+    )
 
     actual = stopservice.get_in_system_by_id(
         SYSTEM_ID, STOP_ONE_ID, exclude_trips_before=1
@@ -200,32 +217,41 @@ def test_build_trip_stop_time_response():
     trip = models.Trip()
     trip.pk = TRIP_PK
     trip.id = TRIP_ID
-    trip_stop_time = models.TripStopTime()
+    trip_stop_time = models.TripStopTime(arrival_time=TIME_1, departure_time=TIME_2)
     trip_stop_time.trip = trip
     trip_stop_time.stop = stop
     route = models.Route(system=system)
     route.id = ROUTE_ID
     trip.route = route
-    last_stop = models.Stop(system=system)
+    last_stop = models.Stop(system=system, id=STOP_TWO_ID, name=STOP_TWO_NAME)
     last_stop.id = STOP_TWO_ID
 
-    expected = {
-        "stop_id": STOP_ONE_ID,
-        "direction": DIRECTION_NAME,
-        **trip_stop_time.to_dict(),
-        "trip": {
-            **trip.to_large_dict(),
-            "href": links.TripEntityLink(trip),
-            "route": {"href": links.RouteEntityLink(route), **route.to_dict()},
-            "last_stop": {
-                **last_stop.to_dict(),
-                "href": links.StopEntityLink(last_stop),
-            },
-        },
-    }
+    expected = views.TripStopTime(
+        arrival=views._TripStopTimeEvent(time=TIME_1, delay=None, uncertainty=None),
+        departure=views._TripStopTimeEvent(time=TIME_2, delay=None, uncertainty=None),
+        track=None,
+        future=None,
+        stop_sequence=None,
+        direction=DIRECTION_NAME,
+        trip=views.Trip(
+            id=TRIP_ID,
+            current_status=None,
+            current_stop_sequence=None,
+            direction_id=None,
+            last_update_time=None,
+            vehicle_id=None,
+            start_time=None,
+            _route_id=ROUTE_ID,
+            _system_id=SYSTEM_ID,
+            route=views.Route(id=ROUTE_ID, color=None, _system_id=SYSTEM_ID),
+            last_stop=views.Stop(
+                id=STOP_TWO_ID, name=STOP_TWO_NAME, _system_id=SYSTEM_ID
+            ),
+        ),
+    )
 
     actual = stopservice._build_trip_stop_time_response(
-        trip_stop_time, DIRECTION_NAME, {trip.pk: last_stop}, True
+        trip_stop_time, DIRECTION_NAME, {trip.pk: last_stop}
     )
 
     assert expected == actual
@@ -277,29 +303,34 @@ def test_build_stop_tree_response(tree_1):
 
     stop_pk_to_service_maps_response = {pk: pk for pk in range(4)}
 
-    expected = {
-        **tree_1[1].to_dict(),
-        "service_maps": 1,
-        "href": links.StopEntityLink(tree_1[1]),
-        "parent_stop": {
-            **tree_1[0].to_dict(),
-            "service_maps": 0,
-            "href": links.StopEntityLink(tree_1[0]),
-            "parent_stop": None,
-            "child_stops": [
-                {
-                    **tree_1[2].to_dict(),
-                    "service_maps": 2,
-                    "href": links.StopEntityLink(tree_1[2]),
-                    "child_stops": [],
-                }
+    system_id = tree_1[1].system.id
+
+    expected = views.Stop(
+        id=tree_1[1].id,
+        name=None,
+        _system_id=system_id,
+        service_maps=1,
+        parent_stop=views.Stop(
+            id=tree_1[0].id,
+            name=None,
+            _system_id=system_id,
+            service_maps=0,
+            parent_stop=None,
+            child_stops=[
+                views.Stop(
+                    id=tree_1[2].id,
+                    name=None,
+                    _system_id=system_id,
+                    service_maps=2,
+                    child_stops=[],
+                )
             ],
-        },
-        "child_stops": [],
-    }
+        ),
+        child_stops=[],
+    )
 
     actual = stopservice._build_stop_tree_response(
-        stop_tree, stop_pk_to_service_maps_response, True, True
+        stop_tree, stop_pk_to_service_maps_response, True
     )
 
     assert expected == actual

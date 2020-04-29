@@ -1,26 +1,20 @@
 """
 The route service is used to retrieve data about routes.
 """
-
-import enum
+import typing
 
 from transiter import exceptions, models
 from transiter.data import dbconnection
-from transiter.data.dams import routedam, systemdam, servicemapdam
+from transiter.data.dams import routedam, systemdam
 from transiter.models import Alert
-from transiter.services import links, constants as c
+from transiter.services import views
+from transiter.services.servicemap import servicemapmanager
 
 
 @dbconnection.unit_of_work
-def list_all_in_system(system_id, return_links=True):
+def list_all_in_system(system_id) -> typing.List[views.Route]:
     """
     Get data on all routes in a system.
-
-    This function returns a list of dictionaries, one dictionary for each
-    route. The dictionary for a specific route contains
-     * the route's short representation,
-     * its status under key 'status',
-     * and optionally a link to the route.
     """
     system = systemdam.get_by_id(system_id, only_return_active=True)
     if system is None:
@@ -29,67 +23,35 @@ def list_all_in_system(system_id, return_links=True):
     routes = list(routedam.list_all_in_system(system_id))
     route_pk_to_status = _construct_route_pk_to_status_map(route.pk for route in routes)
     for route in routes:
-        route_response = {**route.to_dict(), c.STATUS: route_pk_to_status[route.pk]}
-        if return_links:
-            route_response[c.HREF] = links.RouteEntityLink(route)
+        route_response = views.Route.from_model(route)
+        route_response.status = route_pk_to_status[route.pk]
         response.append(route_response)
     return response
 
 
 @dbconnection.unit_of_work
-def get_in_system_by_id(system_id, route_id, return_links=True):
+def get_in_system_by_id(system_id, route_id) -> views.RouteLarge:
     """
     Get data for a specific route in a specific system.
-
-    This function returns a dictionary containing,
-     * the route's long representation,
-     * its status under key 'status',
-     * its periodicity under key 'periodicity',
-     * its alerts under key 'alerts',
-     * all of its service maps for whose group use_for_stops_in_route is true,
-       under key 'service_maps',
-     * and optionally a link to the route.
     """
     route = routedam.get_in_system_by_id(system_id, route_id)
     if route is None:
         raise exceptions.IdNotFoundError(
             models.Route, system_id=system_id, route_id=route_id
         )
-    status = _construct_route_status(route.pk)
     periodicity = routedam.calculate_periodicity(route.pk)
     if periodicity is not None:
         periodicity = int(periodicity / 6) / 10
-    response = {
-        **route.to_large_dict(),
-        c.PERIODICITY: periodicity,
-        c.STATUS: status,
-        c.ALERTS: [alert.to_large_dict() for alert in route.route_statuses],
-        c.SERVICE_MAPS: [],
-    }
-
-    for group, service_map in servicemapdam.list_groups_and_maps_for_stops_in_route(
-        route.pk
-    ):
-        service_map_response = {c.GROUP_ID: group.id, c.STOPS: []}
-        if service_map is not None:
-            for entry in service_map.vertices:
-                stop_response = entry.stop.to_dict()
-                if return_links:
-                    stop_response[c.HREF] = links.StopEntityLink(entry.stop)
-                service_map_response[c.STOPS].append(stop_response)
-        response[c.SERVICE_MAPS].append(service_map_response)
-
-    return response
+    return views.RouteLarge.from_model(
+        route,
+        _construct_route_status(route.pk),
+        periodicity,
+        [alert.to_large_dict() for alert in route.route_statuses],
+        servicemapmanager.build_route_service_maps_response(route.pk),
+    )
 
 
-class Status(str, enum.Enum):
-    """Enum containing the possible statuses for a route."""
-
-    NO_SERVICE = "NO_SERVICE"
-    GOOD_SERVICE = "GOOD_SERVICE"
-    PLANNED_SERVICE_CHANGE = "PLANNED_SERVICE_CHANGE"
-    UNPLANNED_SERVICE_CHANGE = "UNPLANNED_SERVICE_CHANGE"
-    DELAYS = "DELAYS"
+Status = views.Route.Status
 
 
 def _construct_route_status(route_pk):
@@ -98,11 +60,6 @@ def _construct_route_status(route_pk):
 
     See _construct_route_pk_to_status_map for documentation on how this is
     constructed.
-
-    :param route_pk: the route's PK
-    :type route_pk: int
-    :return: the route's status
-    :rtype: Status
     """
     return _construct_route_pk_to_status_map([route_pk])[route_pk]
 
@@ -123,11 +80,6 @@ def _construct_route_pk_to_status_map(route_pks_iter):
     trips for this route.
      * If so, the status is GOOD_SERVICE.
      * Otherwise, the status is NO_SERVICE.
-
-    :param route_pks_iter: iterator of the routes's PKs
-    :type route_pks_iter: iter
-    :return: list of TripStatus objects
-    :rtype: list
     """
     route_pks = {route_pk for route_pk in route_pks_iter}
 

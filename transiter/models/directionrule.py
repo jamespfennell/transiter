@@ -34,5 +34,5 @@ class DirectionRule(Base):
             priority=parsed_direction_rule.priority,
             direction_id=parsed_direction_rule.direction_id,
             track=parsed_direction_rule.track,
-            name=parsed_direction_rule.track,
+            name=parsed_direction_rule.name,
         )

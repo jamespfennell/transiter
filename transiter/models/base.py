@@ -13,6 +13,8 @@ class _BaseModel:
     def __eq__(self, other):
         for column in inspect(type(self)).columns.keys():
             if getattr(self, column) != getattr(other, column):
+                return False
+                # TODO: why is the executor printing this?
                 print(
                     'Values for attribute "{}" don\'t match: "{}" != "{}"'.format(
                         column, str(getattr(self, column)), str(getattr(other, column))
@@ -37,6 +39,7 @@ class _BaseModel:
 Base = declarative_base(cls=_BaseModel)
 
 
+# TODO: destroy
 class ToDictMixin:
 
     __dict_columns__ = None

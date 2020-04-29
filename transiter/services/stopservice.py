@@ -13,34 +13,21 @@ import typing
 from transiter import exceptions, models
 from transiter.data import dbconnection
 from transiter.data.dams import stopdam, tripdam, systemdam
-from transiter.services import links, constants as c
+from transiter.services import views
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
 
 
 @dbconnection.unit_of_work
-def list_all_in_system(system_id, return_links=True):
+def list_all_in_system(system_id) -> typing.List[views.Stop]:
     """
     Get information on all stops in a specific system.
-
-    :param system_id: the system ID
-    :type system_id: str
-    :param return_links: whether to return links
-    :type return_links: bool
-    :return: a list of dictionaries, one for each stop, containing the stop's
-             short representation and optionally a link.
     """
     system = systemdam.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
 
-    response = []
-    for stop in stopdam.list_all_in_system(system_id):
-        stop_response = stop.to_dict()
-        if return_links:
-            stop_response[c.HREF] = links.StopEntityLink(stop)
-        response.append(stop_response)
-    return response
+    return list(map(views.Stop.from_model, stopdam.list_all_in_system(system_id)))
 
 
 @dbconnection.unit_of_work
@@ -85,13 +72,14 @@ def get_in_system_by_id(
     )
 
     # Using the data retrieved, we then build the response
-    response = _build_stop_tree_response(
-        stop_tree, stop_pk_to_service_maps_response, return_links, return_only_stations
+    response = views.StopLarge.from_model(stop)
+    stop_tree_base: views.Stop = _build_stop_tree_response(
+        stop_tree, stop_pk_to_service_maps_response, return_only_stations
     )
-    response.update(stop.to_large_dict())
-    response.update(
-        {c.DIRECTIONS: list(direction_name_matcher.all_names()), c.STOP_TIMES: []}
-    )
+    response.parent_stop = stop_tree_base.parent_stop
+    response.child_stops = stop_tree_base.child_stops
+    response.service_maps = stop_tree_base.service_maps
+    response.directions = list(direction_name_matcher.all_names())
 
     stop_time_filter = _TripStopTimeFilter(
         inclusion_interval_start=exclude_trips_before,
@@ -102,9 +90,9 @@ def get_in_system_by_id(
         direction = direction_name_matcher.match(trip_stop_time)
         if stop_time_filter.remove(trip_stop_time, direction):
             continue
-        response[c.STOP_TIMES].append(
+        response.stop_times.append(
             _build_trip_stop_time_response(
-                trip_stop_time, direction, trip_pk_to_last_stop, return_links
+                trip_stop_time, direction, trip_pk_to_last_stop
             )
         )
     return response
@@ -151,34 +139,19 @@ class _TripStopTimeFilter:
 
 
 def _build_trip_stop_time_response(
-    trip_stop_time, direction_name, trip_pk_to_last_stop, return_links
+    trip_stop_time, direction_name, trip_pk_to_last_stop
 ):
     """
     Build the response for a specific trip stop time.
     """
     trip = trip_stop_time.trip
     last_stop = trip_pk_to_last_stop[trip.pk]
-    trip_stop_time_response = {
-        c.STOP_ID: trip_stop_time.stop.id,
-        c.DIRECTION: direction_name,
-        **trip_stop_time.to_dict(),
-        c.TRIP: {
-            **trip_stop_time.trip.to_large_dict(),
-            c.ROUTE: trip_stop_time.trip.route.to_dict(),
-            c.LAST_STOP: last_stop.to_dict(),
-        },
-    }
-    if return_links:
-        trip_stop_time_response[c.TRIP][c.HREF] = links.TripEntityLink(
-            trip_stop_time.trip
-        )
-        trip_stop_time_response[c.TRIP][c.ROUTE][c.HREF] = links.RouteEntityLink(
-            trip_stop_time.trip.route
-        )
-        trip_stop_time_response[c.TRIP][c.LAST_STOP][c.HREF] = links.StopEntityLink(
-            last_stop
-        )
-    return trip_stop_time_response
+    result = views.TripStopTime.from_model(trip_stop_time)
+    result.direction = direction_name
+    result.trip = views.Trip.from_model(trip)
+    result.trip.route = views.Route.from_model(trip.route)
+    result.trip.last_stop = views.Stop.from_model(last_stop)
+    return result
 
 
 class _StopTree:
@@ -315,7 +288,7 @@ class _StopTree:
 
 
 def _build_stop_tree_response(
-    stop_tree, stop_pk_to_service_maps_response, return_links, return_only_stations
+    stop_tree, stop_pk_to_service_maps_response, return_only_stations
 ):
     """
     Build the stop tree response.
@@ -330,18 +303,14 @@ def _build_stop_tree_response(
     """
 
     def node_function(stop, parent_return, children_return):
-        response = {
-            **stop.to_dict(),
-            c.SERVICE_MAPS: stop_pk_to_service_maps_response[stop.pk],
-        }
-        if return_links:
-            response[c.HREF] = links.StopEntityLink(stop)
+        response = views.Stop.from_model(stop)
+        response.service_maps = stop_pk_to_service_maps_response[stop.pk]
         if parent_return is not None:
-            response[c.PARENT_STOP] = parent_return
+            response.parent_stop = parent_return
         if stop.parent_stop_pk is None:
-            response[c.PARENT_STOP] = None
+            response.parent_stop = None
         if children_return is not None:
-            response[c.CHILD_STOPS] = children_return
+            response.child_stops = children_return
         return response
 
     return stop_tree.apply_function(node_function, only_stations=return_only_stations)
@@ -370,6 +339,7 @@ class _DirectionNameMatcher:
         :return: list of names
         :rtype: list of strings
         """
+        print(self._rules)
         return {rule.name for rule in self._rules}
 
     def match(self, trip_stop_time):

@@ -5,23 +5,23 @@ maps
 import datetime
 import json
 import logging
+import typing
 from typing import List, Set, Tuple
 
 from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
-from transiter.services import constants as c
+from transiter.services import views
 from transiter.services.servicemap import graphutils, conditions
 
 logger = logging.getLogger(__name__)
 
 
-def build_stop_pk_to_service_maps_response(stop_pks):
+def build_stop_pk_to_service_maps_response(
+    stop_pks,
+) -> typing.Dict[str, List[views.ServiceMapWithRoutes]]:
     """
     Build the service maps response used in the stop service.
-
-    :param stop_pks: the PKs of the stops to construct it for.
-    :return: a map of stop PK to the response
     """
     stop_pks = list(stop_pks)
     stop_pk_to_service_map_group_id_to_routes = servicemapdam.get_stop_pk_to_group_id_to_routes_map(
@@ -31,10 +31,30 @@ def build_stop_pk_to_service_maps_response(stop_pks):
     for stop_pk in stop_pks:
         group_id_to_routes = stop_pk_to_service_map_group_id_to_routes[stop_pk]
         stop_pk_to_service_maps_response[stop_pk] = [
-            {c.GROUP_ID: group_id, c.ROUTES: [route.to_dict() for route in routes]}
+            views.ServiceMapWithRoutes(
+                group_id, list(map(views.Route.from_model, routes))
+            )
             for group_id, routes in group_id_to_routes.items()
         ]
+        continue
     return stop_pk_to_service_maps_response
+
+
+def build_route_service_maps_response(
+    route_pk,
+) -> typing.List[views.ServiceMapWithStops]:
+    response = []
+    for group, service_map in servicemapdam.list_groups_and_maps_for_stops_in_route(
+        route_pk
+    ):
+        if service_map is not None:
+            stops = [
+                views.Stop.from_model(entry.stop) for entry in service_map.vertices
+            ]
+        else:
+            stops = []
+        response.append(views.ServiceMapWithStops(group.id, stops))
+    return response
 
 
 def calculate_paths_hash(paths):

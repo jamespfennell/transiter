@@ -16,8 +16,10 @@ Specifically, the HTTP Manager currently does three things:
    of the link_target decorator, which is used to identify which endpoints
    correspond to which Links.
 """
+import dataclasses
 import decimal
 import enum
+import inspect
 import json
 import logging
 from datetime import date, datetime
@@ -26,7 +28,7 @@ import flask
 from decorator import decorator
 
 from transiter import exceptions
-from transiter.services import links
+from transiter.services import views
 
 logger = logging.getLogger(__name__)
 
@@ -116,27 +118,44 @@ def _json_response(func, *args, **kwargs):
 _link_type_to_target = {}
 
 
-def link_target(link_type):
+@dataclasses.dataclass
+class ViewTarget:
+    target_str: str
+    target_param_to_view_param: dict
+
+
+_view_to_target = {}
+
+
+def link_target(link_type, view_params=None):
     """
     This decorator factory is used to identify a HTTP endpoint with a given
-    link. It's used as follows:
+    view class. It's used as follows:
 
     .. code-block:: python
 
-        @link_target(links.RelevantLink)
-        def http_endpoint_to_link():
+        @link_target(views.Stop, ["id"])
+        def http_endpoint_to_link(stop_id):
             pass
 
-    :param link_type: the link type
+    :param link_type: the view type
+    :param view_params: a list of string field names in the view whose values would be
+     passed to the endpoint to get the response for that view object.
     :return: the factory returns a decorator to be applied to the endpoint.
     """
 
-    def decorator_(func):
+    def views_decorator(func):
         flask_endpoint = "{}.{}".format(func.__module__, func.__name__)
-        _link_type_to_target[link_type] = flask_endpoint
+        target_param_to_view_param = {}
+        if view_params is not None:
+            for i, target_param in enumerate(inspect.signature(func).parameters.keys()):
+                target_param_to_view_param[target_param] = view_params[i]
+        _view_to_target[link_type] = ViewTarget(
+            flask_endpoint, target_param_to_view_param
+        )
         return func
 
-    return decorator_
+    return views_decorator
 
 
 def get_url_parameters(expected_keys, error_if_extra_keys=True):
@@ -182,23 +201,39 @@ def _convert_to_json_str(data):
     )
 
 
+def _build_href(view: views.View):
+    if type(view) not in _view_to_target:
+        return None
+    view_target = _view_to_target[type(view)]
+    custom_host = flask.request.headers.get("X-Transiter-Host")
+    kwargs = {
+        key: getattr(view, value)
+        for key, value in view_target.target_param_to_view_param.items()
+    }
+    if custom_host is not None:
+        return custom_host + flask.url_for(
+            view_target.target_str, _external=False, **kwargs
+        )
+    return flask.url_for(view_target.target_str, _external=True, **kwargs)
+
+
 def _transiter_json_serializer(obj):
     """
     This is custom Transiter JSON serializer for objects that are not
     serializable by default.
     """
+    if isinstance(obj, views.View):
+        base = obj.to_dict()
+        href = _build_href(obj)
+        if href is not None:
+            base["href"] = href
+        return base
+
     if isinstance(obj, (datetime, date)):
         return obj.timestamp()
 
     if isinstance(obj, enum.Enum):
         return obj.name
-
-    if isinstance(obj, links.Link):
-        target = _link_type_to_target[type(obj)]
-        custom_host = flask.request.headers.get("X-Transiter-Host")
-        if custom_host is not None:
-            return custom_host + flask.url_for(target, _external=False, **obj.kwargs)
-        return flask.url_for(target, _external=True, **obj.kwargs)
 
     if isinstance(obj, decimal.Decimal):
         return str(obj)

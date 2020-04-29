@@ -1,7 +1,7 @@
 import flask
 
 from transiter.http.httpmanager import link_target, http_endpoint
-from transiter.services import tripservice, links
+from transiter.services import tripservice, views
 
 trip_endpoints = flask.Blueprint(__name__, __name__)
 
@@ -13,7 +13,7 @@ def list_all_in_route(system_id, route_id):
 
 
 @http_endpoint(trip_endpoints, "/<trip_id>")
-@link_target(links.TripEntityLink)
+@link_target(views.Trip, ["_system_id", "_route_id", "id"])
 def get_in_route_by_id(system_id, route_id, trip_id):
     """Retrieve a specific trip in a specific system."""
     return tripservice.get_in_route_by_id(system_id, route_id, trip_id)

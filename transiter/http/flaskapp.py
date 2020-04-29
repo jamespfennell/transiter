@@ -11,13 +11,13 @@ import pytz
 import werkzeug.exceptions as werkzeug_exceptions
 
 from transiter import config, exceptions, __metadata__
-from transiter.http import endpoints
+from transiter.http import endpoints, httpviews
 from transiter.http.httpmanager import (
     http_endpoint,
     HttpStatus,
     convert_exception_to_error_response,
 )
-from transiter.services import links, systemservice
+from transiter.services import systemservice
 
 app = flask.Flask("transiter")
 
@@ -77,27 +77,25 @@ def method_not_allowed(werkzeug_exception: werkzeug_exceptions.MethodNotAllowed)
 
 
 @http_endpoint(app, "/")
-def root(return_links=True):
+def root():
     """HTTP/REST API entry point.
 
     Provides basic information about this Transiter instance and the Transit
     systems it contains.
     """
+    if config.DOCUMENTATION_ENABLED:
+        documentation_link = httpviews.InternalDocumentationLink()
+    else:
+        documentation_link = httpviews.ExternalDocumentationLink()
     response = {
         "transiter": {
             "version": __metadata__.__version__,
             "href": "https://github.com/jamespfennell/transiter",
+            "docs": documentation_link,
             "build": _generate_build_response(),
         },
-        "systems": {"count": len(systemservice.list_all())},
+        "systems": httpviews.SystemsInstalled(count=len(systemservice.list_all())),
     }
-    if return_links:
-        if config.DOCUMENTATION_ENABLED:
-            documentation_link = links.InternalDocumentationLink()
-        else:
-            documentation_link = "https://docs.transiter.io"
-        response["transiter"]["docs"] = {"href": documentation_link}
-        response["systems"]["href"] = links.SystemsIndexLink()
     return response
 
 

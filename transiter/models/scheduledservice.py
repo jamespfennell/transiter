@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
+from transiter import parse
 from .base import Base
 from .updatableentity import updatable_from
-from transiter import parse
 
 
 @updatable_from(parse.ScheduledService)

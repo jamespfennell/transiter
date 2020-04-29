@@ -186,23 +186,17 @@ def endpoints_test_helper(
 
 
 @pytest.mark.parametrize(
-    "return_links,internal_documentation_enabled",
-    [
-        pytest.param(True, True),
-        pytest.param(False, True),
-        pytest.param(True, False),
-        pytest.param(False, False),
-    ],
+    "internal_documentation_enabled", [pytest.param(True), pytest.param(False)],
 )
 def test_flask_app_root(
-    monkeypatch, flask_request, flask_url, return_links, internal_documentation_enabled
+    monkeypatch, flask_request, flask_url, internal_documentation_enabled
 ):
     """[Endpoints] flask app root"""
     num_systems = 2
     monkeypatch.setattr(systemservice, "list_all", lambda: [None] * num_systems)
     monkeypatch.setattr(config, "DOCUMENTATION_ENABLED", internal_documentation_enabled)
 
-    response = flaskapp.root(return_links=True)
+    response = flaskapp.root()
 
     json_response = json.loads(response.get_data(as_text=True))
 

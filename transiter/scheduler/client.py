@@ -1,12 +1,12 @@
 """
 The scheduler client module is used to talk with the scheduler.
 """
+import json
 import logging
 
 import requests
 
 from transiter import config
-import json
 
 logger = logging.getLogger(__name__)
 

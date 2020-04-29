@@ -1,14 +1,13 @@
 import datetime
 import decimal
 import enum
-
+import dataclasses
 import flask
 import pytest
 
 from transiter import exceptions
 from transiter.http import httpmanager
-from transiter.services import links
-
+from transiter.services import views
 
 # NOTE: Most of the test coverage of the HTTP manager comes from the endpoint
 # testing in which the HTTP manager is not mocked. This testing class is
@@ -49,10 +48,8 @@ def test_get_request_args__extra_keys(flask_request):
         httpmanager.get_url_parameters(["key_1"])
 
 
-def test_json_serialization__links(flask_url, flask_request):
-    """[HTTP Manager] JSON serialization of Links"""
-
-    class FakeLink(links.Link):
+def test_build_href(flask_url, flask_request):
+    class FakeLink(views.View):
         pass
 
     @httpmanager.link_target(FakeLink)
@@ -61,13 +58,11 @@ def test_json_serialization__links(flask_url, flask_request):
 
     flask_request.headers = {}
 
-    assert flask_url == httpmanager._transiter_json_serializer(FakeLink())
+    assert flask_url == httpmanager._build_href(FakeLink())
 
 
-def test_json_serialization__links_with_host(flask_url, flask_request):
-    """[HTTP Manager] JSON serialization of Links with custom host"""
-
-    class FakeLink(links.Link):
+def test_build_href__links_with_host(flask_url, flask_request):
+    class FakeLink(views.View):
         pass
 
     @httpmanager.link_target(FakeLink)
@@ -77,7 +72,22 @@ def test_json_serialization__links_with_host(flask_url, flask_request):
     custom_host = "my_host"
     flask_request.headers = {"X-Transiter-Host": custom_host}
 
-    assert custom_host + flask_url == httpmanager._transiter_json_serializer(FakeLink())
+    assert custom_host + flask_url == httpmanager._build_href(FakeLink())
+
+
+def test_json_serialization__views(flask_url, flask_request):
+    @dataclasses.dataclass
+    class MyView(views.View):
+        id: str
+        _system_id: str
+
+    expected = {"id": "my_id"}
+
+    actual = httpmanager._transiter_json_serializer(
+        MyView(id="my_id", _system_id="system_id")
+    )
+
+    assert actual == expected
 
 
 def test_json_serialization__datetime():

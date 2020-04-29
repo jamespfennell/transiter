@@ -2,7 +2,7 @@ import flask
 import requests
 
 from transiter import exceptions
-from transiter.http import httpmanager
+from transiter.http import httpmanager, httpviews
 from transiter.http.httpmanager import (
     http_endpoint,
     link_target,
@@ -10,20 +10,20 @@ from transiter.http.httpmanager import (
     HttpStatus,
 )
 from transiter.http.permissions import requires_permissions, PermissionsLevel
-from transiter.services import systemservice, links
+from transiter.services import systemservice, views
 
 system_endpoints = flask.Blueprint(__name__, __name__)
 
 
 @http_endpoint(system_endpoints, "")
-@link_target(links.SystemsIndexLink)
+@link_target(httpviews.SystemsInstalled)
 def list_all():
     """List all systems"""
     return systemservice.list_all()
 
 
 @http_endpoint(system_endpoints, "/<system_id>")
-@link_target(links.SystemEntityLink)
+@link_target(views.System, ["id"])
 def get_by_id(system_id):
     """Get data on a specific system."""
     return systemservice.get_by_id(system_id)

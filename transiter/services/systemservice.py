@@ -6,6 +6,7 @@ import datetime
 import json
 import logging
 import time
+import typing
 import uuid
 from dataclasses import dataclass
 from typing import Iterator
@@ -15,72 +16,44 @@ from transiter.data import dbconnection
 from transiter.data.dams import feeddam, systemdam, genericqueries
 from transiter.executor import celeryapp
 from transiter.scheduler import client
-from transiter.services import links, systemconfigreader, constants as c
+from transiter.services import systemconfigreader, views
 from transiter.services.update import updatemanager
 
 logger = logging.getLogger(__name__)
 
 
 @dbconnection.unit_of_work
-def list_all(return_links=True):
+def list_all() -> typing.List[views.System]:
     """
     List all installed systems.
-
-    :param return_links: whether to return links
-    :type return_links: bool
-    :return: A list dictionaries, one for each system, containing the system's
-             short representation and optionally its link.
-    :rtype: list
     """
-    response = []
-    for system in systemdam.list_all():
-        system_response = system.to_dict()
-        if return_links:
-            system_response[c.HREF] = links.SystemEntityLink(system)
-        response.append(system_response)
-    return response
+    return list(map(views.System.from_model, systemdam.list_all()))
 
 
 @dbconnection.unit_of_work
-def get_by_id(system_id, return_links=True):
+def get_by_id(system_id) -> views.SystemLarge:
     """
     Get information on a specific system.
-
-    :param system_id: the system ID
-    :type system_id: str
-    :param return_links: whether to return links
-    :type return_links: bool
-    :return: a dictionary containing the system's short representation, and
-             three sub-dictionaries for stops, routes, and feeds. Each
-             sub-dictionary contains the number of such entities in the system,
-             and optionally a link to a list of such entities.
     """
     system = systemdam.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
-    response = system.to_dict()
+    response = views.SystemLarge.from_model(system)
     if system.status != system.SystemStatus.ACTIVE:
         return response
-    response.update(
-        {
-            **system.to_dict(),
-            c.STOPS: {c.COUNT: systemdam.count_stops_in_system(system_id)},
-            c.ROUTES: {c.COUNT: systemdam.count_routes_in_system(system_id)},
-            c.FEEDS: {c.COUNT: systemdam.count_feeds_in_system(system_id)},
-            "agency_alerts": [
-                alert.to_large_dict()
-                for alert in systemdam.list_all_alerts_associated_to_system(system.pk)
-            ],
-        }
+    response.stops = views.StopsInSystem.from_model(
+        system, systemdam.count_stops_in_system(system_id)
     )
-    if return_links:
-        entity_type_to_link = {
-            c.STOPS: links.StopsInSystemIndexLink(system),
-            c.ROUTES: links.RoutesInSystemIndexLink(system),
-            c.FEEDS: links.FeedsInSystemIndexLink(system),
-        }
-        for entity_type, link in entity_type_to_link.items():
-            response[entity_type][c.HREF] = link
+    response.routes = views.RoutesInSystem.from_model(
+        system, systemdam.count_routes_in_system(system_id)
+    )
+    response.feeds = views.FeedsInSystem.from_model(
+        system, systemdam.count_feeds_in_system(system_id)
+    )
+    response.agency_alerts = [
+        alert.to_large_dict()
+        for alert in systemdam.list_all_alerts_associated_to_system(system.pk)
+    ]
     return response
 
 

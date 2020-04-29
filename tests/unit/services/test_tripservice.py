@@ -2,7 +2,7 @@ import pytest
 
 from transiter import models, exceptions
 from transiter.data.dams import tripdam, routedam
-from transiter.services import tripservice, links
+from transiter.services import tripservice, views
 
 SYSTEM_ID = "1"
 ROUTE_ID = "2"
@@ -11,7 +11,9 @@ TRIP_ONE_PK = 4
 TRIP_TWO_ID = "5"
 TRIP_TWO_PK = 6
 STOP_ONE_ID = "7"
+STOP_ONE_NAME = "7-Name"
 STOP_TWO_ID = "8"
+STOP_TWO_NAME = "8-Name"
 
 
 @pytest.fixture
@@ -65,19 +67,33 @@ def test_list_all_in_route(monkeypatch, route, trip_1, trip_2, stop_1, stop_2):
     )
 
     expected = [
-        {
-            **trip_1.to_dict(),
-            "last_stop": {**stop_1.to_dict(), "href": links.StopEntityLink(stop_1)},
-            "href": links.TripEntityLink(trip_1),
-        },
-        {
-            **trip_2.to_dict(),
-            "last_stop": {**stop_2.to_dict(), "href": links.StopEntityLink(stop_2)},
-            "href": links.TripEntityLink(trip_2),
-        },
+        views.Trip(
+            id=TRIP_ONE_ID,
+            direction_id=None,
+            start_time=None,
+            last_update_time=None,
+            current_stop_sequence=None,
+            current_status=None,
+            vehicle_id=None,
+            last_stop=views.Stop.from_model(stop_1),
+            _route_id=ROUTE_ID,
+            _system_id=SYSTEM_ID,
+        ),
+        views.Trip(
+            id=TRIP_TWO_ID,
+            direction_id=None,
+            start_time=None,
+            last_update_time=None,
+            current_stop_sequence=None,
+            current_status=None,
+            vehicle_id=None,
+            last_stop=views.Stop.from_model(stop_2),
+            _route_id=ROUTE_ID,
+            _system_id=SYSTEM_ID,
+        ),
     ]
 
-    actual = tripservice.list_all_in_route(SYSTEM_ID, ROUTE_ID, True)
+    actual = tripservice.list_all_in_route(SYSTEM_ID, ROUTE_ID)
 
     assert expected == actual
 
@@ -99,17 +115,21 @@ def test_get_in_route_by_id(monkeypatch, route, trip_1, stop_1):
     stop_time.stop = stop_1
     trip_1.stop_times = [stop_time]
 
-    expected = {
-        **trip_1.to_large_dict(),
-        "route": {**route.to_dict(), "href": links.RouteEntityLink(route)},
-        "stop_times": [
-            {
-                **stop_time.to_dict(),
-                "stop": {**stop_1.to_dict(), "href": links.StopEntityLink(stop_1)},
-            }
-        ],
-    }
+    expected = views.Trip(
+        id=TRIP_ONE_ID,
+        direction_id=None,
+        start_time=None,
+        last_update_time=None,
+        current_stop_sequence=None,
+        current_status=None,
+        vehicle_id=None,
+        _route_id=ROUTE_ID,
+        _system_id=SYSTEM_ID,
+        stop_times=[views.TripStopTime.from_model(stop_time)],
+        route=views.Route.from_model(route),
+    )
+    expected.stop_times[0].stop = views.Stop.from_model(stop_1)
 
-    actual = tripservice.get_in_route_by_id(SYSTEM_ID, ROUTE_ID, TRIP_ONE_ID, True)
+    actual = tripservice.get_in_route_by_id(SYSTEM_ID, ROUTE_ID, TRIP_ONE_ID)
 
     assert expected == actual

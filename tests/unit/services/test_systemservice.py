@@ -1,7 +1,7 @@
 import time
 import unittest
-import uuid
 import unittest.mock as mock
+import uuid
 
 import pytest
 
@@ -9,10 +9,21 @@ from transiter import models, exceptions
 from transiter.data import dbconnection
 from transiter.data.dams import systemdam, genericqueries, feeddam
 from transiter.scheduler import client
-from transiter.services import systemservice, links, systemconfigreader
+from transiter.services import systemservice, systemconfigreader, views
 from transiter.services.update import updatemanager
 from .. import testutil
 
+SYSTEM_ONE_ID = "1"
+SYSTEM_ONE_NAME = "1-name"
+SYSTEM_TWO_ID = "2"
+SYSTEM_TWO_HREF = "4"
+SYSTEM_TWO_REPR = {"system_id": SYSTEM_TWO_ID, "href": SYSTEM_TWO_HREF}
+SYSTEM_ONE_NUM_STOPS = 20
+SYSTEM_ONE_NUM_STATIONS = 21
+SYSTEM_ONE_NUM_ROUTES = 22
+SYSTEM_ONE_NUM_FEEDS = 23
+FILE_NAME = "24"
+STOP_ONE_ID = "25"
 PARSED_SYSTEM_CONFIG = {
     "name": "Name",
     "requirements": {"packages": [], "extra_settings": {}},
@@ -20,6 +31,40 @@ PARSED_SYSTEM_CONFIG = {
     "service_maps": "ser",
     "direction_rules_files": [],
 }
+
+
+def test_list_all(monkeypatch):
+    """[System service] List all installed systems"""
+    monkeypatch.setattr(
+        systemdam,
+        "list_all",
+        lambda: [
+            models.System(
+                id=SYSTEM_ONE_ID,
+                name=SYSTEM_ONE_NAME,
+                status=models.System.SystemStatus.ACTIVE,
+            )
+        ],
+    )
+
+    expected = [
+        views.System(
+            id=SYSTEM_ONE_ID,
+            name=SYSTEM_ONE_NAME,
+            status=models.System.SystemStatus.ACTIVE,
+        )
+    ]
+
+    actual = systemservice.list_all()
+
+    assert expected == actual
+
+
+def test_get_by_id_no__such_system(monkeypatch):
+    monkeypatch.setattr(systemdam, "get_by_id", lambda *args: None)
+
+    with pytest.raises(exceptions.IdNotFoundError):
+        systemservice.get_by_id(SYSTEM_ONE_ID)
 
 
 class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
@@ -55,64 +100,41 @@ class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
         self.system_2.status = self.system_1.SystemStatus.ACTIVE
         self.system_2.id = self.SYSTEM_TWO_ID
 
-    def test_list_all(self):
-        """[System service] List all installed systems"""
-        expected = [
-            {**self.system_1.to_dict(), "href": links.SystemEntityLink(self.system_1)},
-            {**self.system_2.to_dict(), "href": links.SystemEntityLink(self.system_2)},
-        ]
-        self.systemdam.list_all.return_value = [self.system_1, self.system_2]
 
-        actual = systemservice.list_all(True)
+def test_get_by_id(monkeypatch):
+    system = models.System(
+        id=SYSTEM_ONE_ID, name=SYSTEM_ONE_NAME, status=models.System.SystemStatus.ACTIVE
+    )
+    alert = models.Alert(id="alert_id", header="alert_header")
+    monkeypatch.setattr(
+        systemdam, "list_all_alerts_associated_to_system", lambda *args: [alert]
+    )
+    expected = views.SystemLarge(
+        id=SYSTEM_ONE_ID,
+        status=models.System.SystemStatus.ACTIVE,
+        name=SYSTEM_ONE_NAME,
+        stops=views.StopsInSystem(count=SYSTEM_ONE_NUM_STOPS, _system_id=SYSTEM_ONE_ID),
+        routes=views.RoutesInSystem(
+            count=SYSTEM_ONE_NUM_ROUTES, _system_id=SYSTEM_ONE_ID
+        ),
+        feeds=views.FeedsInSystem(count=SYSTEM_ONE_NUM_FEEDS, _system_id=SYSTEM_ONE_ID),
+        agency_alerts=[alert.to_large_dict()],
+    )
 
-        self.assertEqual(actual, expected)
-        self.systemdam.list_all.assert_called_once()
+    monkeypatch.setattr(systemdam, "get_by_id", lambda *args: system)
+    monkeypatch.setattr(
+        systemdam, "count_stops_in_system", lambda *args: SYSTEM_ONE_NUM_STOPS
+    )
+    monkeypatch.setattr(
+        systemdam, "count_routes_in_system", lambda *args: SYSTEM_ONE_NUM_ROUTES
+    )
+    monkeypatch.setattr(
+        systemdam, "count_feeds_in_system", lambda *args: SYSTEM_ONE_NUM_FEEDS
+    )
 
-    def test_get_by_id_no_such_system(self):
-        """[System service] Get a non-existent system"""
-        self.systemdam.get_by_id.return_value = None
+    actual = systemservice.get_by_id(SYSTEM_ONE_ID)
 
-        self.assertRaises(
-            exceptions.IdNotFoundError, systemservice.get_by_id, self.SYSTEM_ONE_ID
-        )
-
-    def test_get_by_id(self):
-        """[System service] Get a specific system"""
-        alert = models.Alert(id="alert_id", header="alert_header")
-        self.systemdam.list_all_alerts_associated_to_system.return_value = [alert]
-
-        hrefs_dict = {
-            "stops": links.StopsInSystemIndexLink(self.system_1),
-            "routes": links.RoutesInSystemIndexLink(self.system_1),
-            "feeds": links.FeedsInSystemIndexLink(self.system_1),
-        }
-        child_entities_dict = {
-            "stops": self.SYSTEM_ONE_NUM_STOPS,
-            "routes": self.SYSTEM_ONE_NUM_ROUTES,
-            "feeds": self.SYSTEM_ONE_NUM_FEEDS,
-        }
-        expected = {
-            name: {"count": count, "href": hrefs_dict[name]}
-            for (name, count) in child_entities_dict.items()
-        }
-        expected.update(**self.system_1.to_dict())
-        expected["agency_alerts"] = [alert.to_large_dict()]
-
-        self.systemdam.get_by_id.return_value = self.system_1
-        self.systemdam.count_stops_in_system.return_value = self.SYSTEM_ONE_NUM_STOPS
-        self.systemdam.count_routes_in_system.return_value = self.SYSTEM_ONE_NUM_ROUTES
-        self.systemdam.count_feeds_in_system.return_value = self.SYSTEM_ONE_NUM_FEEDS
-
-        actual = systemservice.get_by_id(self.SYSTEM_ONE_ID, True)
-
-        self.maxDiff = None
-        self.assertDictEqual(actual, expected)
-        self.systemdam.get_by_id.assert_called_once_with(self.SYSTEM_ONE_ID)
-        self.systemdam.count_stops_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
-        self.systemdam.count_routes_in_system.assert_called_once_with(
-            self.SYSTEM_ONE_ID
-        )
-        self.systemdam.count_feeds_in_system.assert_called_once_with(self.SYSTEM_ONE_ID)
+    assert expected == actual
 
 
 feeds_config = {
