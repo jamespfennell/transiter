@@ -6,24 +6,22 @@ from google.protobuf.message import DecodeError
 from google.transit import gtfs_realtime_pb2 as gtfs
 
 from transiter import parse
-from transiter.services.update import gtfsrealtimeparser
-from ... import testutil
+from transiter.parse import gtfsrealtime
+from .. import testutil
 
-timestamp_to_datetime = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(
+timestamp_to_datetime = gtfsrealtime._GtfsRealtimeToTransiterTransformer(
     ""
 )._timestamp_to_datetime
 
 
-class TestReadGtfsRealtime(testutil.TestCase(gtfsrealtimeparser)):
+class TestReadGtfsRealtime(testutil.TestCase(gtfsrealtime)):
     RAW_CONTENT = "Some content"
     PARSED_CONTENT = "Transformed"
 
     def setUp(self):
         self.gtfs_feed = mock.MagicMock()
 
-        self.gtfs_realtime_pb2 = self.mockImportedModule(
-            gtfsrealtimeparser.gtfs_realtime_pb2
-        )
+        self.gtfs_realtime_pb2 = self.mockImportedModule(gtfsrealtime.gtfs_realtime_pb2)
         self.gtfs_realtime_pb2.FeedMessage.return_value = self.gtfs_feed
 
         self._read_protobuf_message = self.mockModuleAttribute("_read_protobuf_message")
@@ -39,14 +37,14 @@ class TestReadGtfsRealtime(testutil.TestCase(gtfsrealtimeparser)):
 
         self.assertRaises(
             DecodeError,
-            lambda: gtfsrealtimeparser.read_gtfs_realtime(
+            lambda: gtfsrealtime.read_gtfs_realtime(
                 self.RAW_CONTENT, self.gtfs_realtime_pb2
             ),
         )
 
     def test_read_gtfs_realtime(self):
         """[GTFS Realtime Util] Read basic feed subtask scheduling"""
-        actual_response = gtfsrealtimeparser.read_gtfs_realtime(
+        actual_response = gtfsrealtime.read_gtfs_realtime(
             self.RAW_CONTENT, self.gtfs_realtime_pb2
         )
 
@@ -98,7 +96,7 @@ class TestReadProtobufMessage(unittest.TestCase):
             ],
         }
 
-        actual_data = gtfsrealtimeparser._read_protobuf_message(root)
+        actual_data = gtfsrealtime._read_protobuf_message(root)
 
         self.assertDictEqual(actual_data, expected_data)
 
@@ -112,7 +110,7 @@ class TestParseAlerts(unittest.TestCase):
     DESCRIPTION = "3"
 
     def setUp(self):
-        self.parser = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer("")
+        self.parser = gtfsrealtime._GtfsRealtimeToTransiterTransformer("")
 
     def test_no_alerts(self):
         """[GTFS Realtime parser] Parse alerts, no alert data"""
@@ -214,7 +212,7 @@ def test_transform_feed_metadata():
     expected_transformed_metadata = {
         "timestamp": timestamp_to_datetime(FEED_UPDATE_TIMESTAMP)
     }
-    transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(raw_data)
+    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(raw_data)
 
     transformer._transform_feed_metadata()
 
@@ -241,7 +239,7 @@ def test_group_trip_entities():
         }
     }
 
-    transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(raw_data)
+    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(raw_data)
     transformer._group_trip_entities()
 
     assert expected_raw_entities == transformer._trip_id_to_raw_entities
@@ -249,7 +247,7 @@ def test_group_trip_entities():
 
 def test_transform_trip_base_data():
     """[GTFS Realtime transformer] Transform trip base data"""
-    transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
+    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
     transformer._trip_id_to_raw_entities = {
         TRIP_ID: {
             "trip_update": {"vehicle": {"id": TRAIN_ID}},
@@ -283,7 +281,7 @@ def test_transform_trip_base_data():
 
 def test_transform_trip_base_data_with_vehicle():
     """[GTFS Realtime transformer] Transform trip base data with vehicle"""
-    transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
+    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
     transformer._trip_id_to_raw_entities = {
         TRIP_ID: {
             "trip_update": {"vehicle": {"id": TRAIN_ID}},
@@ -321,7 +319,7 @@ def test_transform_trip_base_data_with_vehicle():
 
 def test_transform_trip_stop_events_short_circuit():
     """[GTFS Realtime transformer] Transform trip base data with no stops"""
-    transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
+    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
     trip = parse.Trip(id="trip", route_id="L", direction_id=True)
     transformer._trip_id_to_trip_model = {TRIP_ID: trip}
     transformer._trip_id_to_raw_entities = {TRIP_ID: {"trip": "Data"}}
@@ -333,7 +331,7 @@ def test_transform_trip_stop_events_short_circuit():
 
 def test_update_stop_event_indices():
     """[GTFS Realtime transformer] Update stop event indices"""
-    transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
+    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
     trip = parse.Trip(
         id="trip",
         route_id="L",
@@ -429,10 +427,9 @@ def test_start_to_finish_parse():
 
     expected_feed_time = timestamp_to_datetime(FEED_UPDATE_TIMESTAMP)
 
-    (
-        actual_feed_time,
-        actual_trips,
-    ) = gtfsrealtimeparser.transform_to_transiter_structure(input)
+    (actual_feed_time, actual_trips,) = gtfsrealtime.transform_to_transiter_structure(
+        input
+    )
 
     assert actual_feed_time == expected_feed_time
     assert [trip] == actual_trips
@@ -453,67 +450,10 @@ def test_timestamp_to_datetime_edge_case_2():
     assert actual is None
 
 
-def test_clean_all_good():
-    """[GTFS static util] Trip cleaner - All good"""
-
-    trip_cleaners = [mock.MagicMock() for __ in range(3)]
-    for cleaner in trip_cleaners:
-        cleaner.return_value = True
-    stop_event_cleaners = [mock.MagicMock() for __ in range(3)]
-    gtfs_cleaner = gtfsrealtimeparser.TripDataCleaner(
-        trip_cleaners, stop_event_cleaners
-    )
-
-    trip = parse.Trip(
-        id="trip",
-        route_id="L",
-        direction_id=True,
-        stop_times=[parse.TripStopTime(stop_id="L03")],
-    )
-
-    clean_trips = gtfs_cleaner.clean([trip])
-
-    assert [trip] == clean_trips
-
-    for cleaner in trip_cleaners:
-        cleaner.assert_called_once_with(trip)
-    for cleaner in stop_event_cleaners:
-        cleaner.assert_called_once_with(trip.stop_times[0])
-
-
-def test_clean_buggy_trip():
-    """[GTFS static util] Trip cleaner - Buggy trip"""
-
-    trip_cleaners = [mock.MagicMock() for __ in range(3)]
-    for cleaner in trip_cleaners:
-        cleaner.return_value = True
-    trip_cleaners[1].return_value = False
-    stop_event_cleaners = [mock.MagicMock() for __ in range(3)]
-    gtfs_cleaner = gtfsrealtimeparser.TripDataCleaner(
-        trip_cleaners, stop_event_cleaners
-    )
-
-    trip = parse.Trip(
-        id="trip",
-        route_id="L",
-        direction_id=True,
-        stop_times=[parse.TripStopTime(stop_id="L03")],
-    )
-
-    clean_trips = gtfs_cleaner.clean([trip])
-
-    assert [] == clean_trips
-    trip_cleaners[0].assert_called_once_with(trip)
-    trip_cleaners[1].assert_called_once_with(trip)
-    trip_cleaners[2].assert_not_called()
-    for cleaner in stop_event_cleaners:
-        cleaner.assert_not_called()
-
-
 def test_transform_trip_stop_events():
     """[GTFS Realtime transformer] Transform trip stop events"""
 
-    transformer = gtfsrealtimeparser._GtfsRealtimeToTransiterTransformer(None)
+    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
     trip = parse.Trip(id="trip", route_id="L", direction_id=True)
     trip.id = TRIP_ID
     transformer._trip_id_to_trip_model = {TRIP_ID: trip}

@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 
 from transiter import models, parse
-from transiter.services.update import gtfsstaticparser
+from transiter.parse import gtfsstatic as gtfsstaticparser
 
 ROUTE_ID = "L"
 ROUTE_COLOR = "red"

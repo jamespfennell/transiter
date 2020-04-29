@@ -6,6 +6,9 @@ from typing import Type
 import pytest
 
 
+# TODO: when this module is destroyed,
+#  can also destroy all the __init__.py files in the test packages
+
 # NOTE: this is simply to help PyCharm with code completion
 class _TestCaseTemplate(unittest.TestCase):
     def mockModuleAttribute(self, attribute_name):
