@@ -1,5 +1,4 @@
 import time
-import unittest
 import unittest.mock as mock
 import uuid
 
@@ -11,7 +10,6 @@ from transiter.data.dams import systemdam, genericqueries, feeddam
 from transiter.scheduler import client
 from transiter.services import systemservice, systemconfigreader, views
 from transiter.services.update import updatemanager
-from .. import testutil
 
 SYSTEM_ONE_ID = "1"
 SYSTEM_ONE_NAME = "1-name"
@@ -65,40 +63,6 @@ def test_get_by_id_no__such_system(monkeypatch):
 
     with pytest.raises(exceptions.IdNotFoundError):
         systemservice.get_by_id(SYSTEM_ONE_ID)
-
-
-class TestSystemService(testutil.TestCase(systemservice), unittest.TestCase):
-
-    SYSTEM_ONE_ID = "1"
-    SYSTEM_TWO_ID = "2"
-    SYSTEM_TWO_HREF = "4"
-    SYSTEM_TWO_REPR = {"system_id": SYSTEM_TWO_ID, "href": SYSTEM_TWO_HREF}
-    SYSTEM_ONE_NUM_STOPS = 20
-    SYSTEM_ONE_NUM_STATIONS = 21
-    SYSTEM_ONE_NUM_ROUTES = 22
-    SYSTEM_ONE_NUM_FEEDS = 23
-    FILE_NAME = "24"
-    STOP_ONE_ID = "25"
-    SYSTEM_CONFIG_STR = {
-        "name": "Name",
-        "requirements": {"packages": [], "extra_settings": {}},
-        "feeds": "Blah blah blah",
-        "service_maps": "ser",
-        "direction_rules_files": [],
-    }
-    DIRECTION_NAME_ONE = "Uptown"
-
-    def setUp(self):
-        self.dbconnection = self.mockImportedModule(systemservice.dbconnection)
-        self.systemdam = self.mockImportedModule(systemservice.systemdam)
-        self.updatemanager = self.mockImportedModule(systemservice.updatemanager)
-
-        self.system_1 = models.System()
-        self.system_1.status = self.system_1.SystemStatus.ACTIVE
-        self.system_1.id = self.SYSTEM_ONE_ID
-        self.system_2 = models.System()
-        self.system_2.status = self.system_1.SystemStatus.ACTIVE
-        self.system_2.id = self.SYSTEM_TWO_ID
 
 
 def test_get_by_id(monkeypatch):

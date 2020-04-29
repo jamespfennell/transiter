@@ -1,5 +1,4 @@
 import datetime
-import unittest
 from unittest import mock
 
 import pytest
@@ -7,7 +6,7 @@ import pytest
 from transiter import models, exceptions
 from transiter.data.dams import feeddam, systemdam
 from transiter.services import feedservice, views
-from .. import testutil
+from transiter.services.update import updatemanager
 
 SYSTEM_ID = "1"
 FEED_ONE_ID = "2"
@@ -97,92 +96,48 @@ def test_get_in_system_by_id__no_such_feed(monkeypatch):
         feedservice.get_in_system_by_id(SYSTEM_ID, FEED_ONE_ID),
 
 
-class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
+def test_create_feed_update(monkeypatch):
+    feed_update = mock.MagicMock()
 
-    SYSTEM_ID = "1"
-    FEED_ONE_ID = "2"
-    FEED_ONE_PK = 3
-    FEED_ONE_AUTO_UPDATE_PERIOD = 500
-    FEED_TWO_AUTO_UPDATE_PERIOD = -1
-    FEED_TWO_ID = "4"
+    monkeypatch.setattr(updatemanager, "create_feed_update", lambda *args: feed_update)
+    monkeypatch.setattr(updatemanager, "execute_feed_update", mock.MagicMock())
 
-    def setUp(self):
-        self.feeddam = self.mockImportedModule(feedservice.feeddam)
-        self.systemdam = self.mockImportedModule(feedservice.systemdam)
-        self.updatemanager = self.mockImportedModule(feedservice.updatemanager)
+    actual = feedservice.create_and_execute_feed_update(SYSTEM_ID, FEED_ONE_ID)
 
-        self.system = models.System()
-        self.system.id = self.SYSTEM_ID
+    assert feed_update == actual
 
-        self.feed_one = models.Feed()
-        self.feed_one.pk = self.FEED_ONE_PK
-        self.feed_one.id = self.FEED_ONE_ID
-        self.feed_one.system = self.system
 
-        self.feed_two = models.Feed()
-        self.feed_two.id = self.FEED_TWO_ID
-        self.feed_two.system = self.system
+def test_create_feed_update__no_such_feed(monkeypatch):
+    monkeypatch.setattr(updatemanager, "create_feed_update", lambda *args: None)
 
-        self.feed_update_one = models.FeedUpdate(feed=self.feed_one)
-        self.feed_update_two = models.FeedUpdate(feed=self.feed_one)
+    with pytest.raises(exceptions.IdNotFoundError):
+        feedservice.create_and_execute_feed_update(SYSTEM_ID, FEED_ONE_ID)
 
-    def test_create_feed_update(self):
-        """[Feed service] Create a feed update"""
-        self.updatemanager.create_feed_update.return_value = 3
 
-        expected = 3
+def test_list_updates_in_feed(monkeypatch, feed_1):
+    update_1 = models.FeedUpdate(feed=feed_1)
+    update_2 = models.FeedUpdate(feed=feed_1)
 
-        actual = feedservice.create_and_execute_feed_update(
-            self.SYSTEM_ID, self.FEED_ONE_ID
-        )
+    monkeypatch.setattr(feeddam, "get_in_system_by_id", lambda *args: feed_1)
+    monkeypatch.setattr(
+        feeddam, "list_updates_in_feed", lambda *args: [update_1, update_2]
+    )
 
-        self.assertEqual(actual, expected)
+    expected = [
+        views.FeedUpdate.from_model(update_1),
+        views.FeedUpdate.from_model(update_2),
+    ]
 
-    def test_create_feed_update__no_such_feed(self):
-        """[Feed service] Create a feed update - no such feed"""
-        self.updatemanager.create_feed_update.return_value = None
+    actual = feedservice.list_updates_in_feed(SYSTEM_ID, FEED_ONE_ID)
 
-        self.assertRaises(
-            exceptions.IdNotFoundError,
-            lambda: feedservice.create_and_execute_feed_update(
-                self.SYSTEM_ID, self.FEED_ONE_ID
-            ),
-        )
+    assert expected == actual
 
-    def test_list_updates_in_feed(self):
-        """[Feed service] List updates in a feed"""
-        self.feeddam.get_in_system_by_id.return_value = self.feed_one
-        self.feeddam.list_updates_in_feed.return_value = [
-            self.feed_update_one,
-            self.feed_update_two,
-        ]
 
-        expected = [
-            views.FeedUpdate.from_model(self.feed_update_one),
-            views.FeedUpdate.from_model(self.feed_update_two),
-        ]
+def test_list_updates_in_feed__no_such_feed(monkeypatch):
+    monkeypatch.setattr(feeddam, "get_in_system_by_id", lambda *args: None)
 
-        actual = feedservice.list_updates_in_feed(self.SYSTEM_ID, self.FEED_ONE_ID)
-
-        self.assertListEqual(actual, expected)
-
-        self.feeddam.get_in_system_by_id.assert_called_once_with(
-            self.SYSTEM_ID, self.FEED_ONE_ID
-        )
-        self.feeddam.list_updates_in_feed.assert_called_once_with(self.FEED_ONE_PK)
-
-    def test_list_updates_in_feed__no_such_feed(self):
-        """[Feed service] List updates in a feed - no such feed"""
-        self.feeddam.get_in_system_by_id.return_value = None
-
-        self.assertRaises(
-            exceptions.IdNotFoundError,
-            lambda: feedservice.list_updates_in_feed(self.SYSTEM_ID, self.FEED_ONE_ID),
-        )
-
-        self.feeddam.get_in_system_by_id.assert_called_once_with(
-            self.SYSTEM_ID, self.FEED_ONE_ID
-        )
+    with pytest.raises(exceptions.IdNotFoundError):
+        feedservice.list_updates_in_feed(SYSTEM_ID, FEED_ONE_ID)
 
 
 @pytest.mark.parametrize(

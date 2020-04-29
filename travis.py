@@ -91,6 +91,24 @@ def is_mainline_build():
     )
 
 
+def get_artifacts_to_push():
+    """
+    Using the commit message, determine which artifacts to push.
+
+    Returns a set possibly containing "docker" and "pypi"
+    """
+    message = os.environ.get("TRAVIS_COMMIT_MESSAGE", "").splitlines()
+    result = set()
+    for line in message:
+        if line[:6] != "push: ":
+            continue
+        for artifact in {"docker", "pypi"}:
+            if artifact in line:
+                result.add(artifact)
+        break
+    return result
+
+
 def upload_to_py_pi():
     """
     Upload the Transiter Python package inside the CI container to PyPI.
@@ -98,6 +116,8 @@ def upload_to_py_pi():
     If this is not a build on master or a release tag, this is a no-op.
     """
     if not is_mainline_build():
+        return
+    if "pypi" not in get_artifacts_to_push():
         return
     subprocess.run(
         [
