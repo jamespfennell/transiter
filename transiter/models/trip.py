@@ -11,12 +11,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from transiter import parse
-from .base import Base, ToDictMixin
+from .base import Base
 from .updatableentity import updatable_from
 
 
 @updatable_from(parse.Trip)
-class Trip(ToDictMixin, Base):
+class Trip(Base):
     __tablename__ = "trip"
 
     pk = Column(Integer, primary_key=True)
@@ -45,14 +45,3 @@ class Trip(ToDictMixin, Base):
     )
 
     __table_args__ = (UniqueConstraint(route_pk, id),)
-
-    __dict_columns__ = [id]
-    __large_dict_columns__ = [
-        id,
-        direction_id,
-        start_time,
-        last_update_time,
-        current_status,
-        current_stop_sequence,
-        vehicle_id,
-    ]

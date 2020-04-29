@@ -13,10 +13,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from .base import Base, ToDictMixin
+from .base import Base
 
 
-class SystemUpdate(ToDictMixin, Base):
+class SystemUpdate(Base):
     __tablename__ = "system_update"
 
     pk = Column(Integer, primary_key=True)
@@ -44,5 +44,3 @@ class SystemUpdate(ToDictMixin, Base):
     __table_args__ = (
         Index("system_update_system_pk_system_update_pk_idx", system_pk, pk),
     )
-
-    __dict_columns__ = [pk, status]

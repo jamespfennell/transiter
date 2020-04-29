@@ -2,12 +2,12 @@ from sqlalchemy import Column, TIMESTAMP, Table, Integer, String, ForeignKey, En
 from sqlalchemy.orm import relationship
 
 from transiter import parse
-from .base import Base, ToDictMixin
+from .base import Base
 from .updatableentity import updatable_from
 
 
 @updatable_from(parse.Alert)
-class Alert(ToDictMixin, Base):
+class Alert(Base):
     __tablename__ = "alert"
 
     pk = Column(Integer, primary_key=True)
@@ -44,19 +44,6 @@ class Alert(ToDictMixin, Base):
         back_populates="route_statuses",
         cascade="none",
     )
-
-    __dict_columns__ = [id, start_time, end_time, creation_time, header, description]
-    __large_dict_columns__ = [
-        id,
-        start_time,
-        end_time,
-        creation_time,
-        header,
-        description,
-        url,
-        cause,
-        effect,
-    ]
 
     @staticmethod
     def from_parsed_alert(alert: parse.Alert) -> "Alert":

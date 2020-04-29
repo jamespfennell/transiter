@@ -37,21 +37,3 @@ class _BaseModel:
 
 
 Base = declarative_base(cls=_BaseModel)
-
-
-# TODO: destroy
-class ToDictMixin:
-
-    __dict_columns__ = None
-    __large_dict_columns__ = None
-
-    def to_dict(self) -> dict:
-        return self._to_dict(self.__dict_columns__)
-
-    def to_large_dict(self) -> dict:
-        return self._to_dict(self.__large_dict_columns__)
-
-    def _to_dict(self, columns) -> dict:
-        if columns is None:  # pragma: no cover
-            raise NotImplementedError
-        return {column.key: getattr(self, column.key, None) for column in columns}

@@ -10,12 +10,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, backref
 
 from transiter import parse
-from .base import Base, ToDictMixin
+from .base import Base
 from .updatableentity import updatable_from
 
 
 @updatable_from(parse.Stop)
-class Stop(ToDictMixin, Base):
+class Stop(Base):
     __tablename__ = "stop"
 
     pk = Column(Integer, primary_key=True)
@@ -56,9 +56,6 @@ class Stop(ToDictMixin, Base):
     )
 
     __table_args__ = (UniqueConstraint("system_pk", "id"),)
-
-    __dict_columns__ = [id, name]
-    __large_dict_columns__ = [id, name, longitude, latitude, url]
 
     @staticmethod
     def from_parsed_stop(stop: parse.Stop) -> "Stop":

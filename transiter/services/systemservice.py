@@ -50,10 +50,12 @@ def get_by_id(system_id) -> views.SystemLarge:
     response.feeds = views.FeedsInSystem.from_model(
         system, systemdam.count_feeds_in_system(system_id)
     )
-    response.agency_alerts = [
-        alert.to_large_dict()
-        for alert in systemdam.list_all_alerts_associated_to_system(system.pk)
-    ]
+    response.agency_alerts = list(
+        map(
+            views.AlertLarge.from_model,
+            systemdam.list_all_alerts_associated_to_system(system.pk),
+        )
+    )
     return response
 
 

@@ -261,3 +261,55 @@ class UpdatesInFeedLink(View):
     @classmethod
     def from_model(cls, feed: models.Feed):
         return cls(_feed_id=feed.id, _system_id=feed.system.id)
+
+
+@dataclasses.dataclass
+class FeedUpdate(View):
+    id: str
+    type: models.FeedUpdate.Type
+    status: models.FeedUpdate.Status
+    result: models.FeedUpdate.Result
+    result_message: str
+    content_hash: str
+    content_length: int
+    completed_at: datetime.datetime
+
+    @classmethod
+    def from_model(cls, feed_update: models.FeedUpdate):
+        return cls(
+            id=str(feed_update.pk),
+            type=feed_update.update_type,
+            status=feed_update.status,
+            result=feed_update.result,
+            result_message=feed_update.result_message,
+            content_hash=feed_update.content_hash,
+            content_length=feed_update.content_length,
+            completed_at=feed_update.completed_at,
+        )
+
+
+@dataclasses.dataclass
+class AlertLarge(View):
+    id: str
+    start_time: datetime.datetime
+    end_time: datetime.datetime
+    creation_time: datetime.datetime
+    header: str
+    description: str
+    url: str
+    cause: models.Alert.Cause
+    effect: models.Alert.Effect
+
+    @classmethod
+    def from_model(cls, alert: models.Alert):
+        return cls(
+            id=alert.id,
+            start_time=alert.start_time,
+            end_time=alert.end_time,
+            creation_time=alert.creation_time,
+            header=alert.header,
+            description=alert.description,
+            url=alert.url,
+            cause=alert.cause,
+            effect=alert.effect,
+        )

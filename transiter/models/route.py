@@ -2,12 +2,12 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Enum, UniqueConstrai
 from sqlalchemy.orm import relationship
 
 from transiter import parse
-from .base import Base, ToDictMixin
+from .base import Base
 from .updatableentity import updatable_from
 
 
 @updatable_from(parse.Route)
-class Route(ToDictMixin, Base):
+class Route(Base):
     __tablename__ = "route"
 
     pk = Column(Integer, primary_key=True)
@@ -43,9 +43,6 @@ class Route(ToDictMixin, Base):
     )
 
     __table_args__ = (UniqueConstraint("system_pk", "id"),)
-
-    __dict_columns__ = [id, color]
-    __large_dict_columns__ = [id, short_name, long_name, color, description, url, type]
 
     @staticmethod
     def from_parsed_route(route: parse.Route) -> "Route":

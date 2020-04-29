@@ -117,7 +117,7 @@ def list_updates_in_feed(system_id, feed_id):
         )
     response = []
     for feed_update in feeddam.list_updates_in_feed(feed.pk):
-        response.append(feed_update.to_dict())
+        response.append(views.FeedUpdate.from_model(feed_update))
     return response
 
 
@@ -131,7 +131,7 @@ def get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk):
             feed_id=feed_id,
             feed_update_id=str(feed_update_pk),
         )
-    return feed_update.to_dict()
+    return views.FeedUpdate.from_model(feed_update)
 
 
 def trim_feed_updates():

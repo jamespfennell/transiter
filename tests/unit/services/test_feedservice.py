@@ -158,8 +158,8 @@ class TestFeedService(testutil.TestCase(feedservice), unittest.TestCase):
         ]
 
         expected = [
-            self.feed_update_one.to_dict(),
-            self.feed_update_two.to_dict(),
+            views.FeedUpdate.from_model(self.feed_update_one),
+            views.FeedUpdate.from_model(self.feed_update_two),
         ]
 
         actual = feedservice.list_updates_in_feed(self.SYSTEM_ID, self.FEED_ONE_ID)

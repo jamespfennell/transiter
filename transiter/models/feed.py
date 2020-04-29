@@ -11,10 +11,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from .base import Base, ToDictMixin
+from .base import Base
 
 
-class Feed(ToDictMixin, Base):
+class Feed(Base):
     __tablename__ = "feed"
 
     pk = Column(Integer, primary_key=True)
@@ -39,5 +39,3 @@ class Feed(ToDictMixin, Base):
     )
 
     __table_args__ = (UniqueConstraint("system_pk", "id"),)
-
-    __dict_columns__ = [id, auto_update_period]

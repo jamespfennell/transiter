@@ -3,10 +3,10 @@ import enum
 from sqlalchemy import Column, Integer, String, Enum, Boolean
 from sqlalchemy.orm import relationship
 
-from .base import Base, ToDictMixin
+from .base import Base
 
 
-class System(ToDictMixin, Base):
+class System(Base):
     __tablename__ = "system"
 
     pk = Column(Integer, primary_key=True)
@@ -38,5 +38,3 @@ class System(ToDictMixin, Base):
     service_map_groups = relationship(
         "ServiceMapGroup", back_populates="system", cascade="all, delete-orphan"
     )
-
-    __dict_columns__ = [id, status, name]

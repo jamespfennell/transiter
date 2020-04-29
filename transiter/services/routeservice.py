@@ -46,7 +46,7 @@ def get_in_system_by_id(system_id, route_id) -> views.RouteLarge:
         route,
         _construct_route_status(route.pk),
         periodicity,
-        [alert.to_large_dict() for alert in route.route_statuses],
+        list(map(views.AlertLarge.from_model, route.route_statuses)),
         servicemapmanager.build_route_service_maps_response(route.pk),
     )
 

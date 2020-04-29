@@ -11,10 +11,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from .base import Base, ToDictMixin
+from .base import Base
 
 
-class TripStopTime(ToDictMixin, Base):
+class TripStopTime(Base):
     __tablename__ = "trip_stop_time"
 
     pk = Column(Integer, primary_key=True)
@@ -42,25 +42,6 @@ class TripStopTime(ToDictMixin, Base):
         UniqueConstraint(trip_pk, stop_sequence),
         Index("trip_stop_time_stop_pk_arrival_time_idx", stop_pk, arrival_time),
     )
-
-    _short_repr_list = [arrival_time, departure_time, track, future, stop_sequence]
-
-    def to_dict(self):
-        return {
-            "arrival": {
-                "time": self.arrival_time,
-                "delay": self.arrival_delay,
-                "uncertainty": self.arrival_uncertainty,
-            },
-            "departure": {
-                "time": self.departure_time,
-                "delay": self.departure_delay,
-                "uncertainty": self.departure_uncertainty,
-            },
-            "track": self.track,
-            "future": self.future,
-            "stop_sequence": self.stop_sequence,
-        }
 
     def get_time(self):
         return self.arrival_time or self.departure_time

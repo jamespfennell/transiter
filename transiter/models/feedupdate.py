@@ -13,10 +13,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from .base import Base, ToDictMixin
+from .base import Base
 
 
-class FeedUpdate(ToDictMixin, Base):
+class FeedUpdate(Base):
     __tablename__ = "feed_update"
 
     pk = Column(Integer, primary_key=True)
@@ -73,16 +73,3 @@ class FeedUpdate(ToDictMixin, Base):
         ),
         Index("feed_update_feed_pk_feed_update_pk_idx", feed_pk, pk),
     )
-
-    __dict_columns__ = [
-        update_type,
-        status,
-        result,
-        result_message,
-        content_hash,
-        content_length,
-        completed_at,
-    ]
-
-    def to_dict(self) -> dict:
-        return {"id": self.pk, **self._to_dict(self.__dict_columns__)}
