@@ -502,3 +502,19 @@ def test_parse_error(current_update):
 
     with pytest.raises(ValueError):
         sync.sync(current_update.pk, BuggyParser())
+
+
+def test_alert__buggy_route(db_session, current_update):
+    alert = parse.Alert(
+        id="my_alert",
+        header="header",
+        description="description",
+        route_ids=["buggy_route_id"],
+    )
+
+    sync.sync(current_update.pk, ParserForTesting([alert]))
+
+    persisted_alerts = db_session.query(models.Alert).all()
+
+    assert 1 == len(persisted_alerts)
+    assert [] == persisted_alerts[0].routes

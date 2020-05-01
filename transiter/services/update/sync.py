@@ -619,6 +619,9 @@ class TripSyncer(syncer(models.Trip)):
 
 class AlertSyncer(syncer(models.Alert)):
     def sync(self, parsed_alerts):
+        # NOTE: when working on this function as part of the full alerts support,
+        # we should make it less efficient by not relying on ORM methods like
+        # models.System.routes.
         persisted_alerts, num_added, num_updated = self._merge_entities(
             list(map(models.Alert.from_parsed_alert, parsed_alerts))
         )
@@ -628,9 +631,8 @@ class AlertSyncer(syncer(models.Alert)):
         alert_id_to_route_ids = {alert.id: alert.route_ids for alert in parsed_alerts}
         alert_id_to_agency_ids = {alert.id: alert.agency_ids for alert in parsed_alerts}
         for alert in persisted_alerts:
-            # TODO: add a unit test for the case when the route doesn't exist!
             alert.routes = [
-                route_id_to_route.get(route_id)
+                route_id_to_route[route_id]
                 for route_id in alert_id_to_route_ids.get(alert.id, [])
                 if route_id in route_id_to_route
             ]
