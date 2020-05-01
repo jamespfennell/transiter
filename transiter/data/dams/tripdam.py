@@ -17,6 +17,19 @@ def list_all_from_feed(feed_pk):
     return query.all()
 
 
+def list_by_system_and_trip_ids(system_pk, trip_ids):
+    if len(trip_ids) == 0:
+        return []
+    return (
+        dbconnection.get_session()
+        .query(models.Trip)
+        .join(models.Route)
+        .filter(models.Trip.id.in_(trip_ids))
+        .filter(models.Route.system_pk == system_pk)
+        .all()
+    )
+
+
 class StopTimeData(NamedTuple):
     pk: int
     stop_sequence: int

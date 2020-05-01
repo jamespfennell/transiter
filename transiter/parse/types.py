@@ -54,6 +54,19 @@ class ScheduledService:
     # added_dates: typing.List[datetime.date] = field(default_factory=list)
     # removed_dates: typing.List[datetime.date] = field(default_factory=list)
 
+    @classmethod
+    def create_empty(cls, id_) -> "ScheduledService":
+        return cls(
+            id=id_,
+            monday=False,
+            tuesday=False,
+            wednesday=False,
+            thursday=False,
+            friday=False,
+            saturday=False,
+            sunday=False,
+        )
+
 
 @dataclass
 class ScheduledTrip:

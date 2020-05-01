@@ -10,6 +10,11 @@ from .data import *
 
 @pytest.fixture(scope="session")
 def test_db():
+    # NOTE: this setup is the main blocker for running the database tests in parallel
+    # with xdist. This is because the multiple spawned processes will each try to
+    # reset the database, and they will interfere with each other.
+    #
+    # A possible alternative is to do this setup outside of pytest in the CI context.
     for __ in range(100):
         try:
             dbconnection.delete_all_tables()

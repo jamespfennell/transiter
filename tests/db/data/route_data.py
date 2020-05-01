@@ -3,9 +3,12 @@ import pytest
 from transiter import models
 
 
+ROUTE_1_1_ID = "202"
+
+
 @pytest.fixture
 def route_1_1(add_model, system_1):
-    return add_model(models.Route(pk=201, id="202", system=system_1))
+    return add_model(models.Route(pk=201, id=ROUTE_1_1_ID, system=system_1))
 
 
 @pytest.fixture

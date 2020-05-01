@@ -63,3 +63,13 @@ def test_get_trip_pk_to_path_map(
     actual = tripdam.get_trip_pk_to_path_map(route_1_1.pk)
 
     assert expected == actual
+
+
+def test_list_by_system_and_trip_ids(
+    add_model, system_1, route_1_1, route_2_1, trip_1, trip_2, trip_3
+):
+    other_system_trip = add_model(models.Trip(id=trip_1.id, route=route_2_1))
+
+    actual = tripdam.list_by_system_and_trip_ids(system_1.pk, [trip_1.id, trip_2.id])
+
+    assert [trip_1, trip_2] == actual

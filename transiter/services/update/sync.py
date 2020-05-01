@@ -413,10 +413,9 @@ class TripSyncer(syncer(models.Trip)):
         previous feed updates.
         """
         trips = list(trips)
-        trip_id_to_db_trip = {
-            trip.id: trip
-            for trip in tripdam.list_all_from_feed(self.feed_update.feed.pk)
-        }
+        trip_id_to_db_trip = self._build_trip_id_to_db_trip_map(
+            trip.id for trip in trips
+        )
         trip_pk_to_db_stop_time_data_list = tripdam.get_trip_pk_to_stop_time_data_list(
             self.feed_update.feed.pk
         )
@@ -439,6 +438,24 @@ class TripSyncer(syncer(models.Trip)):
             trip_id_to_db_trip.values(), trip_pk_to_db_stop_time_data_list
         )
         return trips
+
+    def _build_trip_id_to_db_trip_map(self, feed_trip_ids):
+        trip_id_to_db_trip = {
+            trip.id: trip
+            for trip in tripdam.list_all_from_feed(self.feed_update.feed.pk)
+        }
+        missing_trip_ids = set(
+            trip_id for trip_id in feed_trip_ids if trip_id not in trip_id_to_db_trip
+        )
+        trip_id_to_db_trip.update(
+            {
+                trip.id: trip
+                for trip in tripdam.list_by_system_and_trip_ids(
+                    self.feed_update.feed.system.pk, missing_trip_ids
+                )
+            }
+        )
+        return trip_id_to_db_trip
 
     @staticmethod
     def _build_past_stop_times(
@@ -552,10 +569,6 @@ class TripSyncer(syncer(models.Trip)):
 
     def _fast_merge(self, trips):
         num_added, num_updated = self._fast_mappings_merge(models.Trip, trips)
-        # TODO: this next query looks wrong.
-        #  We should be able to 'steal' Trips across feeds
-        #  Should be possible to test this bug actually, just create a Trip in a
-        #  different feed
         trip_id_to_db_trip_pk = genericqueries.get_id_to_pk_map_by_feed_pk(
             models.Trip, self.feed_update.feed.pk
         )

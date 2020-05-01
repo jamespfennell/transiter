@@ -4,6 +4,7 @@ import itertools
 import pytest
 import pytz
 
+from .data import route_data
 from transiter import models, parse
 from transiter.services.update import sync
 
@@ -24,6 +25,13 @@ def feed(add_model, system_1):
 
 
 @pytest.fixture
+def feed_2(add_model, system_1):
+    return add_model(
+        models.Feed(system=system_1, id="feed_2", auto_update_enabled=False)
+    )
+
+
+@pytest.fixture
 def previous_update(add_model, feed):
     return add_model(models.FeedUpdate(feed=feed))
 
@@ -31,6 +39,11 @@ def previous_update(add_model, feed):
 @pytest.fixture
 def current_update(add_model, feed):
     return add_model(models.FeedUpdate(feed=feed))
+
+
+@pytest.fixture
+def other_feed_update(add_model, feed_2):
+    return add_model(models.FeedUpdate(feed=feed_2))
 
 
 new_alert = parse.Alert(id="alert", header="header", description="description")
@@ -430,6 +443,31 @@ def test_trip__stop_time_reconciliation(
     ]
 
     assert expected_stop_time_data == actual_stop_times
+
+
+@pytest.mark.parametrize(
+    "entity",
+    [
+        parse.Route(id="my_special_route_id", type=parse.Route.Type.RAIL),
+        parse.Stop(
+            id="my_special_stop_id",
+            name="station",
+            is_station=True,
+            latitude=0,
+            longitude=0,
+        ),
+        parse.Trip(
+            id="my_special_trip_id", route_id=route_data.ROUTE_1_1_ID, direction_id=True
+        ),
+        parse.Alert(id="my_special_alert_id", header="header", description="desc"),
+        parse.DirectionRule(id="my_special_direction_id", name="uptown"),
+        parse.ScheduledService.create_empty("my_special_service_id"),
+    ],
+)
+def test_move_entity_across_feeds(current_update, other_feed_update, route_1_1, entity):
+    sync.sync(other_feed_update.pk, ParserForTesting([entity]))
+
+    sync.sync(current_update.pk, ParserForTesting([entity]))
 
 
 def convert_trip_stop_time_model_to_parse(
