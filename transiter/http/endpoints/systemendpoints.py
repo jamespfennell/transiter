@@ -36,51 +36,27 @@ def get_by_id(system_id):
 def install(system_id):
     """Install a system."""
     form_key_to_value = flask.request.form.to_dict()
-    form_key_to_file_storage = flask.request.files.to_dict()
+    config_file_url = form_key_to_value.pop("config_file", None)
 
-    config_source_url = None
-    if "config_file" in form_key_to_value:
-        config_source_url = form_key_to_value["config_file"]
-        try:
-            response = requests.get(config_source_url)
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            raise exceptions.InvalidInput(
-                "Could not download YAML config file from '{}'".format(
-                    config_source_url
-                )
-            )
-        config_str = response.text
-        del form_key_to_value["config_file"]
-    elif "config_file" in form_key_to_file_storage:
-        config_str = flask.request.files["config_file"].read().decode("utf-8")
-    else:
-        raise exceptions.InvalidInput("YAML config file not provided!")
-
-    # TODO: replace with httpmanager.get_boolean_url_parameter("sync")
     sync = httpmanager.is_sync_request()
-    response = systemservice.install(
+    system_update_pk = systemservice.install(
         system_id=system_id,
-        config_str=config_str,
+        config_str=_get_config_file(
+            config_file_url, flask.request.files.get("config_file")
+        ),
         extra_settings=form_key_to_value,
-        config_source_url=config_source_url,
+        config_source_url=config_file_url,
         sync=sync,
     )
 
     # This means the system already exists and nothing was done.
-    # TODO: this is all wrong
-    if not response:
-        status = HttpStatus.OK
+    if sync:
+        status = HttpStatus.CREATED
     else:
-        if sync:
-            status = HttpStatus.CREATED
-        else:
-            status = HttpStatus.ACCEPTED
-    # TODO return a representation of the update instead
-    return systemservice.get_by_id(system_id), status
+        status = HttpStatus.ACCEPTED
+    return systemservice.get_update_by_id(system_update_pk), status
 
 
-# TODO: use this method
 def _get_config_file(config_source_url, uploaded_config_file):
     if config_source_url is not None:
         try:

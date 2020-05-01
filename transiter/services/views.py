@@ -61,6 +61,26 @@ class SystemLarge(System):
 
 
 @dataclasses.dataclass
+class SystemUpdate(View):
+    id: str
+    status: models.SystemUpdate.Status
+    status_message: str
+    scheduled_at: datetime.datetime
+    completed_at: datetime.datetime
+    system: System = NULL
+
+    @classmethod
+    def from_model(cls, update: models.SystemUpdate):
+        return cls(
+            id=str(update.pk),
+            status=update.status,
+            status_message=update.status_message,
+            scheduled_at=update.scheduled_at,
+            completed_at=update.completed_at,
+        )
+
+
+@dataclasses.dataclass
 class Route(View):
     class Status(enum.Enum):
         NO_SERVICE = 0

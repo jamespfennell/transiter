@@ -89,10 +89,20 @@ def install(system_id, config_str, extra_settings, config_source_url, sync=True)
     )
     sync_to_function = {
         True: _execute_system_update,
-        False: _execute_system_update_async,
+        False: _execute_system_update_async.delay,
     }
     sync_to_function[sync](system_update_pk)
     return system_update_pk
+
+
+@dbconnection.unit_of_work
+def get_update_by_id(system_update_id) -> views.SystemUpdate:
+    system_update = systemdam.get_update_by_pk(system_update_id)
+    if system_update is None:
+        raise exceptions.IdNotFoundError(models.SystemUpdate, id=str(system_update_id))
+    result = views.SystemUpdate.from_model(system_update)
+    result.system = views.System.from_model(system_update.system)
+    return result
 
 
 @dbconnection.unit_of_work

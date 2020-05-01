@@ -2,54 +2,41 @@ import datetime
 import unittest
 from unittest import mock
 
+import pytest
 from google.protobuf.message import DecodeError
 from google.transit import gtfs_realtime_pb2 as gtfs
 
 from transiter import parse
 from transiter.parse import gtfsrealtime
-from .. import testutil
 
 timestamp_to_datetime = gtfsrealtime._GtfsRealtimeToTransiterTransformer(
     ""
 )._timestamp_to_datetime
 
+RAW_CONTENT = "Some content"
+PARSED_CONTENT = "Transformed"
 
-class TestReadGtfsRealtime(testutil.TestCase(gtfsrealtime)):
-    RAW_CONTENT = "Some content"
-    PARSED_CONTENT = "Transformed"
 
-    def setUp(self):
-        self.gtfs_feed = mock.MagicMock()
+def test_read_gtfs_realtime(monkeypatch):
+    gtfs_feed = mock.MagicMock()
+    monkeypatch.setattr(gtfs, "FeedMessage", lambda *args, **wargs: gtfs_feed)
+    monkeypatch.setattr(
+        gtfsrealtime, "_read_protobuf_message", lambda *args, **kwargs: PARSED_CONTENT
+    )
 
-        self.gtfs_realtime_pb2 = self.mockImportedModule(gtfsrealtime.gtfs_realtime_pb2)
-        self.gtfs_realtime_pb2.FeedMessage.return_value = self.gtfs_feed
+    response = gtfsrealtime.read_gtfs_realtime(RAW_CONTENT, gtfs)
 
-        self._read_protobuf_message = self.mockModuleAttribute("_read_protobuf_message")
-        self._read_protobuf_message.return_value = self.PARSED_CONTENT
+    assert PARSED_CONTENT == response
 
-    def tearDown(self):
-        self.gtfs_realtime_pb2.FeedMessage.assert_called_once_with()
-        self.gtfs_feed.ParseFromString.assert_called_once_with(self.RAW_CONTENT)
 
-    def test_read_gtfs_realtime_parse_error(self):
-        """[GTFS Realtime Util] GTFS realtime parse error"""
-        self.gtfs_feed.ParseFromString.side_effect = DecodeError
+def test_read_gtfs_realtime__parse_error(monkeypatch):
+    gtfs_feed = mock.MagicMock()
+    monkeypatch.setattr(gtfs, "FeedMessage", lambda *args, **wargs: gtfs_feed)
 
-        self.assertRaises(
-            DecodeError,
-            lambda: gtfsrealtime.read_gtfs_realtime(
-                self.RAW_CONTENT, self.gtfs_realtime_pb2
-            ),
-        )
+    gtfs_feed.ParseFromString.side_effect = DecodeError
 
-    def test_read_gtfs_realtime(self):
-        """[GTFS Realtime Util] Read basic feed subtask scheduling"""
-        actual_response = gtfsrealtime.read_gtfs_realtime(
-            self.RAW_CONTENT, self.gtfs_realtime_pb2
-        )
-
-        self.assertEqual(actual_response, self.PARSED_CONTENT)
-        self._read_protobuf_message.assert_called_once_with(self.gtfs_feed)
+    with pytest.raises(DecodeError):
+        gtfsrealtime.read_gtfs_realtime(RAW_CONTENT, gtfs)
 
 
 class TestReadProtobufMessage(unittest.TestCase):

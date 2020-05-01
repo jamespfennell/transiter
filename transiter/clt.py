@@ -12,14 +12,6 @@ from transiter.data import dbconnection
 from transiter.executor import celeryapp
 from transiter.scheduler import server as scheduler, client
 
-# noinspection PyUnresolvedReferences
-from transiter.services import feedservice
-
-# TODO: figure this out
-#  maybe use autodiscover_tasks
-# noinspection PyUnresolvedReferences
-from transiter.services import systemservice
-
 
 @click.group()
 def transiter_clt():
@@ -58,7 +50,7 @@ def launch(force, log_level, server):
         app = scheduler.create_app()
         app.run(host="0.0.0.0", port=config.SCHEDULER_PORT, debug=False)
     if server == "executor":
-        celeryapp.run(log_level=log_level)
+        celeryapp.run(log_level)
 
 
 @transiter_clt.group()

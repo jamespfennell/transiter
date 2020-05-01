@@ -97,11 +97,16 @@ def get_artifacts_to_push():
 
     Returns a set possibly containing "docker" and "pypi"
     """
+    if not is_mainline_build():
+        return set()
+    if is_release():
+        return {"docker", "pypi"}
     message = os.environ.get("TRAVIS_COMMIT_MESSAGE", "").splitlines()
-    result = set()
+    result = {"docker"}
     for line in message:
         if line[:6] != "push: ":
             continue
+        result = set()
         for artifact in {"docker", "pypi"}:
             if artifact in line:
                 result.add(artifact)
@@ -115,8 +120,6 @@ def upload_to_py_pi():
 
     If this is not a build on master or a release tag, this is a no-op.
     """
-    if not is_mainline_build():
-        return
     if "pypi" not in get_artifacts_to_push():
         return
     subprocess.run(
@@ -139,7 +142,7 @@ def upload_to_docker_hub():
 
     If this is not a build on master or a release tag, this is a no-op.
     """
-    if not is_mainline_build():
+    if "docker" not in get_artifacts_to_push():
         return
     client = docker.from_env()
     client.login(

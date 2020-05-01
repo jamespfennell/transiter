@@ -1,7 +1,7 @@
 import logging
 import os
 
-from celery import Celery, signals, app
+from celery import Celery, signals
 
 host = os.environ.get("TRANSITER_RABBITMQ_HOST", "127.0.0.1")
 
@@ -18,8 +18,8 @@ def on_after_setup_logger(**kwargs):
 
 
 def run(log_level="warning"):
+    app.autodiscover_tasks(
+        packages=["transiter.services.systemservice", "transiter.scheduler.server"],
+        related_name=None,
+    )
     app.start(argv=["celeryapp", "worker", "-l", log_level])
-
-
-if __name__ == "__main__":
-    run()

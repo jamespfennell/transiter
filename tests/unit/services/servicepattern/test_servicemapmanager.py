@@ -6,13 +6,13 @@ import pytest
 
 from transiter import models
 from transiter.data import dbconnection
-from transiter.data.dams import servicemapdam
+from transiter.data.dams import tripdam, stopdam, servicemapdam, scheduledam
 from transiter.services import views
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
-from ... import testutil
 
 SYSTEM_ID = "system_id"
+SYSTEM_PK = 101
 STOP_1_PK = 1
 GROUP_ID = "2"
 ROUTE_1_ID = "3"
@@ -27,149 +27,102 @@ TRIP_2_START_TIME = datetime.datetime(3, 7, 11)
 TRIP_2_END_TIME = datetime.datetime(4, 8, 12)
 
 
-class TestServiceMapManager(testutil.TestCase(servicemapmanager)):
-    STOP_1_PK = 1
-    GROUP_ID = "2"
-    ROUTE_1_ID = "3"
-    ROUTE_1_PK = 6
-    ROUTE_2_ID = "4"
-    ROUTE_2_PK = 7
-    TRIP_1_PK = 10
-    TRIP_2_PK = 11
-    TRIP_1_START_TIME = datetime.datetime(1, 5, 9)
-    TRIP_1_END_TIME = datetime.datetime(2, 6, 10)
-    TRIP_2_START_TIME = datetime.datetime(3, 7, 11)
-    TRIP_2_END_TIME = datetime.datetime(4, 8, 12)
+def test_calculate_realtime_service_map_for_route(monkeypatch):
+    service_map_group = models.ServiceMapGroup(
+        source=models.ServiceMapGroup.ServiceMapSource.REALTIME
+    )
+    route_1 = models.Route(
+        pk=ROUTE_1_PK,
+        id=ROUTE_1_ID,
+        system=models.System(service_map_groups=[service_map_group]),
+        trips=[
+            models.Trip(pk=TRIP_1_PK, direction_id=True),
+            models.Trip(pk=TRIP_2_PK, direction_id=False),
+        ],
+    )
 
-    def setUp(self):
+    monkeypatch.setattr(
+        tripdam,
+        "get_trip_pk_to_path_map",
+        lambda *args, **kwargs: {TRIP_1_PK: [1, 2, 3, 4], TRIP_2_PK: [3, 1, 0]},
+    )
+    monkeypatch.setattr(
+        stopdam,
+        "get_stop_pk_to_station_pk_map_in_system",
+        lambda *args, **kwargs: {0: 0, 1: 11, 2: 2, 3: 3, 4: 14},
+    )
 
-        self.actual_graphutils = servicemapmanager.graphutils
-        self.graphutils = self.mockImportedModule(servicemapmanager.graphutils)
-        self.servicemapdam = self.mockImportedModule(servicemapmanager.servicemapdam)
-        self.scheduledam = self.mockImportedModule(servicemapmanager.scheduledam)
-        self.stopdam = self.mockImportedModule(servicemapmanager.stopdam)
-        self.tripdam = self.mockImportedModule(servicemapmanager.tripdam)
-        self.dbconnection = self.mockImportedModule(servicemapmanager.dbconnection)
+    new_service_map = models.ServiceMap()
+    _build_service_map_from_paths = mock.MagicMock()
+    monkeypatch.setattr(
+        servicemapmanager,
+        "_build_service_map_from_paths",
+        _build_service_map_from_paths,
+    )
+    _build_service_map_from_paths.return_value = new_service_map
 
-        self.trip_one = models.ScheduledTrip(pk=self.TRIP_1_PK)
-        self.trip_one.stop_ids = []
-        self.trip_one.route_id = "C"
-        self.trip_one.direction_id = True
-        self.trip_two = models.ScheduledTrip(pk=self.TRIP_2_PK)
-        self.trip_two.stop_ids = ["1", "2"]
-        self.trip_two.route_id = "A"
-        self.trip_two.direction_id = False
-        self.trip_three = models.ScheduledTrip()
-        self.trip_three.stop_ids = ["3", "4"]
-        self.trip_three.route_id = "A"
-        self.trip_three.direction_id = True
+    expected_paths = {(11, 2, 3, 14), (0, 11, 3)}
 
-        self.system = models.System()
-        self.route_1 = models.Route(
-            pk=self.ROUTE_1_PK, id=self.ROUTE_1_ID, system=self.system
-        )
-        self.route_2 = models.Route(
-            pk=self.ROUTE_2_PK, id=self.ROUTE_2_ID, system=self.system
-        )
+    servicemapmanager.calculate_realtime_service_map_for_route(route_1)
 
-        self.service_map_group_realtime = models.ServiceMapGroup(
-            source=models.ServiceMapGroup.ServiceMapSource.REALTIME
-        )
-        self.service_map_realtime_1 = models.ServiceMap(
-            group=self.service_map_group_realtime, route_pk=self.ROUTE_1_PK
-        )
-        self.service_map_realtime_2 = models.ServiceMap(
-            group=self.service_map_group_realtime, route=self.route_2
-        )
-        self.service_map_group_schedule = models.ServiceMapGroup(
-            source=models.ServiceMapGroup.ServiceMapSource.SCHEDULE,
-            conditions='{"weekday": true}',
-            threshold=0,
-        )
-        self.service_map_schedule_1 = models.ServiceMap(
-            group=self.service_map_group_schedule, route=self.route_1
-        )
-        self.service_map_schedule_2 = models.ServiceMap(
-            group=self.service_map_group_schedule, route=self.route_2
-        )
-        self.system.service_map_groups = [
-            self.service_map_group_schedule,
-            self.service_map_group_realtime,
-        ]
+    _build_service_map_from_paths.assert_called_once_with(expected_paths)
+    assert route_1 == new_service_map.route
+    assert service_map_group == new_service_map.group
 
-    @mock.patch.object(dbconnection, "get_session")
-    @mock.patch.object(servicemapmanager, "_build_service_map_from_paths")
-    def test_calculate_realtime_service_map_for_route(
-        self, _build_service_map_from_paths, inline_unit_of_work
-    ):
-        """[Service map manager] Calculate realtime service map for route"""
-        trip_one = models.Trip(pk=self.TRIP_1_PK)
-        trip_one.stop_ids = []
-        trip_one.route_id = "C"
-        trip_one.direction_id = True
-        trip_two = models.Trip(pk=self.TRIP_2_PK)
-        trip_two.stop_ids = ["1", "2"]
-        trip_two.route_id = "A"
-        trip_two.direction_id = False
 
-        self.route_1.trips = [trip_one, trip_two]
+def test_calculate_schedule_service_map_for_route(monkeypatch):
+    monkeypatch.setattr(dbconnection, "get_session", mock.MagicMock())
+    monkeypatch.setattr(
+        scheduledam,
+        "get_scheduled_trip_pk_to_path_in_system",
+        lambda *args, **kwargs: {TRIP_1_PK: [1, 2, 3, 4], TRIP_2_PK: [3, 1, 0]},
+    )
+    monkeypatch.setattr(
+        stopdam,
+        "get_stop_pk_to_station_pk_map_in_system",
+        lambda *args, **kwargs: {0: 0, 1: 11, 2: 2, 3: 3, 4: 14},
+    )
+    system = models.System(
+        id=SYSTEM_ID,
+        pk=SYSTEM_PK,
+        service_map_groups=[
+            models.ServiceMapGroup(
+                source=models.ServiceMapGroup.ServiceMapSource.SCHEDULE, threshold=0.05
+            )
+        ],
+    )
+    trip_one = models.ScheduledTrip(
+        pk=TRIP_1_PK, route_pk=ROUTE_1_PK, direction_id=True
+    )
+    trip_two = models.ScheduledTrip(
+        pk=TRIP_2_PK, route_pk=ROUTE_1_PK, direction_id=False
+    )
+    monkeypatch.setattr(
+        scheduledam,
+        "list_scheduled_trips_with_times_in_system",
+        lambda *args, **kwargs: [
+            (trip_one, TRIP_1_START_TIME, TRIP_1_END_TIME),
+            (trip_two, TRIP_2_START_TIME, TRIP_2_END_TIME),
+        ],
+    )
+    matcher = mock.MagicMock()
+    matcher.return_value = True
+    monkeypatch.setattr(
+        servicemapmanager, "_ScheduledTripMatcher", lambda *args, **kwargs: matcher
+    )
 
-        self.tripdam.get_trip_pk_to_path_map.return_value = {
-            self.TRIP_1_PK: [1, 2, 3, 4],
-            self.TRIP_2_PK: [3, 1, 0],
-        }
-        self.stopdam.get_stop_pk_to_station_pk_map_in_system.return_value = {
-            0: 0,
-            1: 11,
-            2: 2,
-            3: 3,
-            4: 14,
-        }
+    _build_service_map_from_paths = mock.MagicMock()
+    monkeypatch.setattr(
+        servicemapmanager,
+        "_build_service_map_from_paths",
+        _build_service_map_from_paths,
+    )
 
-        new_service_map = models.ServiceMap()
-        _build_service_map_from_paths.return_value = new_service_map
+    expected_paths = {(11, 2, 3, 14), (0, 11, 3)}
 
-        expected_paths = {(11, 2, 3, 14), (0, 11, 3)}
+    servicemapmanager.calculate_scheduled_service_maps_for_system(system)
 
-        servicemapmanager.calculate_realtime_service_map_for_route(self.route_1)
-
-        _build_service_map_from_paths.assert_called_once_with(expected_paths)
-        self.assertEqual(new_service_map.route, self.route_1)
-        self.assertEqual(new_service_map.group, self.service_map_group_realtime)
-        self.assertEqual(None, self.service_map_realtime_1.group)
-
-    @mock.patch.object(servicemapmanager, "_ScheduledTripMatcher")
-    @mock.patch.object(servicemapmanager, "_build_service_map_from_paths")
-    def test_calculate_schedule_service_map_for_route(
-        self, _build_service_map_from_paths, _ScheduledTripMatcher,
-    ):
-        """[Service map manager] Calculate schedule service maps for system"""
-        self.scheduledam.get_scheduled_trip_pk_to_path_in_system.return_value = {
-            self.TRIP_1_PK: [1, 2, 3, 4],
-            self.TRIP_2_PK: [3, 1, 0],
-        }
-        self.stopdam.get_stop_pk_to_station_pk_map_in_system.return_value = {
-            0: 0,
-            1: 11,
-            2: 2,
-            3: 3,
-            4: 14,
-        }
-        self.trip_one.route_pk = self.ROUTE_1_PK
-        self.trip_two.route_pk = self.ROUTE_1_PK
-        self.scheduledam.list_scheduled_trips_with_times_in_system.return_value = [
-            (self.trip_one, self.TRIP_1_START_TIME, self.TRIP_1_END_TIME),
-            (self.trip_two, self.TRIP_2_START_TIME, self.TRIP_2_END_TIME),
-        ]
-        matcher = mock.MagicMock()
-        _ScheduledTripMatcher.return_value = matcher
-        matcher.return_value = True
-
-        expected_paths = {(11, 2, 3, 14), (0, 11, 3)}
-
-        servicemapmanager.calculate_scheduled_service_maps_for_system(self.system)
-
-        _build_service_map_from_paths.assert_has_calls([mock.call(expected_paths)])
+    _build_service_map_from_paths.assert_has_calls([mock.call(expected_paths)])
 
 
 def test_build_stop_pk_to_service_maps_response(monkeypatch):
