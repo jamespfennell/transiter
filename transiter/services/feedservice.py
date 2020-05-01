@@ -6,8 +6,6 @@ operations.
 import datetime
 import logging
 import typing
-from dataclasses import dataclass
-from typing import Iterable
 
 from transiter import exceptions, models
 from transiter.data import dbconnection
@@ -18,23 +16,13 @@ from transiter.services.update import updatemanager
 logger = logging.getLogger(__name__)
 
 
-# TODO: just use the view instead
-@dataclass
-class Feed:
-    system_id: str
-    feed_id: str
-    auto_update_period: int
-
-
 @dbconnection.unit_of_work
-def list_all_auto_updating() -> Iterable[Feed]:
+def list_all_auto_updating() -> typing.List[views.Feed]:
     """
     List all auto updating feeds.
-
-    This method is designed for use by the scheduler.
     """
     return [
-        Feed(feed.system.id, feed.id, feed.auto_update_period)
+        views.Feed.from_model(feed, add_system=True)
         for feed in feeddam.list_all_auto_updating()
     ]
 

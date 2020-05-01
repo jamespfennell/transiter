@@ -184,15 +184,15 @@ class FeedAutoUpdateRegistry(Registry):
     def refresh(self):
         stale_feed_keys = set(self._current_feed_keys())
         for feed in feedservice.list_all_auto_updating():
-            task = self._system_id_to_feed_id_to_task[feed.system_id].get(feed.feed_id)
+            task = self._system_id_to_feed_id_to_task[feed.system.id].get(feed.id)
             if task is None:
-                logger.info("Adding {}/{}".format(feed.system_id, feed.feed_id))
-                task = FeedAutoUpdateTask(feed.system_id, feed.feed_id)
-                self._system_id_to_feed_id_to_task[feed.system_id][feed.feed_id] = task
+                logger.info("Adding {}/{}".format(feed.system.id, feed.id))
+                task = FeedAutoUpdateTask(feed.system.id, feed.id)
+                self._system_id_to_feed_id_to_task[feed.system.id][feed.id] = task
             else:
-                logger.info("Updating {}/{}".format(feed.system_id, feed.feed_id))
+                logger.info("Updating {}/{}".format(feed.system.id, feed.id))
             task.schedule = PeriodicSchedule(feed.auto_update_period)
-            stale_feed_keys.discard((feed.system_id, feed.feed_id))
+            stale_feed_keys.discard((feed.system.id, feed.id))
 
         for system_id, feed_id in stale_feed_keys:
             logger.info("Removing {}/{}".format(system_id, feed_id))

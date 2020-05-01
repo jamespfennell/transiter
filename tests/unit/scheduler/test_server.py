@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from transiter.scheduler import server
-from transiter.services import feedservice
+from transiter.services import feedservice, views
 
 SYSTEM_ID = "1"
 FEED_ID = "2"
@@ -31,23 +31,28 @@ def test_transiter_registry(scheduler):
     )
 
 
+feed_1 = views.Feed(
+    id=FEED_ID,
+    auto_update_period=5,
+    _system_id=SYSTEM_ID,
+    system=views.System(id=SYSTEM_ID, name="", status=None),
+)
+
+feed_2 = views.Feed(
+    id=FEED_ID,
+    auto_update_period=10,
+    _system_id=SYSTEM_ID,
+    system=views.System(id=SYSTEM_ID, name="", status=None),
+)
+
+
 @pytest.mark.parametrize(
     "existing_feeds,new_feeds,job_added,job_removed",
     [
-        [[], [feedservice.Feed(SYSTEM_ID, FEED_ID, 5)], True, False],
-        [
-            [feedservice.Feed(SYSTEM_ID, FEED_ID, 5)],
-            [feedservice.Feed(SYSTEM_ID, FEED_ID, 5)],
-            False,
-            False,
-        ],
-        [
-            [feedservice.Feed(SYSTEM_ID, FEED_ID, 5)],
-            [feedservice.Feed(SYSTEM_ID, FEED_ID, 10)],
-            True,
-            True,
-        ],
-        [[feedservice.Feed(SYSTEM_ID, FEED_ID, 5)], [], False, True],
+        [[], [feed_1], True, False],
+        [[feed_1], [feed_1], False, False],
+        [[feed_1], [feed_2], True, True],
+        [[feed_1], [], False, True],
     ],
 )
 def test_refresh_feed_auto_update_registry(

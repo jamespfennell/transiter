@@ -258,13 +258,15 @@ class Feed(View):
     auto_update_period: int
     _system_id: str
     updates: "UpdatesInFeedLink" = NULL
+    system: models.System = NULL
 
     @classmethod
-    def from_model(cls, feed: models.Feed):
+    def from_model(cls, feed: models.Feed, add_system=False):
         return cls(
             id=feed.id,
             auto_update_period=feed.auto_update_period,
             _system_id=feed.system.id,
+            system=System.from_model(feed.system) if add_system else NULL,
         )
 
 

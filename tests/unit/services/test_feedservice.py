@@ -18,7 +18,7 @@ FEED_TWO_ID = "4"
 
 @pytest.fixture
 def system():
-    return models.System(id=SYSTEM_ID)
+    return models.System(id=SYSTEM_ID, name="", status=None)
 
 
 @pytest.fixture
@@ -38,9 +38,16 @@ def feed_2(system):
 def test_list_all_auto_updating(monkeypatch, feed_1):
     monkeypatch.setattr(feeddam, "list_all_auto_updating", lambda: [feed_1])
 
-    expected = [feedservice.Feed(SYSTEM_ID, FEED_ONE_ID, FEED_ONE_AUTO_UPDATE_PERIOD)]
+    expected = [
+        views.Feed(
+            id=FEED_ONE_ID,
+            auto_update_period=FEED_ONE_AUTO_UPDATE_PERIOD,
+            _system_id=SYSTEM_ID,
+            system=views.System(id=SYSTEM_ID, name="", status=None),
+        )
+    ]
 
-    actual = feedservice.list_all_auto_updating()
+    actual = list(feedservice.list_all_auto_updating())
 
     assert expected == actual
 
