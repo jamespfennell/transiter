@@ -40,7 +40,6 @@ def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None)
     # noinspection PyUnusedLocal
     def parser(binary_content, *args, **kwargs):
         gtfs_data = read_gtfs_realtime(binary_content, gtfs_realtime_pb2_module)
-        # print(json.dumps(gtfs_data))
         if post_pb2_parsing_function is not None:
             post_pb2_parsing_function(gtfs_data)
         (feed_time, trips) = transform_to_transiter_structure(

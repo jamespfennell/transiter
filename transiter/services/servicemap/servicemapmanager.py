@@ -125,10 +125,9 @@ def calculate_realtime_service_map_for_route(route):
         logger.info("Could not topologically sort:\n{}".format(json.dumps(list(paths))))
         return
 
-    # Delete the old service map for this route. This works by using SQL
-    # Alchemy's delete orphan cascade.
+    # Delete the old service map for this route.
     if old_service_map is not None:
-        old_service_map.group = None
+        dbconnection.get_session().delete(old_service_map)
         dbconnection.get_session().flush()
 
     service_map.route = route

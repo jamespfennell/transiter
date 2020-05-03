@@ -13,8 +13,6 @@ class _BaseModel:
     def __eq__(self, other):
         for column in inspect(type(self)).columns.keys():
             if getattr(self, column) != getattr(other, column):
-                return False
-                # TODO: why is the executor printing this?
                 print(
                     'Values for attribute "{}" don\'t match: "{}" != "{}"'.format(
                         column, str(getattr(self, column)), str(getattr(other, column))
@@ -31,7 +29,7 @@ class _BaseModel:
         return "{}({})".format(type(self).__name__, ", ".join(attributes))
 
     # This is a hack to get around a problem in SQL Alchemy where the hash is evaluated
-    # It should not be relied on and will be replaced at some point by an exception!
+    # when setting models.Alert.routes = [...].
     def __hash__(self):
         return id(self)
 
