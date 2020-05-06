@@ -7,19 +7,21 @@ import pytest
 from transiter import config, exceptions
 from transiter.http import flaskapp, permissions
 from transiter.http.endpoints import (
+    agencyendpoints,
+    feedendpoints,
     routeendpoints,
     stopendpoints,
-    tripendpoints,
     systemendpoints,
-    feedendpoints,
+    tripendpoints,
 )
 from transiter.http.httpmanager import HttpStatus
 from transiter.services import (
+    agencyservice,
+    feedservice,
     routeservice,
     stopservice,
-    tripservice,
-    feedservice,
     systemservice,
+    tripservice,
 )
 
 
@@ -111,6 +113,13 @@ def test_permission_denied__admin_read_endpoints(
             "get_in_route_by_id",
             ["system_id", "route_id", "trip_id"],
         ),
+        [agencyendpoints, agencyservice, "list_all_in_system", ["system_id"]],
+        [
+            agencyendpoints,
+            agencyservice,
+            "get_in_system_by_id",
+            ["system_id", "agency_id"],
+        ],
     ],
 )
 def test_simple_endpoints(

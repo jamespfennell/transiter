@@ -5,6 +5,18 @@ from dataclasses import dataclass, field
 
 
 @dataclass
+class Agency:
+    id: str
+    name: str
+    url: str
+    timezone: str
+    language: str = None
+    phone: str = None
+    fare_url: str = None
+    email: str = None
+
+
+@dataclass
 class Route:
     class Type(enum.Enum):
         LIGHT_RAIL = 0
@@ -18,6 +30,7 @@ class Route:
 
     id: str
     type: Type
+    agency_id: str = None
     short_name: str = None
     long_name: str = None
     description: str = None

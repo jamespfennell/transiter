@@ -41,9 +41,9 @@ from transiter import models
 from transiter.data import dbconnection
 from transiter.data.dams import feeddam
 from transiter.executor import celeryapp
-from transiter.parse import parser
+from transiter.parse import parser, gtfsstatic
 from transiter.services.update import sync
-from . import gtfsrealtimeparser, gtfsstaticparser
+from . import gtfsrealtimeparser
 
 logger = logging.getLogger(__name__)
 
@@ -218,7 +218,7 @@ def _sync_entities(feed_update: models.FeedUpdate, parser_object):
 
 
 _built_in_parser_to_function = {
-    models.Feed.BuiltInParser.GTFS_STATIC: gtfsstaticparser.parse_gtfs_static,
+    models.Feed.BuiltInParser.GTFS_STATIC: gtfsstatic.GtfsStaticParser,
     models.Feed.BuiltInParser.GTFS_REALTIME: gtfsrealtimeparser.built_in_parser,
 }
 

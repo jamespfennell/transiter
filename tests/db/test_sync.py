@@ -46,6 +46,7 @@ def other_feed_update(add_model, feed_2):
     return add_model(models.FeedUpdate(feed=feed_2))
 
 
+new_agency = parse.Agency(id="agency", name="New Agency", timezone="", url="")
 new_alert = parse.Alert(id="alert", header="header", description="description")
 new_route = parse.Route(id="route", type=parse.Route.Type.RAIL, description="new_route")
 new_stop = parse.Stop(
@@ -80,6 +81,19 @@ new_stop = parse.Stop(
             models.Route,
             [models.Route(id="route", description="old route")],
             [new_route],
+            (0, 1, 0),
+        ],
+        [
+            models.Agency,
+            [models.Agency(id="agency", name="old agency", timezone="")],
+            [new_agency],
+            (0, 1, 0),
+        ],
+        [models.Agency, [], [new_agency], (1, 0, 0)],
+        [
+            models.Agency,
+            [models.Agency(id="agency", name="old agency", timezone="")],
+            [new_agency],
             (0, 1, 0),
         ],
         [
@@ -123,6 +137,8 @@ def test_simple_create_update_delete(
             return entity.id, entity.name, entity.source_pk
         if entity_type is models.Alert:
             return entity.id, entity.description, entity.header
+        if entity_type is models.Agency:
+            return entity.id, entity.name
         raise NotImplementedError
 
     assert set(map(fields_to_compare, current)) == set(
@@ -191,6 +207,17 @@ def test_stop__tree_linking(
             actual_stop_id_parent_id[stop.id] = None
 
     assert expected_id_to_parent_id == actual_stop_id_parent_id
+
+
+def test_route__agency_linking(db_session, current_update):
+    agency = parse.Agency(id="agency", name="My Agency", timezone="", url="")
+    route = parse.Route(id="route", type=parse.Route.Type.RAIL, agency_id="agency")
+
+    sync.sync(current_update.pk, ParserForTesting([route, agency]))
+
+    persisted_route = db_session.query(models.Route).all()[0]
+
+    assert persisted_route.agency is not None
 
 
 def test_alert__route_linking(db_session, previous_update, current_update, route_1_1):

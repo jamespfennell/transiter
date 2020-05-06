@@ -1,5 +1,5 @@
 """
-The GTFS Static Util contains the logic for reading feeds of this format.
+The GTFS Static module contains the logic for reading feeds of this format.
 
 The official reference is here: https://gtfs.org/reference/static
 """
@@ -8,26 +8,48 @@ import csv
 import datetime
 import enum
 import io
+import typing
 import zipfile
+import uuid
 
 from transiter import parse
 
 
-# Additional arguments are accepted for forwards compatibility
-# noinspection PyUnusedLocal
-def parse_gtfs_static(binary_content, *args, **kwargs):
-    """
-    Parse a GTFS Static feed
+class GtfsStaticParser(parse.TransiterParser):
 
-    :param binary_content: raw binary GTFS static zip data
-    """
-    gtfs_static_file = GtfsStaticFile(binary_content)
-    for parsing_function in [parse_routes, parse_stops, parse_schedule]:
-        yield from parsing_function(gtfs_static_file)
+    gtfs_static_file = None
+
+    def load_content(self, content: bytes) -> None:
+        self.gtfs_static_file = _GtfsStaticFile(content)
+
+    def get_agencies(self) -> typing.Iterable[parse.Agency]:
+        for row in self.gtfs_static_file.agency():
+            yield parse.Agency(
+                id=row.get(
+                    "agency_id", "transiter_auto_generated_id_" + str(uuid.uuid4())
+                ),
+                name=row["agency_name"],
+                url=row["agency_url"],
+                timezone=row["agency_timezone"],
+                language=row.get("agency_language"),
+                phone=row.get("agency_phone"),
+                fare_url=row.get("agency_fare_url"),
+                email=row.get("agency_email"),
+            )
+
+    def get_routes(self) -> typing.Iterable[parse.Route]:
+        yield from _parse_routes(self.gtfs_static_file)
+
+    def get_stops(self) -> typing.Iterable[parse.Stop]:
+        yield from _parse_stops(self.gtfs_static_file)
+
+    def get_scheduled_services(self) -> typing.Iterable[parse.ScheduledService]:
+        yield from _parse_schedule(self.gtfs_static_file)
 
 
-class GtfsStaticFile:
+class _GtfsStaticFile:
     class _InternalFileName(enum.Enum):
+        AGENCY = "agency.txt"
         CALENDAR = "calendar.txt"
         ROUTES = "routes.txt"
         STOP_TIMES = "stop_times.txt"
@@ -37,6 +59,9 @@ class GtfsStaticFile:
 
     def __init__(self, binary_content):
         self._zip_file = zipfile.ZipFile(io.BytesIO(binary_content))
+
+    def agency(self):
+        return self._read_internal_file(self._InternalFileName.AGENCY)
 
     def calendar(self):
         return self._read_internal_file(self._InternalFileName.CALENDAR)
@@ -74,11 +99,12 @@ class GtfsStaticFile:
             return []
 
 
-def parse_routes(gtfs_static_file: GtfsStaticFile):
+def _parse_routes(gtfs_static_file: _GtfsStaticFile):
     for row in gtfs_static_file.routes():
         yield parse.Route(
             id=row["route_id"],
             type=parse.Route.Type(int(row["route_type"])),
+            agency_id=row.get("agency_id"),
             color=row.get("route_color", "FFFFF"),
             text_color=row.get("route_text_color", "000000"),
             url=row.get("route_url"),
@@ -89,7 +115,7 @@ def parse_routes(gtfs_static_file: GtfsStaticFile):
         )
 
 
-def parse_stops(gtfs_static_file: GtfsStaticFile):
+def _parse_stops(gtfs_static_file: _GtfsStaticFile):
 
     stop_id_to_stop = {}
     stop_id_to_parent_stop_id = {}
@@ -143,14 +169,14 @@ def parse_stops(gtfs_static_file: GtfsStaticFile):
         if len(station_set) <= 1:
             continue
         child_stops = [stop_id_to_stop[stop_id] for stop_id in station_set]
-        parent_stop = create_station_from_child_stops(child_stops)
+        parent_stop = _create_station_from_child_stops(child_stops)
         for child_stop in child_stops:
             child_stop.parent_stop = parent_stop
         yield parent_stop
         station_set.clear()
 
 
-def create_station_from_child_stops(child_stops):
+def _create_station_from_child_stops(child_stops):
     """
     Create a station from child stops.
 
@@ -199,7 +225,7 @@ def create_station_from_child_stops(child_stops):
     )
 
 
-def parse_schedule(gtfs_static_file: GtfsStaticFile):
+def _parse_schedule(gtfs_static_file: _GtfsStaticFile):
     str_to_bool = {"0": False, "1": True}
 
     service_id_to_service = {}

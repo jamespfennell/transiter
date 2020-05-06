@@ -43,25 +43,30 @@ def test_parse_routes():
         type=models.Route.Type.RAIL,
     )
 
-    assert [expected_route] == list(gtfsstaticparser.parse_routes(gtfs_static_file))
+    assert [expected_route] == list(gtfsstaticparser._parse_routes(gtfs_static_file))
 
 
 def test_parse(monkeypatch):
-    monkeypatch.setattr(gtfsstaticparser, "parse_routes", lambda *args, **kwargs: [1])
-    monkeypatch.setattr(gtfsstaticparser, "parse_stops", lambda *args, **kwargs: [2])
-    monkeypatch.setattr(gtfsstaticparser, "parse_schedule", lambda *args, **kwargs: [3])
-    monkeypatch.setattr(gtfsstaticparser, "GtfsStaticFile", mock.MagicMock())
+    monkeypatch.setattr(gtfsstaticparser, "_parse_routes", lambda *args, **kwargs: [1])
+    monkeypatch.setattr(gtfsstaticparser, "_parse_stops", lambda *args, **kwargs: [2])
+    monkeypatch.setattr(
+        gtfsstaticparser, "_parse_schedule", lambda *args, **kwargs: [3]
+    )
+    monkeypatch.setattr(gtfsstaticparser, "_GtfsStaticFile", mock.MagicMock())
 
-    binary_content = mock.MagicMock()
+    parser = gtfsstaticparser.GtfsStaticParser()
+    parser.load_content(b"")
 
-    assert [1, 2, 3] == list(gtfsstaticparser.parse_gtfs_static(binary_content))
+    assert [1] == list(parser.get_routes())
+    assert [2] == list(parser.get_stops())
+    assert [3] == list(parser.get_scheduled_services())
 
 
 @pytest.fixture
 def mock_create_station(monkeypatch):
     mock_create = mock.MagicMock()
     monkeypatch.setattr(
-        gtfsstaticparser, "create_station_from_child_stops", mock_create
+        gtfsstaticparser, "_create_station_from_child_stops", mock_create
     )
     return mock_create
 
@@ -87,7 +92,7 @@ def test_parse_stops__single_stop(mock_create_station):
         is_station=True,
     )
 
-    assert [expected_stop] == list(gtfsstaticparser.parse_stops(gtfs_static_file))
+    assert [expected_stop] == list(gtfsstaticparser._parse_stops(gtfs_static_file))
 
 
 def test_parse_stops__parent_and_child_stop(mock_create_station):
@@ -128,7 +133,7 @@ def test_parse_stops__parent_and_child_stop(mock_create_station):
         parent_stop=expected_stop_2,
     )
 
-    actual_stops = list(gtfsstaticparser.parse_stops(gtfs_static_file))
+    actual_stops = list(gtfsstaticparser._parse_stops(gtfs_static_file))
 
     assert [expected_stop_1, expected_stop_2] == actual_stops
 
@@ -177,7 +182,7 @@ def test_parse_stops__siblings_by_transfer(mock_create_station):
         parent_stop=expected_station,
     )
 
-    actual_stops = list(gtfsstaticparser.parse_stops(gtfs_static_file))
+    actual_stops = list(gtfsstaticparser._parse_stops(gtfs_static_file))
 
     assert [expected_stop_1, expected_stop_2, expected_station] == actual_stops
 
@@ -197,7 +202,7 @@ def test_create_station_from_child_stops():
         id="A-B-C", name="Name 1", latitude=2, longitude=1, is_station=True
     )
 
-    actual_station = gtfsstaticparser.create_station_from_child_stops(
+    actual_station = gtfsstaticparser._create_station_from_child_stops(
         [child_1, child_2, child_3]
     )
 
@@ -216,7 +221,7 @@ def test_create_station_from_child_stops_hybrid_name():
         id="A-B", name="Name 1 / Name 2", latitude=2, longitude=1, is_station=True
     )
 
-    actual_station = gtfsstaticparser.create_station_from_child_stops(
+    actual_station = gtfsstaticparser._create_station_from_child_stops(
         [child_1, child_2]
     )
 
@@ -235,7 +240,7 @@ def test_create_station_from_child_stops_substring_case():
         id="A-B", name="Name 1 (and more)", latitude=2, longitude=1, is_station=True
     )
 
-    actual_station = gtfsstaticparser.create_station_from_child_stops(
+    actual_station = gtfsstaticparser._create_station_from_child_stops(
         [child_1, child_2]
     )
 
@@ -310,7 +315,7 @@ def test_parse_services():
         trips=[trip],
     )
 
-    actual_services = list(gtfsstaticparser.parse_schedule(gtfs_static_file))
+    actual_services = list(gtfsstaticparser._parse_schedule(gtfs_static_file))
 
     assert [service] == actual_services
 
@@ -340,17 +345,17 @@ class TestReadZipFile(unittest.TestCase):
         ]
 
         file_name_to_func_name = {
-            gtfsstaticparser.GtfsStaticFile._InternalFileName.CALENDAR: "calendar",
-            gtfsstaticparser.GtfsStaticFile._InternalFileName.ROUTES: "routes",
-            gtfsstaticparser.GtfsStaticFile._InternalFileName.STOPS: "stops",
-            gtfsstaticparser.GtfsStaticFile._InternalFileName.STOP_TIMES: "stop_times",
-            gtfsstaticparser.GtfsStaticFile._InternalFileName.TRANSFERS: "transfers",
-            gtfsstaticparser.GtfsStaticFile._InternalFileName.TRIPS: "trips",
+            gtfsstaticparser._GtfsStaticFile._InternalFileName.CALENDAR: "calendar",
+            gtfsstaticparser._GtfsStaticFile._InternalFileName.ROUTES: "routes",
+            gtfsstaticparser._GtfsStaticFile._InternalFileName.STOPS: "stops",
+            gtfsstaticparser._GtfsStaticFile._InternalFileName.STOP_TIMES: "stop_times",
+            gtfsstaticparser._GtfsStaticFile._InternalFileName.TRANSFERS: "transfers",
+            gtfsstaticparser._GtfsStaticFile._InternalFileName.TRIPS: "trips",
         }
 
         for file_name, func_name in file_name_to_func_name.items():
             binary_content = self._create_zip(file_name.value, csv)
-            gtfs_file = gtfsstaticparser.GtfsStaticFile(binary_content)
+            gtfs_file = gtfsstaticparser._GtfsStaticFile(binary_content)
             func = getattr(gtfs_file, func_name)
             actual = list(func())
 
@@ -367,10 +372,10 @@ class TestReadZipFile(unittest.TestCase):
             self.VALUE_2_2,
         )
         binary_content = self._create_zip(
-            gtfsstaticparser.GtfsStaticFile._InternalFileName.STOPS.value, csv
+            gtfsstaticparser._GtfsStaticFile._InternalFileName.STOPS.value, csv
         )
 
-        actual = list(gtfsstaticparser.GtfsStaticFile(binary_content).routes())
+        actual = list(gtfsstaticparser._GtfsStaticFile(binary_content).routes())
 
         self.assertEqual([], actual)
 

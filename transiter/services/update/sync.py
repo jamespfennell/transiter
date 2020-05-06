@@ -38,6 +38,7 @@ def sync(feed_update_pk, parser_object: parse.TransiterParser):
     feed_update = feeddam.get_update_by_pk(feed_update_pk)
 
     syncers_in_order = [
+        AgencySyncer,
         RouteSyncer,
         StopSyncer,
         ScheduleSyncer,
@@ -155,11 +156,26 @@ def syncer(entity_type) -> typing.Type[SyncerBase]:
     return _Syncer
 
 
+class AgencySyncer(syncer(models.Agency)):
+    def sync(self, parsed_agencies):
+        agencies = list(map(models.Agency.from_parsed_agency, parsed_agencies))
+        for agency in agencies:
+            agency.system_pk = self.feed_update.feed.system_pk
+        __, num_added, num_updated = self._merge_entities(agencies)
+        return num_added, num_updated
+
+
 class RouteSyncer(syncer(models.Route)):
     def sync(self, parsed_routes):
-        routes = list(map(models.Route.from_parsed_route, parsed_routes))
-        for route in routes:
+        agency_id_to_pk = genericqueries.get_id_to_pk_map(
+            models.Agency, self.feed_update.feed.system.pk
+        )
+        routes = []
+        for parsed_route in parsed_routes:
+            route = models.Route.from_parsed_route(parsed_route)
             route.system_pk = self.feed_update.feed.system_pk
+            route.agency_pk = agency_id_to_pk.get(parsed_route.agency_id)
+            routes.append(route)
         __, num_added, num_updated = self._merge_entities(routes)
         return num_added, num_updated
 

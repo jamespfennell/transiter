@@ -102,6 +102,16 @@ def test_install_system__success(install_system_1, transiter_host, sync):
             assert usual_stops == actual_stops
             break
 
+    # (5) Verify the agency was installed
+    agencies_count = system_response["agencies"]["count"]
+    assert 1 == agencies_count
+
+    agencies_response = requests.get(
+        transiter_host + "/systems/" + system_id + "/agencies"
+    ).json()
+    assert 1 == len(agencies_response)
+    assert "Transiter Transit Agency" == agencies_response[0]["name"]
+
 
 @pytest.mark.parametrize("sync", [True, False])
 def test_install_system__bad_config(install_system, transiter_host, sync):

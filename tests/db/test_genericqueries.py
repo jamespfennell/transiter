@@ -64,3 +64,15 @@ def test_list_stale_entities(
     db_session.flush()
 
     assert [route_1_1] == genericqueries.list_stale_entities(models.Route, update_2)
+
+
+def test_count_number_of_related_entities(system_1, route_1_1, route_1_2, route_2_1):
+    assert 2 == genericqueries.count_number_of_related_entities(
+        models.System.routes, system_1
+    )
+
+
+def test_count_number_of_related_entities__none(system_1, route_2_1):
+    assert 0 == genericqueries.count_number_of_related_entities(
+        models.System.routes, system_1
+    )

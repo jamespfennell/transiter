@@ -27,6 +27,9 @@ app.register_blueprint(
     endpoints.feed_endpoints, url_prefix="/systems/<system_id>/feeds"
 )
 app.register_blueprint(
+    endpoints.agency_endpoints, url_prefix="/systems/<system_id>/agencies"
+)
+app.register_blueprint(
     endpoints.route_endpoints, url_prefix="/systems/<system_id>/routes"
 )
 app.register_blueprint(

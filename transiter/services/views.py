@@ -40,6 +40,10 @@ class _EntitiesInSystem(View):
         return cls(count=count, _system_id=system.id)
 
 
+class AgenciesInSystem(_EntitiesInSystem):
+    pass
+
+
 class RoutesInSystem(_EntitiesInSystem):
     pass
 
@@ -54,10 +58,10 @@ class FeedsInSystem(_EntitiesInSystem):
 
 @dataclasses.dataclass
 class SystemLarge(System):
-    stops: StopsInSystem = NULL
-    routes: RoutesInSystem = NULL
+    agencies: AgenciesInSystem = NULL
     feeds: FeedsInSystem = NULL
-    agency_alerts: list = dataclasses.field(default_factory=list)
+    routes: RoutesInSystem = NULL
+    stops: StopsInSystem = NULL
 
 
 @dataclasses.dataclass
@@ -77,6 +81,44 @@ class SystemUpdate(View):
             status_message=update.status_message,
             scheduled_at=update.scheduled_at,
             completed_at=update.completed_at,
+        )
+
+
+@dataclasses.dataclass
+class Agency(View):
+    id: str
+    name: str
+    _system_id: str
+
+    @classmethod
+    def from_model(cls, agency: models.Agency):
+        return cls(id=agency.id, name=agency.name, _system_id=agency.system.id)
+
+
+@dataclasses.dataclass
+class AgencyLarge(View):
+    id: str
+    name: str
+    url: str
+    timezone: str
+    language: str = None
+    phone: str = None
+    fare_url: str = None
+    email: str = None
+    alerts: list = dataclasses.field(default_factory=list)
+    routes: list = dataclasses.field(default_factory=list)
+
+    @classmethod
+    def from_model(cls, agency: models.Agency):
+        return cls(
+            id=agency.id,
+            name=agency.name,
+            url=agency.url,
+            timezone=agency.timezone,
+            language=agency.language,
+            phone=agency.phone,
+            fare_url=agency.fare_url,
+            email=agency.email,
         )
 
 
@@ -112,11 +154,12 @@ class RouteLarge(View):
     _system_id: str
     status: Route.Status
     periodicity: float
-    alerts: list
-    service_maps: list
+    agency: Agency = None
+    alerts: list = dataclasses.field(default_factory=list)
+    service_maps: list = dataclasses.field(default_factory=list)
 
     @classmethod
-    def from_model(cls, route: models.Route, status, periodicity, alerts, service_maps):
+    def from_model(cls, route: models.Route, status, periodicity):
         return cls(
             id=route.id,
             color=route.color,
@@ -128,8 +171,6 @@ class RouteLarge(View):
             _system_id=route.system.id,
             status=status,
             periodicity=periodicity,
-            alerts=alerts,
-            service_maps=service_maps,
         )
 
 

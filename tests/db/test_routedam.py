@@ -83,8 +83,8 @@ def test_get_route_pk_to_highest_priority_alerts_maps(
     alert_2 = add_model(models.Alert(pk=702, priority=2))
     alert_3 = add_model(models.Alert(pk=703, priority=2))
     alert_4 = add_model(models.Alert(pk=704, priority=3))
-    route_1_1.route_statuses = [alert_1, alert_2, alert_3]
-    route_1_2.route_statuses = [alert_1, alert_3, alert_4]
+    route_1_1.alerts = [alert_1, alert_2, alert_3]
+    route_1_2.alerts = [alert_1, alert_3, alert_4]
     db_session.flush()
 
     expected = {

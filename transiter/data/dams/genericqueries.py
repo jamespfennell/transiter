@@ -5,6 +5,7 @@ import typing
 from typing import Dict, Iterable
 
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 
 from transiter import models
 from transiter.data import dbconnection
@@ -159,3 +160,19 @@ def list_stale_entities(
         .filter(models.FeedUpdate.pk != feed_update.pk)
     )
     return query.all()
+
+
+def count_number_of_related_entities(relationship, instance) -> int:
+    """
+    Count the number of entities related to an instance along a specified relationship.
+    """
+    base_type = relationship.class_
+    related_type = relationship.mapper.class_
+    session = dbconnection.get_session()
+    query = (
+        session.query(func.count(1))
+        .select_from(base_type)
+        .join(related_type, relationship)
+        .filter(getattr(base_type, "pk") == instance.pk)
+    )
+    return query.one()[0]

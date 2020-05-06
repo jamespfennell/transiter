@@ -20,6 +20,7 @@ SYSTEM_ONE_NUM_STOPS = 20
 SYSTEM_ONE_NUM_STATIONS = 21
 SYSTEM_ONE_NUM_ROUTES = 22
 SYSTEM_ONE_NUM_FEEDS = 23
+SYSTEM_ONE_NUM_AGENCIES = 24
 FILE_NAME = "24"
 STOP_ONE_ID = "25"
 PARSED_SYSTEM_CONFIG = {
@@ -32,7 +33,6 @@ PARSED_SYSTEM_CONFIG = {
 
 
 def test_list_all(monkeypatch):
-    """[System service] List all installed systems"""
     monkeypatch.setattr(
         systemdam,
         "list_all",
@@ -66,47 +66,34 @@ def test_get_by_id_no__such_system(monkeypatch):
 
 
 def test_get_by_id(monkeypatch):
+    def count(relationship, system):
+        return {
+            models.System.stops: SYSTEM_ONE_NUM_STOPS,
+            models.System.feeds: SYSTEM_ONE_NUM_FEEDS,
+            models.System.routes: SYSTEM_ONE_NUM_ROUTES,
+            models.System.agencies: SYSTEM_ONE_NUM_AGENCIES,
+        }[relationship]
+
     system = models.System(
         id=SYSTEM_ONE_ID, name=SYSTEM_ONE_NAME, status=models.System.SystemStatus.ACTIVE
     )
-    alert = models.Alert(id="alert_id", header="alert_header")
-    monkeypatch.setattr(
-        systemdam, "list_all_alerts_associated_to_system", lambda *args: [alert]
-    )
+
     expected = views.SystemLarge(
         id=SYSTEM_ONE_ID,
         status=models.System.SystemStatus.ACTIVE,
         name=SYSTEM_ONE_NAME,
+        agencies=views.AgenciesInSystem(
+            count=SYSTEM_ONE_NUM_AGENCIES, _system_id=SYSTEM_ONE_ID
+        ),
         stops=views.StopsInSystem(count=SYSTEM_ONE_NUM_STOPS, _system_id=SYSTEM_ONE_ID),
         routes=views.RoutesInSystem(
             count=SYSTEM_ONE_NUM_ROUTES, _system_id=SYSTEM_ONE_ID
         ),
         feeds=views.FeedsInSystem(count=SYSTEM_ONE_NUM_FEEDS, _system_id=SYSTEM_ONE_ID),
-        agency_alerts=[
-            views.AlertLarge(
-                id="alert_id",
-                header="alert_header",
-                start_time=None,
-                end_time=None,
-                creation_time=None,
-                description=None,
-                url=None,
-                cause=None,
-                effect=None,
-            )
-        ],
     )
 
     monkeypatch.setattr(systemdam, "get_by_id", lambda *args: system)
-    monkeypatch.setattr(
-        systemdam, "count_stops_in_system", lambda *args: SYSTEM_ONE_NUM_STOPS
-    )
-    monkeypatch.setattr(
-        systemdam, "count_routes_in_system", lambda *args: SYSTEM_ONE_NUM_ROUTES
-    )
-    monkeypatch.setattr(
-        systemdam, "count_feeds_in_system", lambda *args: SYSTEM_ONE_NUM_FEEDS
-    )
+    monkeypatch.setattr(genericqueries, "count_number_of_related_entities", count)
 
     actual = systemservice.get_by_id(SYSTEM_ONE_ID)
 

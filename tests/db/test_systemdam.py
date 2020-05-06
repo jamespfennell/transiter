@@ -84,22 +84,6 @@ def test_count_feeds_in_system__no_feeds(system_1, feed_2_1):
     assert 0 == count
 
 
-def test_list_all_alerts_associated_to_system(
-    db_session, add_model, system_1, system_2
-):
-    alert_1 = add_model(models.Alert(pk=703))
-    alert_2 = add_model(models.Alert(pk=704))
-    alert_1.system_pk = system_1.pk
-    alert_2.system_pk = system_2.pk
-    db_session.flush()
-
-    assert [alert_1] == systemdam.list_all_alerts_associated_to_system(system_1.pk)
-
-
-def test_list_all_alerts_associated_to_system__no_alerts(system_1, system_2):
-    assert [] == systemdam.list_all_alerts_associated_to_system(system_1.pk)
-
-
 @pytest.mark.parametrize("old_value", [True, False])
 @pytest.mark.parametrize("new_value", [True, False])
 def test_set_auto_update_enabled(db_session, system_1, system_2, old_value, new_value):

@@ -217,10 +217,15 @@ def test_execute_feed_update__success_or_sync_error(
     assert actual_explanation == expected_explanation
 
 
-@pytest.mark.parametrize(
-    "built_in_parser", [parser for parser in models.Feed.BuiltInParser]
-)
-def test_get_parser__built_in_parser(built_in_parser):
+def test_get_parser__built_in_parser__gtfs_static():
+    parser = updatemanager._get_parser(models.Feed.BuiltInParser.GTFS_STATIC, None)
+
+    assert isinstance(parser, parse.gtfsstatic.GtfsStaticParser)
+
+
+def test_get_parser__built_in_parser__gtfs_realtime():
     assert parse.parser.cast_object_to_instantiated_transiter_parser(
-        updatemanager._built_in_parser_to_function[built_in_parser]
-    ) == updatemanager._get_parser(built_in_parser, None)
+        updatemanager._built_in_parser_to_function[
+            models.Feed.BuiltInParser.GTFS_REALTIME
+        ]
+    ) == updatemanager._get_parser(models.Feed.BuiltInParser.GTFS_REALTIME, None)

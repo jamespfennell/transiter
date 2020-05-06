@@ -27,6 +27,9 @@ class System(Base):
     updates = relationship(
         "SystemUpdate", back_populates="system", cascade="all, delete-orphan"
     )
+    agencies = relationship(
+        "Agency", back_populates="system", cascade="all, delete-orphan"
+    )
     routes = relationship(
         "Route", back_populates="system", cascade="all, delete-orphan"
     )

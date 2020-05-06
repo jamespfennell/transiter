@@ -33,6 +33,9 @@ class TransiterParser:
     def get_timestamp(self) -> typing.Optional[datetime.datetime]:
         pass  # pragma: no cover
 
+    def get_agencies(self) -> typing.Iterable[parse.Agency]:
+        pass  # pragma: no cover
+
     def get_routes(self) -> typing.Iterable[parse.Route]:
         pass  # pragma: no cover
 
@@ -56,6 +59,7 @@ class TransiterParser:
     # below when implementing this class.
 
     __type_to_method__ = {
+        parse.Agency: get_agencies,
         parse.Route: get_routes,
         parse.Stop: get_stops,
         parse.ScheduledService: get_scheduled_services,

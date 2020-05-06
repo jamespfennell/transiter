@@ -24,38 +24,31 @@ logger = logging.getLogger(__name__)
 
 @dbconnection.unit_of_work
 def list_all() -> typing.List[views.System]:
-    """
-    List all installed systems.
-    """
     return list(map(views.System.from_model, systemdam.list_all()))
 
 
 @dbconnection.unit_of_work
 def get_by_id(system_id) -> views.SystemLarge:
-    """
-    Get information on a specific system.
-    """
     system = systemdam.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
     response = views.SystemLarge.from_model(system)
     if system.status != system.SystemStatus.ACTIVE:
         return response
-    response.stops = views.StopsInSystem.from_model(
-        system, systemdam.count_stops_in_system(system_id)
-    )
-    response.routes = views.RoutesInSystem.from_model(
-        system, systemdam.count_routes_in_system(system_id)
-    )
-    response.feeds = views.FeedsInSystem.from_model(
-        system, systemdam.count_feeds_in_system(system_id)
-    )
-    response.agency_alerts = list(
-        map(
-            views.AlertLarge.from_model,
-            systemdam.list_all_alerts_associated_to_system(system.pk),
+    for attr, view, relationship in (
+        ("agencies", views.AgenciesInSystem, models.System.agencies),
+        ("stops", views.StopsInSystem, models.System.stops),
+        ("routes", views.RoutesInSystem, models.System.routes),
+        ("feeds", views.FeedsInSystem, models.System.feeds),
+    ):
+        setattr(
+            response,
+            attr,
+            view.from_model(
+                system,
+                genericqueries.count_number_of_related_entities(relationship, system),
+            ),
         )
-    )
     return response
 
 

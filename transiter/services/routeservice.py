@@ -42,13 +42,14 @@ def get_in_system_by_id(system_id, route_id) -> views.RouteLarge:
     periodicity = routedam.calculate_periodicity(route.pk)
     if periodicity is not None:
         periodicity = int(periodicity / 6) / 10
-    return views.RouteLarge.from_model(
-        route,
-        _construct_route_status(route.pk),
-        periodicity,
-        list(map(views.AlertLarge.from_model, route.route_statuses)),
-        servicemapmanager.build_route_service_maps_response(route.pk),
+    result = views.RouteLarge.from_model(
+        route, _construct_route_status(route.pk), periodicity
     )
+    if route.agency is not None:
+        result.agency = views.Agency.from_model(route.agency)
+    result.alerts = list(map(views.AlertLarge.from_model, route.alerts))
+    result.service_maps = servicemapmanager.build_route_service_maps_response(route.pk)
+    return result
 
 
 Status = views.Route.Status
