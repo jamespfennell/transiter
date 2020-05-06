@@ -5,7 +5,7 @@ import unittest.mock as mock
 import pytest
 
 from transiter import models, exceptions
-from transiter.data.dams import stopdam, systemdam, tripdam
+from transiter.data import tripqueries, systemqueries, stopqueries
 from transiter.services import stopservice, views
 from transiter.services.servicemap import servicemapmanager
 
@@ -112,8 +112,8 @@ def test_list_all_in_system(monkeypatch):
     stop_one = models.Stop(
         pk=STOP_ONE_PK, id=STOP_ONE_ID, name=STOP_ONE_NAME, system=system
     )
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: system)
-    monkeypatch.setattr(stopdam, "list_all_in_system", lambda *args: [stop_one])
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: system)
+    monkeypatch.setattr(stopqueries, "list_all_in_system", lambda *args: [stop_one])
 
     expected = [views.Stop(id=STOP_ONE_ID, name=STOP_ONE_NAME, _system_id=SYSTEM_ID)]
 
@@ -124,14 +124,14 @@ def test_list_all_in_system(monkeypatch):
 
 def test_list_all_in_system__system_not_found(monkeypatch):
 
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: None)
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         stopservice.list_all_in_system(SYSTEM_ID)
 
 
 def test_get_in_system_by_id__stop_not_found(monkeypatch):
-    monkeypatch.setattr(stopdam, "get_in_system_by_id", lambda *args: None)
+    monkeypatch.setattr(stopqueries, "get_in_system_by_id", lambda *args: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         stopservice.get_in_system_by_id(SYSTEM_ID, STOP_ONE_ID),
@@ -151,18 +151,18 @@ def test_get_in_system_by_id(monkeypatch):
     child_stops = mock.MagicMock()
     parent_stop = mock.MagicMock()
 
-    monkeypatch.setattr(stopdam, "get_in_system_by_id", lambda *args: stop_one)
+    monkeypatch.setattr(stopqueries, "get_in_system_by_id", lambda *args: stop_one)
     monkeypatch.setattr(
-        stopdam, "list_all_stops_in_stop_tree", lambda *args: [stop_one]
+        stopqueries, "list_all_stops_in_stop_tree", lambda *args: [stop_one]
     )
-    monkeypatch.setattr(stopdam, "list_direction_rules_for_stops", lambda *args: [])
+    monkeypatch.setattr(stopqueries, "list_direction_rules_for_stops", lambda *args: [])
     monkeypatch.setattr(
-        stopdam,
+        stopqueries,
         "list_stop_time_updates_at_stops",
         lambda *args, **kwargs: [stop_time_one, stop_time_two],
     )
 
-    monkeypatch.setattr(tripdam, "get_trip_pk_to_last_stop_map", mock.MagicMock())
+    monkeypatch.setattr(tripqueries, "get_trip_pk_to_last_stop_map", mock.MagicMock())
     monkeypatch.setattr(
         servicemapmanager, "build_stop_pk_to_service_maps_response", mock.MagicMock()
     )

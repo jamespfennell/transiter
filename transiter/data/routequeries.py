@@ -3,8 +3,7 @@ from typing import Optional, Dict, Iterable
 import sqlalchemy.sql.expression as sql
 
 from transiter import models
-from transiter.data import dbconnection
-from transiter.data.dams import genericqueries
+from transiter.data import dbconnection, genericqueries
 
 
 def list_all_in_system(system_id):

@@ -7,9 +7,9 @@ from sqlalchemy import exc
 
 from transiter import clt
 from transiter.data import dbconnection
-from transiter.scheduler import client, server as scheduler
 from transiter.executor import celeryapp
 from transiter.http import flaskapp
+from transiter.scheduler import client, server as scheduler
 
 
 @pytest.fixture

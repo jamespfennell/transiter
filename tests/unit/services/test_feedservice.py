@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from transiter import models, exceptions
-from transiter.data.dams import feeddam, systemdam
+from transiter.data import feedqueries, systemqueries
 from transiter.services import feedservice, views
 from transiter.services.update import updatemanager
 
@@ -36,7 +36,7 @@ def feed_2(system):
 
 
 def test_list_all_auto_updating(monkeypatch, feed_1):
-    monkeypatch.setattr(feeddam, "list_all_auto_updating", lambda: [feed_1])
+    monkeypatch.setattr(feedqueries, "list_all_auto_updating", lambda: [feed_1])
 
     expected = [
         views.Feed(
@@ -53,15 +53,17 @@ def test_list_all_auto_updating(monkeypatch, feed_1):
 
 
 def test_list_all_in_system__no_such_system(monkeypatch):
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: None)
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         feedservice.list_all_in_system(SYSTEM_ID)
 
 
 def test_list_all_in_system(monkeypatch, system, feed_1, feed_2):
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: system)
-    monkeypatch.setattr(feeddam, "list_all_in_system", lambda *args: [feed_1, feed_2])
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: system)
+    monkeypatch.setattr(
+        feedqueries, "list_all_in_system", lambda *args: [feed_1, feed_2]
+    )
 
     expected = [
         views.Feed(
@@ -82,7 +84,7 @@ def test_list_all_in_system(monkeypatch, system, feed_1, feed_2):
 
 
 def test_get_in_system_by_id(monkeypatch, feed_1):
-    monkeypatch.setattr(feeddam, "get_in_system_by_id", lambda *args: feed_1)
+    monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: feed_1)
 
     expected = views.FeedLarge(
         id=FEED_ONE_ID,
@@ -97,7 +99,7 @@ def test_get_in_system_by_id(monkeypatch, feed_1):
 
 
 def test_get_in_system_by_id__no_such_feed(monkeypatch):
-    monkeypatch.setattr(feeddam, "get_in_system_by_id", lambda *args: None)
+    monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         feedservice.get_in_system_by_id(SYSTEM_ID, FEED_ONE_ID),
@@ -125,9 +127,9 @@ def test_list_updates_in_feed(monkeypatch, feed_1):
     update_1 = models.FeedUpdate(feed=feed_1)
     update_2 = models.FeedUpdate(feed=feed_1)
 
-    monkeypatch.setattr(feeddam, "get_in_system_by_id", lambda *args: feed_1)
+    monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: feed_1)
     monkeypatch.setattr(
-        feeddam, "list_updates_in_feed", lambda *args: [update_1, update_2]
+        feedqueries, "list_updates_in_feed", lambda *args: [update_1, update_2]
     )
 
     expected = [
@@ -141,7 +143,7 @@ def test_list_updates_in_feed(monkeypatch, feed_1):
 
 
 def test_list_updates_in_feed__no_such_feed(monkeypatch):
-    monkeypatch.setattr(feeddam, "get_in_system_by_id", lambda *args: None)
+    monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         feedservice.list_updates_in_feed(SYSTEM_ID, FEED_ONE_ID)
@@ -163,8 +165,8 @@ def test_trip_feed_updates(monkeypatch, datetime_now, feed_pks):
     )
 
     dam_trip_feed_updates = mock.Mock()
-    monkeypatch.setattr(feeddam, "list_all_feed_pks", lambda: feed_pks)
-    monkeypatch.setattr(feeddam, "trim_feed_updates", dam_trip_feed_updates)
+    monkeypatch.setattr(feedqueries, "list_all_feed_pks", lambda: feed_pks)
+    monkeypatch.setattr(feedqueries, "trim_feed_updates", dam_trip_feed_updates)
 
     feedservice.trim_feed_updates()
 

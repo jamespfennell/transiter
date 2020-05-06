@@ -8,8 +8,7 @@ import logging
 import typing
 
 from transiter import exceptions, models
-from transiter.data import dbconnection
-from transiter.data.dams import feeddam, systemdam
+from transiter.data import dbconnection, feedqueries, systemqueries
 from transiter.services import views
 from transiter.services.update import updatemanager
 
@@ -23,7 +22,7 @@ def list_all_auto_updating() -> typing.List[views.Feed]:
     """
     return [
         views.Feed.from_model(feed, add_system=True)
-        for feed in feeddam.list_all_auto_updating()
+        for feed in feedqueries.list_all_auto_updating()
     ]
 
 
@@ -32,10 +31,10 @@ def list_all_in_system(system_id) -> typing.List[views.Feed]:
     """
     Get data on all feeds in a system.
     """
-    system = systemdam.get_by_id(system_id, only_return_active=True)
+    system = systemqueries.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
-    return list(map(views.Feed.from_model, feeddam.list_all_in_system(system_id)))
+    return list(map(views.Feed.from_model, feedqueries.list_all_in_system(system_id)))
 
 
 @dbconnection.unit_of_work
@@ -43,7 +42,7 @@ def get_in_system_by_id(system_id, feed_id) -> views.Feed:
     """
     Get data on a specific feed in a system.
     """
-    feed = feeddam.get_in_system_by_id(system_id, feed_id)
+    feed = feedqueries.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         raise exceptions.IdNotFoundError(
             models.Feed, system_id=system_id, feed_id=feed_id
@@ -98,20 +97,20 @@ def list_updates_in_feed(system_id, feed_id):
     """
     List all of the updates for a feed.
     """
-    feed = feeddam.get_in_system_by_id(system_id, feed_id)
+    feed = feedqueries.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         raise exceptions.IdNotFoundError(
             models.Feed, system_id=system_id, feed_id=feed_id
         )
     response = []
-    for feed_update in feeddam.list_updates_in_feed(feed.pk):
+    for feed_update in feedqueries.list_updates_in_feed(feed.pk):
         response.append(views.FeedUpdate.from_model(feed_update))
     return response
 
 
 @dbconnection.unit_of_work
 def get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk):
-    feed_update = feeddam.get_update_by_pk(feed_update_pk)
+    feed_update = feedqueries.get_update_by_pk(feed_update_pk)
     if feed_update is None:
         raise exceptions.IdNotFoundError(
             models.Feed,
@@ -131,7 +130,7 @@ def trim_feed_updates():
 
     @dbconnection.unit_of_work
     def _list_all_feed_pks():
-        return feeddam.list_all_feed_pks()
+        return feedqueries.list_all_feed_pks()
 
     @dbconnection.unit_of_work
     def _trim_feed_updates_helper(feed_pk_, before_datetime_):
@@ -140,7 +139,7 @@ def trim_feed_updates():
                 feed_pk_, before_datetime_
             )
         )
-        feeddam.trim_feed_updates(feed_pk_, before_datetime_)
+        feedqueries.trim_feed_updates(feed_pk_, before_datetime_)
 
     logger.info("Trimming old feed updates.")
     before_datetime = (

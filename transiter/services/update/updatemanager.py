@@ -38,8 +38,7 @@ import requests
 from requests import RequestException
 
 from transiter import models
-from transiter.data import dbconnection
-from transiter.data.dams import feeddam
+from transiter.data import dbconnection, feedqueries
 from transiter.executor import celeryapp
 from transiter.parse import parser, gtfsstatic
 from transiter.services.update import sync
@@ -62,7 +61,7 @@ def create_feed_flush(system_id, feed_id) -> typing.Optional[int]:
 
 @dbconnection.unit_of_work
 def _create_feed_update_helper(system_id, feed_id, update_type) -> typing.Optional[int]:
-    feed = feeddam.get_in_system_by_id(system_id, feed_id)
+    feed = feedqueries.get_in_system_by_id(system_id, feed_id)
     if feed is None:
         return None
     feed_update = models.FeedUpdate()
@@ -126,7 +125,7 @@ def _execute_feed_update_helper(feed_update_pk: int, content=None) -> models.Fee
     For a description of what feed updates involve consult the module docs.
     """
     with dbconnection.inline_unit_of_work() as session:
-        feed_update = feeddam.get_update_by_pk(feed_update_pk)
+        feed_update = feedqueries.get_update_by_pk(feed_update_pk)
         feed = feed_update.feed
         feed_update.status = feed_update.Status.IN_PROGRESS
         # We need to flush the session to persist the status change.
@@ -170,7 +169,7 @@ def _execute_feed_update_helper(feed_update_pk: int, content=None) -> models.Fee
 
     feed_update.content_hash = _calculate_content_hash(content)
     with dbconnection.inline_unit_of_work():
-        previous_hash = feeddam.get_last_successful_update_hash(feed.pk)
+        previous_hash = feedqueries.get_last_successful_update_hash(feed.pk)
     if previous_hash is not None and previous_hash == feed_update.content_hash:
         return _update_status(
             feed_update,

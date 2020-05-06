@@ -1,7 +1,7 @@
 import pytest
 
 from transiter import models, exceptions
-from transiter.data.dams import tripdam, routedam
+from transiter.data import tripqueries, routequeries
 from transiter.services import tripservice, views
 
 SYSTEM_ID = "1"
@@ -48,7 +48,9 @@ def stop_2(system):
 
 def test_list_all_in_route__route_not_found(monkeypatch):
     """[Trip service] List all in route - route not found"""
-    monkeypatch.setattr(routedam, "get_in_system_by_id", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        routequeries, "get_in_system_by_id", lambda *args, **kwargs: None
+    )
 
     with pytest.raises(exceptions.IdNotFoundError):
         tripservice.list_all_in_route(SYSTEM_ID, ROUTE_ID),
@@ -56,12 +58,14 @@ def test_list_all_in_route__route_not_found(monkeypatch):
 
 def test_list_all_in_route(monkeypatch, route, trip_1, trip_2, stop_1, stop_2):
     """[Trip service] List all trips in a route"""
-    monkeypatch.setattr(routedam, "get_in_system_by_id", lambda *args, **kwargs: route)
     monkeypatch.setattr(
-        tripdam, "list_all_in_route_by_pk", lambda *args, **kwargs: [trip_1, trip_2]
+        routequeries, "get_in_system_by_id", lambda *args, **kwargs: route
     )
     monkeypatch.setattr(
-        tripdam,
+        tripqueries, "list_all_in_route_by_pk", lambda *args, **kwargs: [trip_1, trip_2]
+    )
+    monkeypatch.setattr(
+        tripqueries,
         "get_trip_pk_to_last_stop_map",
         lambda *args, **kwargs: {trip_1.pk: stop_1, trip_2.pk: stop_2},
     )
@@ -100,7 +104,7 @@ def test_list_all_in_route(monkeypatch, route, trip_1, trip_2, stop_1, stop_2):
 
 def test_get_in_route_by_id__trip_not_found(monkeypatch):
     """[Trip service] Get in route - trip not found"""
-    monkeypatch.setattr(tripdam, "get_in_route_by_id", lambda *args, **kwargs: None)
+    monkeypatch.setattr(tripqueries, "get_in_route_by_id", lambda *args, **kwargs: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         tripservice.get_in_route_by_id(SYSTEM_ID, ROUTE_ID, TRIP_ONE_ID),
@@ -109,7 +113,9 @@ def test_get_in_route_by_id__trip_not_found(monkeypatch):
 def test_get_in_route_by_id(monkeypatch, route, trip_1, stop_1):
     """[Trip service] Get in in route"""
 
-    monkeypatch.setattr(tripdam, "get_in_route_by_id", lambda *args, **kwargs: trip_1)
+    monkeypatch.setattr(
+        tripqueries, "get_in_route_by_id", lambda *args, **kwargs: trip_1
+    )
 
     stop_time = models.TripStopTime()
     stop_time.stop = stop_1

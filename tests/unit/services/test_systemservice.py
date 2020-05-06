@@ -5,8 +5,7 @@ import uuid
 import pytest
 
 from transiter import models, exceptions
-from transiter.data import dbconnection
-from transiter.data.dams import systemdam, genericqueries, feeddam
+from transiter.data import dbconnection, feedqueries, systemqueries, genericqueries
 from transiter.scheduler import client
 from transiter.services import systemservice, systemconfigreader, views
 from transiter.services.update import updatemanager
@@ -34,7 +33,7 @@ PARSED_SYSTEM_CONFIG = {
 
 def test_list_all(monkeypatch):
     monkeypatch.setattr(
-        systemdam,
+        systemqueries,
         "list_all",
         lambda: [
             models.System(
@@ -59,7 +58,7 @@ def test_list_all(monkeypatch):
 
 
 def test_get_by_id_no__such_system(monkeypatch):
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args: None)
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         systemservice.get_by_id(SYSTEM_ONE_ID)
@@ -92,7 +91,7 @@ def test_get_by_id(monkeypatch):
         feeds=views.FeedsInSystem(count=SYSTEM_ONE_NUM_FEEDS, _system_id=SYSTEM_ONE_ID),
     )
 
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args: system)
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args: system)
     monkeypatch.setattr(genericqueries, "count_number_of_related_entities", count)
 
     actual = systemservice.get_by_id(SYSTEM_ONE_ID)
@@ -145,10 +144,12 @@ def mock_systemdam(monkeypatch):
             self._system = None
 
     mock_systemdam = SystemDam()
-    monkeypatch.setattr(systemdam, "get_update_by_pk", mock_systemdam.get_update_by_pk)
-    monkeypatch.setattr(systemdam, "get_by_id", mock_systemdam.get_by_id)
-    monkeypatch.setattr(systemdam, "create", mock_systemdam.create)
-    monkeypatch.setattr(systemdam, "delete_by_id", mock_systemdam.delete_by_id)
+    monkeypatch.setattr(
+        systemqueries, "get_update_by_pk", mock_systemdam.get_update_by_pk
+    )
+    monkeypatch.setattr(systemqueries, "get_by_id", mock_systemdam.get_by_id)
+    monkeypatch.setattr(systemqueries, "create", mock_systemdam.create)
+    monkeypatch.setattr(systemqueries, "delete_by_id", mock_systemdam.delete_by_id)
     return mock_systemdam
 
 
@@ -373,8 +374,8 @@ def test_create_system_update__does_not_exist(mock_systemdam):
 
 def _test_install(mock_systemdam, monkeypatch, inline_unit_of_work):
 
-    monkeypatch.setattr(systemdam, "get_by_id", mock_systemdam.get_by_id)
-    monkeypatch.setattr(systemdam, "create", mock_systemdam.create)
+    monkeypatch.setattr(systemqueries, "get_by_id", mock_systemdam.get_by_id)
+    monkeypatch.setattr(systemqueries, "create", mock_systemdam.create)
 
     _install_service_maps = mock.MagicMock()
     monkeypatch.setattr(
@@ -405,8 +406,8 @@ def _test_install(mock_systemdam, monkeypatch, inline_unit_of_work):
 
 def _test_install__already_exists(mock_systemdam, monkeypatch, db_session):
 
-    monkeypatch.setattr(systemdam, "get_by_id", mock_systemdam.get_by_id)
-    monkeypatch.setattr(systemdam, "create", mock_systemdam.create)
+    monkeypatch.setattr(systemqueries, "get_by_id", mock_systemdam.get_by_id)
+    monkeypatch.setattr(systemqueries, "create", mock_systemdam.create)
     system = mock_systemdam.create()
     system.status = system.SystemStatus.ACTIVE
 
@@ -561,7 +562,7 @@ def test_delete__regular_case(mock_systemdam, monkeypatch):
     monkeypatch.setattr(updatemanager, "create_feed_flush", create_feed_flush)
     monkeypatch.setattr(updatemanager, "execute_feed_update", mock.MagicMock())
     delete_in_system_by_id = mock.MagicMock()
-    monkeypatch.setattr(feeddam, "delete_in_system_by_id", delete_in_system_by_id)
+    monkeypatch.setattr(feedqueries, "delete_in_system_by_id", delete_in_system_by_id)
 
     system = models.System(id=SYSTEM_ID)
     system.feeds = [models.Feed(id=FEED_ID_1)]

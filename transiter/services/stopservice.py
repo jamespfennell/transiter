@@ -11,8 +11,7 @@ import time
 import typing
 
 from transiter import exceptions, models
-from transiter.data import dbconnection
-from transiter.data.dams import stopdam, tripdam, systemdam
+from transiter.data import dbconnection, tripqueries, systemqueries, stopqueries
 from transiter.services import views
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
@@ -23,11 +22,11 @@ def list_all_in_system(system_id) -> typing.List[views.Stop]:
     """
     Get information on all stops in a specific system.
     """
-    system = systemdam.get_by_id(system_id, only_return_active=True)
+    system = systemqueries.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
 
-    return list(map(views.Stop.from_model, stopdam.list_all_in_system(system_id)))
+    return list(map(views.Stop.from_model, stopqueries.list_all_in_system(system_id)))
 
 
 @dbconnection.unit_of_work
@@ -45,23 +44,23 @@ def get_in_system_by_id(
     """
     Get information about a specific stop.
     """
-    stop = stopdam.get_in_system_by_id(system_id, stop_id)
+    stop = stopqueries.get_in_system_by_id(system_id, stop_id)
     if stop is None:
         raise exceptions.IdNotFoundError(
             models.Stop, system_id=system_id, stop_id=stop_id
         )
 
-    stop_tree = _StopTree(stop, stopdam.list_all_stops_in_stop_tree(stop.pk))
+    stop_tree = _StopTree(stop, stopqueries.list_all_stops_in_stop_tree(stop.pk))
 
     # The descendant stops are used as the source of trip stop times
     descendant_stop_pks = list(stop.pk for stop in stop_tree.descendents())
     direction_name_matcher = _DirectionNameMatcher(
-        stopdam.list_direction_rules_for_stops(descendant_stop_pks)
+        stopqueries.list_direction_rules_for_stops(descendant_stop_pks)
     )
-    trip_stop_times = stopdam.list_stop_time_updates_at_stops(
+    trip_stop_times = stopqueries.list_stop_time_updates_at_stops(
         descendant_stop_pks, earliest_time=earliest_time, latest_time=latest_time,
     )
-    trip_pk_to_last_stop = tripdam.get_trip_pk_to_last_stop_map(
+    trip_pk_to_last_stop = tripqueries.get_trip_pk_to_last_stop_map(
         trip_stop_time.trip.pk for trip_stop_time in trip_stop_times
     )
 

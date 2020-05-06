@@ -1,7 +1,7 @@
 import pytest
 
 from transiter import models, exceptions
-from transiter.data.dams import routedam, systemdam
+from transiter.data import systemqueries, routequeries
 from transiter.services import routeservice, views
 from transiter.services.servicemap import servicemapmanager
 
@@ -19,7 +19,7 @@ STOP_ID = "1002"
 
 
 def test_list_all_in_system__system_not_found(monkeypatch):
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: None)
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         routeservice.list_all_in_system(SYSTEM_ID)
@@ -37,9 +37,9 @@ def test_list_all_in_system(monkeypatch):
             ROUTE_TWO_PK: ROUTE_TWO_STATUS,
         },
     )
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: system)
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: system)
     monkeypatch.setattr(
-        routedam, "list_all_in_system", lambda *args: [route_one, route_two]
+        routequeries, "list_all_in_system", lambda *args: [route_one, route_two]
     )
 
     expected = [
@@ -57,7 +57,7 @@ def test_list_all_in_system(monkeypatch):
 
 
 def test_get_in_system_by_id__route_not_found(monkeypatch):
-    monkeypatch.setattr(routedam, "get_in_system_by_id", lambda *args: None)
+    monkeypatch.setattr(routequeries, "get_in_system_by_id", lambda *args: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         routeservice.get_in_system_by_id(SYSTEM_ID, ROUTE_ONE_ID)
@@ -70,8 +70,10 @@ def test_get_in_system_by_id(monkeypatch):
     monkeypatch.setattr(
         routeservice, "_construct_route_status", lambda *args: ROUTE_ONE_STATUS
     )
-    monkeypatch.setattr(routedam, "get_in_system_by_id", lambda *args: route_one)
-    monkeypatch.setattr(routedam, "calculate_periodicity", lambda *args: RAW_FREQUENCY)
+    monkeypatch.setattr(routequeries, "get_in_system_by_id", lambda *args: route_one)
+    monkeypatch.setattr(
+        routequeries, "calculate_periodicity", lambda *args: RAW_FREQUENCY
+    )
     monkeypatch.setattr(
         servicemapmanager, "build_route_service_maps_response", lambda *args: []
     )
@@ -142,7 +144,7 @@ def test_construct_route_statuses_runner(
     monkeypatch, alerts, current_service, expected_status
 ):
     monkeypatch.setattr(
-        routedam,
+        routequeries,
         "get_route_pk_to_highest_priority_alerts_map",
         lambda *args, **kwargs: {ROUTE_ONE_PK: alerts},
     )
@@ -154,7 +156,7 @@ def test_construct_route_statuses_runner(
             return []
 
     monkeypatch.setattr(
-        routedam,
+        routequeries,
         "list_route_pks_with_current_service",
         list_route_pks_with_current_service,
     )

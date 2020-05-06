@@ -4,8 +4,7 @@ The route service is used to retrieve data about routes.
 import typing
 
 from transiter import exceptions, models
-from transiter.data import dbconnection
-from transiter.data.dams import routedam, systemdam
+from transiter.data import dbconnection, systemqueries, routequeries
 from transiter.models import Alert
 from transiter.services import views
 from transiter.services.servicemap import servicemapmanager
@@ -16,11 +15,11 @@ def list_all_in_system(system_id) -> typing.List[views.Route]:
     """
     Get data on all routes in a system.
     """
-    system = systemdam.get_by_id(system_id, only_return_active=True)
+    system = systemqueries.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
     response = []
-    routes = list(routedam.list_all_in_system(system_id))
+    routes = list(routequeries.list_all_in_system(system_id))
     route_pk_to_status = _construct_route_pk_to_status_map(route.pk for route in routes)
     for route in routes:
         route_response = views.Route.from_model(route)
@@ -34,12 +33,12 @@ def get_in_system_by_id(system_id, route_id) -> views.RouteLarge:
     """
     Get data for a specific route in a specific system.
     """
-    route = routedam.get_in_system_by_id(system_id, route_id)
+    route = routequeries.get_in_system_by_id(system_id, route_id)
     if route is None:
         raise exceptions.IdNotFoundError(
             models.Route, system_id=system_id, route_id=route_id
         )
-    periodicity = routedam.calculate_periodicity(route.pk)
+    periodicity = routequeries.calculate_periodicity(route.pk)
     if periodicity is not None:
         periodicity = int(periodicity / 6) / 10
     result = views.RouteLarge.from_model(
@@ -84,7 +83,9 @@ def _construct_route_pk_to_status_map(route_pks_iter):
     """
     route_pks = {route_pk for route_pk in route_pks_iter}
 
-    route_pk_to_alerts = routedam.get_route_pk_to_highest_priority_alerts_map(route_pks)
+    route_pk_to_alerts = routequeries.get_route_pk_to_highest_priority_alerts_map(
+        route_pks
+    )
 
     route_pk_to_status = {route_pk: Status.NO_SERVICE for route_pk in route_pks}
     for route_pk, alerts in route_pk_to_alerts.items():
@@ -100,7 +101,7 @@ def _construct_route_pk_to_status_map(route_pks_iter):
             route_pk_to_status[route_pk] = Status.PLANNED_SERVICE_CHANGE
         route_pks.remove(route_pk)
 
-    for route_pk in routedam.list_route_pks_with_current_service(route_pks):
+    for route_pk in routequeries.list_route_pks_with_current_service(route_pks):
         route_pk_to_status[route_pk] = Status.GOOD_SERVICE
 
     return route_pk_to_status

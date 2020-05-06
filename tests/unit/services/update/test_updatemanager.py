@@ -4,7 +4,7 @@ import pytest
 import requests
 
 from transiter import models, parse
-from transiter.data.dams import feeddam
+from transiter.data import feedqueries
 from transiter.services.update import updatemanager, sync
 
 FEED_ID = "1"
@@ -40,7 +40,9 @@ def test_create_feed_update(
         feed = models.Feed(id=FEED_ID)
     else:
         feed = None
-    monkeypatch.setattr(feeddam, "get_in_system_by_id", lambda *args, **kwargs: feed)
+    monkeypatch.setattr(
+        feedqueries, "get_in_system_by_id", lambda *args, **kwargs: feed
+    )
 
     def flush():
         nonlocal feed
@@ -162,9 +164,9 @@ def test_execute_feed_update(
             return None
         return updatemanager._calculate_content_hash(previous_content)
 
-    monkeypatch.setattr(feeddam, "get_update_by_pk", get_update_by_pk)
+    monkeypatch.setattr(feedqueries, "get_update_by_pk", get_update_by_pk)
     monkeypatch.setattr(
-        feeddam, "get_last_successful_update_hash", get_last_successful_update
+        feedqueries, "get_last_successful_update_hash", get_last_successful_update
     )
     monkeypatch.setattr(sync, "sync", lambda: (0, 0, 0))
 
@@ -195,8 +197,10 @@ def test_execute_feed_update__success_or_sync_error(
     response.content = b"a"
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
 
-    monkeypatch.setattr(feeddam, "get_update_by_pk", lambda *args: feed_update)
-    monkeypatch.setattr(feeddam, "get_last_successful_update_hash", lambda *args: None)
+    monkeypatch.setattr(feedqueries, "get_update_by_pk", lambda *args: feed_update)
+    monkeypatch.setattr(
+        feedqueries, "get_last_successful_update_hash", lambda *args: None
+    )
 
     class Parser(parse.TransiterParser):
         def load_content(self, content: bytes):

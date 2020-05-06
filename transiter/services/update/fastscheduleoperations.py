@@ -2,8 +2,7 @@ import itertools
 import typing
 
 from transiter import models, parse
-from transiter.data import dbconnection
-from transiter.data.dams import scheduledam, genericqueries
+from transiter.data import dbconnection, schedulequeries, genericqueries
 
 
 def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]):
@@ -32,7 +31,9 @@ def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]
             )
     session.bulk_insert_mappings(models.ScheduledTrip, trip_mappings)
 
-    trip_id_to_pk = scheduledam.get_trip_id_to_pk_map_by_feed_pk(feed_update.feed.pk)
+    trip_id_to_pk = schedulequeries.get_trip_id_to_pk_map_by_feed_pk(
+        feed_update.feed.pk
+    )
     stop_id_to_pk = genericqueries.get_id_to_pk_map(
         models.Stop, feed_update.feed.system.pk
     )

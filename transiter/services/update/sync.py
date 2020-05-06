@@ -17,9 +17,15 @@ import typing
 from typing import Iterable, List, Tuple
 
 from transiter import models, parse
-from transiter.data import dbconnection
-from transiter.data.dams import genericqueries
-from transiter.data.dams import stopdam, tripdam, routedam, scheduledam, feeddam
+from transiter.data import (
+    dbconnection,
+    feedqueries,
+    tripqueries,
+    schedulequeries,
+    genericqueries,
+    routequeries,
+    stopqueries,
+)
 from transiter.models import updatableentity
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.update import fastscheduleoperations
@@ -35,7 +41,7 @@ def sync(feed_update_pk, parser_object: parse.TransiterParser):
       performed
     :param parser_object: the parser object
     """
-    feed_update = feeddam.get_update_by_pk(feed_update_pk)
+    feed_update = feedqueries.get_update_by_pk(feed_update_pk)
 
     syncers_in_order = [
         AgencySyncer,
@@ -246,7 +252,7 @@ class ScheduleSyncer(syncer(models.ScheduledService)):
 
 class DirectionRuleSyncer(syncer(models.DirectionRule)):
     def sync(self, parsed_direction_rules):
-        stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(
+        stop_id_to_pk = stopqueries.get_id_to_pk_map_in_system(
             self.feed_update.feed.system.pk
         )
         entities_to_merge = []
@@ -372,7 +378,7 @@ class TripSyncer(syncer(models.Trip)):
             return trips
         trip_id_to_scheduled_trip = {
             trip.id: trip
-            for trip in scheduledam.list_trips_by_system_pk_and_trip_ids(
+            for trip in schedulequeries.list_trips_by_system_pk_and_trip_ids(
                 self.feed_update.feed.system.pk, trip_ids_needing_schedule
             )
         }
@@ -391,7 +397,7 @@ class TripSyncer(syncer(models.Trip)):
         route IDs and are missing route PKs are filtered out.
         """
         trips = list(trips)
-        route_id_to_pk = routedam.get_id_to_pk_map_in_system(
+        route_id_to_pk = routequeries.get_id_to_pk_map_in_system(
             self.feed_update.feed.system.pk,
             [trip.route_id for trip in trips if trip.route_id is not None],
         )
@@ -407,7 +413,7 @@ class TripSyncer(syncer(models.Trip)):
         Convert stop_ids on the trip stop times into stop_pks. Trip stop times that have
         invalid stop IDs and are missing stop PKs are filtered out.
         """
-        stop_id_to_pk = stopdam.get_id_to_pk_map_in_system(
+        stop_id_to_pk = stopqueries.get_id_to_pk_map_in_system(
             self.feed_update.feed.system.pk
         )
 
@@ -432,7 +438,7 @@ class TripSyncer(syncer(models.Trip)):
         trip_id_to_db_trip = self._build_trip_id_to_db_trip_map(
             trip.id for trip in trips
         )
-        trip_pk_to_db_stop_time_data_list = tripdam.get_trip_pk_to_stop_time_data_list(
+        trip_pk_to_db_stop_time_data_list = tripqueries.get_trip_pk_to_stop_time_data_list(
             self.feed_update.feed.pk
         )
         for trip in trips:
@@ -458,7 +464,7 @@ class TripSyncer(syncer(models.Trip)):
     def _build_trip_id_to_db_trip_map(self, feed_trip_ids):
         trip_id_to_db_trip = {
             trip.id: trip
-            for trip in tripdam.list_all_from_feed(self.feed_update.feed.pk)
+            for trip in tripqueries.list_all_from_feed(self.feed_update.feed.pk)
         }
         missing_trip_ids = set(
             trip_id for trip_id in feed_trip_ids if trip_id not in trip_id_to_db_trip
@@ -466,7 +472,7 @@ class TripSyncer(syncer(models.Trip)):
         trip_id_to_db_trip.update(
             {
                 trip.id: trip
-                for trip in tripdam.list_by_system_and_trip_ids(
+                for trip in tripqueries.list_by_system_and_trip_ids(
                     self.feed_update.feed.system.pk, missing_trip_ids
                 )
             }
@@ -475,7 +481,7 @@ class TripSyncer(syncer(models.Trip)):
 
     @staticmethod
     def _build_past_stop_times(
-        trip, db_trip, db_stop_time_data_list: List[tripdam.StopTimeData]
+        trip, db_trip, db_stop_time_data_list: List[tripqueries.StopTimeData]
     ) -> Iterable[_TripStopTime]:
         """
         Build stop times that have already passed and are not in the feed.
@@ -625,7 +631,9 @@ class TripSyncer(syncer(models.Trip)):
             return
         route_pk_to_route = {
             route.pk: route
-            for route in routedam.list_all_in_system(self.feed_update.feed.system.id)
+            for route in routequeries.list_all_in_system(
+                self.feed_update.feed.system.id
+            )
         }
         for route_pk in changed_route_pks:
             servicemapmanager.calculate_realtime_service_map_for_route(

@@ -1,7 +1,7 @@
 import pytest
 
 from transiter import models
-from transiter.data.dams import servicemapdam
+from transiter.data import servicemapqueries
 
 
 @pytest.fixture
@@ -87,7 +87,7 @@ def test_list_groups_and_maps_for_stops_in_route(
         (service_map_group_2, service_map_2_1),
     ]
 
-    actual = servicemapdam.list_groups_and_maps_for_stops_in_route(route_1_2.pk)
+    actual = servicemapqueries.list_groups_and_maps_for_stops_in_route(route_1_2.pk)
 
     assert expected == actual
 
@@ -104,7 +104,7 @@ def test_list_groups_and_maps_for_stops_in_route__none(
         (service_map_group_2, None),
     ]
 
-    actual = servicemapdam.list_groups_and_maps_for_stops_in_route(route_1_3.pk)
+    actual = servicemapqueries.list_groups_and_maps_for_stops_in_route(route_1_3.pk)
 
     assert expected == actual
 
@@ -129,7 +129,7 @@ def test_get_stop_pk_to_group_id_to_routes_map(
         stop_1_5.pk: {service_map_group_1.id: []},
     }
 
-    actual = servicemapdam.get_stop_pk_to_group_id_to_routes_map(
+    actual = servicemapqueries.get_stop_pk_to_group_id_to_routes_map(
         [stop_1_1.pk, stop_1_2.pk, stop_1_3.pk, stop_1_4.pk, stop_1_5.pk]
     )
 

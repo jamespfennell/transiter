@@ -1,5 +1,5 @@
 from transiter import models
-from transiter.data.dams import genericqueries, routedam
+from transiter.data import genericqueries, routequeries
 
 
 def test_get_id_to_pk_map_by_feed_pk(
@@ -50,7 +50,7 @@ def test_delete_stale_entities(
 
     genericqueries.delete_stale_entities(models.Route, update_2)
 
-    assert [route_1_2, route_1_3] == routedam.list_all_in_system(system_1.id)
+    assert [route_1_2, route_1_3] == routequeries.list_all_in_system(system_1.id)
 
 
 def test_list_stale_entities(

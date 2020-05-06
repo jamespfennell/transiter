@@ -9,8 +9,8 @@ import datetime
 import enum
 import io
 import typing
-import zipfile
 import uuid
+import zipfile
 
 from transiter import parse
 

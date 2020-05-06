@@ -9,8 +9,13 @@ import typing
 from typing import List, Set, Tuple
 
 from transiter import models
-from transiter.data import dbconnection
-from transiter.data.dams import scheduledam, servicemapdam, stopdam, tripdam
+from transiter.data import (
+    dbconnection,
+    tripqueries,
+    servicemapqueries,
+    schedulequeries,
+    stopqueries,
+)
 from transiter.services import views
 from transiter.services.servicemap import graphutils, conditions
 
@@ -24,7 +29,7 @@ def build_stop_pk_to_service_maps_response(
     Build the service maps response used in the stop service.
     """
     stop_pks = list(stop_pks)
-    stop_pk_to_service_map_group_id_to_routes = servicemapdam.get_stop_pk_to_group_id_to_routes_map(
+    stop_pk_to_service_map_group_id_to_routes = servicemapqueries.get_stop_pk_to_group_id_to_routes_map(
         stop_pks
     )
     stop_pk_to_service_maps_response = {}
@@ -44,7 +49,7 @@ def build_route_service_maps_response(
     route_pk,
 ) -> typing.List[views.ServiceMapWithStops]:
     response = []
-    for group, service_map in servicemapdam.list_groups_and_maps_for_stops_in_route(
+    for group, service_map in servicemapqueries.list_groups_and_maps_for_stops_in_route(
         route_pk
     ):
         if service_map is not None:
@@ -108,10 +113,10 @@ def calculate_realtime_service_map_for_route(route):
             break
 
     # Now actually build the map.
-    stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(
+    stop_pk_to_station_pk = stopqueries.get_stop_pk_to_station_pk_map_in_system(
         route.system.id
     )
-    trip_pk_to_path = tripdam.get_trip_pk_to_path_map(route.pk)
+    trip_pk_to_path = tripqueries.get_trip_pk_to_path_map(route.pk)
     paths = set()
     for trip in route.trips:
         path = trip_pk_to_path.get(trip.pk, [])
@@ -141,15 +146,19 @@ def calculate_scheduled_service_maps_for_system(system):
     :param system: the system
     :return: nothing; the service maps are persisted in the database
     """
-    stop_pk_to_station_pk = stopdam.get_stop_pk_to_station_pk_map_in_system(system.id)
-    trip_pk_to_stop_pks = scheduledam.get_scheduled_trip_pk_to_path_in_system(system.pk)
+    stop_pk_to_station_pk = stopqueries.get_stop_pk_to_station_pk_map_in_system(
+        system.id
+    )
+    trip_pk_to_stop_pks = schedulequeries.get_scheduled_trip_pk_to_path_in_system(
+        system.pk
+    )
     route_pk_to_trips = {}
 
     for (
         trip,
         start_time,
         end_time,
-    ) in scheduledam.list_scheduled_trips_with_times_in_system(system.pk):
+    ) in schedulequeries.list_scheduled_trips_with_times_in_system(system.pk):
         trip.start_time = start_time
         trip.end_time = end_time
         if not trip.direction_id:

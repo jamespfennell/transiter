@@ -4,8 +4,7 @@ from sqlalchemy import sql
 from sqlalchemy.orm import joinedload, selectinload
 
 from transiter import models
-from transiter.data import dbconnection
-from transiter.data.dams import genericqueries
+from transiter.data import dbconnection, genericqueries
 
 
 def list_all_in_system(system_id):

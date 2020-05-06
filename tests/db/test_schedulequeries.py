@@ -3,7 +3,7 @@ import datetime
 import pytest
 
 from transiter import models
-from transiter.data.dams import scheduledam
+from transiter.data import schedulequeries
 
 
 @pytest.fixture
@@ -72,7 +72,7 @@ def test_get_scheduled_trip_pk_to_path_in_system(system_1, scheduled_trip_1_1):
         ]
     }
 
-    actual = scheduledam.get_scheduled_trip_pk_to_path_in_system(system_1.pk)
+    actual = schedulequeries.get_scheduled_trip_pk_to_path_in_system(system_1.pk)
 
     assert expected == actual
 
@@ -80,7 +80,7 @@ def test_get_scheduled_trip_pk_to_path_in_system(system_1, scheduled_trip_1_1):
 def test_get_scheduled_trip_pk_to_path_in_system__no_trips(system_1):
     expected = {}
 
-    actual = scheduledam.get_scheduled_trip_pk_to_path_in_system(system_1.pk)
+    actual = schedulequeries.get_scheduled_trip_pk_to_path_in_system(system_1.pk)
 
     assert expected == actual
 
@@ -94,7 +94,7 @@ def test_list_scheduled_trips_with_times_in_system(system_1, scheduled_trip_1_1)
         )
     ]
 
-    actual = scheduledam.list_scheduled_trips_with_times_in_system(system_1.pk)
+    actual = schedulequeries.list_scheduled_trips_with_times_in_system(system_1.pk)
 
     assert expected == actual
 
@@ -102,7 +102,7 @@ def test_list_scheduled_trips_with_times_in_system(system_1, scheduled_trip_1_1)
 def test_list_scheduled_trips_with_times_in_system__no_trips(system_1):
     expected = []
 
-    actual = scheduledam.list_scheduled_trips_with_times_in_system(system_1.pk)
+    actual = schedulequeries.list_scheduled_trips_with_times_in_system(system_1.pk)
 
     assert expected == actual
 
@@ -110,7 +110,7 @@ def test_list_scheduled_trips_with_times_in_system__no_trips(system_1):
 def test_get_trip_id_to_pk_map_by_feed_pk(feed_1_1, scheduled_trip_1_1):
     expected = {scheduled_trip_1_1.id: scheduled_trip_1_1.pk}
 
-    actual = scheduledam.get_trip_id_to_pk_map_by_feed_pk(feed_1_1.pk)
+    actual = schedulequeries.get_trip_id_to_pk_map_by_feed_pk(feed_1_1.pk)
 
     assert expected == actual
 
@@ -118,13 +118,13 @@ def test_get_trip_id_to_pk_map_by_feed_pk(feed_1_1, scheduled_trip_1_1):
 def test_get_trip_id_to_pk_map_by_feed_pk__no_trips(feed_1_1, scheduled_service_1):
     expected = {}
 
-    actual = scheduledam.get_trip_id_to_pk_map_by_feed_pk(feed_1_1.pk)
+    actual = schedulequeries.get_trip_id_to_pk_map_by_feed_pk(feed_1_1.pk)
 
     assert expected == actual
 
 
 def test_list_trips_by_system_pk_and_trip_ids(system_1, scheduled_trip_1_1):
-    assert [scheduled_trip_1_1] == scheduledam.list_trips_by_system_pk_and_trip_ids(
+    assert [scheduled_trip_1_1] == schedulequeries.list_trips_by_system_pk_and_trip_ids(
         system_1.pk, [scheduled_trip_1_1.id, "unknown_id"]
     )
 
@@ -132,4 +132,4 @@ def test_list_trips_by_system_pk_and_trip_ids(system_1, scheduled_trip_1_1):
 def test_list_trips_by_system_pk_and_trip_ids__no_ids_provided(
     system_1, scheduled_trip_1_1
 ):
-    assert [] == scheduledam.list_trips_by_system_pk_and_trip_ids(system_1.pk, [])
+    assert [] == schedulequeries.list_trips_by_system_pk_and_trip_ids(system_1.pk, [])

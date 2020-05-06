@@ -4,9 +4,9 @@ import itertools
 import pytest
 import pytz
 
-from .data import route_data
 from transiter import models, parse
 from transiter.services.update import sync
+from .data import route_data
 
 
 class ParserForTesting(parse.parser.CallableBasedParser):

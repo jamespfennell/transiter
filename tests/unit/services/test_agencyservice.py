@@ -1,7 +1,7 @@
 import pytest
 
 from transiter import models, exceptions
-from transiter.data.dams import systemdam, genericqueries
+from transiter.data import systemqueries, genericqueries
 from transiter.services import agencyservice, views
 
 SYSTEM_ID = "1"
@@ -14,7 +14,7 @@ ROUTE_COLOR = "8"
 
 
 def test_list_all_in_system__system_not_found(monkeypatch):
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: None)
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
         agencyservice.list_all_in_system(SYSTEM_ID)
@@ -25,7 +25,7 @@ def test_list_all_in_system(monkeypatch):
     agency_1 = models.Agency(system=system, id=AGENCY_ONE_ID, name=AGENCY_ONE_NAME)
     agency_2 = models.Agency(system=system, id=AGENCY_TWO_ID, name=AGENCY_TWO_NAME)
 
-    monkeypatch.setattr(systemdam, "get_by_id", lambda *args, **kwargs: system)
+    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: system)
     monkeypatch.setattr(
         genericqueries, "list_all_in_system", lambda *args: [agency_1, agency_2]
     )

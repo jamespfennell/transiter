@@ -1,5 +1,5 @@
 from transiter import models
-from transiter.data.dams import tripdam
+from transiter.data import tripqueries
 
 
 def test_list_all_from_feed(
@@ -12,31 +12,35 @@ def test_list_all_from_feed(
     trip_3.source = feed_update_1_2
     db_session.flush()
 
-    assert [trip_1, trip_2] == tripdam.list_all_from_feed(feed_1_1.pk)
+    assert [trip_1, trip_2] == tripqueries.list_all_from_feed(feed_1_1.pk)
 
 
 def test_list_all_in_route(route_1_1, trip_1, trip_2, trip_3):
-    assert [trip_1, trip_2, trip_3] == tripdam.list_all_in_route_by_pk(route_1_1.pk)
+    assert [trip_1, trip_2, trip_3] == tripqueries.list_all_in_route_by_pk(route_1_1.pk)
 
 
 def test_list_all_in_route__no_trips(route_1_1, route_1_2):
-    assert [] == tripdam.list_all_in_route_by_pk(route_1_2.pk)
+    assert [] == tripqueries.list_all_in_route_by_pk(route_1_2.pk)
 
 
 def test_get_in_route_by_id(system_1, route_1_1, trip_1):
-    assert trip_1 == tripdam.get_in_route_by_id(system_1.id, route_1_1.id, trip_1.id)
+    assert trip_1 == tripqueries.get_in_route_by_id(
+        system_1.id, route_1_1.id, trip_1.id
+    )
 
 
 def test_get_in_route_by_id__no_system(system_1, route_1_1, trip_1):
-    assert None is tripdam.get_in_route_by_id("unknown_id", route_1_1.id, trip_1.id)
+    assert None is tripqueries.get_in_route_by_id("unknown_id", route_1_1.id, trip_1.id)
 
 
 def test_get_in_route_by_id__no_route(system_1, route_1_1, trip_1):
-    assert None is tripdam.get_in_route_by_id(system_1.id, "unknown_id", trip_1.id)
+    assert None is tripqueries.get_in_route_by_id(system_1.id, "unknown_id", trip_1.id)
 
 
 def test_get_in_route_by_id__no_trip(system_1, route_1_1, trip_1):
-    assert None is tripdam.get_in_route_by_id(system_1.id, route_1_1.id, "unknown_id")
+    assert None is tripqueries.get_in_route_by_id(
+        system_1.id, route_1_1.id, "unknown_id"
+    )
 
 
 def test_get_trip_pk_to_last_stop_map(route_1_1, stop_1_4, trip_1, trip_2, trip_3):
@@ -46,7 +50,7 @@ def test_get_trip_pk_to_last_stop_map(route_1_1, stop_1_4, trip_1, trip_2, trip_
         trip_3.pk: stop_1_4,
     }
 
-    actual = tripdam.get_trip_pk_to_last_stop_map(expected.keys())
+    actual = tripqueries.get_trip_pk_to_last_stop_map(expected.keys())
 
     assert expected == actual
 
@@ -60,7 +64,7 @@ def test_get_trip_pk_to_path_map(
         trip_3.pk: [stop_1_1.pk, stop_1_4.pk],
     }
 
-    actual = tripdam.get_trip_pk_to_path_map(route_1_1.pk)
+    actual = tripqueries.get_trip_pk_to_path_map(route_1_1.pk)
 
     assert expected == actual
 
@@ -70,6 +74,8 @@ def test_list_by_system_and_trip_ids(
 ):
     other_system_trip = add_model(models.Trip(id=trip_1.id, route=route_2_1))
 
-    actual = tripdam.list_by_system_and_trip_ids(system_1.pk, [trip_1.id, trip_2.id])
+    actual = tripqueries.list_by_system_and_trip_ids(
+        system_1.pk, [trip_1.id, trip_2.id]
+    )
 
     assert [trip_1, trip_2] == actual

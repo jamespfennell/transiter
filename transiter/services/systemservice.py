@@ -12,8 +12,7 @@ from dataclasses import dataclass
 from typing import Iterator
 
 from transiter import models, exceptions, __metadata__
-from transiter.data import dbconnection
-from transiter.data.dams import feeddam, systemdam, genericqueries
+from transiter.data import dbconnection, feedqueries, systemqueries, genericqueries
 from transiter.executor import celeryapp
 from transiter.scheduler import client
 from transiter.services import systemconfigreader, views
@@ -24,12 +23,12 @@ logger = logging.getLogger(__name__)
 
 @dbconnection.unit_of_work
 def list_all() -> typing.List[views.System]:
-    return list(map(views.System.from_model, systemdam.list_all()))
+    return list(map(views.System.from_model, systemqueries.list_all()))
 
 
 @dbconnection.unit_of_work
 def get_by_id(system_id) -> views.SystemLarge:
-    system = systemdam.get_by_id(system_id)
+    system = systemqueries.get_by_id(system_id)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
     response = views.SystemLarge.from_model(system)
@@ -54,7 +53,7 @@ def get_by_id(system_id) -> views.SystemLarge:
 
 def set_auto_update_enabled(system_id, auto_update):
     with dbconnection.inline_unit_of_work():
-        response = systemdam.set_auto_update_enabled(system_id, auto_update)
+        response = systemqueries.set_auto_update_enabled(system_id, auto_update)
     client.refresh_tasks()
     return response
 
@@ -90,7 +89,7 @@ def install(system_id, config_str, extra_settings, config_source_url, sync=True)
 
 @dbconnection.unit_of_work
 def get_update_by_id(system_update_id) -> views.SystemUpdate:
-    system_update = systemdam.get_update_by_pk(system_update_id)
+    system_update = systemqueries.get_update_by_pk(system_update_id)
     if system_update is None:
         raise exceptions.IdNotFoundError(models.SystemUpdate, id=str(system_update_id))
     result = views.SystemUpdate.from_model(system_update)
@@ -100,7 +99,7 @@ def get_update_by_id(system_update_id) -> views.SystemUpdate:
 
 @dbconnection.unit_of_work
 def _create_system_update(system_id, config_str, extra_settings, config_source_url):
-    system = systemdam.get_by_id(system_id)
+    system = systemqueries.get_by_id(system_id)
     if system is not None:
         invalid_statuses_for_update = {
             models.System.SystemStatus.SCHEDULED,
@@ -119,7 +118,7 @@ def _create_system_update(system_id, config_str, extra_settings, config_source_u
         system = models.System(
             id=system_id, status=models.System.SystemStatus.SCHEDULED,
         )
-        systemdam.create(system)
+        systemqueries.create(system)
 
     update = models.SystemUpdate(
         system=system,
@@ -192,7 +191,7 @@ class _SystemUpdateContext:
 
 @dbconnection.unit_of_work
 def _mark_update_started(system_update_pk) -> _SystemUpdateContext:
-    system_update = systemdam.get_update_by_pk(system_update_pk)
+    system_update = systemqueries.get_update_by_pk(system_update_pk)
     system_update.status = models.SystemUpdate.Status.IN_PROGRESS
     system = system_update.system
     prior_auto_update_setting = system.auto_update_enabled
@@ -214,7 +213,7 @@ def _mark_update_completed(
     """
     Set the status of a transit system, if that system exists in the DB.
     """
-    system_update = systemdam.get_update_by_pk(context.update_pk)
+    system_update = systemqueries.get_update_by_pk(context.update_pk)
     system_update.status = final_status
     system_update.status_message = final_status_message
     system_update.total_duration = time.time() - context.start_time
@@ -229,7 +228,7 @@ def _mark_update_completed(
 
 @dbconnection.unit_of_work
 def _install_system_configuration(system_update_pk):
-    system_update = systemdam.get_update_by_pk(system_update_pk)
+    system_update = systemqueries.get_update_by_pk(system_update_pk)
     extra_settings = json.loads(system_update.config_parameters)
     system_update.config = systemconfigreader.render_template(
         system_update.config_template, extra_settings
@@ -250,7 +249,7 @@ def delete_by_id(system_id, error_if_not_exists=True, sync=True):
     Delete a transit system
     """
     with dbconnection.inline_unit_of_work():
-        system = systemdam.get_by_id(system_id)
+        system = systemqueries.get_by_id(system_id)
         if system is not None:
             system.status = models.System.SystemStatus.DELETING
             if not sync:
@@ -277,7 +276,7 @@ def _complete_delete_operation_async(system_id):
 def _complete_delete_operation(system_id):
     feed_ids = set()
     with dbconnection.inline_unit_of_work():
-        system = systemdam.get_by_id(system_id)
+        system = systemqueries.get_by_id(system_id)
         for feed in system.feeds:
             feed_ids.add(feed.id)
 
@@ -285,7 +284,7 @@ def _complete_delete_operation(system_id):
         _delete_feed(system_id, feed_id)
 
     with dbconnection.inline_unit_of_work():
-        systemdam.delete_by_id(system_id)
+        systemqueries.delete_by_id(system_id)
 
 
 def _delete_feed(system_id, feed_id):
@@ -294,7 +293,7 @@ def _delete_feed(system_id, feed_id):
         updatemanager.create_feed_flush(system_id, feed_id)
     )
     with dbconnection.inline_unit_of_work():
-        feeddam.delete_in_system_by_id(system_id, feed_id)
+        feedqueries.delete_in_system_by_id(system_id, feed_id)
 
 
 def _save_feed_configuration(system, feeds_config):

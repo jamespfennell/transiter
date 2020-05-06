@@ -5,8 +5,13 @@ from unittest import mock
 import pytest
 
 from transiter import models
-from transiter.data import dbconnection
-from transiter.data.dams import tripdam, stopdam, servicemapdam, scheduledam
+from transiter.data import (
+    dbconnection,
+    tripqueries,
+    servicemapqueries,
+    schedulequeries,
+    stopqueries,
+)
 from transiter.services import views
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
@@ -42,12 +47,12 @@ def test_calculate_realtime_service_map_for_route(monkeypatch):
     )
 
     monkeypatch.setattr(
-        tripdam,
+        tripqueries,
         "get_trip_pk_to_path_map",
         lambda *args, **kwargs: {TRIP_1_PK: [1, 2, 3, 4], TRIP_2_PK: [3, 1, 0]},
     )
     monkeypatch.setattr(
-        stopdam,
+        stopqueries,
         "get_stop_pk_to_station_pk_map_in_system",
         lambda *args, **kwargs: {0: 0, 1: 11, 2: 2, 3: 3, 4: 14},
     )
@@ -73,12 +78,12 @@ def test_calculate_realtime_service_map_for_route(monkeypatch):
 def test_calculate_schedule_service_map_for_route(monkeypatch):
     monkeypatch.setattr(dbconnection, "get_session", mock.MagicMock())
     monkeypatch.setattr(
-        scheduledam,
+        schedulequeries,
         "get_scheduled_trip_pk_to_path_in_system",
         lambda *args, **kwargs: {TRIP_1_PK: [1, 2, 3, 4], TRIP_2_PK: [3, 1, 0]},
     )
     monkeypatch.setattr(
-        stopdam,
+        stopqueries,
         "get_stop_pk_to_station_pk_map_in_system",
         lambda *args, **kwargs: {0: 0, 1: 11, 2: 2, 3: 3, 4: 14},
     )
@@ -98,7 +103,7 @@ def test_calculate_schedule_service_map_for_route(monkeypatch):
         pk=TRIP_2_PK, route_pk=ROUTE_1_PK, direction_id=False
     )
     monkeypatch.setattr(
-        scheduledam,
+        schedulequeries,
         "list_scheduled_trips_with_times_in_system",
         lambda *args, **kwargs: [
             (trip_one, TRIP_1_START_TIME, TRIP_1_END_TIME),
@@ -131,7 +136,7 @@ def test_build_stop_pk_to_service_maps_response(monkeypatch):
     route_2 = models.Route(id=ROUTE_2_ID, system=system)
 
     monkeypatch.setattr(
-        servicemapdam,
+        servicemapqueries,
         "get_stop_pk_to_group_id_to_routes_map",
         lambda *args: {STOP_1_PK: {GROUP_ID: [route_1, route_2]}},
     )

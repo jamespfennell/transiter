@@ -1,14 +1,13 @@
 import typing
 
 from transiter import exceptions, models
-from transiter.data import dbconnection
-from transiter.data.dams import systemdam, genericqueries
+from transiter.data import dbconnection, systemqueries, genericqueries
 from transiter.services import views
 
 
 @dbconnection.unit_of_work
 def list_all_in_system(system_id) -> typing.List[views.Agency]:
-    system = systemdam.get_by_id(system_id, only_return_active=True)
+    system = systemqueries.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
     return list(
