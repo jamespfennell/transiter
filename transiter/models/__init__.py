@@ -5,8 +5,12 @@ from .directionrule import DirectionRule
 from .feed import Feed
 from .feedupdate import FeedUpdate
 from .route import Route
-from .scheduledservice import ScheduledService
-from .scheduledtrip import ScheduledTrip
+from .scheduledservice import (
+    ScheduledService,
+    ScheduledServiceAddition,
+    ScheduledServiceRemoval,
+)
+from .scheduledtrip import ScheduledTrip, ScheduledTripFrequency
 from .scheduledtripstoptime import ScheduledTripStopTime
 from .servicemap import ServiceMap
 from .servicemapgroup import ServiceMapGroup

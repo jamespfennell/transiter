@@ -1,5 +1,6 @@
 import itertools
 import typing
+import dataclasses
 
 from transiter import models, parse
 from transiter.data import dbconnection, schedulequeries, genericqueries
@@ -34,6 +35,7 @@ def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]
     trip_id_to_pk = schedulequeries.get_trip_id_to_pk_map_by_feed_pk(
         feed_update.feed.pk
     )
+
     stop_id_to_pk = genericqueries.get_id_to_pk_map(
         models.Stop, feed_update.feed.system.pk
     )
@@ -46,7 +48,15 @@ def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]
     )
     for chunk_of_trips in split(all_trips_iter, 100):
         stop_time_mappings = []
+        frequency_mappings = []
         for trip in chunk_of_trips:
+            for trip_frequency in trip.frequencies:
+                frequency_mappings.append(
+                    {
+                        "trip_pk": trip_id_to_pk[trip.id],
+                        **dataclasses.asdict(trip_frequency),
+                    }
+                )
             for stop_time in trip.stop_times:
                 if stop_time.stop_id not in stop_id_to_pk:
                     continue
@@ -60,6 +70,10 @@ def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]
                     }
                 )
         session.bulk_insert_mappings(models.ScheduledTripStopTime, stop_time_mappings)
+        if len(frequency_mappings) > 0:
+            session.bulk_insert_mappings(
+                models.ScheduledTripFrequency, frequency_mappings
+            )
 
     return num_entities_deleted > 0 or len(trip_mappings) > 0
 
@@ -76,26 +90,21 @@ def split(container, size):
 
 
 def delete_trips_associated_to_feed(feed_pk):
-
     session = dbconnection.get_session()
-    num_stop_times_deleted = (
-        session.query(models.ScheduledTripStopTime)
-        .filter(
-            models.ScheduledTrip.pk == models.ScheduledTripStopTime.trip_pk,
+    base_queries = [
+        session.query(models.ScheduledTripStopTime).filter(
+            models.ScheduledTrip.pk == models.ScheduledTripStopTime.trip_pk
+        ),
+        session.query(models.ScheduledTripFrequency).filter(
+            models.ScheduledTrip.pk == models.ScheduledTripFrequency.trip_pk
+        ),
+        session.query(models.ScheduledTrip),
+    ]
+    num_deleted = 0
+    for base_query in base_queries:
+        num_deleted += base_query.filter(
             models.ScheduledService.pk == models.ScheduledTrip.service_pk,
             models.FeedUpdate.pk == models.ScheduledService.source_pk,
             models.FeedUpdate.feed_pk == feed_pk,
-        )
-        .delete(synchronize_session=False)
-    )
-    num_trips_deleted = (
-        session.query(models.ScheduledTrip)
-        .filter(
-            models.ScheduledService.pk == models.ScheduledTrip.service_pk,
-            models.FeedUpdate.pk == models.ScheduledService.source_pk,
-            models.FeedUpdate.feed_pk == feed_pk,
-        )
-        .delete(synchronize_session=False)
-    )
-    # session.flush()
-    return num_stop_times_deleted + num_trips_deleted
+        ).delete(synchronize_session=False)
+    return num_deleted

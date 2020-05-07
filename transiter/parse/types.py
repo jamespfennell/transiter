@@ -61,11 +61,11 @@ class ScheduledService:
     friday: bool
     saturday: bool
     sunday: bool
-    # start_date: datetime.date = None
-    # end_date: datetime.date = None
+    start_date: datetime.date = None
+    end_date: datetime.date = None
     trips: typing.List["ScheduledTrip"] = field(default_factory=list)
-    # added_dates: typing.List[datetime.date] = field(default_factory=list)
-    # removed_dates: typing.List[datetime.date] = field(default_factory=list)
+    added_dates: typing.List[datetime.date] = field(default_factory=list)
+    removed_dates: typing.List[datetime.date] = field(default_factory=list)
 
     @classmethod
     def create_empty(cls, id_) -> "ScheduledService":
@@ -87,6 +87,15 @@ class ScheduledTrip:
     route_id: str
     direction_id: bool
     stop_times: typing.List["ScheduledTripStopTime"] = field(default_factory=list)
+    frequencies: typing.List["ScheduledTripFrequency"] = field(default_factory=list)
+
+
+@dataclass
+class ScheduledTripFrequency:
+    start_time: datetime.time
+    end_time: datetime.time
+    headway: int
+    frequency_based: bool = True
 
 
 @dataclass

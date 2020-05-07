@@ -247,8 +247,29 @@ def test_create_station_from_child_stops_substring_case():
     assert expected_station == actual_station
 
 
-def test_parse_services():
+def test_parse_services__with_trips():
     gtfs_static_file = mock.Mock()
+
+    gtfs_static_file.trip_frequencies.return_value = [
+        {
+            "trip_id": TRIP_ID,
+            "start_time": "03:04:05",
+            "end_time": "06:07:08",
+            "headway": 20,
+        },
+        {
+            "trip_id": "Unknown trip ID",
+            "start_time": "03:04:05",
+            "end_time": "06:07:08",
+            "headway": 26,
+        },
+    ]
+    frequency = parse.ScheduledTripFrequency(
+        start_time=datetime.time(3, 4, 5),
+        end_time=datetime.time(6, 7, 8),
+        headway=20,
+        frequency_based=True,
+    )
 
     gtfs_static_file.stop_times.return_value = [
         {
@@ -288,7 +309,11 @@ def test_parse_services():
         },
     ]
     trip = parse.ScheduledTrip(
-        id=TRIP_ID, route_id=ROUTE_ID, direction_id=True, stop_times=[stop_time]
+        id=TRIP_ID,
+        route_id=ROUTE_ID,
+        direction_id=True,
+        stop_times=[stop_time],
+        frequencies=[frequency],
     )
 
     gtfs_static_file.calendar.return_value = [
@@ -301,8 +326,11 @@ def test_parse_services():
             "friday": "0",
             "saturday": "0",
             "sunday": "0",
+            "start_date": "20180101",
+            "end_date": "20181231",
         }
     ]
+    gtfs_static_file.calendar_dates.return_value = []
     service = parse.ScheduledService(
         id=SERVICE_ID,
         monday=True,
@@ -312,7 +340,67 @@ def test_parse_services():
         friday=False,
         saturday=False,
         sunday=False,
+        start_date=datetime.date(year=2018, month=1, day=1),
+        end_date=datetime.date(year=2018, month=12, day=31),
         trips=[trip],
+    )
+
+    actual_services = list(gtfsstaticparser._parse_schedule(gtfs_static_file))
+
+    assert [service] == actual_services
+
+
+@pytest.mark.parametrize("calendar_set", [True, False])
+@pytest.mark.parametrize(
+    "exception_type,expected_added_dates,expected_removed_dates",
+    [
+        ["1", [datetime.date(year=2019, month=3, day=4)], []],
+        ["2", [], [datetime.date(year=2019, month=3, day=4)]],
+    ],
+)
+def test_parse_services__exception_days_handling(
+    calendar_set, exception_type, expected_added_dates, expected_removed_dates
+):
+    gtfs_static_file = mock.Mock()
+    gtfs_static_file.trips.return_value = []
+    gtfs_static_file.stop_times.return_value = []
+    gtfs_static_file.trip_frequencies.return_value = []
+
+    if calendar_set:
+        gtfs_static_file.calendar.return_value = [
+            {
+                "service_id": SERVICE_ID,
+                "monday": "1",
+                "tuesday": "1",
+                "wednesday": "1",
+                "thursday": "0",
+                "friday": "0",
+                "saturday": "0",
+                "sunday": "0",
+                "start_date": "20180101",
+                "end_date": "20181231",
+            }
+        ]
+    else:
+        gtfs_static_file.calendar.return_value = []
+
+    gtfs_static_file.calendar_dates.return_value = [
+        {"service_id": SERVICE_ID, "exception_type": exception_type, "date": "20190304"}
+    ]
+
+    service = parse.ScheduledService(
+        id=SERVICE_ID,
+        monday=calendar_set,
+        tuesday=calendar_set,
+        wednesday=calendar_set,
+        thursday=False,
+        friday=False,
+        saturday=False,
+        sunday=False,
+        start_date=datetime.date(year=2018, month=1, day=1) if calendar_set else None,
+        end_date=datetime.date(year=2018, month=12, day=31) if calendar_set else None,
+        added_dates=expected_added_dates,
+        removed_dates=expected_removed_dates,
     )
 
     actual_services = list(gtfsstaticparser._parse_schedule(gtfs_static_file))
