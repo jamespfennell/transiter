@@ -6,6 +6,7 @@ import datetime
 import json
 import logging
 import typing
+import collections
 from typing import List, Set, Tuple
 
 from transiter import models
@@ -29,7 +30,7 @@ def build_stop_pk_to_service_maps_response(
     Build the service maps response used in the stop service.
     """
     stop_pks = list(stop_pks)
-    stop_pk_to_service_map_group_id_to_routes = servicemapqueries.get_stop_pk_to_group_id_to_routes_map(
+    stop_pk_to_service_map_group_id_to_routes = build_stop_pk_to_group_id_to_inherited_routes_map(
         stop_pks
     )
     stop_pk_to_service_maps_response = {}
@@ -43,6 +44,28 @@ def build_stop_pk_to_service_maps_response(
         ]
         continue
     return stop_pk_to_service_maps_response
+
+
+def build_stop_pk_to_group_id_to_inherited_routes_map(stop_pks):
+    stop_pk_to_descendent_pks = stopqueries.build_stop_pk_to_descendant_pks_map(
+        stop_pks, stations_only=True
+    )
+    all_stop_pks = set()
+    for descendent_pks in stop_pk_to_descendent_pks.values():
+        all_stop_pks.update(descendent_pks)
+    stop_pk_to_group_id_to_routes = servicemapqueries.get_stop_pk_to_group_id_to_routes_map(
+        all_stop_pks
+    )
+    result = {stop_pk: collections.defaultdict(list) for stop_pk in stop_pks}
+    for stop_pk in stop_pks:
+        for descendent_pk in stop_pk_to_descendent_pks[stop_pk]:
+            group_id_to_routes = stop_pk_to_group_id_to_routes.get(descendent_pk, {})
+            for group_id, routes in group_id_to_routes.items():
+                result[stop_pk][group_id].extend(routes)
+    for group_id_to_routes in result.values():
+        for routes in group_id_to_routes.values():
+            routes.sort(key=lambda route: route.id)
+    return result
 
 
 def build_route_service_maps_response(

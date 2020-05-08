@@ -1,4 +1,5 @@
-from typing import Dict, Iterable
+import typing
+import collections
 
 from sqlalchemy import sql
 from sqlalchemy.orm import joinedload, selectinload
@@ -16,8 +17,8 @@ def get_in_system_by_id(system_id, stop_id):
 
 
 def get_id_to_pk_map_in_system(
-    system_pk: int, stop_ids: Iterable[str] = None
-) -> Dict[str, int]:
+    system_pk: int, stop_ids: typing.Iterable[str] = None
+) -> typing.Dict[str, int]:
     """
     Get a map of stop ID to stop PK for all stops in a system.
     """
@@ -36,7 +37,38 @@ def list_direction_rules_for_stops(stop_pks):
     )
 
 
-def list_all_stops_in_stop_tree(stop_pk) -> Iterable[models.Stop]:
+def build_stop_pk_to_descendant_pks_map(
+    stop_pks, stations_only=False
+) -> typing.Dict[int, typing.Set[int]]:
+    """
+    Construct a map whose key is a stop's pk and value is a list of all stop pks
+    that are descendents of that stop.
+    """
+    session = dbconnection.get_session()
+    descendant_cte = (
+        session.query(
+            models.Stop.pk.label("ancestor_pk"), models.Stop.pk.label("descendent_pk")
+        )
+        .filter(models.Stop.pk.in_(stop_pks))
+        .cte(name="descendent_cte", recursive=True)
+    )
+    recursive_part = session.query(
+        descendant_cte.c.ancestor_pk.label("ancestor_pk"),
+        models.Stop.pk.label("descendent_pk"),
+    ).filter(models.Stop.parent_stop_pk == descendant_cte.c.descendent_pk)
+    if stations_only:
+        recursive_part = recursive_part.filter(
+            models.Stop.type.in_(models.Stop.STATION_TYPES)
+        )
+    descendant_cte = descendant_cte.union_all(recursive_part)
+
+    stop_pk_to_descendant_pks = collections.defaultdict(set)
+    for stop_pk, descendant_pk in session.query(descendant_cte).all():
+        stop_pk_to_descendant_pks[stop_pk].add(descendant_pk)
+    return dict(stop_pk_to_descendant_pks)
+
+
+def list_all_stops_in_stop_tree(stop_pk) -> typing.Iterable[models.Stop]:
     """
     List all stops in the stop tree of a given stop.
     """

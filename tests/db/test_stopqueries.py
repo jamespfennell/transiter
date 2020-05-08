@@ -140,6 +140,60 @@ def test_list_all_stops_in_stop_tree(add_model, system_1, base_pk):
     assert expected_pks == actual_pks
 
 
+@pytest.mark.parametrize("stations_only", [True, False])
+def test_build_stop_pk_to_descendant_pks_map(add_model, system_1, stations_only):
+    #      2
+    #    / | \
+    #   1  3  4
+    #  /   |
+    # 0    5
+    add_model(models.Stop(pk=1002, system=system_1, type=models.Stop.Type.STATION))
+    add_model(
+        models.Stop(
+            pk=1001, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1000,
+            parent_stop_pk=1001,
+            system=system_1,
+            type=models.Stop.Type.PLATFORM,
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1003, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1005,
+            parent_stop_pk=1003,
+            system=system_1,
+            type=models.Stop.Type.PLATFORM,
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1004, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+        )
+    )
+
+    # Red herring
+    add_model(models.Stop(pk=1012, system=system_1))
+
+    if stations_only:
+        expected_map = {1002: {1001, 1002, 1003, 1004}}
+    else:
+        expected_map = {1002: {1000, 1001, 1002, 1003, 1004, 1005}}
+
+    actual_map = stopqueries.build_stop_pk_to_descendant_pks_map(
+        [1002], stations_only=stations_only
+    )
+    assert expected_map == actual_map
+
+
 def test_list_direction_rules(add_model, stop_1_1, stop_1_2, stop_1_3):
     rule_1 = add_model(models.DirectionRule(stop=stop_1_1))
     rule_2 = add_model(models.DirectionRule(stop=stop_1_2))
