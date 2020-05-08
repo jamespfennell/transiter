@@ -135,8 +135,16 @@ def _parse_stops(gtfs_static_file: _GtfsStaticFile):
             name=row["stop_name"],
             longitude=float(row["stop_lon"]),
             latitude=float(row["stop_lat"]),
+            type=parse.Stop.Type(int(row.get("location_type", "0"))),
+            code=row.get("stop_code"),
+            description=row.get("stop_desc"),
+            zone_id=row.get("zone_id"),
             url=row.get("stop_url"),
-            is_station=row.get("location_type") == "1",
+            timezone=row.get("stop_timezone"),
+            wheelchair_boarding=parse.Stop.WheelchairBoarding(
+                int(row.get("wheelchair_boarding", "0"))
+            ),
+            platform_code=row.get("platform_code"),
         )
         parent_stop_id = row.get("parent_station", "")
         if parent_stop_id != "":
@@ -151,9 +159,7 @@ def _parse_stops(gtfs_static_file: _GtfsStaticFile):
     stop_id_to_station_id = {}
     station_sets_by_stop_id = {}
     for stop in stop_id_to_stop.values():
-        if stop.parent_stop is None:
-            stop.is_station = True
-        if stop.is_station:
+        if stop.parent_stop is None or stop.type == parse.Stop.Type.STATION:
             station_sets_by_stop_id[stop.id] = {stop.id}
         else:
             stop_id_to_station_id[stop.id] = stop.parent_stop.id
@@ -229,7 +235,11 @@ def _create_station_from_child_stops(child_stops):
     name = " / ".join(sorted(most_frequent_names))
 
     return parse.Stop(
-        id=stop_id, name=name, longitude=longitude, latitude=latitude, is_station=True
+        id=stop_id,
+        name=name,
+        longitude=longitude,
+        latitude=latitude,
+        type=parse.Stop.Type.GROUPED_STATION,
     )
 
 

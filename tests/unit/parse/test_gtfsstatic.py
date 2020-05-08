@@ -89,7 +89,7 @@ def test_parse_stops__single_stop(mock_create_station):
         name=STOP_NAME,
         longitude=float(STOP_LON),
         latitude=float(STOP_LAT),
-        is_station=True,
+        type=parse.Stop.Type.PLATFORM,
     )
 
     assert [expected_stop] == list(gtfsstaticparser._parse_stops(gtfs_static_file))
@@ -122,14 +122,14 @@ def test_parse_stops__parent_and_child_stop(mock_create_station):
         name=STOP_NAME_2,
         longitude=float(STOP_LON),
         latitude=float(STOP_LAT),
-        is_station=True,
+        type=parse.Stop.Type.STATION,
     )
     expected_stop_1 = parse.Stop(
         id=STOP_ID,
         name=STOP_NAME,
         longitude=float(STOP_LON),
         latitude=float(STOP_LAT),
-        is_station=False,
+        type=parse.Stop.Type.PLATFORM,
         parent_stop=expected_stop_2,
     )
 
@@ -162,7 +162,11 @@ def test_parse_stops__siblings_by_transfer(mock_create_station):
     ]
 
     expected_station = parse.Stop(
-        id="FakeID", name="", longitude=0, latitude=0, is_station=False
+        id="FakeID",
+        name="",
+        longitude=0,
+        latitude=0,
+        type=parse.Stop.Type.GROUPED_STATION,
     )
     mock_create_station.return_value = expected_station
     expected_stop_1 = parse.Stop(
@@ -170,7 +174,7 @@ def test_parse_stops__siblings_by_transfer(mock_create_station):
         name=STOP_NAME,
         longitude=float(STOP_LON),
         latitude=float(STOP_LAT),
-        is_station=True,
+        type=parse.Stop.Type.STATION,
         parent_stop=expected_station,
     )
     expected_stop_2 = parse.Stop(
@@ -178,7 +182,7 @@ def test_parse_stops__siblings_by_transfer(mock_create_station):
         name=STOP_NAME_2,
         longitude=float(STOP_LON),
         latitude=float(STOP_LAT),
-        is_station=True,
+        type=parse.Stop.Type.STATION,
         parent_stop=expected_station,
     )
 
@@ -189,17 +193,21 @@ def test_parse_stops__siblings_by_transfer(mock_create_station):
 
 def test_create_station_from_child_stops():
     child_1 = parse.Stop(
-        id="A", name="Name 1", latitude=4, longitude=1, is_station=True
+        id="A", name="Name 1", latitude=4, longitude=1, type=parse.Stop.Type.STATION
     )
     child_2 = parse.Stop(
-        id="B", name="Name 1", latitude=1, longitude=1, is_station=True
+        id="B", name="Name 1", latitude=1, longitude=1, type=parse.Stop.Type.STATION
     )
     child_3 = parse.Stop(
-        id="C", name="Name 2", latitude=1, longitude=1, is_station=True
+        id="C", name="Name 2", latitude=1, longitude=1, type=parse.Stop.Type.STATION
     )
 
     expected_station = parse.Stop(
-        id="A-B-C", name="Name 1", latitude=2, longitude=1, is_station=True
+        id="A-B-C",
+        name="Name 1",
+        latitude=2,
+        longitude=1,
+        type=parse.Stop.Type.GROUPED_STATION,
     )
 
     actual_station = gtfsstaticparser._create_station_from_child_stops(
@@ -211,14 +219,18 @@ def test_create_station_from_child_stops():
 
 def test_create_station_from_child_stops_hybrid_name():
     child_1 = parse.Stop(
-        id="A", name="Name 1", latitude=3, longitude=1, is_station=True
+        id="A", name="Name 1", latitude=3, longitude=1, type=parse.Stop.Type.STATION
     )
     child_2 = parse.Stop(
-        id="B", name="Name 2", latitude=1, longitude=1, is_station=True
+        id="B", name="Name 2", latitude=1, longitude=1, type=parse.Stop.Type.STATION
     )
 
     expected_station = parse.Stop(
-        id="A-B", name="Name 1 / Name 2", latitude=2, longitude=1, is_station=True
+        id="A-B",
+        name="Name 1 / Name 2",
+        latitude=2,
+        longitude=1,
+        type=parse.Stop.Type.GROUPED_STATION,
     )
 
     actual_station = gtfsstaticparser._create_station_from_child_stops(
@@ -230,14 +242,22 @@ def test_create_station_from_child_stops_hybrid_name():
 
 def test_create_station_from_child_stops_substring_case():
     child_1 = parse.Stop(
-        id="A", name="Name 1", latitude=3, longitude=1, is_station=True
+        id="A", name="Name 1", latitude=3, longitude=1, type=parse.Stop.Type.STATION
     )
     child_2 = parse.Stop(
-        id="B", name="Name 1 (and more)", latitude=1, longitude=1, is_station=True
+        id="B",
+        name="Name 1 (and more)",
+        latitude=1,
+        longitude=1,
+        type=parse.Stop.Type.STATION,
     )
 
     expected_station = parse.Stop(
-        id="A-B", name="Name 1 (and more)", latitude=2, longitude=1, is_station=True
+        id="A-B",
+        name="Name 1 (and more)",
+        latitude=2,
+        longitude=1,
+        type=parse.Stop.Type.GROUPED_STATION,
     )
 
     actual_station = gtfsstaticparser._create_station_from_child_stops(

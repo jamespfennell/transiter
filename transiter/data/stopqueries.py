@@ -8,23 +8,10 @@ from transiter.data import dbconnection, genericqueries
 
 
 def list_all_in_system(system_id):
-    """
-    List all stops in a system.
-
-    :param system_id: the system's ID
-    :return: a list of Stops
-    """
     return genericqueries.list_all_in_system(models.Stop, system_id, models.Stop.id)
 
 
 def get_in_system_by_id(system_id, stop_id):
-    """
-    Get a specific stop in a system.
-
-    :param system_id: the system's ID
-    :param stop_id: the stop's ID
-    :return: Stop, if it exists; None if it does not
-    """
     return genericqueries.get_in_system_by_id(models.Stop, system_id, stop_id)
 
 
@@ -136,15 +123,13 @@ def get_stop_pk_to_station_pk_map_in_system(system_id):
     """
     session = dbconnection.get_session()
     query = (
-        session.query(
-            models.Stop.pk, models.Stop.parent_stop_pk, models.Stop.is_station
-        )
+        session.query(models.Stop.pk, models.Stop.parent_stop_pk, models.Stop.type)
         .filter(models.Stop.system_pk == models.System.pk)
         .filter(models.System.id == system_id)
     )
     stop_pk_to_station_pk = {}
-    for stop_pk, parent_stop_pk, is_station in query:
-        if is_station or parent_stop_pk is None:
+    for stop_pk, parent_stop_pk, stop_type in query:
+        if stop_type in models.Stop.STATION_TYPES or parent_stop_pk is None:
             stop_pk_to_station_pk[stop_pk] = stop_pk
         else:
             stop_pk_to_station_pk[stop_pk] = parent_stop_pk

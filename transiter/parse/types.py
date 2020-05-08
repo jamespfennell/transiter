@@ -42,13 +42,32 @@ class Route:
 
 @dataclass
 class Stop:
+    class Type(enum.Enum):
+        PLATFORM = 0
+        STATION = 1
+        ENTRANCE_OR_EXIT = 2
+        GENERIC_NODE = 3
+        BOARDING_AREA = 4
+        GROUPED_STATION = 101  # Transiter only
+
+    class WheelchairBoarding(enum.Enum):
+        NOT_SPECIFIED = 0
+        ACCESSIBLE = 1
+        NOT_ACCESSIBLE = 2
+
     id: str
     name: str
     longitude: float
     latitude: float
-    is_station: bool
-    url: str = None
+    type: Type
     parent_stop: typing.Optional["Stop"] = None
+    code: str = None
+    description: str = None
+    zone_id: str = None
+    url: str = None
+    timezone: str = None
+    wheelchair_boarding: WheelchairBoarding = WheelchairBoarding.NOT_SPECIFIED
+    platform_code: str = None
 
 
 @dataclass

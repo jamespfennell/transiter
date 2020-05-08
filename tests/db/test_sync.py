@@ -50,7 +50,7 @@ new_agency = parse.Agency(id="agency", name="New Agency", timezone="", url="")
 new_alert = parse.Alert(id="alert", header="header", description="description")
 new_route = parse.Route(id="route", type=parse.Route.Type.RAIL, description="new_route")
 new_stop = parse.Stop(
-    id="route", name="new stop", latitude=0, longitude=0, is_station=True
+    id="route", name="new stop", latitude=0, longitude=0, type=parse.Stop.Type.STATION
 )
 
 
@@ -189,7 +189,9 @@ def test_stop__tree_linking(
     db_session.flush()
 
     stop_id_to_stop = {
-        id_: parse.Stop(id=id_, name=id_, longitude=0, latitude=0, is_station=True)
+        id_: parse.Stop(
+            id=id_, name=id_, longitude=0, latitude=0, type=parse.Stop.Type.STATION
+        )
         for id_ in expected_id_to_parent_id.keys()
     }
     for id_, parent_id in expected_id_to_parent_id.items():
@@ -498,7 +500,7 @@ def test_trip__stop_time_reconciliation(
         parse.Stop(
             id="my_special_stop_id",
             name="station",
-            is_station=True,
+            type=parse.Stop.Type.STATION,
             latitude=0,
             longitude=0,
         ),

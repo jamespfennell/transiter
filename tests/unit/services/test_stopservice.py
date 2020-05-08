@@ -260,14 +260,14 @@ def test_build_trip_stop_time_response():
 def tree_factory(number_of_stops, adjacency_tuples, not_stations=None):
     system = models.System(id="system_id")
     stops = [
-        models.Stop(pk=i, id=str(i), is_station=True, system=system)
+        models.Stop(pk=i, id=str(i), type=models.Stop.Type.STATION, system=system)
         for i in range(number_of_stops)
     ]
     for stop_pk, parent_pk in adjacency_tuples:
         stops[stop_pk].parent_stop_pk = parent_pk
     if not_stations is not None:
         for not_station in not_stations:
-            stops[not_station].is_station = False
+            stops[not_station].type = models.Stop.Type.PLATFORM
     return stops
 
 

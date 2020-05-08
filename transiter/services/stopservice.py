@@ -265,7 +265,7 @@ class _StopTree:
             stop_pk, neighbors_added = stack.pop()
             if neighbors_added:
                 stop = self._stop_pk_to_stop[stop_pk]
-                if only_stations and not stop.is_station and stop.pk != self._base.pk:
+                if only_stations and not stop.is_station() and stop.pk != self._base.pk:
                     continue
                 yield stop
                 continue

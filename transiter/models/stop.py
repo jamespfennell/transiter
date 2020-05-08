@@ -6,6 +6,7 @@ from sqlalchemy import (
     Boolean,
     Numeric,
     UniqueConstraint,
+    Enum,
 )
 from sqlalchemy.orm import relationship, backref
 
@@ -24,11 +25,24 @@ class Stop(Base):
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
     parent_stop_pk = Column(Integer, ForeignKey("stop.pk"), index=True)
 
+    Type = parse.Stop.Type
+    STATION_TYPES = {Type.STATION, Type.GROUPED_STATION}
+    WheelchairBoarding = parse.Stop.WheelchairBoarding
+
     name = Column(String)
     longitude = Column(Numeric(precision=9, scale=6))
     latitude = Column(Numeric(precision=9, scale=6))
+    type = Column(Enum(Type, native_enum=False), nullable=False)
+    code = Column(String)
+    description = Column(String)
+    zone_id = Column(String)
     url = Column(String)
-    is_station = Column(Boolean)
+    timezone = Column(String)
+    wheelchair_boarding = Column(
+        Enum(WheelchairBoarding, native_enum=False),
+        default=WheelchairBoarding.NOT_SPECIFIED,
+    )
+    platform_code = Column(String)
 
     system = relationship("System", back_populates="stops")
     source = relationship("FeedUpdate", cascade="none")
@@ -64,6 +78,15 @@ class Stop(Base):
             name=stop.name,
             latitude=stop.latitude,
             longitude=stop.longitude,
+            type=stop.type,
+            code=stop.code,
+            description=stop.description,
+            zone_id=stop.zone_id,
             url=stop.url,
-            is_station=stop.is_station,
+            timezone=stop.timezone,
+            wheelchair_boarding=stop.wheelchair_boarding,
+            platform_code=stop.platform_code,
         )
+
+    def is_station(self):
+        return self.type in Stop.STATION_TYPES or self.parent_stop_pk is None

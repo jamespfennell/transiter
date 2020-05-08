@@ -108,6 +108,9 @@ def reset():
     This operation drops all of the Transiter tables in the database, if they
     exist, and then creates them. All existing data will be lost.
     """
+    print("Deleting old tables...")
     dbconnection.delete_all_tables()
+    print("Upgrading database...")
     dbconnection.upgrade_database()
     client.refresh_tasks()
+    print("Done.")
