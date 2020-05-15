@@ -259,6 +259,8 @@ def _build_sorted_graph_from_paths(
         return [graphutils.datastructures.Graph()]
     if len(paths) == 1:
         unique_path = next(iter(paths))
+        if len(set(unique_path)) != len(unique_path):
+            return [graphutils.datastructures.Graph()]
         return [graphutils.datastructures.Path.build_from_label_list(unique_path)]
     additional_nodes = set()
     edge_tuples = set()

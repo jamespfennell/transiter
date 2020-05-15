@@ -282,7 +282,7 @@ def _parse_schedule(gtfs_static_file: _GtfsStaticFile):
         trip = parse.ScheduledTrip(
             id=row["trip_id"],
             route_id=row["route_id"],
-            direction_id=str_to_bool[row["direction_id"]],
+            direction_id=str_to_bool.get(row["direction_id"]),
         )
         service_id_to_service[service_id].trips.append(trip)
         trip_id_to_trip[trip.id] = trip

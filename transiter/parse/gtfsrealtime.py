@@ -107,6 +107,14 @@ def _read_protobuf_message(message):
     return d
 
 
+if __name__ == "__main__":
+    with open("path.gtfsrt", "rb") as f:
+        result = read_gtfs_realtime(f.read())
+    import json
+
+    print(json.dumps(result, indent=2))
+
+
 def transform_to_transiter_structure(data, timezone_str=None):
     """
     Transform GTFS Realtime data in JSON like format to Transiter models

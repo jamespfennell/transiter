@@ -207,6 +207,14 @@ def test_build_sorted_graph_from_paths__path():
     ]
 
 
+def test_build_sorted_graph_from_paths__single_buggy_path():
+    empty_graph = datastructures.Graph.build_from_edge_label_tuples([])
+
+    assert servicemapmanager._build_sorted_graph_from_paths({("a", "b", "c", "a")}) == [
+        empty_graph
+    ]
+
+
 def test_build_sorted_graph_from_paths__full_case():
     raw_paths = [("a", "b", "c"), ("a", "c", "d"), ("x", "y", "z")]
 

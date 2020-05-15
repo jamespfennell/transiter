@@ -267,7 +267,11 @@ def test_create_station_from_child_stops_substring_case():
     assert expected_station == actual_station
 
 
-def test_parse_services__with_trips():
+@pytest.mark.parametrize(
+    "input_direction,output_direction",
+    [["1", True], ["0", False], ["unknown", None], ["", None]],
+)
+def test_parse_services_with_trips(input_direction, output_direction):
     gtfs_static_file = mock.Mock()
 
     gtfs_static_file.trip_frequencies.return_value = [
@@ -319,19 +323,19 @@ def test_parse_services__with_trips():
             "service_id": SERVICE_ID,
             "trip_id": TRIP_ID,
             "route_id": ROUTE_ID,
-            "direction_id": "1",
+            "direction_id": input_direction,
         },
         {
             "service_id": "Unknown service ID",
             "trip_id": TRIP_ID,
             "route_id": ROUTE_ID,
-            "direction_id": "1",
+            "direction_id": input_direction,
         },
     ]
     trip = parse.ScheduledTrip(
         id=TRIP_ID,
         route_id=ROUTE_ID,
-        direction_id=True,
+        direction_id=output_direction,
         stop_times=[stop_time],
         frequencies=[frequency],
     )
