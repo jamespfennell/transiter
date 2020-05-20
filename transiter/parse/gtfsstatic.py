@@ -12,10 +12,11 @@ import typing
 import uuid
 import zipfile
 
-from transiter import parse
+from transiter.parse import types as parse
+from transiter.parse.parser import TransiterParser
 
 
-class GtfsStaticParser(parse.TransiterParser):
+class GtfsStaticParser(TransiterParser):
 
     gtfs_static_file = None
 

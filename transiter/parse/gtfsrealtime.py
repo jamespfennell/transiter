@@ -9,11 +9,12 @@ import typing
 
 import pytz
 
-from transiter import parse
-from . import transiter_gtfs_rt_pb2
+from transiter.parse import transiter_gtfs_rt_pb2
+from transiter.parse import types as parse
+from transiter.parse.parser import TransiterParser
 
 
-class GtfsRealtimeParser(parse.TransiterParser):
+class GtfsRealtimeParser(TransiterParser):
 
     GTFS_REALTIME_PB2_MODULE = None
 

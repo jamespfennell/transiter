@@ -1,7 +1,7 @@
 import datetime
 import typing
 
-from transiter import parse
+from transiter.parse import types as parse
 
 
 class TransiterParser:
