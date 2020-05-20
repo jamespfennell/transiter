@@ -1,5 +1,5 @@
-import typing
 import collections
+import typing
 
 from sqlalchemy import sql
 from sqlalchemy.orm import joinedload, selectinload
@@ -8,8 +8,10 @@ from transiter import models
 from transiter.data import dbconnection, genericqueries
 
 
-def list_all_in_system(system_id):
-    return genericqueries.list_all_in_system(models.Stop, system_id, models.Stop.id)
+def list_all_in_system(system_id, stop_ids=None):
+    return genericqueries.list_in_system(
+        models.Stop, system_id, order_by_field=models.Stop.id, ids=stop_ids
+    )
 
 
 def get_in_system_by_id(system_id, stop_id):

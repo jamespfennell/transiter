@@ -123,15 +123,35 @@ def test_list_all_stops_in_stop_tree(add_model, system_1, base_pk):
     #   1  3  4
     #  /   |
     # 0    5
-    add_model(models.Stop(pk=1002, system=system_1))
-    add_model(models.Stop(pk=1001, parent_stop_pk=1002, system=system_1))
-    add_model(models.Stop(pk=1000, parent_stop_pk=1001, system=system_1))
-    add_model(models.Stop(pk=1003, parent_stop_pk=1002, system=system_1))
-    add_model(models.Stop(pk=1005, parent_stop_pk=1003, system=system_1))
-    add_model(models.Stop(pk=1004, parent_stop_pk=1002, system=system_1))
+    add_model(models.Stop(pk=1002, system=system_1, type=models.Stop.Type.STATION))
+    add_model(
+        models.Stop(
+            pk=1001, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1000, parent_stop_pk=1001, system=system_1, type=models.Stop.Type.STATION
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1003, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1005, parent_stop_pk=1003, system=system_1, type=models.Stop.Type.STATION
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1004, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+        )
+    )
 
     # Red herring
-    add_model(models.Stop(pk=1012, system=system_1))
+    add_model(models.Stop(pk=1012, system=system_1, type=models.Stop.Type.STATION))
 
     expected_pks = {1000, 1001, 1002, 1003, 1004, 1005}
 
@@ -181,7 +201,7 @@ def test_build_stop_pk_to_descendant_pks_map(add_model, system_1, stations_only)
     )
 
     # Red herring
-    add_model(models.Stop(pk=1012, system=system_1))
+    add_model(models.Stop(pk=1012, system=system_1, type=models.Stop.Type.STATION))
 
     if stations_only:
         expected_map = {1002: {1001, 1002, 1003, 1004}}

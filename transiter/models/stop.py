@@ -3,7 +3,6 @@ from sqlalchemy import (
     Integer,
     String,
     ForeignKey,
-    Boolean,
     Numeric,
     UniqueConstraint,
     Enum,
@@ -67,6 +66,9 @@ class Stop(Base):
     )
     scheduled_trip_times = relationship(
         "ScheduledTripStopTime", back_populates="stop", cascade="delete, delete-orphan"
+    )
+    alerts = relationship(
+        "Alert", secondary="alert_stop", back_populates="stops", cascade="all"
     )
 
     __table_args__ = (UniqueConstraint("system_pk", "id"),)

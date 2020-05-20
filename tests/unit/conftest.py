@@ -7,6 +7,14 @@ import pytest
 from transiter.data import dbconnection
 
 
+@pytest.fixture(autouse=True)
+def block_db_access(monkeypatch):
+    def get_session(*args, **kwargs):
+        raise Exception("Attempting to get a DB session in a unit test!")
+
+    monkeypatch.setattr(dbconnection, "get_session", get_session)
+
+
 class SessionFactory:
     def __init__(self):
         self.merged = []
@@ -25,7 +33,7 @@ def session_factory():
 
 
 @pytest.fixture
-def inline_unit_of_work(monkeypatch):
+def inline_unit_of_work(monkeypatch, block_db_access):
 
     session_started = False
     session = mock.MagicMock()
@@ -36,7 +44,7 @@ def inline_unit_of_work(monkeypatch):
         session_started = True
         yield session
 
-    def get_session():
+    def get_session(*args, **kwargs):
         nonlocal session_started
         if not session_started:
             raise dbconnection.OutsideUnitOfWorkError

@@ -188,6 +188,7 @@ FEED_ID_3 = "205"
 )
 def test_install(
     mock_systemdam,
+    inline_unit_of_work,
     monkeypatch,
     feed_update_status,
     delete_called,
@@ -349,7 +350,7 @@ def test_create_system_update__invalid_current_status(mock_systemdam, current_st
     ],
 )
 def test_create_system_update__exists_already(
-    mock_systemdam, current_status, post_status
+    mock_systemdam, current_status, post_status, inline_unit_of_work
 ):
     system = mock_systemdam.create()
     system.status = current_status
@@ -361,7 +362,7 @@ def test_create_system_update__exists_already(
     assert system.updates[0].status == models.SystemUpdate.Status.SCHEDULED
 
 
-def test_create_system_update__does_not_exist(mock_systemdam):
+def test_create_system_update__does_not_exist(mock_systemdam, inline_unit_of_work):
     systemservice._create_system_update("system_id", "", {}, None)
 
     system = mock_systemdam.get_by_id("system_id")

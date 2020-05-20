@@ -178,6 +178,25 @@ def is_sync_request():
     )
 
 
+def get_enum_url_parameter(key, enum_, default=None):
+    raw_value = flask.request.args.get(key)
+    if raw_value is None:
+        return default
+    try:
+        return enum_[raw_value.upper()]
+    except KeyError:
+        raise exceptions.InvalidInput(
+            (
+                "Received unexpected value '{}' for URL parameter '{}'. "
+                "Valid values are {} (case insensitive)."
+            ).format(
+                raw_value,
+                key,
+                ", ".join(["'{}'".format(element.name) for element in enum_]),
+            )
+        )
+
+
 def convert_exception_to_error_response(exception):
     # noinspection PyBroadException
     try:

@@ -89,6 +89,7 @@ class Agency(View):
     id: str
     name: str
     _system_id: str
+    alerts: list = NULL
 
     @classmethod
     def from_model(cls, agency: models.Agency):
@@ -105,7 +106,7 @@ class AgencyLarge(View):
     phone: str = None
     fare_url: str = None
     email: str = None
-    alerts: list = dataclasses.field(default_factory=list)
+    alerts: list = NULL
     routes: list = dataclasses.field(default_factory=list)
 
     @classmethod
@@ -124,17 +125,10 @@ class AgencyLarge(View):
 
 @dataclasses.dataclass
 class Route(View):
-    class Status(enum.Enum):
-        NO_SERVICE = 0
-        GOOD_SERVICE = 1
-        PLANNED_SERVICE_CHANGE = 2
-        UNPLANNED_SERVICE_CHANGE = 3
-        DELAYS = 4
-
     id: str
     color: str
     _system_id: str
-    status: Status = NULL
+    alerts: typing.List["AlertSmall"] = NULL
 
     @classmethod
     def from_model(cls, route: models.Route):
@@ -152,14 +146,13 @@ class RouteLarge(View):
     url: str
     type: models.Route.Type
     _system_id: str
-    status: Route.Status
     periodicity: float
     agency: Agency = None
-    alerts: list = dataclasses.field(default_factory=list)
+    alerts: list = NULL
     service_maps: list = dataclasses.field(default_factory=list)
 
     @classmethod
-    def from_model(cls, route: models.Route, status, periodicity):
+    def from_model(cls, route: models.Route, periodicity):
         return cls(
             id=route.id,
             color=route.color,
@@ -169,7 +162,6 @@ class RouteLarge(View):
             url=route.url,
             type=route.type,
             _system_id=route.system.id,
-            status=status,
             periodicity=periodicity,
         )
 
@@ -182,6 +174,7 @@ class Stop(View):
     service_maps: list = NULL
     parent_stop: typing.Optional["Stop"] = NULL
     child_stops: list = NULL
+    alerts: typing.List["AlertSmall"] = NULL
 
     @classmethod
     def from_model(cls, stop: models.Stop):
@@ -200,6 +193,7 @@ class StopLarge(View):
     parent_stop: typing.Optional["Stop"] = NULL
     child_stops: list = NULL
     directions: list = NULL
+    alerts: typing.List["AlertSmall"] = NULL
     stop_times: list = dataclasses.field(default_factory=list)
 
     @classmethod
@@ -240,6 +234,7 @@ class Trip(View):
     route: Route = NULL
     last_stop: Stop = NULL
     stop_times: list = NULL
+    alerts: list = NULL
 
     @classmethod
     def from_model(cls, trip: models.Trip):
@@ -352,27 +347,71 @@ class FeedUpdate(View):
 
 
 @dataclasses.dataclass
-class AlertLarge(View):
-    id: str
-    start_time: datetime.datetime
-    end_time: datetime.datetime
-    creation_time: datetime.datetime
+class AlertMessage(View):
     header: str
     description: str
-    url: str
+    url: str = None
+    language: str = None
+
+    @classmethod
+    def from_model(cls, alert_message: models.AlertMessage):
+        return cls(
+            header=alert_message.header,
+            description=alert_message.description,
+            url=alert_message.url,
+            language=alert_message.language,
+        )
+
+
+@dataclasses.dataclass
+class AlertSmall(View):
+    id: str
     cause: models.Alert.Cause
     effect: models.Alert.Effect
 
     @classmethod
-    def from_model(cls, alert: models.Alert):
+    def from_models(cls, active_period, alert: models.Alert):
+        return cls(id=alert.id, cause=alert.cause, effect=alert.effect)
+
+
+@dataclasses.dataclass
+class AlertLarge(View):
+    id: str
+    cause: models.Alert.Cause
+    effect: models.Alert.Effect
+    active_period: "AlertActivePeriod"
+    messages: typing.List[AlertMessage] = dataclasses.field(default_factory=list)
+
+    @classmethod
+    def from_models(cls, active_period: models.AlertActivePeriod, alert: models.Alert):
         return cls(
             id=alert.id,
-            start_time=alert.start_time,
-            end_time=alert.end_time,
-            creation_time=alert.creation_time,
-            header=alert.header,
-            description=alert.description,
-            url=alert.url,
             cause=alert.cause,
             effect=alert.effect,
+            active_period=AlertActivePeriod.from_model(active_period),
+            messages=list(map(AlertMessage.from_model, alert.messages)),
         )
+
+
+@dataclasses.dataclass
+class AlertActivePeriod(View):
+    starts_at: datetime.datetime
+    ends_at: datetime.datetime
+
+    @classmethod
+    def from_model(cls, active_period: models.AlertActivePeriod):
+        return cls(starts_at=active_period.starts_at, ends_at=active_period.ends_at)
+
+
+@dataclasses.dataclass
+class _AlertsDetailValue:
+    clazz: typing.Optional[typing.Type[View]]
+    need_messages: bool
+    need_all_active_periods: bool
+
+
+class AlertsDetail(enum.Enum):
+    NONE = _AlertsDetailValue(None, False, False)
+    CAUSE_AND_EFFECT = _AlertsDetailValue(AlertSmall, False, False)
+    MESSAGES = _AlertsDetailValue(AlertLarge, True, False)
+    ALL = _AlertsDetailValue(AlertLarge, True, True)

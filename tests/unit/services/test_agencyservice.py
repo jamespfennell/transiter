@@ -2,6 +2,7 @@ import pytest
 
 from transiter import models, exceptions
 from transiter.data import systemqueries, genericqueries
+from transiter.data.queries import alertqueries
 from transiter.services import agencyservice, views
 
 SYSTEM_ID = "1"
@@ -27,12 +28,19 @@ def test_list_all_in_system(monkeypatch):
 
     monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: system)
     monkeypatch.setattr(
-        genericqueries, "list_all_in_system", lambda *args: [agency_1, agency_2]
+        genericqueries, "list_in_system", lambda *args: [agency_1, agency_2]
+    )
+    monkeypatch.setattr(
+        alertqueries, "get_agency_pk_to_active_alerts", lambda *args, **kwargs: {}
     )
 
     expected = [
-        views.Agency(id=AGENCY_ONE_ID, _system_id=SYSTEM_ID, name=AGENCY_ONE_NAME),
-        views.Agency(id=AGENCY_TWO_ID, _system_id=SYSTEM_ID, name=AGENCY_TWO_NAME),
+        views.Agency(
+            id=AGENCY_ONE_ID, _system_id=SYSTEM_ID, name=AGENCY_ONE_NAME, alerts=[]
+        ),
+        views.Agency(
+            id=AGENCY_TWO_ID, _system_id=SYSTEM_ID, name=AGENCY_TWO_NAME, alerts=[]
+        ),
     ]
 
     actual = agencyservice.list_all_in_system(SYSTEM_ID)
@@ -55,6 +63,9 @@ def test_get_in_system_by_id(monkeypatch):
     )
 
     monkeypatch.setattr(genericqueries, "get_in_system_by_id", lambda *args: agency_1)
+    monkeypatch.setattr(
+        alertqueries, "get_agency_pk_to_active_alerts", lambda *args, **kwargs: {}
+    )
 
     expected = views.AgencyLarge(
         id=AGENCY_ONE_ID,

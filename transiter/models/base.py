@@ -12,10 +12,12 @@ class _BaseModel:
     # The equals method is designed for testing purposes only.
     def __eq__(self, other):
         for column in inspect(type(self)).columns.keys():
-            if getattr(self, column) != getattr(other, column):
+            if getattr(self, column) != getattr(other, column, None):
                 print(
                     'Values for attribute "{}" don\'t match: "{}" != "{}"'.format(
-                        column, str(getattr(self, column)), str(getattr(other, column))
+                        column,
+                        str(getattr(self, column)),
+                        str(getattr(other, column, "<not present>")),
                     )
                 )
                 return False

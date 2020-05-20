@@ -228,8 +228,6 @@ def test_get_parser__built_in_parser__gtfs_static():
 
 
 def test_get_parser__built_in_parser__gtfs_realtime():
-    assert parse.parser.cast_object_to_instantiated_transiter_parser(
-        updatemanager._built_in_parser_to_function[
-            models.Feed.BuiltInParser.GTFS_REALTIME
-        ]
-    ) == updatemanager._get_parser(models.Feed.BuiltInParser.GTFS_REALTIME, None)
+    parser = updatemanager._get_parser(models.Feed.BuiltInParser.GTFS_REALTIME, None)
+
+    assert isinstance(parser, parse.gtfsrealtime.GtfsRealtimeParser)

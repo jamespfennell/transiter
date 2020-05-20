@@ -6,6 +6,7 @@ import pytest
 
 from transiter import models, exceptions
 from transiter.data import tripqueries, systemqueries, stopqueries
+from transiter.data.queries import alertqueries
 from transiter.services import stopservice, views
 from transiter.services.servicemap import servicemapmanager
 
@@ -189,6 +190,11 @@ def test_get_in_system_by_id(monkeypatch):
         "_build_trip_stop_time_response",
         lambda *args: fake_trip_stop_time_response,
     )
+    monkeypatch.setattr(
+        alertqueries,
+        "get_stop_pk_to_active_alerts",
+        lambda *args, **kwargs: {STOP_ONE_PK: []},
+    )
 
     expected = views.StopLarge(
         id=STOP_ONE_ID,
@@ -201,6 +207,7 @@ def test_get_in_system_by_id(monkeypatch):
         child_stops=child_stops,
         directions=[DIRECTION_NAME],
         stop_times=[fake_trip_stop_time_response],
+        alerts=[],
     )
 
     actual = stopservice.get_in_system_by_id(

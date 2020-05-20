@@ -27,6 +27,8 @@ class Route:
         CABLE_CAR = 5
         GONDOLA = 6
         FUNICULAR = 7
+        TROLLEYBUS = 11
+        MONORAIL = 12
 
     id: str
     type: Type
@@ -179,31 +181,44 @@ class Alert:
         MEDICAL_EMERGENCY = 12
 
     class Effect(enum.Enum):
-        NO_SERVICE = 0
-        REDUCED_SERVICE = 1
-        SIGNIFICANT_DELAYS = 2
-        DETOUR = 3
-        ADDITIONAL_SERVICE = 4
-        MODIFIED_SERVICE = 5
-        OTHER_EFFECT = 6
-        UNKNOWN_EFFECT = 7
-        STOP_MOVED = 8
+        NO_SERVICE = 1
+        REDUCED_SERVICE = 2
+        SIGNIFICANT_DELAYS = 3
+        DETOUR = 4
+        ADDITIONAL_SERVICE = 5
+        MODIFIED_SERVICE = 6
+        OTHER_EFFECT = 7
+        UNKNOWN_EFFECT = 8
+        STOP_MOVED = 9
 
     id: str
-    header: str
-    description: str
-    start_time: datetime.datetime = None
-    end_time: datetime.datetime = None
-    cause: Cause = None
-    effect: Effect = None
-    url: str = None
-    priority: int = None  # Transiter-only non-GTFS field
+    cause: Cause = Cause.UNKNOWN_CAUSE
+    effect: Effect = Effect.UNKNOWN_EFFECT
+    created_at: datetime.datetime = None  # Non-GTFS field
+    updated_at: datetime.datetime = None  # Non-GTFS field
+    sort_order: int = None  # Non-GTFS field
 
+    messages: typing.List["AlertMessage"] = field(default_factory=list)
+    active_periods: typing.List["AlertActivePeriod"] = field(default_factory=list)
     agency_ids: typing.List[str] = field(default_factory=list)
     route_ids: typing.List[str] = field(default_factory=list)
     route_types: typing.List[Route.Type] = field(default_factory=list)
     trip_ids: typing.List[str] = field(default_factory=list)
     stop_ids: typing.List[str] = field(default_factory=list)
+
+
+@dataclass
+class AlertMessage:
+    header: str
+    description: str
+    url: str = None
+    language: str = None
+
+
+@dataclass
+class AlertActivePeriod:
+    starts_at: datetime.datetime = None
+    ends_at: datetime.datetime = None
 
 
 @dataclass

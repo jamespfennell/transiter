@@ -2,6 +2,7 @@ import pytest
 
 from transiter import models, exceptions
 from transiter.data import tripqueries, routequeries
+from transiter.data.queries import alertqueries
 from transiter.services import tripservice, views
 
 SYSTEM_ID = "1"
@@ -57,7 +58,6 @@ def test_list_all_in_route__route_not_found(monkeypatch):
 
 
 def test_list_all_in_route(monkeypatch, route, trip_1, trip_2, stop_1, stop_2):
-    """[Trip service] List all trips in a route"""
     monkeypatch.setattr(
         routequeries, "get_in_system_by_id", lambda *args, **kwargs: route
     )
@@ -68,6 +68,9 @@ def test_list_all_in_route(monkeypatch, route, trip_1, trip_2, stop_1, stop_2):
         tripqueries,
         "get_trip_pk_to_last_stop_map",
         lambda *args, **kwargs: {trip_1.pk: stop_1, trip_2.pk: stop_2},
+    )
+    monkeypatch.setattr(
+        alertqueries, "get_trip_pk_to_active_alerts", lambda *args, **kwargs: {}
     )
 
     expected = [
@@ -80,6 +83,7 @@ def test_list_all_in_route(monkeypatch, route, trip_1, trip_2, stop_1, stop_2):
             current_status=None,
             vehicle_id=None,
             last_stop=views.Stop.from_model(stop_1),
+            alerts=[],
             _route_id=ROUTE_ID,
             _system_id=SYSTEM_ID,
         ),
@@ -92,6 +96,7 @@ def test_list_all_in_route(monkeypatch, route, trip_1, trip_2, stop_1, stop_2):
             current_status=None,
             vehicle_id=None,
             last_stop=views.Stop.from_model(stop_2),
+            alerts=[],
             _route_id=ROUTE_ID,
             _system_id=SYSTEM_ID,
         ),
@@ -116,6 +121,9 @@ def test_get_in_route_by_id(monkeypatch, route, trip_1, stop_1):
     monkeypatch.setattr(
         tripqueries, "get_in_route_by_id", lambda *args, **kwargs: trip_1
     )
+    monkeypatch.setattr(
+        alertqueries, "get_trip_pk_to_active_alerts", lambda *args, **kwargs: {}
+    )
 
     stop_time = models.TripStopTime()
     stop_time.stop = stop_1
@@ -132,6 +140,7 @@ def test_get_in_route_by_id(monkeypatch, route, trip_1, stop_1):
         _route_id=ROUTE_ID,
         _system_id=SYSTEM_ID,
         stop_times=[views.TripStopTime.from_model(stop_time)],
+        alerts=[],
         route=views.Route.from_model(route),
     )
     expected.stop_times[0].stop = views.Stop.from_model(stop_1)

@@ -12,34 +12,36 @@ import typing
 
 from transiter import exceptions, models
 from transiter.data import dbconnection, tripqueries, systemqueries, stopqueries
-from transiter.services import views
+from transiter.services import views, helpers
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
 
 
 @dbconnection.unit_of_work
-def list_all_in_system(system_id) -> typing.List[views.Stop]:
-    """
-    Get information on all stops in a specific system.
-    """
+def list_all_in_system(system_id, alerts_detail=None) -> typing.List[views.Stop]:
     system = systemqueries.get_by_id(system_id, only_return_active=True)
     if system is None:
         raise exceptions.IdNotFoundError(models.System, system_id=system_id)
 
-    return list(map(views.Stop.from_model, stopqueries.list_all_in_system(system_id)))
+    stops = stopqueries.list_all_in_system(system_id)
+    response = list(map(views.Stop.from_model, stops))
+    helpers.add_alerts_to_views(
+        response, stops, alerts_detail or views.AlertsDetail.NONE,
+    )
+    return response
 
 
 @dbconnection.unit_of_work
 def get_in_system_by_id(
     system_id,
     stop_id,
-    return_links=True,
     return_only_stations=True,
     earliest_time=None,
     latest_time=None,
     minimum_number_of_trips=None,
     include_all_trips_within=None,
     exclude_trips_before=None,
+    alerts_detail=None,
 ):
     """
     Get information about a specific stop.
@@ -94,6 +96,9 @@ def get_in_system_by_id(
                 trip_stop_time, direction, trip_pk_to_last_stop
             )
         )
+    helpers.add_alerts_to_views(
+        [response], [stop], alerts_detail or views.AlertsDetail.CAUSE_AND_EFFECT,
+    )
     return response
 
 

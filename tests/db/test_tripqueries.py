@@ -75,7 +75,7 @@ def test_list_by_system_and_trip_ids(
     other_system_trip = add_model(models.Trip(id=trip_1.id, route=route_2_1))
 
     actual = tripqueries.list_by_system_and_trip_ids(
-        system_1.pk, [trip_1.id, trip_2.id]
+        system_1.id, [trip_1.id, trip_2.id]
     )
 
     assert [trip_1, trip_2] == actual

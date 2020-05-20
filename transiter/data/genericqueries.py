@@ -54,7 +54,7 @@ def get_by_id(DbEntity: models.Base, id_):
     return session.query(DbEntity).filter(DbEntity.id == id_).one_or_none()
 
 
-def list_all_in_system(DbEntity: models.Base, system_id, order_by_field=None):
+def list_in_system(DbEntity: models.Base, system_id, order_by_field=None, ids=None):
     """
     List all entities of a certain type that are in a given system. Note this method
     only works with entities that are direct children of the system.
@@ -62,14 +62,19 @@ def list_all_in_system(DbEntity: models.Base, system_id, order_by_field=None):
     :param DbEntity: the entity's type
     :param system_id: the system's ID
     :param order_by_field: optional field to order the results by
+    :param ids: ids to filter on
     :return: list of entities of type DbEntity
     """
+    if ids is not None and len(ids) == 0:
+        return []
     session = dbconnection.get_session()
     query = (
         session.query(DbEntity)
         .filter(DbEntity.system_pk == models.System.pk)
         .filter(models.System.id == system_id)
     )
+    if ids is not None:
+        query = query.filter(DbEntity.id.in_(ids))
     if order_by_field is not None:
         query = query.order_by(order_by_field)
     return query.all()

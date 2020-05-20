@@ -43,5 +43,8 @@ class Trip(Base):
         cascade="all, delete-orphan",
         cascade_backrefs=False,
     )
+    alerts = relationship(
+        "Alert", secondary="alert_trip", back_populates="trips", cascade="all"
+    )
 
     __table_args__ = (UniqueConstraint(route_pk, id),)

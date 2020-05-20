@@ -14,7 +14,7 @@ script:
   - make containerized-db-tests
   - make end-to-end-tests
   - docker run --entrypoint black jamespfennell/transiter-ci:latest --check {/transiter/source/transiter,/transiter-ci/tests}
-  - docker run --entrypoint pycodestyle jamespfennell/transiter-ci:latest --ignore=E203,E501,W503 {/transiter/source/transiter,/transiter-ci/tests}
+  - docker run --entrypoint pycodestyle jamespfennell/transiter-ci:latest --ignore=E203,E501,W503 --exclude="*pb2.py" {/transiter/source/transiter,/transiter-ci/tests}
 
 after_success:
   - python travis.py after

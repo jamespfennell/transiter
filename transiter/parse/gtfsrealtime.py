@@ -3,70 +3,131 @@ The GTFS Realtime Util contains the logic for reading feeds of this format.
 
 The official reference is here: https://gtfs.org/reference/realtime/v2/
 """
+import collections
 import datetime
+import typing
 
 import pytz
-from google.transit import gtfs_realtime_pb2
 
 from transiter import parse
+from . import transiter_gtfs_rt_pb2
 
 
-def create_parser(gtfs_realtime_pb2_module=None, post_pb2_parsing_function=None):
-    """
-    Create a GTFS Realtime parser.
+class GtfsRealtimeParser(parse.TransiterParser):
 
-    The returned parser performs the following steps in order:
+    GTFS_REALTIME_PB2_MODULE = None
 
-    (1) Read the GTFS Realtime binary data into a JSON structure using either
-        the default GTFS Realtime protobuf modules or a custom module.
-        The custom is for when a GTFS Realtime extension is being used.
+    _gtfs_feed_message = None
 
-    (2) Optionally apply a post-pb2-parsing function to the JSON structure.
-        This is generally use for merging GTFS Realtime extension data into
-        the main JSON structure. Clean-up of the data within the feed is
-        easier with a trip cleaner in (4).
+    def load_content(self, content: bytes) -> None:
+        if self.GTFS_REALTIME_PB2_MODULE is not None:
+            pb2_module = self.GTFS_REALTIME_PB2_MODULE
+        else:
+            pb2_module = transiter_gtfs_rt_pb2
+        self._gtfs_feed_message = pb2_module.FeedMessage()
+        self._gtfs_feed_message.ParseFromString(content)
+        self.post_process_feed_message(self._gtfs_feed_message)
 
-    (3) Convert the JSON structure into various Transiter Python objects.
-        These objects are SQL Alchemy models that correspond to database tables.
+    @staticmethod
+    def post_process_feed_message(feed_message):
+        pass
 
-    :param gtfs_realtime_pb2_module: optional, the protobuffers module to use
-        to read the feed. Defaults to the official module on PyPI.
-    :param post_pb2_parsing_function: the function described in (2). It takes
-        a single argument, which is the JSON data structure. It returns nothing;
-        rather, it alterts the JSON structure in place.
-    :return: the parser
-    """
-    # Additional arguments are accepted for forwards compatibility
-    # noinspection PyUnusedLocal
-    def parser(binary_content, *args, **kwargs):
-        gtfs_data = read_gtfs_realtime(binary_content, gtfs_realtime_pb2_module)
-        if post_pb2_parsing_function is not None:
-            post_pb2_parsing_function(gtfs_data)
+    def get_timestamp(self) -> typing.Optional[datetime.datetime]:
+        return _timestamp_to_datetime(self._gtfs_feed_message.header.timestamp)
+
+    def get_alerts(self) -> typing.Iterable[parse.Alert]:
+        yield from parse_alerts(self._gtfs_feed_message)
+
+    def get_trips(self) -> typing.Iterable[parse.Trip]:
         (feed_time, trips) = transform_to_transiter_structure(
-            gtfs_data, "America/New_York"
+            _read_protobuf_message(self._gtfs_feed_message), "America/New_York"
         )
         return trips
 
-    return parser
+
+# Smallest number that is expressible as the sum of two cubes in two different ways.
+TRANSITER_EXTENSION_ID = 1729  # = 1^3 + 12^3 = 9^3 + 10^3
 
 
-built_in_parser = create_parser()
+def parse_alerts(feed_message):
+    for entity in feed_message.entity:
+        if not entity.HasField("alert"):
+            continue
+        alert_id = entity.id
+        alert = entity.alert
+        active_periods = [
+            parse.AlertActivePeriod(
+                starts_at=_timestamp_to_datetime(active_period.start),
+                ends_at=_timestamp_to_datetime(active_period.end),
+            )
+            for active_period in alert.active_period
+        ]
+        parsed_alert = parse.Alert(
+            id=alert_id,
+            cause=parse.Alert.Cause(alert.cause),
+            effect=parse.Alert.Effect(alert.effect),
+            messages=list(build_alert_messages(alert)),
+            active_periods=active_periods,
+        )
+        attach_informed_entities(alert, parsed_alert)
+        attach_transiter_extension_data(alert, parsed_alert)
+        yield parsed_alert
 
 
-def read_gtfs_realtime(content, gtfs_realtime_pb2_module=None):
-    """
-    Convert a binary GTFS Realtime feed to a JSON-like data structure
+def attach_transiter_extension_data(alert, parsed_alert: parse.Alert):
+    # This the only way to actually get the extension...of course, the API can't
+    # be trusted to not change but probably it won't.
+    # noinspection PyProtectedMember
+    extension_key = alert._extensions_by_number.get(TRANSITER_EXTENSION_ID)
+    if extension_key is None:
+        return
+    additional_data = alert.Extensions[extension_key]
+    parsed_alert.created_at = _timestamp_to_datetime(additional_data.created_at)
+    parsed_alert.updated_at = _timestamp_to_datetime(additional_data.updated_at)
+    if additional_data.HasField("sort_order"):
+        parsed_alert.sort_order = additional_data.sort_order
 
-    :param content: GTFS realtime binary data
-    :param gtfs_realtime_pb2_module: GTFS realtime module
-    :return: the data in a JSON-like data structure
-    """
-    if gtfs_realtime_pb2_module is None:
-        gtfs_realtime_pb2_module = gtfs_realtime_pb2
 
-    gtfs_feed = gtfs_realtime_pb2_module.FeedMessage()
-    gtfs_feed.ParseFromString(content)
-    return _read_protobuf_message(gtfs_feed)
+def _timestamp_to_datetime(timestamp):
+    if timestamp == 0 or timestamp is None:
+        return None
+    return datetime.datetime.utcfromtimestamp(timestamp).replace(tzinfo=pytz.UTC)
+
+
+def attach_informed_entities(alert, parsed_alert: parse.Alert):
+    for informed_entity in alert.informed_entity:
+        if informed_entity.HasField("trip"):
+            if informed_entity.trip.HasField("trip_id"):
+                parsed_alert.trip_ids.append(informed_entity.trip.trip_id)
+                continue
+            elif informed_entity.trip.HasField("route_id"):
+                parsed_alert.route_ids.append(informed_entity.trip.route_id)
+        elif informed_entity.HasField("route_id"):
+            parsed_alert.route_ids.append(informed_entity.route_id)
+        elif informed_entity.HasField("stop_id"):
+            parsed_alert.stop_ids.append(informed_entity.stop_id)
+        elif informed_entity.HasField("agency_id"):
+            parsed_alert.agency_ids.append(informed_entity.agency_id)
+
+
+def build_alert_messages(alert):
+    def get_language(translated_string):
+        if translated_string.HasField("language"):
+            return translated_string.language
+        return None
+
+    language_to_message = collections.defaultdict(
+        lambda: parse.AlertMessage(header="", description="")
+    )
+    for header in alert.header_text.translation:
+        language_to_message[get_language(header)].header = header.text
+    for description in alert.description_text.translation:
+        language_to_message[get_language(description)].description = description.text
+    for url in alert.url.translation:
+        language_to_message[get_language(url)].url = url.text
+    for language, message in language_to_message.items():
+        message.language = language
+        yield message
 
 
 def _read_protobuf_message(message):
@@ -105,14 +166,6 @@ def _read_protobuf_message(message):
 
         d[descriptor.name] = parsed_value
     return d
-
-
-if __name__ == "__main__":
-    with open("path.gtfsrt", "rb") as f:
-        result = read_gtfs_realtime(f.read())
-    import json
-
-    print(json.dumps(result, indent=2))
 
 
 def transform_to_transiter_structure(data, timezone_str=None):
@@ -165,66 +218,7 @@ class _GtfsRealtimeToTransiterTransformer:
         self._transform_trip_base_data()
         self._transform_trip_stop_events()
         self._update_stop_event_indices()
-        return (
-            self._feed_time,
-            list(self._trip_id_to_trip_model.values())
-            + self.build_alerts(self._raw_data),
-        )
-
-    def build_alerts(self, raw_data):
-        def get_text(alert_data_, key):
-            texts = alert_data_.get(key, {}).get(TRANSLATION, [])
-            if len(texts) == 0:
-                return None
-            return texts[0][TEXT]
-
-        def get_enum_value(enum, key, default):
-            try:
-                return enum[key]
-            except KeyError:
-                return default
-
-        alerts = []
-        for entity in raw_data.get(ENTITY, []):
-            alert_id = entity.get(ID)
-            alert_data = entity.get(ALERT)
-            if alert_id is None or alert_data is None:
-                continue
-            informed_entities = alert_data.get(INFORMED_ENTITY, {})
-            alert = parse.Alert(
-                id=alert_id,
-                cause=get_enum_value(
-                    parse.Alert.Cause,
-                    alert_data.get(CAUSE),
-                    parse.Alert.Cause.UNKNOWN_CAUSE,
-                ),
-                effect=get_enum_value(
-                    parse.Alert.Effect,
-                    alert_data.get(EFFECT),
-                    parse.Alert.Effect.UNKNOWN_EFFECT,
-                ),
-                header=get_text(alert_data, HEADER_TEXT),
-                description=get_text(alert_data, DESCRIPTION_TEXT),
-                url=get_text(alert_data, URL),
-                start_time=self._timestamp_to_datetime(
-                    alert_data.get(ACTIVE_PERIOD, {}).get(START)
-                ),
-                end_time=self._timestamp_to_datetime(
-                    alert_data.get(ACTIVE_PERIOD, {}).get(START)
-                ),
-                agency_ids=[
-                    informed_entity[AGENCY_ID]
-                    for informed_entity in informed_entities
-                    if AGENCY_ID in informed_entity
-                ],
-                route_ids=[
-                    informed_entity[ROUTE_ID]
-                    for informed_entity in informed_entities
-                    if ROUTE_ID in informed_entity
-                ],
-            )
-            alerts.append(alert)
-        return alerts
+        return (self._feed_time, list(self._trip_id_to_trip_model.values()))
 
     def _transform_feed_metadata(self):
         self._feed_time = self._timestamp_to_datetime(

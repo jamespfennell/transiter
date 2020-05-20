@@ -1,5 +1,7 @@
 from .agency import Agency
 from .alert import Alert, alert_route
+from .alertactiveperiod import AlertActivePeriod
+from .alertmessage import AlertMessage
 from .base import Base
 from .directionrule import DirectionRule
 from .feed import Feed

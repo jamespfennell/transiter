@@ -35,7 +35,7 @@ def list_all_in_system(system_id):
     :param system_id: the system's ID
     :return: list of Feeds
     """
-    return genericqueries.list_all_in_system(models.Feed, system_id, models.Feed.id)
+    return genericqueries.list_in_system(models.Feed, system_id, models.Feed.id)
 
 
 def get_in_system_by_id(system_id, feed_id):

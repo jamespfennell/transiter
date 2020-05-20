@@ -50,7 +50,7 @@ def test_delete_stale_entities(
 
     genericqueries.delete_stale_entities(models.Route, update_2)
 
-    assert [route_1_2, route_1_3] == routequeries.list_all_in_system(system_1.id)
+    assert [route_1_2, route_1_3] == routequeries.list_in_system(system_1.id)
 
 
 def test_list_stale_entities(

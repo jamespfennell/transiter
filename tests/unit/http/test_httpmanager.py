@@ -124,3 +124,37 @@ def test_json_serialization__unknown_object():
 
     with pytest.raises(TypeError):
         httpmanager._transiter_json_serializer(flask.Response())
+
+
+@pytest.mark.parametrize("value", ["value_a", "VALUE_A", "VaLuE_a"])
+def test_get_enum_url_parameter__base_case(flask_request, value):
+    class TestEnum(enum.Enum):
+        VALUE_A = 0
+        VALUE_B = 1
+
+    flask_request.args = {"my_param": "value_a"}
+
+    assert TestEnum.VALUE_A == httpmanager.get_enum_url_parameter("my_param", TestEnum)
+
+
+def test_get_enum_url_parameter__default_case(flask_request):
+    class TestEnum(enum.Enum):
+        VALUE_A = 0
+        VALUE_B = 1
+
+    flask_request.args = {}
+
+    assert TestEnum.VALUE_A == httpmanager.get_enum_url_parameter(
+        "my_param", TestEnum, TestEnum.VALUE_A
+    )
+
+
+def test_get_enum_url_parameter__invalid(flask_request):
+    class TestEnum(enum.Enum):
+        VALUE_A = 0
+        VALUE_B = 1
+
+    flask_request.args = {"my_param": "value_c"}
+
+    with pytest.raises(exceptions.InvalidInput):
+        httpmanager.get_enum_url_parameter("my_param", TestEnum)

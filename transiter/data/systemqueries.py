@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import func, sql
+from sqlalchemy import sql
 from sqlalchemy.orm import joinedload
 
 from transiter import models
@@ -81,48 +81,5 @@ def set_auto_update_enabled(system_id, auto_update_enabled) -> bool:
     return True
 
 
-def _count_child_entity_in_system(system_id, Model):
-    """
-    Return the number of entities of a certain type that are children of a System.
-
-    :param system_id: the system's ID
-    :param Model: the model type: Trip, Route or Stop
-    :return: the integer count
-    """
-    session = dbconnection.get_session()
-    query = (
-        session.query(func.count(Model.pk))
-        .filter(Model.system_pk == models.System.pk)
-        .filter(models.System.id == system_id)
-    )
-    return query.one()[0]
-
-
-def count_stops_in_system(system_id):
-    """
-    Return the number of Stops in a system.
-
-    :param system_id: the system's ID
-    :return: the integer count
-    """
-    return _count_child_entity_in_system(system_id, models.Stop)
-
-
-def count_routes_in_system(system_id):
-    """
-    Return the number of Routes in a system.
-
-    :param system_id: the system's ID
-    :return: the integer count
-    """
-    return _count_child_entity_in_system(system_id, models.Route)
-
-
-def count_feeds_in_system(system_id):
-    """
-    Return the number of Feeds in a system.
-
-    :param system_id: the system's ID
-    :return: the integer count
-    """
-    return _count_child_entity_in_system(system_id, models.Feed)
+def list_agencies_in_system(system_id, agency_ids=None):
+    return genericqueries.list_in_system(models.Agency, system_id, ids=agency_ids)

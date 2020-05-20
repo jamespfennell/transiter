@@ -50,42 +50,6 @@ def test_get_by_id__not_active(installing_system):
     )
 
 
-def test_count_stops_in_system(system_1, stop_1_1, stop_1_2, stop_2_1):
-    count = systemqueries.count_stops_in_system(system_1.id)
-
-    assert 2 == count
-
-
-def test_count_stops_in_system__no_stops(system_1, stop_2_1):
-    count = systemqueries.count_stops_in_system(system_1.id)
-
-    assert 0 == count
-
-
-def test_count_routes_in_system(system_1, route_1_1, route_1_2, route_1_3, route_2_1):
-    count = systemqueries.count_routes_in_system(system_1.id)
-
-    assert 3 == count
-
-
-def test_count_routes_in_system__no_routes(system_1, route_2_1):
-    count = systemqueries.count_routes_in_system(system_1.id)
-
-    assert 0 == count
-
-
-def test_count_feeds_in_system(system_1, feed_1_1, feed_1_2, feed_2_1):
-    count = systemqueries.count_feeds_in_system(system_1.id)
-
-    assert 2 == count
-
-
-def test_count_feeds_in_system__no_feeds(system_1, feed_2_1):
-    count = systemqueries.count_routes_in_system(system_1.id)
-
-    assert 0 == count
-
-
 @pytest.mark.parametrize("old_value", [True, False])
 @pytest.mark.parametrize("new_value", [True, False])
 def test_set_auto_update_enabled(db_session, system_1, system_2, old_value, new_value):
