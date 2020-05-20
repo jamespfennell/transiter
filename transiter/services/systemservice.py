@@ -235,6 +235,7 @@ def _install_system_configuration(system_update_pk):
     )
     system_config = systemconfigreader.read(system_update.config, extra_settings)
     system = system_update.system
+    system.name = system_config[systemconfigreader.NAME]
 
     # Service maps must come first in case calculations are triggered
     # by install_required feed updates

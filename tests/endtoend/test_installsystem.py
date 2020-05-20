@@ -44,6 +44,10 @@ def test_install_system__success(install_system_1, transiter_host, sync):
     system_id = "test_install_system_" + str(sync)
     install_system_1(system_id, sync=sync)
 
+    # (0) Verify the system name was populated
+    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
+    assert system_response["name"] == "Test System"
+
     # (1) Verify all of the stops were installed
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     stops_count = system_response["stops"]["count"]
