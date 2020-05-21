@@ -1,34 +1,53 @@
-# Python is used here just to install coveralls and docker. It is not necessary to
-# keep the version in sync with Transiter's Python version.
 language: python
-python: "3.6"
+python: "3.7"
 
-install:
-  - pip install --quiet docker
-  - python travis.py before
-  - make docker-ci
-  - docker-compose -p transiter -f docker/docker-compose.yml up -d
+jobs:
+  include:
+    - stage: "Native host build and tests"
+      name: "Unit and database tests"
+      install:
+        - pip install --quiet .
+        - pip install --quiet -r dev-requirements.txt
+      before_script:
+        - docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
+      script:
+        - coverage run --source=transiter --omit="transiter/alembic/*","*pb2/*" -m pytest --color=yes tests/unit tests/db
+      after_success:
+        - pip install --quiet coveralls
+        - coveralls
 
-script:
-  - make containerized-unit-tests
-  - make containerized-db-tests
-  - make end-to-end-tests
-  - docker run --entrypoint black jamespfennell/transiter-ci:latest --check {/transiter/source/transiter,/transiter-ci/tests}
-  - docker run --entrypoint pycodestyle jamespfennell/transiter-ci:latest --ignore=E203,E501,W503 --exclude="*pb2.py" {/transiter/source/transiter,/transiter-ci/tests}
+    - name: "End to end tests"
+      install:
+        - pip install --quiet .
+        - pip install --quiet -r dev-requirements.txt
+      before_script:
+        - docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
+        - docker run -d -p 5672:5672 rabbitmq:3
+        - transiterclt db reset --yes
+        - transiterclt launch webservice > webservice.log &
+        - transiterclt launch executor > executor.log &
+        - transiterclt launch scheduler > scheduler.log &
+        - python tests/endtoend/sourceserver.py > sourceserver.log &
+      script:
+        - pytest --color=yes tests/endtoend
 
-after_success:
-  - python travis.py after
-  # In order to submit code coverage numbers, we need to perform some
-  # pre-processing steps:
-  # 1. Install the coveralls package.
-  # 1. Make the coverage file writable. This file is often created
-  #    inside a directory mounted as a Docker volume, and by default
-  #    is only writable by root.
-  # 2. Transform paths in the .coverage file from being relative
-  #    to the Docker container to be relative to the Travis CI build
-  #    directory. Necessary for correct coverage reporting.
-  - pip install --quiet coverage==5.1
-  - pip install --quiet coveralls
-  - sudo chmod -R 0777 coverage
-  - coverage combine
-  - coveralls
+    - name: "Formatting enforcement"
+      install:
+        - pip install --quiet black==19.10b pycodestyle==2.5.0
+      script:
+        - black transiter tests *py
+        - pycodestyle --ignore=E203,E501,W503 --exclude="*pb2.py" transiter tests *py
+
+    - stage: "Containerized build and tests"
+      name: "CPython 3.7 Docker build and all tests"
+      install:
+        - pip install --quiet docker
+        - python travis.py before
+        - make docker-ci
+        - docker-compose -p transiter -f docker/docker-compose.yml up -d
+      script:
+        - make containerized-unit-tests
+        - make containerized-db-tests
+        - make end-to-end-tests
+      after_success:
+        - python travis.py after

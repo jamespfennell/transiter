@@ -12,8 +12,6 @@ WORKDIR /transiter-ci
 COPY dev-requirements.txt dev-requirements.txt
 RUN pip install --quiet -r dev-requirements.txt
 
-COPY .coveragerc .coveragerc
-RUN mkdir coverage
 COPY Makefile Makefile
 COPY docs docs
 COPY tests tests
