@@ -45,4 +45,4 @@ end-to-end-tests:
 # Misc commands
 
 black:
-	black "{transiter,tests,*py}"
+	black {transiter,tests,*py}

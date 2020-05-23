@@ -2,7 +2,7 @@ import unittest
 
 from sqlalchemy import Column, String, Integer
 
-from transiter.models import base
+from transiter.db.models import base
 
 
 class TestBasicModel(unittest.TestCase):

@@ -3,7 +3,7 @@ import datetime
 import enum
 import typing
 
-from transiter import models
+from transiter.db import models
 
 
 class NULL:

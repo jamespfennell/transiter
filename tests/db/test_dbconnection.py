@@ -1,6 +1,6 @@
 import pytest
 
-from transiter.data import dbconnection
+from transiter.db import dbconnection
 
 
 def test_outside_unit_of_work_error__before():

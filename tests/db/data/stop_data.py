@@ -1,6 +1,6 @@
 import pytest
 
-from transiter import models
+from transiter.db import models
 
 
 @pytest.fixture

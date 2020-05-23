@@ -6,7 +6,8 @@ from unittest import mock
 
 import pytest
 
-from transiter import models, parse
+from transiter import parse
+from transiter.db import models
 from transiter.parse import gtfsstatic as gtfsstaticparser
 
 ROUTE_ID = "L"

@@ -8,7 +8,7 @@ import click
 from sqlalchemy import exc
 
 from transiter import config
-from transiter.data import dbconnection
+from transiter.db import dbconnection
 from transiter.executor import celeryapp
 from transiter.scheduler import server as scheduler, client
 

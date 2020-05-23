@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from transiter.data import dbconnection
+from transiter.db import dbconnection
 
 # noinspection PyUnresolvedReferences
 from .data import *

@@ -6,7 +6,7 @@ from click.testing import CliRunner
 from sqlalchemy import exc
 
 from transiter import clt
-from transiter.data import dbconnection
+from transiter.db import dbconnection
 from transiter.executor import celeryapp
 from transiter.http import flaskapp
 from transiter.scheduler import client, server as scheduler

@@ -2,20 +2,22 @@
 Service map manager has responsibility for constructing and displaying service
 maps
 """
+import collections
 import datetime
 import json
 import logging
 import typing
-import collections
 from typing import List, Set, Tuple
 
-from transiter import models
-from transiter.data import (
+from transiter.db import (
     dbconnection,
+    models,
+)
+from transiter.db.queries import (
     tripqueries,
     servicemapqueries,
-    schedulequeries,
     stopqueries,
+    schedulequeries,
 )
 from transiter.services import views
 from transiter.services.servicemap import graphutils, conditions

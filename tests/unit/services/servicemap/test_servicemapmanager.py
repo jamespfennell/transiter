@@ -4,13 +4,15 @@ from unittest import mock
 
 import pytest
 
-from transiter import models
-from transiter.data import (
+from transiter.db import (
     dbconnection,
+    models,
+)
+from transiter.db.queries import (
     tripqueries,
     servicemapqueries,
-    schedulequeries,
     stopqueries,
+    schedulequeries,
 )
 from transiter.services import views
 from transiter.services.servicemap import servicemapmanager

@@ -4,9 +4,9 @@ import unittest.mock as mock
 
 import pytest
 
-from transiter import models, exceptions
-from transiter.data import tripqueries, systemqueries, stopqueries
-from transiter.data.queries import alertqueries
+from transiter import exceptions
+from transiter.db import models
+from transiter.db.queries import alertqueries, tripqueries, stopqueries, systemqueries
 from transiter.services import stopservice, views
 from transiter.services.servicemap import servicemapmanager
 

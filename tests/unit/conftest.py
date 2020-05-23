@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from transiter.data import dbconnection
+from transiter.db import dbconnection
 
 
 @pytest.fixture(autouse=True)

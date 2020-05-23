@@ -6,7 +6,8 @@ import strictyaml
 from strictyaml import Map
 from strictyaml.exceptions import YAMLValidationError, YAMLSerializationError
 
-from transiter import models, exceptions
+from transiter import exceptions
+from transiter.db import models
 from transiter.services import systemconfigreader
 
 

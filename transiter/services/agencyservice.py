@@ -1,7 +1,8 @@
 import typing
 
-from transiter import exceptions, models
-from transiter.data import dbconnection, systemqueries, genericqueries
+from transiter import exceptions
+from transiter.db import dbconnection, models
+from transiter.db.queries import genericqueries, systemqueries
 from transiter.services import views, helpers
 
 

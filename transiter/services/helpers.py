@@ -1,7 +1,7 @@
 import typing
 
-from transiter import models
-from transiter.data.queries import alertqueries
+from transiter.db import models
+from transiter.db.queries import alertqueries
 from transiter.services import views
 
 

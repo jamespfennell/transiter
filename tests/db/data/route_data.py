@@ -1,6 +1,6 @@
 import pytest
 
-from transiter import models
+from transiter.db import models
 
 ROUTE_1_1_ID = "202"
 

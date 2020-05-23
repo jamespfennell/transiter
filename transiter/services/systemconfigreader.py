@@ -18,7 +18,7 @@ from strictyaml import (
 from strictyaml.exceptions import YAMLSerializationError
 
 from transiter import exceptions
-from transiter import models
+from transiter.db import models
 from transiter.services.servicemap import conditions
 
 

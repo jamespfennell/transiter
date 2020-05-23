@@ -1,7 +1,7 @@
 import pytest
 
 from transiter import parse
-from transiter.models import updatableentity
+from transiter.db.models import updatableentity
 
 route = parse.Route(id="route", type=parse.Route.Type.RAIL)
 
