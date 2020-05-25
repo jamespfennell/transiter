@@ -5,6 +5,7 @@ The official reference is here: https://gtfs.org/reference/realtime/v2/
 """
 import collections
 import datetime
+import sys
 import typing
 
 import pytz
@@ -44,6 +45,9 @@ class GtfsRealtimeParser(TransiterParser):
             _read_protobuf_message(self._gtfs_feed_message), "America/New_York"
         )
         return trips
+
+    def print(self):
+        print(self._gtfs_feed_message)
 
 
 # Smallest number that is expressible as the sum of two cubes in two different ways.
@@ -340,3 +344,11 @@ class _GtfsRealtimeToTransiterTransformer:
             return self._timezone.localize(dt)
         else:
             return dt.astimezone(self._timezone)
+
+
+if __name__ == "__main__":
+    with open(sys.argv[1], "rb") as f:
+        content = f.read()
+    parser = GtfsRealtimeParser()
+    parser.load_content(content)
+    parser.print()
