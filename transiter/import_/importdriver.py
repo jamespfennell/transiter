@@ -448,6 +448,16 @@ class TripSyncer(syncer(models.Trip)):
         for trip in trips:
             db_trip = trip_id_to_db_trip.get(trip.id, None)
             if db_trip is None:
+                index = 1
+                for stop_time in trip.stop_times:
+                    # If the stop sequence is not set, or is less than a previously
+                    # assigned stop sequence and hence malformed, then we update it.
+                    if (
+                        stop_time.stop_sequence is None
+                        or stop_time.stop_sequence < index
+                    ):
+                        stop_time.stop_sequence = index
+                    index = stop_time.stop_sequence + 1
                 continue
             trip.pk = db_trip.pk
             db_stop_time_data = trip_pk_to_db_stop_time_data_list.get(db_trip.pk, [])
@@ -518,6 +528,21 @@ class TripSyncer(syncer(models.Trip)):
         """
         Add stop time data from the database trip.
         """
+        stop_pk_to_stop_sequence = {
+            stop_time_data.stop_pk: stop_time_data.stop_sequence
+            for stop_time_data in db_stop_time_data
+        }
+        index = 1
+        for stop_time in trip.stop_times:
+            existing_stop_sequence = stop_pk_to_stop_sequence.get(stop_time.stop_pk)
+            # If stop sequence is null or malformed.
+            if stop_time.stop_sequence is None or stop_time.stop_sequence < index:
+                if existing_stop_sequence is None or existing_stop_sequence < index:
+                    stop_time.stop_sequence = index
+                else:
+                    stop_time.stop_sequence = existing_stop_sequence
+            index = stop_time.stop_sequence + 1
+
         stop_sequence_to_pk_and_stop_pk = {
             stop_sequence: (stop_time_pk, stop_pk)
             for stop_time_pk, stop_sequence, stop_pk in db_stop_time_data

@@ -222,7 +222,6 @@ class _GtfsRealtimeToTransiterTransformer:
         self._group_trip_entities()
         self._transform_trip_base_data()
         self._transform_trip_stop_events()
-        self._update_stop_event_indices()
         return (self._feed_time, list(self._trip_id_to_trip_model.values()))
 
     def _transform_feed_metadata(self):
@@ -315,16 +314,10 @@ class _GtfsRealtimeToTransiterTransformer:
                         "departure", {}
                     ).get("uncertainty"),
                     track=stop_time_update_data.get("track", None),
+                    stop_sequence=stop_time_update_data.get("stop_sequence", None),
                 )
                 stop_time_updates.append(stop_time_update)
             trip.stop_times = stop_time_updates
-
-    def _update_stop_event_indices(self):
-        for trip_id, trip in self._trip_id_to_trip_model.items():
-            index = trip.current_stop_sequence
-            for stop_time_update in trip.stop_times:
-                stop_time_update.stop_sequence = index
-                index += 1
 
     def _timestamp_to_datetime(self, timestamp):
         if timestamp is None or timestamp == 0:

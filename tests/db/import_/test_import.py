@@ -441,52 +441,167 @@ def test_trip__invalid_stops_in_stop_times(
     assert 1 == len(all_trips[0].stop_times)
 
 
+TIME_1 = datetime.datetime.fromtimestamp(1000100, tz=pytz.timezone("UTC"))
+TIME_2 = datetime.datetime.fromtimestamp(1000200, tz=pytz.timezone("UTC"))
+TIME_3 = datetime.datetime.fromtimestamp(1000300, tz=pytz.timezone("UTC"))
+STOP_ID_1 = "stop_id_1"
+STOP_ID_2 = "stop_id_2"
+STOP_ID_3 = "stop_id_3"
+
+
+# Just to make the parameters in the next test easier to follow
+def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
+    return parse.TripStopTime(
+        stop_sequence=stop_sequence,
+        stop_id=stop_id,
+        arrival_time=arrival_time,
+        future=future,
+    )
+
+
+@pytest.mark.parametrize(
+    "old_stop_time_data,new_stop_time_data,expected_stop_time_data",
+    [
+        [  # Basic arrival time update case
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, True),
+                trip_stop_time(2, STOP_ID_2, TIME_2, True),
+            ],
+            [trip_stop_time(2, STOP_ID_2, TIME_3, True)],
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, False),
+                trip_stop_time(2, STOP_ID_2, TIME_3, True),
+            ],
+        ],
+        [  # Converting a null stop sequence to a correct one based on the DB
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, True),
+                trip_stop_time(4, STOP_ID_2, TIME_2, True),
+            ],
+            [trip_stop_time(None, STOP_ID_2, TIME_3, True)],
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, False),
+                trip_stop_time(4, STOP_ID_2, TIME_3, True),
+            ],
+        ],
+        [  # Converting a null stop sequence to a correct one multiple times
+            [
+                trip_stop_time(None, STOP_ID_1, TIME_1, True),
+                trip_stop_time(None, STOP_ID_2, TIME_2, True),
+            ],
+            [trip_stop_time(None, STOP_ID_2, TIME_3, True)],
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, False),
+                trip_stop_time(2, STOP_ID_2, TIME_3, True),
+            ],
+        ],
+        [  # Converting a null stop sequence to a correct one with change of schedule
+            [
+                trip_stop_time(None, STOP_ID_1, TIME_1, True),
+                trip_stop_time(None, STOP_ID_2, TIME_2, True),
+                trip_stop_time(None, STOP_ID_3, TIME_3, True),
+            ],
+            [
+                trip_stop_time(None, STOP_ID_3, TIME_2, True),
+                trip_stop_time(None, STOP_ID_2, TIME_3, True),
+            ],
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, False),
+                trip_stop_time(3, STOP_ID_3, TIME_2, True),
+                trip_stop_time(4, STOP_ID_2, TIME_3, True),
+            ],
+        ],
+        [  # Converting a null stop sequence to a correct one with change of schedule 2
+            [
+                trip_stop_time(None, STOP_ID_1, TIME_1, True),
+                trip_stop_time(None, STOP_ID_2, TIME_2, True),
+                trip_stop_time(None, STOP_ID_3, TIME_3, True),
+            ],
+            [
+                trip_stop_time(None, STOP_ID_1, TIME_1, True),
+                trip_stop_time(None, STOP_ID_3, TIME_3, True),
+            ],
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, True),
+                trip_stop_time(3, STOP_ID_3, TIME_3, True),
+            ],
+        ],
+        [  # Deleting an extra stop time if it disappears
+            [
+                trip_stop_time(None, STOP_ID_1, TIME_1, True),
+                trip_stop_time(None, STOP_ID_2, TIME_2, True),
+            ],
+            [trip_stop_time(None, STOP_ID_1, TIME_1, True)],
+            [trip_stop_time(1, STOP_ID_1, TIME_1, True)],
+        ],
+        [  # Setting the stop sequences of a new trip
+            [],
+            [
+                trip_stop_time(None, STOP_ID_1, TIME_1, True),
+                trip_stop_time(None, STOP_ID_2, TIME_3, True),
+            ],
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, True),
+                trip_stop_time(2, STOP_ID_2, TIME_3, True),
+            ],
+        ],
+        [  # Handling malformed stop sequences in a new trip
+            [],
+            [
+                trip_stop_time(4, STOP_ID_1, TIME_1, True),
+                trip_stop_time(2, STOP_ID_2, TIME_3, True),
+            ],
+            [
+                trip_stop_time(4, STOP_ID_1, TIME_1, True),
+                trip_stop_time(5, STOP_ID_2, TIME_3, True),
+            ],
+        ],
+        [  # Handling a shift in the stop sequences in an existing trip
+            [
+                trip_stop_time(3, STOP_ID_1, TIME_1, True),
+                trip_stop_time(6, STOP_ID_2, TIME_3, True),
+            ],
+            [trip_stop_time(5, STOP_ID_2, TIME_3, True)],
+            [
+                trip_stop_time(3, STOP_ID_1, TIME_1, False),
+                trip_stop_time(5, STOP_ID_2, TIME_3, True),
+            ],
+        ],
+        [  # Ensuring a lower stop sequence overwrites existing data
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, True),
+                trip_stop_time(2, STOP_ID_2, TIME_2, True),
+            ],
+            [trip_stop_time(1, STOP_ID_2, TIME_3, True)],
+            [trip_stop_time(1, STOP_ID_2, TIME_3, True)],
+        ],
+        [  # Ensuring stop sequences are shifted forward
+            [
+                trip_stop_time(1, STOP_ID_1, TIME_1, True),
+                trip_stop_time(2, STOP_ID_2, TIME_2, True),
+            ],
+            [
+                trip_stop_time(5, STOP_ID_1, TIME_1, True),
+                trip_stop_time(6, STOP_ID_2, TIME_2, True),
+            ],
+            [
+                trip_stop_time(5, STOP_ID_1, TIME_1, True),
+                trip_stop_time(6, STOP_ID_2, TIME_2, True),
+            ],
+        ],
+    ],
+)
 def test_trip__stop_time_reconciliation(
-    db_session, add_model, system_1, route_1_1, previous_update, current_update
+    db_session,
+    add_model,
+    system_1,
+    route_1_1,
+    previous_update,
+    current_update,
+    old_stop_time_data,
+    new_stop_time_data,
+    expected_stop_time_data,
 ):
-
-    old_stop_time_data = [
-        parse.TripStopTime(
-            stop_sequence=1,
-            stop_id="stop_id_1",
-            arrival_time=datetime.datetime.fromtimestamp(1000100),
-            future=True,
-        ),
-        parse.TripStopTime(
-            stop_sequence=2,
-            stop_id="stop_id_2",
-            arrival_time=datetime.datetime.fromtimestamp(1000200),
-            future=True,
-        ),
-    ]
-    new_stop_time_data = [
-        parse.TripStopTime(
-            stop_sequence=2,
-            stop_id="stop_id_2",
-            arrival_time=datetime.datetime.fromtimestamp(1000300),
-            future=True,
-        ),
-    ]
-
-    expected_stop_time_data = [
-        parse.TripStopTime(
-            stop_sequence=1,
-            stop_id="stop_id_1",
-            arrival_time=datetime.datetime.fromtimestamp(
-                1000100, tz=pytz.timezone("UTC")
-            ),
-            future=False,
-        ),
-        parse.TripStopTime(
-            stop_sequence=2,
-            stop_id="stop_id_2",
-            arrival_time=datetime.datetime.fromtimestamp(
-                1000300, tz=pytz.timezone("UTC")
-            ),
-            future=True,
-        ),
-    ]
-
     stop_pk_to_stop = {}
     all_stop_ids = set(
         trip_stop_time.stop_id

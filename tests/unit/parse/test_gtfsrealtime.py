@@ -355,23 +355,6 @@ def test_transform_trip_stop_events_short_circuit():
     assert [] == trip.stop_times
 
 
-def test_update_stop_event_indices():
-    """[GTFS Realtime transformer] Update stop event indices"""
-    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
-    trip = parse.Trip(
-        id="trip",
-        route_id="L",
-        direction_id=True,
-        current_stop_sequence=15,
-        stop_times=[parse.TripStopTime(stop_id="1"), parse.TripStopTime(stop_id="2")],
-    )
-    transformer._trip_id_to_trip_model = {TRIP_ID: trip}
-
-    transformer._update_stop_event_indices()
-
-    assert [15, 16] == [stu.stop_sequence for stu in trip.stop_times]
-
-
 def test_start_to_finish_parse():
     """[GTFS Realtime transformer] Full transformation test"""
     input = {
@@ -433,7 +416,7 @@ def test_start_to_finish_parse():
 
     stu_1 = parse.TripStopTime(
         stop_id=STOP_ONE_ID,
-        stop_sequence=16,
+        stop_sequence=None,
         future=True,
         arrival_time=timestamp_to_datetime(STOP_ONE_ARR_TIMESTAMP),
         departure_time=timestamp_to_datetime(STOP_ONE_DEP_TIMESTAMP),
@@ -442,7 +425,7 @@ def test_start_to_finish_parse():
 
     stu_2 = parse.TripStopTime(
         stop_id=STOP_TWO_ID,
-        stop_sequence=17,
+        stop_sequence=None,
         future=True,
         arrival_time=timestamp_to_datetime(STOP_TWO_ARR_TIMESTAMP),
         departure_time=None,
