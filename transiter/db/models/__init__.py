@@ -23,3 +23,4 @@ from .systemupdate import SystemUpdate
 from .trip import Trip
 from .tripstoptime import TripStopTime
 from .updatableentity import list_updatable_entities
+from .vehicle import Vehicle

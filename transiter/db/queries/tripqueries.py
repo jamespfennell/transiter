@@ -5,6 +5,7 @@ import sqlalchemy.sql.expression as sql
 from sqlalchemy.orm import selectinload, joinedload
 
 from transiter.db import dbconnection, models
+import typing
 
 
 def list_all_from_feed(feed_pk):
@@ -17,6 +18,7 @@ def list_all_from_feed(feed_pk):
 
 
 def list_by_system_and_trip_ids(system_id, trip_ids):
+    trip_ids = list(trip_ids)
     if len(trip_ids) == 0:
         return []
     return (
@@ -28,6 +30,23 @@ def list_by_system_and_trip_ids(system_id, trip_ids):
         .filter(models.System.id == system_id)
         .all()
     )
+
+
+def get_id_to_pk_map_in_system(system_pk, trip_ids):
+    trip_ids = list(trip_ids)
+    if len(trip_ids) == 0:
+        return {}
+    id_to_pk = {id_: None for id_ in trip_ids}
+    for id_, pk in (
+        dbconnection.get_session()
+        .query(models.Trip.id, models.Trip.pk)
+        .join(models.Route)
+        .filter(models.Trip.id.in_(trip_ids))
+        .filter(models.Route.system_pk == system_pk)
+        .all()
+    ):
+        id_to_pk[id_] = pk
+    return id_to_pk
 
 
 class StopTimeData(NamedTuple):
@@ -51,13 +70,47 @@ def get_trip_pk_to_stop_time_data_list(feed_pk) -> Dict[int, List[StopTimeData]]
         .order_by(models.TripStopTime.trip_pk, models.TripStopTime.stop_sequence)
     )
     trip_pk_to_stop_time_data_list = {}
-    for (trip_pk, stop_time_pk, stop_sequence, stop_pk,) in query.all():
+    for (trip_pk, stop_time_pk, stop_sequence, stop_pk) in query.all():
         if trip_pk not in trip_pk_to_stop_time_data_list:
             trip_pk_to_stop_time_data_list[trip_pk] = []
         trip_pk_to_stop_time_data_list[trip_pk].append(
             StopTimeData(pk=stop_time_pk, stop_sequence=stop_sequence, stop_pk=stop_pk)
         )
     return trip_pk_to_stop_time_data_list
+
+
+def get_trip_pk_to_stop_time_data(
+    trip_pk_stop_pk_stop_sequence_tuples,
+) -> typing.Dict[int, StopTimeData]:
+    session = dbconnection.get_session()
+
+    conditions = []
+    for trip_pk, stop_pk, stop_sequence in trip_pk_stop_pk_stop_sequence_tuples:
+        if stop_sequence is None and stop_pk is None:
+            continue
+        sub_conditions = [models.TripStopTime.trip_pk == trip_pk]
+        if stop_pk is not None:
+            sub_conditions.append(models.TripStopTime.stop_pk == stop_pk)
+        if stop_sequence is not None:
+            sub_conditions.append(models.TripStopTime.stop_sequence == stop_sequence)
+        conditions.append(sql.and_(*sub_conditions))
+
+    if len(conditions) == 0:
+        return {}
+
+    query = session.query(
+        models.TripStopTime.trip_pk,
+        models.TripStopTime.pk,
+        models.TripStopTime.stop_sequence,
+        models.TripStopTime.stop_pk,
+    ).filter(sql.or_(*conditions))
+
+    result = {}
+    for (trip_pk, stop_time_pk, stop_sequence, stop_pk) in query.all():
+        result[trip_pk] = StopTimeData(
+            pk=stop_time_pk, stop_sequence=stop_sequence, stop_pk=stop_pk
+        )
+    return result
 
 
 def list_all_in_route_by_pk(route_pk):

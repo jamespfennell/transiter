@@ -108,6 +108,7 @@ def get_id_to_pk_map(
     Note this method only works with entities that are direct children of the system.
     """
     if ids is not None:
+        ids = list(ids)
         id_to_pk = {id_: None for id_ in ids}
     else:
         id_to_pk = {}

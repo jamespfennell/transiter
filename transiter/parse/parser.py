@@ -48,6 +48,9 @@ class TransiterParser:
     def get_trips(self) -> typing.Iterable[parse.Trip]:
         pass  # pragma: no cover
 
+    def get_vehicles(self) -> typing.Iterable[parse.Vehicle]:
+        pass  # pragma: no cover
+
     def get_alerts(self) -> typing.Iterable[parse.Alert]:
         pass  # pragma: no cover
 
@@ -64,6 +67,7 @@ class TransiterParser:
         parse.Stop: get_stops,
         parse.ScheduledService: get_scheduled_services,
         parse.Trip: get_trips,
+        parse.Vehicle: get_vehicles,
         parse.Alert: get_alerts,
         parse.DirectionRule: get_direction_rules,
     }

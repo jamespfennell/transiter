@@ -224,13 +224,11 @@ class ServiceMapWithStops(View):
 class Trip(View):
     id: str
     direction_id: bool
-    start_time: datetime.datetime
-    last_update_time: datetime.datetime
-    current_status: models.Trip.TripStatus
-    current_stop_sequence: int
-    vehicle_id: str
+    started_at: datetime.datetime
+    updated_at: datetime.datetime
     _system_id: str
     _route_id: str
+    delay: int = None
     route: Route = NULL
     last_stop: Stop = NULL
     stop_times: list = NULL
@@ -241,11 +239,9 @@ class Trip(View):
         return cls(
             id=trip.id,
             direction_id=trip.direction_id,
-            start_time=trip.start_time,
-            last_update_time=trip.last_update_time,
-            current_status=trip.current_status,
-            current_stop_sequence=trip.current_stop_sequence,
-            vehicle_id=trip.vehicle_id,
+            started_at=trip.started_at,
+            updated_at=trip.updated_at,
+            delay=trip.delay,
             _system_id=trip.route.system.id,
             _route_id=trip.route.id,
         )

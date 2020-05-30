@@ -24,10 +24,10 @@ jobs:
         - docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
         - docker run -d -p 5672:5672 rabbitmq:3
         - transiterclt db reset --yes
-        - transiterclt launch webservice > webservice.log &
-        - transiterclt launch executor > executor.log &
-        - transiterclt launch scheduler > scheduler.log &
-        - python tests/endtoend/sourceserver.py > sourceserver.log &
+        - transiterclt launch webservice > webservice.log 2>&1 &
+        - transiterclt launch executor > executor.log 2>&1 &
+        - transiterclt launch scheduler > scheduler.log  2>&1 &
+        - python tests/endtoend/sourceserver.py > sourceserver.log  2>&1 &
       script:
         - pytest --color=yes tests/endtoend
 

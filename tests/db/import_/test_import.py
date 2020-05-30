@@ -55,6 +55,9 @@ new_route = parse.Route(id="route", type=parse.Route.Type.RAIL, description="new
 new_stop = parse.Stop(
     id="route", name="new stop", latitude=0, longitude=0, type=parse.Stop.Type.STATION
 )
+new_vehicle = parse.Vehicle(
+    id="vehicle", label="new vehicle", current_status=parse.Vehicle.Status.STOPPED_AT
+)
 
 
 @pytest.mark.parametrize(
@@ -130,6 +133,31 @@ new_stop = parse.Stop(
             [],
             (0, 0, 1),
         ],
+        [models.Vehicle, [], [new_vehicle], (1, 0, 0)],
+        [
+            models.Vehicle,
+            [
+                models.Vehicle(
+                    id="vehicle",
+                    label="old vehicle",
+                    current_status=models.Vehicle.Status.IN_TRANSIT_TO,
+                )
+            ],
+            [new_vehicle],
+            (0, 1, 0),
+        ],
+        [
+            models.Vehicle,
+            [
+                models.Vehicle(
+                    id="vehicle",
+                    label="old vehicle",
+                    current_status=models.Vehicle.Status.IN_TRANSIT_TO,
+                )
+            ],
+            [],
+            (0, 0, 1),
+        ],
     ],
 )
 def test_simple_create_update_delete(
@@ -161,6 +189,8 @@ def test_simple_create_update_delete(
             return entity.id, entity.cause, entity.effect
         if entity_type is models.Agency:
             return entity.id, entity.name
+        if entity_type is models.Vehicle:
+            return entity.id, entity.label, entity.current_status
         raise NotImplementedError
 
     assert set(map(fields_to_compare, current)) == set(
@@ -730,3 +760,125 @@ def test_alert__route_linking(
         assert getattr(persisted_alert, entity_type) == [entity]
     else:
         assert getattr(persisted_alert, entity_type) == []
+
+
+@pytest.fixture
+def trip_for_vehicle(add_model, system_1, route_1_1, stop_1_1, stop_1_2, stop_1_3):
+    return add_model(
+        models.Trip(
+            id="trip_id",
+            route=route_1_1,
+            stop_times=[
+                models.TripStopTime(stop_sequence=1, stop=stop_1_1, future=False),
+                models.TripStopTime(stop_sequence=2, stop=stop_1_2, future=True),
+                models.TripStopTime(stop_sequence=3, stop=stop_1_3, future=True),
+            ],
+        )
+    )
+
+
+@pytest.mark.parametrize("provide_stop_id", [True, False])
+@pytest.mark.parametrize("provide_stop_sequence", [True, False])
+def test_vehicle__set_stop_simple_case(
+    db_session,
+    current_update,
+    trip_for_vehicle,
+    stop_1_3,
+    provide_stop_id,
+    provide_stop_sequence,
+):
+    vehicle = parse.Vehicle(
+        id="vehicle_id",
+        trip_id="trip_id",
+        current_stop_id=stop_1_3.id if provide_stop_id else None,
+        current_stop_sequence=3 if provide_stop_sequence else None,
+    )
+
+    importdriver.run_import(current_update.pk, ParserForTesting([vehicle]))
+
+    persisted_vehicle = db_session.query(models.Vehicle).all()[0]
+
+    if not provide_stop_id and not provide_stop_sequence:
+        assert persisted_vehicle.current_stop is None
+        assert persisted_vehicle.current_stop_sequence is None
+    else:
+        assert persisted_vehicle.current_stop == stop_1_3
+        assert persisted_vehicle.current_stop_sequence == 3
+
+
+def test_vehicle__add_trip_relationship(
+    db_session, current_update, trip_for_vehicle, stop_1_3,
+):
+    vehicle = parse.Vehicle(id="vehicle_id", trip_id="trip_id",)
+
+    importdriver.run_import(current_update.pk, ParserForTesting([vehicle]))
+
+    persisted_vehicle = db_session.query(models.Vehicle).all()[0]
+
+    assert trip_for_vehicle.vehicle == persisted_vehicle
+    assert persisted_vehicle.trip == trip_for_vehicle
+
+
+def test_vehicle__delete_with_trip_attached(
+    db_session,
+    add_model,
+    system_1,
+    previous_update,
+    current_update,
+    trip_for_vehicle,
+    stop_1_3,
+):
+    add_model(
+        models.Vehicle(
+            id="vehicle_id",
+            system=system_1,
+            source=previous_update,
+            trip=trip_for_vehicle,
+        )
+    )
+
+    importdriver.run_import(current_update.pk, ParserForTesting([]))
+
+    db_session.refresh(trip_for_vehicle)
+
+    assert trip_for_vehicle.vehicle is None
+
+
+def test_vehicle__move_between_trips_attached(
+    db_session,
+    add_model,
+    system_1,
+    route_1_1,
+    previous_update,
+    current_update,
+    trip_for_vehicle,
+    stop_1_3,
+):
+    vehicle = add_model(
+        models.Vehicle(
+            id="vehicle_id",
+            system=system_1,
+            source=previous_update,
+            trip=trip_for_vehicle,
+        )
+    )
+
+    importdriver.run_import(
+        current_update.pk,
+        ParserForTesting(
+            [
+                parse.Trip(id="trip_id_2", route_id=route_1_1.id),
+                parse.Vehicle(id="vehicle_id", trip_id="trip_id_2"),
+            ]
+        ),
+    )
+
+    db_session.refresh(trip_for_vehicle)
+    new_trip = (
+        db_session.query(models.Trip)
+        .filter(models.Trip.id == "trip_id_2")
+        .one_or_none()
+    )
+
+    assert trip_for_vehicle.vehicle is None
+    assert new_trip.vehicle == vehicle

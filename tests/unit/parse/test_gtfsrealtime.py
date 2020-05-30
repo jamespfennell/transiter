@@ -9,14 +9,6 @@ from transiter import parse
 from transiter.parse import gtfsrealtime
 from transiter.parse import transiter_gtfs_rt_pb2
 
-timestamp_to_datetime = gtfsrealtime._GtfsRealtimeToTransiterTransformer(
-    ""
-)._timestamp_to_datetime
-
-RAW_CONTENT = "Some content"
-PARSED_CONTENT = "Transformed"
-
-
 ALERT_ID = "alert_id"
 LANGUAGE = "ie-ga"
 URL = "url"
@@ -28,6 +20,15 @@ TRIP_ID = "trip_id"
 ROUTE_ID = "route_id"
 STOP_ID = "stop_id"
 AGENCY_ID = "agency_id"
+TRACK = "track"
+TRIP_DIRECTION_ID = True
+SCHEDULE_RELATIONSHIP = parse.Trip.ScheduleRelationship.ADDED
+SCHEDULE_RELATIONSHIP_STOP_TIME = parse.TripStopTime.ScheduleRelationship.SKIPPED
+DELAY = 324
+DELAY_2 = 75
+UNCERTAINTY_1 = 213
+UNCERTAINTY_2 = 214
+STOP_SEQUENCE = 4
 
 
 def build_test_parse_alerts_params(gtfs):
@@ -207,298 +208,352 @@ def test_parse_alerts__transiter_extension():
     assert [expected_alert] == actual_alerts
 
 
-GTFS_REALTIME_VERSION = "2.0"
-INCREMENTALITY = "FULL_DATASET"
-INCREMENTALITY_INT = 0
-FEED_UPDATE_TIMESTAMP = 4
-TRIP_UPDATE_TIMESTAMP = 5
-STOP_ONE_ID = "Stop 1"
-STOP_ONE_ARR_TIMESTAMP = 6
-STOP_ONE_DEP_TIMESTAMP = 7
-STOP_TWO_ID = "Stop 2"
-STOP_TWO_ARR_TIMESTAMP = 8
-ENTITY_1_ID = "1"
-ENTITY_2_ID = "2"
-TRIP_ID = "Trip 1"
-ROUTE_ID = "L"
-START_DATE = "19900326"
-TRAIN_ID = "Train ID"
-TRIP_DIRECTION = "North"
-TRIP_DIRECTION_ID = True
-CURRENT_STATUS = "Stopped"
-CURRENT_STOP_SEQUENCE = 14
-
-
-def test_transform_feed_metadata():
-    """[GTFS Realtime transformer] Transform feed metadata"""
-    raw_data = {
-        "header": {"timestamp": FEED_UPDATE_TIMESTAMP, "other_field": "other value"},
-        "other_field": "other value",
-    }
-    expected_transformed_metadata = {
-        "timestamp": timestamp_to_datetime(FEED_UPDATE_TIMESTAMP)
-    }
-    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(raw_data)
-
-    transformer._transform_feed_metadata()
-
-    assert expected_transformed_metadata == transformer._transformed_metadata
-
-
-def test_group_trip_entities():
-    """[GTFS Realtime transformer] Group trip entities"""
-    trip_dict = {"trip_id": TRIP_ID}
-    entity_dict = {"trip": trip_dict}
-
-    raw_data = {
-        "entity": [
-            {"trip_update": entity_dict},
-            {"vehicle": entity_dict},
-            {"unknown": "unknown"},
-        ]
-    }
-    expected_raw_entities = {
-        TRIP_ID: {
-            "trip": trip_dict,
-            "trip_update": entity_dict,
-            "vehicle": entity_dict,
-        }
-    }
-
-    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(raw_data)
-    transformer._group_trip_entities()
-
-    assert expected_raw_entities == transformer._trip_id_to_raw_entities
-
-
-def test_transform_trip_base_data():
-    """[GTFS Realtime transformer] Transform trip base data"""
-    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
-    transformer._trip_id_to_raw_entities = {
-        TRIP_ID: {
-            "trip_update": {"vehicle": {"id": TRAIN_ID}},
-            "trip": {
-                "trip_id": TRIP_ID,
-                "route_id": ROUTE_ID,
-                "start_date": START_DATE,
-                "direction_id": TRIP_DIRECTION_ID,
-            },
-        }
-    }
-    transformer._feed_time = FEED_UPDATE_TIMESTAMP
-
-    trip = parse.Trip(
-        id=TRIP_ID,
-        route_id=ROUTE_ID,
-        start_time=datetime.datetime(year=1990, month=3, day=26),
-        train_id=TRAIN_ID,
-        direction_id=TRIP_DIRECTION_ID,
-        current_status=None,
-        current_stop_sequence=0,
-        updated_at=None,
-    )
-
-    expected_transformed_base_data = {TRIP_ID: trip}
-
-    transformer._transform_trip_base_data()
-
-    assert expected_transformed_base_data == transformer._trip_id_to_trip_model
-
-
-def test_transform_trip_base_data_with_vehicle():
-    """[GTFS Realtime transformer] Transform trip base data with vehicle"""
-    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
-    transformer._trip_id_to_raw_entities = {
-        TRIP_ID: {
-            "trip_update": {"vehicle": {"id": TRAIN_ID}},
-            "trip": {
-                "trip_id": TRIP_ID,
-                "route_id": ROUTE_ID,
-                "start_date": START_DATE,
-                "direction_id": TRIP_DIRECTION_ID,
-            },
-            "vehicle": {
-                "timestamp": TRIP_UPDATE_TIMESTAMP,
-                "current_status": "STOPPED_AT",
-                "current_stop_sequence": CURRENT_STOP_SEQUENCE,
-            },
-        }
-    }
-    transformer._feed_time = FEED_UPDATE_TIMESTAMP
-
-    trip = parse.Trip(
-        id=TRIP_ID,
-        route_id=ROUTE_ID,
-        start_time=datetime.datetime(year=1990, month=3, day=26),
-        train_id=TRAIN_ID,
-        direction_id=TRIP_DIRECTION_ID,
-        current_status=parse.Trip.Status.STOPPED_AT,
-        current_stop_sequence=CURRENT_STOP_SEQUENCE,
-        updated_at=timestamp_to_datetime(TRIP_UPDATE_TIMESTAMP),
-    )
-    expected_transformed_base_data = {TRIP_ID: trip}
-
-    transformer._transform_trip_base_data()
-
-    assert expected_transformed_base_data == transformer._trip_id_to_trip_model
-
-
-def test_transform_trip_stop_events_short_circuit():
-    """[GTFS Realtime transformer] Transform trip base data with no stops"""
-    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
-    trip = parse.Trip(id="trip", route_id="L", direction_id=True)
-    transformer._trip_id_to_trip_model = {TRIP_ID: trip}
-    transformer._trip_id_to_raw_entities = {TRIP_ID: {"trip": "Data"}}
-
-    transformer._transform_trip_stop_events()
-
-    assert [] == trip.stop_times
-
-
-def test_start_to_finish_parse():
-    """[GTFS Realtime transformer] Full transformation test"""
-    input = {
-        "header": {
-            "gtfs_realtime_version": GTFS_REALTIME_VERSION,
-            "incrementality": INCREMENTALITY,
-            "timestamp": FEED_UPDATE_TIMESTAMP,
-        },
-        "entity": [
-            {
-                "id": ENTITY_1_ID,
-                "vehicle": {
-                    "trip": {
-                        "trip_id": "trip_id",
-                        "start_date": "20180915",
-                        "route_id": "4",
-                    },
-                    "current_stop_sequence": 16,
-                    "current_status": "IN_TRANSIT_TO",
-                    "timestamp": TRIP_UPDATE_TIMESTAMP,
-                    "stop_id": "626S",
-                },
-            },
-            {
-                "id": ENTITY_2_ID,
-                "trip_update": {
-                    "trip": {
-                        "trip_id": "trip_id",
-                        "start_date": "20180915",
-                        "route_id": "4",
-                    },
-                    "stop_time_update": [
-                        {
-                            "arrival": {"time": STOP_ONE_ARR_TIMESTAMP},
-                            "departure": {"time": STOP_ONE_DEP_TIMESTAMP},
-                            "stop_id": STOP_ONE_ID,
-                        },
-                        {
-                            "arrival": {"time": STOP_TWO_ARR_TIMESTAMP},
-                            "stop_id": STOP_TWO_ID,
-                        },
-                    ],
-                },
-            },
+def build_test_parse_trip_params(gtfs):
+    return [
+        [  # Check nullable fields
+            gtfs.TripUpdate(trip=gtfs.TripDescriptor(trip_id=TRIP_ID)),
+            parse.Trip(id=TRIP_ID),
         ],
-    }
+        [  # Check fields in the trip descriptor
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(
+                    trip_id=TRIP_ID,
+                    route_id=ROUTE_ID,
+                    direction_id=TRIP_DIRECTION_ID,
+                    schedule_relationship=SCHEDULE_RELATIONSHIP.value,
+                )
+            ),
+            parse.Trip(
+                id=TRIP_ID,
+                route_id=ROUTE_ID,
+                direction_id=TRIP_DIRECTION_ID,
+                schedule_relationship=SCHEDULE_RELATIONSHIP,
+            ),
+        ],
+        [  # Check start time field in the trip descriptor
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID, start_time="11:22:33")
+            ),
+            parse.Trip(
+                id=TRIP_ID,
+                start_time=datetime.datetime.now().replace(
+                    hour=11, minute=22, second=33, microsecond=0
+                ),
+            ),
+        ],
+        [  # Check start time and date field in the trip descriptor
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(
+                    trip_id=TRIP_ID, start_date="19900326", start_time="11:22:33"
+                )
+            ),
+            parse.Trip(
+                id=TRIP_ID, start_time=datetime.datetime(1990, 3, 26, 11, 22, 33)
+            ),
+        ],
+        [  # Check fields in the trip update
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                timestamp=int(TIME_1.timestamp()),
+                delay=DELAY,
+            ),
+            parse.Trip(id=TRIP_ID, updated_at=TIME_1, delay=DELAY),
+        ],
+        [  # Check nullable fields in StopTimeUpdate
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                stop_time_update=[
+                    gtfs.TripUpdate.StopTimeUpdate(
+                        stop_id=STOP_ID,
+                        arrival=gtfs.TripUpdate.StopTimeEvent(
+                            time=int(TIME_1.timestamp())
+                        ),
+                    )
+                ],
+            ),
+            parse.Trip(
+                id=TRIP_ID,
+                stop_times=[parse.TripStopTime(stop_id=STOP_ID, arrival_time=TIME_1)],
+            ),
+        ],
+        [  # Check all fields in StopTimeUpdate
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                stop_time_update=[
+                    gtfs.TripUpdate.StopTimeUpdate(
+                        stop_id=STOP_ID,
+                        stop_sequence=STOP_SEQUENCE,
+                        schedule_relationship=SCHEDULE_RELATIONSHIP_STOP_TIME.value,
+                        arrival=gtfs.TripUpdate.StopTimeEvent(
+                            time=int(TIME_1.timestamp()),
+                            delay=DELAY,
+                            uncertainty=UNCERTAINTY_1,
+                        ),
+                        departure=gtfs.TripUpdate.StopTimeEvent(
+                            time=int(TIME_2.timestamp()),
+                            delay=DELAY_2,
+                            uncertainty=UNCERTAINTY_2,
+                        ),
+                    )
+                ],
+            ),
+            parse.Trip(
+                id=TRIP_ID,
+                stop_times=[
+                    parse.TripStopTime(
+                        stop_id=STOP_ID,
+                        stop_sequence=STOP_SEQUENCE,
+                        schedule_relationship=SCHEDULE_RELATIONSHIP_STOP_TIME,
+                        arrival_time=TIME_1,
+                        arrival_delay=DELAY,
+                        arrival_uncertainty=UNCERTAINTY_1,
+                        departure_time=TIME_2,
+                        departure_delay=DELAY_2,
+                        departure_uncertainty=UNCERTAINTY_2,
+                    )
+                ],
+            ),
+        ],
+    ]
 
-    trip = parse.Trip(
-        id="trip_id",
-        train_id=None,
-        route_id="4",
-        start_time=datetime.datetime(year=2018, month=9, day=15),
-        current_status=parse.Trip.Status.IN_TRANSIT_TO,
-        current_stop_sequence=16,
-        direction_id=None,
-        updated_at=timestamp_to_datetime(TRIP_UPDATE_TIMESTAMP),
-        current_stop_id="626S",
+
+@pytest.mark.parametrize(
+    "input_trip,expected_trip,gtfs",
+    itertools.chain.from_iterable(
+        [
+            (input_trip, expected_trip, gtfs_rt_pb2)
+            for input_trip, expected_trip in build_test_parse_trip_params(gtfs_rt_pb2)
+        ]
+        for gtfs_rt_pb2 in [transiter_gtfs_rt_pb2, library_gtfs_rt_pb2]
+    ),
+)
+def test_parse_trips(input_trip, expected_trip, gtfs):
+    trip_message = gtfs.FeedMessage(
+        header=gtfs.FeedHeader(gtfs_realtime_version="2.0"),
+        entity=[gtfs.FeedEntity(id=TRIP_ID, trip_update=input_trip)],
     )
 
-    stu_1 = parse.TripStopTime(
-        stop_id=STOP_ONE_ID,
-        stop_sequence=None,
-        future=True,
-        arrival_time=timestamp_to_datetime(STOP_ONE_ARR_TIMESTAMP),
-        departure_time=timestamp_to_datetime(STOP_ONE_DEP_TIMESTAMP),
-        track=None,
+    parser = gtfsrealtime.GtfsRealtimeParser()
+    parser.load_content(trip_message.SerializeToString())
+    actual_trips = list(parser.get_trips())
+
+    assert [expected_trip] == actual_trips
+
+
+def test_parse_trips__transiter_extension():
+    gtfs = transiter_gtfs_rt_pb2
+
+    stop_time_extension_key = gtfs.TripUpdate.StopTimeUpdate._extensions_by_number[
+        gtfsrealtime.TRANSITER_EXTENSION_ID
+    ]
+
+    input_stop_time_update = gtfs.TripUpdate.StopTimeUpdate(stop_id=STOP_ID)
+    additional_data = input_stop_time_update.Extensions[stop_time_extension_key]
+    additional_data.track = TRACK
+    trip_message = gtfs.FeedMessage(
+        header=gtfs.FeedHeader(gtfs_realtime_version="2.0"),
+        entity=[
+            gtfs.FeedEntity(
+                id=TRIP_ID,
+                trip_update=gtfs.TripUpdate(
+                    trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                    stop_time_update=[input_stop_time_update],
+                ),
+            )
+        ],
     )
 
-    stu_2 = parse.TripStopTime(
-        stop_id=STOP_TWO_ID,
-        stop_sequence=None,
-        future=True,
-        arrival_time=timestamp_to_datetime(STOP_TWO_ARR_TIMESTAMP),
-        departure_time=None,
-        track=None,
+    expected_trip = parse.Trip(
+        id=TRIP_ID, stop_times=[parse.TripStopTime(stop_id=STOP_ID, track=TRACK)]
     )
 
-    trip.stop_times = [stu_1, stu_2]
+    parser = gtfsrealtime.GtfsRealtimeParser()
+    parser.load_content(trip_message.SerializeToString())
+    actual_trips = list(parser.get_trips())
 
-    expected_feed_time = timestamp_to_datetime(FEED_UPDATE_TIMESTAMP)
+    assert [expected_trip] == actual_trips
 
-    (actual_feed_time, actual_trips,) = gtfsrealtime.transform_to_transiter_structure(
-        input
+
+VEHICLE_ID = "vehicle_id"
+VEHICLE_ID_2 = "vehicle_id_2"
+LABEL = "label"
+LICENCE_PLACE = "licence_plate"
+TRIP_ID_2 = "trip_id_2"
+VEHICLE_STOP_STATUS = parse.Vehicle.Status.STOPPED_AT
+CONGESTION_LEVEL = parse.Vehicle.CongestionLevel.STOP_AND_GO
+OCCUPANCY_STATUS = parse.Vehicle.OccupancyStatus.CRUSHED_STANDING_ROOM_ONLY
+
+
+def build_test_parse_vehicle_params(gtfs):
+    for data in [
+        [  # Valid vehicle descriptor but no vehicle position
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            None,
+            parse.Vehicle(id=VEHICLE_ID, trip_id=TRIP_ID),
+        ],
+        [  # Invalid vehicle descriptor and no vehicle position
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(label=VEHICLE_ID),
+            ),
+            None,
+            None,
+        ],
+        [  # No vehicle descriptor and no vehicle position
+            gtfs.TripUpdate(trip=gtfs.TripDescriptor(trip_id=TRIP_ID),),
+            None,
+            None,
+        ],
+        [  # No trip update but vehicle position has trip descriptor
+            None,
+            gtfs.VehiclePosition(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            parse.Vehicle(id=VEHICLE_ID, trip_id=TRIP_ID),
+        ],
+        [  # No trip update and no trip descriptor
+            None,
+            gtfs.VehiclePosition(vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID)),
+            parse.Vehicle(id=VEHICLE_ID),
+        ],
+        [  # Ensure trip data doesn't overwrite vehicle data
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            gtfs.VehiclePosition(
+                vehicle=gtfs.VehicleDescriptor(
+                    id=VEHICLE_ID, label=LABEL, license_plate=LICENCE_PLACE
+                )
+            ),
+            parse.Vehicle(
+                id=VEHICLE_ID, trip_id=TRIP_ID, label=LABEL, license_plate=LICENCE_PLACE
+            ),
+        ],
+        [  # Ensure vehicle data doesn't overwrite trip data
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(
+                    id=VEHICLE_ID, label=LABEL, license_plate=LICENCE_PLACE
+                ),
+            ),
+            gtfs.VehiclePosition(vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID)),
+            parse.Vehicle(
+                id=VEHICLE_ID, trip_id=TRIP_ID, label=LABEL, license_plate=LICENCE_PLACE
+            ),
+        ],
+        [  # Inconsistent trip <-> vehicle pairing
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            gtfs.VehiclePosition(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID_2),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            None,
+        ],
+        [  # Inconsistent trip <-> vehicle pairing
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            gtfs.VehiclePosition(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID_2),
+            ),
+            None,
+        ],
+        [  # All data copied
+            None,
+            gtfs.VehiclePosition(
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+                position=gtfs.Position(
+                    latitude=1.0, longitude=2.0, bearing=3.0, odometer=4.0, speed=5.0,
+                ),
+                current_stop_sequence=6,
+                stop_id="7",
+                current_status=VEHICLE_STOP_STATUS.value,
+                congestion_level=CONGESTION_LEVEL.value,
+                occupancy_status=OCCUPANCY_STATUS.value,
+            ),
+            parse.Vehicle(
+                id=VEHICLE_ID,
+                latitude=1.0,
+                longitude=2.0,
+                bearing=3.0,
+                odometer=4.0,
+                speed=5.0,
+                current_stop_sequence=6,
+                current_stop_id="7",
+                current_status=VEHICLE_STOP_STATUS,
+                congestion_level=CONGESTION_LEVEL,
+                occupancy_status=OCCUPANCY_STATUS,
+            ),
+        ],
+        [  # Some data not copied
+            None,
+            gtfs.VehiclePosition(
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+                position=gtfs.Position(latitude=1.0, longitude=2.0,),
+                current_stop_sequence=6,
+                stop_id="7",
+                occupancy_status=OCCUPANCY_STATUS.value,
+            ),
+            parse.Vehicle(
+                id=VEHICLE_ID,
+                latitude=1.0,
+                longitude=2.0,
+                current_stop_sequence=6,
+                current_stop_id="7",
+                occupancy_status=OCCUPANCY_STATUS,
+            ),
+        ],
+        [None, None, None],  # No data at all
+    ]:
+        # Note: this is to ensure so duplicate test cases. If the input trip or
+        # vehicle is None, all entity_location cases are the same.
+        yield data + ["same"]
+        if data[0] is not None and data[1] is not None:
+            yield data + ["trip_first"]
+            yield data + ["vehicle_first"]
+
+
+@pytest.mark.parametrize(
+    "input_trip,input_vehicle,expected_vehicle,entity_location,gtfs",
+    itertools.chain.from_iterable(
+        [(*data, gtfs_rt_pb2) for data in build_test_parse_vehicle_params(gtfs_rt_pb2)]
+        for gtfs_rt_pb2 in [transiter_gtfs_rt_pb2, library_gtfs_rt_pb2]
+    ),
+)
+def test_parse_vehicles(
+    input_trip, input_vehicle, expected_vehicle, entity_location, gtfs
+):
+    entities = []
+    if entity_location == "same":
+        entities.append(
+            gtfs.FeedEntity(id="1", trip_update=input_trip, vehicle=input_vehicle)
+        )
+    else:
+        if input_trip is not None:
+            entities.append(gtfs.FeedEntity(id="1", trip_update=input_trip))
+        if input_vehicle is not None:
+            entities.append(gtfs.FeedEntity(id="2", vehicle=input_vehicle))
+        if entity_location == "vehicle_first":
+            entities.reverse()
+    trip_message = gtfs.FeedMessage(
+        header=gtfs.FeedHeader(gtfs_realtime_version="2.0"), entity=entities
     )
 
-    assert actual_feed_time == expected_feed_time
-    assert [trip] == actual_trips
-    assert trip.stop_times == actual_trips[0].stop_times
+    parser = gtfsrealtime.GtfsRealtimeParser()
+    parser.load_content(trip_message.SerializeToString())
+    actual_vehicles = list(parser.get_vehicles())
 
-
-def test_timestamp_to_datetime_edge_case_1():
-    """[GTFS Realtime Util] Timestamp to datetime edge case 1"""
-    actual = timestamp_to_datetime(None)
-
-    assert actual is None
-
-
-def test_timestamp_to_datetime_edge_case_2():
-    """[GTFS Realtime Util] Timestamp to datetime edge case 2"""
-    actual = timestamp_to_datetime(0)
-
-    assert actual is None
-
-
-def test_transform_trip_stop_events():
-    """[GTFS Realtime transformer] Transform trip stop events"""
-
-    transformer = gtfsrealtime._GtfsRealtimeToTransiterTransformer(None)
-    trip = parse.Trip(id="trip", route_id="L", direction_id=True)
-    trip.id = TRIP_ID
-    transformer._trip_id_to_trip_model = {TRIP_ID: trip}
-    transformer._trip_id_to_raw_entities = {
-        TRIP_ID: {
-            "trip": "Data",
-            "trip_update": {
-                "stop_time_update": [
-                    {
-                        "arrival": {"time": STOP_ONE_ARR_TIMESTAMP},
-                        "departure": {"time": STOP_ONE_DEP_TIMESTAMP},
-                        "stop_id": STOP_ONE_ID,
-                    },
-                    {
-                        "arrival": {"time": STOP_TWO_ARR_TIMESTAMP},
-                        "stop_id": STOP_TWO_ID,
-                    },
-                ]
-            },
-        }
-    }
-
-    stu_1 = parse.TripStopTime(
-        stop_id=STOP_ONE_ID,
-        arrival_time=timestamp_to_datetime(STOP_ONE_ARR_TIMESTAMP),
-        departure_time=timestamp_to_datetime(STOP_ONE_DEP_TIMESTAMP),
-        track=None,
-    )
-
-    stu_2 = parse.TripStopTime(
-        stop_id=STOP_TWO_ID,
-        arrival_time=timestamp_to_datetime(STOP_TWO_ARR_TIMESTAMP),
-        departure_time=None,
-        track=None,
-    )
-
-    transformer._transform_trip_stop_events()
-
-    assert [stu_1, stu_2] == trip.stop_times
+    if expected_vehicle is None:
+        assert [] == actual_vehicles
+    else:
+        assert [expected_vehicle] == actual_vehicles
