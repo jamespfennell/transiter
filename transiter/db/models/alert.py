@@ -60,8 +60,6 @@ class Alert(Base):
         "Trip", secondary="alert_trip", back_populates="alerts", cascade="none",
     )
 
-    __table_args__ = (UniqueConstraint("system_pk", "id"),)
-
     @staticmethod
     def from_parsed_alert(alert: parse.Alert) -> "Alert":
         return Alert(
