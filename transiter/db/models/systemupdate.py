@@ -29,7 +29,7 @@ class SystemUpdate(Base):
         FAILED = 4
 
     status = Column(Enum(Status, native_enum=False), nullable=False)
-    status_message = Column(String)
+    status_message = Column(String)  # TODO: rename stack trace?
     total_duration = Column(Float)
     scheduled_at = Column(TIMESTAMP(timezone=True), default=datetime.datetime.utcnow)
     completed_at = Column(TIMESTAMP(timezone=True))

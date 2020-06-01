@@ -1,3 +1,4 @@
+import hashlib
 from unittest import mock
 
 import pytest
@@ -163,7 +164,9 @@ def test_execute_feed_update(
     def get_last_successful_update(*args, **kwargs):
         if previous_content is None:
             return None
-        return updatemanager._calculate_content_hash(previous_content)
+        m = hashlib.md5()
+        m.update(previous_content)
+        return m.hexdigest()
 
     monkeypatch.setattr(feedqueries, "get_update_by_pk", get_update_by_pk)
     monkeypatch.setattr(
@@ -171,16 +174,16 @@ def test_execute_feed_update(
     )
     monkeypatch.setattr(import_, "run_import", lambda: (0, 0, 0))
 
-    actual_status, actual_explanation = updatemanager.execute_feed_update(1)
+    feed_update, _ = updatemanager.execute_feed_update(1)
 
-    assert actual_status == expected_status
-    assert actual_explanation == expected_explanation
+    assert feed_update.status == expected_status
+    assert feed_update.result == expected_explanation
 
 
 @pytest.mark.parametrize(
     "sync_error,expected_status,expected_explanation",
     [
-        [True, models.FeedUpdate.Status.FAILURE, models.FeedUpdate.Result.SYNC_ERROR],
+        [True, models.FeedUpdate.Status.FAILURE, models.FeedUpdate.Result.IMPORT_ERROR],
         [False, models.FeedUpdate.Status.SUCCESS, models.FeedUpdate.Result.UPDATED],
     ],
 )
@@ -216,10 +219,10 @@ def test_execute_feed_update__success_or_sync_error(
 
     monkeypatch.setattr(import_, "run_import", sync_func)
 
-    actual_status, actual_explanation = updatemanager.execute_feed_update(1)
+    feed_update, _ = updatemanager.execute_feed_update(1)
 
-    assert actual_status == expected_status
-    assert actual_explanation == expected_explanation
+    assert feed_update.status == expected_status
+    assert feed_update.result == expected_explanation
 
 
 def test_get_parser__built_in_parser__gtfs_static():

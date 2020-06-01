@@ -4,6 +4,7 @@ The system service is used to install, delete and retrieve information about
 """
 import datetime
 import json
+import traceback
 import logging
 import time
 import typing
@@ -149,32 +150,34 @@ def _execute_system_update(system_update_pk):
             system_update_pk
         )
         for feed_id in feed_ids_to_update:
-            update_status, __ = updatemanager.execute_feed_update(
+            feed_update, exception = updatemanager.execute_feed_update(
                 feed_update_pk=updatemanager.create_feed_update(
                     context.system_id, feed_id
                 )
             )
-            if update_status != models.FeedUpdate.Status.SUCCESS:
-                raise exceptions.InstallError(
-                    message="Failed to update feed with id={}; reason: {}".format(
-                        feed_id, update_status
+            if feed_update.status != models.FeedUpdate.Status.SUCCESS:
+                if exception is None:
+                    exception = exceptions.InstallError(
+                        message=(
+                            f"Failed to update feed (id={feed_id}); "
+                            f"status: {feed_update.status}; "
+                            f"result: {feed_update.result}"
+                        )
                     )
-                )
+                raise exceptions.InstallError(
+                    message=(
+                        f"Failed to update a feed (id={feed_id}) "
+                        f"that is required for install"
+                    )
+                ) from exception
         for feed_id in feed_ids_to_delete:
             _delete_feed(context.system_id, feed_id)
         _mark_update_completed(
             context, models.SystemUpdate.Status.SUCCESS,
         )
-    except exceptions.TransiterException as e:
+    except Exception:
         _mark_update_completed(
-            context, models.SystemUpdate.Status.FAILED, json.dumps(e.response()),
-        )
-        logger.debug("Install or update of system failed", exc_info=True)
-    except Exception as e:
-        _mark_update_completed(
-            context,
-            models.SystemUpdate.Status.FAILED,
-            json.dumps(exceptions.UnexpectedError(str(e)).response()),
+            context, models.SystemUpdate.Status.FAILED, traceback.format_exc()
         )
         logger.debug("Install or update of system failed", exc_info=True)
 

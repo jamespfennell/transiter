@@ -209,7 +209,7 @@ def test_install(
     monkeypatch.setattr(
         updatemanager,
         "execute_feed_update",
-        lambda *args, **kwargs: (feed_update_status, None),
+        lambda *args, **kwargs: (models.FeedUpdate(status=feed_update_status), None),
     )
     monkeypatch.setattr(updatemanager, "create_feed_update", mock.MagicMock())
 
