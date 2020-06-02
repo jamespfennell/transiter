@@ -1,48 +1,10 @@
 {
 	"info": {
-		"_postman_id": "f95af11d-b25c-4106-b0f0-a8f5d77f4105",
+		"_postman_id": "465a5d45-3db4-4bb2-8fe1-268859f120f5",
 		"name": "Transiter",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
-		{
-			"name": "About",
-			"item": [
-				{
-					"name": "About",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {},
-						"url": {
-							"raw": "{{transiter_server}}/about",
-							"host": [
-								"{{transiter_server}}"
-							],
-							"path": [
-								"about"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Index",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {},
-						"url": {
-							"raw": "{{transiter_server}}",
-							"host": [
-								"{{transiter_server}}"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
 		{
 			"name": "System",
 			"item": [
@@ -51,15 +13,13 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
-							"raw": "{{transiter_server}}/systems/",
+							"raw": "{{transiter_server}}/systems",
 							"host": [
 								"{{transiter_server}}"
 							],
 							"path": [
-								"systems",
-								""
+								"systems"
 							]
 						}
 					},
@@ -70,7 +30,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{transiter_server}}/systems/nycsubway/",
 							"host": [
@@ -86,22 +45,201 @@
 					"response": []
 				},
 				{
-					"name": "Install system",
+					"name": "Install system (PATH Train)",
 					"request": {
 						"method": "PUT",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "config_file",
+									"value": "https://raw.githubusercontent.com/jamespfennell/transiter-nycsubway/master/transiter_config_path_train.yaml",
+									"type": "text"
+								},
+								{
+									"key": "config_file",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
 						"url": {
-							"raw": "{{transiter_server}}/systems/nycsubway/",
+							"raw": "{{transiter_server}}/systems/us-ny-path",
 							"host": [
 								"{{transiter_server}}"
 							],
 							"path": [
 								"systems",
-								"nycsubway",
-								""
+								"us-ny-path"
+							],
+							"query": [
+								{
+									"key": "config_file",
+									"value": "https://raw.githubusercontent.com/jamespfennell/transiter-nycsubway/master/transiter_config_path_train.yaml",
+									"disabled": true
+								}
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Install system (SF BART)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "config_file",
+									"value": "https://raw.githubusercontent.com/jamespfennell/transiter-nycsubway/master/config/nyc_subway_transiter_config.yaml",
+									"type": "text"
+								},
+								{
+									"key": "config_file_2",
+									"type": "file",
+									"src": "/Users/james/Projects/transiter-nycsubway/config/nyc_subway_transiter_config.yaml"
+								},
+								{
+									"key": "mta_api_key",
+									"value": "vQJAXzrXm69ZLV6lRZQ6z2Xr6ieRb4pa238Geqn6",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{transiter_server}}/systems/sfbart",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"sfbart"
+							],
+							"query": [
+								{
+									"key": "config_file",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Install system (NYC Subway)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "config_file",
+									"value": "https://raw.githubusercontent.com/jamespfennell/transiter-nycsubway/transiter-0.5.x/transiter_config_nyc_subway.yaml",
+									"type": "text"
+								},
+								{
+									"key": "config_file",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{transiter_server}}/systems/us-ny-path",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"us-ny-path"
+							],
+							"query": [
+								{
+									"key": "config_file",
+									"value": "https://raw.githubusercontent.com/jamespfennell/transiter-nycsubway/master/transiter_config_path_train.yaml",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Install the New York City Subway. Prerequisites: you need to have the Python package \"transiter_ny_mta\" installed and you need to have obtained an API key from the MTA at api.mta.info. The API key needs to be passed as part of the body in this request."
+					},
+					"response": []
+				},
+				{
+					"name": "Enable/disable auto update for system",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "enabled",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "config_file",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{transiter_server}}/systems/{{system_id}}/auto-update",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"systems",
+								"{{system_id}}",
+								"auto-update"
+							],
+							"query": [
+								{
+									"key": "config_file",
+									"value": "https://raw.githubusercontent.com/jamespfennell/transiter-nycsubway/master/transiter_config_path_train.yaml",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Enable or disable auto update tasks for the feeds in the system. Pass an enabled form seting of true of false appropriately."
 					},
 					"response": []
 				},
@@ -110,7 +248,6 @@
 					"request": {
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{transiter_server}}/systems/nycsubway/",
 							"host": [
@@ -135,7 +272,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{transiter_server}}/systems/nycsubway/routes",
 							"host": [
@@ -155,7 +291,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{transiter_server}}/systems/nycsubway/routes/L",
 							"host": [
@@ -181,7 +316,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{transiter_server}}/systems/nycsubway/routes/2/trips",
 							"host": [
@@ -203,7 +337,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{transiter_server}}/systems/nycsubway/routes/2/trips/2N1538873040",
 							"host": [
@@ -234,7 +367,6 @@
 							"request": {
 								"method": "GET",
 								"header": [],
-								"body": {},
 								"url": {
 									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L",
 									"host": [
@@ -255,9 +387,8 @@
 							"request": {
 								"method": "POST",
 								"header": [],
-								"body": {},
 								"url": {
-									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/",
+									"raw": "{{transiter_server}}/systems/nycsubway/feeds/ACE",
 									"host": [
 										"{{transiter_server}}"
 									],
@@ -265,8 +396,7 @@
 										"systems",
 										"nycsubway",
 										"feeds",
-										"L",
-										""
+										"ACE"
 									]
 								}
 							},
@@ -277,7 +407,6 @@
 							"request": {
 								"method": "GET",
 								"header": [],
-								"body": {},
 								"url": {
 									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/updates",
 									"host": [
@@ -299,7 +428,6 @@
 							"request": {
 								"method": "GET",
 								"header": [],
-								"body": {},
 								"url": {
 									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/updates/921",
 									"host": [
@@ -322,7 +450,6 @@
 							"request": {
 								"method": "GET",
 								"header": [],
-								"body": {},
 								"url": {
 									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/autoupdater",
 									"host": [
@@ -344,7 +471,6 @@
 							"request": {
 								"method": "PUT",
 								"header": [],
-								"body": {},
 								"url": {
 									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L/autoupdater",
 									"host": [
@@ -372,7 +498,6 @@
 							"request": {
 								"method": "GET",
 								"header": [],
-								"body": {},
 								"url": {
 									"raw": "{{transiter_server}}/systems/nycsubway/feeds/L",
 									"host": [
@@ -393,7 +518,6 @@
 							"request": {
 								"method": "POST",
 								"header": [],
-								"body": {},
 								"url": {
 									"raw": "{{transiter_server}}/systems/nycsubway/feeds/ServiceStatus/",
 									"host": [
@@ -415,7 +539,6 @@
 							"request": {
 								"method": "GET",
 								"header": [],
-								"body": {},
 								"url": {
 									"raw": "{{transiter_server}}/systems/nycsubway/feeds/ServiceStatus/updates",
 									"host": [
@@ -440,7 +563,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{transiter_server}}/systems/nycsubway/feeds",
 							"host": [
@@ -465,7 +587,6 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{transiter_server}}/systems/nycsubway/stops",
 							"host": [
@@ -485,9 +606,8 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
-							"raw": "{{transiter_server}}/systems/nycsubway/stops/L22",
+							"raw": "{{transiter_server}}/systems/nycsubway/stops/601?earliest_time=1562123490&latest_time=1562123490",
 							"host": [
 								"{{transiter_server}}"
 							],
@@ -495,13 +615,121 @@
 								"systems",
 								"nycsubway",
 								"stops",
-								"L22"
+								"601"
+							],
+							"query": [
+								{
+									"key": "earliest_time",
+									"value": "1562123490"
+								},
+								{
+									"key": "latest_time",
+									"value": "1562123490"
+								}
 							]
 						}
 					},
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Get health status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{transiter_server}}/admin/health",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"admin",
+								"health"
+							]
+						},
+						"description": "Gets the status of the scheduler and executor services. Transiter is consdered up if both of these are up. (The webservice is implictely up because it can recieve the request.)"
+					},
+					"response": []
+				},
+				{
+					"name": "List scheduler tasks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{transiter_server}}/admin/scheduler",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"admin",
+								"scheduler"
+							]
+						},
+						"description": "Get a list of the tasks currently running on the scheduler."
+					},
+					"response": []
+				},
+				{
+					"name": "Update scheduler tasks",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{transiter_server}}/admin/scheduler",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"admin",
+								"scheduler"
+							]
+						},
+						"description": "Update the tasks being run on the scheduler so that they match what should be run given the database state. This endpoint is useful when a manual edit has been made to the database and the scheduler tasks need to be refreshed accordingly."
+					},
+					"response": []
+				},
+				{
+					"name": "Upgade the database",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{transiter_server}}/admin/upgrade",
+							"host": [
+								"{{transiter_server}}"
+							],
+							"path": [
+								"admin",
+								"upgrade"
+							]
+						},
+						"description": "Upgrades the database schema to match the version of Transiter being run by the webservice. If the database is already upgraded, this is a no-op."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Entrypoint",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{transiter_server}}/systems",
+					"host": [
+						"{{transiter_server}}"
+					],
+					"path": [
+						"systems"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
