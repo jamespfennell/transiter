@@ -54,6 +54,7 @@ def upgrade():
     )
     op.add_column("route", sa.Column("agency_pk", sa.Integer(), nullable=True))
     op.create_foreign_key(None, "route", "agency", ["agency_pk"], ["pk"])
+    op.create_unique_constraint(None, "alert", ["system_pk", "id"])
 
 
 def downgrade():

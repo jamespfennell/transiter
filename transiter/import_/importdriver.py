@@ -136,9 +136,13 @@ class SyncerBase:
 
         persisted_entities = []
         id_to_pk = self._get_id_to_pk_map()
+        processed_ids = set()
         session = dbconnection.get_session()
         num_updated_entities = 0
         for entity in entities:
+            if entity.id in processed_ids:
+                continue
+            processed_ids.add(entity.id)
             if entity.id in id_to_pk:
                 num_updated_entities += 1
                 entity.pk = id_to_pk[entity.id]
@@ -146,7 +150,7 @@ class SyncerBase:
             persisted_entities.append(session.merge(entity))
         return (
             persisted_entities,
-            len(entities) - num_updated_entities,
+            len(processed_ids) - num_updated_entities,
             num_updated_entities,
         )
 
@@ -352,6 +356,7 @@ class TripSyncer(syncer(models.Trip)):
         trips = map(_Trip.from_parsed_trip, parsed_trips)
         # TODO: localize the trip start time
         for data_adder in (
+            self._filter_duplicate_ids,
             self._add_source,
             self._add_schedule_data,  # Must come before route data
             self._add_route_data,
@@ -361,6 +366,15 @@ class TripSyncer(syncer(models.Trip)):
             trips = data_adder(trips)
         self._calculate_route_pk_to_new_service_map_hash(trips)
         return self._fast_merge(trips)
+
+    @staticmethod
+    def _filter_duplicate_ids(trips: Iterable[_Trip]) -> Iterable[_Trip]:
+        processed_ids = set()
+        for trip in trips:
+            if trip.id in processed_ids:
+                continue
+            processed_ids.add(trip.id)
+            yield trip
 
     def _add_source(self, trips: Iterable[_Trip]) -> Iterable[_Trip]:
         for trip in trips:

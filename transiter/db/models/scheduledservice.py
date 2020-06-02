@@ -1,4 +1,12 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+    Date,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from transiter import parse
@@ -32,6 +40,8 @@ class ScheduledService(Base):
     )
     additions = relationship("ScheduledServiceAddition", cascade="all, delete-orphan")
     removals = relationship("ScheduledServiceRemoval", cascade="all, delete-orphan")
+
+    __table_args__ = (UniqueConstraint(system_pk, id),)
 
     @staticmethod
     def from_parsed_service(service: parse.ScheduledService) -> "ScheduledService":

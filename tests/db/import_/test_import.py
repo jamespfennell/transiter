@@ -200,6 +200,32 @@ def test_simple_create_update_delete(
 
 
 @pytest.mark.parametrize(
+    "parsed_type",
+    [
+        new_agency,
+        new_route,
+        new_stop,
+        parse.ScheduledService.create_empty("scheduled_service"),
+        parse.DirectionRule(id="direction_rule", name="direction_rule"),
+        parse.Trip(id="trip_id"),
+        new_vehicle,
+        new_alert,
+    ],
+)
+def test_duplicate_ids(current_update, parsed_type, route_1_1, stop_1_1):
+    if isinstance(parsed_type, parse.Trip):
+        parsed_type.route_id = route_1_1.id
+    if isinstance(parsed_type, parse.DirectionRule):
+        parsed_type.stop_id = stop_1_1.id
+
+    actual_counts = importdriver.run_import(
+        current_update.pk, ParserForTesting([parsed_type, parsed_type])
+    )
+
+    assert actual_counts == (1, 0, 0)
+
+
+@pytest.mark.parametrize(
     "old_id_to_parent_id,expected_id_to_parent_id",
     [
         [{}, {"1": "2", "2": None}],

@@ -1,4 +1,12 @@
-from sqlalchemy import Index, Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import (
+    Index,
+    Column,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from transiter import parse
@@ -25,6 +33,7 @@ class DirectionRule(Base):
 
     __table_args__ = (
         Index("direction_name_rule_stop_pk_priority_idx", stop_pk, priority),
+        UniqueConstraint(source_pk, id),
     )
 
     @staticmethod
