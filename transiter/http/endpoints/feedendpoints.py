@@ -1,3 +1,4 @@
+import flask
 from flask import Blueprint
 
 from transiter.http.httpmanager import (
@@ -7,6 +8,7 @@ from transiter.http.httpmanager import (
     HttpStatus,
     is_sync_request,
 )
+from transiter import exceptions
 from transiter.http.permissions import requires_permissions, PermissionsLevel
 from transiter.services import feedservice, views
 
@@ -32,8 +34,21 @@ def get_in_system_by_id(system_id, feed_id):
 @http_endpoint(feed_endpoints, "/<feed_id>", method=HttpMethod.POST)
 @requires_permissions(PermissionsLevel.ALL)
 def create_feed_update(system_id, feed_id):
+    user_provided_content = flask.request.files.get("content")
+    if user_provided_content is not None:
+        user_provided_content = user_provided_content.read()
+        if len(user_provided_content) == 0:
+            raise exceptions.InvalidInput("No file or an empty file provided.")
+        if not is_sync_request():
+            raise exceptions.InvalidInput(
+                "Feed updates with content provided must be run synchronously. "
+                "Use the sync=true url parameter."
+            )
     feed_update_pk = feedservice.create_and_execute_feed_update(
-        system_id, feed_id, execute_async=not is_sync_request()
+        system_id,
+        feed_id,
+        execute_async=not is_sync_request(),
+        content=user_provided_content,
     )
     return (
         feedservice.get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk),
