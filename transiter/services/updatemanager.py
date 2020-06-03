@@ -200,7 +200,7 @@ def _get_content(context: _UpdateContext):
     download_start_time = time.time()
     request = requests.get(
         context.feed_update.feed.url,
-        timeout=4,
+        timeout=context.feed_update.feed.http_timeout or 10,
         headers=json.loads(context.feed_update.feed.headers),
     )
     request.raise_for_status()

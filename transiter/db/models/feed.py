@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Boolean,
     ForeignKey,
+    Float,
 )
 from sqlalchemy.orm import relationship
 
@@ -27,8 +28,10 @@ class Feed(Base):
 
     built_in_parser = Column(Enum(BuiltInParser, native_enum=False))
     custom_parser = Column(String)
+    parser_options = Column(String)
     url = Column(String)
     headers = Column(String)
+    http_timeout = Column(Float)
     auto_update_enabled = Column(Boolean, nullable=False)
     auto_update_period = Column(Integer)
     required_for_install = Column(Boolean, nullable=False, default=False)

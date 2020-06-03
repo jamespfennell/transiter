@@ -117,7 +117,9 @@ def _create_system_update(system_id, config_str, extra_settings, config_source_u
             system.status = models.System.SystemStatus.SCHEDULED
     else:
         system = models.System(
-            id=system_id, status=models.System.SystemStatus.SCHEDULED,
+            id=system_id,
+            name="(Awaiting install for full name)",
+            status=models.System.SystemStatus.SCHEDULED,
         )
         systemqueries.create(system)
 
@@ -342,9 +344,18 @@ def _build_feeds_from_config(feeds_config) -> Iterator[models.Feed]:
         feed.custom_parser = config[systemconfigreader.PARSER].get(
             systemconfigreader.CUSTOM
         )
+        parser_options = config[systemconfigreader.PARSER].get(
+            systemconfigreader.OPTIONS
+        )
+        feed.parser_options = (
+            json.dumps(parser_options, indent=2) if parser_options is not None else None
+        )
         feed.url = config[systemconfigreader.HTTP][systemconfigreader.URL]
         feed.headers = json.dumps(
-            dict(config[systemconfigreader.HTTP][systemconfigreader.HEADERS])
+            dict(config[systemconfigreader.HTTP][systemconfigreader.HEADERS]), indent=2
+        )
+        feed.http_timeout = config[systemconfigreader.HTTP].get(
+            systemconfigreader.TIMEOUT
         )
         feed.auto_update_enabled = config[systemconfigreader.AUTO_UPDATE][
             systemconfigreader.ENABLED

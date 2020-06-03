@@ -500,3 +500,78 @@ class TestReadZipFile(unittest.TestCase):
         zip_file.close()
         buff.seek(0)
         return buff.read()
+
+
+@pytest.mark.parametrize(
+    "input_blob,expected",
+    [
+        [None, gtfsstaticparser._TransfersConfig()],
+        [
+            {"strategy": "group_stations"},
+            gtfsstaticparser._TransfersConfig(
+                default_strategy=gtfsstaticparser._TransfersStrategy.GROUP_STATIONS
+            ),
+        ],
+        [
+            {"exceptions": [{"strategy": "group_stations", "stop_ids": ["A", "B"]}]},
+            gtfsstaticparser._TransfersConfig(
+                exceptions=[
+                    gtfsstaticparser._TransfersConfigException(
+                        strategy=gtfsstaticparser._TransfersStrategy.GROUP_STATIONS,
+                        stop_ids={"A", "B"},
+                    )
+                ]
+            ),
+        ],
+    ],
+)
+def test_transfers_config__load(input_blob, expected):
+    actual = gtfsstaticparser._TransfersConfig.load_from_options_blob(input_blob)
+
+    assert expected == actual
+
+
+@pytest.mark.parametrize(
+    "input_blob",
+    [
+        {"unexpected_key": "value"},
+        {"exceptions": "not_a_list"},
+        {"exceptions": [{"stop_ids": ["a"]}]},
+        {"exceptions": [{"strategy": "default"}]},
+        {"strategy": "unknown"},
+        {"exceptions": [{"strategy": "unknown", "stop_ids": ["a"]}]},
+        {
+            "exceptions": [
+                {"strategy": "default", "stop_ids": ["a"], "unexpected_key": "value"}
+            ]
+        },
+    ],
+)
+def test_transfers_config__load_error(input_blob):
+    with pytest.raises(Exception):
+        gtfsstaticparser._TransfersConfig.load_from_options_blob(input_blob)
+
+
+@pytest.mark.parametrize(
+    "stop_1_id,stop_2_id,expected",
+    [
+        ["A", "B", gtfsstaticparser._TransfersStrategy.GROUP_STATIONS],
+        ["A", "C", gtfsstaticparser._TransfersStrategy.GROUP_STATIONS],
+        ["B", "A", gtfsstaticparser._TransfersStrategy.GROUP_STATIONS],
+        ["B", "C", gtfsstaticparser._TransfersStrategy.DEFAULT],
+        ["C", "A", gtfsstaticparser._TransfersStrategy.GROUP_STATIONS],
+        ["C", "B", gtfsstaticparser._TransfersStrategy.DEFAULT],
+    ],
+)
+def test_transfers_config__get_strategy(stop_1_id, stop_2_id, expected):
+    config = gtfsstaticparser._TransfersConfig(
+        default_strategy=gtfsstaticparser._TransfersStrategy.GROUP_STATIONS,
+        exceptions=[
+            gtfsstaticparser._TransfersConfigException(
+                strategy=gtfsstaticparser._TransfersStrategy.DEFAULT,
+                stop_ids={"B", "C"},
+            )
+        ],
+    )
+
+    assert config.get_strategy(stop_1_id, stop_2_id) == expected

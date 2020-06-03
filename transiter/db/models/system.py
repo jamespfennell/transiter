@@ -19,7 +19,7 @@ class System(Base):
         INSTALL_FAILED = 4
         DELETING = 5
 
-    name = Column(String, nullable=True)
+    name = Column(String, nullable=False)
     status = Column(Enum(SystemStatus, native_enum=False), nullable=False)
     timezone = Column(String, nullable=True)
     auto_update_enabled = Column(Boolean, nullable=False, server_default="True")

@@ -18,6 +18,36 @@ class TransiterParser:
     implement the get_stops method to return these entities.
     """
 
+    def load_options(self, options_blob: typing.Optional[dict]) -> None:
+        """
+        Load options into the parser.
+
+        Options are provided by users in the system definition yaml file, and the
+        resulting JSON blob is inputted here as options_blob. For example, if the user
+        specifies:
+
+          parser:
+            custom: "package:module"
+            options:
+              option_a: "value"
+              option_b:
+                - "a"
+                - "b"
+
+        then options_blob will be:
+
+          {
+            "option_a": "value",
+            "option_b": ["a", "b"]
+          }
+
+        The blob can contain dictionaries, lists and strings only.
+
+        It's generally encouraged to fail hard if the options blob does not have the
+        right structure or if it has additional fields. This will give early feedback to
+        the administrator on unexpected parse results.
+        """
+
     def load_content(self, content: bytes) -> None:
         """
         Load content from a feed into the parser.

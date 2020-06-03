@@ -101,6 +101,7 @@ def test_base_case():
 
     expected = {
         systemconfigreader.NAME: SYSTEM_NAME,
+        "required_settings": [],
         "requirements": {"packages": [], "settings": []},
         "feeds": {
             FEED_ID: {
@@ -115,6 +116,7 @@ def test_base_case():
     actual = systemconfigreader.read(config)
     del actual["service_maps"]
 
+    # assert expected["feeds"][FEED_ID] == actual["feeds"][FEED_ID]
     assert expected == actual
 
 

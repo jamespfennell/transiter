@@ -1,3 +1,4 @@
+import json
 import time
 import unittest.mock as mock
 import uuid
@@ -433,7 +434,7 @@ def test_save_feed_configuration(monkeypatch, session_factory):
     feeds_config = {
         FEED_ID_2: {
             "parser": {"built_in": "GTFS_STATIC"},
-            "http": {"url": "https://demo.transiter.io", "headers": {}},
+            "http": {"url": "https://demo.transiter.io", "headers": {}, "timeout": 40},
             "auto_update": {"period": None, "enabled": False},
             "required_for_install": True,
         },
@@ -452,6 +453,8 @@ def test_save_feed_configuration(monkeypatch, session_factory):
         custom_parser=None,
         url="https://demo.transiter.io",
         headers="{}",
+        http_timeout=40,
+        parser_options=None,
         auto_update_enabled=False,
         auto_update_period=None,
         required_for_install=True,
@@ -461,7 +464,8 @@ def test_save_feed_configuration(monkeypatch, session_factory):
         built_in_parser=None,
         custom_parser="a:b",
         url="https://nytimes.com",
-        headers='{"key": "value"}',
+        headers=json.dumps({"key": "value"}, indent=2),
+        parser_options=None,
         auto_update_period=5,
         auto_update_enabled=True,
         required_for_install=False,

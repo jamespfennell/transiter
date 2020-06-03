@@ -7,6 +7,7 @@ from transiter.db.queries import systemqueries
 def test_create(db_session):
     new_system = systemqueries.create()
     new_system.id = "new_id"
+    new_system.name = "name"
     new_system.status = models.System.SystemStatus.ACTIVE
     db_session.flush()
 

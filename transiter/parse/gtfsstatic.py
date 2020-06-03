@@ -11,7 +11,7 @@ import io
 import typing
 import uuid
 import zipfile
-
+import dataclasses
 from transiter.parse import types as parse
 from transiter.parse.parser import TransiterParser
 
@@ -19,6 +19,15 @@ from transiter.parse.parser import TransiterParser
 class GtfsStaticParser(TransiterParser):
 
     gtfs_static_file = None
+
+    def __init__(self):
+        super().__init__()
+        self._transfers_config = _TransfersConfig()
+
+    def load_options(self, options_blob: typing.Optional[dict]) -> None:
+        self._transfers_config = _TransfersConfig.load_from_options_blob(
+            options_blob.get("transfers")
+        )
 
     def load_content(self, content: bytes) -> None:
         self.gtfs_static_file = _GtfsStaticFile(content)
@@ -46,6 +55,61 @@ class GtfsStaticParser(TransiterParser):
 
     def get_scheduled_services(self) -> typing.Iterable[parse.ScheduledService]:
         yield from _parse_schedule(self.gtfs_static_file)
+
+
+class _TransfersStrategy(enum.Enum):
+    DEFAULT = 0
+    GROUP_STATIONS = 1
+
+
+@dataclasses.dataclass
+class _TransfersConfigException:
+    strategy: _TransfersStrategy
+    stop_ids: typing.Set[str]
+
+
+@dataclasses.dataclass
+class _TransfersConfig:
+    default_strategy: _TransfersStrategy = _TransfersStrategy.DEFAULT
+    exceptions: typing.List[_TransfersConfigException] = dataclasses.field(
+        default_factory=list
+    )
+
+    @classmethod
+    def load_from_options_blob(cls, options_blob):
+        config = cls()
+        if options_blob is None:
+            return config
+        config.default_strategy = _TransfersStrategy[
+            options_blob.pop("strategy", "DEFAULT").upper()
+        ]
+        for exception_blob in options_blob.pop("exceptions", []):
+            config.exceptions.append(
+                _TransfersConfigException(
+                    strategy=_TransfersStrategy[exception_blob.pop("strategy").upper()],
+                    stop_ids=set(exception_blob.pop("stop_ids")),
+                )
+            )
+            if len(exception_blob) > 0:
+                raise ValueError(
+                    "Unrecognized transfers.exceptions sub-options: {}".format(
+                        exception_blob
+                    )
+                )
+        if len(options_blob) > 0:
+            raise ValueError(
+                "Unrecognized transfers sub-options: {}".format(options_blob)
+            )
+        return config
+
+    def get_strategy(self, stop_1_id, stop_2_id) -> _TransfersStrategy:
+        for exception in self.exceptions:
+            if stop_1_id not in exception.stop_ids:
+                continue
+            if stop_2_id not in exception.stop_ids:
+                continue
+            return exception.strategy
+        return self.default_strategy
 
 
 class _GtfsStaticFile:

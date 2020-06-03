@@ -2,8 +2,10 @@ import enum
 
 import jinja2
 import pytimeparse
+import pytz
 import strictyaml
 from strictyaml import (
+    Any,
     Bool,
     EmptyList,
     EmptyDict,
@@ -28,9 +30,6 @@ class HumanReadableTimePeriod(ScalarValidator):
     number of seconds in the period, as determined by pytimeparse.
     """
 
-    def __init__(self):
-        pass
-
     def validate_scalar(self, chunk):
         value = pytimeparse.parse(chunk.contents)
         if value is None:
@@ -43,6 +42,22 @@ class HumanReadableTimePeriod(ScalarValidator):
     @staticmethod
     def to_yaml(data):
         return "{} seconds".format(data)
+
+
+class Timezone(ScalarValidator):
+    def validate_scalar(self, chunk):
+        try:
+            pytz.timezone(chunk.contents)
+        except pytz.exceptions.UnknownTimeZoneError:
+            chunk.expecting_but_found(
+                "when expecting a valid timezone specifier",
+                "found '{}'".format(chunk.contents),
+            )
+        return chunk.contents
+
+    @staticmethod
+    def to_yaml(data):
+        return data
 
 
 class PyEnum(ScalarValidator):
@@ -111,15 +126,20 @@ FEEDS = "feeds"
 HEADERS = "headers"
 HTTP = "http"
 NAME = "name"
+OPTIONS = "options"
+PREFERRED_ID = "preferred_id"
 PACKAGES = "packages"
 PARSER = "parser"
 PERIOD = "period"
 REQUIRED_FOR_INSTALL = "required_for_install"
+REQUIRED_SETTINGS = "required_settings"
 REQUIREMENTS = "requirements"
 SERVICE_MAPS = "service_maps"
 SETTINGS = "settings"
 SOURCE = "source"
 THRESHOLD = "threshold"
+TIMEOUT = "timeout"
+TIMEZONE = "timezone"
 URL = "url"
 USE_FOR_ROUTES_AT_STOP = "use_for_routes_at_stop"
 USE_FOR_STOPS_IN_ROUTE = "use_for_stops_in_route"
@@ -153,7 +173,10 @@ default_service_map_config = {
 _schema = Map(
     {
         NAME: Str(),
-        Optional(REQUIREMENTS, {PACKAGES: [], SETTINGS: []}): Map(
+        Optional(PREFERRED_ID): Str(),
+        Optional(TIMEZONE): Timezone(),
+        Optional(REQUIRED_SETTINGS, []): Seq(Str()) | EmptyList(),
+        Optional(REQUIREMENTS, {PACKAGES: [], SETTINGS: []}): Map(  # Ignored
             {
                 Optional(PACKAGES, []): Seq(Str()) | EmptyList(),
                 Optional(SETTINGS, []): Seq(Str()) | EmptyList(),
@@ -168,12 +191,14 @@ _schema = Map(
                             URL: Str(),
                             Optional(HEADERS, {}): MapPattern(Str(), Str())
                             | EmptyDict(),
+                            Optional(TIMEOUT): HumanReadableTimePeriod(),
                         }
                     ),
                     PARSER: Map(
                         {
                             Optional(BUILT_IN, None): PyEnum(models.Feed.BuiltInParser),
                             Optional(CUSTOM, None): Str(),
+                            Optional(OPTIONS): MapPattern(Str(), Any()) | EmptyDict(),
                         }
                     ),
                     Optional(AUTO_UPDATE, {ENABLED: False, PERIOD: -1}): Map(
