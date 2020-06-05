@@ -51,7 +51,10 @@ class GtfsStaticParser(TransiterParser):
         yield from _parse_routes(self.gtfs_static_file)
 
     def get_stops(self) -> typing.Iterable[parse.Stop]:
-        yield from _parse_stops(self.gtfs_static_file)
+        yield from _parse_stops(self.gtfs_static_file, self._transfers_config)
+
+    def get_transfers(self) -> typing.Iterable[parse.Transfer]:
+        yield from _parse_transfers(self.gtfs_static_file, self._transfers_config)
 
     def get_scheduled_services(self) -> typing.Iterable[parse.ScheduledService]:
         yield from _parse_schedule(self.gtfs_static_file)
@@ -184,16 +187,15 @@ def _parse_routes(gtfs_static_file: _GtfsStaticFile):
             short_name=row.get("route_short_name"),
             long_name=row.get("route_long_name"),
             description=row.get("route_desc"),
-            sort_order=row.get("route_sort_order"),
+            sort_order=row.get("route_sort_order"),  # TODO?
         )
 
 
-def _parse_stops(gtfs_static_file: _GtfsStaticFile):
+def _parse_stops(gtfs_static_file: _GtfsStaticFile, transfers_config: _TransfersConfig):
 
     stop_id_to_stop = {}
     stop_id_to_parent_stop_id = {}
 
-    # Step 1: read the basic stops in the GTFS feed into Stop objects.
     for row in gtfs_static_file.stops():
         stop = parse.Stop(
             id=row["stop_id"],
@@ -219,31 +221,9 @@ def _parse_stops(gtfs_static_file: _GtfsStaticFile):
     for stop_id, parent_stop_id in stop_id_to_parent_stop_id.items():
         stop_id_to_stop[stop_id].parent_stop = stop_id_to_stop[parent_stop_id]
 
-    # Step 2: replace the parent stop IDs with the actual parent stop. If a stop does
-    # not have a parent, make it a station.
-    stop_id_to_station_id = {}
-    station_sets_by_stop_id = {}
-    for stop in stop_id_to_stop.values():
-        if stop.parent_stop is None or stop.type == parse.Stop.Type.STATION:
-            station_sets_by_stop_id[stop.id] = {stop.id}
-        else:
-            stop_id_to_station_id[stop.id] = stop.parent_stop.id
-        yield stop
+    yield from stop_id_to_stop.values()
 
-    # Step 3: using the GTFS transfers data, link together stops which have a free
-    # transfer.
-    for row in gtfs_static_file.transfers():
-        stop_id_1 = row["from_stop_id"]
-        stop_id_2 = row["to_stop_id"]
-        if stop_id_1 == stop_id_2:
-            continue
-        updated_station_set = station_sets_by_stop_id[stop_id_1].union(
-            station_sets_by_stop_id[stop_id_2]
-        )
-        for stop_id in updated_station_set:
-            station_sets_by_stop_id[stop_id] = updated_station_set
-
-    # Step 4: create parent stations for stop linked together in Step 3.
+    station_sets_by_stop_id = _build_station_sets(gtfs_static_file, transfers_config)
     for station_set in station_sets_by_stop_id.values():
         if len(station_set) <= 1:
             continue
@@ -253,6 +233,70 @@ def _parse_stops(gtfs_static_file: _GtfsStaticFile):
             child_stop.parent_stop = parent_stop
         yield parent_stop
         station_set.clear()
+
+
+def _parse_transfers(
+    gtfs_static_file: _GtfsStaticFile, transfers_config: _TransfersConfig
+):
+    station_sets_by_stop_id = _build_station_sets(gtfs_static_file, transfers_config)
+
+    for row in gtfs_static_file.transfers():
+        stop_id_1 = row["from_stop_id"]
+        stop_id_2 = row["to_stop_id"]
+        if stop_id_1 == stop_id_2:
+            continue
+        # Don't create transfers for stops that share a grouped station parent
+        if stop_id_1 in station_sets_by_stop_id.get(stop_id_2, set()):
+            continue
+        yield parse.Transfer(
+            from_stop_id=stop_id_1,
+            to_stop_id=stop_id_2,
+            type=_get_enum_by_key(
+                parse.Transfer.Type,
+                row.get("transfer_type"),
+                parse.Transfer.Type.RECOMMENDED,
+            ),
+            min_transfer_time=_cast_to_int(row.get("min_transfer_time")),
+        )
+
+
+def _get_enum_by_key(enum_class, key, default):
+    try:
+        return enum_class(_cast_to_int(key))
+    except ValueError:
+        return default
+
+
+def _cast_to_int(string) -> typing.Optional[int]:
+    try:
+        return int(string)
+    except (ValueError, TypeError):
+        return None
+
+
+def _build_station_sets(
+    gtfs_static_file: _GtfsStaticFile, transfers_config: _TransfersConfig
+) -> typing.Dict[str, typing.Set[str]]:
+    station_sets_by_stop_id = {}
+    for row in gtfs_static_file.transfers():
+        stop_id_1 = row["from_stop_id"]
+        stop_id_2 = row["to_stop_id"]
+        if stop_id_1 == stop_id_2:
+            continue
+        if (
+            transfers_config.get_strategy(stop_id_1, stop_id_2)
+            != _TransfersStrategy.GROUP_STATIONS
+        ):
+            continue
+        for stop_id in [stop_id_1, stop_id_2]:
+            if stop_id not in station_sets_by_stop_id:
+                station_sets_by_stop_id[stop_id] = {stop_id}
+        updated_station_set = station_sets_by_stop_id[stop_id_1].union(
+            station_sets_by_stop_id[stop_id_2]
+        )
+        for stop_id in updated_station_set:
+            station_sets_by_stop_id[stop_id] = updated_station_set
+    return station_sets_by_stop_id
 
 
 def _create_station_from_child_stops(child_stops):

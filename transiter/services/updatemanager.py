@@ -276,9 +276,6 @@ _built_in_parser_to_function = {
 }
 
 
-# TODO: move to a new parser manager
-#  That way we can verify parsers are valid when adding systems.
-#  The main tricky thing here is updating the unit tests.
 def _get_parser(built_in_parser, custom_parser) -> parser.TransiterParser:
     """
     Get the parser for a feed.

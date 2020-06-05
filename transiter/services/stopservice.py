@@ -33,6 +33,25 @@ def list_all_in_system(system_id, alerts_detail=None) -> typing.List[views.Stop]
 
 
 @dbconnection.unit_of_work
+def list_all_transfers_in_system(
+    system_id, from_stop_ids=None, to_stop_ids=None
+) -> typing.List[views.Transfer]:
+    system = systemqueries.get_by_id(system_id, only_return_active=True)
+    if system is None:
+        raise exceptions.IdNotFoundError(models.System, system_id=system_id)
+    return [
+        views.Transfer.from_model(
+            transfer,
+            views.Stop.from_model(transfer.from_stop),
+            views.Stop.from_model(transfer.to_stop),
+        )
+        for transfer in stopqueries.list_all_transfers_in_system(
+            system_id, from_stop_ids=from_stop_ids, to_stop_ids=to_stop_ids
+        )
+    ]
+
+
+@dbconnection.unit_of_work
 def get_in_system_by_id(
     system_id,
     stop_id,
@@ -54,6 +73,8 @@ def get_in_system_by_id(
         )
 
     stop_tree = _StopTree(stop, stopqueries.list_all_stops_in_stop_tree(stop.pk))
+    all_station_pks = set(stop.pk for stop in stop_tree.all_stations())
+    transfers = stopqueries.list_all_transfers_at_stops(all_station_pks)
 
     # The descendant stops are used as the source of trip stop times
     descendant_stop_pks = list(stop.pk for stop in stop_tree.descendents())
@@ -70,7 +91,7 @@ def get_in_system_by_id(
     # On the other hand, the stop tree graph that is returned consists of all
     # stations in the stop's tree
     stop_pk_to_service_maps_response = servicemapmanager.build_stop_pk_to_service_maps_response(
-        stop.pk for stop in stop_tree.all_stations()
+        all_station_pks.union(transfer.to_stop_pk for transfer in transfers)
     )
 
     # Using the data retrieved, we then build the response
@@ -82,6 +103,9 @@ def get_in_system_by_id(
     response.child_stops = stop_tree_base.child_stops
     response.service_maps = stop_tree_base.service_maps
     response.directions = list(direction_name_matcher.all_names())
+    response.transfers = _build_transfers_response(
+        transfers, stop_pk_to_service_maps_response
+    )
 
     stop_time_filter = _TripStopTimeFilter(
         inclusion_interval_start=exclude_trips_before,
@@ -141,6 +165,21 @@ class _TripStopTimeFilter:
         ):
             return False
         return True
+
+
+def _build_transfers_response(transfers, stop_pk_to_service_maps_response):
+    result = []
+    for transfer in transfers:
+        to_stop = views.Stop.from_model(transfer.to_stop)
+        to_stop.service_maps = stop_pk_to_service_maps_response.get(
+            transfer.to_stop.pk, []
+        )
+        result.append(
+            views.Transfer.from_model(
+                transfer, views.Stop.from_model(transfer.from_stop), to_stop
+            )
+        )
+    return result
 
 
 def _build_trip_stop_time_response(

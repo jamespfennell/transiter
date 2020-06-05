@@ -20,6 +20,7 @@ from .servicemapvertex import ServiceMapVertex
 from .stop import Stop
 from .system import System
 from .systemupdate import SystemUpdate
+from .transfer import Transfer
 from .trip import Trip
 from .tripstoptime import TripStopTime
 from .updatableentity import list_updatable_entities

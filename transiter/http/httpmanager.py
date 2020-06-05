@@ -178,6 +178,13 @@ def is_sync_request():
     )
 
 
+def get_list_url_parameter(key):
+    raw = flask.request.args.getlist(key)
+    if len(raw) == 0:
+        return None
+    return raw
+
+
 def get_enum_url_parameter(key, enum_, default=None):
     raw_value = flask.request.args.get(key)
     if raw_value is None:

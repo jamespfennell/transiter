@@ -5,6 +5,7 @@ import enum
 
 import flask
 import pytest
+from werkzeug import datastructures
 
 from transiter import exceptions
 from transiter.http import httpmanager
@@ -124,6 +125,17 @@ def test_json_serialization__unknown_object():
 
     with pytest.raises(TypeError):
         httpmanager._transiter_json_serializer(flask.Response())
+
+
+@pytest.mark.parametrize(
+    "key,expected_list", [["a", ["a", "b"]], ["c", ["c"]], ["b", None]]
+)
+def test_list_url_parameter(flask_request, key, expected_list):
+    flask_request.args = datastructures.ImmutableMultiDict(
+        [("a", "a"), ("a", "b"), ("c", "c")]
+    )
+
+    assert expected_list == httpmanager.get_list_url_parameter(key)
 
 
 @pytest.mark.parametrize("value", ["value_a", "VALUE_A", "VaLuE_a"])

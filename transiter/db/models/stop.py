@@ -70,6 +70,12 @@ class Stop(Base):
     alerts = relationship(
         "Alert", secondary="alert_stop", back_populates="stops", cascade="all"
     )
+    transfers_out = relationship(
+        "Transfer", back_populates="from_stop", foreign_keys="Transfer.from_stop_pk"
+    )
+    transfers_in = relationship(
+        "Transfer", back_populates="to_stop", foreign_keys="Transfer.to_stop_pk"
+    )
 
     __table_args__ = (UniqueConstraint("system_pk", "id"),)
 

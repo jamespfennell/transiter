@@ -20,3 +20,5 @@ stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station
 1G,Guanabana St. Station,0,0,1,
 1GS,Guanabana St. Station,0,0,0,1G
 1GN,Guanabana St. Station,0,0,0,1G
+2COL,Avenida de Colombia,0,0,1,
+2MEX,Avenida de Mexico,0,0,1,

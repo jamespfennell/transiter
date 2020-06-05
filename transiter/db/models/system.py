@@ -36,6 +36,9 @@ class System(Base):
     routes = relationship(
         "Route", back_populates="system", cascade="all, delete-orphan"
     )
+    transfers = relationship(
+        "Transfer", back_populates="system", cascade="all, delete-orphan"
+    )
     vehicles = relationship(
         "Vehicle", back_populates="system", cascade="all, delete-orphan"
     )

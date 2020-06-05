@@ -908,3 +908,38 @@ def test_vehicle__move_between_trips_attached(
 
     assert trip_for_vehicle.vehicle is None
     assert new_trip.vehicle == vehicle
+
+
+@pytest.mark.parametrize("previous_transfer,expected_deleted", [[True, 1], [False, 0]])
+@pytest.mark.parametrize(
+    "from_stop_valid,to_stop_valid,expected_added",
+    [[True, True, 1], [False, True, 0], [True, False, 0], [False, False, 0]],
+)
+def test_transfers(
+    previous_update,
+    current_update,
+    stop_1_1,
+    stop_1_2,
+    from_stop_valid,
+    to_stop_valid,
+    expected_added,
+    previous_transfer,
+    expected_deleted,
+):
+    transfer = parse.Transfer(
+        from_stop_id=stop_1_1.id if from_stop_valid else "blah",
+        to_stop_id=stop_1_2.id if to_stop_valid else "blaf",
+        min_transfer_time=300,
+    )
+
+    if previous_transfer:
+        importdriver.run_import(
+            previous_update.pk,
+            ParserForTesting(
+                [parse.Transfer(from_stop_id=stop_1_1.id, to_stop_id=stop_1_2.id)]
+            ),
+        )
+
+    result = importdriver.run_import(current_update.pk, ParserForTesting([transfer]))
+
+    assert (expected_added, 0, expected_deleted) == result

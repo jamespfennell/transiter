@@ -93,7 +93,11 @@ def test_parse_stops__single_stop(mock_create_station):
         type=parse.Stop.Type.PLATFORM,
     )
 
-    assert [expected_stop] == list(gtfsstaticparser._parse_stops(gtfs_static_file))
+    assert [expected_stop] == list(
+        gtfsstaticparser._parse_stops(
+            gtfs_static_file, gtfsstaticparser._TransfersConfig()
+        )
+    )
 
 
 def test_parse_stops__parent_and_child_stop(mock_create_station):
@@ -134,12 +138,25 @@ def test_parse_stops__parent_and_child_stop(mock_create_station):
         parent_stop=expected_stop_2,
     )
 
-    actual_stops = list(gtfsstaticparser._parse_stops(gtfs_static_file))
+    actual_stops = list(
+        gtfsstaticparser._parse_stops(
+            gtfs_static_file, gtfsstaticparser._TransfersConfig()
+        )
+    )
 
     assert [expected_stop_1, expected_stop_2] == actual_stops
 
 
-def test_parse_stops__siblings_by_transfer(mock_create_station):
+@pytest.mark.parametrize(
+    "transfers_strategy,expect_station",
+    [
+        [gtfsstaticparser._TransfersStrategy.GROUP_STATIONS, True],
+        [gtfsstaticparser._TransfersStrategy.DEFAULT, False],
+    ],
+)
+def test_parse_stops__group_stations(
+    mock_create_station, transfers_strategy, expect_station
+):
     gtfs_static_file = mock.Mock()
     gtfs_static_file.stops.return_value = [
         {
@@ -176,7 +193,6 @@ def test_parse_stops__siblings_by_transfer(mock_create_station):
         longitude=float(STOP_LON),
         latitude=float(STOP_LAT),
         type=parse.Stop.Type.STATION,
-        parent_stop=expected_station,
     )
     expected_stop_2 = parse.Stop(
         id=STOP_ID_2,
@@ -184,12 +200,23 @@ def test_parse_stops__siblings_by_transfer(mock_create_station):
         longitude=float(STOP_LON),
         latitude=float(STOP_LAT),
         type=parse.Stop.Type.STATION,
-        parent_stop=expected_station,
+    )
+    if expect_station:
+        expected_stop_1.parent_stop = expected_station
+        expected_stop_2.parent_stop = expected_station
+
+    actual_stops = list(
+        gtfsstaticparser._parse_stops(
+            gtfs_static_file,
+            gtfsstaticparser._TransfersConfig(default_strategy=transfers_strategy),
+        )
     )
 
-    actual_stops = list(gtfsstaticparser._parse_stops(gtfs_static_file))
+    expected = [expected_stop_1, expected_stop_2]
+    if expect_station:
+        expected.append(expected_station)
 
-    assert [expected_stop_1, expected_stop_2, expected_station] == actual_stops
+    assert expected == actual_stops
 
 
 def test_create_station_from_child_stops():
@@ -575,3 +602,79 @@ def test_transfers_config__get_strategy(stop_1_id, stop_2_id, expected):
     )
 
     assert config.get_strategy(stop_1_id, stop_2_id) == expected
+
+
+@pytest.mark.parametrize(
+    "input_rows,transfers_config,expected_transfers",
+    [
+        [
+            [
+                {
+                    "from_stop_id": STOP_ID,
+                    "to_stop_id": STOP_ID_2,
+                    "min_transfer_time": 543,
+                }
+            ],
+            gtfsstaticparser._TransfersConfig(),
+            [
+                parse.Transfer(
+                    from_stop_id=STOP_ID, to_stop_id=STOP_ID_2, min_transfer_time=543
+                )
+            ],
+        ],
+        [
+            [{"from_stop_id": STOP_ID, "to_stop_id": STOP_ID_2, "transfer_type": ""}],
+            gtfsstaticparser._TransfersConfig(),
+            [parse.Transfer(from_stop_id=STOP_ID, to_stop_id=STOP_ID_2)],
+        ],
+        [
+            [{"from_stop_id": STOP_ID, "to_stop_id": STOP_ID_2, "transfer_type": "1"}],
+            gtfsstaticparser._TransfersConfig(),
+            [
+                parse.Transfer(
+                    from_stop_id=STOP_ID,
+                    to_stop_id=STOP_ID_2,
+                    type=parse.Transfer.Type.COORDINATED,
+                )
+            ],
+        ],
+        [
+            [{"from_stop_id": STOP_ID, "to_stop_id": STOP_ID_2}],
+            gtfsstaticparser._TransfersConfig(),
+            [parse.Transfer(from_stop_id=STOP_ID, to_stop_id=STOP_ID_2)],
+        ],
+        [
+            [{"from_stop_id": STOP_ID, "to_stop_id": STOP_ID}],
+            gtfsstaticparser._TransfersConfig(),
+            [],
+        ],
+        [
+            [{"from_stop_id": STOP_ID, "to_stop_id": STOP_ID}],
+            gtfsstaticparser._TransfersConfig(
+                default_strategy=gtfsstaticparser._TransfersStrategy.GROUP_STATIONS
+            ),
+            [],
+        ],
+        [
+            [{"from_stop_id": STOP_ID, "to_stop_id": STOP_ID}],
+            gtfsstaticparser._TransfersConfig(
+                exceptions=[
+                    gtfsstaticparser._TransfersConfigException(
+                        strategy=gtfsstaticparser._TransfersStrategy.GROUP_STATIONS,
+                        stop_ids={STOP_ID, STOP_ID_2},
+                    )
+                ]
+            ),
+            [],
+        ],
+    ],
+)
+def test_parse_transfers(input_rows, transfers_config, expected_transfers):
+    gtfs_static_file = mock.Mock()
+    gtfs_static_file.transfers.return_value = input_rows
+
+    actual_transfers = list(
+        gtfsstaticparser._parse_transfers(gtfs_static_file, transfers_config)
+    )
+
+    assert expected_transfers == actual_transfers

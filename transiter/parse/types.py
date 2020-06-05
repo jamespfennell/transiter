@@ -73,6 +73,20 @@ class Stop:
 
 
 @dataclass
+class Transfer:
+    class Type(enum.Enum):
+        RECOMMENDED = 0
+        COORDINATED = 1
+        POSSIBLE = 2
+        NO_TRANSFER = 3
+
+    from_stop_id: str
+    to_stop_id: str
+    type: Type = Type.RECOMMENDED
+    min_transfer_time: typing.Optional[int] = None
+
+
+@dataclass
 class ScheduledService:
     id: str
     monday: bool

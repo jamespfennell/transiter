@@ -5,11 +5,6 @@ import requests
 from google.transit import gtfs_realtime_pb2 as gtfs
 
 
-@pytest.fixture
-def system_id(request):
-    return request.node.originalname + "__" + str(uuid.uuid4())
-
-
 TRIP_ID = "trip_id"
 ROUTE_ID = "A"
 TRIP_INITIAL_TIMETABLE = {

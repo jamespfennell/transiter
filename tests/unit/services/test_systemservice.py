@@ -21,6 +21,7 @@ SYSTEM_ONE_NUM_STATIONS = 21
 SYSTEM_ONE_NUM_ROUTES = 22
 SYSTEM_ONE_NUM_FEEDS = 23
 SYSTEM_ONE_NUM_AGENCIES = 24
+SYSTEM_ONE_NUM_TRANSFERS = 25
 FILE_NAME = "24"
 STOP_ONE_ID = "25"
 PARSED_SYSTEM_CONFIG = {
@@ -72,6 +73,7 @@ def test_get_by_id(monkeypatch):
             models.System.feeds: SYSTEM_ONE_NUM_FEEDS,
             models.System.routes: SYSTEM_ONE_NUM_ROUTES,
             models.System.agencies: SYSTEM_ONE_NUM_AGENCIES,
+            models.System.transfers: SYSTEM_ONE_NUM_TRANSFERS,
         }[relationship]
 
     system = models.System(
@@ -90,6 +92,9 @@ def test_get_by_id(monkeypatch):
             count=SYSTEM_ONE_NUM_ROUTES, _system_id=SYSTEM_ONE_ID
         ),
         feeds=views.FeedsInSystem(count=SYSTEM_ONE_NUM_FEEDS, _system_id=SYSTEM_ONE_ID),
+        transfers=views.TransfersInSystem(
+            count=SYSTEM_ONE_NUM_TRANSFERS, _system_id=SYSTEM_ONE_ID
+        ),
     )
 
     monkeypatch.setattr(systemqueries, "get_by_id", lambda *args: system)

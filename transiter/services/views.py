@@ -56,12 +56,17 @@ class FeedsInSystem(_EntitiesInSystem):
     pass
 
 
+class TransfersInSystem(_EntitiesInSystem):
+    pass
+
+
 @dataclasses.dataclass
 class SystemLarge(System):
     agencies: AgenciesInSystem = NULL
     feeds: FeedsInSystem = NULL
     routes: RoutesInSystem = NULL
     stops: StopsInSystem = NULL
+    transfers: TransfersInSystem = NULL
 
 
 @dataclasses.dataclass
@@ -196,6 +201,7 @@ class StopLarge(View):
     child_stops: list = NULL
     directions: list = NULL
     alerts: typing.List["AlertSmall"] = NULL
+    transfers: typing.List["Transfer"] = NULL
     stop_times: list = dataclasses.field(default_factory=list)
 
     @classmethod
@@ -207,6 +213,23 @@ class StopLarge(View):
             latitude=stop.latitude,
             url=stop.url,
             _system_id=stop.system.id,
+        )
+
+
+@dataclasses.dataclass
+class Transfer(View):
+    from_stop: Stop
+    to_stop: Stop
+    type: models.Transfer.Type
+    min_transfer_time: int = None
+
+    @classmethod
+    def from_model(cls, transfer: models.Transfer, from_stop_view, to_stop_view):
+        return cls(
+            from_stop=from_stop_view,
+            to_stop=to_stop_view,
+            type=transfer.type,
+            min_transfer_time=transfer.min_transfer_time,
         )
 
 

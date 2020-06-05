@@ -6,6 +6,51 @@ from transiter.db import models
 from transiter.db.queries import stopqueries
 
 
+@pytest.fixture
+def transfers(add_model, system_1, stop_1_1, stop_1_2, stop_1_3):
+    return [
+        add_model(
+            models.Transfer(from_stop=stop_1_1, to_stop=stop_1_2, system=system_1)
+        ),
+        add_model(
+            models.Transfer(from_stop=stop_1_2, to_stop=stop_1_3, system=system_1)
+        ),
+        add_model(
+            models.Transfer(from_stop=stop_1_3, to_stop=stop_1_1, system=system_1)
+        ),
+    ]
+
+
+def test_list_all_transfers_in_system(system_1, transfers):
+    assert transfers == stopqueries.list_all_transfers_in_system(system_1.id)
+
+
+def test_list_all_transfers_in_system__specify_from_ids(
+    system_1, transfers, stop_1_1, stop_1_2
+):
+    assert transfers[:2] == stopqueries.list_all_transfers_in_system(
+        system_1.id, from_stop_ids=[stop_1_1.id, stop_1_2.id]
+    )
+
+
+def test_list_all_transfers_in_system__specify_to_ids(
+    system_1, transfers, stop_1_1, stop_1_3
+):
+    assert transfers[1:] == stopqueries.list_all_transfers_in_system(
+        system_1.id, to_stop_ids=[stop_1_1.id, stop_1_3.id]
+    )
+
+
+def test_list_all_transfers_in_system__specify_from_and_to_ids(
+    system_1, transfers, stop_1_1, stop_1_2, stop_1_3
+):
+    assert [transfers[1]] == stopqueries.list_all_transfers_in_system(
+        system_1.id,
+        from_stop_ids=[stop_1_1.id, stop_1_2.id],
+        to_stop_ids=[stop_1_1.id, stop_1_3.id],
+    )
+
+
 def test_list_all_in_system(system_1, stop_1_1, stop_1_2, stop_2_1):
     assert [stop_1_1, stop_1_2] == stopqueries.list_all_in_system(system_1.id)
 

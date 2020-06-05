@@ -1,6 +1,7 @@
 import io
 import os
 import time
+import uuid
 import zipfile
 
 import pytest
@@ -176,3 +177,8 @@ def install_system_1(
 @pytest.fixture
 def updated_gtfs_zip():
     return get_zip("gtfsstatic_updated")
+
+
+@pytest.fixture
+def system_id(request):
+    return request.node.originalname + "__" + str(uuid.uuid4())

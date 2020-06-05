@@ -3,6 +3,7 @@ from unittest import mock
 
 import flask
 import pytest
+from werkzeug import datastructures
 
 from transiter import config, exceptions
 from transiter.http import flaskapp, permissions
@@ -165,7 +166,6 @@ def test_simple_endpoints(
     function_args,
     function_kwargs,
 ):
-    """[Endpoints] Test pass-through endpoints"""
     endpoints_test_helper(
         monkeypatch,
         endpoints_module,
@@ -177,7 +177,6 @@ def test_simple_endpoints(
 
 
 def test_stop_endpoints__get_in_system_by_id(monkeypatch):
-    """[Endpoints] stop.get_in_system_by_id"""
     endpoints_test_helper(
         monkeypatch,
         stopendpoints,
@@ -193,8 +192,18 @@ def test_stop_endpoints__get_in_system_by_id(monkeypatch):
     )
 
 
+def test_system_endpoints__list_all_transfers(monkeypatch):
+    endpoints_test_helper(
+        monkeypatch,
+        systemendpoints,
+        stopservice,
+        "list_all_transfers_in_system",
+        ["system_id"],
+        {"from_stop_ids": None, "to_stop_ids": None},
+    )
+
+
 def test_system_endpoints__delete_by_id(monkeypatch):
-    """[Endpoints] system / delete_by_id"""
     endpoints_test_helper(
         monkeypatch,
         systemendpoints,
@@ -222,7 +231,9 @@ def endpoints_test_helper(
     if function_kwargs is None:
         function_kwargs = {}
 
-    monkeypatch.setattr(flask, "request", mock.MagicMock(headers={}, args={}))
+    monkeypatch.setattr(
+        flask, "request", mock.MagicMock(headers={}, args=datastructures.MultiDict())
+    )
 
     service_layer_response = "TEST"
     service_layer_function = mock.MagicMock()

@@ -40,6 +40,7 @@ def get_by_id(system_id) -> views.SystemLarge:
         ("stops", views.StopsInSystem, models.System.stops),
         ("routes", views.RoutesInSystem, models.System.routes),
         ("feeds", views.FeedsInSystem, models.System.feeds),
+        ("transfers", views.TransfersInSystem, models.System.transfers),
     ):
         setattr(
             response,

@@ -8,126 +8,90 @@ from transiter.db import models
 from transiter.db.queries import feedqueries, systemqueries
 from transiter.services import feedservice, views, updatemanager
 
-SYSTEM_ID = "1"
-FEED_ONE_ID = "2"
-FEED_ONE_PK = 3
-FEED_ONE_AUTO_UPDATE_PERIOD = 500
-FEED_TWO_AUTO_UPDATE_PERIOD = -1
-FEED_TWO_ID = "4"
 
+def test_list_all_auto_updating(
+    monkeypatch, feed_1_model, feed_1_small_view, system_1_view
+):
+    monkeypatch.setattr(feedqueries, "list_all_auto_updating", lambda: [feed_1_model])
 
-@pytest.fixture
-def system():
-    return models.System(id=SYSTEM_ID, name="", status=None)
-
-
-@pytest.fixture
-def feed_1(system):
-    return models.Feed(
-        id=FEED_ONE_ID, auto_update_period=FEED_ONE_AUTO_UPDATE_PERIOD, system=system
-    )
-
-
-@pytest.fixture
-def feed_2(system):
-    return models.Feed(
-        id=FEED_TWO_ID, auto_update_period=FEED_TWO_AUTO_UPDATE_PERIOD, system=system
-    )
-
-
-def test_list_all_auto_updating(monkeypatch, feed_1):
-    monkeypatch.setattr(feedqueries, "list_all_auto_updating", lambda: [feed_1])
-
-    expected = [
-        views.Feed(
-            id=FEED_ONE_ID,
-            auto_update_period=FEED_ONE_AUTO_UPDATE_PERIOD,
-            _system_id=SYSTEM_ID,
-            system=views.System(id=SYSTEM_ID, name="", status=None),
-        )
-    ]
+    feed_1_small_view.system = system_1_view
 
     actual = list(feedservice.list_all_auto_updating())
 
-    assert expected == actual
+    assert [feed_1_small_view] == actual
 
 
-def test_list_all_in_system__no_such_system(monkeypatch):
+def test_list_all_in_system__no_such_system(monkeypatch, system_1_model):
     monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
-        feedservice.list_all_in_system(SYSTEM_ID)
+        feedservice.list_all_in_system(system_1_model)
 
 
-def test_list_all_in_system(monkeypatch, system, feed_1, feed_2):
-    monkeypatch.setattr(systemqueries, "get_by_id", lambda *args, **kwargs: system)
+def test_list_all_in_system(
+    monkeypatch,
+    system_1_model,
+    feed_1_model,
+    feed_1_small_view,
+    feed_2_model,
+    feed_2_small_view,
+):
     monkeypatch.setattr(
-        feedqueries, "list_all_in_system", lambda *args: [feed_1, feed_2]
+        systemqueries, "get_by_id", lambda *args, **kwargs: system_1_model
+    )
+    monkeypatch.setattr(
+        feedqueries, "list_all_in_system", lambda *args: [feed_1_model, feed_2_model]
     )
 
-    expected = [
-        views.Feed(
-            id=FEED_ONE_ID,
-            auto_update_period=FEED_ONE_AUTO_UPDATE_PERIOD,
-            _system_id=SYSTEM_ID,
-        ),
-        views.Feed(
-            id=FEED_TWO_ID,
-            auto_update_period=FEED_TWO_AUTO_UPDATE_PERIOD,
-            _system_id=SYSTEM_ID,
-        ),
-    ]
+    expected = [feed_1_small_view, feed_2_small_view]
 
-    actual = feedservice.list_all_in_system(SYSTEM_ID)
+    actual = feedservice.list_all_in_system(system_1_model.id)
 
     assert actual == expected
 
 
-def test_get_in_system_by_id(monkeypatch, feed_1):
-    monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: feed_1)
+def test_get_in_system_by_id(monkeypatch, feed_1_model, feed_1_large_view):
+    monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: feed_1_model)
 
-    expected = views.FeedLarge(
-        id=FEED_ONE_ID,
-        auto_update_period=FEED_ONE_AUTO_UPDATE_PERIOD,
-        _system_id=SYSTEM_ID,
-        updates=views.UpdatesInFeedLink(_feed_id=FEED_ONE_ID, _system_id=SYSTEM_ID),
-    )
+    actual = feedservice.get_in_system_by_id(feed_1_model.system.id, feed_1_model.id)
 
-    actual = feedservice.get_in_system_by_id(SYSTEM_ID, FEED_ONE_ID)
-
-    assert expected == actual
+    assert feed_1_large_view == actual
 
 
-def test_get_in_system_by_id__no_such_feed(monkeypatch):
+def test_get_in_system_by_id__no_such_feed(monkeypatch, feed_1_model):
     monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
-        feedservice.get_in_system_by_id(SYSTEM_ID, FEED_ONE_ID),
+        feedservice.get_in_system_by_id(feed_1_model.system.id, feed_1_model.id)
 
 
-def test_create_feed_update(monkeypatch):
+def test_create_feed_update(monkeypatch, feed_1_model):
     feed_update = mock.MagicMock()
 
     monkeypatch.setattr(updatemanager, "create_feed_update", lambda *args: feed_update)
     monkeypatch.setattr(updatemanager, "execute_feed_update", mock.MagicMock())
 
-    actual = feedservice.create_and_execute_feed_update(SYSTEM_ID, FEED_ONE_ID)
+    actual = feedservice.create_and_execute_feed_update(
+        feed_1_model.system.id, feed_1_model.id
+    )
 
     assert feed_update == actual
 
 
-def test_create_feed_update__no_such_feed(monkeypatch):
+def test_create_feed_update__no_such_feed(monkeypatch, feed_1_model):
     monkeypatch.setattr(updatemanager, "create_feed_update", lambda *args: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
-        feedservice.create_and_execute_feed_update(SYSTEM_ID, FEED_ONE_ID)
+        feedservice.create_and_execute_feed_update(
+            feed_1_model.system.id, feed_1_model.id
+        )
 
 
-def test_list_updates_in_feed(monkeypatch, feed_1):
-    update_1 = models.FeedUpdate(feed=feed_1)
-    update_2 = models.FeedUpdate(feed=feed_1)
+def test_list_updates_in_feed(monkeypatch, feed_1_model):
+    update_1 = models.FeedUpdate(feed=feed_1_model)
+    update_2 = models.FeedUpdate(feed=feed_1_model)
 
-    monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: feed_1)
+    monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: feed_1_model)
     monkeypatch.setattr(
         feedqueries, "list_updates_in_feed", lambda *args: [update_1, update_2]
     )
@@ -137,16 +101,16 @@ def test_list_updates_in_feed(monkeypatch, feed_1):
         views.FeedUpdate.from_model(update_2),
     ]
 
-    actual = feedservice.list_updates_in_feed(SYSTEM_ID, FEED_ONE_ID)
+    actual = feedservice.list_updates_in_feed(feed_1_model.system.id, feed_1_model.id)
 
     assert expected == actual
 
 
-def test_list_updates_in_feed__no_such_feed(monkeypatch):
+def test_list_updates_in_feed__no_such_feed(monkeypatch, feed_1_model):
     monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: None)
 
     with pytest.raises(exceptions.IdNotFoundError):
-        feedservice.list_updates_in_feed(SYSTEM_ID, FEED_ONE_ID)
+        feedservice.list_updates_in_feed(feed_1_model.system.id, feed_1_model.id)
 
 
 @pytest.mark.parametrize(

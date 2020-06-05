@@ -10,7 +10,7 @@ from transiter.http.httpmanager import (
     HttpStatus,
 )
 from transiter.http.permissions import requires_permissions, PermissionsLevel
-from transiter.services import systemservice, views
+from transiter.services import stopservice, systemservice, views
 
 system_endpoints = flask.Blueprint(__name__, __name__)
 
@@ -27,6 +27,16 @@ def list_all():
 def get_by_id(system_id):
     """Get data on a specific system."""
     return systemservice.get_by_id(system_id)
+
+
+@http_endpoint(system_endpoints, "/<system_id>/transfers")
+@link_target(views.TransfersInSystem, ["_system_id"])
+def list_all_transfers_in_system(system_id):
+    from_stop_ids = httpmanager.get_list_url_parameter("from_stop_id")
+    to_stop_ids = httpmanager.get_list_url_parameter("to_stop_id")
+    return stopservice.list_all_transfers_in_system(
+        system_id, from_stop_ids=from_stop_ids, to_stop_ids=to_stop_ids
+    )
 
 
 @http_endpoint(

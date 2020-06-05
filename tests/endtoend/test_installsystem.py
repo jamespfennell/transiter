@@ -23,6 +23,8 @@ STOP_IDS = {
     "1EN",
     "1FN",
     "1GN",
+    "2COL",
+    "2MEX",
 }
 ROUTE_IDS = {"A", "B"}
 FEED_IDS = {"GtfsRealtimeFeed", "gtfsstatic"}
@@ -39,16 +41,20 @@ ROUTE_ID_TO_USUAL_ROUTE = {"A": ["1A", "1D", "1E", "1G"], "B": []}
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def test_install_system__success(install_system_1, transiter_host, sync):
+def test_install_system__basic_data(system_id, install_system_1, transiter_host, sync):
 
-    system_id = "test_install_system_" + str(sync)
     install_system_1(system_id, sync=sync)
 
     # (0) Verify the system name was populated
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     assert system_response["name"] == "Test System"
 
-    # (1) Verify all of the stops were installed
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system__stops(system_id, install_system_1, transiter_host, sync):
+
+    install_system_1(system_id, sync=sync)
+
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     stops_count = system_response["stops"]["count"]
     assert len(STOP_IDS) == stops_count
@@ -59,7 +65,31 @@ def test_install_system__success(install_system_1, transiter_host, sync):
     actual_stop_ids = set([stop["id"] for stop in stops_response])
     assert STOP_IDS == actual_stop_ids
 
-    # (2) Verify all of the routes were installed
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system__transfers(system_id, install_system_1, transiter_host, sync):
+
+    install_system_1(system_id, sync=sync)
+
+    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
+    stops_count = system_response["transfers"]["count"]
+    assert 3 == stops_count
+
+    stops_response = requests.get(
+        transiter_host + "/systems/" + system_id + "/transfers"
+    ).json()
+    actual_transfer_tuples = set(
+        (transfer["from_stop"]["id"], transfer["to_stop"]["id"])
+        for transfer in stops_response
+    )
+    assert {("2COL", "1C"), ("2MEX", "1E"), ("1E", "2MEX")} == actual_transfer_tuples
+
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system__routes(system_id, install_system_1, transiter_host, sync):
+
+    install_system_1(system_id, sync=sync)
+
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     routes_count = system_response["routes"]["count"]
     assert len(ROUTE_IDS), routes_count
@@ -70,7 +100,12 @@ def test_install_system__success(install_system_1, transiter_host, sync):
     actual_route_ids = set([route["id"] for route in routes_response])
     assert ROUTE_IDS == actual_route_ids
 
-    # (3) Verify all of the feeds were installed
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system__feeds(system_id, install_system_1, transiter_host, sync):
+
+    install_system_1(system_id, sync=sync)
+
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     feeds_count = system_response["feeds"]["count"]
     assert len(FEED_IDS) == feeds_count
@@ -81,7 +116,14 @@ def test_install_system__success(install_system_1, transiter_host, sync):
     actual_feed_ids = set([feed["id"] for feed in feeds_response])
     assert FEED_IDS == actual_feed_ids
 
-    # (4) Verify the service map is correct in the stops view
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system__success__service_map_stop(
+    system_id, install_system_1, transiter_host, sync
+):
+
+    install_system_1(system_id, sync=sync)
+
     for stop_id, usual_route in STOP_ID_TO_USUAL_ROUTES.items():
         stop_response = requests.get(
             "{}/systems/{}/stops/{}".format(transiter_host, system_id, stop_id)
@@ -94,7 +136,14 @@ def test_install_system__success(install_system_1, transiter_host, sync):
             ]
         assert usual_route == actual
 
-    # (5) Verify the service map is correct in the routes view
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system__service_map_route(
+    system_id, install_system_1, transiter_host, sync
+):
+
+    install_system_1(system_id, sync=sync)
+
     for route_id, usual_stops in ROUTE_ID_TO_USUAL_ROUTE.items():
         route_response = requests.get(
             "{}/systems/{}/routes/{}".format(transiter_host, system_id, route_id)
@@ -106,9 +155,11 @@ def test_install_system__success(install_system_1, transiter_host, sync):
             assert usual_stops == actual_stops
             break
 
-    # (5) Verify the agency was installed
-    agencies_count = system_response["agencies"]["count"]
-    assert 1 == agencies_count
+
+@pytest.mark.parametrize("sync", [True, False])
+def test_install_system__agency(system_id, install_system_1, transiter_host, sync):
+
+    install_system_1(system_id, sync=sync)
 
     agencies_response = requests.get(
         transiter_host + "/systems/" + system_id + "/agencies"

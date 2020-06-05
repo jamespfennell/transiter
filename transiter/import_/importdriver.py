@@ -51,6 +51,7 @@ def run_import(feed_update_pk, parser_object: parse.TransiterParser):
         AgencySyncer,
         RouteSyncer,
         StopSyncer,
+        TransferSyncer,
         ScheduleSyncer,
         DirectionRuleSyncer,
         TripSyncer,
@@ -226,6 +227,39 @@ class StopSyncer(syncer(models.Stop)):
             else:
                 stop.parent_stop_pk = None
         return num_added, num_updated
+
+
+class TransferSyncer(syncer(models.Transfer)):
+    def sync(self, parsed_transfers: typing.Iterable[parse.Transfer]):
+        parsed_transfers = list(parsed_transfers)
+
+        # TODO use the query to speed it up:
+        # stopqueries.delete_transfers_in_system(self.feed_update.feed.system.pk)
+
+        stop_ids = set()
+        for transfer in parsed_transfers:
+            stop_ids.add(transfer.from_stop_id)
+            stop_ids.add(transfer.to_stop_id)
+        stop_id_to_pk = stopqueries.get_id_to_pk_map_in_system(
+            self.feed_update.feed.system.pk, stop_ids
+        )
+
+        session = dbconnection.get_session()
+        num_added = 0
+        for transfer in parsed_transfers:
+            from_stop_pk = stop_id_to_pk.get(transfer.from_stop_id)
+            to_stop_pk = stop_id_to_pk.get(transfer.to_stop_id)
+            if from_stop_pk is None or to_stop_pk is None:
+                continue
+            db_transfer = models.Transfer.from_parsed_transfer(transfer)
+            db_transfer.system_pk = self.feed_update.feed.system.pk
+            db_transfer.source_pk = self.feed_update.pk
+            db_transfer.from_stop_pk = from_stop_pk
+            db_transfer.to_stop_pk = to_stop_pk
+            session.add(db_transfer)
+            num_added += 1
+
+        return num_added, 0
 
 
 class ScheduleSyncer(syncer(models.ScheduledService)):

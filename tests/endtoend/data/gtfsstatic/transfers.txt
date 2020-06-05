@@ -1,0 +1,4 @@
+from_stop_id,to_stop_id,transfer_type,min_transfer_time
+2COL,1C,1,300
+2MEX,1E,2,200
+1E,2MEX,2,200

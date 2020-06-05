@@ -2,7 +2,7 @@ import collections
 import typing
 
 from sqlalchemy import sql
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload, selectinload, aliased
 
 from transiter.db import dbconnection, models
 from transiter.db.queries import genericqueries
@@ -12,6 +12,39 @@ def list_all_in_system(system_id, stop_ids=None):
     return genericqueries.list_in_system(
         models.Stop, system_id, order_by_field=models.Stop.id, ids=stop_ids
     )
+
+
+def list_all_transfers_in_system(
+    system_id, from_stop_ids=None, to_stop_ids=None
+) -> typing.List[models.Transfer]:
+    query = (
+        dbconnection.get_session()
+        .query(models.Transfer)
+        .join(models.System)
+        .filter(models.System.id == system_id)
+        .options(joinedload(models.Transfer.from_stop))
+        .options(joinedload(models.Transfer.to_stop))
+    )
+    if from_stop_ids is not None:
+        from_stop = aliased(models.Stop)
+        query = query.join(from_stop, models.Transfer.from_stop).filter(
+            from_stop.id.in_(from_stop_ids)
+        )
+    if to_stop_ids is not None:
+        query = query.join(models.Stop, models.Transfer.to_stop).filter(
+            models.Stop.id.in_(to_stop_ids)
+        )
+    return list(query.all())
+
+
+def list_all_transfers_at_stops(from_stop_pks) -> typing.List[models.Transfer]:
+    query = (
+        dbconnection.get_session()
+        .query(models.Transfer)
+        .filter(models.Transfer.from_stop_pk.in_(from_stop_pks))
+        .options(joinedload(models.Transfer.to_stop))
+    )
+    return list(query.all())
 
 
 def get_in_system_by_id(system_id, stop_id):
@@ -168,3 +201,8 @@ def get_stop_pk_to_station_pk_map_in_system(system_id):
         else:
             stop_pk_to_station_pk[stop_pk] = parent_stop_pk
     return stop_pk_to_station_pk
+
+
+def delete_transfers_in_system(system_pk):
+
+    session = dbconnection.get_session()
