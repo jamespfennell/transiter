@@ -6,6 +6,7 @@ from sqlalchemy import (
     Numeric,
     UniqueConstraint,
     Enum,
+    Index,
 )
 from sqlalchemy.orm import relationship, backref
 
@@ -29,8 +30,8 @@ class Stop(Base):
     WheelchairBoarding = parse.Stop.WheelchairBoarding
 
     name = Column(String)
-    longitude = Column(Numeric(precision=9, scale=6))
-    latitude = Column(Numeric(precision=9, scale=6))
+    longitude = Column(Numeric(precision=9, scale=6), index=True)
+    latitude = Column(Numeric(precision=9, scale=6), index=True)
     type = Column(Enum(Type, native_enum=False), nullable=False)
     code = Column(String)
     description = Column(String)
@@ -77,7 +78,11 @@ class Stop(Base):
         "Transfer", back_populates="to_stop", foreign_keys="Transfer.to_stop_pk"
     )
 
-    __table_args__ = (UniqueConstraint("system_pk", "id"),)
+    __table_args__ = (
+        UniqueConstraint("system_pk", "id"),
+        Index("idx_stop_system_pk_latitude", "system_pk", "latitude"),
+        Index("idx_stop_system_pk_longitude", "system_pk", "longitude"),
+    )
 
     @staticmethod
     def from_parsed_stop(stop: parse.Stop) -> "Stop":

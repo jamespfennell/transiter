@@ -178,6 +178,20 @@ def is_sync_request():
     )
 
 
+def get_float_url_parameter(key, default=None, required=False):
+    raw_value = flask.request.args.get(key)
+    if raw_value is None:
+        if not required:
+            return default
+        raise exceptions.InvalidInput(f"The URL parameter '{key}' is required.")
+    try:
+        return float(raw_value)
+    except ValueError:
+        raise exceptions.InvalidInput(
+            f"Received non-float value '{raw_value}' for float URL parameter '{key}'."
+        )
+
+
 def get_list_url_parameter(key):
     raw = flask.request.args.getlist(key)
     if len(raw) == 0:

@@ -178,6 +178,7 @@ class Stop(View):
     id: str
     name: str
     _system_id: str
+    distance: float = NULL
     service_maps: list = NULL
     parent_stop: typing.Optional["Stop"] = NULL
     child_stops: list = NULL

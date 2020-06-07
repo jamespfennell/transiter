@@ -8,6 +8,23 @@ from transiter.db import dbconnection, models
 from transiter.db.queries import genericqueries
 
 
+def list_all_in_geographical_bounds(
+    lower_lat, upper_lat, lower_lon, upper_lon, system_id,
+):
+    query = (
+        dbconnection.get_session()
+        .query(models.Stop)
+        .filter(models.Stop.parent_stop_pk.is_(None))
+        .filter(models.Stop.latitude >= lower_lat)
+        .filter(models.Stop.latitude <= upper_lat)
+        .filter(models.Stop.longitude >= lower_lon)
+        .filter(models.Stop.longitude <= upper_lon)
+    )
+    if system_id is not None:
+        query = query.join(models.System).filter(models.System.id == system_id)
+    return query.all()
+
+
 def list_all_in_system(system_id, stop_ids=None):
     return genericqueries.list_in_system(
         models.Stop, system_id, order_by_field=models.Stop.id, ids=stop_ids

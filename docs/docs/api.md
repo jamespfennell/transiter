@@ -34,6 +34,8 @@ Operation                                           | API endpoint
 **Stops**
 [List stops in a system](#list-stops-in-a-system)   | `GET /systems/<system_id>/stops`
 [Get a stop](#get-a-stop-in-a-system)               | `GET /systems/<system_id>/stops/<stop_id>`
+[Search for stops in a system based on location](#search-stops-in-a-system)      | `POST /systems/<system_id>/stops`
+[Search for stops in all systems based on location](#search-stops-in-all-systems)               | `POST /stops`
 **Routes**
 [List routes in a system](#list-routes-in-a-system) | `GET /systems/<system_id>/routes`
 [Get a route](#get-a-route-in-a-system)             | `GET /systems/<system_id>/routes/<route_id>`
@@ -294,8 +296,42 @@ Return code         | Description
 `200 OK`            | Returned if the system and stop exist.
 `404 NOT FOUND`     | Returned if either the system or the stop does not exist.
 
-## Route endpoints
+### Search stops in a system
 
+`POST /systems/<system_id>/stops`
+
+Search for stops in a system based on their proximity to a geographic root location. 
+This endpoint can be used, for example, to list stops near a user given the user's location.
+
+It takes three URL parameters:
+
+- `latitude` - the latitude of the root location (required).
+- `longitude` - the longitude of the root location (required).
+- `distance` - the maximum distance, in meters, away from the root location that stops can be. 
+            This is optional and defaults to 1000 meters (i.e., 1 kilometer). 1 mile is about 1609 meters.
+   
+The result of this endpoint is a list of stops ordered by distance, starting with the stop 
+closest to the root location.
+
+Return code         | Description
+--------------------|-------------
+`200 OK`            | Returned if the system exists.
+`404 NOT FOUND`     | Returned if no system with the provided ID is installed.
+
+
+### Search stops in all systems
+
+`POST /stops`
+
+This endpoint is identical to the endpoint above, except instead of searching for stops within
+a specific system it searches for stops within all the installed systems.
+
+Return code         | Description
+--------------------|-------------
+`200 OK`            | Returned in all cases.
+
+
+## Route endpoints
 
 
 ### List routes in a system

@@ -1,4 +1,4 @@
-site_name: Transiter 0.4
+site_name: Transiter 0.5
 theme: cinder
 nav:
 - 'api.md'

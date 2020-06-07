@@ -32,9 +32,7 @@ app.register_blueprint(
 app.register_blueprint(
     endpoints.route_endpoints, url_prefix="/systems/<system_id>/routes"
 )
-app.register_blueprint(
-    endpoints.stop_endpoints, url_prefix="/systems/<system_id>/stops"
-)
+app.register_blueprint(endpoints.stop_endpoints)
 app.register_blueprint(endpoints.system_endpoints, url_prefix="/systems")
 app.register_blueprint(
     endpoints.trip_endpoints, url_prefix="/systems/<system_id>/routes/<route_id>/trips"

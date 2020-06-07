@@ -1,4 +1,4 @@
-# Transiter 0.4 documentation
+# Transiter 0.5 documentation
 
 ## Contents
 

@@ -170,3 +170,29 @@ def test_get_enum_url_parameter__invalid(flask_request):
 
     with pytest.raises(exceptions.InvalidInput):
         httpmanager.get_enum_url_parameter("my_param", TestEnum)
+
+
+@pytest.mark.parametrize(
+    "value,expected_result,default,required,raises_exception",
+    [
+        ["3.4", 3.4, None, False, False],
+        ["3.4s", None, None, False, True],
+        [None, None, None, False, False],
+        [None, None, None, True, True],
+        [None, 3.4, 3.4, False, False],
+        [None, 3.4, 3.4, True, True],
+    ],
+)
+def test_get_float_url_parameter(
+    flask_request, value, expected_result, default, required, raises_exception
+):
+    flask_request.args = {"key": value}
+    if raises_exception:
+        with pytest.raises(exceptions.InvalidInput):
+            httpmanager.get_float_url_parameter(
+                key="key", default=default, required=required
+            )
+    else:
+        assert expected_result == httpmanager.get_float_url_parameter(
+            key="key", default=default, required=required
+        )

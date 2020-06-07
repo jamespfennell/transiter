@@ -267,3 +267,32 @@ def test_list_direction_rules(add_model, stop_1_1, stop_1_2, stop_1_3):
     assert [rule_1, rule_2] == stopqueries.list_direction_rules_for_stops(
         [stop_1_1.pk, stop_1_2.pk]
     )
+
+
+@pytest.mark.parametrize("lat", [-4, 0, 4])
+@pytest.mark.parametrize("lon", [-4, 0, 4])
+def test_list_all_in_geographical_bounds(system_1, add_model, lat, lon, stop_1_1):
+    stop_1 = add_model(
+        models.Stop(
+            id="id_1",
+            type=models.Stop.Type.STATION,
+            latitude=0,
+            longitude=0,
+            system=system_1,
+        )
+    )
+    stop_2 = add_model(
+        models.Stop(
+            id="id_2",
+            type=models.Stop.Type.STATION,
+            latitude=lat,
+            longitude=lon,
+            system=system_1,
+        )
+    )
+    if lat == 0 and lon == 0:
+        stop_2.parent_stop = stop_1_1
+
+    all_stops = stopqueries.list_all_in_geographical_bounds(-1, 1, -1, 1, system_1.id)
+
+    assert [stop_1] == all_stops

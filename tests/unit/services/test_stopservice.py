@@ -7,7 +7,7 @@ import pytest
 from transiter import exceptions
 from transiter.db import models
 from transiter.db.queries import alertqueries, tripqueries, stopqueries, systemqueries
-from transiter.services import stopservice, views
+from transiter.services import stopservice, views, geography
 from transiter.services.servicemap import servicemapmanager
 
 SYSTEM_ID = "1"
@@ -74,6 +74,43 @@ def test_list_all_transfers_in_system__system_not_found(monkeypatch):
 
     with pytest.raises(exceptions.IdNotFoundError):
         stopservice.list_all_transfers_in_system(SYSTEM_ID)
+
+
+def test_geographical_search(monkeypatch):
+    system = models.System(id="system_id")
+    stop_1 = models.Stop(
+        pk=1, id="1", name="1", latitude=0.1, longitude=0.1, system=system
+    )
+    stop_2 = models.Stop(
+        pk=3, id="3", name="3", latitude=0.3, longitude=0.3, system=system
+    )
+    stop_3 = models.Stop(
+        pk=5, id="5", name="5", latitude=0.5, longitude=0.5, system=system
+    )
+    monkeypatch.setattr(
+        stopqueries,
+        "list_all_in_geographical_bounds",
+        lambda *args, **kwargs: [stop_3, stop_2, stop_1],
+    )
+
+    actual_stops = stopservice.geographical_search(
+        "system_id", 0, 0, geography.distance(0, 0, 0.4, 0.4), return_service_maps=False
+    )
+
+    assert [
+        views.Stop(
+            id="1",
+            name="1",
+            _system_id="system_id",
+            distance=int(geography.distance(0, 0, 0.1, 0.1)),
+        ),
+        views.Stop(
+            id="3",
+            name="3",
+            _system_id="system_id",
+            distance=int(geography.distance(0, 0, 0.3, 0.3)),
+        ),
+    ] == actual_stops
 
 
 def test_old_trips__exclude(time_dot_time):

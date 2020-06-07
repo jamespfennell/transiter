@@ -7,13 +7,14 @@ of data, and this is reflected in the amount of code executed.
 """
 import collections
 import enum
+import math
 import time
 import typing
 
 from transiter import exceptions
 from transiter.db import dbconnection, models
 from transiter.db.queries import tripqueries, stopqueries, systemqueries
-from transiter.services import views, helpers
+from transiter.services import views, helpers, geography
 from transiter.services.servicemap import servicemapmanager
 from transiter.services.servicemap.graphutils import datastructures
 
@@ -30,6 +31,77 @@ def list_all_in_system(system_id, alerts_detail=None) -> typing.List[views.Stop]
         response, stops, alerts_detail or views.AlertsDetail.NONE,
     )
     return response
+
+
+@dbconnection.unit_of_work
+def search_in_system(system_id):
+    stops_1 = (
+        dbconnection.get_session()
+        .query(models.Stop)
+        .join(models.System)
+        .filter(models.System.id == "nycsubway")
+        .filter(models.Stop.parent_stop_pk.is_(None))
+    )
+    stops_2 = (
+        dbconnection.get_session()
+        .query(models.Stop)
+        .join(models.System)
+        .filter(models.System.id == "us-ny-path")
+        .filter(models.Stop.parent_stop_pk.is_(None))
+    )
+    pairs = []
+    for stop_1 in stops_1:
+        for stop_2 in stops_2:
+            pairs.append((stop_1, stop_2))
+
+    pairs.sort(
+        key=lambda pair: geography.distance(
+            float(pair[0].latitude),
+            float(pair[0].longitude),
+            float(pair[1].latitude),
+            float(pair[1].longitude),
+        )
+    )
+
+    return [
+        [views.Stop.from_model(stop_1), views.Stop.from_model(stop_2)]
+        for stop_1, stop_2 in pairs[:10]
+    ]
+
+
+@dbconnection.unit_of_work
+def geographical_search(
+    system_id, latitude, longitude, distance, return_service_maps=True,
+) -> typing.List[views.Stop]:
+    lower_lat, upper_lat = geography.latitude_bounds(latitude, longitude, distance)
+    lower_lon, upper_lon = geography.longitude_bounds(latitude, longitude, distance)
+    all_stops = stopqueries.list_all_in_geographical_bounds(
+        lower_lat, upper_lat, lower_lon, upper_lon, system_id
+    )
+    stop_pk_to_distance = {
+        stop.pk: geography.distance(
+            float(stop.latitude), float(stop.longitude), latitude, longitude,
+        )
+        for stop in all_stops
+    }
+    all_stops = list(
+        filter(lambda stop_: stop_pk_to_distance[stop_.pk] <= distance, all_stops)
+    )
+    all_stops.sort(key=lambda stop_: stop_pk_to_distance[stop_.pk])
+    if return_service_maps:
+        stop_pk_to_service_maps = servicemapmanager.build_stop_pk_to_service_maps_response(
+            list(stop.pk for stop in all_stops)
+        )
+    else:
+        stop_pk_to_service_maps = {}
+
+    result = []
+    for stop in all_stops:
+        result.append(views.Stop.from_model(stop))
+        result[-1].distance = int(stop_pk_to_distance[stop.pk])
+        if return_service_maps:
+            result[-1].service_maps = stop_pk_to_service_maps.get(stop.pk, [])
+    return result
 
 
 @dbconnection.unit_of_work
