@@ -26,21 +26,6 @@ def create(DbEntity: models.Base, entity=None):
     return entity
 
 
-def list_all(DbEntity: models.Base, order_by_field=None):
-    """
-    List all entities of a certain type.
-
-    :param DbEntity: the entities' type
-    :param order_by_field: field or order the results be
-    :return: list of entities of type DbEntity
-    """
-    session = dbconnection.get_session()
-    query = session.query(DbEntity)
-    if order_by_field is not None:
-        query = query.order_by(order_by_field)
-    return query.all()
-
-
 def get_by_id(DbEntity: models.Base, id_):
     """
     Get an entity by its ID.

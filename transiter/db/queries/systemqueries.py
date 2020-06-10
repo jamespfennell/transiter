@@ -32,11 +32,12 @@ def delete_by_id(id_):
     return True
 
 
-def list_all():
-    """
-    List all Systems in the database.
-    """
-    return genericqueries.list_all(models.System, models.System.id)
+def list_all(system_ids=None):
+    session = dbconnection.get_session()
+    query = session.query(models.System).order_by(models.System.id)
+    if system_ids is not None:
+        query = query.filter(models.System.id.in_(system_ids))
+    return query.all()
 
 
 def get_by_id(id_, only_return_active=False) -> Optional[models.System]:

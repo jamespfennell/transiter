@@ -8,7 +8,7 @@ from transiter import exceptions
 from transiter.http import httpmanager
 from transiter.http.endpoints import systemendpoints
 from transiter.http.httpmanager import HttpStatus
-from transiter.services import systemservice
+from transiter.services import systemservice, views
 
 
 @pytest.fixture
@@ -45,8 +45,12 @@ def get_request_args(monkeypatch):
 
 @pytest.mark.parametrize("extra_params", [{}, {"key_1": "value_1"}])
 @pytest.mark.parametrize(
-    "sync,expected_http_status",
-    [(True, HttpStatus.CREATED), (False, HttpStatus.ACCEPTED)],
+    "sync,update_status,expected_http_status",
+    [
+        (True, views.SystemUpdateStatus.SUCCESS, HttpStatus.CREATED),
+        (True, views.SystemUpdateStatus.FAILED, HttpStatus.BAD_REQUEST),
+        (False, views.SystemUpdateStatus.SCHEDULED, HttpStatus.ACCEPTED),
+    ],
 )
 def test_install__config_file_from_url(
     monkeypatch,
@@ -55,12 +59,15 @@ def test_install__config_file_from_url(
     get_update_function,
     get_request_args,
     sync,
+    update_status,
     expected_http_status,
     extra_params,
 ):
     if extra_params is None:
         extra_params = {}
-
+    get_update_function.return_value = views.SystemUpdate(
+        status=update_status, id="", scheduled_at=0, completed_at=0, stack_trace=[]
+    )
     install_method = install_service_function
 
     get_request_args.return_value = {"sync": str(sync).lower()}
@@ -115,8 +122,12 @@ def test_install__config_file_from_url__failed_to_download(
     "extra_params", [pytest.param({}), pytest.param({"key_1": "value_1"})]
 )
 @pytest.mark.parametrize(
-    "sync,expected_http_status",
-    [(True, HttpStatus.CREATED), (False, HttpStatus.ACCEPTED)],
+    "sync,update_status,expected_http_status",
+    [
+        (True, views.SystemUpdateStatus.SUCCESS, HttpStatus.CREATED),
+        (True, views.SystemUpdateStatus.FAILED, HttpStatus.BAD_REQUEST),
+        (False, views.SystemUpdateStatus.SCHEDULED, HttpStatus.ACCEPTED),
+    ],
 )
 def test_install__config_file_from_file_upload(
     flask_request,
@@ -124,9 +135,13 @@ def test_install__config_file_from_file_upload(
     get_update_function,
     get_request_args,
     sync,
+    update_status,
     expected_http_status,
     extra_params,
 ):
+    get_update_function.return_value = views.SystemUpdate(
+        status=update_status, id="", scheduled_at=0, completed_at=0, stack_trace=[]
+    )
     install_method = install_service_function
 
     flask_request.form = ImmutableMultiDict(list(extra_params.items()))

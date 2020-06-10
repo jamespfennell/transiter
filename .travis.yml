@@ -30,6 +30,8 @@ jobs:
         - python tests/endtoend/sourceserver.py > sourceserver.log  2>&1 &
       script:
         - pytest --color=yes tests/endtoend
+      after_failure:
+        - cat webservice.log
 
     - name: "Formatting enforcement"
       install:
@@ -39,7 +41,7 @@ jobs:
         - pycodestyle --ignore=E203,E501,W503 --exclude="*pb2.py" transiter tests *py
 
     - stage: "Containerized build and tests"
-      name: "CPython 3.7 Docker build and all tests"
+      name: "CPython 3.8 Docker build and all tests"
       install:
         - pip install --quiet docker
         - python travis.py before

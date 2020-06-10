@@ -192,10 +192,12 @@ def get_float_url_parameter(key, default=None, required=False):
         )
 
 
-def get_list_url_parameter(key):
+def get_list_url_parameter(key, required=False):
     raw = flask.request.args.getlist(key)
     if len(raw) == 0:
-        return None
+        if not required:
+            return None
+        raise exceptions.InvalidInput(f"The URL parameter '{key}' is required.")
     return raw
 
 

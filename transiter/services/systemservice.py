@@ -53,6 +53,12 @@ def get_by_id(system_id) -> views.SystemLarge:
     return response
 
 
+@dbconnection.unit_of_work
+def is_active(system_id):
+    system = systemqueries.get_by_id(system_id)
+    return system is not None and system.status != models.System.SystemStatus.ACTIVE
+
+
 def set_auto_update_enabled(system_id, auto_update):
     with dbconnection.inline_unit_of_work():
         response = systemqueries.set_auto_update_enabled(system_id, auto_update)

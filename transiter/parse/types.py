@@ -79,6 +79,7 @@ class Transfer:
         COORDINATED = 1
         POSSIBLE = 2
         NO_TRANSFER = 3
+        GEOGRAPHIC = 4  # TODO remove check constraint
 
     from_stop_id: str
     to_stop_id: str

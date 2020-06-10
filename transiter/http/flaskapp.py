@@ -35,6 +35,9 @@ app.register_blueprint(
 app.register_blueprint(endpoints.stop_endpoints)
 app.register_blueprint(endpoints.system_endpoints, url_prefix="/systems")
 app.register_blueprint(
+    endpoints.transfers_config_endpoints, url_prefix="/admin/transfers-config"
+)
+app.register_blueprint(
     endpoints.trip_endpoints, url_prefix="/systems/<system_id>/routes/<route_id>/trips"
 )
 app.url_map.strict_slashes = False

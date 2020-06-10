@@ -3,6 +3,7 @@ from sqlalchemy import (
     Integer,
     ForeignKey,
     Enum,
+    Numeric,
 )
 from sqlalchemy.orm import relationship
 
@@ -18,6 +19,8 @@ class Transfer(Base):
     pk = Column(Integer, primary_key=True)
     system_pk = Column(Integer, ForeignKey("system.pk"), index=True)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
+    config_source_pk = Column(Integer, ForeignKey("transfers_config.pk"), index=True)
+    # TODO nullable constraint
     from_stop_pk = Column(Integer, ForeignKey("stop.pk"), index=True)
     to_stop_pk = Column(Integer, ForeignKey("stop.pk"), index=True)
 
@@ -27,9 +30,13 @@ class Transfer(Base):
         Enum(Type, native_enum=False), nullable=False, default=Type.RECOMMENDED
     )
     min_transfer_time = Column(Integer)
+    distance = Column(Numeric)
 
     system = relationship("System", cascade="none")
     source = relationship("FeedUpdate", cascade="none")
+    config_source = relationship(
+        "TransfersConfig", cascade="none", back_populates="transfers"
+    )
     from_stop = relationship("Stop", foreign_keys=from_stop_pk, cascade="none")
     to_stop = relationship("Stop", foreign_keys=to_stop_pk, cascade="none")
 

@@ -50,3 +50,9 @@ class System(Base):
     service_map_groups = relationship(
         "ServiceMapGroup", back_populates="system", cascade="all, delete-orphan"
     )
+    transfers_configs = relationship(
+        "TransfersConfig",
+        back_populates="systems",
+        secondary="transfers_config_system",
+        cascade="none",
+    )

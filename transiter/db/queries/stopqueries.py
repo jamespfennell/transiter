@@ -221,5 +221,5 @@ def get_stop_pk_to_station_pk_map_in_system(system_id):
 
 
 def delete_transfers_in_system(system_pk):
-
+    # TODO
     session = dbconnection.get_session()

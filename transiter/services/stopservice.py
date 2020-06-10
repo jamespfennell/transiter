@@ -34,42 +34,6 @@ def list_all_in_system(system_id, alerts_detail=None) -> typing.List[views.Stop]
 
 
 @dbconnection.unit_of_work
-def search_in_system(system_id):
-    stops_1 = (
-        dbconnection.get_session()
-        .query(models.Stop)
-        .join(models.System)
-        .filter(models.System.id == "nycsubway")
-        .filter(models.Stop.parent_stop_pk.is_(None))
-    )
-    stops_2 = (
-        dbconnection.get_session()
-        .query(models.Stop)
-        .join(models.System)
-        .filter(models.System.id == "us-ny-path")
-        .filter(models.Stop.parent_stop_pk.is_(None))
-    )
-    pairs = []
-    for stop_1 in stops_1:
-        for stop_2 in stops_2:
-            pairs.append((stop_1, stop_2))
-
-    pairs.sort(
-        key=lambda pair: geography.distance(
-            float(pair[0].latitude),
-            float(pair[0].longitude),
-            float(pair[1].latitude),
-            float(pair[1].longitude),
-        )
-    )
-
-    return [
-        [views.Stop.from_model(stop_1), views.Stop.from_model(stop_2)]
-        for stop_1, stop_2 in pairs[:10]
-    ]
-
-
-@dbconnection.unit_of_work
 def geographical_search(
     system_id, latitude, longitude, distance, return_service_maps=True,
 ) -> typing.List[views.Stop]:
@@ -242,7 +206,11 @@ class _TripStopTimeFilter:
 def _build_transfers_response(transfers, stop_pk_to_service_maps_response):
     result = []
     for transfer in transfers:
-        to_stop = views.Stop.from_model(transfer.to_stop)
+        to_stop = views.Stop.from_model(
+            transfer.to_stop,
+            show_system=(transfer.from_stop.system.id != transfer.to_stop.system.id),
+        )
+
         to_stop.service_maps = stop_pk_to_service_maps_response.get(
             transfer.to_stop.pk, []
         )

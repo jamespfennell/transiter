@@ -69,6 +69,9 @@ class SystemLarge(System):
     transfers: TransfersInSystem = NULL
 
 
+SystemUpdateStatus = models.SystemUpdate.Status
+
+
 @dataclasses.dataclass
 class SystemUpdate(View):
     id: str
@@ -179,14 +182,18 @@ class Stop(View):
     name: str
     _system_id: str
     distance: float = NULL
+    system: System = NULL
     service_maps: list = NULL
     parent_stop: typing.Optional["Stop"] = NULL
     child_stops: list = NULL
     alerts: typing.List["AlertSmall"] = NULL
 
     @classmethod
-    def from_model(cls, stop: models.Stop):
-        return cls(id=stop.id, name=stop.name, _system_id=stop.system.id)
+    def from_model(cls, stop: models.Stop, show_system=False):
+        result = cls(id=stop.id, name=stop.name, _system_id=stop.system.id)
+        if show_system:
+            result.system = System.from_model(stop.system)
+        return result
 
 
 @dataclasses.dataclass
@@ -223,6 +230,7 @@ class Transfer(View):
     to_stop: Stop
     type: models.Transfer.Type
     min_transfer_time: int = None
+    distance: int = None
 
     @classmethod
     def from_model(cls, transfer: models.Transfer, from_stop_view, to_stop_view):
@@ -231,7 +239,28 @@ class Transfer(View):
             to_stop=to_stop_view,
             type=transfer.type,
             min_transfer_time=transfer.min_transfer_time,
+            distance=transfer.distance,
         )
+
+
+@dataclasses.dataclass
+class TransfersConfig(View):
+    id: str
+    distance: float
+    systems: typing.List[System] = NULL
+
+    @classmethod
+    def from_model(cls, transfers_config: models.TransfersConfig):
+        return cls(
+            id=transfers_config.id,
+            distance=transfers_config.distance,
+            systems=list(map(System.from_model, transfers_config.systems)),
+        )
+
+
+@dataclasses.dataclass
+class TransfersConfigBig(TransfersConfig):
+    transfers: typing.List[Transfer] = NULL
 
 
 @dataclasses.dataclass

@@ -59,9 +59,14 @@ def install(system_id):
         sync=sync,
     )
 
-    # This means the system already exists and nothing was done.
     if sync:
-        status = HttpStatus.CREATED
+        if (
+            systemservice.get_update_by_id(system_update_pk).status
+            == views.SystemUpdateStatus.SUCCESS
+        ):
+            status = HttpStatus.CREATED
+        else:
+            status = HttpStatus.BAD_REQUEST
     else:
         status = HttpStatus.ACCEPTED
     return systemservice.get_update_by_id(system_update_pk), status

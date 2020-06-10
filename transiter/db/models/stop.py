@@ -72,10 +72,16 @@ class Stop(Base):
         "Alert", secondary="alert_stop", back_populates="stops", cascade="all"
     )
     transfers_out = relationship(
-        "Transfer", back_populates="from_stop", foreign_keys="Transfer.from_stop_pk"
+        "Transfer",
+        back_populates="from_stop",
+        foreign_keys="Transfer.from_stop_pk",
+        cascade="delete",
     )
     transfers_in = relationship(
-        "Transfer", back_populates="to_stop", foreign_keys="Transfer.to_stop_pk"
+        "Transfer",
+        back_populates="to_stop",
+        foreign_keys="Transfer.to_stop_pk",
+        cascade="delete",
     )
 
     __table_args__ = (

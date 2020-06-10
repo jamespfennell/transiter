@@ -1,10 +1,9 @@
-# Regular cases, including reversable graph
-# Impossible to sort case, ensure update still happens but map *not* updated
-#     temporary revert thing to make sure this captures edge case
-# Update so that old + new = invalid service map, ensure update still happens normally
 import requests
 
 from . import gtfsrealtimegenerator
+
+# TODO: stop using this module ^
+#  Also break up these tests if reasonable
 
 
 def test_service_maps(install_system_1, transiter_host, source_server):
