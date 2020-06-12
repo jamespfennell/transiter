@@ -74,9 +74,7 @@ class _TransfersConfigException:
 @dataclasses.dataclass
 class _TransfersConfig:
     default_strategy: _TransfersStrategy = _TransfersStrategy.DEFAULT
-    exceptions: typing.List[_TransfersConfigException] = dataclasses.field(
-        default_factory=list
-    )
+    exceptions: typing.List[typing.Set[str]] = dataclasses.field(default_factory=list)
 
     @classmethod
     def load_from_options_blob(cls, options_blob):
@@ -86,19 +84,12 @@ class _TransfersConfig:
         config.default_strategy = _TransfersStrategy[
             options_blob.pop("strategy", "DEFAULT").upper()
         ]
-        for exception_blob in options_blob.pop("exceptions", []):
-            config.exceptions.append(
-                _TransfersConfigException(
-                    strategy=_TransfersStrategy[exception_blob.pop("strategy").upper()],
-                    stop_ids=set(exception_blob.pop("stop_ids")),
-                )
-            )
-            if len(exception_blob) > 0:
+        for exceptions_blob in options_blob.pop("exceptions", []):
+            if not isinstance(exceptions_blob, list):
                 raise ValueError(
-                    "Unrecognized transfers.exceptions sub-options: {}".format(
-                        exception_blob
-                    )
+                    "A specific transfer strategy exception must be a list of stop IDs"
                 )
+            config.exceptions.append(set(exceptions_blob))
         if len(options_blob) > 0:
             raise ValueError(
                 "Unrecognized transfers sub-options: {}".format(options_blob)
@@ -107,11 +98,15 @@ class _TransfersConfig:
 
     def get_strategy(self, stop_1_id, stop_2_id) -> _TransfersStrategy:
         for exception in self.exceptions:
-            if stop_1_id not in exception.stop_ids:
+            if stop_1_id not in exception:
                 continue
-            if stop_2_id not in exception.stop_ids:
+            if stop_2_id not in exception:
                 continue
-            return exception.strategy
+            return (
+                _TransfersStrategy.DEFAULT
+                if self.default_strategy == _TransfersStrategy.GROUP_STATIONS
+                else _TransfersStrategy.GROUP_STATIONS
+            )
         return self.default_strategy
 
 
