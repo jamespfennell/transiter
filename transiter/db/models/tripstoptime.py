@@ -21,7 +21,6 @@ class TripStopTime(Base):
     stop_pk = Column(Integer, ForeignKey("stop.pk"), nullable=False)
     trip_pk = Column(Integer, ForeignKey("trip.pk"), nullable=False)
 
-    future = Column(Boolean, default=True, nullable=False)
     arrival_time = Column(TIMESTAMP(timezone=True))
     arrival_delay = Column(Integer)
     arrival_uncertainty = Column(Integer)
@@ -30,8 +29,6 @@ class TripStopTime(Base):
     departure_uncertainty = Column(Integer)
     stop_sequence = Column(Integer, nullable=False)
     track = Column(String)
-
-    stop_id = None
 
     stop = relationship("Stop", back_populates="trip_times", cascade="none")
     trip = relationship(
@@ -45,3 +42,9 @@ class TripStopTime(Base):
 
     def get_time(self):
         return self.arrival_time or self.departure_time
+
+    @property
+    def future(self):
+        # NOTE: negative trip stop sequences are interpreted as indicating that
+        # all stops are passed.
+        return 0 <= self.trip.current_stop_sequence <= self.stop_sequence

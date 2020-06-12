@@ -55,7 +55,7 @@ class StopTimeData(NamedTuple):
     stop_pk: int
 
 
-def get_trip_pk_to_stop_time_data_list(feed_pk) -> Dict[int, List[StopTimeData]]:
+def get_trip_pk_to_stop_time_data_list(trip_pks) -> Dict[int, List[StopTimeData]]:
     session = dbconnection.get_session()
     query = (
         session.query(
@@ -64,9 +64,7 @@ def get_trip_pk_to_stop_time_data_list(feed_pk) -> Dict[int, List[StopTimeData]]
             models.TripStopTime.stop_sequence,
             models.TripStopTime.stop_pk,
         )
-        .join(models.Trip, models.Trip.pk == models.TripStopTime.trip_pk)
-        .join(models.FeedUpdate, models.FeedUpdate.pk == models.Trip.source_pk)
-        .filter(models.FeedUpdate.feed_pk == feed_pk)
+        .filter(models.TripStopTime.trip_pk.in_(trip_pks))
         .order_by(models.TripStopTime.trip_pk, models.TripStopTime.stop_sequence)
     )
     trip_pk_to_stop_time_data_list = {}

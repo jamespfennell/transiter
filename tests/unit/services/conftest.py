@@ -124,7 +124,9 @@ def route_2_small_view():
 
 @pytest.fixture
 def trip_1_model(route_1_model):
-    return models.Trip(pk=TRIP_ONE_PK, id=TRIP_ONE_ID, route=route_1_model)
+    return models.Trip(
+        pk=TRIP_ONE_PK, id=TRIP_ONE_ID, route=route_1_model, current_stop_sequence=1
+    )
 
 
 @pytest.fixture
@@ -141,7 +143,9 @@ def trip_1_view():
 
 @pytest.fixture
 def trip_2_model(route_1_model):
-    return models.Trip(pk=TRIP_TWO_PK, id=TRIP_TWO_ID, route=route_1_model)
+    return models.Trip(
+        pk=TRIP_TWO_PK, id=TRIP_TWO_ID, route=route_1_model, current_stop_sequence=1
+    )
 
 
 @pytest.fixture

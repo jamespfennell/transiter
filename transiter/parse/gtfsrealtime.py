@@ -210,7 +210,6 @@ def _build_stop_time(stop_time_update):
             stop_time_update.departure, "uncertainty"
         ),
         track=track,
-        future=True,
     )
 
 

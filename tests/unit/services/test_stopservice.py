@@ -300,10 +300,12 @@ def test_build_trip_stop_time_response():
     system = models.System(id=SYSTEM_ID)
     stop = models.Stop(system=system)
     stop.id = STOP_ONE_ID
-    trip = models.Trip()
+    trip = models.Trip(current_stop_sequence=1)
     trip.pk = TRIP_PK
     trip.id = TRIP_ID
-    trip_stop_time = models.TripStopTime(arrival_time=TIME_1, departure_time=TIME_2)
+    trip_stop_time = models.TripStopTime(
+        arrival_time=TIME_1, departure_time=TIME_2, stop_sequence=1
+    )
     trip_stop_time.trip = trip
     trip_stop_time.stop = stop
     route = models.Route(system=system)
@@ -316,8 +318,8 @@ def test_build_trip_stop_time_response():
         arrival=views._TripStopTimeEvent(time=TIME_1, delay=None, uncertainty=None),
         departure=views._TripStopTimeEvent(time=TIME_2, delay=None, uncertainty=None),
         track=None,
-        future=None,
-        stop_sequence=None,
+        future=True,
+        stop_sequence=1,
         direction=DIRECTION_NAME,
         trip=views.Trip(
             id=TRIP_ID,

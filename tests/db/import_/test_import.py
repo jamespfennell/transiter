@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import itertools
 
@@ -505,9 +506,18 @@ STOP_ID_2 = "stop_id_2"
 STOP_ID_3 = "stop_id_3"
 
 
+@dataclasses.dataclass
+class TripStopTimeWithFuture(parse.TripStopTime):
+    future: bool = True
+
+
 # Just to make the parameters in the next test easier to follow
-def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
-    return parse.TripStopTime(
+def trip_stop_time(stop_sequence, stop_id, arrival_time, future=None):
+    if future is None:
+        return parse.TripStopTime(
+            stop_sequence=stop_sequence, stop_id=stop_id, arrival_time=arrival_time,
+        )
+    return TripStopTimeWithFuture(
         stop_sequence=stop_sequence,
         stop_id=stop_id,
         arrival_time=arrival_time,
@@ -520,10 +530,10 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
     [
         [  # Basic arrival time update case
             [
-                trip_stop_time(1, STOP_ID_1, TIME_1, True),
-                trip_stop_time(2, STOP_ID_2, TIME_2, True),
+                trip_stop_time(1, STOP_ID_1, TIME_1),
+                trip_stop_time(2, STOP_ID_2, TIME_2),
             ],
-            [trip_stop_time(2, STOP_ID_2, TIME_3, True)],
+            [trip_stop_time(2, STOP_ID_2, TIME_3)],
             [
                 trip_stop_time(1, STOP_ID_1, TIME_1, False),
                 trip_stop_time(2, STOP_ID_2, TIME_3, True),
@@ -531,10 +541,10 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
         ],
         [  # Converting a null stop sequence to a correct one based on the DB
             [
-                trip_stop_time(1, STOP_ID_1, TIME_1, True),
-                trip_stop_time(4, STOP_ID_2, TIME_2, True),
+                trip_stop_time(1, STOP_ID_1, TIME_1),
+                trip_stop_time(4, STOP_ID_2, TIME_2),
             ],
-            [trip_stop_time(None, STOP_ID_2, TIME_3, True)],
+            [trip_stop_time(None, STOP_ID_2, TIME_3)],
             [
                 trip_stop_time(1, STOP_ID_1, TIME_1, False),
                 trip_stop_time(4, STOP_ID_2, TIME_3, True),
@@ -542,10 +552,10 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
         ],
         [  # Converting a null stop sequence to a correct one multiple times
             [
-                trip_stop_time(None, STOP_ID_1, TIME_1, True),
-                trip_stop_time(None, STOP_ID_2, TIME_2, True),
+                trip_stop_time(None, STOP_ID_1, TIME_1),
+                trip_stop_time(None, STOP_ID_2, TIME_2),
             ],
-            [trip_stop_time(None, STOP_ID_2, TIME_3, True)],
+            [trip_stop_time(None, STOP_ID_2, TIME_3)],
             [
                 trip_stop_time(1, STOP_ID_1, TIME_1, False),
                 trip_stop_time(2, STOP_ID_2, TIME_3, True),
@@ -553,13 +563,13 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
         ],
         [  # Converting a null stop sequence to a correct one with change of schedule
             [
-                trip_stop_time(None, STOP_ID_1, TIME_1, True),
-                trip_stop_time(None, STOP_ID_2, TIME_2, True),
-                trip_stop_time(None, STOP_ID_3, TIME_3, True),
+                trip_stop_time(None, STOP_ID_1, TIME_1),
+                trip_stop_time(None, STOP_ID_2, TIME_2),
+                trip_stop_time(None, STOP_ID_3, TIME_3),
             ],
             [
-                trip_stop_time(None, STOP_ID_3, TIME_2, True),
-                trip_stop_time(None, STOP_ID_2, TIME_3, True),
+                trip_stop_time(None, STOP_ID_3, TIME_2),
+                trip_stop_time(None, STOP_ID_2, TIME_3),
             ],
             [
                 trip_stop_time(1, STOP_ID_1, TIME_1, False),
@@ -569,13 +579,13 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
         ],
         [  # Converting a null stop sequence to a correct one with change of schedule 2
             [
-                trip_stop_time(None, STOP_ID_1, TIME_1, True),
-                trip_stop_time(None, STOP_ID_2, TIME_2, True),
-                trip_stop_time(None, STOP_ID_3, TIME_3, True),
+                trip_stop_time(None, STOP_ID_1, TIME_1),
+                trip_stop_time(None, STOP_ID_2, TIME_2),
+                trip_stop_time(None, STOP_ID_3, TIME_3),
             ],
             [
-                trip_stop_time(None, STOP_ID_1, TIME_1, True),
-                trip_stop_time(None, STOP_ID_3, TIME_3, True),
+                trip_stop_time(None, STOP_ID_1, TIME_1),
+                trip_stop_time(None, STOP_ID_3, TIME_3),
             ],
             [
                 trip_stop_time(1, STOP_ID_1, TIME_1, True),
@@ -584,17 +594,17 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
         ],
         [  # Deleting an extra stop time if it disappears
             [
-                trip_stop_time(None, STOP_ID_1, TIME_1, True),
-                trip_stop_time(None, STOP_ID_2, TIME_2, True),
+                trip_stop_time(None, STOP_ID_1, TIME_1),
+                trip_stop_time(None, STOP_ID_2, TIME_2),
             ],
-            [trip_stop_time(None, STOP_ID_1, TIME_1, True)],
+            [trip_stop_time(None, STOP_ID_1, TIME_1)],
             [trip_stop_time(1, STOP_ID_1, TIME_1, True)],
         ],
         [  # Setting the stop sequences of a new trip
             [],
             [
-                trip_stop_time(None, STOP_ID_1, TIME_1, True),
-                trip_stop_time(None, STOP_ID_2, TIME_3, True),
+                trip_stop_time(None, STOP_ID_1, TIME_1),
+                trip_stop_time(None, STOP_ID_2, TIME_3),
             ],
             [
                 trip_stop_time(1, STOP_ID_1, TIME_1, True),
@@ -604,8 +614,8 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
         [  # Handling malformed stop sequences in a new trip
             [],
             [
-                trip_stop_time(4, STOP_ID_1, TIME_1, True),
-                trip_stop_time(2, STOP_ID_2, TIME_3, True),
+                trip_stop_time(4, STOP_ID_1, TIME_1),
+                trip_stop_time(2, STOP_ID_2, TIME_3),
             ],
             [
                 trip_stop_time(4, STOP_ID_1, TIME_1, True),
@@ -614,10 +624,10 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
         ],
         [  # Handling a shift in the stop sequences in an existing trip
             [
-                trip_stop_time(3, STOP_ID_1, TIME_1, True),
-                trip_stop_time(6, STOP_ID_2, TIME_3, True),
+                trip_stop_time(3, STOP_ID_1, TIME_1),
+                trip_stop_time(6, STOP_ID_2, TIME_3),
             ],
-            [trip_stop_time(5, STOP_ID_2, TIME_3, True)],
+            [trip_stop_time(5, STOP_ID_2, TIME_3)],
             [
                 trip_stop_time(3, STOP_ID_1, TIME_1, False),
                 trip_stop_time(5, STOP_ID_2, TIME_3, True),
@@ -625,20 +635,20 @@ def trip_stop_time(stop_sequence, stop_id, arrival_time, future):
         ],
         [  # Ensuring a lower stop sequence overwrites existing data
             [
-                trip_stop_time(1, STOP_ID_1, TIME_1, True),
-                trip_stop_time(2, STOP_ID_2, TIME_2, True),
+                trip_stop_time(1, STOP_ID_1, TIME_1),
+                trip_stop_time(2, STOP_ID_2, TIME_2),
             ],
-            [trip_stop_time(1, STOP_ID_2, TIME_3, True)],
+            [trip_stop_time(1, STOP_ID_2, TIME_3)],
             [trip_stop_time(1, STOP_ID_2, TIME_3, True)],
         ],
         [  # Ensuring stop sequences are shifted forward
             [
-                trip_stop_time(1, STOP_ID_1, TIME_1, True),
-                trip_stop_time(2, STOP_ID_2, TIME_2, True),
+                trip_stop_time(1, STOP_ID_1, TIME_1),
+                trip_stop_time(2, STOP_ID_2, TIME_2),
             ],
             [
-                trip_stop_time(5, STOP_ID_1, TIME_1, True),
-                trip_stop_time(6, STOP_ID_2, TIME_2, True),
+                trip_stop_time(5, STOP_ID_1, TIME_1),
+                trip_stop_time(6, STOP_ID_2, TIME_2),
             ],
             [
                 trip_stop_time(5, STOP_ID_1, TIME_1, True),
@@ -718,7 +728,7 @@ def test_move_entity_across_feeds(current_update, other_feed_update, route_1_1, 
 def convert_trip_stop_time_model_to_parse(
     trip_stop_time: models.TripStopTime, stop_pk_to_stop
 ):
-    return parse.TripStopTime(
+    return TripStopTimeWithFuture(
         stop_sequence=trip_stop_time.stop_sequence,
         future=trip_stop_time.future,
         arrival_time=trip_stop_time.arrival_time,
@@ -794,10 +804,11 @@ def trip_for_vehicle(add_model, system_1, route_1_1, stop_1_1, stop_1_2, stop_1_
         models.Trip(
             id="trip_id",
             route=route_1_1,
+            current_stop_sequence=2,
             stop_times=[
-                models.TripStopTime(stop_sequence=1, stop=stop_1_1, future=False),
-                models.TripStopTime(stop_sequence=2, stop=stop_1_2, future=True),
-                models.TripStopTime(stop_sequence=3, stop=stop_1_3, future=True),
+                models.TripStopTime(stop_sequence=1, stop=stop_1_1),
+                models.TripStopTime(stop_sequence=2, stop=stop_1_2),
+                models.TripStopTime(stop_sequence=3, stop=stop_1_3),
             ],
         )
     )

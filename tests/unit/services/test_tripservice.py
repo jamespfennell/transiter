@@ -77,7 +77,6 @@ def test_get_in_route_by_id(
     stop_1_model,
     stop_1_small_view,
 ):
-
     monkeypatch.setattr(
         tripqueries, "get_in_route_by_id", lambda *args, **kwargs: trip_1_model
     )
@@ -85,7 +84,7 @@ def test_get_in_route_by_id(
         alertqueries, "get_trip_pk_to_active_alerts", lambda *args, **kwargs: {}
     )
 
-    stop_time = models.TripStopTime()
+    stop_time = models.TripStopTime(stop_sequence=1)
     stop_time.stop = stop_1_model
     trip_1_model.stop_times = [stop_time]
 

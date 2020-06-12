@@ -98,6 +98,7 @@ def execute_feed_update(
         try:
             action(context)
         except Exception as e:
+            logger.exception("Exception encountered during update")
             exception_type_to_outcome = getattr(
                 action, "__exception_type_to_outcome__", {}
             )

@@ -180,7 +180,6 @@ class TripStopTime:
     departure_delay: int = None
     departure_uncertainty: int = None
     track: str = None  # Transiter-only non-GTFS field
-    future: bool = True
 
 
 @dataclass

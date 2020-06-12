@@ -29,6 +29,9 @@ class Trip(Base):
     started_at = Column(TIMESTAMP(timezone=True))
     updated_at = Column(TIMESTAMP(timezone=True))
     delay = Column(Integer)
+    # Stop times are considered in the past if their stop sequence is less than
+    # the trip's current stop sequence
+    current_stop_sequence = Column(Integer)  # TODO: make non-nullable
 
     source = relationship("FeedUpdate", cascade="none")
     route = relationship("Route", back_populates="trips", cascade="none")

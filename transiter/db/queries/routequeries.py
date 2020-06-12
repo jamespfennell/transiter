@@ -54,7 +54,12 @@ def calculate_periodicity(route_pk):
         sql.select([models.Stop.pk])
         .select_from(sql.join(models.Stop, models.TripStopTime).join(models.Trip))
         .where(models.Trip.route_pk == route_pk)
-        .where(models.TripStopTime.future)
+        .where(
+            sql.and_(
+                models.Trip.current_stop_sequence >= 0,
+                models.Trip.current_stop_sequence <= models.TripStopTime.stop_sequence,
+            )
+        )  # TODO: test
         .where(models.TripStopTime.arrival_time is not None)
         .distinct()
     )

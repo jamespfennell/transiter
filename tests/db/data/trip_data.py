@@ -30,7 +30,13 @@ def trip_1(add_model, route_1_1, stop_1_1, stop_1_2, stop_1_3, stop_1_4):
         ),
     ]
     return add_model(
-        models.Trip(pk=401, id="402", route=route_1_1, stop_times=stop_times)
+        models.Trip(
+            pk=401,
+            id="402",
+            route=route_1_1,
+            stop_times=stop_times,
+            current_stop_sequence=1,
+        )
     )
 
 
@@ -54,7 +60,13 @@ def trip_2(add_model, route_1_1, stop_1_1, stop_1_2, stop_1_4):
         ),
     ]
     return add_model(
-        models.Trip(pk=403, id="404", route=route_1_1, stop_times=stop_times)
+        models.Trip(
+            pk=403,
+            id="404",
+            route=route_1_1,
+            stop_times=stop_times,
+            current_stop_sequence=1,
+        )
     )
 
 
@@ -73,5 +85,11 @@ def trip_3(add_model, route_1_1, stop_1_1, stop_1_4):
         ),
     ]
     return add_model(
-        models.Trip(pk=404, id="406", route=route_1_1, stop_times=stop_times)
+        models.Trip(
+            pk=404,
+            id="406",
+            route=route_1_1,
+            stop_times=stop_times,
+            current_stop_sequence=3,
+        )
     )

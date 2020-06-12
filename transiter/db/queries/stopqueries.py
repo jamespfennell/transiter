@@ -169,7 +169,12 @@ def list_stop_time_updates_at_stops(stop_pks, earliest_time=None, latest_time=No
         session.query(models.TripStopTime)
         .filter(models.TripStopTime.stop_pk.in_(stop_pks))
         .filter(models.TripStopTime.trip_pk == models.Trip.pk)
-        .filter(models.TripStopTime.future)
+        .filter(
+            sql.and_(
+                models.Trip.current_stop_sequence >= 0,
+                models.Trip.current_stop_sequence <= models.TripStopTime.stop_sequence,
+            )
+        )  # TODO: test
         .order_by(models.TripStopTime.departure_time)
         .order_by(models.TripStopTime.arrival_time)
         .options(joinedload(models.TripStopTime.trip))
