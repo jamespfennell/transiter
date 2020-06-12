@@ -29,6 +29,10 @@ def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]
                     "route_pk": route_id_to_pk[trip.route_id],
                     "service_pk": service_id_to_pk[parsed_service.id],
                     "direction_id": trip.direction_id,
+                    "headsign": trip.headsign,
+                    "short_name": trip.short_name,
+                    "wheelchair_accessible": trip.wheelchair_accessible,
+                    "bikes_allowed": trip.bikes_allowed,
                 }
             )
     session.bulk_insert_mappings(models.ScheduledTrip, trip_mappings)
@@ -68,6 +72,13 @@ def sync_trips(feed_update, parsed_services: typing.List[parse.ScheduledService]
                         "arrival_time": stop_time.arrival_time,
                         "departure_time": stop_time.departure_time,
                         "stop_sequence": stop_time.stop_sequence,
+                        "headsign": stop_time.headsign,
+                        "pickup_type": stop_time.pickup_type,
+                        "drop_off_type": stop_time.drop_off_type,
+                        "continuous_pickup": stop_time.continuous_pickup,
+                        "continuous_drop_off": stop_time.continuous_drop_off,
+                        "shape_distance_traveled": stop_time.shape_distance_traveled,
+                        "exact_times": stop_time.exact_times,
                     }
                 )
         session.bulk_insert_mappings(models.ScheduledTripStopTime, stop_time_mappings)

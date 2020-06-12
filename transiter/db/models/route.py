@@ -17,6 +17,7 @@ class Route(Base):
     system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False)
 
     Type = parse.Route.Type
+    BoardingPolicy = parse.BoardingPolicy
 
     color = Column(String)
     text_color = Column(String)
@@ -26,6 +27,16 @@ class Route(Base):
     url = Column(String)
     type = Column(Enum(Type, name="route_type", native_enum=False))
     sort_order = Column(Integer)
+    continuous_pickup = Column(
+        Enum(BoardingPolicy, native_enum=False),
+        nullable=False,
+        default=BoardingPolicy.NOT_ALLOWED,
+    )
+    continuous_drop_off = Column(
+        Enum(BoardingPolicy, native_enum=False),
+        nullable=False,
+        default=BoardingPolicy.NOT_ALLOWED,
+    )
 
     system = relationship("System", back_populates="routes")
     agency = relationship("Agency", back_populates="routes")
@@ -58,4 +69,6 @@ class Route(Base):
             text_color=route.text_color,
             url=route.url,
             sort_order=route.sort_order,
+            continuous_pickup=route.continuous_pickup,
+            continuous_drop_off=route.continuous_drop_off,
         )

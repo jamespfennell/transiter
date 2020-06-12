@@ -187,7 +187,17 @@ def _parse_routes(gtfs_static_file: _GtfsStaticFile):
             short_name=row.get("route_short_name"),
             long_name=row.get("route_long_name"),
             description=row.get("route_desc"),
-            sort_order=row.get("route_sort_order"),  # TODO?
+            sort_order=_cast_to_int(row.get("route_sort_order")),
+            continuous_pickup=_get_enum_by_key(
+                parse.BoardingPolicy,
+                row.get("continuous_pickup"),
+                parse.BoardingPolicy.NOT_ALLOWED,
+            ),
+            continuous_drop_off=_get_enum_by_key(
+                parse.BoardingPolicy,
+                row.get("continuous_drop_off"),
+                parse.BoardingPolicy.NOT_ALLOWED,
+            ),
         )
 
 
@@ -270,6 +280,13 @@ def _get_enum_by_key(enum_class, key, default):
 def _cast_to_int(string) -> typing.Optional[int]:
     try:
         return int(string)
+    except (ValueError, TypeError):
+        return None
+
+
+def _cast_to_float(string) -> typing.Optional[float]:
+    try:
+        return float(string)
     except (ValueError, TypeError):
         return None
 
@@ -392,6 +409,19 @@ def _parse_schedule(gtfs_static_file: _GtfsStaticFile):
             id=row["trip_id"],
             route_id=row["route_id"],
             direction_id=str_to_bool.get(row["direction_id"]),
+            headsign=row.get("trip_headsign"),
+            short_name=row.get("trip_short_name"),
+            block_id=row.get("block_id"),
+            wheelchair_accessible=_get_enum_by_key(
+                parse.ScheduledTrip.WheelchairAccessible,
+                row.get("wheelchair_accessible"),
+                parse.ScheduledTrip.WheelchairAccessible.UNKNOWN,
+            ),
+            bikes_allowed=_get_enum_by_key(
+                parse.ScheduledTrip.BikesAllowed,
+                row.get("bikes_allowed"),
+                parse.ScheduledTrip.BikesAllowed.UNKNOWN,
+            ),
         )
         service_id_to_service[service_id].trips.append(trip)
         trip_id_to_trip[trip.id] = trip
@@ -432,6 +462,29 @@ def _parse_schedule(gtfs_static_file: _GtfsStaticFile):
             stop_sequence=int(row["stop_sequence"]),
             departure_time=time_string_to_datetime_time(row["departure_time"]),
             arrival_time=time_string_to_datetime_time(row["arrival_time"]),
+            headsign=row.get("stop_headsign"),
+            pickup_type=_get_enum_by_key(
+                parse.BoardingPolicy,
+                row.get("pickup_type"),
+                parse.BoardingPolicy.ALLOWED,
+            ),
+            drop_off_type=_get_enum_by_key(
+                parse.BoardingPolicy,
+                row.get("drop_off_type"),
+                parse.BoardingPolicy.ALLOWED,
+            ),
+            continuous_pickup=_get_enum_by_key(
+                parse.BoardingPolicy,
+                row.get("continuous_pickup"),
+                parse.BoardingPolicy.NOT_ALLOWED,
+            ),
+            continuous_drop_off=_get_enum_by_key(
+                parse.BoardingPolicy,
+                row.get("continuous_drop_off"),
+                parse.BoardingPolicy.NOT_ALLOWED,
+            ),
+            shape_distance_traveled=_cast_to_float(row.get("shape_dist_traveled")),
+            exact_times=row.get("timepoint", "0") == "1",
         )
         trip_id_to_trip[trip_id].stop_times.append(stop_time)
 

@@ -16,6 +16,13 @@ class Agency:
     email: str = None
 
 
+class BoardingPolicy(enum.Enum):
+    ALLOWED = 0
+    NOT_ALLOWED = 1
+    COORDINATE_WITH_AGENCY = 2
+    COORDINATE_WITH_DRIVER = 3
+
+
 @dataclass
 class Route:
     class Type(enum.Enum):
@@ -40,6 +47,8 @@ class Route:
     text_color: str = None
     url: str = None
     sort_order: int = None
+    continuous_pickup: BoardingPolicy = BoardingPolicy.NOT_ALLOWED
+    continuous_drop_off: BoardingPolicy = BoardingPolicy.NOT_ALLOWED
 
 
 @dataclass
@@ -119,9 +128,24 @@ class ScheduledService:
 
 @dataclass
 class ScheduledTrip:
+    class WheelchairAccessible(enum.Enum):
+        UNKNOWN = 0
+        ACCESSIBLE = 1
+        NOT_ACCESSIBLE = 2
+
+    class BikesAllowed(enum.Enum):
+        UNKNOWN = 0
+        ALLOWED = 1
+        NOT_ALLOWED = 2
+
     id: str
     route_id: str
     direction_id: bool
+    headsign: str = None
+    short_name: str = None
+    block_id: str = None
+    wheelchair_accessible: WheelchairAccessible = WheelchairAccessible.UNKNOWN
+    bikes_allowed: BikesAllowed = BikesAllowed.UNKNOWN
     stop_times: typing.List["ScheduledTripStopTime"] = field(default_factory=list)
     frequencies: typing.List["ScheduledTripFrequency"] = field(default_factory=list)
 
@@ -140,6 +164,13 @@ class ScheduledTripStopTime:
     arrival_time: typing.Optional[datetime.time]
     departure_time: typing.Optional[datetime.time]
     stop_sequence: int
+    headsign: str = None
+    pickup_type: BoardingPolicy = BoardingPolicy.ALLOWED
+    drop_off_type: BoardingPolicy = BoardingPolicy.ALLOWED
+    continuous_pickup: BoardingPolicy = BoardingPolicy.NOT_ALLOWED
+    continuous_drop_off: BoardingPolicy = BoardingPolicy.NOT_ALLOWED
+    shape_distance_traveled: float = None
+    exact_times: bool = False
 
 
 @dataclass
