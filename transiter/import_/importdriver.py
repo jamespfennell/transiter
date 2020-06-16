@@ -125,7 +125,7 @@ class SyncerBase:
     def feed_entity(cls):
         return cls.__feed_entity__
 
-    def _merge_entities(self, entities) -> typing.Tuple[list, int, int]:
+    def _merge_entities(self, entities, match_ids=True) -> typing.Tuple[list, int, int]:
         """
         Merge entities of a given type into the session.
 
@@ -137,17 +137,21 @@ class SyncerBase:
         """
 
         persisted_entities = []
-        id_to_pk = self._get_id_to_pk_map()
+        if match_ids:
+            id_to_pk = self._get_id_to_pk_map()
+        else:
+            id_to_pk = {}
         processed_ids = set()
         session = dbconnection.get_session()
         num_updated_entities = 0
         for entity in entities:
-            if entity.id in processed_ids:
+            if entity.id is not None and entity.id in processed_ids:
                 continue
             processed_ids.add(entity.id)
             if entity.id in id_to_pk:
-                num_updated_entities += 1
                 entity.pk = id_to_pk[entity.id]
+            if entity.pk is not None:
+                num_updated_entities += 1
             entity.source_pk = self.feed_update.pk
             persisted_entities.append(session.merge(entity))
         return (
@@ -734,19 +738,41 @@ class VehicleImporter(syncer(models.Vehicle)):
         trip_id_to_trip = self._get_trip_id_trip_map(
             self.feed_update.feed.system, parsed_vehicles
         )
+        vehicle_id_to_pk = self._get_id_to_pk_map()
 
         vehicle_id_to_trip = {}
         vehicles = []
         trip_pk_stop_pk_stop_sequence_tuples = []
+        processed_trip_ids = set()
         for parsed_vehicle in parsed_vehicles:
+            if (
+                parsed_vehicle.trip_id is not None
+                and parsed_vehicle.trip_id in processed_trip_ids
+            ):
+                continue
+            processed_trip_ids.add(parsed_vehicle.trip_id)
             vehicle = models.Vehicle.from_parsed_vehicle(parsed_vehicle)
             vehicle.current_stop_pk = stop_id_to_pk.get(parsed_vehicle.current_stop_id)
             vehicle.system_pk = self.feed_update.feed.system_pk
-            vehicles.append(vehicle)
 
             trip = trip_id_to_trip.get(parsed_vehicle.trip_id)
+            if trip is None and vehicle.id is None:
+                continue
+            if vehicle.id in vehicle_id_to_pk:
+                vehicle.pk = vehicle_id_to_pk[vehicle.id]
+            if trip is not None and trip.vehicle is not None:
+                # Easy way to get around the edge case when a new vehicle is the merging
+                # of two existing vehicles. We just skip that vehicle, and hope that
+                # next import it will be dealt with correctly. Dealing with this
+                # properly is hard because of the database's unique constraints.
+                if vehicle.pk is not None and vehicle.pk != trip.vehicle.pk:
+                    continue
+                vehicle.pk = trip.vehicle.pk
+            vehicles.append(vehicle)
+
             if trip is None:
                 continue
+            vehicle.trip_pk = trip.pk
             vehicle_id_to_trip[parsed_vehicle.id] = trip
             trip_pk_stop_pk_stop_sequence_tuples.append(
                 (trip.pk, vehicle.current_stop_pk, vehicle.current_stop_sequence)
@@ -756,13 +782,14 @@ class VehicleImporter(syncer(models.Vehicle)):
             trip_pk_stop_pk_stop_sequence_tuples
         )
 
-        persisted_vehicles, num_added, num_updated = self._merge_entities(vehicles)
+        persisted_vehicles, num_added, num_updated = self._merge_entities(
+            vehicles, match_ids=False
+        )
 
         for persisted_vehicle in persisted_vehicles:
             trip = vehicle_id_to_trip.get(persisted_vehicle.id)
             if trip is None:
                 continue
-            trip.vehicle = persisted_vehicle
             stop_time_data = trip_pk_to_stop_time_data.get(trip.pk)
             if stop_time_data is not None:
                 persisted_vehicle.current_stop_pk = stop_time_data.stop_pk

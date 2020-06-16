@@ -843,17 +843,49 @@ def test_vehicle__set_stop_simple_case(
         assert persisted_vehicle.current_stop_sequence == 3
 
 
-def test_vehicle__add_trip_relationship(
-    db_session, current_update, trip_for_vehicle, stop_1_3,
+@pytest.mark.parametrize("vehicle_id", [None, "vehicle_id"])
+def test_vehicle__no_vehicle_id(
+    db_session, current_update, trip_for_vehicle, stop_1_3, vehicle_id,
 ):
-    vehicle = parse.Vehicle(id="vehicle_id", trip_id="trip_id",)
+    vehicle = parse.Vehicle(id=vehicle_id, trip_id="trip_id")
 
     importdriver.run_import(current_update.pk, ParserForTesting([vehicle]))
 
     persisted_vehicle = db_session.query(models.Vehicle).all()[0]
 
+    db_session.refresh(trip_for_vehicle)
+
     assert trip_for_vehicle.vehicle == persisted_vehicle
     assert persisted_vehicle.trip == trip_for_vehicle
+
+
+def test_vehicle__duplicate_trip_ids(
+    db_session, current_update, trip_for_vehicle, stop_1_3,
+):
+    vehicle = parse.Vehicle(id=None, trip_id="trip_id")
+
+    result = importdriver.run_import(
+        current_update.pk, ParserForTesting([vehicle, vehicle])
+    )
+
+    assert (1, 0, 0) == result
+
+
+def test_vehicle__merged_vehicle_edge_case(
+    db_session, previous_update, current_update, trip_for_vehicle, stop_1_3,
+):
+    vehicle_1 = parse.Vehicle(id=None, trip_id="trip_id")
+    vehicle_2 = parse.Vehicle(id="vehicle_id", trip_id=None)
+    vehicle_3 = parse.Vehicle(id="vehicle_id", trip_id="trip_id")
+
+    importdriver.run_import(
+        previous_update.pk, ParserForTesting([vehicle_1, vehicle_2])
+    )
+    db_session.refresh(trip_for_vehicle)
+
+    result = importdriver.run_import(current_update.pk, ParserForTesting([vehicle_3]))
+
+    assert (0, 0, 2) == result
 
 
 def test_vehicle__delete_with_trip_attached(

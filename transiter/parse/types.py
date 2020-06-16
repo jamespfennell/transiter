@@ -237,8 +237,8 @@ class Vehicle:
         NOT_ACCEPTING_PASSENGERS = 6
         UNKNOWN = 100
 
-    id: str
-    trip_id: str = None
+    id: typing.Optional[str] = None
+    trip_id: typing.Optional[str] = None
     label: str = None
     license_plate: str = None
     current_stop_sequence: int = None

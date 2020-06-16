@@ -51,8 +51,10 @@ def test_list_all_in_route(
 
     expected[0].last_stop = stop_1_small_view
     expected[0].alerts = []
+    expected[0].vehicle = None
     expected[1].last_stop = stop_2_small_view
     expected[1].alerts = []
+    expected[1].vehicle = None
 
     actual = tripservice.list_all_in_route(route_1_model.system.id, route_1_model.id)
 
@@ -91,6 +93,7 @@ def test_get_in_route_by_id(
     expected = trip_1_view
     expected.stop_times = [views.TripStopTime.from_model(stop_time)]
     expected.alerts = []
+    expected.vehicle = None
     expected.route = route_1_small_view
     expected.stop_times[0].stop = stop_1_small_view
 

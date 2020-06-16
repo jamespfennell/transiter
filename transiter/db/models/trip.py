@@ -22,7 +22,6 @@ class Trip(Base):
     pk = Column(Integer, primary_key=True)
     id = Column(String)
     route_pk = Column(Integer, ForeignKey("route.pk"), nullable=False)
-    vehicle_pk = Column(Integer, ForeignKey("vehicle.pk"), index=True, unique=True)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
 
     direction_id = Column(Boolean)
@@ -35,7 +34,9 @@ class Trip(Base):
 
     source = relationship("FeedUpdate", cascade="none")
     route = relationship("Route", back_populates="trips", cascade="none")
-    vehicle = relationship("Vehicle", back_populates="trip", cascade="none")
+    vehicle = relationship(
+        "Vehicle", back_populates="trip", cascade="none", uselist=False, lazy="joined"
+    )
     stop_times = relationship(
         "TripStopTime",
         back_populates="trip",

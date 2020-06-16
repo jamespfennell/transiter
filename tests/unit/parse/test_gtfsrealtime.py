@@ -386,6 +386,54 @@ OCCUPANCY_STATUS = parse.Vehicle.OccupancyStatus.CRUSHED_STANDING_ROOM_ONLY
 
 def build_test_parse_vehicle_params(gtfs):
     for data in [
+        [  # Basic case 1
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            gtfs.VehiclePosition(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+                current_stop_sequence=6,
+            ),
+            parse.Vehicle(id=VEHICLE_ID, trip_id=TRIP_ID, current_stop_sequence=6),
+        ],
+        [  # Basic case 2
+            gtfs.TripUpdate(trip=gtfs.TripDescriptor(trip_id=TRIP_ID),),
+            gtfs.VehiclePosition(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+                current_stop_sequence=6,
+            ),
+            parse.Vehicle(id=VEHICLE_ID, trip_id=TRIP_ID, current_stop_sequence=6),
+        ],
+        [  # Basic case 3
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            gtfs.VehiclePosition(
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID), current_stop_sequence=6
+            ),
+            parse.Vehicle(id=VEHICLE_ID, trip_id=TRIP_ID, current_stop_sequence=6),
+        ],
+        [  # Basic case 4
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+                vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
+            ),
+            gtfs.VehiclePosition(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID), current_stop_sequence=6
+            ),
+            parse.Vehicle(id=VEHICLE_ID, trip_id=TRIP_ID, current_stop_sequence=6),
+        ],
+        [  # Basic case 5
+            gtfs.TripUpdate(trip=gtfs.TripDescriptor(trip_id=TRIP_ID),),
+            gtfs.VehiclePosition(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID), current_stop_sequence=6
+            ),
+            parse.Vehicle(id=None, trip_id=TRIP_ID, current_stop_sequence=6),
+        ],
         [  # Valid vehicle descriptor but no vehicle position
             gtfs.TripUpdate(
                 trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
@@ -400,7 +448,7 @@ def build_test_parse_vehicle_params(gtfs):
                 vehicle=gtfs.VehicleDescriptor(label=VEHICLE_ID),
             ),
             None,
-            None,
+            parse.Vehicle(trip_id=TRIP_ID, label=VEHICLE_ID),
         ],
         [  # No vehicle descriptor and no vehicle position
             gtfs.TripUpdate(trip=gtfs.TripDescriptor(trip_id=TRIP_ID),),
@@ -515,7 +563,7 @@ def build_test_parse_vehicle_params(gtfs):
         ],
         [None, None, None],  # No data at all
     ]:
-        # Note: this is to ensure so duplicate test cases. If the input trip or
+        # Note: this is to ensure no duplicate test cases. If the input trip or
         # vehicle is None, all entity_location cases are the same.
         yield data + ["same"]
         if data[0] is not None and data[1] is not None:

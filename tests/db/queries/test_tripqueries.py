@@ -16,7 +16,9 @@ def test_list_all_from_feed(
 
 
 def test_list_all_in_route(route_1_1, trip_1, trip_2, trip_3):
-    assert [trip_1, trip_2, trip_3] == tripqueries.list_all_in_route_by_pk(route_1_1.pk)
+    assert {trip_1, trip_2, trip_3} == set(
+        tripqueries.list_all_in_route_by_pk(route_1_1.pk)
+    )
 
 
 def test_list_all_in_route__no_trips(route_1_1, route_1_2):

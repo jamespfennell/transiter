@@ -21,8 +21,11 @@ class Vehicle(Base):
 
     pk = Column(Integer, primary_key=True)
     id = Column(String)
-    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
+    source_pk = Column(
+        Integer, ForeignKey("feed_update.pk"), index=True, nullable=False
+    )
     system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False, index=True)
+    trip_pk = Column(Integer, ForeignKey("trip.pk"), index=True, unique=True)
 
     Status = parse.Vehicle.Status
     CongestionLevel = parse.Vehicle.CongestionLevel
@@ -56,7 +59,7 @@ class Vehicle(Base):
 
     source = relationship("FeedUpdate", cascade="none")
     system = relationship("System", back_populates="vehicles", cascade="none")
-    trip = relationship("Trip", back_populates="vehicle", cascade="none", uselist=False)
+    trip = relationship("Trip", back_populates="vehicle", cascade="none", lazy="joined")
     current_stop = relationship("Stop", cascade="none")
 
     __table_args__ = (UniqueConstraint(system_pk, id),)

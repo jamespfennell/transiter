@@ -21,8 +21,9 @@ def upgrade():
         "vehicle",
         sa.Column("pk", sa.Integer(), nullable=False),
         sa.Column("id", sa.String(), nullable=True),
-        sa.Column("source_pk", sa.Integer(), nullable=True),
+        sa.Column("source_pk", sa.Integer(), nullable=False),
         sa.Column("system_pk", sa.Integer(), nullable=False),
+        sa.Column("trip_pk", sa.Integer(), nullable=True),
         sa.Column("label", sa.String(), nullable=True),
         sa.Column("license_plate", sa.String(), nullable=True),
         sa.Column(
@@ -66,6 +67,8 @@ def upgrade():
     op.create_index(
         op.f("ix_vehicle_system_pk"), "vehicle", ["system_pk"], unique=False
     )
+    op.create_index(op.f("ix_vehicle_trip_pk"), "vehicle", ["trip_pk"], unique=True)
+    op.create_foreign_key(None, "vehicle", "trip", ["trip_pk"], ["pk"])
     op.alter_column("alert", "cause", existing_type=sa.VARCHAR(), nullable=False)
     op.alter_column("alert", "effect", existing_type=sa.VARCHAR(), nullable=False)
     op.add_column("trip", sa.Column("delay", sa.Integer(), nullable=True))
@@ -75,9 +78,6 @@ def upgrade():
     op.add_column(
         "trip", sa.Column("updated_at", sa.TIMESTAMP(timezone=True), nullable=True)
     )
-    op.add_column("trip", sa.Column("vehicle_pk", sa.Integer(), nullable=True))
-    op.create_index(op.f("ix_trip_vehicle_pk"), "trip", ["vehicle_pk"], unique=True)
-    op.create_foreign_key(None, "trip", "vehicle", ["vehicle_pk"], ["pk"])
     op.drop_column("trip", "current_stop_sequence")
     op.drop_column("trip", "vehicle_id")
     op.drop_column("trip", "last_update_time")

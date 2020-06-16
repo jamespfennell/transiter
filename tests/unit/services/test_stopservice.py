@@ -326,6 +326,7 @@ def test_build_trip_stop_time_response():
             direction_id=None,
             started_at=None,
             updated_at=None,
+            vehicle=None,
             _route_id=ROUTE_ID,
             _system_id=SYSTEM_ID,
             route=views.Route(id=ROUTE_ID, color=None, _system_id=SYSTEM_ID),
