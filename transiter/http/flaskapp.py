@@ -1,7 +1,5 @@
 """
-This module contains the actual Flask app and is a such the 'root' of the HTTP
-server. All other HTTP endpoints are linked to the app via blueprints in this
-module.
+Entry point and docs
 """
 import datetime
 import logging
@@ -19,7 +17,7 @@ from transiter.http.httpmanager import (
 )
 from transiter.services import systemservice
 
-app = flask.Flask("transiter")
+app = flask.Flask("transiter", static_folder=None)
 
 app.register_blueprint(endpoints.docs_endpoints, url_prefix="/docs")
 app.register_blueprint(endpoints.admin_endpoints, url_prefix="/admin")
@@ -65,6 +63,7 @@ def page_not_found(__=None):
     """
     What to return if a user requests an endpoint that doesn't exist.
     """
+    print(app.root_path)
     return transiter_error_handler(exceptions.PageNotFound(flask.request.path))
 
 
@@ -82,7 +81,7 @@ def method_not_allowed(werkzeug_exception: werkzeug_exceptions.MethodNotAllowed)
 
 @http_endpoint(app, "/")
 def root():
-    """HTTP/REST API entry point.
+    """HTTP API entry point
 
     Provides basic information about this Transiter instance and the Transit
     systems it contains.

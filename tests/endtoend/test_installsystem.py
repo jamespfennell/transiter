@@ -240,7 +240,10 @@ def test_delete(install_system_1, transiter_host, sync):
     response = requests.delete(
         transiter_host + "/systems/" + system_id + "?sync=" + str(sync).lower()
     )
-    assert response.status_code == 204
+    if sync:
+        assert response.status_code == 204
+    else:
+        assert response.status_code == 202
 
     response = requests.get(transiter_host + "/systems/" + system_id)
     assert response.status_code == 404

@@ -1,3 +1,8 @@
+"""
+Admin
+
+These endpoints are used for administering the Transiter instance.
+"""
 import logging
 
 from flask import Blueprint
@@ -16,7 +21,12 @@ logger = logging.getLogger(__name__)
 @http_endpoint(admin_endpoints, "health")
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def health():
-    """Generate a health response."""
+    """
+    Transiter health status
+
+    Return Transiter's health status.
+    This describes whether or not the scheduler and executor cluster are up.
+    """
     scheduler_response = client.ping()
     if scheduler_response is None:
         scheduler_up = False
@@ -38,16 +48,46 @@ def health():
 @http_endpoint(admin_endpoints, "scheduler")
 @requires_permissions(PermissionsLevel.ADMIN_READ)
 def scheduler_ping():
+    """
+    List scheduler tasks
+
+    List all tasks that are currently being scheduled by the scheduler.
+
+    This contains the feed auto update tasks as well as the cron task that trims old feed updates.
+    """
     return client.ping()
 
 
 @http_endpoint(admin_endpoints, "scheduler", method=HttpMethod.POST)
 @requires_permissions(PermissionsLevel.ALL)
 def scheduler_refresh_tasks():
+    """
+    Refresh scheduler tasks
+
+    When this endpoint is hit the scheduler inspects the database and ensures that the right tasks are being scheduled
+    and with the right periodicity, etc.
+    This process happens automatically when an event occurs that
+    potentially requires the tasks list to be changed, like a system install or delete.
+    This endpoint is designed for the case when an admin manually edits something in the database and
+    wants the scheduler to reflect that edit.
+    """
     return client.refresh_tasks()
 
 
 @http_endpoint(admin_endpoints, "upgrade", method=HttpMethod.POST)
 @requires_permissions(PermissionsLevel.ALL)
 def upgrade_database():
+    """
+    Upgrade database
+
+    Upgrades the Transiter database to the schema/version associated to
+    the Transiter version of the webservice.
+    This endpoint is used during Transiter updates: after first updating
+    the Python code (or Docker contains), this endpoint can be hit to
+    upgrade the database schema.
+    It has the same effect as the terminal command:
+
+        transiterclt db upgrade
+
+    """
     return dbconnection.upgrade_database()

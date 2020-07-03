@@ -7,12 +7,12 @@ The configuration file can be plain, or it can be a
  [Jinja template](https://jinja.palletsprojects.com/en/2.11.x/).
 It contains information such as:
 
-- The transit system's name,
-- The internet location of its data feeds and instructions on how to parse them,
-- Additional Python packages needed for the transit system.
+- The transit system's name.
+- The URLs of its data feeds and instructions on how to parse the feeds.
+- Definitions of "service maps" for the system.
 
 The transit system is installed by sending the YAML
-configuration file to the [system install endpoint](api.md#install-a-system).
+configuration file to the [system install endpoint](api/index.md#install-a-system).
 
 
 ## Basic configuration
@@ -22,6 +22,8 @@ After presenting the full configuration, each section is described below.
 
 ```yaml
 name: Transit System Name
+preferred_id: transit-system-id
+timezone: America/New York
 
 feeds:
   
@@ -32,7 +34,7 @@ feeds:
       - X-Extra-Header: "header value"
 
     parser:
-      built_in: "GTFS_STATIC"  
+      built_in: "GTFS_STATIC" 
 
     auto_update:
       enabled: "true"
@@ -55,13 +57,16 @@ feeds:
     required_for_install: "true" 
 ```
 
-### Transit system name
+### Basic Transit system information
 
-The config begins with the Transit system name:
+The config begins with the Transit system name and an optional preferred ID:
 ```yaml
 name: Transit System Name
+preferred_id: transit-system-id
+timezone: America/New York
 ```
 The name can any string.
+The preferred ID can be any valid system ID, and should be the "default" ID for the system.
 
 ### Feeds
 
@@ -150,18 +155,20 @@ the system is being installed:
 ```yaml
      required_for_install: "true" 
 ```
+The system install will fail if the feed update fails.
+
 This is useful for GTFS static feeds, 
 which often bring in basic information about the system 
 (like the list of stops) which other realtime feeds rely on.
-If the feed update fails, the system install will fail.
-Note the feed update can fail for transient reasons (like a failed HTTP request),
+
+The feed update can fail for transient reasons (like a failed HTTP request),
 and therefore to make system installs reliable you should only
 set `required_for_install` for feeds that actually need it.
 
 Note that `required_for_install` feed updates
-take sequentially, and in the order they are specified in the YAML
+take place sequentially, and in the order they are specified in the YAML
 file.
-This feature may be useful if one feed relies on data having been populated from
+This feature may be useful if one feed relies on data having been imported from
 another feed.
 
 
@@ -177,7 +184,7 @@ That way configurations can be safely shared without also sharing private keys.
 To support these situations, Transiter interprets every configuration
 file as a Jinja template and processes the template before parsing the YAML.
 Variables can be provided to the template using URL parameters in the
-[system install endpoint](api.md#install-a-system).
+[system install endpoint](api/index.md#install-a-system).
 
 The following is a simple example of providing an API key using Jinja:
 ```yaml
@@ -185,7 +192,7 @@ The following is a simple example of providing an API key using Jinja:
       url: "https://www.transitsystem.com/feed_1?api_key={{ user_api_key }}"
 ```
 Here the user provided parameter is `api_key`.
-The user instals the system by sending a `POST` request to
+The user installs the system by sending a `PUT` request to
 
     /systems/system_id?user_api_key=123456789
 
@@ -206,10 +213,10 @@ When people think of a stop, like
 they usually think of the routes available at that stop (the A and E lines).
 
 The GTFS static specification does not contain this data *explicitly*.
-The observation that led to Transiter service maps is that this data is contained
+Transiter service maps are built on the idea that this data is contained
 in the static data *implicitly*.
-Namely, if you have the complete timetable for a transit system, it should
-be possible to auto-generate the list of stops for each route by
+Namely, if you have the complete timetable for a transit system, it is
+possible to auto-generate the list of stops for each route by
 merging together the paths
  taken by each trip in that route.
 Once you have this list worked out for each route, for a given stop
@@ -230,9 +237,10 @@ the `service_maps` data given in these endpoints:
 
 ### Configuring service maps
 
-For each route in a transit system you can have multiple
-service maps.
+Each route in a transit system can have multiple service maps.
 The service maps desired are defined in the YAML configuration.
+If no service maps are defined, the default service maps will be used.
+
 Here's an example of three service maps definitions; `any_time`, `weekday_day`, and `realtime`:
 
 ```yaml
@@ -282,6 +290,6 @@ corresponding to trips that:
 
 Finally, `use_for_routes_at_stop` being set to true 
 indicates that the service map should be returned by the 
-[stop endpoint](api.md#get-a-stop-in-a-system).
+[stop endpoint](api/index.md#get-a-stop-in-a-system).
 The parameter `use_for_stops_in_route` 
-does the same for the [route endpoint](api.md#get-a-route-in-a-system).
+does the same for the [route endpoint](api/index.md#get-a-route-in-a-system).

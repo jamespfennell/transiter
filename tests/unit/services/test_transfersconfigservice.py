@@ -18,6 +18,9 @@ def list_all_in_system_factory(stops):
     return lambda system_id: [stop for stop in stops if stop.system.id == system_id]
 
 
+# TODO: test that the transfers are returned ion sorted order
+
+
 @pytest.mark.parametrize(
     "stops,distance,expected_tuples",
     [
@@ -64,6 +67,24 @@ def list_all_in_system_factory(stops):
             50000,
             {(STOP_2_ID, STOP_3_ID), (STOP_3_ID, STOP_2_ID)},
         ],
+        [
+            # Parent and child matches case
+            [
+                models.Stop(
+                    id=STOP_1_ID,
+                    latitude=1,
+                    longitude=1,
+                    system=SYSTEM_1,
+                    parent_stop=models.Stop(id=STOP_2_ID),
+                ),
+                models.Stop(
+                    id=STOP_2_ID, latitude=1.00001, longitude=1.00001, system=SYSTEM_1
+                ),
+                models.Stop(id=STOP_3_ID, latitude=1.4, longitude=1, system=SYSTEM_2),
+            ],
+            50000,
+            {(STOP_2_ID, STOP_3_ID), (STOP_3_ID, STOP_2_ID)},
+        ],
     ],
 )
 def test_build_transfers(monkeypatch, stops, distance, expected_tuples):
@@ -71,14 +92,15 @@ def test_build_transfers(monkeypatch, stops, distance, expected_tuples):
         stopqueries, "list_all_in_system", list_all_in_system_factory(stops),
     )
 
-    actual_pairs = {
+    actual_pairs_list = [
         (transfer.from_stop.id, transfer.to_stop.id)
         for transfer in transfersconfigservice._build_transfers(
             [SYSTEM_1, SYSTEM_2], distance
         )
-    }
+    ]
 
-    assert expected_tuples == actual_pairs
+    assert len(actual_pairs_list) == len(set(actual_pairs_list))
+    assert expected_tuples == set(actual_pairs_list)
 
 
 @pytest.mark.parametrize(

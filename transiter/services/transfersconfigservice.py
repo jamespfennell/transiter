@@ -1,6 +1,6 @@
 import itertools
 import typing
-
+import collections
 from transiter import exceptions
 from transiter.db import dbconnection, models
 from transiter.db.queries import stopqueries, systemqueries, transfersconfigqueries
@@ -123,18 +123,24 @@ def _build_transfers(systems, distance) -> typing.Iterable[models.Transfer]:
 class _WorkingSet:
     def __init__(self):
         self._stop_id_to_stop = {}
-        self._data = set()
+        self._matches = set()
+        self._match_to_distance = collections.defaultdict(list)
 
     def add(self, stop_1, stop_2, distance):
         stop_1_root = self._root(stop_1)
         stop_2_root = self._root(stop_2)
-        self._data.add((stop_1_root.id, stop_2_root.id, distance))
+        match = (stop_1_root.id, stop_2_root.id)
+        self._matches.add(match)
+        self._match_to_distance[match].append(distance)
         self._stop_id_to_stop[stop_1_root.id] = stop_1_root
         self._stop_id_to_stop[stop_2_root.id] = stop_2_root
 
     def elements(self):
-        sorted_data = sorted(self._data, key=lambda t: t[-1])
-        for stop_1_id, stop_2_id, distance in sorted_data:
+        sorted_data = sorted(
+            self._matches, key=lambda match: min(self._match_to_distance[match])
+        )
+        for stop_1_id, stop_2_id in sorted_data:
+            distance = min(self._match_to_distance[(stop_1_id, stop_2_id)])
             yield (
                 self._stop_id_to_stop[stop_1_id],
                 self._stop_id_to_stop[stop_2_id],

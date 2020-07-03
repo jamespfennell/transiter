@@ -211,7 +211,7 @@ def test_system_endpoints__delete_by_id(monkeypatch):
         "delete_by_id",
         ["system_id"],
         function_kwargs={"error_if_not_exists": True, "sync": False},
-        expected_http_status=HttpStatus.NO_CONTENT,
+        expected_http_status=HttpStatus.ACCEPTED,
         expected_content="",
         expected_content_type="",
     )
