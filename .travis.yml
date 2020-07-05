@@ -33,6 +33,16 @@ jobs:
       after_failure:
         - cat webservice.log
 
+    - name: "Database upgrade test"
+      install:
+        - pip install --quiet .
+      before_script:
+        - docker run -d -v $TRAVIS_BUILD_DIR/tests/upgrade:/dumps --name postgres --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
+        - sleep 10
+        - docker exec postgres pg_restore -U transiter -d transiter dumps/db.dump
+      script:
+        - transiterclt db upgrade
+
     - name: "Formatting enforcement"
       install:
         - pip install --quiet black==19.10b pycodestyle==2.5.0

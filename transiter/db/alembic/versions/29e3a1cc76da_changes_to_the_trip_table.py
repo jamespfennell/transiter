@@ -18,8 +18,29 @@ depends_on = None
 
 def upgrade():
     op.add_column(
-        "trip", sa.Column("current_stop_sequence", sa.Integer(), nullable=False)
+        "trip", sa.Column("current_stop_sequence", sa.Integer(), nullable=True)
     )
+    # Set the current stop sequence for trips with future stop times
+    op.get_bind().execute(
+        """
+        UPDATE trip
+        SET current_stop_sequence = (
+            SELECT MAX(trip_stop_time.stop_sequence)
+            FROM trip_stop_time
+            WHERE trip_stop_time.trip_pk = trip.pk
+            AND trip_stop_time.future
+        )
+        """
+    )
+    # Set the current stop sequence for all other trips
+    op.get_bind().execute(
+        """
+        UPDATE trip
+        SET current_stop_sequence = 100000
+        WHERE current_stop_sequence IS NULL
+        """
+    )
+    op.alter_column("trip", "current_stop_sequence", nullable=False)
     op.drop_column("trip_stop_time", "future")
 
 

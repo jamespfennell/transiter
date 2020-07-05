@@ -30,6 +30,7 @@ def upgrade():
                 native_enum=False,
             ),
             nullable=False,
+            server_default="NOT_ALLOWED",
         ),
     )
     op.add_column(
@@ -45,6 +46,7 @@ def upgrade():
                 native_enum=False,
             ),
             nullable=False,
+            server_default="NOT_ALLOWED",
         ),
     )
     op.add_column(
@@ -59,6 +61,7 @@ def upgrade():
                 native_enum=False,
             ),
             nullable=False,
+            server_default="UNKNOWN",
         ),
     )
     op.add_column("scheduled_trip", sa.Column("block_id", sa.String(), nullable=True))
@@ -76,6 +79,7 @@ def upgrade():
                 native_enum=False,
             ),
             nullable=False,
+            server_default="UNKNOWN",
         ),
     )
     op.add_column(
@@ -91,6 +95,7 @@ def upgrade():
                 native_enum=False,
             ),
             nullable=False,
+            server_default="NOT_ALLOWED",
         ),
     )
     op.add_column(
@@ -106,6 +111,7 @@ def upgrade():
                 native_enum=False,
             ),
             nullable=False,
+            server_default="NOT_ALLOWED",
         ),
     )
     op.add_column(
@@ -121,11 +127,12 @@ def upgrade():
                 native_enum=False,
             ),
             nullable=False,
+            server_default="ALLOWED",
         ),
     )
     op.add_column(
         "scheduled_trip_stop_time",
-        sa.Column("exact_times", sa.Boolean(), nullable=False),
+        sa.Column("exact_times", sa.Boolean(), server_default="FALSE", nullable=False),
     )
     op.add_column(
         "scheduled_trip_stop_time", sa.Column("headsign", sa.String(), nullable=True)
@@ -143,6 +150,7 @@ def upgrade():
                 native_enum=False,
             ),
             nullable=False,
+            server_default="ALLOWED",
         ),
     )
     op.add_column(

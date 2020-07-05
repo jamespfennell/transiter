@@ -57,7 +57,7 @@ def upgrade():
     op.get_bind().execute("update stop set type = 'PLATFORM' where not stop.is_station")
     op.get_bind().execute("update stop set type = 'STATION' where stop.is_station")
 
-    op.alter_column("stop", "type", nullable=True)
+    op.alter_column("stop", "type", nullable=False)
     op.drop_column("stop", "is_station")
 
 
