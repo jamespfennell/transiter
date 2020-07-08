@@ -13,7 +13,9 @@ class Route(Base):
     pk = Column(Integer, primary_key=True)
     id = Column(String)
     agency_pk = Column(Integer, ForeignKey("agency.pk"))
-    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
+    source_pk = Column(
+        Integer, ForeignKey("feed_update.pk"), index=True, nullable=False
+    )
     system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False)
 
     Type = parse.Route.Type

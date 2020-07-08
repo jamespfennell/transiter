@@ -21,7 +21,9 @@ class DirectionRule(Base):
     pk = Column(Integer, primary_key=True)
     id = Column(String)
     stop_pk = Column(Integer, ForeignKey("stop.pk"))
-    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
+    source_pk = Column(
+        Integer, ForeignKey("feed_update.pk"), index=True, nullable=False
+    )
 
     priority = Column(Integer)
     direction_id = Column(Boolean)

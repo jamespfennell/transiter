@@ -446,13 +446,17 @@ def test_flush(db_session, add_model, system_1, previous_update, current_update)
 
 
 def test_trip__route_from_schedule(
-    db_session, add_model, system_1, route_1_1, current_update
+    db_session, add_model, system_1, route_1_1, current_update, feed_1_1_update_1
 ):
     add_model(
         models.ScheduledTrip(
             id="trip",
             route=route_1_1,
-            service=add_model(models.ScheduledService(id="service", system=system_1)),
+            service=add_model(
+                models.ScheduledService(
+                    id="service", system=system_1, source=feed_1_1_update_1
+                )
+            ),
         )
     )
 
@@ -667,6 +671,7 @@ def test_trip__stop_time_reconciliation(
     old_stop_time_data,
     new_stop_time_data,
     expected_stop_time_data,
+    feed_1_1_update_1,
 ):
     stop_pk_to_stop = {}
     all_stop_ids = set(
@@ -675,7 +680,12 @@ def test_trip__stop_time_reconciliation(
     )
     for stop_id in all_stop_ids:
         stop = add_model(
-            models.Stop(id=stop_id, system=system_1, type=models.Stop.Type.STATION)
+            models.Stop(
+                id=stop_id,
+                system=system_1,
+                type=models.Stop.Type.STATION,
+                source=feed_1_1_update_1,
+            )
         )
         stop_pk_to_stop[stop.pk] = stop
 
@@ -799,7 +809,9 @@ def test_alert__route_linking(
 
 
 @pytest.fixture
-def trip_for_vehicle(add_model, system_1, route_1_1, stop_1_1, stop_1_2, stop_1_3):
+def trip_for_vehicle(
+    add_model, system_1, route_1_1, stop_1_1, stop_1_2, stop_1_3, feed_1_1_update_1
+):
     return add_model(
         models.Trip(
             id="trip_id",
@@ -810,6 +822,7 @@ def trip_for_vehicle(add_model, system_1, route_1_1, stop_1_1, stop_1_2, stop_1_
                 models.TripStopTime(stop_sequence=2, stop=stop_1_2),
                 models.TripStopTime(stop_sequence=3, stop=stop_1_3),
             ],
+            source=feed_1_1_update_1,
         )
     )
 

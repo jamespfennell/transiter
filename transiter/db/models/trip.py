@@ -22,7 +22,9 @@ class Trip(Base):
     pk = Column(Integer, primary_key=True)
     id = Column(String)
     route_pk = Column(Integer, ForeignKey("route.pk"), nullable=False)
-    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
+    source_pk = Column(
+        Integer, ForeignKey("feed_update.pk"), index=True, nullable=False
+    )
 
     direction_id = Column(Boolean)
     started_at = Column(TIMESTAMP(timezone=True))

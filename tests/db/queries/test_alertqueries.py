@@ -21,13 +21,14 @@ TIME_3 = datetime.datetime.utcfromtimestamp(3000)
     ],
 )
 def test_list_alerts__empty_list(
-    add_model, system_1, model_type, query_function: typing.Callable
+    add_model, system_1, model_type, query_function: typing.Callable, feed_1_1_update_1
 ):
     alert = add_model(
         models.Alert(
             id=ALERT_ID_1,
             system_pk=system_1.pk,
             active_periods=[models.AlertActivePeriod(starts_at=TIME_1, ends_at=TIME_3)],
+            source=feed_1_1_update_1,
         )
     )
 
@@ -69,6 +70,7 @@ def test_list_alerts__base(
     stop_1_2,
     trip_1,
     trip_2,
+    feed_1_1_update_1,
     agency_1_1,
     alert_start,
     alert_end,
@@ -85,6 +87,7 @@ def test_list_alerts__base(
             active_periods=[
                 models.AlertActivePeriod(starts_at=alert_start, ends_at=alert_end)
             ],
+            source=feed_1_1_update_1,
         )
     )
     alert_2 = add_model(
@@ -94,6 +97,7 @@ def test_list_alerts__base(
             active_periods=[
                 models.AlertActivePeriod(starts_at=alert_start, ends_at=alert_end)
             ],
+            source=feed_1_1_update_1,
         )
     )
     if model_type == models.Route:
@@ -136,6 +140,7 @@ def test_list_alerts__de_duplicate_active_periods(
     system_1,
     route_1_1,
     stop_1_1,
+    feed_1_1_update_1,
     model_type,
     query_function: typing.Callable,
 ):
@@ -147,6 +152,7 @@ def test_list_alerts__de_duplicate_active_periods(
                 models.AlertActivePeriod(starts_at=TIME_1, ends_at=TIME_3),
                 models.AlertActivePeriod(starts_at=TIME_1, ends_at=TIME_3),
             ],
+            source=feed_1_1_update_1,
         )
     )
     if model_type == models.Route:

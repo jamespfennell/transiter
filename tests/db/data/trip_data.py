@@ -6,7 +6,9 @@ from transiter.db import models
 
 
 @pytest.fixture
-def trip_1(add_model, route_1_1, stop_1_1, stop_1_2, stop_1_3, stop_1_4):
+def trip_1(
+    add_model, route_1_1, stop_1_1, stop_1_2, stop_1_3, stop_1_4, feed_1_1_update_1
+):
     stop_times = [
         models.TripStopTime(
             arrival_time=datetime.datetime(2018, 11, 2, 10, 0, 0),
@@ -36,12 +38,13 @@ def trip_1(add_model, route_1_1, stop_1_1, stop_1_2, stop_1_3, stop_1_4):
             route=route_1_1,
             stop_times=stop_times,
             current_stop_sequence=1,
+            source=feed_1_1_update_1,
         )
     )
 
 
 @pytest.fixture
-def trip_2(add_model, route_1_1, stop_1_1, stop_1_2, stop_1_4):
+def trip_2(add_model, route_1_1, stop_1_1, stop_1_2, stop_1_4, feed_1_1_update_1):
     stop_times = [
         models.TripStopTime(
             arrival_time=datetime.datetime(2018, 11, 2, 11, 0, 0),
@@ -66,12 +69,13 @@ def trip_2(add_model, route_1_1, stop_1_1, stop_1_2, stop_1_4):
             route=route_1_1,
             stop_times=stop_times,
             current_stop_sequence=1,
+            source=feed_1_1_update_1,
         )
     )
 
 
 @pytest.fixture
-def trip_3(add_model, route_1_1, stop_1_1, stop_1_4):
+def trip_3(add_model, route_1_1, stop_1_1, stop_1_4, feed_1_1_update_1):
     stop_times = [
         models.TripStopTime(
             arrival_time=datetime.datetime(2018, 11, 2, 12, 0, 0),
@@ -91,5 +95,6 @@ def trip_3(add_model, route_1_1, stop_1_1, stop_1_4):
             route=route_1_1,
             stop_times=stop_times,
             current_stop_sequence=3,
+            source=feed_1_1_update_1,
         )
     )

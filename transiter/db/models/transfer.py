@@ -1,10 +1,4 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    ForeignKey,
-    Enum,
-    Numeric,
-)
+from sqlalchemy import Column, Integer, ForeignKey, Enum, Numeric, CheckConstraint
 from sqlalchemy.orm import relationship
 
 from transiter import parse
@@ -20,7 +14,6 @@ class Transfer(Base):
     system_pk = Column(Integer, ForeignKey("system.pk"), index=True)
     source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
     config_source_pk = Column(Integer, ForeignKey("transfers_config.pk"), index=True)
-    # TODO nullable constraint
     from_stop_pk = Column(Integer, ForeignKey("stop.pk"), index=True)
     to_stop_pk = Column(Integer, ForeignKey("stop.pk"), index=True)
 
@@ -39,6 +32,10 @@ class Transfer(Base):
     )
     from_stop = relationship("Stop", foreign_keys=from_stop_pk, cascade="none")
     to_stop = relationship("Stop", foreign_keys=to_stop_pk, cascade="none")
+
+    __table_args__ = (
+        CheckConstraint("NOT(source_pk IS NULL AND config_source_pk IS NULL)"),
+    )
 
     @staticmethod
     def from_parsed_transfer(transfer: parse.Transfer) -> "Transfer":

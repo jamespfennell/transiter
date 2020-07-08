@@ -13,7 +13,9 @@ class Agency(Base):
     pk = Column(Integer, primary_key=True)
     id = Column(String, nullable=False)
     system_pk = Column(Integer, ForeignKey("system.pk"), nullable=False)
-    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
+    source_pk = Column(
+        Integer, ForeignKey("feed_update.pk"), index=True, nullable=False
+    )
 
     name = Column(String, nullable=False)
     url = Column(String)

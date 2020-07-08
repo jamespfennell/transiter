@@ -21,7 +21,9 @@ class ScheduledService(Base):
     pk = Column(Integer, primary_key=True)
     id = Column(String, nullable=False)
     system_pk = Column(Integer, ForeignKey("system.pk"), index=True)
-    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
+    source_pk = Column(
+        Integer, ForeignKey("feed_update.pk"), index=True, nullable=False
+    )
 
     monday = Column(Boolean)
     tuesday = Column(Boolean)

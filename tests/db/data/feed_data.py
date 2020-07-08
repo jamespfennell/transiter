@@ -61,3 +61,14 @@ def feed_1_1_update_3(add_model, feed_1_1):
             completed_at=datetime.datetime(2011, 1, 1, 5, 0, 0),
         )
     )
+
+
+@pytest.fixture
+def feed_2_1_update_1(add_model, feed_2_1):
+    return add_model(
+        models.FeedUpdate(
+            feed=feed_2_1,
+            status=models.FeedUpdate.Status.SUCCESS,
+            completed_at=datetime.datetime(2011, 1, 1, 5, 0, 0),
+        )
+    )

@@ -23,7 +23,9 @@ class Alert(Base):
 
     pk = Column(Integer, primary_key=True)
     id = Column(String)
-    source_pk = Column(Integer, ForeignKey("feed_update.pk"), index=True)
+    source_pk = Column(
+        Integer, ForeignKey("feed_update.pk"), index=True, nullable=False
+    )
     system_pk = Column(Integer, ForeignKey("system.pk"), index=True)
 
     Cause = parse.Alert.Cause

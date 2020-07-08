@@ -7,16 +7,31 @@ from transiter.db.queries import stopqueries
 
 
 @pytest.fixture
-def transfers(add_model, system_1, stop_1_1, stop_1_2, stop_1_3):
+def transfers(add_model, system_1, stop_1_1, stop_1_2, stop_1_3, feed_1_1_update_1):
     return [
         add_model(
-            models.Transfer(from_stop=stop_1_1, to_stop=stop_1_2, system=system_1)
+            models.Transfer(
+                from_stop=stop_1_1,
+                to_stop=stop_1_2,
+                system=system_1,
+                source=feed_1_1_update_1,
+            )
         ),
         add_model(
-            models.Transfer(from_stop=stop_1_2, to_stop=stop_1_3, system=system_1)
+            models.Transfer(
+                from_stop=stop_1_2,
+                to_stop=stop_1_3,
+                system=system_1,
+                source=feed_1_1_update_1,
+            )
         ),
         add_model(
-            models.Transfer(from_stop=stop_1_3, to_stop=stop_1_1, system=system_1)
+            models.Transfer(
+                from_stop=stop_1_3,
+                to_stop=stop_1_1,
+                system=system_1,
+                source=feed_1_1_update_1,
+            )
         ),
     ]
 
@@ -162,41 +177,75 @@ def test_get_stop_pk_to_station_pk(
 
 
 @pytest.mark.parametrize("base_pk", [1000, 1001, 1002, 1003, 1004, 1005])
-def test_list_all_stops_in_stop_tree(add_model, system_1, base_pk):
+def test_list_all_stops_in_stop_tree(add_model, system_1, base_pk, feed_1_1_update_1):
     #      2
     #    / | \
     #   1  3  4
     #  /   |
     # 0    5
-    add_model(models.Stop(pk=1002, system=system_1, type=models.Stop.Type.STATION))
     add_model(
         models.Stop(
-            pk=1001, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+            pk=1002,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
         )
     )
     add_model(
         models.Stop(
-            pk=1000, parent_stop_pk=1001, system=system_1, type=models.Stop.Type.STATION
+            pk=1001,
+            parent_stop_pk=1002,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
         )
     )
     add_model(
         models.Stop(
-            pk=1003, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+            pk=1000,
+            parent_stop_pk=1001,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
         )
     )
     add_model(
         models.Stop(
-            pk=1005, parent_stop_pk=1003, system=system_1, type=models.Stop.Type.STATION
+            pk=1003,
+            parent_stop_pk=1002,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
         )
     )
     add_model(
         models.Stop(
-            pk=1004, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+            pk=1005,
+            parent_stop_pk=1003,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1004,
+            parent_stop_pk=1002,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
         )
     )
 
     # Red herring
-    add_model(models.Stop(pk=1012, system=system_1, type=models.Stop.Type.STATION))
+    add_model(
+        models.Stop(
+            pk=1012,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
+        )
+    )
 
     expected_pks = {1000, 1001, 1002, 1003, 1004, 1005}
 
@@ -206,16 +255,29 @@ def test_list_all_stops_in_stop_tree(add_model, system_1, base_pk):
 
 
 @pytest.mark.parametrize("stations_only", [True, False])
-def test_build_stop_pk_to_descendant_pks_map(add_model, system_1, stations_only):
+def test_build_stop_pk_to_descendant_pks_map(
+    add_model, system_1, stations_only, feed_1_1_update_1
+):
     #      2
     #    / | \
     #   1  3  4
     #  /   |
     # 0    5
-    add_model(models.Stop(pk=1002, system=system_1, type=models.Stop.Type.STATION))
     add_model(
         models.Stop(
-            pk=1001, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+            pk=1002,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
+        )
+    )
+    add_model(
+        models.Stop(
+            pk=1001,
+            parent_stop_pk=1002,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
         )
     )
     add_model(
@@ -224,11 +286,16 @@ def test_build_stop_pk_to_descendant_pks_map(add_model, system_1, stations_only)
             parent_stop_pk=1001,
             system=system_1,
             type=models.Stop.Type.PLATFORM,
+            source=feed_1_1_update_1,
         )
     )
     add_model(
         models.Stop(
-            pk=1003, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+            pk=1003,
+            parent_stop_pk=1002,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
         )
     )
     add_model(
@@ -237,16 +304,28 @@ def test_build_stop_pk_to_descendant_pks_map(add_model, system_1, stations_only)
             parent_stop_pk=1003,
             system=system_1,
             type=models.Stop.Type.PLATFORM,
+            source=feed_1_1_update_1,
         )
     )
     add_model(
         models.Stop(
-            pk=1004, parent_stop_pk=1002, system=system_1, type=models.Stop.Type.STATION
+            pk=1004,
+            parent_stop_pk=1002,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
         )
     )
 
     # Red herring
-    add_model(models.Stop(pk=1012, system=system_1, type=models.Stop.Type.STATION))
+    add_model(
+        models.Stop(
+            pk=1012,
+            system=system_1,
+            type=models.Stop.Type.STATION,
+            source=feed_1_1_update_1,
+        )
+    )
 
     if stations_only:
         expected_map = {1002: {1001, 1002, 1003, 1004}}
@@ -259,10 +338,12 @@ def test_build_stop_pk_to_descendant_pks_map(add_model, system_1, stations_only)
     assert expected_map == actual_map
 
 
-def test_list_direction_rules(add_model, stop_1_1, stop_1_2, stop_1_3):
-    rule_1 = add_model(models.DirectionRule(stop=stop_1_1))
-    rule_2 = add_model(models.DirectionRule(stop=stop_1_2))
-    add_model(models.DirectionRule(stop=stop_1_3))
+def test_list_direction_rules(
+    add_model, stop_1_1, stop_1_2, stop_1_3, feed_1_1_update_1
+):
+    rule_1 = add_model(models.DirectionRule(stop=stop_1_1, source=feed_1_1_update_1))
+    rule_2 = add_model(models.DirectionRule(stop=stop_1_2, source=feed_1_1_update_1))
+    add_model(models.DirectionRule(stop=stop_1_3, source=feed_1_1_update_1))
 
     assert [rule_1, rule_2] == stopqueries.list_direction_rules_for_stops(
         [stop_1_1.pk, stop_1_2.pk]
@@ -271,7 +352,9 @@ def test_list_direction_rules(add_model, stop_1_1, stop_1_2, stop_1_3):
 
 @pytest.mark.parametrize("lat", [-4, 0, 4])
 @pytest.mark.parametrize("lon", [-4, 0, 4])
-def test_list_all_in_geographical_bounds(system_1, add_model, lat, lon, stop_1_1):
+def test_list_all_in_geographical_bounds(
+    system_1, add_model, lat, lon, stop_1_1, feed_1_1_update_1
+):
     stop_1 = add_model(
         models.Stop(
             id="id_1",
@@ -279,6 +362,7 @@ def test_list_all_in_geographical_bounds(system_1, add_model, lat, lon, stop_1_1
             latitude=0,
             longitude=0,
             system=system_1,
+            source=feed_1_1_update_1,
         )
     )
     stop_2 = add_model(
@@ -288,6 +372,7 @@ def test_list_all_in_geographical_bounds(system_1, add_model, lat, lon, stop_1_1
             latitude=lat,
             longitude=lon,
             system=system_1,
+            source=feed_1_1_update_1,
         )
     )
     if lat == 0 and lon == 0:

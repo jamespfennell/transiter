@@ -22,10 +22,14 @@ def system_2(add_model):
 
 
 @pytest.fixture
-def agency_1_1(add_model, system_1):
+def agency_1_1(add_model, system_1, feed_1_1_update_1):
     return add_model(
         models.Agency(
-            id="6", name="Agency", timezone="America/New York", system=system_1
+            id="6",
+            name="Agency",
+            timezone="America/New York",
+            system=system_1,
+            source=feed_1_1_update_1,
         )
     )
 
