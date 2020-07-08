@@ -475,9 +475,13 @@ class TripSyncer(syncer(models.Trip)):
         Convert stop_ids on the trip stop times into stop_pks. Trip stop times that have
         invalid stop IDs and are missing stop PKs are filtered out.
         """
-        # TODO: stop getting the full id to pk map
+        trips = list(trips)
+        all_stop_ids = set()
+        for trip in trips:
+            for stop_time in trip.stop_times:
+                all_stop_ids.add(stop_time.stop_id)
         stop_id_to_pk = stopqueries.get_id_to_pk_map_in_system(
-            self.feed_update.feed.system.pk
+            self.feed_update.feed.system.pk, all_stop_ids
         )
 
         def process_stop_times(stop_times):
