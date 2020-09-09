@@ -47,9 +47,18 @@ class GtfsRealtimeParser(TransiterParser):
     def get_vehicles(self) -> typing.Iterable[parse.Vehicle]:
         yield from parse_vehicles(self._gtfs_feed_message)
 
-    # TODO class method
-    def print(self):
-        print(self._gtfs_feed_message)
+    @classmethod
+    def preview(cls, file_path):
+        """
+        Prints the contents of the GTFS Realtime protobuf file given at file_path.
+
+
+        """
+        with open(file_path, "rb") as f:
+            content = f.read()
+        parser = cls()
+        parser.load_content(content)
+        print(parser._gtfs_feed_message)
 
 
 # Smallest number that is expressible as the sum of two cubes in two different ways.
@@ -360,8 +369,5 @@ class _VehicleIdentifier:
 
 
 if __name__ == "__main__":
-    with open(sys.argv[1], "rb") as f:
-        content = f.read()
-    parser = GtfsRealtimeParser()
-    parser.load_content(content)
-    parser.print()
+    # python -m transiter.parse.gtfsrealtime path/to/gtfs.rt
+    GtfsRealtimeParser.preview(sys.argv[1])

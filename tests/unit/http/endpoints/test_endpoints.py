@@ -252,6 +252,45 @@ def endpoints_test_helper(
 
 
 @pytest.mark.parametrize(
+    "endpoint_function,endpoint_kwargs,system_id",
+    [
+        [stopendpoints.geographical_search, {}, None],
+        [stopendpoints.geographical_search_in_system, {"system_id": "A"}, "A"],
+    ],
+)
+def test_geographic_search(monkeypatch, endpoint_function, endpoint_kwargs, system_id):
+    monkeypatch.setattr(
+        flask,
+        "request",
+        mock.MagicMock(
+            headers={},
+            args=datastructures.MultiDict([("latitude", 10), ("longitude", 20)]),
+        ),
+    )
+
+    service_layer_response = "TEST"
+    service_layer_function = mock.MagicMock()
+    service_layer_function.return_value = service_layer_response
+    monkeypatch.setattr(stopservice, "geographical_search", service_layer_function)
+
+    expected_content = None
+    if expected_content is None:
+        expected_content = json.dumps(service_layer_response)
+
+    response = endpoint_function(**endpoint_kwargs)
+
+    assert expected_content == response.get_data(as_text=True)
+    assert HttpStatus.OK == response.status_code
+    service_layer_function.assert_called_once_with(
+        system_id=system_id,
+        latitude=10,
+        longitude=20,
+        distance=1000,
+        return_service_maps=True,
+    )
+
+
+@pytest.mark.parametrize(
     "internal_documentation_enabled", [pytest.param(True), pytest.param(False)],
 )
 def test_flask_app_root(

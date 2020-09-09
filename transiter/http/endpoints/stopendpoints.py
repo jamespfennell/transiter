@@ -57,11 +57,11 @@ def geographical_search():
     The result of this endpoint is a list of stops ordered by distance, starting with the stop
     closest to the root location.
     """
-    return geographical_search_in_system(None)
+    return _geographical_search_helper(None)
 
 
 @http_endpoint(stop_endpoints, "/systems/<system_id>/stops", method=HttpMethod.POST)
-def geographical_search_in_system(system_id=None):
+def geographical_search_in_system(system_id):
     """
     Search for stops in a system
 
@@ -78,6 +78,10 @@ def geographical_search_in_system(system_id=None):
     The result of this endpoint is a list of stops ordered by distance, starting with the stop
     closest to the root location.
     """
+    return _geographical_search_helper(system_id)
+
+
+def _geographical_search_helper(system_id):
     return stopservice.geographical_search(
         system_id=system_id,
         latitude=get_float_url_parameter("latitude", required=True),
