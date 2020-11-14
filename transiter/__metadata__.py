@@ -1,5 +1,5 @@
 # When updating the version, also update it in the docs.
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 
 # The following are set by Travis CI at build time.
 __build_number__ = None
