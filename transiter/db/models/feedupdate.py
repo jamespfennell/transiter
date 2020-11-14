@@ -72,5 +72,12 @@ class FeedUpdate(Base):
             completed_at,
             postgresql_where=(status == Status.SUCCESS),
         ),
+        Index(
+            "feed_update_status_result_completed_at_idx",
+            feed_pk,
+            status,
+            result,
+            completed_at,
+        ),
         Index("feed_update_feed_pk_feed_update_pk_idx", feed_pk, pk),
     )

@@ -52,8 +52,15 @@ def test_list_all_in_system(
 
 def test_get_in_system_by_id(monkeypatch, feed_1_model, feed_1_large_view):
     monkeypatch.setattr(feedqueries, "get_in_system_by_id", lambda *args: feed_1_model)
+    monkeypatch.setattr(
+        feedservice,
+        "build_feed_windows",
+        lambda feed_pks, *args: {feed_pk: None for feed_pk in feed_pks},
+    )
 
     actual = feedservice.get_in_system_by_id(feed_1_model.system.id, feed_1_model.id)
+
+    feed_1_large_view.statistics = [None, None, None]
 
     assert feed_1_large_view == actual
 
@@ -122,11 +129,11 @@ def test_trip_feed_updates(monkeypatch, datetime_now, feed_pks):
         year=datetime_now.year,
         month=datetime_now.month,
         day=datetime_now.day,
-        hour=datetime_now.hour - 1,
+        hour=datetime_now.hour,
         minute=datetime_now.minute,
         second=0,
         microsecond=0,
-    )
+    ) - datetime.timedelta(hours=30)
 
     dam_trip_feed_updates = mock.Mock()
     monkeypatch.setattr(feedqueries, "list_all_feed_pks", lambda: feed_pks)

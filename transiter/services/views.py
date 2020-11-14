@@ -354,11 +354,30 @@ class TripStopTime(View):
 
 
 @dataclasses.dataclass
+class FeedWStatisticsOutcome(View):
+    status: models.FeedUpdate.Status
+    result: models.FeedUpdate.Result
+    count: int
+
+
+@dataclasses.dataclass
+class FeedStatistics(View):
+    start_time: datetime.datetime
+    end_time: datetime.datetime = NULL
+    update_periodicity: float = None
+    count: int = 0
+    outcomes: typing.List[FeedWStatisticsOutcome] = dataclasses.field(
+        default_factory=list
+    )
+
+
+@dataclasses.dataclass
 class Feed(View):
     id: str
     auto_update_period: int
     _system_id: str
     updates: "UpdatesInFeedLink" = NULL
+    statistics: typing.List[FeedStatistics] = NULL
     system: models.System = NULL
 
     @classmethod

@@ -49,6 +49,13 @@ def get_in_system_by_id(system_id, feed_id) -> views.Feed:
         )
     response = views.FeedLarge.from_model(feed)
     response.updates = views.UpdatesInFeedLink.from_model(feed)
+    end_time = datetime.datetime.utcnow()
+    response.statistics = []
+    for minutes in [15, 60, 60 * 24]:
+        start_time = end_time - datetime.timedelta(minutes=minutes)
+        response.statistics.append(
+            build_feed_windows([feed.pk], start_time, end_time)[feed.pk]
+        )
     return response
 
 
@@ -121,6 +128,49 @@ def get_update_in_feed_by_pk(system_id, feed_id, feed_update_pk):
     return views.FeedUpdate.from_model(feed_update)
 
 
+def build_feed_windows(
+    feed_pks, start_time, end_time
+) -> typing.Dict[int, views.FeedStatistics]:
+    result: typing.Dict[int, views.FeedStatistics] = {
+        feed_pk: views.FeedStatistics(start_time=start_time, end_time=end_time)
+        for feed_pk in feed_pks
+    }
+
+    for feed_pk, data in feedqueries.list_aggregated_updates(
+        feed_pks, start_time
+    ).items():
+        result[feed_pk] = build_statistics_from_data(data, start_time, end_time)
+    return result
+
+
+def build_statistics_from_data(data, start_time, end_time):
+    earliest_time = data[0][3]
+    total_count = 0
+    success_count = 0
+    outcomes = []
+    for count, status, result, time_1, _ in data:
+        total_count += count
+        earliest_time = min(earliest_time, time_1)
+        outcomes.append(
+            views.FeedWStatisticsOutcome(status=status, result=result, count=count)
+        )
+        if (
+            status == models.FeedUpdate.Status.SUCCESS
+            and result == models.FeedUpdate.Result.UPDATED
+        ):
+            success_count = count
+    return views.FeedStatistics(
+        start_time=start_time,
+        end_time=end_time,
+        outcomes=outcomes,
+        count=total_count,
+        update_periodicity=(end_time.timestamp() - earliest_time.timestamp())
+        / success_count
+        if success_count > 1
+        else None,
+    )
+
+
 def trim_feed_updates():
     """
     Delete old feed updates.
@@ -143,7 +193,7 @@ def trim_feed_updates():
 
     logger.info("Trimming old feed updates.")
     before_datetime = (
-        datetime.datetime.now() - datetime.timedelta(minutes=60)
+        datetime.datetime.utcnow() - datetime.timedelta(hours=30)
     ).replace(microsecond=0, second=0)
 
     for feed_pk in _list_all_feed_pks():

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import sql
+from sqlalchemy import sql, func
 from sqlalchemy.orm import joinedload
 
 from transiter.db import dbconnection, models
@@ -137,3 +137,35 @@ def delete_in_system_by_id(system_id, feed_id):
         return False
     session.delete(entity)
     return True
+
+
+def list_aggregated_updates(feed_pks, start_time):
+    session = dbconnection.get_session()
+    query = (
+        session.query(
+            models.FeedUpdate.feed_pk,
+            func.count(models.FeedUpdate.status),
+            models.FeedUpdate.status,
+            models.FeedUpdate.result,
+            func.min(models.FeedUpdate.completed_at),
+            func.max(models.FeedUpdate.completed_at),
+        )
+        .group_by(
+            models.FeedUpdate.feed_pk,
+            models.FeedUpdate.status,
+            models.FeedUpdate.result,
+        )
+        .filter(
+            models.FeedUpdate.feed_pk.in_(feed_pks),
+            models.FeedUpdate.completed_at > start_time,
+            models.FeedUpdate.status.in_(
+                {models.FeedUpdate.Status.SUCCESS, models.FeedUpdate.Status.FAILURE}
+            ),
+        )
+    )
+    feed_pk_to_updates = {}
+    for row in query.all():
+        if row[0] not in feed_pk_to_updates:
+            feed_pk_to_updates[row[0]] = []
+        feed_pk_to_updates[row[0]].append(row[1:])
+    return feed_pk_to_updates

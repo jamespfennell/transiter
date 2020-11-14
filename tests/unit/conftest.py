@@ -78,5 +78,9 @@ def datetime_now(monkeypatch):
         def now(cls, *args, **kwargs):
             return now
 
+        @classmethod
+        def utcnow(cls, *args, **kwargs):
+            return now
+
     monkeypatch.setattr(datetime, "datetime", MockedDatetime)
     return now
