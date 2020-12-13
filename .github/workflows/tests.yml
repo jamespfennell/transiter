@@ -1,0 +1,135 @@
+name: Transiter build and tests
+on: [push, pull_request]
+jobs:
+  unit-tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+            python-version: 3.7
+      - name: Install Transiter and other Python packages
+        run: |
+          pip install --quiet .
+          pip install --quiet -r dev-requirements.txt
+      - name: Launch Postgres
+        run: docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
+      - name: Run unit tests
+        run: coverage run --source=transiter --omit="transiter/alembic/*","*pb2/*" -m pytest --color=yes tests/unit tests/db
+      # TODO
+      # - name: Post coverage to Coveralls
+      #  uses: coverallsapp/github-action@master
+      #  with:
+      #    github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  end-to-end-tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install Transiter and other Python packages
+        run: |
+          pip install --quiet .
+          pip install --quiet -r dev-requirements.txt
+      - name: Launch Postgres, RabbitMQ, and Transiter services
+        run: |
+          docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
+          docker run -d -p 5672:5672 rabbitmq:3
+          transiterclt db reset --yes
+          transiterclt launch webservice > webservice.log 2>&1 &
+          transiterclt launch executor > executor.log 2>&1 &
+          transiterclt launch scheduler > scheduler.log  2>&1 &
+          python tests/endtoend/sourceserver.py > sourceserver.log  2>&1 &
+      - name: Run end to end tests
+        run: pytest --color=yes tests/endtoend
+
+  database-upgrade-test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install Transiter and other Python packages
+        run: |
+          pip install --quiet .
+      - name: Launch Postgres and restore the legacy database
+        run: |
+          docker run -d -v $(pwd)/tests/upgrade:/dumps --name postgres --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
+          sleep 10
+          docker exec postgres pg_restore -U transiter -d transiter dumps/db.dump
+        # TODO is this ^ actually working
+      - name: Upgrade the database (this is the test)
+        run: transiterclt db upgrade
+
+  formatting-enforcement:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install Black and PyCodeStyle
+        run: pip install --quiet black==19.10b pycodestyle==2.5.0
+      - name: Run formatting checks
+        run: |
+          black transiter tests *py
+          pycodestyle --ignore=E203,E501,W503 --exclude="*pb2.py" transiter tests *py
+
+  containerized-build-and-tests:
+    #needs:
+    #  - unit-tests
+    #  - end-to-end-tests
+    #  - database-upgrade-test
+    #  - formatting-enforcement
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: pip install --quiet docker
+      - name: Build and launch containerized Transiter
+        env:
+          GIT_REF: ${{ github.ref }}
+          GIT_COMMIT_HASH: ${{ github.sha }}
+          GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          IS_PULL_REQUEST: ${{ github.base_ref == '' }}
+          BUILD_ID: ${{ github.run_number }}
+          CI_WEB_URL: https://github.com/jamespfennell/transiter/actions/runs/${{ github.run_id }}
+        run: |
+          pip install --quiet docker
+          python ci.py before
+          make docker-ci
+          docker-compose -p transiter -f docker/docker-compose.yml up -d
+      - name: Run tests
+        run: |
+          make containerized-unit-tests
+          make containerized-db-tests
+          make end-to-end-tests
+      - name: Push artifacts to Docker Hub and PyPI
+        env:
+          GIT_REF: ${{ github.ref }}
+          GIT_COMMIT_HASH: ${{ github.sha }}
+          GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          IS_PULL_REQUEST: ${{ github.base_ref == '' }}
+          BUILD_ID: ${{ github.run_number }}
+          CI_WEB_URL: https://github.com/jamespfennell/transiter/actions/runs/${{ github.run_id }}
+
+          DOCKER_USERNAME: jamespfennell
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          TWINE_USERNAME: jamespfennell
+          TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+        run: python ci.py after
