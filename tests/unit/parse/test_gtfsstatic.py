@@ -307,13 +307,13 @@ def test_parse_services_with_trips(input_direction, output_direction):
             "trip_id": TRIP_ID,
             "start_time": "03:04:05",
             "end_time": "06:07:08",
-            "headway": 20,
+            "headway_secs": 20,
         },
         {
             "trip_id": "Unknown trip ID",
             "start_time": "03:04:05",
             "end_time": "06:07:08",
-            "headway": 26,
+            "headway_secs": 26,
         },
     ]
     frequency = parse.ScheduledTripFrequency(

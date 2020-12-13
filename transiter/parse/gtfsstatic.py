@@ -429,7 +429,10 @@ def _parse_schedule(gtfs_static_file: _GtfsStaticFile):
 
     def time_string_to_datetime_time(time_string):
         if time_string not in cache:
-            hour, minute, second = time_string.split(":")
+            s = time_string.split(":")
+            if len(s) != 3:
+                return None
+            hour, minute, second = s
             cache[time_string] = datetime.time(
                 hour=int(hour) % 24, minute=int(minute), second=int(second)
             )
@@ -443,7 +446,7 @@ def _parse_schedule(gtfs_static_file: _GtfsStaticFile):
             parse.ScheduledTripFrequency(
                 start_time=time_string_to_datetime_time(row["start_time"]),
                 end_time=time_string_to_datetime_time(row["end_time"]),
-                headway=int(row["headway"]),
+                headway=int(row["headway_secs"]),
                 frequency_based=row.get("exact_times") != "1",
             )
         )
@@ -452,11 +455,18 @@ def _parse_schedule(gtfs_static_file: _GtfsStaticFile):
         trip_id = row["trip_id"]
         if trip_id not in trip_id_to_trip:
             continue
+        dep_time = time_string_to_datetime_time(row["departure_time"])
+        arr_time = time_string_to_datetime_time(row["arrival_time"])
+        if dep_time is None:
+            print("Skipping stop_times.txt row", row)
+            continue
+        if arr_time is None:
+            arr_time = dep_time
         stop_time = parse.ScheduledTripStopTime(
             stop_id=row["stop_id"],
             stop_sequence=int(row["stop_sequence"]),
-            departure_time=time_string_to_datetime_time(row["departure_time"]),
-            arrival_time=time_string_to_datetime_time(row["arrival_time"]),
+            departure_time=dep_time,
+            arrival_time=arr_time,
             headsign=row.get("stop_headsign"),
             pickup_type=_get_enum_by_key(
                 parse.BoardingPolicy,
