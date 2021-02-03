@@ -3,7 +3,7 @@
 
 [![7 train in Queens, New York, United States](7-train-in-queens-new-york.jpg "Photo by Luca Bravo")](https://unsplash.com/@lucabravo)
 
-Transiter is a HTTP web service that makes it easy to use 
+Transiter is a backend web service that makes it easy to use 
 transit data in web apps, train arrival time boards and similar technologies.
 
 Transiter subscribes to GTFS static, GTFS realtime and other types of feeds
@@ -24,7 +24,8 @@ You can get a sense for the data that's available by navigating through the
 
 The easiest way to get Transiter up and running is to
 use Docker compose with the configuration file at 
-[docker/docker-compose.yaml](https://raw.githubusercontent.com/jamespfennell/transiter/master/docker/docker-compose.yml). It references Docker images
+[docker/docker-compose.yaml](https://raw.githubusercontent.com/jamespfennell/transiter/master/docker/docker-compose.yml).
+It references Docker images
 that are stored in Docker Hub, so it will work immediately;
 assuming it's in your current working directory, just run:
 
@@ -49,7 +50,7 @@ will yield a response like:
 
     {
       "transiter": {
-        "version": "0.3.1",
+        "version": "0.5.4",
         "href": "https://github.com/jamespfennell/transiter"
         "docs": {
             "href": "http://localhost:8000/docs/"
@@ -70,11 +71,11 @@ assuming the steps above have been followed, simply execute:
     curl -X PUT "localhost:8000/systems/sfbart?sync=true" \
         -F 'config_file=https://raw.githubusercontent.com/jamespfennell/transiter-sfbart/master/Transiter-SF-BART-config.yaml'
 
-The install will take a couple of seconds as the BART's 
+The installation will take a couple of seconds as the BART's 
 schedule is loaded into the database.
 
 If you are streaming the Docker compose 
-output you'll notice after the install
+output you'll notice after the installation
  that realtime feed updates are now occurring every 5 seconds.
 At this point you're ready to navigate the HTTP API to
 access the BART's static and realtime data!
@@ -91,7 +92,7 @@ at San Francisco International Airport (stop ID `SFIA`), just execute:
 - Write a [custom feed parser](https://docs.transiter.io/docs/feedparsers/) to import data in non-standard format into Transiter.
     
 The [documentation website](https://docs.transiter.io) has much more
-including advice on deployment.
+including advice on deployment and monitoring.
 
 ## Development indicators
 

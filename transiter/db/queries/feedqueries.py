@@ -11,6 +11,19 @@ def list_all_feed_pks():
     return list(pk_ for (pk_,) in dbconnection.get_session().query(models.Feed.pk))
 
 
+def list_all_active():
+    """
+    List all feeds in active systems.
+    """
+    session = dbconnection.get_session()
+    query = (
+        session.query(models.Feed)
+        .join(models.System, models.System.pk == models.Feed.system_pk)
+        .filter(models.System.status == models.System.SystemStatus.ACTIVE)
+    )
+    return query.all()
+
+
 def list_all_auto_updating():
     """
     List all auto-updating Feeds.

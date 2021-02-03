@@ -186,11 +186,14 @@ def test_transiter_registry__no_refresh():
 
 def test_app_refresh_tasks(monkeypatch):
     registry = mock.MagicMock()
+    metrics = mock.MagicMock()
     monkeypatch.setattr(server, "feed_auto_update_registry", registry)
+    monkeypatch.setattr(server, "metrics_populator", metrics)
 
     server.app_refresh_tasks()
 
     registry.refresh.assert_called_once()
+    metrics.refresh.assert_called_once()
 
 
 def test_create_app(monkeypatch, scheduler):
@@ -198,6 +201,8 @@ def test_create_app(monkeypatch, scheduler):
     monkeypatch.setattr(server, "feed_auto_update_registry", registry_1)
     registry_2 = mock.MagicMock()
     monkeypatch.setattr(server, "transiter_registry", registry_2)
+    metrics = mock.MagicMock()
+    monkeypatch.setattr(server, "metrics_populator", metrics)
 
     server.create_app()
 

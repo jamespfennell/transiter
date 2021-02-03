@@ -197,7 +197,7 @@ def test_simple_create_update_delete(
     assert set(map(fields_to_compare, current)) == set(
         map(fields_to_compare, db_session.query(entity_type).all())
     )
-    assert expected_counts == actual_counts
+    verify_stats(actual_counts, expected_counts)
 
 
 @pytest.mark.parametrize(
@@ -223,7 +223,7 @@ def test_duplicate_ids(current_update, parsed_type, route_1_1, stop_1_1):
         current_update.pk, ParserForTesting([parsed_type, parsed_type])
     )
 
-    assert actual_counts == (1, 0, 0)
+    verify_stats(actual_counts, (1, 0, 0))
 
 
 @pytest.mark.parametrize(
@@ -355,7 +355,7 @@ def test_direction_rules(
     assert set(map(fields_to_compare, expected_entities)) == set(
         map(fields_to_compare, db_session.query(models.DirectionRule).all())
     )
-    assert expected_counts == actual_counts
+    verify_stats(actual_counts, expected_counts)
 
 
 def test_schedule(db_session, stop_1_1, route_1_1, previous_update, current_update):
@@ -402,7 +402,7 @@ def test_schedule(db_session, stop_1_1, route_1_1, previous_update, current_upda
     assert 1 == len(db_session.query(models.ScheduledTrip).all())
     assert 1 == len(db_session.query(models.ScheduledTripFrequency).all())
     assert 1 == len(db_session.query(models.ScheduledTripStopTime).all())
-    assert (1, 0, 0) == actual_counts
+    verify_stats(actual_counts, (1, 0, 0))
 
     # Just to make sure we can delete it all
     importdriver.run_import(current_update.pk, ParserForTesting([]))
@@ -420,7 +420,7 @@ def test_direction_rules__skip_unknown_stop(
     )
 
     assert [] == db_session.query(models.DirectionRule).all()
-    assert (0, 0, 0) == actual_counts
+    verify_stats(actual_counts, (0, 0, 0))
 
 
 def test_unknown_type(current_update):
@@ -757,7 +757,7 @@ def test_entities_skipped(db_session, current_update):
     result = importdriver.run_import(current_update.pk, parser)
 
     assert [] == db_session.query(models.Route).all()
-    assert (0, 0, 0) == result
+    verify_stats(result, (0, 0, 0))
 
 
 def test_parse_error(current_update):
@@ -881,7 +881,7 @@ def test_vehicle__duplicate_trip_ids(
         current_update.pk, ParserForTesting([vehicle, vehicle])
     )
 
-    assert (1, 0, 0) == result
+    verify_stats(result, (1, 0, 0))
 
 
 def test_vehicle__merged_vehicle_edge_case(
@@ -898,7 +898,7 @@ def test_vehicle__merged_vehicle_edge_case(
 
     result = importdriver.run_import(current_update.pk, ParserForTesting([vehicle_3]))
 
-    assert (0, 0, 2) == result
+    verify_stats(result, (0, 0, 2))
 
 
 def test_vehicle__delete_with_trip_attached(
@@ -998,4 +998,10 @@ def test_transfers(
 
     result = importdriver.run_import(current_update.pk, ParserForTesting([transfer]))
 
-    assert (expected_added, 0, expected_deleted) == result
+    verify_stats(result, (expected_added, 0, expected_deleted))
+
+
+def verify_stats(stats, expected_counts):
+    assert stats.num_added() == expected_counts[0]
+    assert stats.num_updated() == expected_counts[1]
+    assert stats.num_deleted() == expected_counts[2]

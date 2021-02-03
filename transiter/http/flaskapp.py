@@ -16,6 +16,7 @@ from transiter.http.httpmanager import (
     convert_exception_to_error_response,
 )
 from transiter.services import systemservice
+from transiter.scheduler import client
 
 app = flask.Flask("transiter", static_folder=None)
 
@@ -100,6 +101,16 @@ def root():
         "systems": httpviews.SystemsInstalled(count=len(systemservice.list_all())),
     }
     return response
+
+
+@http_endpoint(app, "/metrics", returns_json_response=False)
+def metrics():
+    """
+    Prometheus metrics endpoints
+
+    Provides metrics on feed updating in Prometheus format.
+    """
+    return client.metrics()
 
 
 def _generate_build_response():

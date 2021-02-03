@@ -27,6 +27,14 @@ def list_all_auto_updating() -> typing.List[views.Feed]:
 
 
 @dbconnection.unit_of_work
+def get_feed_pk_to_system_id_and_feed_id_map():
+    result = {}
+    for feed in feedqueries.list_all_active():
+        result[feed.pk] = (feed.system.id, feed.id)
+    return result
+
+
+@dbconnection.unit_of_work
 def list_all_in_system(system_id) -> typing.List[views.Feed]:
     """
     Get data on all feeds in a system.
