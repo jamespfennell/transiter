@@ -24,7 +24,7 @@ setup(
         "flask==1.1.2",
         "gunicorn==20.0.4",
         "inflection==0.4.0",
-        "Jinja2==2.11.2",
+        "Jinja2==2.11.3",
         "prometheus-client==0.9.0",
         "protobuf==3.11.3",
         "psycopg2-binary==2.8.5",
