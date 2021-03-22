@@ -1,9 +1,7 @@
 import requests
 
 
-def test_gtfs_static_feed_flush(install_system_1, transiter_host):
-
-    system_id = "test_gtfs_static_feed_flush"
+def test_gtfs_static_feed_flush(system_id, install_system_1, transiter_host):
     install_system_1(system_id)
 
     requests.post(

@@ -6,9 +6,8 @@ from . import gtfsrealtimegenerator
 #  Also break up these tests if reasonable
 
 
-def test_service_maps(install_system_1, transiter_host, source_server):
-
-    __, realtime_feed_url = install_system_1("test_service_maps")
+def test_service_maps(system_id, install_system_1, transiter_host, source_server):
+    __, realtime_feed_url = install_system_1(system_id)
 
     # (1) Regular case
     trip_1_stops = {
@@ -31,6 +30,7 @@ def test_service_maps(install_system_1, transiter_host, source_server):
         ],
     )
     _perform_service_map_test(
+        system_id,
         transiter_host,
         source_server,
         realtime_feed_url,
@@ -61,6 +61,7 @@ def test_service_maps(install_system_1, transiter_host, source_server):
         ],
     )
     _perform_service_map_test(
+        system_id,
         transiter_host,
         source_server,
         realtime_feed_url,
@@ -85,6 +86,7 @@ def test_service_maps(install_system_1, transiter_host, source_server):
         ],
     )
     _perform_service_map_test(
+        system_id,
         transiter_host,
         source_server,
         realtime_feed_url,
@@ -95,6 +97,7 @@ def test_service_maps(install_system_1, transiter_host, source_server):
 
 
 def _perform_service_map_test(
+    system_id,
     transiter_host,
     source_server,
     realtime_feed_url,
@@ -104,11 +107,11 @@ def _perform_service_map_test(
 ):
     source_server.put(realtime_feed_url, feed.build_feed())
     requests.post(
-        transiter_host + "/systems/test_service_maps/feeds/GtfsRealtimeFeed?sync=true"
+        transiter_host + "/systems/" + system_id + "/feeds/GtfsRealtimeFeed?sync=true"
     )
 
     route_data = requests.get(
-        transiter_host + "/systems/test_service_maps/routes/A"
+        transiter_host + "/systems/" + system_id + "/routes/A"
     ).json()
     stop_ids = None
     for service_map in route_data["service_maps"]:
@@ -119,7 +122,7 @@ def _perform_service_map_test(
     assert expected_map_stop_ids == stop_ids
 
     trips_in_route_data = requests.get(
-        transiter_host + "/systems/test_service_maps/routes/A/trips"
+        transiter_host + "/systems/" + system_id + "/routes/A/trips"
     ).json()
     trip_ids = set(trip["id"] for trip in trips_in_route_data)
     assert set(expected_trip_ids) == trip_ids

@@ -69,6 +69,7 @@ def _create_feed_update_helper(system_id, feed_id, update_type) -> typing.Option
     feed_update.update_type = update_type
     feed_update.status = feed_update.Status.SCHEDULED
     feed_update.feed = feed
+    dbconnection.get_session().add(feed_update)
     dbconnection.get_session().flush()
     return feed_update.pk
 

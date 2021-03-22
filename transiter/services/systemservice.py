@@ -72,16 +72,16 @@ def install(system_id, config_str, extra_settings, config_source_url, sync=True)
 
     This is a no-op if the system is already installed.
 
-    This method is designed to be called both in a sync HTTP install request and as
-    the main install method called by the executor of a async HTTP install request.
+    This method is designed to be invoked both in a sync HTTP install request and in
+    the executor of a async HTTP install request.
 
     If the transit system does not have a record in the DB when this method is called
     (as in the sync case), the install will take place in a single unit of work. One
-    consequence of this is that if the install failed there will be no record of it
+    consequence of this is that if the install fails there will be no record of it
     in the DB.
 
     Otherwise a number of unit of works will be used to update the systems's status as
-    it progresses through the install
+    it progresses through the install.
     """
     logger.info("Received system install request for id={}".format(system_id))
     system_update_pk = _create_system_update(
@@ -116,7 +116,8 @@ def _create_system_update(system_id, config_str, extra_settings, config_source_u
         }
         if system.status in invalid_statuses_for_update:
             raise exceptions.InstallError(
-                "Cannot install or update system with status '{}'".format(
+                "Cannot install or update system with status '{}'. "
+                "If the system is stuck in this state, delete it first to reinstall".format(
                     system.status.name
                 )
             )
@@ -138,6 +139,7 @@ def _create_system_update(system_id, config_str, extra_settings, config_source_u
         config_source_url=config_source_url,
         transiter_version=__metadata__.__version__,
     )
+    dbconnection.get_session().add(update)
     dbconnection.get_session().flush()
     return update.pk
 

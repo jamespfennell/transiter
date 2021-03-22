@@ -121,7 +121,6 @@ def test_install_system__feeds(system_id, install_system_1, transiter_host, sync
 def test_install_system__success__service_map_stop(
     system_id, install_system_1, transiter_host, sync
 ):
-
     install_system_1(system_id, sync=sync)
 
     for stop_id, usual_route in STOP_ID_TO_USUAL_ROUTES.items():
@@ -141,7 +140,6 @@ def test_install_system__success__service_map_stop(
 def test_install_system__service_map_route(
     system_id, install_system_1, transiter_host, sync
 ):
-
     install_system_1(system_id, sync=sync)
 
     for route_id, usual_stops in ROUTE_ID_TO_USUAL_ROUTE.items():
@@ -158,7 +156,6 @@ def test_install_system__service_map_route(
 
 @pytest.mark.parametrize("sync", [True, False])
 def test_install_system__agency(system_id, install_system_1, transiter_host, sync):
-
     install_system_1(system_id, sync=sync)
 
     agencies_response = requests.get(
@@ -169,9 +166,7 @@ def test_install_system__agency(system_id, install_system_1, transiter_host, syn
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def test_install_system__bad_config(install_system, transiter_host, sync):
-    system_id = "test_install_system__fail_" + str(sync)
-
+def test_install_system__bad_config(system_id, install_system, transiter_host, sync):
     install_system(
         system_id,
         "This is not a valid Transiter YAML config!",
@@ -200,9 +195,7 @@ feeds:
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def test_install_system__bad_update(install_system, transiter_host, sync):
-    system_id = "test_install_system__update_" + str(sync)
-
+def test_install_system__bad_update(system_id, install_system, transiter_host, sync):
     install_system(
         system_id,
         SYSTEM_CONFIG.format(feed_url="non_url"),
@@ -217,24 +210,21 @@ def test_install_system__bad_update(install_system, transiter_host, sync):
 
 
 def test_update_static_entities(
-    install_system_1, transiter_host, source_server, updated_gtfs_zip
+    system_id, install_system_1, transiter_host, source_server, updated_gtfs_zip
 ):
-    system_id = "test_update_static_entities"
     static_feed_url, __ = install_system_1(system_id)
 
     source_server.put(static_feed_url, updated_gtfs_zip)
 
     response = requests.post(
-        transiter_host
-        + "/systems/test_update_static_entities/feeds/gtfsstatic?sync=true"
+        transiter_host + "/systems/" + system_id + "/feeds/gtfsstatic?sync=true"
     ).json()
 
     assert response["status"] != "FAILURE"
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def test_delete(install_system_1, transiter_host, sync):
-    system_id = "test_delete_" + str(sync)
+def test_delete(system_id, install_system_1, transiter_host, sync):
     install_system_1(system_id)
 
     response = requests.delete(
@@ -249,9 +239,7 @@ def test_delete(install_system_1, transiter_host, sync):
     assert response.status_code == 404
 
 
-def test_update_system(install_system, transiter_host):
-    system_id = "test_update_system"
-
+def test_update_system(system_id, install_system, transiter_host):
     config = """
     name: test update system
 

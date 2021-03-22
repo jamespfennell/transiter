@@ -4,7 +4,6 @@ Admin
 These endpoints are used for administering the Transiter instance.
 """
 import logging
-
 from flask import Blueprint
 
 from transiter.db import dbconnection

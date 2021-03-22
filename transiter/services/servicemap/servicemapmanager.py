@@ -160,8 +160,9 @@ def calculate_realtime_service_map_for_route(route):
         dbconnection.get_session().delete(old_service_map)
         dbconnection.get_session().flush()
 
-    service_map.route = route
-    service_map.group = realtime_service_map
+    service_map.route_pk = route.pk
+    service_map.group_pk = realtime_service_map.pk
+    dbconnection.get_session().add(service_map)
 
 
 def calculate_scheduled_service_maps_for_system(system):
@@ -171,6 +172,7 @@ def calculate_scheduled_service_maps_for_system(system):
     :param system: the system
     :return: nothing; the service maps are persisted in the database
     """
+    logger.info("Beginning service maps calculation")
     stop_pk_to_station_pk = stopqueries.get_stop_pk_to_station_pk_map_in_system(
         system.id
     )
@@ -229,7 +231,8 @@ def calculate_scheduled_service_maps_for_system(system):
                 print("Failed to topologically sort graph", final_paths)
                 continue
             service_map.route_pk = route_pk
-            service_map.group = service_map_group
+            service_map.group_pk = service_map_group.pk
+            dbconnection.get_session().add(service_map)
 
 
 def _build_service_map_from_paths(paths):
