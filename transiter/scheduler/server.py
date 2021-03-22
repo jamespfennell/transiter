@@ -15,9 +15,12 @@ import typing
 import apscheduler.schedulers.background
 import flask
 import inflection
+import prometheus_client as prometheus
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 from transiter.executor import celeryapp
+from transiter.scheduler import metrics
 from transiter.services import feedservice
 
 logger = logging.getLogger("transiter")
@@ -126,6 +129,7 @@ class FeedAutoUpdateTask(Task):
         )
         # NOTE: access the task like a static method to avoid the current instance
         # being unnecessarily being sent through RabbitMQ.
+        logger.info("Triggering task update %s/%s", self._system_id, self._feed_id)
         FeedAutoUpdateTask._create_feed_update.apply_async(
             args=(None, self._system_id, self._feed_id), expires=expires
         )
@@ -227,6 +231,7 @@ class TransiterRegistry(Registry):
 
 feed_auto_update_registry = FeedAutoUpdateRegistry()
 transiter_registry = TransiterRegistry()
+metrics_populator = metrics.MetricsPopulator()
 
 
 def app_ping():
@@ -244,13 +249,33 @@ def app_ping():
 def app_refresh_tasks():
     logger.info("Received external refresh tasks command via HTTP")
     feed_auto_update_registry.refresh()
+    metrics_populator.refresh()
     return "", 204
+
+
+def app_feed_update_callback():
+    # TODO: add a time.sleep and verify that this is blocking
+    error_message = metrics_populator.report(flask.request.json)
+    if error_message is None:
+        return "", 200
+    logger.info(error_message)
+    return error_message, 400  # bad request
 
 
 def create_app():
     app = flask.Flask(__name__)
     app.add_url_rule("/", "ping", app_ping, methods=["GET"])
     app.add_url_rule("/", "refresh_tasks", app_refresh_tasks, methods=["POST"])
+    app.add_url_rule(
+        "/feed_update_callback",
+        "feed_update_callback",
+        app_feed_update_callback,
+        methods=["POST"],
+    )
+    # Add prometheus wsgi middleware to route /metrics requests
+    app.wsgi_app = DispatcherMiddleware(
+        app.wsgi_app, {"/metrics": prometheus.make_wsgi_app()}
+    )
 
     logger.setLevel(logging.INFO)
     handler = logging.StreamHandler()
@@ -264,6 +289,7 @@ def create_app():
     scheduler.start()
     feed_auto_update_registry.initialize()
     transiter_registry.initialize()
+    metrics_populator.refresh()
 
     logger.info("Launching HTTP server")
     return app

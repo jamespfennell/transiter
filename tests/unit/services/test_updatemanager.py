@@ -8,6 +8,7 @@ from transiter import parse, import_
 from transiter.db import models
 from transiter.db.queries import feedqueries
 from transiter.services import updatemanager
+from transiter.import_ import importdriver
 
 FEED_ID = "1"
 SYSTEM_ID = "2"
@@ -215,7 +216,7 @@ def test_execute_feed_update__success_or_sync_error(
     def sync_func(feed_update_pk, entities):
         if sync_error:
             raise ValueError
-        return 1, 2, 3
+        return importdriver.ImportStats()
 
     monkeypatch.setattr(import_, "run_import", sync_func)
 

@@ -74,8 +74,8 @@ This setup is ideal when writing new end to end tests that
 
 First, the Docker compose network is launched using,
     
-    docker-compose -p transiter docker/docker-compose.yml -d up 
-    docker-compose -p transiter tests/endtoend/compose.yaml up -d sourceserver
+    docker-compose -p transiter -f docker/docker-compose.yml -d up 
+    docker-compose -p transiter -f tests/endtoend/compose.yaml up -d sourceserver
 
 The non-default environment variables should be set as follows:
 
@@ -91,10 +91,10 @@ This is the setup the tests run under in Travis CI.
 
 First, the Docker compose network is launched using,
     
-    docker-compose -p transiter docker/docker-compose.yml up -d 
-    docker-compose -p transiter tests/endtoend/compose.yaml up -d sourceserver
+    docker-compose -p transiter -f docker/docker-compose.yml up -d 
+    docker-compose -p transiter -f tests/endtoend/compose.yaml up -d sourceserver
 
 And then the tests are run using,
 
-    docker-compose -f tests/endtoend/compose.yaml run testrunner
+    docker-compose -p transiter -f tests/endtoend/compose.yaml run testrunner
 

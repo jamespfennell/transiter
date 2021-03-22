@@ -222,7 +222,12 @@ def calculate_scheduled_service_maps_for_system(system):
                 for path, count in path_to_count.items()
                 if count >= num_trips * service_map_group.threshold
             }
-            service_map = _build_service_map_from_paths(final_paths)
+            try:
+                service_map = _build_service_map_from_paths(final_paths)
+            # If the graph can't be topologically sorted skip
+            except graphutils.topologicalsort.ImpossibleToTopologicallySortGraph:
+                print("Failed to topologically sort graph", final_paths)
+                continue
             service_map.route_pk = route_pk
             service_map.group = service_map_group
 

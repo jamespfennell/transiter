@@ -38,6 +38,31 @@ from transiter.services.servicemap import servicemapmanager
 logger = logging.getLogger(__name__)
 
 
+class ImportStats:
+    def __init__(self):
+        self._entity_type_to_data = {}
+
+    def add_data(self, entity_type, num_added, num_updated, num_deleted):
+        if num_added == 0 and num_updated == 0 and num_deleted == 0:
+            return
+        self._entity_type_to_data[entity_type] = (num_added, num_updated, num_deleted)
+
+    def num_added(self):
+        return sum(x for x, _, _ in self._entity_type_to_data.values())
+
+    def num_updated(self):
+        return sum(x for _, x, _ in self._entity_type_to_data.values())
+
+    def num_deleted(self):
+        return sum(x for _, _, x in self._entity_type_to_data.values())
+
+    def entity_type_to_num_in_db(self):
+        result = {}
+        for entity_type, data in self._entity_type_to_data.items():
+            result[entity_type] = data[0] + data[1]
+        return result
+
+
 def run_import(feed_update_pk, parser_object: parse.TransiterParser):
     """
     Sync entities to the database.
@@ -62,7 +87,7 @@ def run_import(feed_update_pk, parser_object: parse.TransiterParser):
     if feed_update.update_type == feed_update.Type.FLUSH:
         syncers_in_order.reverse()
 
-    totals = [0, 0, 0]
+    stats = ImportStats()
     for syncer_class in syncers_in_order:
         if syncer_class.feed_entity() not in parser_object.supported_types:
             continue
@@ -70,10 +95,14 @@ def run_import(feed_update_pk, parser_object: parse.TransiterParser):
         entities = list(parser_object.get_entities(syncer_class.feed_entity()))
         for entity in entities:
             entity.source_pk = feed_update.pk
-        result = syncer_class(feed_update).run(entities)
-        for i in range(3):
-            totals[i] += result[i]
-    return tuple(totals)
+        num_added, num_updated, num_deleted = syncer_class(feed_update).run(entities)
+        if num_added == 0 and num_updated == 0 and num_deleted == 0:
+            continue
+
+        entity = syncer_class.__feed_entity__.__name__.upper()
+        stats.add_data(entity, num_added, num_updated, num_deleted)
+
+    return stats
 
 
 class SyncerBase:
@@ -144,6 +173,7 @@ class SyncerBase:
         processed_ids = set()
         session = dbconnection.get_session()
         num_updated_entities = 0
+        num_added_entities = 0
         for entity in entities:
             if entity.id is not None and entity.id in processed_ids:
                 continue
@@ -152,11 +182,13 @@ class SyncerBase:
                 entity.pk = id_to_pk[entity.id]
             if entity.pk is not None:
                 num_updated_entities += 1
+            else:
+                num_added_entities += 1
             entity.source_pk = self.feed_update.pk
             persisted_entities.append(session.merge(entity))
         return (
             persisted_entities,
-            len(processed_ids) - num_updated_entities,
+            num_added_entities,
             num_updated_entities,
         )
 
