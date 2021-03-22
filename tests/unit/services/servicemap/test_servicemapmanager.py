@@ -34,7 +34,8 @@ TRIP_2_START_TIME = datetime.datetime(3, 7, 11)
 TRIP_2_END_TIME = datetime.datetime(4, 8, 12)
 
 
-def test_calculate_realtime_service_map_for_route(monkeypatch):
+def test_calculate_realtime_service_map_for_route(inline_unit_of_work, monkeypatch):
+    monkeypatch.setattr(dbconnection, "get_session", mock.MagicMock())
     service_map_group = models.ServiceMapGroup(
         source=models.ServiceMapGroup.ServiceMapSource.REALTIME
     )
@@ -73,8 +74,8 @@ def test_calculate_realtime_service_map_for_route(monkeypatch):
     servicemapmanager.calculate_realtime_service_map_for_route(route_1)
 
     _build_service_map_from_paths.assert_called_once_with(expected_paths)
-    assert route_1 == new_service_map.route
-    assert service_map_group == new_service_map.group
+    assert route_1.pk == new_service_map.route_pk
+    assert service_map_group.pk == new_service_map.group_pk
 
 
 def test_calculate_schedule_service_map_for_route(monkeypatch):
