@@ -133,6 +133,8 @@ def trim_feed_updates(feed_pk, before_datetime):
             models.FeedUpdate.completed_at <= before_datetime,
             *not_exists_conditions
         )
+    ).execution_options(
+        synchronize_session=False
     )
     dbconnection.get_session().execute(query)
 

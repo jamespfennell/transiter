@@ -23,7 +23,7 @@ def create_engine():
 
     :return: the engine
     """
-    connection_url = URL(
+    connection_url = URL.create(
         drivername=config.DB_DRIVER,
         username=config.DB_USERNAME,
         password=config.DB_PASSWORD,

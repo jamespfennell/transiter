@@ -77,10 +77,10 @@ def calculate_periodicity(route_pk):
         .where(models.TripStopTime.stop_pk.in_(route_stop_pks_stmt))
         .group_by(models.TripStopTime.stop_pk)
         .having(sql.func.count() > 1)
+        .subquery()
     )
-    stop_data_alias = sql.alias(stop_data_stmt)
     final_stmt = sql.select(
-        [sql.func.avg(stop_data_alias.c.time_diff / (stop_data_alias.c.number - 1))]
+        [sql.func.avg(stop_data_stmt.c.time_diff / (stop_data_stmt.c.number - 1))]
     )
     result = [row for row in session.execute(final_stmt)]
     if len(result) > 0:

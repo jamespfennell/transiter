@@ -60,6 +60,7 @@ def upgrade():
                 "UNEXPECTED_ERROR",
                 name="result",
                 native_enum=False,
+                create_constraint=True,
             ),
             nullable=True,
         ),

@@ -16,7 +16,7 @@ setup(
     license="MIT",
     entry_points={"console_scripts": ["transiterclt = transiter.clt:transiter_clt"]},
     install_requires=[
-        "alembic==1.4.2",
+        "alembic==1.5.7",
         "apscheduler==3.6.3",
         "celery==4.4.2",
         "click==7.1.1",
@@ -31,7 +31,7 @@ setup(
         "pytimeparse==1.1.8",
         "pytz==2019.3",
         "requests==2.23.0",
-        "sqlalchemy==1.3.16",
+        "sqlalchemy==1.4.2",
         "strictyaml==1.0.6",
     ],
 )

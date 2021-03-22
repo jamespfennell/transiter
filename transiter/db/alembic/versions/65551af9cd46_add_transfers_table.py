@@ -34,6 +34,7 @@ def upgrade():
                 "NO_TRANSFER",
                 name="type",
                 native_enum=False,
+                create_constraint=True,
             ),
             nullable=False,
         ),
