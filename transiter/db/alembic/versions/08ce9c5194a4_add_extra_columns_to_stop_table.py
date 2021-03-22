@@ -54,8 +54,12 @@ def upgrade():
     op.add_column("stop", sa.Column("zone_id", sa.String(), nullable=True))
 
     # Migrate data from the is_station column to the type column
-    op.get_bind().execute("update stop set type = 'PLATFORM' where not stop.is_station")
-    op.get_bind().execute("update stop set type = 'STATION' where stop.is_station")
+    op.get_bind().execute(
+        sa.text("update stop set type = 'PLATFORM' where not stop.is_station")
+    )
+    op.get_bind().execute(
+        sa.text("update stop set type = 'STATION' where stop.is_station")
+    )
 
     op.alter_column("stop", "type", nullable=False)
     op.drop_column("stop", "is_station")

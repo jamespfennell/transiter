@@ -56,7 +56,7 @@ def upgrade():
 
     # (2) Migrate some of the data from the system table over
     statement = sa.sql.select(
-        [sa.text("system.pk"), sa.text("system.raw_config"), sa.text("system.status")]
+        *[sa.text("system.pk"), sa.text("system.raw_config"), sa.text("system.status")]
     ).select_from(sa.text("system"))
     data_dicts = []
     for system_pk, raw_config, system_status in op.get_bind().execute(statement):

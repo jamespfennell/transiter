@@ -61,11 +61,15 @@ def convert_enum_to_non_native(table_name, column_name, default=None):
 
     # If there is a default set, populate all fields with the default
     if default is not None:
-        op.get_bind().execute(f"update {table_name} set {column_name} = '{default}'")
+        op.get_bind().execute(
+            sa.text(f"update {table_name} set {column_name} = '{default}'")
+        )
         op.alter_column(table_name, column_name, nullable=False)
 
     # Migrate the data over
-    op.get_bind().execute(f"update {table_name} set {column_name} = {temp_column_name}")
+    op.get_bind().execute(
+        sa.text(f"update {table_name} set {column_name} = {temp_column_name}")
+    )
 
     # Drop old column
     op.drop_column(table_name, temp_column_name)

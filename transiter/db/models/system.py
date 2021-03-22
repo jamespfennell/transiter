@@ -25,7 +25,7 @@ class System(Base):
     auto_update_enabled = Column(Boolean, nullable=False, server_default="True")
 
     updates = relationship(
-        "SystemUpdate", back_populates="system", cascade="all, delete-orphan"
+        "SystemUpdate", back_populates="system", cascade="all, delete-orphan",
     )
     alerts = relationship(
         "Alert", back_populates="system", cascade="all, delete-orphan"

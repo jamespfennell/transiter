@@ -51,7 +51,7 @@ def calculate_periodicity(route_pk):
     session = dbconnection.get_session()
 
     route_stop_pks_stmt = (
-        sql.select([models.Stop.pk])
+        sql.select(models.Stop.pk)
         .select_from(sql.join(models.Stop, models.TripStopTime).join(models.Trip))
         .where(models.Trip.route_pk == route_pk)
         .where(
@@ -65,14 +65,12 @@ def calculate_periodicity(route_pk):
     )
     stop_data_stmt = (
         sql.select(
-            [
-                sql.func.extract(
-                    "epoch",
-                    sql.func.max(models.TripStopTime.arrival_time)
-                    - sql.func.min(models.TripStopTime.arrival_time),
-                ).label("time_diff"),
-                sql.func.count().label("number"),
-            ]
+            sql.func.extract(
+                "epoch",
+                sql.func.max(models.TripStopTime.arrival_time)
+                - sql.func.min(models.TripStopTime.arrival_time),
+            ).label("time_diff"),
+            sql.func.count().label("number"),
         )
         .where(models.TripStopTime.stop_pk.in_(route_stop_pks_stmt))
         .group_by(models.TripStopTime.stop_pk)
@@ -80,7 +78,7 @@ def calculate_periodicity(route_pk):
         .subquery()
     )
     final_stmt = sql.select(
-        [sql.func.avg(stop_data_stmt.c.time_diff / (stop_data_stmt.c.number - 1))]
+        sql.func.avg(stop_data_stmt.c.time_diff / (stop_data_stmt.c.number - 1))
     )
     result = [row for row in session.execute(final_stmt)]
     if len(result) > 0:
@@ -96,10 +94,10 @@ def list_route_pks_with_current_service(route_pks):
     :return: a subset of the input
     """
     session = dbconnection.get_session()
-    stmt = sql.select([models.Route.pk]).where(
+    stmt = sql.select(models.Route.pk).where(
         sql.and_(
             sql.exists(
-                sql.select([1])
+                sql.select(1)
                 .select_from(sql.join(models.TripStopTime, models.Trip))
                 .where(models.Trip.route_pk == models.Route.pk)
                 .limit(1)

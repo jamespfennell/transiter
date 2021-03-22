@@ -22,7 +22,8 @@ def upgrade():
     )
     # Set the current stop sequence for trips with future stop times
     op.get_bind().execute(
-        """
+        sa.text(
+            """
         UPDATE trip
         SET current_stop_sequence = (
             SELECT MAX(trip_stop_time.stop_sequence)
@@ -31,14 +32,17 @@ def upgrade():
             AND trip_stop_time.future
         )
         """
+        )
     )
     # Set the current stop sequence for all other trips
     op.get_bind().execute(
-        """
+        sa.text(
+            """
         UPDATE trip
         SET current_stop_sequence = 100000
         WHERE current_stop_sequence IS NULL
         """
+        )
     )
     op.alter_column("trip", "current_stop_sequence", nullable=False)
     op.drop_column("trip_stop_time", "future")

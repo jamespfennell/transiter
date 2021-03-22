@@ -121,20 +121,20 @@ def trim_feed_updates(feed_pk, before_datetime):
     """
     not_exists_conditions = [
         ~sql.exists(
-            sql.select([sql.literal_column("1")]).where(
-                UpdatableEntity.source_pk == models.FeedUpdate.pk
-            )
+            sql.select(1).where(UpdatableEntity.source_pk == models.FeedUpdate.pk)
         )
         for UpdatableEntity in models.list_updatable_entities()
     ]
-    query = sql.delete(models.FeedUpdate).where(
-        sql.and_(
-            models.FeedUpdate.feed_pk == feed_pk,
-            models.FeedUpdate.completed_at <= before_datetime,
-            *not_exists_conditions
+    query = (
+        sql.delete(models.FeedUpdate)
+        .where(
+            sql.and_(
+                models.FeedUpdate.feed_pk == feed_pk,
+                models.FeedUpdate.completed_at <= before_datetime,
+                *not_exists_conditions
+            )
         )
-    ).execution_options(
-        synchronize_session=False
+        .execution_options(synchronize_session=False)
     )
     dbconnection.get_session().execute(query)
 

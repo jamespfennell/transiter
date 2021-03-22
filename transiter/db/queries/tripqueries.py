@@ -191,7 +191,7 @@ def get_trip_pk_to_path_map(route_pk):
     :return: map described above
     """
     statement = (
-        sql.select([models.TripStopTime.trip_pk, models.TripStopTime.stop_pk])
+        sql.select(models.TripStopTime.trip_pk, models.TripStopTime.stop_pk)
         .select_from(sql.join(models.TripStopTime, models.Trip))
         .where(models.Trip.route_pk == route_pk)
         .order_by(models.TripStopTime.trip_pk, models.TripStopTime.stop_sequence)

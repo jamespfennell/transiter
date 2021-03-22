@@ -114,3 +114,7 @@ def reset():
     dbconnection.upgrade_database()
     client.refresh_tasks()
     print("Done.")
+
+
+if __name__ == "__main__":
+    transiter_clt()

@@ -52,7 +52,7 @@ def ensure_db_connection():
     if engine is not None:
         return
     engine = create_engine()
-    session_factory = sessionmaker(bind=engine)
+    session_factory = sessionmaker(bind=engine, future=True)
     Session = scoped_session(session_factory)
 
 
