@@ -31,7 +31,7 @@ setup(
         "pytimeparse==1.1.8",
         "pytz==2019.3",
         "requests==2.23.0",
-        "sqlalchemy==1.4.2",
+        "sqlalchemy==1.4.5",
         "strictyaml==1.0.6",
     ],
 )
