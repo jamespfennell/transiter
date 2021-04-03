@@ -107,7 +107,7 @@ jobs:
           GIT_COMMIT_HASH: ${{ github.sha }}
           GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
           IS_PULL_REQUEST: ${{ github.base_ref == '' }}
-          BUILD_ID: ${{ github.run_number }}
+          BUILD_NUMBER: ${{ github.run_number }}
           CI_WEB_URL: https://github.com/jamespfennell/transiter/actions/runs/${{ github.run_id }}
         run: |
           pip install --quiet docker
@@ -125,7 +125,7 @@ jobs:
           GIT_COMMIT_HASH: ${{ github.sha }}
           GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
           IS_PULL_REQUEST: ${{ github.base_ref == '' }}
-          BUILD_ID: ${{ github.run_number }}
+          BUILD_NUMBER: ${{ github.run_number }}
           CI_WEB_URL: https://github.com/jamespfennell/transiter/actions/runs/${{ github.run_id }}
 
           DOCKER_USERNAME: jamespfennell

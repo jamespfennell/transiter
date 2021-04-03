@@ -48,7 +48,7 @@ def calculate_version():
     """
     version = calculate_base_version()
 
-    build_number = os.environ.get("BUILD_ID")
+    build_number = os.environ.get("BUILD_NUMBER")
     print("The build ID is", build_number)
     if build_number is not None:
         if not is_release():
