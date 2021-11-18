@@ -1,0 +1,4 @@
+version: v1
+name: buf.build/jamespfennell/transiter
+deps:
+  - buf.build/googleapis/googleapis

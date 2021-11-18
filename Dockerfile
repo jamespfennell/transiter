@@ -1,0 +1,50 @@
+FROM golang:1.16 AS builder
+
+WORKDIR /transiter
+
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+# Install all the code generation tools.
+RUN go install \
+    github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway \
+    github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 \
+    google.golang.org/protobuf/cmd/protoc-gen-go \
+    google.golang.org/grpc/cmd/protoc-gen-go-grpc \
+    github.com/kyleconroy/sqlc/cmd/sqlc
+RUN curl -sSL "https://github.com/bufbuild/buf/releases/download/v1.0.0-rc6/buf-$(uname -s)-$(uname -m)" \
+    -o "/usr/bin/buf"
+RUN chmod +x "/usr/bin/buf"
+
+# Generate the DB files
+COPY sqlc.yaml .
+COPY db db
+RUN sqlc generate
+
+# Generate the gRPC files
+COPY buf.gen.yaml .
+COPY buf.lock .
+COPY buf.yaml .
+COPY api api
+RUN buf generate
+
+# Move the newly generated files so that they don't get clobbered when we copy the source code in
+RUN mv internal/gen internal/genNew
+
+COPY . ./
+
+# Diff the newly generated files with the ones in source control.
+# If there are differences, this will fail
+RUN diff --brief --recursive internal/gen internal/genNew
+RUN rm -r internal/genNew
+
+RUN go build .
+
+# Only build the image if the tests pass
+RUN go test ./...
+
+# We use this buildpack image because it already has SSL certificates installed
+FROM buildpack-deps:buster-curl
+COPY --from=builder /transiter/transiter /usr/bin
+ENTRYPOINT ["transiter"]

@@ -1,0 +1,84 @@
+syntax = "proto3";
+option go_package = "github.com/jamespfennell/transiter/api";
+
+import "google/api/annotations.proto";
+
+service Transiter {
+  rpc Entrypoint (EntrypointRequest) returns (EntrypointReply) {
+    option (google.api.http) = {
+            get: "/"
+        };
+  }
+
+  rpc ListSystems (ListSystemsRequest) returns (ListSystemsReply) {
+    option (google.api.http) = {
+            get: "/systems"
+        };
+  }
+  
+  rpc GetSystem (GetSystemRequest) returns (GetSystemReply) {
+    option (google.api.http) = {
+            get: "/systems/{id}"
+        };
+  }
+}
+
+message EntrypointRequest {}
+
+message EntrypointReply {
+
+  message TransiterDetails {
+    string version = 1;
+    string href = 2;
+    string build_number = 3;
+    string built_at = 4;
+    string built_at_timestamp = 5;
+    string git_commit_hash = 6;
+    string build_href = 7;
+  }
+  TransiterDetails transiter = 1;
+  
+  CountAndHref systems = 2;
+}
+
+message ListSystemsRequest {}
+
+message ListSystemsReply {
+  repeated SystemShort systems = 1;
+}
+
+message GetSystemRequest {
+  string id = 1;
+}
+
+message GetSystemReply {
+  string id = 1;
+  string name = 2;
+  SystemStatus status = 3;
+  CountAndHref agencies = 4;
+  CountAndHref feeds = 5;
+  CountAndHref routes = 6;
+  CountAndHref stops = 7;
+  CountAndHref transfers = 8;
+}
+
+message CountAndHref {
+  int64 count = 1;
+  string href = 2;
+}
+
+enum SystemStatus {
+  UNKNOWN = 0;
+  SCHEDULED = 1;
+  INSTALLING = 2;
+  ACTIVE = 3;
+  INSTALL_FAILED = 4;
+  DELETING = 5;
+}
+
+message SystemShort {
+  string id = 1;
+  string name = 2;
+  SystemStatus status = 3;
+  string href = 4;
+}

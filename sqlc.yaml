@@ -1,0 +1,8 @@
+version: 1
+packages:
+  - path: "internal/gen/db"
+    name: "db"
+    engine: "postgresql"
+    schema: "db/schema.sql"
+    queries: "db/query.sql"
+    emit_interface: true
