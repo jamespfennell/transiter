@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.6.0
+	github.com/jackc/pgx/v4 v4.14.0
 	github.com/kyleconroy/sqlc v1.10.0
 	github.com/lib/pq v1.10.4
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect

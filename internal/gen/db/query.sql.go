@@ -6,7 +6,34 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	"github.com/lib/pq"
 )
+
+const calculatePeriodicityForRoute = `-- name: CalculatePeriodicityForRoute :one
+WITH route_stop_pks AS (
+  SELECT DISTINCT trip_stop_time.stop_pk stop_pk FROM trip_stop_time
+    INNER JOIN trip ON trip.pk = trip_stop_time.trip_pk
+  WHERE trip.route_pk = $1
+    AND trip.current_stop_sequence >= 0
+    AND trip.current_stop_sequence <= trip_stop_time.stop_sequence
+    AND trip_stop_time.arrival_time IS NOT NULL
+), diffs AS (
+  SELECT EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) diff, COUNT(*) n
+  FROM trip_stop_time
+    INNER JOIN route_stop_pks ON route_stop_pks.stop_pk = trip_stop_time.stop_pk
+  GROUP BY trip_stop_time.stop_pk
+  HAVING COUNT(*) > 1
+)
+SELECT coalesce(AVG(diff / (n-1)), -1) FROM diffs
+`
+
+func (q *Queries) CalculatePeriodicityForRoute(ctx context.Context, routePk int32) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, calculatePeriodicityForRoute, routePk)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
 
 const countAgenciesInSystem = `-- name: CountAgenciesInSystem :one
 SELECT COUNT(*) FROM agency WHERE system_pk = $1
@@ -74,6 +101,239 @@ func (q *Queries) CountTransfersInSystem(ctx context.Context, systemPk sql.NullI
 	return count, err
 }
 
+const getAgencyInSystem = `-- name: GetAgencyInSystem :one
+SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency
+    INNER JOIN system ON agency.system_pk = system.pk
+WHERE system.id = $1
+    AND agency.id = $2
+`
+
+type GetAgencyInSystemParams struct {
+	SystemID string
+	AgencyID string
+}
+
+func (q *Queries) GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error) {
+	row := q.db.QueryRowContext(ctx, getAgencyInSystem, arg.SystemID, arg.AgencyID)
+	var i Agency
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.SourcePk,
+		&i.Name,
+		&i.Url,
+		&i.Timezone,
+		&i.Language,
+		&i.Phone,
+		&i.FareUrl,
+		&i.Email,
+	)
+	return i, err
+}
+
+const getFeedInSystem = `-- name: GetFeedInSystem :one
+SELECT feed.pk, feed.id, feed.system_pk, feed.custom_parser, feed.url, feed.headers, feed.auto_update_enabled, feed.auto_update_period, feed.required_for_install, feed.built_in_parser, feed.http_timeout, feed.parser_options FROM feed
+    INNER JOIN system ON feed.system_pk = system.pk
+    WHERE system.id = $1
+    AND feed.id = $2
+`
+
+type GetFeedInSystemParams struct {
+	SystemID string
+	FeedID   string
+}
+
+func (q *Queries) GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error) {
+	row := q.db.QueryRowContext(ctx, getFeedInSystem, arg.SystemID, arg.FeedID)
+	var i Feed
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.CustomParser,
+		&i.Url,
+		&i.Headers,
+		&i.AutoUpdateEnabled,
+		&i.AutoUpdatePeriod,
+		&i.RequiredForInstall,
+		&i.BuiltInParser,
+		&i.HttpTimeout,
+		&i.ParserOptions,
+	)
+	return i, err
+}
+
+const getLastStopsForTrips = `-- name: GetLastStopsForTrips :many
+WITH last_stop_sequence AS (
+  SELECT trip_pk, MAX(stop_sequence) as stop_sequence
+    FROM trip_stop_time
+    WHERE trip_pk = ANY($1::int[])
+    GROUP BY trip_pk
+)
+SELECT lss.trip_pk, stop.id, stop.name
+  FROM last_stop_sequence lss
+  INNER JOIN trip_stop_time
+    ON lss.trip_pk = trip_stop_time.trip_pk 
+    AND lss.stop_sequence = trip_stop_time.stop_sequence
+  INNER JOIN stop
+    ON trip_stop_time.stop_pk = stop.pk
+`
+
+type GetLastStopsForTripsRow struct {
+	TripPk int32
+	ID     string
+	Name   string
+}
+
+func (q *Queries) GetLastStopsForTrips(ctx context.Context, tripPks []int32) ([]GetLastStopsForTripsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getLastStopsForTrips, pq.Array(tripPks))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetLastStopsForTripsRow
+	for rows.Next() {
+		var i GetLastStopsForTripsRow
+		if err := rows.Scan(&i.TripPk, &i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRouteInSystem = `-- name: GetRouteInSystem :one
+SELECT route.pk, route.id, route.system_pk, route.source_pk, route.color, route.text_color, route.short_name, route.long_name, route.description, route.url, route.sort_order, route.type, route.agency_pk, route.continuous_drop_off, route.continuous_pickup, agency.id agency_id, agency.name agency_name FROM route
+    INNER JOIN system ON route.system_pk = system.pk
+    INNER JOIN agency ON route.agency_pk = agency.pk
+    WHERE system.id = $1
+    AND route.id = $2
+`
+
+type GetRouteInSystemParams struct {
+	SystemID string
+	RouteID  string
+}
+
+type GetRouteInSystemRow struct {
+	Pk                int32
+	ID                string
+	SystemPk          int32
+	SourcePk          int32
+	Color             sql.NullString
+	TextColor         sql.NullString
+	ShortName         sql.NullString
+	LongName          sql.NullString
+	Description       sql.NullString
+	Url               sql.NullString
+	SortOrder         sql.NullInt32
+	Type              sql.NullString
+	AgencyPk          int32
+	ContinuousDropOff string
+	ContinuousPickup  string
+	AgencyID          string
+	AgencyName        string
+}
+
+func (q *Queries) GetRouteInSystem(ctx context.Context, arg GetRouteInSystemParams) (GetRouteInSystemRow, error) {
+	row := q.db.QueryRowContext(ctx, getRouteInSystem, arg.SystemID, arg.RouteID)
+	var i GetRouteInSystemRow
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.SourcePk,
+		&i.Color,
+		&i.TextColor,
+		&i.ShortName,
+		&i.LongName,
+		&i.Description,
+		&i.Url,
+		&i.SortOrder,
+		&i.Type,
+		&i.AgencyPk,
+		&i.ContinuousDropOff,
+		&i.ContinuousPickup,
+		&i.AgencyID,
+		&i.AgencyName,
+	)
+	return i, err
+}
+
+const getStopInSystem = `-- name: GetStopInSystem :one
+SELECT stop.pk, stop.id, system_pk, source_pk, parent_stop_pk, stop.name, longitude, latitude, url, code, description, platform_code, stop.timezone, type, wheelchair_boarding, zone_id, system.pk, system.id, system.name, system.timezone, auto_update_enabled, status FROM stop
+    INNER JOIN system ON stop.system_pk = system.pk
+    WHERE system.id = $1
+    AND stop.id = $2
+`
+
+type GetStopInSystemParams struct {
+	SystemID string
+	StopID   string
+}
+
+type GetStopInSystemRow struct {
+	Pk                 int32
+	ID                 string
+	SystemPk           int32
+	SourcePk           int32
+	ParentStopPk       sql.NullInt32
+	Name               string
+	Longitude          sql.NullString
+	Latitude           sql.NullString
+	Url                sql.NullString
+	Code               sql.NullString
+	Description        sql.NullString
+	PlatformCode       sql.NullString
+	Timezone           sql.NullString
+	Type               string
+	WheelchairBoarding sql.NullString
+	ZoneID             sql.NullString
+	Pk_2               int32
+	ID_2               string
+	Name_2             string
+	Timezone_2         sql.NullString
+	AutoUpdateEnabled  bool
+	Status             string
+}
+
+func (q *Queries) GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (GetStopInSystemRow, error) {
+	row := q.db.QueryRowContext(ctx, getStopInSystem, arg.SystemID, arg.StopID)
+	var i GetStopInSystemRow
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.SourcePk,
+		&i.ParentStopPk,
+		&i.Name,
+		&i.Longitude,
+		&i.Latitude,
+		&i.Url,
+		&i.Code,
+		&i.Description,
+		&i.PlatformCode,
+		&i.Timezone,
+		&i.Type,
+		&i.WheelchairBoarding,
+		&i.ZoneID,
+		&i.Pk_2,
+		&i.ID_2,
+		&i.Name_2,
+		&i.Timezone_2,
+		&i.AutoUpdateEnabled,
+		&i.Status,
+	)
+	return i, err
+}
+
 const getSystem = `-- name: GetSystem :one
 SELECT pk, id, name, timezone, auto_update_enabled, status FROM system
 WHERE id = $1 LIMIT 1
@@ -91,6 +351,904 @@ func (q *Queries) GetSystem(ctx context.Context, id string) (System, error) {
 		&i.Status,
 	)
 	return i, err
+}
+
+const getTrip = `-- name: GetTrip :one
+SELECT trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.delay, trip.started_at, trip.updated_at, trip.current_stop_sequence, vehicle.id AS vehicle_id, route.id route_id, route.color route_color FROM trip
+    INNER JOIN route ON route.pk = trip.route_pk
+    INNER JOIN system ON system.pk = route.system_pk
+    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+WHERE trip.id = $1
+    AND route.id = $2
+    AND system.id = $3
+`
+
+type GetTripParams struct {
+	TripID   string
+	RouteID  string
+	SystemID string
+}
+
+type GetTripRow struct {
+	Pk                  int32
+	ID                  string
+	RoutePk             int32
+	SourcePk            int32
+	DirectionID         sql.NullBool
+	Delay               sql.NullInt32
+	StartedAt           sql.NullTime
+	UpdatedAt           sql.NullTime
+	CurrentStopSequence sql.NullInt32
+	VehicleID           sql.NullString
+	RouteID             string
+	RouteColor          sql.NullString
+}
+
+func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error) {
+	row := q.db.QueryRowContext(ctx, getTrip, arg.TripID, arg.RouteID, arg.SystemID)
+	var i GetTripRow
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.RoutePk,
+		&i.SourcePk,
+		&i.DirectionID,
+		&i.Delay,
+		&i.StartedAt,
+		&i.UpdatedAt,
+		&i.CurrentStopSequence,
+		&i.VehicleID,
+		&i.RouteID,
+		&i.RouteColor,
+	)
+	return i, err
+}
+
+const listActiveAlertsForAgency = `-- name: ListActiveAlertsForAgency :many
+SELECT alert.id, alert.cause, alert.effect
+FROM alert_agency
+    INNER JOIN alert ON alert_agency.alert_pk = alert.pk
+WHERE alert_agency.agency_pk = $1
+    AND EXISTS (
+        SELECT 1 FROM alert_active_period
+        WHERE alert_active_period.alert_pk = alert.pk
+        AND (
+            alert_active_period.starts_at < $2
+            OR alert_active_period.starts_at IS NULL
+        )
+        AND (
+            alert_active_period.ends_at > $2
+            OR alert_active_period.ends_at IS NULL
+        )
+    )
+`
+
+type ListActiveAlertsForAgencyParams struct {
+	AgencyPk    int32
+	PresentTime sql.NullTime
+}
+
+type ListActiveAlertsForAgencyRow struct {
+	ID     string
+	Cause  string
+	Effect string
+}
+
+func (q *Queries) ListActiveAlertsForAgency(ctx context.Context, arg ListActiveAlertsForAgencyParams) ([]ListActiveAlertsForAgencyRow, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveAlertsForAgency, arg.AgencyPk, arg.PresentTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveAlertsForAgencyRow
+	for rows.Next() {
+		var i ListActiveAlertsForAgencyRow
+		if err := rows.Scan(&i.ID, &i.Cause, &i.Effect); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveAlertsForRoutes = `-- name: ListActiveAlertsForRoutes :many
+SELECT route.pk route_pk, alert.pk, alert.id, alert.cause, alert.effect, alert_active_period.starts_at, alert_active_period.ends_at
+FROM route
+    INNER JOIN alert_route ON route.pk = alert_route.route_pk
+    INNER JOIN alert ON alert_route.alert_pk = alert.pk
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE route.pk = ANY($1::int[])
+    AND (
+        alert_active_period.starts_at < $2
+        OR alert_active_period.starts_at IS NULL
+    )
+    AND (
+        alert_active_period.ends_at > $2
+        OR alert_active_period.ends_at IS NULL
+    )
+ORDER BY alert.id ASC
+`
+
+type ListActiveAlertsForRoutesParams struct {
+	RoutePks    []int32
+	PresentTime sql.NullTime
+}
+
+type ListActiveAlertsForRoutesRow struct {
+	RoutePk  int32
+	Pk       int32
+	ID       string
+	Cause    string
+	Effect   string
+	StartsAt sql.NullTime
+	EndsAt   sql.NullTime
+}
+
+func (q *Queries) ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveAlertsForRoutes, pq.Array(arg.RoutePks), arg.PresentTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveAlertsForRoutesRow
+	for rows.Next() {
+		var i ListActiveAlertsForRoutesRow
+		if err := rows.Scan(
+			&i.RoutePk,
+			&i.Pk,
+			&i.ID,
+			&i.Cause,
+			&i.Effect,
+			&i.StartsAt,
+			&i.EndsAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveAlertsForStops = `-- name: ListActiveAlertsForStops :many
+SELECT stop.pk stop_pk, alert.pk, alert.id, alert.cause, alert.effect, alert_active_period.starts_at, alert_active_period.ends_at
+FROM stop
+    INNER JOIN alert_stop ON stop.pk = alert_stop.stop_pk
+    INNER JOIN alert ON alert_stop.alert_pk = alert.pk
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE stop.pk = ANY($1::int[])
+    AND (
+        alert_active_period.starts_at < $2
+        OR alert_active_period.starts_at IS NULL
+    )
+    AND (
+        alert_active_period.ends_at > $2
+        OR alert_active_period.ends_at IS NULL
+    )
+ORDER BY alert.id ASC
+`
+
+type ListActiveAlertsForStopsParams struct {
+	StopPks     []int32
+	PresentTime sql.NullTime
+}
+
+type ListActiveAlertsForStopsRow struct {
+	StopPk   int32
+	Pk       int32
+	ID       string
+	Cause    string
+	Effect   string
+	StartsAt sql.NullTime
+	EndsAt   sql.NullTime
+}
+
+func (q *Queries) ListActiveAlertsForStops(ctx context.Context, arg ListActiveAlertsForStopsParams) ([]ListActiveAlertsForStopsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveAlertsForStops, pq.Array(arg.StopPks), arg.PresentTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveAlertsForStopsRow
+	for rows.Next() {
+		var i ListActiveAlertsForStopsRow
+		if err := rows.Scan(
+			&i.StopPk,
+			&i.Pk,
+			&i.ID,
+			&i.Cause,
+			&i.Effect,
+			&i.StartsAt,
+			&i.EndsAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAgenciesInSystem = `-- name: ListAgenciesInSystem :many
+SELECT pk, id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email FROM agency WHERE system_pk = $1 ORDER BY id
+`
+
+func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int32) ([]Agency, error) {
+	rows, err := q.db.QueryContext(ctx, listAgenciesInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Agency
+	for rows.Next() {
+		var i Agency
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.Name,
+			&i.Url,
+			&i.Timezone,
+			&i.Language,
+			&i.Phone,
+			&i.FareUrl,
+			&i.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDirectionNameRulesForStops = `-- name: ListDirectionNameRulesForStops :many
+SELECT pk, id, stop_pk, source_pk, priority, direction_id, track, name FROM direction_name_rule
+WHERE stop_pk = ANY($1::int[])
+ORDER BY priority ASC
+`
+
+func (q *Queries) ListDirectionNameRulesForStops(ctx context.Context, stopPks []int32) ([]DirectionNameRule, error) {
+	rows, err := q.db.QueryContext(ctx, listDirectionNameRulesForStops, pq.Array(stopPks))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DirectionNameRule
+	for rows.Next() {
+		var i DirectionNameRule
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.StopPk,
+			&i.SourcePk,
+			&i.Priority,
+			&i.DirectionID,
+			&i.Track,
+			&i.Name,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFeedsInSystem = `-- name: ListFeedsInSystem :many
+SELECT pk, id, system_pk, custom_parser, url, headers, auto_update_enabled, auto_update_period, required_for_install, built_in_parser, http_timeout, parser_options FROM feed WHERE system_pk = $1 ORDER BY id
+`
+
+func (q *Queries) ListFeedsInSystem(ctx context.Context, systemPk int32) ([]Feed, error) {
+	rows, err := q.db.QueryContext(ctx, listFeedsInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Feed
+	for rows.Next() {
+		var i Feed
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.CustomParser,
+			&i.Url,
+			&i.Headers,
+			&i.AutoUpdateEnabled,
+			&i.AutoUpdatePeriod,
+			&i.RequiredForInstall,
+			&i.BuiltInParser,
+			&i.HttpTimeout,
+			&i.ParserOptions,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMessagesForAlerts = `-- name: ListMessagesForAlerts :many
+SELECT pk, alert_pk, header, description, url, language
+FROM alert_message 
+WHERE alert_pk = ANY($1::int[])
+`
+
+func (q *Queries) ListMessagesForAlerts(ctx context.Context, alertPks []int32) ([]AlertMessage, error) {
+	rows, err := q.db.QueryContext(ctx, listMessagesForAlerts, pq.Array(alertPks))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AlertMessage
+	for rows.Next() {
+		var i AlertMessage
+		if err := rows.Scan(
+			&i.Pk,
+			&i.AlertPk,
+			&i.Header,
+			&i.Description,
+			&i.Url,
+			&i.Language,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRoutesByPk = `-- name: ListRoutesByPk :many
+SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE route.pk = ANY($1::int[])
+`
+
+func (q *Queries) ListRoutesByPk(ctx context.Context, routePks []int32) ([]Route, error) {
+	rows, err := q.db.QueryContext(ctx, listRoutesByPk, pq.Array(routePks))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Route
+	for rows.Next() {
+		var i Route
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.Color,
+			&i.TextColor,
+			&i.ShortName,
+			&i.LongName,
+			&i.Description,
+			&i.Url,
+			&i.SortOrder,
+			&i.Type,
+			&i.AgencyPk,
+			&i.ContinuousDropOff,
+			&i.ContinuousPickup,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRoutesInAgency = `-- name: ListRoutesInAgency :many
+SELECT route.id, route.color FROM route
+WHERE route.agency_pk = $1
+`
+
+type ListRoutesInAgencyRow struct {
+	ID    string
+	Color sql.NullString
+}
+
+func (q *Queries) ListRoutesInAgency(ctx context.Context, agencyPk int32) ([]ListRoutesInAgencyRow, error) {
+	rows, err := q.db.QueryContext(ctx, listRoutesInAgency, agencyPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListRoutesInAgencyRow
+	for rows.Next() {
+		var i ListRoutesInAgencyRow
+		if err := rows.Scan(&i.ID, &i.Color); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRoutesInSystem = `-- name: ListRoutesInSystem :many
+SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE system_pk = $1 ORDER BY id
+`
+
+func (q *Queries) ListRoutesInSystem(ctx context.Context, systemPk int32) ([]Route, error) {
+	rows, err := q.db.QueryContext(ctx, listRoutesInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Route
+	for rows.Next() {
+		var i Route
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.Color,
+			&i.TextColor,
+			&i.ShortName,
+			&i.LongName,
+			&i.Description,
+			&i.Url,
+			&i.SortOrder,
+			&i.Type,
+			&i.AgencyPk,
+			&i.ContinuousDropOff,
+			&i.ContinuousPickup,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listServiceMapsForRoute = `-- name: ListServiceMapsForRoute :many
+SELECT DISTINCT service_map_group.id group_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
+FROM service_map_group
+  INNER JOIN system ON service_map_group.system_pk = system.pk
+  INNER JOIN route ON route.system_pk = system.pk
+  LEFT JOIN service_map ON service_map.group_pk = service_map_group.pk AND service_map.route_pk = $1
+  LEFT JOIN service_map_vertex ON service_map_vertex.map_pk = service_map.pk
+  LEFT JOIN stop ON stop.pk = service_map_vertex.stop_pk
+WHERE service_map_group.use_for_stops_in_route AND route.pk = $1
+ORDER BY service_map_group.id, service_map_vertex.position
+`
+
+type ListServiceMapsForRouteRow struct {
+	GroupID  string
+	Position sql.NullInt32
+	StopID   sql.NullString
+	StopName sql.NullString
+}
+
+func (q *Queries) ListServiceMapsForRoute(ctx context.Context, routePk int32) ([]ListServiceMapsForRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, listServiceMapsForRoute, routePk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceMapsForRouteRow
+	for rows.Next() {
+		var i ListServiceMapsForRouteRow
+		if err := rows.Scan(
+			&i.GroupID,
+			&i.Position,
+			&i.StopID,
+			&i.StopName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listServiceMapsForStops = `-- name: ListServiceMapsForStops :many
+WITH RECURSIVE descendent AS (
+	SELECT initial.pk, initial.parent_stop_pk, initial.pk AS descendent_pk
+	  FROM stop initial
+    WHERE initial.pk = ANY($1::int[])
+	UNION (
+    SELECT parent.pk, parent.parent_stop_pk, descendent.pk AS descendent_pk
+      FROM stop parent
+      INNER JOIN descendent ON (
+        descendent.parent_stop_pk = parent.pk OR
+        descendent.pk = parent.pk
+      )
+  )
+)
+SELECT descendent.pk stop_pk, service_map_group.id service_map_group_id,
+  route.id route_id, route.color route_color, system.id system_id
+FROM descendent
+  LEFT JOIN service_map_vertex smv ON smv.stop_pk = descendent.descendent_pk
+  INNER JOIN service_map ON service_map.pk = smv.map_pk
+  INNER JOIN service_map_group ON service_map_group.pk = service_map.group_pk
+  LEFT JOIN route ON service_map.route_pk = route.pk
+  INNER JOIN system ON system.pk = route.system_pk
+WHERE service_map_group.use_for_routes_at_stop
+ORDER BY system_id, route_id
+`
+
+type ListServiceMapsForStopsRow struct {
+	StopPk            int32
+	ServiceMapGroupID string
+	RouteID           string
+	RouteColor        sql.NullString
+	SystemID          string
+}
+
+func (q *Queries) ListServiceMapsForStops(ctx context.Context, stopPks []int32) ([]ListServiceMapsForStopsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listServiceMapsForStops, pq.Array(stopPks))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceMapsForStopsRow
+	for rows.Next() {
+		var i ListServiceMapsForStopsRow
+		if err := rows.Scan(
+			&i.StopPk,
+			&i.ServiceMapGroupID,
+			&i.RouteID,
+			&i.RouteColor,
+			&i.SystemID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listServiceMapsGroupIDsForStops = `-- name: ListServiceMapsGroupIDsForStops :many
+SELECT stop.pk, service_map_group.id
+FROM service_map_group
+    INNER JOIN stop ON service_map_group.system_pk = stop.system_pk
+WHERE service_map_group.use_for_routes_at_stop
+    AND stop.pk = ANY($1::int[])
+`
+
+type ListServiceMapsGroupIDsForStopsRow struct {
+	Pk int32
+	ID string
+}
+
+func (q *Queries) ListServiceMapsGroupIDsForStops(ctx context.Context, stopPks []int32) ([]ListServiceMapsGroupIDsForStopsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listServiceMapsGroupIDsForStops, pq.Array(stopPks))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceMapsGroupIDsForStopsRow
+	for rows.Next() {
+		var i ListServiceMapsGroupIDsForStopsRow
+		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStopTimesAtStops = `-- name: ListStopTimesAtStops :many
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.delay, trip.started_at, trip.updated_at, trip.current_stop_sequence, vehicle.id vehicle_id FROM trip_stop_time
+    INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
+    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+    WHERE trip_stop_time.stop_pk = ANY($1::int[])
+    AND trip.current_stop_sequence >= 0
+    AND trip.current_stop_sequence <= trip_stop_time.stop_sequence
+    ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time
+`
+
+type ListStopTimesAtStopsRow struct {
+	Pk                   int32
+	StopPk               int32
+	TripPk               int32
+	ArrivalTime          sql.NullTime
+	ArrivalDelay         sql.NullInt32
+	ArrivalUncertainty   sql.NullInt32
+	DepartureTime        sql.NullTime
+	DepartureDelay       sql.NullInt32
+	DepartureUncertainty sql.NullInt32
+	StopSequence         int32
+	Track                sql.NullString
+	Pk_2                 int32
+	ID                   string
+	RoutePk              int32
+	SourcePk             int32
+	DirectionID          sql.NullBool
+	Delay                sql.NullInt32
+	StartedAt            sql.NullTime
+	UpdatedAt            sql.NullTime
+	CurrentStopSequence  sql.NullInt32
+	VehicleID            sql.NullString
+}
+
+func (q *Queries) ListStopTimesAtStops(ctx context.Context, stopPks []int32) ([]ListStopTimesAtStopsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listStopTimesAtStops, pq.Array(stopPks))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStopTimesAtStopsRow
+	for rows.Next() {
+		var i ListStopTimesAtStopsRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.StopPk,
+			&i.TripPk,
+			&i.ArrivalTime,
+			&i.ArrivalDelay,
+			&i.ArrivalUncertainty,
+			&i.DepartureTime,
+			&i.DepartureDelay,
+			&i.DepartureUncertainty,
+			&i.StopSequence,
+			&i.Track,
+			&i.Pk_2,
+			&i.ID,
+			&i.RoutePk,
+			&i.SourcePk,
+			&i.DirectionID,
+			&i.Delay,
+			&i.StartedAt,
+			&i.UpdatedAt,
+			&i.CurrentStopSequence,
+			&i.VehicleID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStopsInStopTree = `-- name: ListStopsInStopTree :many
+WITH RECURSIVE 
+ancestor AS (
+	SELECT initial.pk, initial.parent_stop_pk
+	  FROM stop initial
+	  WHERE	initial.pk = $1
+	UNION
+	SELECT parent.pk, parent.parent_stop_pk
+		FROM stop parent
+		INNER JOIN ancestor ON ancestor.parent_stop_pk = parent.pk
+),
+descendent AS (
+	SELECT pk, parent_stop_pk FROM ancestor
+	UNION
+	SELECT child.pk, child.parent_stop_pk
+		FROM stop child
+		INNER JOIN descendent ON descendent.pk = child.parent_stop_pk
+) 
+SELECT stop.pk, stop.id, stop.system_pk, stop.source_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id FROM stop
+  INNER JOIN descendent
+  ON stop.pk = descendent.pk
+`
+
+func (q *Queries) ListStopsInStopTree(ctx context.Context, pk int32) ([]Stop, error) {
+	rows, err := q.db.QueryContext(ctx, listStopsInStopTree, pk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Stop
+	for rows.Next() {
+		var i Stop
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.ParentStopPk,
+			&i.Name,
+			&i.Longitude,
+			&i.Latitude,
+			&i.Url,
+			&i.Code,
+			&i.Description,
+			&i.PlatformCode,
+			&i.Timezone,
+			&i.Type,
+			&i.WheelchairBoarding,
+			&i.ZoneID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStopsInSystem = `-- name: ListStopsInSystem :many
+SELECT pk, id, system_pk, source_pk, parent_stop_pk, name, longitude, latitude, url, code, description, platform_code, timezone, type, wheelchair_boarding, zone_id FROM stop WHERE system_pk = $1 
+    ORDER BY id
+`
+
+func (q *Queries) ListStopsInSystem(ctx context.Context, systemPk int32) ([]Stop, error) {
+	rows, err := q.db.QueryContext(ctx, listStopsInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Stop
+	for rows.Next() {
+		var i Stop
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.ParentStopPk,
+			&i.Name,
+			&i.Longitude,
+			&i.Latitude,
+			&i.Url,
+			&i.Code,
+			&i.Description,
+			&i.PlatformCode,
+			&i.Timezone,
+			&i.Type,
+			&i.WheelchairBoarding,
+			&i.ZoneID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStopsTimesForTrip = `-- name: ListStopsTimesForTrip :many
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, stop.id stop_id, stop.name stop_name
+FROM trip_stop_time
+    INNER JOIN stop ON trip_stop_time.stop_pk = stop.pk
+WHERE trip_stop_time.trip_pk = $1
+ORDER BY trip_stop_time.stop_sequence ASC
+`
+
+type ListStopsTimesForTripRow struct {
+	Pk                   int32
+	StopPk               int32
+	TripPk               int32
+	ArrivalTime          sql.NullTime
+	ArrivalDelay         sql.NullInt32
+	ArrivalUncertainty   sql.NullInt32
+	DepartureTime        sql.NullTime
+	DepartureDelay       sql.NullInt32
+	DepartureUncertainty sql.NullInt32
+	StopSequence         int32
+	Track                sql.NullString
+	StopID               string
+	StopName             string
+}
+
+func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int32) ([]ListStopsTimesForTripRow, error) {
+	rows, err := q.db.QueryContext(ctx, listStopsTimesForTrip, tripPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStopsTimesForTripRow
+	for rows.Next() {
+		var i ListStopsTimesForTripRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.StopPk,
+			&i.TripPk,
+			&i.ArrivalTime,
+			&i.ArrivalDelay,
+			&i.ArrivalUncertainty,
+			&i.DepartureTime,
+			&i.DepartureDelay,
+			&i.DepartureUncertainty,
+			&i.StopSequence,
+			&i.Track,
+			&i.StopID,
+			&i.StopName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listSystems = `-- name: ListSystems :many
@@ -112,6 +1270,230 @@ func (q *Queries) ListSystems(ctx context.Context) ([]System, error) {
 			&i.Name,
 			&i.Timezone,
 			&i.AutoUpdateEnabled,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTransfersFromStops = `-- name: ListTransfersFromStops :many
+  SELECT transfer.from_stop_pk,
+      transfer.to_stop_pk, stop.id to_id, stop.name to_name, 
+      transfer.type, transfer.min_transfer_time, transfer.distance
+  FROM transfer
+  INNER JOIN stop
+    ON stop.pk = transfer.to_stop_pk
+  WHERE transfer.from_stop_pk = ANY($1::int[])
+`
+
+type ListTransfersFromStopsRow struct {
+	FromStopPk      int32
+	ToStopPk        int32
+	ToID            string
+	ToName          string
+	Type            string
+	MinTransferTime sql.NullInt32
+	Distance        sql.NullInt32
+}
+
+func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int32) ([]ListTransfersFromStopsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTransfersFromStops, pq.Array(fromStopPks))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTransfersFromStopsRow
+	for rows.Next() {
+		var i ListTransfersFromStopsRow
+		if err := rows.Scan(
+			&i.FromStopPk,
+			&i.ToStopPk,
+			&i.ToID,
+			&i.ToName,
+			&i.Type,
+			&i.MinTransferTime,
+			&i.Distance,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTransfersInSystem = `-- name: ListTransfersInSystem :many
+SELECT 
+    transfer.pk, transfer.source_pk, transfer.config_source_pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.distance,
+    from_stop.id from_stop_id, from_stop.name from_stop_name, from_system.id from_system_id,
+    to_stop.id to_stop_id, to_stop.name to_stop_name, to_system.id to_system_id
+FROM transfer
+    INNER JOIN stop from_stop ON from_stop.pk = transfer.from_stop_pk
+    INNER JOIN system from_system ON from_stop.system_pk = from_system.pk
+    INNER JOIN stop to_stop ON to_stop.pk = transfer.to_stop_pk
+    INNER JOIN system to_system ON to_stop.system_pk = to_system.pk
+WHERE transfer.system_pk = $1 
+ORDER BY transfer.pk
+`
+
+type ListTransfersInSystemRow struct {
+	Pk              int32
+	SourcePk        sql.NullInt32
+	ConfigSourcePk  sql.NullInt32
+	SystemPk        sql.NullInt32
+	FromStopPk      int32
+	ToStopPk        int32
+	Type            string
+	MinTransferTime sql.NullInt32
+	Distance        sql.NullInt32
+	FromStopID      string
+	FromStopName    string
+	FromSystemID    string
+	ToStopID        string
+	ToStopName      string
+	ToSystemID      string
+}
+
+func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt32) ([]ListTransfersInSystemRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTransfersInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTransfersInSystemRow
+	for rows.Next() {
+		var i ListTransfersInSystemRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.SourcePk,
+			&i.ConfigSourcePk,
+			&i.SystemPk,
+			&i.FromStopPk,
+			&i.ToStopPk,
+			&i.Type,
+			&i.MinTransferTime,
+			&i.Distance,
+			&i.FromStopID,
+			&i.FromStopName,
+			&i.FromSystemID,
+			&i.ToStopID,
+			&i.ToStopName,
+			&i.ToSystemID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTripsInRoute = `-- name: ListTripsInRoute :many
+SELECT trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.delay, trip.started_at, trip.updated_at, trip.current_stop_sequence, vehicle.id vehicle_id FROM trip 
+    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+WHERE trip.route_pk = $1
+ORDER BY trip.id
+`
+
+type ListTripsInRouteRow struct {
+	Pk                  int32
+	ID                  string
+	RoutePk             int32
+	SourcePk            int32
+	DirectionID         sql.NullBool
+	Delay               sql.NullInt32
+	StartedAt           sql.NullTime
+	UpdatedAt           sql.NullTime
+	CurrentStopSequence sql.NullInt32
+	VehicleID           sql.NullString
+}
+
+func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int32) ([]ListTripsInRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTripsInRoute, routePk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTripsInRouteRow
+	for rows.Next() {
+		var i ListTripsInRouteRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.RoutePk,
+			&i.SourcePk,
+			&i.DirectionID,
+			&i.Delay,
+			&i.StartedAt,
+			&i.UpdatedAt,
+			&i.CurrentStopSequence,
+			&i.VehicleID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUpdatesInFeed = `-- name: ListUpdatesInFeed :many
+SELECT pk, feed_pk, content_length, completed_at, content_created_at, content_hash, download_duration, result, num_parsed_entities, num_added_entities, num_updated_entities, num_deleted_entities, result_message, scheduled_at, total_duration, update_type, status FROM feed_update 
+WHERE feed_pk = $1
+ORDER BY pk DESC
+LIMIT 100
+`
+
+func (q *Queries) ListUpdatesInFeed(ctx context.Context, feedPk int32) ([]FeedUpdate, error) {
+	rows, err := q.db.QueryContext(ctx, listUpdatesInFeed, feedPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FeedUpdate
+	for rows.Next() {
+		var i FeedUpdate
+		if err := rows.Scan(
+			&i.Pk,
+			&i.FeedPk,
+			&i.ContentLength,
+			&i.CompletedAt,
+			&i.ContentCreatedAt,
+			&i.ContentHash,
+			&i.DownloadDuration,
+			&i.Result,
+			&i.NumParsedEntities,
+			&i.NumAddedEntities,
+			&i.NumUpdatedEntities,
+			&i.NumDeletedEntities,
+			&i.ResultMessage,
+			&i.ScheduledAt,
+			&i.TotalDuration,
+			&i.UpdateType,
 			&i.Status,
 		); err != nil {
 			return nil, err

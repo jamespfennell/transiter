@@ -16,9 +16,81 @@ service Transiter {
         };
   }
   
-  rpc GetSystem (GetSystemRequest) returns (GetSystemReply) {
+  rpc GetSystem (GetSystemRequest) returns (System) {
     option (google.api.http) = {
-            get: "/systems/{id}"
+            get: "/systems/{system_id}"
+        };
+  }
+
+  rpc ListAgenciesInSystem (ListAgenciesInSystemRequest) returns (ListAgenciesInSystemReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/agencies"
+        };
+  }
+
+  rpc GetAgencyInSystem (GetAgencyInSystemRequest) returns (Agency) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/agencies/{agency_id}"
+        };
+  }
+
+  rpc ListStopsInSystem (ListStopsInSystemRequest) returns (ListStopsInSystemReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/stops"
+        };
+  }
+
+  rpc GetStopInSystem (GetStopInSystemRequest) returns (Stop) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/stops/{stop_id}"
+        };
+  }
+
+  rpc ListRoutesInSystem (ListRoutesInSystemRequest) returns (ListRoutesInSystemReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/routes"
+        };
+  }
+
+  rpc GetRouteInSystem (GetRouteInSystemRequest) returns (Route) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/routes/{route_id}"
+        };
+  }
+
+  rpc ListTripsInRoute (ListTripsInRouteRequest) returns (ListTripsInRouteReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/routes/{route_id}/trips"
+        };
+  }
+
+  rpc GetTrip (GetTripRequest) returns (Trip) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"
+        };
+  }
+
+  rpc ListFeedsInSystem (ListFeedsInSystemRequest) returns (ListFeedsInSystemReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/feeds"
+        };
+  }
+
+  rpc GetFeedInSystem (GetFeedInSystemRequest) returns (Feed) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/feeds/{feed_id}"
+        };
+  }
+
+  rpc ListFeedUpdates (ListFeedUpdatesRequest) returns (ListFeedUpdatesReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/feeds/{feed_id}/updates"
+        };
+  }
+
+  rpc ListTransfersInSystem (ListTransfersInSystemRequest) returns (ListTransfersInSystemReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/transfers"
         };
   }
 }
@@ -30,11 +102,15 @@ message EntrypointReply {
   message TransiterDetails {
     string version = 1;
     string href = 2;
-    string build_number = 3;
-    string built_at = 4;
-    string built_at_timestamp = 5;
-    string git_commit_hash = 6;
-    string build_href = 7;
+    
+    message Build {
+      string number = 3;
+      string built_at = 4;
+      string built_at_timestamp = 5;
+      string git_commit_hash = 6;
+      string href = 7;
+    }
+    optional Build build = 3;
   }
   TransiterDetails transiter = 1;
   
@@ -44,41 +120,384 @@ message EntrypointReply {
 message ListSystemsRequest {}
 
 message ListSystemsReply {
-  repeated SystemShort systems = 1;
+  repeated System systems = 1;
 }
 
 message GetSystemRequest {
+  string system_id = 1;
+}
+
+message ListAgenciesInSystemRequest {
+  string system_id = 1;
+}
+
+message ListAgenciesInSystemReply {
+  repeated AgencyPreviewWithAlerts agencies = 1;
+}
+
+message GetAgencyInSystemRequest {
+  string system_id = 1;
+  string agency_id = 2;
+}
+
+message ListStopsInSystemRequest {
+  string system_id = 1;
+}
+
+message ListStopsInSystemReply {
+  repeated StopPreview stops = 1;
+}
+
+message GetStopInSystemRequest {
+  string system_id = 1;
+  string stop_id = 2;
+}
+
+message ListRoutesInSystemRequest {
+  string system_id = 1;
+}
+
+message ListRoutesInSystemReply {
+  repeated RoutePreviewWithAlerts routes = 1;
+}
+
+message GetRouteInSystemRequest {
+  string system_id = 1;
+  string route_id = 2;
+}
+
+message ListTripsInRouteRequest {
+  string system_id = 1;
+  string route_id = 2;
+}
+
+message ListTripsInRouteReply {
+  repeated TripPreviewWithAlerts trips = 1;
+}
+
+message GetTripRequest {
+  string system_id = 1;
+  string route_id = 2;
+  string trip_id = 3;
+}
+
+message ListFeedsInSystemRequest {
+  string system_id = 1;
+}
+
+message ListFeedsInSystemReply {
+  repeated FeedPreview feeds = 1;
+}
+
+message ListFeedUpdatesRequest {
+  string system_id = 1;
+  string feed_id = 2;
+}
+
+message ListFeedUpdatesReply {
+  repeated FeedUpdate updates = 1;
+}
+
+message GetFeedInSystemRequest {
+  string system_id = 1;
+  string feed_id = 2;
+}
+
+message ListTransfersInSystemRequest {
+  string system_id = 1;
+}
+
+message ListTransfersInSystemReply {
+  repeated Transfer transfers = 1;
+}
+
+message System {
+  string id = 1;
+  string name = 2;
+
+  enum Status {
+    UNKNOWN = 0;
+    SCHEDULED = 1;
+    INSTALLING = 2;
+    ACTIVE = 3;
+    INSTALL_FAILED = 4;
+    DELETING = 5;
+  }
+  Status status = 3;
+
+  optional CountAndHref agencies = 4;
+  optional CountAndHref feeds = 5;
+  optional CountAndHref routes = 6;
+  optional CountAndHref stops = 7;
+  optional CountAndHref transfers = 8;
+  
+  optional string href = 9;
+}
+
+message Stop {
+  string id = 1;
+  string name = 2;
+
+  optional string longitude = 3;
+  optional string latitude = 4;
+  optional string url = 5;
+
+  repeated string directions = 7;
+
+  optional RelatedStop parent_stop = 13;
+  repeated RelatedStop child_stops = 14;
+  repeated ServiceMapForStop service_maps = 8;
+  repeated AlertPreview alerts = 15;
+
+  message StopTime {
+    EstimatedTime arrival = 1;
+    EstimatedTime departure = 2;
+    bool future = 4;
+    int32 stop_sequence = 5;
+    optional string direction = 6;
+    optional string track = 3;
+    TripPreview trip = 7;
+  }
+  repeated StopTime stop_times = 6;
+
+  repeated TransferAtStop transfers = 16;
+}
+
+message RelatedStop {
+  string id = 1;
+  string name = 2;
+  optional RelatedStop parent_stop = 3;
+  repeated RelatedStop child_stops = 4;
+  repeated ServiceMapForStop service_maps = 5;
+  optional string href = 9;
+}
+
+
+message TransferAtStop {
+  StopPreview from_stop = 1;
+  RelatedStop to_stop = 2;
+  // TODO: make this an enum
+  string type = 3;
+  optional int32 min_transfer_time = 4;
+  optional int32 distance = 5;
+}
+
+
+message StopPreview {
+  string id = 1;
+  string name = 2;
+  optional string href = 7;
+}
+
+message TripPreview {
+  string id = 1;
+  RoutePreview route = 2;
+  StopPreview last_stop = 3;
+  optional int64 started_at = 10;
+  optional int64 updated_at = 11;
+  optional VehiclePreview vehicle = 6;
+  bool direction_id = 4;
+  optional string href = 5;
+}
+
+// TODO(APIv2): remove and just return TripPreview
+message TripPreviewWithAlerts {
+  string id = 1;
+  RoutePreview route = 2;
+  StopPreview last_stop = 3;
+  optional int64 started_at = 10;
+  optional int64 updated_at = 11;
+  optional VehiclePreview vehicle = 6;
+  bool direction_id = 4;
+  optional string href = 5;
+  repeated AlertPreview alerts = 20;
+}
+
+message Trip {
+  string id = 1;
+  // TODO(APIv2): remove route
+  RoutePreview route = 2;
+  StopPreview last_stop = 3;
+  optional int64 started_at = 4;
+  optional int64 updated_at = 5;
+  optional VehiclePreview vehicle = 6;
+  bool direction_id = 7;
+
+  message StopTime {
+    EstimatedTime arrival = 1;
+    EstimatedTime departure = 2;
+    bool future = 4;
+    int32 stop_sequence = 5;
+    optional string direction = 6;
+    optional string track = 3;
+    StopPreview stop = 7;
+  }
+  repeated StopTime stop_times = 9;
+  optional string href = 10;
+}
+
+message VehiclePreview {
   string id = 1;
 }
 
-message GetSystemReply {
+message RoutePreview {
+  string id = 1;
+  // TODO(APIv2): remove?
+  string color = 2;
+  // Will be populated only if the system is not obvious
+  optional System system = 8;
+  optional string href = 3;
+}
+
+message RoutePreviewWithAlerts {
+  string id = 1;
+  // TODO(APIv2): remove?
+  string color = 2;
+  repeated AlertPreview alerts = 3;
+  optional string href = 4;
+}
+
+message Route {
+  string id = 1;
+  string short_name = 2;
+  string long_name = 3;
+  string color = 4;
+  // TODO(APIv2): uncomment this field
+  // string text_color = 5;
+  string description = 6;
+  string url = 7;
+
+  // TODO: make this an enum
+  string type = 8;
+  // TODO(APIv2): make this integer seconds
+  optional double periodicity = 9;
+
+  AgencyPreview agency = 10;
+
+  repeated ServiceMapForRoute service_maps = 11;
+
+  repeated Alert alerts = 12;
+}
+
+message Feed {
+  string id = 1;
+  // TODO(APIv2): uncomment this field
+  // bool auto_update_enabled = 2;
+  optional int32 auto_update_period = 3;
+
+  message Updates {
+    string href = 1;
+  }
+  optional Updates updates = 4;
+}
+
+message FeedPreview {
+  string id = 1;
+  // TODO(APIv2): uncomment this field
+  // bool auto_update_enabled = 2;
+  optional int32 auto_update_period = 3;
+  optional string href = 4;
+}
+
+message Agency {
   string id = 1;
   string name = 2;
-  SystemStatus status = 3;
-  CountAndHref agencies = 4;
-  CountAndHref feeds = 5;
-  CountAndHref routes = 6;
-  CountAndHref stops = 7;
-  CountAndHref transfers = 8;
+  // TODO(APIv2): make this not optional
+  optional string url = 3;
+  string timezone = 4;
+  optional string language = 5;
+  optional string phone = 6;
+  optional string fare_url = 7;
+  optional string email = 8;
+
+  repeated RoutePreview routes = 9;
+  repeated AlertPreview alerts = 10;
+}
+
+// TODO(APIv2): delete this message and replace with AgencyPreview?
+message AgencyPreviewWithAlerts {
+  string id = 1;
+  string name = 2;
+  repeated string alerts = 4;
+  optional string href = 3;
+}
+
+message AgencyPreview {
+  string id = 1;
+  string name = 2;
+  optional string href = 3;
+}
+
+message AlertPreview {
+  string id = 1;
+  // TODO: make this an enum
+  string cause = 2;
+  // TODO: make this an enum
+  string effect = 3;
+  // TODO(APIv2): add this field and create API endpoints
+  // optional string href = 3;
+}
+
+message Alert {
+  string id = 1;
+  // TODO: make this an enum
+  string cause = 2;
+  // TODO: make this an enum
+  string effect = 3;
+
+  message ActivePeriod {
+    optional int64 starts_at = 1;
+    optional int64 ends_at = 2;
+  }
+  ActivePeriod active_period = 4;
+
+  message Message {
+    string header = 1;
+    string description = 2;
+    optional string language = 3;
+    optional string url = 4;
+  }
+  repeated Message messages = 5;
+}
+
+message EstimatedTime {
+  optional int64 time = 1;
+  optional int32 delay = 2;
+  optional int32 uncertainty = 3;
+}
+
+message ServiceMapForStop {
+  string group_id = 1;
+  repeated RoutePreview routes = 2;
+}
+
+message ServiceMapForRoute {
+  string group_id = 1;
+  repeated StopPreview stops = 2;
 }
 
 message CountAndHref {
   int64 count = 1;
-  string href = 2;
+  optional string href = 2;
 }
 
-enum SystemStatus {
-  UNKNOWN = 0;
-  SCHEDULED = 1;
-  INSTALLING = 2;
-  ACTIVE = 3;
-  INSTALL_FAILED = 4;
-  DELETING = 5;
+message Transfer {
+  StopPreview from_stop = 1;
+  StopPreview to_stop = 2;
+  // TODO: make this an enum
+  string type = 3;
+  int32 min_transfer_time = 4;
+  optional int32 distance = 5;
 }
 
-message SystemShort {
-  string id = 1;
-  string name = 2;
-  SystemStatus status = 3;
-  string href = 4;
+message FeedUpdate {
+    string id = 1;
+    // TODO: make these enums
+    string type = 2;
+    string status = 3;
+    optional string result = 4;
+    optional string stack_trace = 5;
+    optional string content_hash = 6;
+    optional int32 content_length = 7;
+    optional int64 completed_at = 8;
 }
