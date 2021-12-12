@@ -39,19 +39,18 @@ class SourceServerClient:
 @pytest.fixture
 def source_server(request):
     return SourceServerClient(
-        os.environ.get("SOURCE_SERVER_HOST", "http://localhost:5001"),
+        os.environ.get("SOURCE_SERVER_HOST", "http://localhost:8090"),
         request.addfinalizer,
     )
 
 
 @pytest.fixture(scope="session")
 def transiter_host():
-    host = os.environ.get("TRANSITER_HOST", "http://localhost:8000")
+    host = os.environ.get("TRANSITER_HOST", "http://localhost:8082")
     for __ in range(20):
         try:
-            response = requests.get(host + "/admin/health", timeout=1).json()
-            if response["up"]:
-                return host
+            requests.get(host, timeout=1).json()
+            return host
         except requests.RequestException:
             pass
         time.sleep(0.5)
@@ -62,7 +61,7 @@ def transiter_host():
 def source_server_host_within_transiter():
     return os.environ.get(
         "SOURCE_SERVER_HOST_WITHIN_TRANSITER",
-        os.environ.get("SOURCE_SERVER_HOST", "http://localhost:5001"),
+        os.environ.get("SOURCE_SERVER_HOST", "http://localhost:8090"),
     )
 
 
@@ -86,7 +85,7 @@ def install_system(
 ):
     def install(system_id, system_config, sync=True, expected_status="ACTIVE"):
         def delete():
-            requests.delete(transiter_host + "/systems/" + system_id + "?sync=true")
+            requests.delete(transiter_host + "/admin/systems/" + system_id + "?sync=true")
 
         system_config_url = source_server.create(
             "", "/" + system_id + "/system-config.yaml.jinja"
@@ -95,9 +94,9 @@ def install_system(
         source_server.put(system_config_url, system_config)
 
         response = requests.put(
-            transiter_host + "/systems/" + system_id + "?sync=" + str(sync).lower(),
-            data={
-                "config_file": source_server_host_within_transiter
+            transiter_host + "/admin/systems/" + system_id, # + "?sync=" + str(sync).lower(),
+            json={
+                "yaml_config_url": source_server_host_within_transiter
                 + "/"
                 + system_config_url
             },
@@ -126,22 +125,16 @@ name: Test System
 
 feeds:
 
-  gtfsstatic:
-    http:
-      url: "{static_feed_url}"
-    parser:
-      built_in: GTFS_STATIC
+  - id: gtfsstatic
+    url: "{static_feed_url}"
+    parser: GTFS_STATIC
     required_for_install: true
-    auto_update:
-      period: 1 day
+    auto_update_period: 1d
 
-  GtfsRealtimeFeed:
-    http:
-      url: "{realtime_feed_url}"
-    parser:
-      built_in: GTFS_REALTIME
-    auto_update:
-      period: "{realtime_auto_update_period}"
+  - id: GtfsRealtimeFeed
+    url: "{realtime_feed_url}"
+    parser: GTFS_REALTIME
+    auto_update_period: "{realtime_auto_update_period}"
 
 """
 

@@ -81,18 +81,12 @@ type DirectionNameRule struct {
 }
 
 type Feed struct {
-	Pk                 int32
-	ID                 string
-	SystemPk           int32
-	CustomParser       sql.NullString
-	Url                sql.NullString
-	Headers            sql.NullString
-	AutoUpdateEnabled  bool
-	AutoUpdatePeriod   sql.NullInt32
-	RequiredForInstall bool
-	BuiltInParser      sql.NullString
-	HttpTimeout        sql.NullFloat64
-	ParserOptions      sql.NullString
+	Pk                int32
+	ID                string
+	SystemPk          int32
+	AutoUpdateEnabled bool
+	AutoUpdatePeriod  sql.NullInt32
+	Config            string
 }
 
 type FeedUpdate struct {
@@ -243,12 +237,11 @@ type Stop struct {
 }
 
 type System struct {
-	Pk                int32
-	ID                string
-	Name              string
-	Timezone          sql.NullString
-	AutoUpdateEnabled bool
-	Status            string
+	Pk       int32
+	ID       string
+	Name     string
+	Timezone sql.NullString
+	Status   string
 }
 
 type SystemUpdate struct {

@@ -1,33 +1,36 @@
 # Transiter end to end tests
 
 The end to end tests simulate real world usage of Transiter.
-During the tests, Transiter is running as it would in production
+In the tests, Transiter is running as it would in production
 and various standard operations (installing transit systems, performing feed updates,
  querying the resulting data)
 are performed and verified.
 Because the test closely resembles actual usage, it is extremely
 valuable for ensuring the correctness of the software.
 
-The end to end test is run automatically as a part of the 
-continuous integration on Travis.
+The tests are written in Python.
+This is an artifact of Transiter originally being written in Python too.
+However, the intent is to keep the tests in Python because the language difference
+  is nicely enforces that the tests don't use non-API aspects of Transiter.
+
 
 ## Structure of the test
 
 During a test run, there are three live components:
 
-1. The Transiter instance, listening by default on port 8000.
+1. The Transiter instance, listening on its default ports.
 
 1. A source server, which is used to simulate external transit agency data sources.
-   This listens by default on port 5001.
+   This listens by default on port 8090.
     
 1. The test driver itself. 
-   It interacts with Transiter solely through Transiter's HTTP API.
+   It interacts with Transiter solely through Transiter's admin HTTP API.
 
 
 ## Running the test
 
-The test requires a running Transiter instance
-that is listening at the location given 
+The test requires a running Transiter instance with an HTTP admin service
+listening at the location given 
 in the environment variable `TRANSITER_HOST`.
 It also requires the source server to be running. 
 The source server should be accessible to the test driver
@@ -35,9 +38,9 @@ at the location `SOURCE_SERVER_HOST` and be accessible
 to the Transiter instance at the location `SOURCE_SERVER_HOST_WITHIN_TRANSITER`.
 The defaults for these are:
 
-- `TRANSITER_HOST=http://localhost:8000`
+- `TRANSITER_HOST=http://localhost:8082` (this is also the Transiter default)
 
-- `SOURCE_SERVER_HOST=http://localhost:5001`
+- `SOURCE_SERVER_HOST=http://localhost:8090`
 
 - `SOURCE_SERVER_HOST_WITHIN_TRANSITER=SOURCE_SERVER_HOST`
 
@@ -47,7 +50,7 @@ for the environment variables.
 In the following, it is assumed the the current working
 directory is the root of the Transiter repo.
 
-### Bare metal setup
+### Bare metal run
 
 In this setup, the processes composing the Transiter instance
 are run using the appropriate `transiterclt launch` command.

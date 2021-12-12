@@ -27,11 +27,25 @@ func ConvertSqlNullString(t sql.NullString) *string {
 	return &t.String
 }
 
+func ConvertSqlNullFloat64(t sql.NullFloat64) *float64 {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Float64
+}
+
 func ConvertSqlNullInt32(t sql.NullInt32) *int32 {
 	if !t.Valid {
 		return nil
 	}
 	return &t.Int32
+}
+
+func ConvertNullInt32(t *int32) sql.NullInt32 {
+	if t == nil {
+		return sql.NullInt32{}
+	}
+	return sql.NullInt32{Valid: true, Int32: *t}
 }
 
 func MarshalerOptions() runtime.ServeMuxOption {

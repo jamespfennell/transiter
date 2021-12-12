@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -28,13 +29,11 @@ func (t *TransiterService) ListFeedsInSystem(ctx context.Context, req *api.ListF
 	result := &api.ListFeedsInSystemReply{}
 	for _, feed := range feeds {
 		feed := feed
-		aup := autoUpdatePeriod(&feed)
 		api_feed := &api.FeedPreview{
-			Id: feed.ID,
-			// TODO(APIv2)
-			// AutoUpdateEnabled: feed.AutoUpdateEnabled,
-			AutoUpdatePeriod: &aup,
-			Href:             s.Hrefs.Feed(system.ID, feed.ID),
+			Id:                feed.ID,
+			AutoUpdateEnabled: feed.AutoUpdateEnabled,
+			AutoUpdatePeriod:  autoUpdatePeriod(&feed),
+			Href:              s.Hrefs.Feed(system.ID, feed.ID),
 		}
 		result.Feeds = append(result.Feeds, api_feed)
 	}
@@ -51,12 +50,12 @@ func (t *TransiterService) GetFeedInSystem(ctx context.Context, req *api.GetFeed
 		}
 		return nil, err
 	}
-	aup := autoUpdatePeriod(&feed)
 	reply := &api.Feed{
-		Id:               feed.ID,
-		AutoUpdatePeriod: &aup,
+		Id:                feed.ID,
+		AutoUpdateEnabled: feed.AutoUpdateEnabled,
+		AutoUpdatePeriod:  autoUpdatePeriod(&feed),
 		Updates: &api.Feed_Updates{
-			Href: *s.Hrefs.FeedUpdates(req.SystemId, req.FeedId),
+			Href: s.Hrefs.FeedUpdates(req.SystemId, req.FeedId),
 		},
 	}
 	return reply, s.Finish()
@@ -92,13 +91,10 @@ func (t *TransiterService) ListFeedUpdates(ctx context.Context, req *api.ListFee
 	return reply, s.Finish()
 }
 
-func autoUpdatePeriod(feed *db.Feed) int32 {
-	// TODO(APIv2): remove this branch and make the int32 optional
-	if !feed.AutoUpdateEnabled {
-		return -1
-	}
+func autoUpdatePeriod(feed *db.Feed) *string {
 	if feed.AutoUpdatePeriod.Valid && feed.AutoUpdatePeriod.Int32 > 0 {
-		return feed.AutoUpdatePeriod.Int32
+		d := (time.Millisecond * time.Duration(feed.AutoUpdatePeriod.Int32)).String()
+		return &d
 	}
-	return -5
+	return nil
 }

@@ -8,8 +8,9 @@
 !go.sum
 !sqlc.yaml
 
-!db/*.sql
+!db/*
 !api/*proto
 
 !transiter.go
+!config/*
 !internal/*

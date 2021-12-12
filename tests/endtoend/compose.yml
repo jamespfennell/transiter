@@ -1,0 +1,39 @@
+version: '3.5'
+
+services:
+
+  db:
+    image: postgres:14
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=transiter
+      - POSTGRES_PASSWORD=transiter
+      - POSTGRES_DB=transiter
+
+  transiter:
+    image: jamespfennell/transiter:latest
+    expose:
+      - "8082"
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+      - "8083:8083"
+    command: --postgres-host "db:5432"
+
+  sourceserver:
+    build:
+      context: ./sourceserver
+    expose:
+      - "8090"
+    ports:
+      - "8090:8090"
+
+  testrunner:
+    build:
+      context: ./
+    environment:
+      - TRANSITER_HOST=http://transiter:8082
+      - SOURCE_SERVER_HOST=http://sourceserver:8090
+      - SOURCE_SERVER_HOST_WITHIN_TRANSITER=http://sourceserver:8090

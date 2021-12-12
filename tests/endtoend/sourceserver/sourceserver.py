@@ -54,4 +54,4 @@ def delete(path):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=os.environ.get("SOURCE_SERVER_PORT", 5001))
+    app.run(host="0.0.0.0", port=os.environ.get("SOURCE_SERVER_PORT", 8090))

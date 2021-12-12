@@ -3,6 +3,6 @@ packages:
   - path: "internal/gen/db"
     name: "db"
     engine: "postgresql"
-    schema: "db/schema.sql"
-    queries: "db/query.sql"
+    schema: "db/schema/"
+    queries: "db/queries/"
     emit_interface: true

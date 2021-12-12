@@ -1,3 +1,4 @@
+-- +goose Up
 
 CREATE TABLE agency (
     pk SERIAL PRIMARY KEY,
@@ -84,15 +85,9 @@ CREATE TABLE feed (
     pk SERIAL PRIMARY KEY,
     id character varying NOT NULL,
     system_pk integer NOT NULL,
-    custom_parser character varying,
-    url character varying,
-    headers character varying,
     auto_update_enabled boolean NOT NULL,
     auto_update_period integer,
-    required_for_install boolean DEFAULT false NOT NULL,
-    built_in_parser character varying,
-    http_timeout double precision,
-    parser_options character varying,
+    config character varying NOT NULL,
 
     UNIQUE(system_pk, id)
 );
@@ -276,7 +271,6 @@ CREATE TABLE system (
     id character varying NOT NULL,
     name character varying NOT NULL,
     timezone character varying,
-    auto_update_enabled boolean DEFAULT true NOT NULL,
     status character varying NOT NULL,
 
     UNIQUE(id)
@@ -439,15 +433,15 @@ ALTER TABLE scheduled_service
     ADD CONSTRAINT fk_scheduled_service_source_pk FOREIGN KEY(source_pk) REFERENCES feed_update(pk) ON DELETE CASCADE;
 
 ALTER TABLE scheduled_service_addition
-    ADD CONSTRAINT fk_scheduled_service_addition_service_pk FOREIGN KEY(service_pk) REFERENCES scheulded_service(pk) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_scheduled_service_addition_service_pk FOREIGN KEY(service_pk) REFERENCES scheduled_service(pk) ON DELETE CASCADE;
 
 ALTER TABLE scheduled_service_removal
-    ADD CONSTRAINT fk_scheduled_service_removal_service_pk FOREIGN KEY(service_pk) REFERENCES scheulded_service(pk) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_scheduled_service_removal_service_pk FOREIGN KEY(service_pk) REFERENCES scheduled_service(pk) ON DELETE CASCADE;
 
 ALTER TABLE scheduled_trip
     ADD CONSTRAINT fk_scheduled_trip_route_pk FOREIGN KEY(route_pk) REFERENCES route(pk) ON DELETE CASCADE;
 ALTER TABLE scheduled_trip
-    ADD CONSTRAINT fk_scheduled_trip_service_pk FOREIGN KEY(service_pk) REFERENCES scheulded_service(pk) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_scheduled_trip_service_pk FOREIGN KEY(service_pk) REFERENCES scheduled_service(pk) ON DELETE CASCADE;
 
 ALTER TABLE scheduled_trip_frequency
     ADD CONSTRAINT fk_scheduled_trip_frequency_trip_pk FOREIGN KEY(trip_pk) REFERENCES scheduled_trip(pk) ON DELETE CASCADE;

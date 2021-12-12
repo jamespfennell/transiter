@@ -381,21 +381,19 @@ message Route {
 
 message Feed {
   string id = 1;
-  // TODO(APIv2): uncomment this field
-  // bool auto_update_enabled = 2;
-  optional int32 auto_update_period = 3;
+  bool auto_update_enabled = 2;
+  optional string auto_update_period = 3;
 
   message Updates {
-    string href = 1;
+    optional string href = 1;
   }
   optional Updates updates = 4;
 }
 
 message FeedPreview {
   string id = 1;
-  // TODO(APIv2): uncomment this field
-  // bool auto_update_enabled = 2;
-  optional int32 auto_update_period = 3;
+  bool auto_update_enabled = 2;
+  optional string auto_update_period = 3;
   optional string href = 4;
 }
 

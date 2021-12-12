@@ -133,7 +133,7 @@ func (q *Queries) GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemPa
 }
 
 const getFeedInSystem = `-- name: GetFeedInSystem :one
-SELECT feed.pk, feed.id, feed.system_pk, feed.custom_parser, feed.url, feed.headers, feed.auto_update_enabled, feed.auto_update_period, feed.required_for_install, feed.built_in_parser, feed.http_timeout, feed.parser_options FROM feed
+SELECT feed.pk, feed.id, feed.system_pk, feed.auto_update_enabled, feed.auto_update_period, feed.config FROM feed
     INNER JOIN system ON feed.system_pk = system.pk
     WHERE system.id = $1
     AND feed.id = $2
@@ -151,15 +151,9 @@ func (q *Queries) GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams
 		&i.Pk,
 		&i.ID,
 		&i.SystemPk,
-		&i.CustomParser,
-		&i.Url,
-		&i.Headers,
 		&i.AutoUpdateEnabled,
 		&i.AutoUpdatePeriod,
-		&i.RequiredForInstall,
-		&i.BuiltInParser,
-		&i.HttpTimeout,
-		&i.ParserOptions,
+		&i.Config,
 	)
 	return i, err
 }
@@ -268,7 +262,7 @@ func (q *Queries) GetRouteInSystem(ctx context.Context, arg GetRouteInSystemPara
 }
 
 const getStopInSystem = `-- name: GetStopInSystem :one
-SELECT stop.pk, stop.id, system_pk, source_pk, parent_stop_pk, stop.name, longitude, latitude, url, code, description, platform_code, stop.timezone, type, wheelchair_boarding, zone_id, system.pk, system.id, system.name, system.timezone, auto_update_enabled, status FROM stop
+SELECT stop.pk, stop.id, system_pk, source_pk, parent_stop_pk, stop.name, longitude, latitude, url, code, description, platform_code, stop.timezone, type, wheelchair_boarding, zone_id, system.pk, system.id, system.name, system.timezone, status FROM stop
     INNER JOIN system ON stop.system_pk = system.pk
     WHERE system.id = $1
     AND stop.id = $2
@@ -300,7 +294,6 @@ type GetStopInSystemRow struct {
 	ID_2               string
 	Name_2             string
 	Timezone_2         sql.NullString
-	AutoUpdateEnabled  bool
 	Status             string
 }
 
@@ -328,14 +321,13 @@ func (q *Queries) GetStopInSystem(ctx context.Context, arg GetStopInSystemParams
 		&i.ID_2,
 		&i.Name_2,
 		&i.Timezone_2,
-		&i.AutoUpdateEnabled,
 		&i.Status,
 	)
 	return i, err
 }
 
 const getSystem = `-- name: GetSystem :one
-SELECT pk, id, name, timezone, auto_update_enabled, status FROM system
+SELECT pk, id, name, timezone, status FROM system
 WHERE id = $1 LIMIT 1
 `
 
@@ -347,7 +339,6 @@ func (q *Queries) GetSystem(ctx context.Context, id string) (System, error) {
 		&i.ID,
 		&i.Name,
 		&i.Timezone,
-		&i.AutoUpdateEnabled,
 		&i.Status,
 	)
 	return i, err
@@ -663,7 +654,7 @@ func (q *Queries) ListDirectionNameRulesForStops(ctx context.Context, stopPks []
 }
 
 const listFeedsInSystem = `-- name: ListFeedsInSystem :many
-SELECT pk, id, system_pk, custom_parser, url, headers, auto_update_enabled, auto_update_period, required_for_install, built_in_parser, http_timeout, parser_options FROM feed WHERE system_pk = $1 ORDER BY id
+SELECT pk, id, system_pk, auto_update_enabled, auto_update_period, config FROM feed WHERE system_pk = $1 ORDER BY id
 `
 
 func (q *Queries) ListFeedsInSystem(ctx context.Context, systemPk int32) ([]Feed, error) {
@@ -679,15 +670,9 @@ func (q *Queries) ListFeedsInSystem(ctx context.Context, systemPk int32) ([]Feed
 			&i.Pk,
 			&i.ID,
 			&i.SystemPk,
-			&i.CustomParser,
-			&i.Url,
-			&i.Headers,
 			&i.AutoUpdateEnabled,
 			&i.AutoUpdatePeriod,
-			&i.RequiredForInstall,
-			&i.BuiltInParser,
-			&i.HttpTimeout,
-			&i.ParserOptions,
+			&i.Config,
 		); err != nil {
 			return nil, err
 		}
@@ -1252,7 +1237,7 @@ func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int32) ([]Li
 }
 
 const listSystems = `-- name: ListSystems :many
-SELECT pk, id, name, timezone, auto_update_enabled, status FROM system
+SELECT pk, id, name, timezone, status FROM system
 `
 
 func (q *Queries) ListSystems(ctx context.Context) ([]System, error) {
@@ -1269,7 +1254,6 @@ func (q *Queries) ListSystems(ctx context.Context) ([]System, error) {
 			&i.ID,
 			&i.Name,
 			&i.Timezone,
-			&i.AutoUpdateEnabled,
 			&i.Status,
 		); err != nil {
 			return nil, err

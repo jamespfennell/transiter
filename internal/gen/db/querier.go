@@ -15,6 +15,8 @@ type Querier interface {
 	CountStopsInSystem(ctx context.Context, systemPk int32) (int64, error)
 	CountSystems(ctx context.Context) (int64, error)
 	CountTransfersInSystem(ctx context.Context, systemPk sql.NullInt32) (int64, error)
+	DeleteFeed(ctx context.Context, pk int32) error
+	DeleteSystem(ctx context.Context, pk int32) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
 	GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error)
 	GetLastStopsForTrips(ctx context.Context, tripPks []int32) ([]GetLastStopsForTripsRow, error)
@@ -22,6 +24,8 @@ type Querier interface {
 	GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (GetStopInSystemRow, error)
 	GetSystem(ctx context.Context, id string) (System, error)
 	GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error)
+	InsertFeed(ctx context.Context, arg InsertFeedParams) error
+	InsertSystem(ctx context.Context, arg InsertSystemParams) error
 	ListActiveAlertsForAgency(ctx context.Context, arg ListActiveAlertsForAgencyParams) ([]ListActiveAlertsForAgencyRow, error)
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)
 	ListActiveAlertsForStops(ctx context.Context, arg ListActiveAlertsForStopsParams) ([]ListActiveAlertsForStopsRow, error)
@@ -44,6 +48,8 @@ type Querier interface {
 	ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt32) ([]ListTransfersInSystemRow, error)
 	ListTripsInRoute(ctx context.Context, routePk int32) ([]ListTripsInRouteRow, error)
 	ListUpdatesInFeed(ctx context.Context, feedPk int32) ([]FeedUpdate, error)
+	UpdateFeed(ctx context.Context, arg UpdateFeedParams) error
+	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
 }
 
 var _ Querier = (*Queries)(nil)

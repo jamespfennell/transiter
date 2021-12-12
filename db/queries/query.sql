@@ -293,3 +293,4 @@ FROM trip_stop_time
     INNER JOIN stop ON trip_stop_time.stop_pk = stop.pk
 WHERE trip_stop_time.trip_pk = sqlc.arg(trip_pk)
 ORDER BY trip_stop_time.stop_sequence ASC;
+
