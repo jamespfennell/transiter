@@ -7,7 +7,7 @@ from . import gtfsrealtimegenerator
 
 def test_auto_update(system_id, install_system_1, transiter_host, source_server):
 
-    __, realtime_feed_url = install_system_1(system_id, "1 second")
+    __, realtime_feed_url = install_system_1(system_id, "1s")
 
     # Check that the realtime feed is initially failing
     _wait_for_update(system_id, transiter_host, "FAILURE", "EMPTY_FEED")
@@ -32,8 +32,8 @@ def _wait_for_update(system_id, transiter_host, expected_status, expected_result
         updates = requests.get(
             transiter_host + "/systems/" + system_id + "/feeds/GtfsRealtimeFeed/updates"
         ).json()
-        if len(updates) > 0:
-            latest_update = updates[0]
+        if len(updates["updates"]) > 0:
+            latest_update = updates["updates"][0]
             if (
                 expected_status == latest_update["status"]
                 and expected_result == latest_update["result"]

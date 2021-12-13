@@ -14,3 +14,11 @@ WHERE pk = sqlc.arg(feed_pk);
 
 -- name: DeleteFeed :exec
 DELETE FROM feed WHERE pk = sqlc.arg(pk);
+
+
+-- name: ListAutoUpdateFeedsForSystem :many
+SELECT feed.id, feed.auto_update_period
+FROM feed
+    INNER JOIN system ON system.pk = feed.system_pk
+WHERE feed.auto_update_enabled
+    AND system.id = sqlc.arg(system_id);

@@ -44,6 +44,42 @@ func (q *Queries) InsertFeed(ctx context.Context, arg InsertFeedParams) error {
 	return err
 }
 
+const listAutoUpdateFeedsForSystem = `-- name: ListAutoUpdateFeedsForSystem :many
+SELECT feed.id, feed.auto_update_period
+FROM feed
+    INNER JOIN system ON system.pk = feed.system_pk
+WHERE feed.auto_update_enabled
+    AND system.id = $1
+`
+
+type ListAutoUpdateFeedsForSystemRow struct {
+	ID               string
+	AutoUpdatePeriod sql.NullInt32
+}
+
+func (q *Queries) ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAutoUpdateFeedsForSystem, systemID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAutoUpdateFeedsForSystemRow
+	for rows.Next() {
+		var i ListAutoUpdateFeedsForSystemRow
+		if err := rows.Scan(&i.ID, &i.AutoUpdatePeriod); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateFeed = `-- name: UpdateFeed :exec
 UPDATE feed
 SET auto_update_enabled = $1, 

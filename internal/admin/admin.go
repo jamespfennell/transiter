@@ -14,17 +14,22 @@ import (
 	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/scheduler"
 	"github.com/jamespfennell/transiter/internal/service/errors"
 )
 
 // Service implements the Transiter admin service.
 type Service struct {
-	database *sql.DB
+	database  *sql.DB
+	scheduler *scheduler.Scheduler
 	api.UnimplementedTransiterAdminServer
 }
 
-func New(database *sql.DB) *Service {
-	return &Service{database: database}
+func New(database *sql.DB, scheduler *scheduler.Scheduler) *Service {
+	return &Service{
+		database:  database,
+		scheduler: scheduler,
+	}
 }
 
 func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigRequest) (*api.SystemConfig, error) {
@@ -83,7 +88,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	default:
 		return nil, fmt.Errorf("no system configuration provided")
 	}
-	log.Printf("Config for %s: %+v\n", req.SystemId, systemConfig)
+	// log.Printf("Config for %s: %+v\n", req.SystemId, systemConfig)
 
 	{
 		system, err := querier.GetSystem(ctx, req.SystemId)
@@ -147,6 +152,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		return nil, err
 	}
 	log.Printf("Installed system %+v\n", system.ID)
+	s.scheduler.Refresh(ctx, req.SystemId)
 	return &api.InstallOrUpdateSystemReply{}, nil
 }
 
@@ -174,6 +180,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 		return nil, err
 	}
 	log.Printf("Deleted system %q", req.SystemId)
+	s.scheduler.Refresh(ctx, req.SystemId)
 	return nil, nil
 }
 

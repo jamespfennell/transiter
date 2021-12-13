@@ -11,13 +11,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/benbjohnson/clock"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/admin"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
+	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/scheduler"
 	"github.com/jamespfennell/transiter/internal/service"
+	"github.com/jamespfennell/transiter/internal/update"
 	"google.golang.org/grpc"
 )
 
@@ -26,7 +30,7 @@ var flagPostgresHost = flag.String("postgres-host", "localhost:5432", "the help 
 func main() {
 	flag.Parse()
 	log.Println("Transiter v0.6alpha")
-	db, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
+	database, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
 		"transiter",       // user
 		"transiter",       // password
 		*flagPostgresHost, // Postgres host
@@ -36,24 +40,34 @@ func main() {
 		log.Fatalf("Could not connect to DB: %s\n", err)
 	}
 
-	if err := pingDb(db); err != nil {
+	if err := pingDb(database); err != nil {
 		log.Fatalf("Failed to connect to the database; exiting: %s\n", err)
 	}
 
 	log.Println("Database migrations: starting")
-	if err := schema.Migrate(db); err != nil {
+	if err := schema.Migrate(database); err != nil {
 		log.Fatalf("Could not run the database migrations: %s\n", err)
 	}
 	log.Println("Database migrations: finished")
-
-	transiterService := service.NewTransiterService(db)
-	adminService := admin.New(db)
 
 	ctx := context.Background()
 	ctx, cancelFunc := context.WithCancel(ctx)
 	defer cancelFunc()
 
 	var wg sync.WaitGroup
+	scheduler, err := scheduler.New(ctx, clock.New(), db.New(database), update.Run)
+	if err != nil {
+		log.Fatalf("Failed to intialize the scheduler: %s\n", err)
+	}
+	wg.Add(1)
+	go func() {
+		defer cancelFunc()
+		defer wg.Done()
+		scheduler.Run(nil)
+	}()
+
+	transiterService := service.NewTransiterService(database)
+	adminService := admin.New(database, scheduler)
 
 	wg.Add(1)
 	go func() {
@@ -66,7 +80,8 @@ func main() {
 		)
 		api.RegisterTransiterHandlerServer(ctx, mux, transiterService)
 		log.Println("Transiter service HTTP API listening on localhost:8080")
-		_ = http.ListenAndServe("localhost:8080", mux)
+		err := http.ListenAndServe("localhost:8080", mux)
+		fmt.Printf("Closing :8080: %s\n", err)
 	}()
 
 	wg.Add(1)

@@ -30,6 +30,7 @@ type Querier interface {
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)
 	ListActiveAlertsForStops(ctx context.Context, arg ListActiveAlertsForStopsParams) ([]ListActiveAlertsForStopsRow, error)
 	ListAgenciesInSystem(ctx context.Context, systemPk int32) ([]Agency, error)
+	ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error)
 	ListDirectionNameRulesForStops(ctx context.Context, stopPks []int32) ([]DirectionNameRule, error)
 	ListFeedsInSystem(ctx context.Context, systemPk int32) ([]Feed, error)
 	ListMessagesForAlerts(ctx context.Context, alertPks []int32) ([]AlertMessage, error)

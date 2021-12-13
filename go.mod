@@ -3,6 +3,7 @@ module github.com/jamespfennell/transiter
 go 1.16
 
 require (
+	github.com/benbjohnson/clock v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.6.0
 	github.com/jackc/pgx/v4 v4.14.0
 	github.com/kyleconroy/sqlc v1.10.0
