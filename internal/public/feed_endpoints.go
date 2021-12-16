@@ -1,4 +1,4 @@
-package service
+package public
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/service/errors"
+	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *TransiterService) ListFeedsInSystem(ctx context.Context, req *api.ListFeedsInSystemRequest) (*api.ListFeedsInSystemReply, error) {
-	s := t.NewSession(ctx)
+func (t *Service) ListFeedsInSystem(ctx context.Context, req *api.ListFeedsInSystemRequest) (*api.ListFeedsInSystemReply, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
@@ -40,8 +40,8 @@ func (t *TransiterService) ListFeedsInSystem(ctx context.Context, req *api.ListF
 	return result, s.Finish()
 }
 
-func (t *TransiterService) GetFeedInSystem(ctx context.Context, req *api.GetFeedInSystemRequest) (*api.Feed, error) {
-	s := t.NewSession(ctx)
+func (t *Service) GetFeedInSystem(ctx context.Context, req *api.GetFeedInSystemRequest) (*api.Feed, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	feed, err := s.Querier.GetFeedInSystem(ctx, db.GetFeedInSystemParams{SystemID: req.SystemId, FeedID: req.FeedId})
 	if err != nil {
@@ -61,8 +61,8 @@ func (t *TransiterService) GetFeedInSystem(ctx context.Context, req *api.GetFeed
 	return reply, s.Finish()
 }
 
-func (t *TransiterService) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesRequest) (*api.ListFeedUpdatesReply, error) {
-	s := t.NewSession(ctx)
+func (t *Service) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesRequest) (*api.ListFeedUpdatesReply, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	feed, err := s.Querier.GetFeedInSystem(ctx, db.GetFeedInSystemParams{SystemID: req.SystemId, FeedID: req.FeedId})
 	if err != nil {

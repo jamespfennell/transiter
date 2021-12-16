@@ -1,4 +1,4 @@
-package service
+package public
 
 import (
 	"context"
@@ -11,11 +11,11 @@ import (
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/service/errors"
+	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *TransiterService) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInSystemRequest) (*api.ListRoutesInSystemReply, error) {
-	s := t.NewSession(ctx)
+func (t *Service) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInSystemRequest) (*api.ListRoutesInSystemReply, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
@@ -60,9 +60,9 @@ func (t *TransiterService) ListRoutesInSystem(ctx context.Context, req *api.List
 	return reply, s.Finish()
 }
 
-func (t *TransiterService) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSystemRequest) (*api.Route, error) {
+func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSystemRequest) (*api.Route, error) {
 	startTime := time.Now()
-	s := t.NewSession(ctx)
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	route, err := s.Querier.GetRouteInSystem(ctx, db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
 	if err != nil {

@@ -12,9 +12,9 @@ import (
 )
 
 type Client struct {
-	conn            *grpc.ClientConn
-	transiterClient api.TransiterClient
-	adminClient     api.TransiterAdminClient
+	conn         *grpc.ClientConn
+	publicClient api.PublicClient
+	adminClient  api.TransiterAdminClient
 }
 
 func New(addr string) (*Client, error) {
@@ -24,9 +24,9 @@ func New(addr string) (*Client, error) {
 		log.Fatalf("fail to dial: %v", err)
 	}
 	return &Client{
-		conn:            conn,
-		transiterClient: api.NewTransiterClient(conn),
-		adminClient:     api.NewTransiterAdminClient(conn),
+		conn:         conn,
+		publicClient: api.NewPublicClient(conn),
+		adminClient:  api.NewTransiterAdminClient(conn),
 	}, nil
 }
 
@@ -36,7 +36,7 @@ func (c *Client) Close() error {
 
 func (c *Client) ListSystems(ctx context.Context) error {
 	var req api.ListSystemsRequest
-	rep, err := c.transiterClient.ListSystems(ctx, &req)
+	rep, err := c.publicClient.ListSystems(ctx, &req)
 	if err != nil {
 		return err
 	}

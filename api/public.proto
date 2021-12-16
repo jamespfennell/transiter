@@ -3,7 +3,7 @@ option go_package = "github.com/jamespfennell/transiter/api";
 
 import "google/api/annotations.proto";
 
-service Transiter {
+service Public {
   rpc Entrypoint (EntrypointRequest) returns (EntrypointReply) {
     option (google.api.http) = {
             get: "/"

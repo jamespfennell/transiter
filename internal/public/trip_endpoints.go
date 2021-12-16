@@ -1,4 +1,4 @@
-package service
+package public
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/service/errors"
+	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *TransiterService) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRouteRequest) (*api.ListTripsInRouteReply, error) {
-	s := t.NewSession(ctx)
+func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRouteRequest) (*api.ListTripsInRouteReply, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	route, err := s.Querier.GetRouteInSystem(ctx,
 		db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
@@ -67,8 +67,8 @@ func (t *TransiterService) ListTripsInRoute(ctx context.Context, req *api.ListTr
 	return reply, s.Finish()
 }
 
-func (t *TransiterService) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Trip, error) {
-	s := t.NewSession(ctx)
+func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Trip, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	trip, err := s.Querier.GetTrip(ctx, db.GetTripParams{
 		SystemID: req.SystemId, RouteID: req.RouteId, TripID: req.TripId})

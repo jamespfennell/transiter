@@ -1,4 +1,4 @@
-package service
+package public
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/service/errors"
+	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *TransiterService) ListAgenciesInSystem(ctx context.Context, req *api.ListAgenciesInSystemRequest) (*api.ListAgenciesInSystemReply, error) {
-	s := t.NewSession(ctx)
+func (t *Service) ListAgenciesInSystem(ctx context.Context, req *api.ListAgenciesInSystemRequest) (*api.ListAgenciesInSystemReply, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
@@ -39,8 +39,8 @@ func (t *TransiterService) ListAgenciesInSystem(ctx context.Context, req *api.Li
 	return reply, s.Finish()
 }
 
-func (t *TransiterService) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSystemRequest) (*api.Agency, error) {
-	s := t.NewSession(ctx)
+func (t *Service) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSystemRequest) (*api.Agency, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	agency, err := s.Querier.GetAgencyInSystem(ctx, db.GetAgencyInSystemParams{SystemID: req.SystemId, AgencyID: req.AgencyId})
 	if err != nil {

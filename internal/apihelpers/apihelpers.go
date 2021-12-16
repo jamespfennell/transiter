@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/jamespfennell/transiter/internal/service/errors"
+	"github.com/jamespfennell/transiter/internal/public/errors"
 	"google.golang.org/protobuf/encoding/protojson"
 	"net/http"
 )

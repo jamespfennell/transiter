@@ -18,8 +18,8 @@ import (
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/public"
 	"github.com/jamespfennell/transiter/internal/scheduler"
-	"github.com/jamespfennell/transiter/internal/service"
 	"github.com/jamespfennell/transiter/internal/update"
 	"google.golang.org/grpc"
 )
@@ -56,7 +56,7 @@ func Run(postgresHost string) error {
 		log.Fatalf("Failed to intialize the scheduler: %s\n", err)
 	}
 
-	transiterService := service.NewTransiterService(database)
+	publicService := public.New(database)
 	adminService := admin.New(database, scheduler)
 
 	wg.Add(1)
@@ -68,7 +68,7 @@ func Run(postgresHost string) error {
 			apihelpers.IncomingHeaderMatcher(),
 			apihelpers.ErrorHandler(),
 		)
-		api.RegisterTransiterHandlerServer(ctx, mux, transiterService)
+		api.RegisterPublicHandlerServer(ctx, mux, publicService)
 		log.Println("Transiter service HTTP API listening on localhost:8080")
 		err := http.ListenAndServe("localhost:8080", mux)
 		fmt.Printf("Closing :8080: %s\n", err)
@@ -79,7 +79,7 @@ func Run(postgresHost string) error {
 		defer cancelFunc()
 		defer wg.Done()
 		grpcServer := grpc.NewServer()
-		api.RegisterTransiterServer(grpcServer, transiterService)
+		api.RegisterPublicServer(grpcServer, publicService)
 		lis, err := net.Listen("tcp", "localhost:8081")
 		if err != nil {
 			return
@@ -97,7 +97,7 @@ func Run(postgresHost string) error {
 			apihelpers.IncomingHeaderMatcher(),
 			apihelpers.ErrorHandler(),
 		)
-		api.RegisterTransiterHandlerServer(ctx, mux, transiterService)
+		api.RegisterPublicHandlerServer(ctx, mux, publicService)
 		api.RegisterTransiterAdminHandlerServer(ctx, mux, adminService)
 		log.Println("Admin service HTTP API listening on localhost:8082")
 		_ = http.ListenAndServe("0.0.0.0:8082", mux)
@@ -108,7 +108,7 @@ func Run(postgresHost string) error {
 		defer cancelFunc()
 		defer wg.Done()
 		grpcServer := grpc.NewServer()
-		api.RegisterTransiterServer(grpcServer, transiterService)
+		api.RegisterPublicServer(grpcServer, publicService)
 		api.RegisterTransiterAdminServer(grpcServer, adminService)
 		lis, err := net.Listen("tcp", "localhost:8083")
 		if err != nil {

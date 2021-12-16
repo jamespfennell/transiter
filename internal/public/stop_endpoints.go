@@ -1,10 +1,10 @@
-package service
+package public
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/jamespfennell/transiter/internal/service/stoptree"
+	"github.com/jamespfennell/transiter/internal/public/stoptree"
 	"log"
 	"sort"
 	"time"
@@ -12,12 +12,12 @@ import (
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/service/errors"
-	"github.com/jamespfennell/transiter/internal/service/session"
+	"github.com/jamespfennell/transiter/internal/public/errors"
+	"github.com/jamespfennell/transiter/internal/public/session"
 )
 
-func (t *TransiterService) ListStopsInSystem(ctx context.Context, req *api.ListStopsInSystemRequest) (*api.ListStopsInSystemReply, error) {
-	s := t.NewSession(ctx)
+func (t *Service) ListStopsInSystem(ctx context.Context, req *api.ListStopsInSystemRequest) (*api.ListStopsInSystemReply, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
@@ -41,8 +41,8 @@ func (t *TransiterService) ListStopsInSystem(ctx context.Context, req *api.ListS
 	return result, s.Finish()
 }
 
-func (t *TransiterService) ListTransfersInSystem(ctx context.Context, req *api.ListTransfersInSystemRequest) (*api.ListTransfersInSystemReply, error) {
-	s := t.NewSession(ctx)
+func (t *Service) ListTransfersInSystem(ctx context.Context, req *api.ListTransfersInSystemRequest) (*api.ListTransfersInSystemReply, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
@@ -76,9 +76,9 @@ func (t *TransiterService) ListTransfersInSystem(ctx context.Context, req *api.L
 	return reply, nil
 }
 
-func (t *TransiterService) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemRequest) (*api.Stop, error) {
+func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemRequest) (*api.Stop, error) {
 	startTime := time.Now()
-	s := t.NewSession(ctx)
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	// TODO: we can probably remove this call? And just check that the stops tree is non-empty
 	stop, err := s.Querier.GetStopInSystem(ctx, db.GetStopInSystemParams{SystemID: req.SystemId, StopID: req.StopId})

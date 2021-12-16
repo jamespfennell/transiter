@@ -167,7 +167,7 @@ The start of response will look like this,
   "periodicity": 7.5,
   "agency": null,
   "alerts": [],
-  "service_maps": // service map definitions in here
+  "service_maps": // public map definitions in here
 }
 ```
 

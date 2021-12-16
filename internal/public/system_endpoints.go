@@ -1,4 +1,4 @@
-package service
+package public
 
 import (
 	"context"
@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/jamespfennell/transiter/internal/gen/api"
-	"github.com/jamespfennell/transiter/internal/service/errors"
+	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *TransiterService) ListSystems(ctx context.Context, req *api.ListSystemsRequest) (*api.ListSystemsReply, error) {
-	s := t.NewSession(ctx)
+func (t *Service) ListSystems(ctx context.Context, req *api.ListSystemsRequest) (*api.ListSystemsReply, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	systems, err := s.Querier.ListSystems(ctx)
 	if err != nil {
@@ -29,8 +29,8 @@ func (t *TransiterService) ListSystems(ctx context.Context, req *api.ListSystems
 	return &res, s.Finish()
 }
 
-func (t *TransiterService) GetSystem(ctx context.Context, req *api.GetSystemRequest) (*api.System, error) {
-	s := t.NewSession(ctx)
+func (t *Service) GetSystem(ctx context.Context, req *api.GetSystemRequest) (*api.System, error) {
+	s := t.newSession(ctx)
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
