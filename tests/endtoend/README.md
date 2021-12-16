@@ -5,27 +5,26 @@ In the tests, Transiter is running as it would in production
 and various standard operations (installing transit systems, performing feed updates,
  querying the resulting data)
 are performed and verified.
-Because the test closely resembles actual usage, it is extremely
+Because the test closely resembles actual usage, these tests are really
 valuable for ensuring the correctness of the software.
 
-The tests are written in Python.
-This is an artifact of Transiter originally being written in Python too.
+The tests are written in Python, which is an artifact of Transiter originally being written in Python, too.
 However, the intent is to keep the tests in Python because the language difference
   is nicely enforces that the tests don't use non-API aspects of Transiter.
 
-
 ## Structure of the test
 
-During a test run, there are three live components:
+During a test run, there are four live components:
+
+1. Postgres.
 
 1. The Transiter instance, listening on its default ports.
 
 1. A source server, which is used to simulate external transit agency data sources.
    This listens by default on port 8090.
-    
+
 1. The test driver itself. 
    It interacts with Transiter solely through Transiter's admin HTTP API.
-
 
 ## Running the test
 
@@ -44,60 +43,17 @@ The defaults for these are:
 
 - `SOURCE_SERVER_HOST_WITHIN_TRANSITER=SOURCE_SERVER_HOST`
 
-There are three ways to setup the test,
-and each corresponds to a different configuration 
-for the environment variables.
-In the following, it is assumed the the current working
-directory is the root of the Transiter repo.
+### Full Docker compose
 
-### Bare metal run
+The easiest way to run the tests is using Docker compose.
+This assumes that Docker image has been built locally with:
 
-In this setup, the processes composing the Transiter instance
-are run using the appropriate `transiterclt launch` command.
-The Transiter instance will listen on `localhost`'s 8000 port.
-The source server is run using the command `python sourceserver.py`,
- and will listen on `localhost`'s 5001 port.
-As such, for this setup, the environment variables should be set to their defaults.
+    docker build . -t jamespfennell/transiter:latest   
 
-This test setup is tedious to create because you may need to have a few terminal windows open.
-The benefit of it is that it's easy to pick up code changes to the Transiter production code,
-unlike the Docker based solutions below.
+First launch Transiter, Postgres and the source server:
 
-The tests are run using,
+    docker-compose -f tests/endtoend/compose.yml up --build sourceserver transiter db
 
-    pytest tests/endtoend
+Then in another terminal run the tests:
 
-
-### Partial Docker compose setup
-
-In this setup, the Transiter processes and the source server are 
-run in the same Docker compose network, and the test runner is outside of the network (i.e., bare metal).
-This setup is ideal when writing new end to end tests that
-    won't involve code changes to the Transiter production code.
-
-First, the Docker compose network is launched using,
-    
-    docker-compose -p transiter -f docker/docker-compose.yml -d up 
-    docker-compose -p transiter -f tests/endtoend/compose.yaml up -d sourceserver
-
-The non-default environment variables should be set as follows:
-
-    export SOURCE_SERVER_HOST_WITHIN_TRANSITER=http://sourceserver:5001
-    
-The tests are then run using,
-
-    pytest tests/endtoend
-
-### Full Docker compose 
-
-This is the setup the tests run under in Travis CI.
-
-First, the Docker compose network is launched using,
-    
-    docker-compose -p transiter -f docker/docker-compose.yml up -d 
-    docker-compose -p transiter -f tests/endtoend/compose.yaml up -d sourceserver
-
-And then the tests are run using,
-
-    docker-compose -p transiter -f tests/endtoend/compose.yaml run testrunner
-
+    docker-compose -f tests/endtoend/compose.yml up --build testrunner

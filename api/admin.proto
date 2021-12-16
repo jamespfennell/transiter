@@ -22,6 +22,18 @@ service TransiterAdmin {
                 delete: "/admin/systems/{system_id}"
             };
       }
+
+      rpc GetSchedulerStatus(GetSchedulerStatusRequest) returns (GetSchedulerStatusReply) {
+        option (google.api.http) = {
+                get: "/admin/scheduler"
+            };
+      }
+
+      rpc RefreshScheduler(RefreshSchedulerRequest) returns (RefreshSchedulerReply) {
+        option (google.api.http) = {
+                post: "/admin/scheduler"
+            };
+      }
 }
 
 message GetSystemConfigRequest {
@@ -100,3 +112,22 @@ enum GtfsRealtimeExtension {
     US_NY_SUBWAY_TRIPS = 1;
     US_NY_SUBWAY_ALERTS = 2;
 }
+
+
+message GetSchedulerStatusRequest {}
+
+message GetSchedulerStatusReply {
+    message Feed {
+        string system_id = 1;
+        string feed_id = 2;
+        int32 period = 3;
+        int64 last_successful_update = 4;
+        int64 last_finished_update = 5;
+        bool currently_running = 6;
+    }
+    repeated Feed feeds = 1;
+}
+
+message RefreshSchedulerRequest {}
+
+message RefreshSchedulerReply {}

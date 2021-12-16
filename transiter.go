@@ -2,149 +2,83 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"flag"
 	"fmt"
-	"log"
-	"net"
-	"net/http"
-	"sync"
-	"time"
+	"os"
 
-	"github.com/benbjohnson/clock"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	_ "github.com/jackc/pgx/v4"
-	"github.com/jamespfennell/transiter/db/schema"
-	"github.com/jamespfennell/transiter/internal/admin"
-	"github.com/jamespfennell/transiter/internal/apihelpers"
-	"github.com/jamespfennell/transiter/internal/gen/api"
-	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/scheduler"
-	"github.com/jamespfennell/transiter/internal/service"
-	"github.com/jamespfennell/transiter/internal/update"
-	"google.golang.org/grpc"
+	"github.com/jamespfennell/transiter/internal/client"
+	"github.com/jamespfennell/transiter/internal/server"
+	"github.com/urfave/cli/v2"
 )
 
-var flagPostgresHost = flag.String("postgres-host", "localhost:5432", "the help message for flag n")
-
 func main() {
-	flag.Parse()
-	log.Println("Transiter v0.6alpha")
-	database, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-		"transiter",       // user
-		"transiter",       // password
-		*flagPostgresHost, // Postgres host
-		"transiter",       // database
-	))
-	if err != nil {
-		log.Fatalf("Could not connect to DB: %s\n", err)
+	app := &cli.App{
+		Name:  "Transiter",
+		Usage: "web service for transit data",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "addr",
+				Aliases: []string{"a"},
+				Usage:   "address of the Transiter server's gRPC admin API",
+				Value:   "localhost:8083",
+			},
+		},
+		Commands: []*cli.Command{
+			{
+				Name:  "list",
+				Usage: "list all installed transit systems",
+				Action: clientAction(func(ctx context.Context, client *client.Client) error {
+					return client.ListSystems(ctx)
+				}),
+			},
+			{
+				Name:  "scheduler",
+				Usage: "perform operations on the Transiter server scheduler",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "status",
+						Usage: "get the list of periodic update tasks currently scheduled",
+						Action: clientAction(func(ctx context.Context, client *client.Client) error {
+							return client.SchedulerStatus(ctx)
+						}),
+					},
+					{
+						Name:  "refresh",
+						Usage: "refresh the set of feed auto update tasks the scheduler is scheduling",
+						Action: clientAction(func(ctx context.Context, client *client.Client) error {
+							return client.RefreshScheduler(ctx)
+						}),
+					},
+				},
+			},
+			{
+				Name:  "server",
+				Usage: "run a Transiter server",
+				Action: func(c *cli.Context) error {
+					return server.Run(c.String("postgres-addr"))
+				},
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "postgres-addr",
+						Usage: "Postgres database address",
+						Value: "localhost:5432",
+					},
+				},
+			},
+		},
 	}
-
-	if err := pingDb(database); err != nil {
-		log.Fatalf("Failed to connect to the database; exiting: %s\n", err)
+	if err := app.Run(os.Args); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
-
-	log.Println("Database migrations: starting")
-	if err := schema.Migrate(database); err != nil {
-		log.Fatalf("Could not run the database migrations: %s\n", err)
-	}
-	log.Println("Database migrations: finished")
-
-	ctx := context.Background()
-	ctx, cancelFunc := context.WithCancel(ctx)
-	defer cancelFunc()
-
-	var wg sync.WaitGroup
-	scheduler, err := scheduler.New(ctx, clock.New(), db.New(database), update.Run)
-	if err != nil {
-		log.Fatalf("Failed to intialize the scheduler: %s\n", err)
-	}
-	wg.Add(1)
-	go func() {
-		defer cancelFunc()
-		defer wg.Done()
-		scheduler.Run(nil)
-	}()
-
-	transiterService := service.NewTransiterService(database)
-	adminService := admin.New(database, scheduler)
-
-	wg.Add(1)
-	go func() {
-		defer cancelFunc()
-		defer wg.Done()
-		mux := runtime.NewServeMux(
-			apihelpers.MarshalerOptions(),
-			apihelpers.IncomingHeaderMatcher(),
-			apihelpers.ErrorHandler(),
-		)
-		api.RegisterTransiterHandlerServer(ctx, mux, transiterService)
-		log.Println("Transiter service HTTP API listening on localhost:8080")
-		err := http.ListenAndServe("localhost:8080", mux)
-		fmt.Printf("Closing :8080: %s\n", err)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer cancelFunc()
-		defer wg.Done()
-		grpcServer := grpc.NewServer()
-		api.RegisterTransiterServer(grpcServer, transiterService)
-		lis, err := net.Listen("tcp", "localhost:8081")
-		if err != nil {
-			return
-		}
-		log.Println("Transiter service gRPC API listening on localhost:8081")
-		_ = grpcServer.Serve(lis)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer cancelFunc()
-		defer wg.Done()
-		mux := runtime.NewServeMux(
-			apihelpers.MarshalerOptions(),
-			apihelpers.IncomingHeaderMatcher(),
-			apihelpers.ErrorHandler(),
-		)
-		api.RegisterTransiterHandlerServer(ctx, mux, transiterService)
-		api.RegisterTransiterAdminHandlerServer(ctx, mux, adminService)
-		log.Println("Admin service HTTP API listening on localhost:8082")
-		_ = http.ListenAndServe("0.0.0.0:8082", mux)
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer cancelFunc()
-		defer wg.Done()
-		grpcServer := grpc.NewServer()
-		api.RegisterTransiterServer(grpcServer, transiterService)
-		api.RegisterTransiterAdminServer(grpcServer, adminService)
-		lis, err := net.Listen("tcp", "localhost:8083")
-		if err != nil {
-			return
-		}
-		log.Println("Admin service gRPC API listening on localhost:8083")
-		_ = grpcServer.Serve(lis)
-	}()
-
-	wg.Wait()
 }
 
-func pingDb(db *sql.DB) error {
-	var err error
-	nRetries := 20
-	for i := 0; i < nRetries; i++ {
-		err = db.Ping()
-		if err == nil {
-			log.Printf("Database ping successful")
-			break
+func clientAction(f func(ctx context.Context, client *client.Client) error) func(c *cli.Context) error {
+	return func(c *cli.Context) error {
+		client, err := client.New(c.String("addr"))
+		if err != nil {
+			return err
 		}
-		log.Printf("Failed to ping the database: %s\n", err)
-		if i != nRetries-1 {
-			log.Printf("Will try to ping agaion in 500 milliseconds")
-			time.Sleep(500 * time.Millisecond)
-		}
+		defer client.Close()
+		return f(context.Background(), client)
 	}
-	return err
 }

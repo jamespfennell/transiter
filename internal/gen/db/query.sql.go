@@ -1237,7 +1237,7 @@ func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int32) ([]Li
 }
 
 const listSystems = `-- name: ListSystems :many
-SELECT pk, id, name, timezone, status FROM system
+SELECT pk, id, name, timezone, status FROM system ORDER BY id, name
 `
 
 func (q *Queries) ListSystems(ctx context.Context) ([]System, error) {

@@ -9,6 +9,7 @@ require (
 	github.com/kyleconroy/sqlc v1.10.0
 	github.com/lib/pq v1.10.4
 	github.com/pressly/goose/v3 v3.4.1
+	github.com/urfave/cli/v2 v2.3.0
 	google.golang.org/genproto v0.0.0-20210903162649-d08c68adba83
 	google.golang.org/grpc v1.42.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0

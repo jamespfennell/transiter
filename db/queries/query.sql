@@ -3,7 +3,7 @@ SELECT * FROM system
 WHERE id = $1 LIMIT 1;
 
 -- name: ListSystems :many
-SELECT * FROM system;
+SELECT * FROM system ORDER BY id, name;
 
 -- name: CountSystems :one
 SELECT COUNT(*) FROM system;
