@@ -24,6 +24,18 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			{
+				Name:  "delete",
+				Usage: "delete a transit system",
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() == 0 {
+						return fmt.Errorf("must provide the ID of the system to delete")
+					}
+					return clientAction(func(ctx context.Context, client *client.Client) error {
+						return client.DeleteSystem(ctx, c.Args().Get(0))
+					})(c)
+				},
+			},
+			{
 				Name:  "list",
 				Usage: "list all installed transit systems",
 				Action: clientAction(func(ctx context.Context, client *client.Client) error {

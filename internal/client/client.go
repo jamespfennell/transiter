@@ -34,6 +34,12 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
+func (c *Client) DeleteSystem(ctx context.Context, systemId string) error {
+	req := api.DeleteSystemRequest{SystemId: systemId}
+	_, err := c.adminClient.DeleteSystem(ctx, &req)
+	return err
+}
+
 func (c *Client) ListSystems(ctx context.Context) error {
 	var req api.ListSystemsRequest
 	rep, err := c.publicClient.ListSystems(ctx, &req)

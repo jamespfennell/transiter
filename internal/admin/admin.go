@@ -14,8 +14,8 @@ import (
 	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/scheduler"
 	"github.com/jamespfennell/transiter/internal/public/errors"
+	"github.com/jamespfennell/transiter/internal/scheduler"
 )
 
 // Service implements the Transiter admin service.
@@ -181,7 +181,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 	}
 	log.Printf("Deleted system %q", req.SystemId)
 	s.scheduler.Refresh(ctx, req.SystemId)
-	return nil, nil
+	return &api.DeleteSystemReply{}, nil
 }
 
 func getSystemConfigFromUrl(url string) (*config.SystemConfig, error) {
