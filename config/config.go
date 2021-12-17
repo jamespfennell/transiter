@@ -59,12 +59,13 @@ type TransfersException struct {
 type GtfsRealtimeExtension string
 
 const (
+	NoExtension      GtfsRealtimeExtension = ""
 	UsNySubwayTrips  GtfsRealtimeExtension = "US_NY_SUBWAY_TRIPS"
 	UsNySubwayAlerts GtfsRealtimeExtension = "US_NY_SUBWAY_ALERTS"
 )
 
 type GtfsRealtimeOptions struct {
-	Extensions []GtfsRealtimeExtension
+	Extension GtfsRealtimeExtension
 }
 
 func ConvertApiSystemConfig(sc *api.SystemConfig) *SystemConfig {
@@ -103,18 +104,14 @@ func ConvertApiFeedConfig(fc *api.FeedConfig) *FeedConfig {
 			TransfersExceptions: internalExceptions,
 		}
 	case *api.FeedConfig_GtfsRealtimeParser_:
-		var internalExts []GtfsRealtimeExtension
-		for _, ext := range parser.GtfsRealtimeParser.Extensions {
-			switch ext {
-			case api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS:
-				internalExts = append(internalExts, UsNySubwayAlerts)
-			case api.GtfsRealtimeExtension_US_NY_SUBWAY_TRIPS:
-				internalExts = append(internalExts, UsNySubwayTrips)
-			}
-		}
 		result.Parser = GtfsRealtime
-		result.GtfsRealtimeOptions = GtfsRealtimeOptions{
-			Extensions: internalExts,
+		if parser.GtfsRealtimeParser.Extension != nil {
+			switch *parser.GtfsRealtimeParser.Extension {
+			case api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS:
+				result.GtfsRealtimeOptions.Extension = UsNySubwayAlerts
+			case api.GtfsRealtimeExtension_US_NY_SUBWAY_TRIPS:
+				result.GtfsRealtimeOptions.Extension = UsNySubwayTrips
+			}
 		}
 	case *api.FeedConfig_DirectionRulesParser_:
 		result.Parser = DirectionRules
@@ -168,18 +165,18 @@ func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 			},
 		}
 	case GtfsRealtime:
-		var apiExts []api.GtfsRealtimeExtension
-		for _, ext := range fc.GtfsRealtimeOptions.Extensions {
-			switch ext {
-			case UsNySubwayAlerts:
-				apiExts = append(apiExts, api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS)
-			case UsNySubwayTrips:
-				apiExts = append(apiExts, api.GtfsRealtimeExtension_US_NY_SUBWAY_TRIPS)
-			}
+		var apiExt *api.GtfsRealtimeExtension
+		switch fc.GtfsRealtimeOptions.Extension {
+		case UsNySubwayAlerts:
+			e := api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS
+			apiExt = &e
+		case UsNySubwayTrips:
+			e := api.GtfsRealtimeExtension_US_NY_SUBWAY_TRIPS
+			apiExt = &e
 		}
 		result.Parser = &api.FeedConfig_GtfsRealtimeParser_{
 			GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{
-				Extensions: apiExts,
+				Extension: apiExt,
 			},
 		}
 	case DirectionRules:

@@ -1,5 +1,6 @@
+- add requiredForInstall flag and trigger these updates during install
+- implement the gtfs static parser and import logic
+- Async install (and delete?)
+- Support for Go templates in the Yaml file
+- implement the gtfs realtime parser and import logic
 
-- Read yaml config from remote
-- Parse the yaml config into a SystemConfig type
-- Then install the system properly
-- Start running the integration test

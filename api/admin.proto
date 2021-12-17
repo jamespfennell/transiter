@@ -46,9 +46,10 @@ message InstallOrUpdateSystemRequest {
     oneof config {
         SystemConfig system_config = 2;
         string yaml_config_url = 3;
+        string yaml_config_content = 4;
     }
 
-    bool no_update = 4;
+    bool no_update = 5;
 }
 
 message InstallOrUpdateSystemReply {
@@ -91,7 +92,7 @@ message FeedConfig {
     }
 
     message GtfsRealtimeParser {
-        repeated GtfsRealtimeExtension extensions = 1;
+        optional GtfsRealtimeExtension extension = 1;
     }
 
     message DirectionRulesParser{}

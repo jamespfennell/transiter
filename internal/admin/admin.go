@@ -85,6 +85,11 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		if err != nil {
 			return nil, err
 		}
+	case *api.InstallOrUpdateSystemRequest_YamlConfigContent:
+		systemConfig, err = config.UnmarshalFromYaml([]byte(c.YamlConfigContent))
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("no system configuration provided")
 	}
@@ -187,12 +192,12 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 func getSystemConfigFromUrl(url string) (*config.SystemConfig, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
 	}
 	return config.UnmarshalFromYaml(body)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/jamespfennell/transiter/internal/client/table"
@@ -37,6 +38,28 @@ func (c *Client) Close() error {
 func (c *Client) DeleteSystem(ctx context.Context, systemId string) error {
 	req := api.DeleteSystemRequest{SystemId: systemId}
 	_, err := c.adminClient.DeleteSystem(ctx, &req)
+	return err
+}
+
+func (c *Client) InstallSystem(ctx context.Context, systemId, configPath string, isFile bool, allowUpdate bool) error {
+	req := api.InstallOrUpdateSystemRequest{
+		SystemId: systemId,
+		NoUpdate: !allowUpdate,
+	}
+	if isFile {
+		yaml, err := os.ReadFile(configPath)
+		if err != nil {
+			return err
+		}
+		req.Config = &api.InstallOrUpdateSystemRequest_YamlConfigContent{
+			YamlConfigContent: string(yaml),
+		}
+	} else {
+		req.Config = &api.InstallOrUpdateSystemRequest_YamlConfigUrl{
+			YamlConfigUrl: configPath,
+		}
+	}
+	_, err := c.adminClient.InstallOrUpdateSystem(ctx, &req)
 	return err
 }
 

@@ -21,6 +21,7 @@ const (
 func TestConvert(t *testing.T) {
 	var timeoutMs int64 = 5000
 	timeoutDuration := time.Second * 5
+	alertsExt := api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS
 
 	testCases := []struct {
 		apiConfig      *api.FeedConfig
@@ -75,15 +76,26 @@ func TestConvert(t *testing.T) {
 			apiConfig: &api.FeedConfig{
 				Parser: &api.FeedConfig_GtfsRealtimeParser_{
 					GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{
-						Extensions: []api.GtfsRealtimeExtension{api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS},
+						Extension: &alertsExt,
 					},
 				},
 			},
 			internalConfig: &FeedConfig{
 				Parser: GtfsRealtime,
 				GtfsRealtimeOptions: GtfsRealtimeOptions{
-					Extensions: []GtfsRealtimeExtension{UsNySubwayAlerts},
+					Extension: UsNySubwayAlerts,
 				},
+			},
+		},
+		{
+			apiConfig: &api.FeedConfig{
+				Parser: &api.FeedConfig_GtfsRealtimeParser_{
+					GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{},
+				},
+			},
+			internalConfig: &FeedConfig{
+				Parser:              GtfsRealtime,
+				GtfsRealtimeOptions: GtfsRealtimeOptions{},
 			},
 		},
 		{

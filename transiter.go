@@ -36,6 +36,35 @@ func main() {
 				},
 			},
 			{
+				Name:  "install",
+				Usage: "install a transit system",
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() == 0 {
+						return fmt.Errorf("must provide the ID of the system to delete")
+					}
+					if c.Args().Len() == 1 {
+						return fmt.Errorf("must provide a URL or file path for the transit system Yaml config")
+					}
+					return clientAction(func(ctx context.Context, client *client.Client) error {
+						return client.InstallSystem(ctx, c.Args().Get(0), c.Args().Get(1), c.Bool("file"), c.Bool("update"))
+					})(c)
+				},
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:    "file",
+						Aliases: []string{"f"},
+						Usage:   "interpret the second argument as a local file path",
+						Value:   false,
+					},
+					&cli.BoolFlag{
+						Name:    "update",
+						Aliases: []string{"u"},
+						Usage:   "if the system is already installed, update it with the provided config",
+						Value:   false,
+					},
+				},
+			},
+			{
 				Name:  "list",
 				Usage: "list all installed transit systems",
 				Action: clientAction(func(ctx context.Context, client *client.Client) error {
@@ -91,6 +120,8 @@ func clientAction(f func(ctx context.Context, client *client.Client) error) func
 			return err
 		}
 		defer client.Close()
+		// TODO: parse the error to remove RPC references
+		// For example when a yaml config url provided to install is incorrect
 		return f(context.Background(), client)
 	}
 }
