@@ -16,6 +16,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/scheduler"
+	"github.com/jamespfennell/transiter/internal/update"
 )
 
 // Service implements the Transiter admin service.
@@ -147,6 +148,9 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 				AutoUpdatePeriod:  convertNullDuration(newFeed.AutoUpdatePeriod),
 				Config:            string(newFeed.MarshalToJson()),
 			})
+		}
+		if newFeed.RequiredForInstall {
+			update.RunWithQuerier(ctx, querier, req.SystemId, newFeed.Id)
 		}
 	}
 	for _, pk := range feedIdToPk {

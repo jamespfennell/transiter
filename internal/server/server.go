@@ -51,7 +51,7 @@ func Run(postgresHost string) error {
 	defer cancelFunc()
 
 	var wg sync.WaitGroup
-	scheduler, err := scheduler.New(ctx, clock.New(), db.New(database), update.Run)
+	scheduler, err := scheduler.New(ctx, clock.New(), database, func(database *sql.DB) db.Querier { return db.New(database) }, update.Run)
 	if err != nil {
 		log.Fatalf("Failed to intialize the scheduler: %s\n", err)
 	}

@@ -72,6 +72,11 @@ message SystemConfig {
 message FeedConfig {
     string id = 1;
 
+    bool required_for_install = 8;
+
+    bool auto_update_enabled = 6;
+    optional int64 auto_update_period = 7;
+    
     string url = 2;
     optional int64 http_timeout = 22;
     map<string, string> http_headers = 23;
@@ -103,9 +108,6 @@ message FeedConfig {
         DirectionRulesParser direction_rules_parser = 5;
     }
 
-    bool auto_update_enabled = 6;
-    optional int32 auto_update_period = 7;
-    bool required_for_install = 8;
 }
 
 enum GtfsRealtimeExtension {
@@ -121,7 +123,7 @@ message GetSchedulerStatusReply {
     message Feed {
         string system_id = 1;
         string feed_id = 2;
-        int32 period = 3;
+        int64 period = 3;
         int64 last_successful_update = 4;
         int64 last_finished_update = 5;
         bool currently_running = 6;

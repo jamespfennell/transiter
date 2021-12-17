@@ -30,6 +30,7 @@ package scheduler
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"sort"
@@ -39,10 +40,13 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
 
-type UpdateFunc func(ctx context.Context, systemId, feedId string) error
+type UpdateFunc func(ctx context.Context, database *sql.DB, systemId, feedId string) error
+
+type QuerierFunc func(database *sql.DB) db.Querier
 
 type Scheduler struct {
-	querier db.Querier
+	database *sql.DB
+	querierFunc QuerierFunc
 
 	// The refreshAll channels are used to signal to the root scheduler that it should refresh all systems
 	refreshAllRequest chan []refreshMsg
@@ -60,9 +64,10 @@ type Scheduler struct {
 	doneChan chan struct{}
 }
 
-func New(ctx context.Context, clock clock.Clock, querier db.Querier, updateFunc UpdateFunc) (*Scheduler, error) {
+func New(ctx context.Context, clock clock.Clock, database *sql.DB, querierFunc QuerierFunc, updateFunc UpdateFunc) (*Scheduler, error) {
 	s := &Scheduler{
-		querier:           querier,
+		database:          database,
+		querierFunc: querierFunc,
 		refreshAllRequest: make(chan []refreshMsg),
 		refreshAllReply:   make(chan struct{}),
 		refreshRequest:    make(chan refreshMsg),
@@ -71,11 +76,11 @@ func New(ctx context.Context, clock clock.Clock, querier db.Querier, updateFunc 
 		statusReply:       make(chan []ScheduledFeed),
 		doneChan:          make(chan struct{}),
 	}
-	go s.run(ctx, clock, updateFunc)
+	go s.run(ctx, clock, database, updateFunc)
 	return s, s.RefreshAll(ctx)
 }
 
-func (s *Scheduler) run(ctx context.Context, clock clock.Clock, updateFunc UpdateFunc) {
+func (s *Scheduler) run(ctx context.Context, clock clock.Clock, database *sql.DB, updateFunc UpdateFunc) {
 	systemSchedulers := map[string]struct {
 		scheduler  *systemScheduler
 		cancelFunc context.CancelFunc
@@ -91,7 +96,7 @@ func (s *Scheduler) run(ctx context.Context, clock clock.Clock, updateFunc Updat
 			cancelFunc context.CancelFunc
 		}{
 			scheduler: newSystemScheduler(systemCtx, clock, func(ctx context.Context, feedId string) error {
-				return updateFunc(ctx, systemId, feedId)
+				return updateFunc(ctx, database, systemId, feedId)
 			}),
 			cancelFunc: cancelFunc,
 		}
@@ -155,14 +160,15 @@ func (s *Scheduler) Wait() {
 
 func (s *Scheduler) RefreshAll(ctx context.Context) error {
 	log.Printf("Preparing to refresh scheduler")
-	systems, err := s.querier.ListSystems(ctx)
+	querier := s.querierFunc(s.database)
+	systems, err := querier.ListSystems(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get systems data during scheduler refresh: %w", err)
 	}
 	var msg []refreshMsg
 	for _, system := range systems {
 		systemMsg := refreshMsg{systemId: system.ID}
-		feeds, err := s.querier.ListAutoUpdateFeedsForSystem(ctx, system.ID)
+		feeds, err := querier.ListAutoUpdateFeedsForSystem(ctx, system.ID)
 		if err != nil {
 			return err
 		}
@@ -199,7 +205,8 @@ type refreshMsg struct {
 
 func (s *Scheduler) Refresh(ctx context.Context, systemId string) error {
 	log.Printf("Preparing to refresh scheduler for system %q\n", systemId)
-	feeds, err := s.querier.ListAutoUpdateFeedsForSystem(ctx, systemId)
+	querier := s.querierFunc(s.database)
+	feeds, err := querier.ListAutoUpdateFeedsForSystem(ctx, systemId)
 	if err != nil {
 		return err
 	}

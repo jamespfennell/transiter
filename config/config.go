@@ -18,6 +18,8 @@ type SystemConfig struct {
 type FeedConfig struct {
 	Id string
 
+	RequiredForInstall bool `yaml:"requiredForInstall"`
+
 	AutoUpdateEnabled bool           `yaml:"autoUpdateEnabled"`
 	AutoUpdatePeriod  *time.Duration `yaml:"autoUpdatePeriod"`
 
@@ -80,12 +82,12 @@ func ConvertApiSystemConfig(sc *api.SystemConfig) *SystemConfig {
 
 func ConvertApiFeedConfig(fc *api.FeedConfig) *FeedConfig {
 	result := &FeedConfig{
-		Url:         fc.Url,
-		HttpHeaders: fc.HttpHeaders,
-	}
-	if fc.HttpTimeout != nil {
-		timeout := time.Millisecond * time.Duration(*fc.HttpTimeout)
-		result.HttpTimeout = &timeout
+		RequiredForInstall: fc.RequiredForInstall,
+		AutoUpdateEnabled:  fc.AutoUpdateEnabled,
+		AutoUpdatePeriod:   convertMilliseconds(fc.AutoUpdatePeriod),
+		Url:                fc.Url,
+		HttpTimeout:        convertMilliseconds(fc.HttpTimeout),
+		HttpHeaders:        fc.HttpHeaders,
 	}
 
 	switch parser := fc.Parser.(type) {
@@ -141,12 +143,12 @@ func ConvertSystemConfig(sc *SystemConfig) *api.SystemConfig {
 
 func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 	result := &api.FeedConfig{
-		Url:         fc.Url,
-		HttpHeaders: fc.HttpHeaders,
-	}
-	if fc.HttpTimeout != nil {
-		timeout := fc.HttpTimeout.Milliseconds()
-		result.HttpTimeout = &timeout
+		RequiredForInstall: fc.RequiredForInstall,
+		AutoUpdateEnabled:  fc.AutoUpdateEnabled,
+		AutoUpdatePeriod:   convertDuration(fc.AutoUpdatePeriod),
+		Url:                fc.Url,
+		HttpTimeout:        convertDuration(fc.HttpTimeout),
+		HttpHeaders:        fc.HttpHeaders,
 	}
 	switch fc.Parser {
 	case GtfsStatic:
@@ -193,6 +195,22 @@ func convertInternalTransfersStrategy(s TransfersStrategy) api.FeedConfig_GtfsSt
 		return api.FeedConfig_GtfsStaticParser_GROUP_STATIONS
 	}
 	return api.FeedConfig_GtfsStaticParser_DEFAULT
+}
+
+func convertMilliseconds(t *int64) *time.Duration {
+	if t == nil {
+		return nil
+	}
+	r := time.Millisecond * time.Duration(*t)
+	return &r
+}
+
+func convertDuration(t *time.Duration) *int64 {
+	if t == nil {
+		return nil
+	}
+	r := t.Milliseconds()
+	return &r
 }
 
 func UnmarshalFromYaml(b []byte) (*SystemConfig, error) {

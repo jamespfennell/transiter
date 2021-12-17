@@ -29,6 +29,18 @@ func TestConvert(t *testing.T) {
 	}{
 		{
 			apiConfig: &api.FeedConfig{
+				RequiredForInstall: true,
+				AutoUpdateEnabled:  true,
+				AutoUpdatePeriod:   &timeoutMs,
+			},
+			internalConfig: &FeedConfig{
+				RequiredForInstall: true,
+				AutoUpdateEnabled:  true,
+				AutoUpdatePeriod:   &timeoutDuration,
+			},
+		},
+		{
+			apiConfig: &api.FeedConfig{
 				Url:         Url,
 				HttpTimeout: &timeoutMs,
 				HttpHeaders: map[string]string{
