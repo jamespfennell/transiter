@@ -400,8 +400,7 @@ message FeedPreview {
 message Agency {
   string id = 1;
   string name = 2;
-  // TODO(APIv2): make this not optional
-  optional string url = 3;
+  string url = 3;
   string timezone = 4;
   optional string language = 5;
   optional string phone = 6;

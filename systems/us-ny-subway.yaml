@@ -31,7 +31,7 @@ feeds:
     parser: DIRECTION_RULES
 
   - id: gtfsrealtime-alerts
-    autoUpdateEnabled: true
+    autoUpdateEnabled: false
     autoUpdatePeriod: 5s
   
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"

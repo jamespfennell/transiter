@@ -128,7 +128,7 @@ feeds:
   - id: gtfsstatic
     url: "{static_feed_url}"
     parser: GTFS_STATIC
-    required_for_install: true
+    requiredForInstall: true
     autoUpdatePeriod: 3600s
 
   - id: GtfsRealtimeFeed

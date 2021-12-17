@@ -166,16 +166,6 @@ WHERE service_map_group.use_for_stops_in_route AND route.pk = sqlc.arg(route_pk)
 ORDER BY service_map_group.id, service_map_vertex.position;
 
 
--- name: ListFeedsInSystem :many
-SELECT * FROM feed WHERE system_pk = $1 ORDER BY id;
-
--- name: GetFeedInSystem :one
-SELECT feed.* FROM feed
-    INNER JOIN system ON feed.system_pk = system.pk
-    WHERE system.id = sqlc.arg(system_id)
-    AND feed.id = sqlc.arg(feed_id);
-
-
 -- name: ListTransfersInSystem :many
 SELECT 
     transfer.*,

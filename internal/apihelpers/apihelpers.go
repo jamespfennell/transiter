@@ -48,6 +48,13 @@ func ConvertNullInt32(t *int32) sql.NullInt32 {
 	return sql.NullInt32{Valid: true, Int32: *t}
 }
 
+func ConvertNullString(t *string) sql.NullString {
+	if t == nil {
+		return sql.NullString{}
+	}
+	return sql.NullString{Valid: true, String: *t}
+}
+
 func MarshalerOptions() runtime.ServeMuxOption {
 	return runtime.WithMarshalerOption("*", &runtime.JSONPb{
 		MarshalOptions: protojson.MarshalOptions{

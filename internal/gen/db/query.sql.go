@@ -132,32 +132,6 @@ func (q *Queries) GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemPa
 	return i, err
 }
 
-const getFeedInSystem = `-- name: GetFeedInSystem :one
-SELECT feed.pk, feed.id, feed.system_pk, feed.auto_update_enabled, feed.auto_update_period, feed.config FROM feed
-    INNER JOIN system ON feed.system_pk = system.pk
-    WHERE system.id = $1
-    AND feed.id = $2
-`
-
-type GetFeedInSystemParams struct {
-	SystemID string
-	FeedID   string
-}
-
-func (q *Queries) GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error) {
-	row := q.db.QueryRowContext(ctx, getFeedInSystem, arg.SystemID, arg.FeedID)
-	var i Feed
-	err := row.Scan(
-		&i.Pk,
-		&i.ID,
-		&i.SystemPk,
-		&i.AutoUpdateEnabled,
-		&i.AutoUpdatePeriod,
-		&i.Config,
-	)
-	return i, err
-}
-
 const getLastStopsForTrips = `-- name: GetLastStopsForTrips :many
 WITH last_stop_sequence AS (
   SELECT trip_pk, MAX(stop_sequence) as stop_sequence
@@ -639,40 +613,6 @@ func (q *Queries) ListDirectionNameRulesForStops(ctx context.Context, stopPks []
 			&i.DirectionID,
 			&i.Track,
 			&i.Name,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listFeedsInSystem = `-- name: ListFeedsInSystem :many
-SELECT pk, id, system_pk, auto_update_enabled, auto_update_period, config FROM feed WHERE system_pk = $1 ORDER BY id
-`
-
-func (q *Queries) ListFeedsInSystem(ctx context.Context, systemPk int32) ([]Feed, error) {
-	rows, err := q.db.QueryContext(ctx, listFeedsInSystem, systemPk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Feed
-	for rows.Next() {
-		var i Feed
-		if err := rows.Scan(
-			&i.Pk,
-			&i.ID,
-			&i.SystemPk,
-			&i.AutoUpdateEnabled,
-			&i.AutoUpdatePeriod,
-			&i.Config,
 		); err != nil {
 			return nil, err
 		}
@@ -1446,7 +1386,7 @@ func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int32) ([]ListTr
 }
 
 const listUpdatesInFeed = `-- name: ListUpdatesInFeed :many
-SELECT pk, feed_pk, content_length, completed_at, content_created_at, content_hash, download_duration, result, num_parsed_entities, num_added_entities, num_updated_entities, num_deleted_entities, result_message, scheduled_at, total_duration, update_type, status FROM feed_update 
+SELECT pk, feed_pk, status, created_at, completed_at, content_created_at, content_hash, content_length, result, result_message, total_duration FROM feed_update 
 WHERE feed_pk = $1
 ORDER BY pk DESC
 LIMIT 100
@@ -1464,21 +1404,15 @@ func (q *Queries) ListUpdatesInFeed(ctx context.Context, feedPk int32) ([]FeedUp
 		if err := rows.Scan(
 			&i.Pk,
 			&i.FeedPk,
-			&i.ContentLength,
+			&i.Status,
+			&i.CreatedAt,
 			&i.CompletedAt,
 			&i.ContentCreatedAt,
 			&i.ContentHash,
-			&i.DownloadDuration,
+			&i.ContentLength,
 			&i.Result,
-			&i.NumParsedEntities,
-			&i.NumAddedEntities,
-			&i.NumUpdatedEntities,
-			&i.NumDeletedEntities,
 			&i.ResultMessage,
-			&i.ScheduledAt,
 			&i.TotalDuration,
-			&i.UpdateType,
-			&i.Status,
 		); err != nil {
 			return nil, err
 		}

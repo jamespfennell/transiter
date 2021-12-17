@@ -12,5 +12,6 @@
 !api/*proto
 
 !transiter.go
+!parse/*
 !config/*
 !internal/*

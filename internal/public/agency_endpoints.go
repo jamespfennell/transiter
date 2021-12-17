@@ -64,7 +64,7 @@ func (t *Service) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSys
 	reply := &api.Agency{
 		Id:       agency.ID,
 		Name:     agency.Name,
-		Url:      apihelpers.ConvertSqlNullString(agency.Url),
+		Url:      agency.Url,
 		Timezone: agency.Timezone,
 		Language: apihelpers.ConvertSqlNullString(agency.Language),
 		Phone:    apihelpers.ConvertSqlNullString(agency.Phone),

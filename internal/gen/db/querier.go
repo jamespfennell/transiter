@@ -15,16 +15,20 @@ type Querier interface {
 	CountStopsInSystem(ctx context.Context, systemPk int32) (int64, error)
 	CountSystems(ctx context.Context) (int64, error)
 	CountTransfersInSystem(ctx context.Context, systemPk sql.NullInt32) (int64, error)
+	DeleteAgency(ctx context.Context, pk int32) error
 	DeleteFeed(ctx context.Context, pk int32) error
 	DeleteSystem(ctx context.Context, pk int32) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
+	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
 	GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error)
 	GetLastStopsForTrips(ctx context.Context, tripPks []int32) ([]GetLastStopsForTripsRow, error)
 	GetRouteInSystem(ctx context.Context, arg GetRouteInSystemParams) (GetRouteInSystemRow, error)
 	GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (GetStopInSystemRow, error)
 	GetSystem(ctx context.Context, id string) (System, error)
 	GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error)
+	InsertAgency(ctx context.Context, arg InsertAgencyParams) error
 	InsertFeed(ctx context.Context, arg InsertFeedParams) error
+	InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdateParams) (int64, error)
 	InsertSystem(ctx context.Context, arg InsertSystemParams) error
 	ListActiveAlertsForAgency(ctx context.Context, arg ListActiveAlertsForAgencyParams) ([]ListActiveAlertsForAgencyRow, error)
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)
@@ -49,6 +53,8 @@ type Querier interface {
 	ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt32) ([]ListTransfersInSystemRow, error)
 	ListTripsInRoute(ctx context.Context, routePk int32) ([]ListTripsInRouteRow, error)
 	ListUpdatesInFeed(ctx context.Context, feedPk int32) ([]FeedUpdate, error)
+	MapAgencyPkToIdInSystem(ctx context.Context, systemPk int32) ([]MapAgencyPkToIdInSystemRow, error)
+	UpdateAgency(ctx context.Context, arg UpdateAgencyParams) error
 	UpdateFeed(ctx context.Context, arg UpdateFeedParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
 }

@@ -1,3 +1,17 @@
+-- name: ListFeedsInSystem :many
+SELECT * FROM feed WHERE system_pk = $1 ORDER BY id;
+
+-- name: GetFeedInSystem :one
+SELECT feed.* FROM feed
+    INNER JOIN system ON feed.system_pk = system.pk
+    WHERE system.id = sqlc.arg(system_id)
+    AND feed.id = sqlc.arg(feed_id);
+
+-- name: GetFeedForUpdate :one
+SELECT feed.* FROM feed
+    INNER JOIN feed_update ON feed_update.feed_pk = feed.pk
+    WHERE feed_update.pk = sqlc.arg(update_pk);
+
 -- name: InsertFeed :exec
 INSERT INTO feed
     (id, system_pk, auto_update_enabled, auto_update_period, config)
@@ -15,10 +29,16 @@ WHERE pk = sqlc.arg(feed_pk);
 -- name: DeleteFeed :exec
 DELETE FROM feed WHERE pk = sqlc.arg(pk);
 
-
 -- name: ListAutoUpdateFeedsForSystem :many
 SELECT feed.id, feed.auto_update_period
 FROM feed
     INNER JOIN system ON system.pk = feed.system_pk
 WHERE feed.auto_update_enabled
     AND system.id = sqlc.arg(system_id);
+
+-- name: InsertFeedUpdate :one
+INSERT INTO feed_update
+    (feed_pk, status)
+VALUES
+    (sqlc.arg(feed_pk), sqlc.arg(status))
+RETURNING pk;

@@ -13,7 +13,7 @@ type Agency struct {
 	SystemPk int32
 	SourcePk int32
 	Name     string
-	Url      sql.NullString
+	Url      string
 	Timezone string
 	Language sql.NullString
 	Phone    sql.NullString
@@ -90,23 +90,17 @@ type Feed struct {
 }
 
 type FeedUpdate struct {
-	Pk                 int32
-	FeedPk             int32
-	ContentLength      sql.NullInt32
-	CompletedAt        sql.NullTime
-	ContentCreatedAt   sql.NullTime
-	ContentHash        sql.NullString
-	DownloadDuration   sql.NullFloat64
-	Result             sql.NullString
-	NumParsedEntities  sql.NullInt32
-	NumAddedEntities   sql.NullInt32
-	NumUpdatedEntities sql.NullInt32
-	NumDeletedEntities sql.NullInt32
-	ResultMessage      sql.NullString
-	ScheduledAt        sql.NullTime
-	TotalDuration      sql.NullFloat64
-	UpdateType         string
-	Status             sql.NullString
+	Pk               int64
+	FeedPk           int32
+	Status           string
+	CreatedAt        sql.NullTime
+	CompletedAt      sql.NullTime
+	ContentCreatedAt sql.NullTime
+	ContentHash      sql.NullString
+	ContentLength    sql.NullInt32
+	Result           sql.NullString
+	ResultMessage    sql.NullString
+	TotalDuration    sql.NullInt32
 }
 
 type Route struct {

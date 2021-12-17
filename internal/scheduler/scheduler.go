@@ -45,7 +45,7 @@ type UpdateFunc func(ctx context.Context, database *sql.DB, systemId, feedId str
 type QuerierFunc func(database *sql.DB) db.Querier
 
 type Scheduler struct {
-	database *sql.DB
+	database    *sql.DB
 	querierFunc QuerierFunc
 
 	// The refreshAll channels are used to signal to the root scheduler that it should refresh all systems
@@ -67,7 +67,7 @@ type Scheduler struct {
 func New(ctx context.Context, clock clock.Clock, database *sql.DB, querierFunc QuerierFunc, updateFunc UpdateFunc) (*Scheduler, error) {
 	s := &Scheduler{
 		database:          database,
-		querierFunc: querierFunc,
+		querierFunc:       querierFunc,
 		refreshAllRequest: make(chan []refreshMsg),
 		refreshAllReply:   make(chan struct{}),
 		refreshRequest:    make(chan refreshMsg),

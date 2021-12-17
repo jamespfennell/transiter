@@ -153,15 +153,25 @@ def _test_install_system__service_map_route(
             break
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def _test_install_system__agency(system_id, install_system_1, transiter_host, sync):
-    install_system_1(system_id, sync=sync)
+def test_install_system__agency(system_id, install_system_1, transiter_host):
+    install_system_1(system_id)
 
     agencies_response = requests.get(
         transiter_host + "/systems/" + system_id + "/agencies"
-    ).json()
+    ).json()["agencies"]
     assert 1 == len(agencies_response)
-    assert "Transiter Transit Agency" == agencies_response[0]["name"]
+
+    agency_response = requests.get(
+        transiter_host + "/systems/" + system_id + "/agencies/AgencyId"
+    ).json()
+    assert "AgencyId" == agency_response["id"]
+    assert "AgencyName" == agency_response["name"]
+    assert "AgencyUrl" == agency_response["url"]
+    assert "AgencyTimezone" == agency_response["timezone"]
+    assert "AgencyLanguage" == agency_response["language"]
+    assert "AgencyPhone" == agency_response["phone"]
+    assert "AgencyFareUrl" == agency_response["fareUrl"]
+    assert "AgencyEmail" == agency_response["email"]
 
 
 @pytest.mark.parametrize("sync", [True, False])
@@ -186,7 +196,7 @@ feeds:
   - id: feed_1
     url: {feed_url}
     parser: GTFS_STATIC
-    required_for_install: true
+    requiredForInstall: false
 
 """
 
@@ -239,6 +249,7 @@ def test_update_system(system_id, install_system, transiter_host):
 
     feeds:
       - id: feed_1
+        requiredForInstall: false
         autoUpdateEnabled: true
         autoUpdatePeriod: {}s
         url: transiter.io

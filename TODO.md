@@ -2,4 +2,4 @@
 - Async install (and delete?)
 - Support for Go templates in the Yaml file
 - implement the gtfs realtime parser and import logic
-
+- change serial to bigserial everywhere

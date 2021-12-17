@@ -94,7 +94,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	default:
 		return nil, fmt.Errorf("no system configuration provided")
 	}
-	// log.Printf("Config for %s: %+v\n", req.SystemId, systemConfig)
+	log.Printf("Config for install/update for system %s:\n%+v\n", req.SystemId, systemConfig)
 
 	{
 		system, err := querier.GetSystem(ctx, req.SystemId)
@@ -150,7 +150,9 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 			})
 		}
 		if newFeed.RequiredForInstall {
-			update.RunWithQuerier(ctx, querier, req.SystemId, newFeed.Id)
+			if err := update.CreateAndRunInsideTx(ctx, querier, req.SystemId, newFeed.Id); err != nil {
+				return nil, err
+			}
 		}
 	}
 	for _, pk := range feedIdToPk {
@@ -203,6 +205,7 @@ func getSystemConfigFromUrl(url string) (*config.SystemConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
 	}
+	// fmt.Printf("Raw system config Yaml from %s:\n%+v\n", url, string(body))
 	return config.UnmarshalFromYaml(body)
 }
 

@@ -28,6 +28,8 @@ During a test run, there are four live components:
 
 ## Running the test
 
+**Simplist way**: in the root of repo, run `bash tests/endtoend/run.sh`.
+
 The test requires a running Transiter instance with an HTTP admin service
 listening at the location given 
 in the environment variable `TRANSITER_HOST`.

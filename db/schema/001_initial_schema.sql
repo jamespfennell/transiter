@@ -6,7 +6,7 @@ CREATE TABLE agency (
     system_pk integer NOT NULL,
     source_pk integer NOT NULL,
     name character varying NOT NULL,
-    url character varying,
+    url character varying NOT NULL,
     timezone character varying NOT NULL,
     language character varying,
     phone character varying,
@@ -93,23 +93,19 @@ CREATE TABLE feed (
 );
 
 CREATE TABLE feed_update (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     feed_pk integer NOT NULL,
-    content_length integer,
+    status character varying(16) NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+
+    -- the following fields are only populated when the update completes
     completed_at timestamp with time zone,
     content_created_at timestamp with time zone,
     content_hash character varying,
-    download_duration double precision,
+    content_length integer,
     result character varying(16),
-    num_parsed_entities integer,
-    num_added_entities integer,
-    num_updated_entities integer,
-    num_deleted_entities integer,
     result_message character varying,
-    scheduled_at timestamp with time zone,
-    total_duration double precision,
-    update_type character varying NOT NULL,
-    status character varying
+    total_duration integer
 );
 
 CREATE INDEX ix_feed_update_feed_feed_update ON feed_update USING btree (feed_pk, pk);

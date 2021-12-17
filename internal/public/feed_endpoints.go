@@ -79,8 +79,7 @@ func (t *Service) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesR
 	for _, update := range updates {
 		reply.Updates = append(reply.Updates, &api.FeedUpdate{
 			Id:            fmt.Sprintf("%d", update.Pk),
-			Type:          update.UpdateType,
-			Status:        update.Status.String,
+			Status:        update.Status,
 			Result:        apihelpers.ConvertSqlNullString(update.Result),
 			StackTrace:    apihelpers.ConvertSqlNullString(update.ResultMessage),
 			ContentHash:   apihelpers.ConvertSqlNullString(update.ContentHash),
