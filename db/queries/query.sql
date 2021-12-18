@@ -51,7 +51,7 @@ SELECT * FROM stop
 SELECT trip_stop_time.*, trip.*, vehicle.id vehicle_id FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
-    WHERE trip_stop_time.stop_pk = ANY(sqlc.arg(stop_pks)::int[])
+    WHERE trip_stop_time.stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
     AND trip.current_stop_sequence >= 0
     AND trip.current_stop_sequence <= trip_stop_time.stop_sequence
     ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time;
@@ -80,13 +80,13 @@ SELECT stop.* FROM stop
 
 
 -- name: ListRoutesByPk :many
-SELECT * FROM route WHERE route.pk = ANY(sqlc.arg(route_pks)::int[]);
+SELECT * FROM route WHERE route.pk = ANY(sqlc.arg(route_pks)::bigint[]);
 
 -- name: GetLastStopsForTrips :many
 WITH last_stop_sequence AS (
   SELECT trip_pk, MAX(stop_sequence) as stop_sequence
     FROM trip_stop_time
-    WHERE trip_pk = ANY(sqlc.arg(trip_pks)::int[])
+    WHERE trip_pk = ANY(sqlc.arg(trip_pks)::bigint[])
     GROUP BY trip_pk
 )
 SELECT lss.trip_pk, stop.id, stop.name
@@ -104,7 +104,7 @@ SELECT lss.trip_pk, stop.id, stop.name
   FROM transfer
   INNER JOIN stop
     ON stop.pk = transfer.to_stop_pk
-  WHERE transfer.from_stop_pk = ANY(sqlc.arg(from_stop_pks)::int[]);
+  WHERE transfer.from_stop_pk = ANY(sqlc.arg(from_stop_pks)::bigint[]);
 
 
 -- name: ListServiceMapsGroupIDsForStops :many
@@ -112,13 +112,13 @@ SELECT stop.pk, service_map_group.id
 FROM service_map_group
     INNER JOIN stop ON service_map_group.system_pk = stop.system_pk
 WHERE service_map_group.use_for_routes_at_stop
-    AND stop.pk = ANY(sqlc.arg(stop_pks)::int[]); 
+    AND stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]); 
 
 -- name: ListServiceMapsForStops :many
 WITH RECURSIVE descendent AS (
 	SELECT initial.pk, initial.parent_stop_pk, initial.pk AS descendent_pk
 	  FROM stop initial
-    WHERE initial.pk = ANY(sqlc.arg(stop_pks)::int[])
+    WHERE initial.pk = ANY(sqlc.arg(stop_pks)::bigint[])
 	UNION (
     SELECT parent.pk, parent.parent_stop_pk, descendent.pk AS descendent_pk
       FROM stop parent
@@ -141,7 +141,7 @@ ORDER BY system_id, route_id;
 
 -- name: ListDirectionNameRulesForStops :many
 SELECT * FROM direction_name_rule
-WHERE stop_pk = ANY(sqlc.arg(stop_pks)::int[])
+WHERE stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
 ORDER BY priority ASC;
 
 -- name: ListRoutesInSystem :many
@@ -185,7 +185,7 @@ FROM route
     INNER JOIN alert_route ON route.pk = alert_route.route_pk
     INNER JOIN alert ON alert_route.alert_pk = alert.pk
     INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
-WHERE route.pk = ANY(sqlc.arg(route_pks)::int[])
+WHERE route.pk = ANY(sqlc.arg(route_pks)::bigint[])
     AND (
         alert_active_period.starts_at < sqlc.arg(present_time)
         OR alert_active_period.starts_at IS NULL
@@ -203,7 +203,7 @@ FROM stop
     INNER JOIN alert_stop ON stop.pk = alert_stop.stop_pk
     INNER JOIN alert ON alert_stop.alert_pk = alert.pk
     INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
-WHERE stop.pk = ANY(sqlc.arg(stop_pks)::int[])
+WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
     AND (
         alert_active_period.starts_at < sqlc.arg(present_time)
         OR alert_active_period.starts_at IS NULL
@@ -236,7 +236,7 @@ WHERE alert_agency.agency_pk = sqlc.arg(agency_pk)
 -- name: ListMessagesForAlerts :many
 SELECT *
 FROM alert_message 
-WHERE alert_pk = ANY(sqlc.arg(alert_pks)::int[]);
+WHERE alert_pk = ANY(sqlc.arg(alert_pks)::bigint[]);
 
 -- name: CalculatePeriodicityForRoute :one
 WITH route_stop_pks AS (

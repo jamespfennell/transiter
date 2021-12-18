@@ -28,7 +28,7 @@ WITH route_stop_pks AS (
 SELECT coalesce(AVG(diff / (n-1)), -1) FROM diffs
 `
 
-func (q *Queries) CalculatePeriodicityForRoute(ctx context.Context, routePk int32) (interface{}, error) {
+func (q *Queries) CalculatePeriodicityForRoute(ctx context.Context, routePk int64) (interface{}, error) {
 	row := q.db.QueryRowContext(ctx, calculatePeriodicityForRoute, routePk)
 	var coalesce interface{}
 	err := row.Scan(&coalesce)
@@ -39,7 +39,7 @@ const countAgenciesInSystem = `-- name: CountAgenciesInSystem :one
 SELECT COUNT(*) FROM agency WHERE system_pk = $1
 `
 
-func (q *Queries) CountAgenciesInSystem(ctx context.Context, systemPk int32) (int64, error) {
+func (q *Queries) CountAgenciesInSystem(ctx context.Context, systemPk int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countAgenciesInSystem, systemPk)
 	var count int64
 	err := row.Scan(&count)
@@ -50,7 +50,7 @@ const countFeedsInSystem = `-- name: CountFeedsInSystem :one
 SELECT COUNT(*) FROM feed WHERE system_pk = $1
 `
 
-func (q *Queries) CountFeedsInSystem(ctx context.Context, systemPk int32) (int64, error) {
+func (q *Queries) CountFeedsInSystem(ctx context.Context, systemPk int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countFeedsInSystem, systemPk)
 	var count int64
 	err := row.Scan(&count)
@@ -61,7 +61,7 @@ const countRoutesInSystem = `-- name: CountRoutesInSystem :one
 SELECT COUNT(*) FROM route WHERE system_pk = $1
 `
 
-func (q *Queries) CountRoutesInSystem(ctx context.Context, systemPk int32) (int64, error) {
+func (q *Queries) CountRoutesInSystem(ctx context.Context, systemPk int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countRoutesInSystem, systemPk)
 	var count int64
 	err := row.Scan(&count)
@@ -72,7 +72,7 @@ const countStopsInSystem = `-- name: CountStopsInSystem :one
 SELECT COUNT(*) FROM stop WHERE system_pk = $1
 `
 
-func (q *Queries) CountStopsInSystem(ctx context.Context, systemPk int32) (int64, error) {
+func (q *Queries) CountStopsInSystem(ctx context.Context, systemPk int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countStopsInSystem, systemPk)
 	var count int64
 	err := row.Scan(&count)
@@ -94,7 +94,7 @@ const countTransfersInSystem = `-- name: CountTransfersInSystem :one
 SELECT COUNT(*) FROM transfer WHERE system_pk = $1
 `
 
-func (q *Queries) CountTransfersInSystem(ctx context.Context, systemPk sql.NullInt32) (int64, error) {
+func (q *Queries) CountTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countTransfersInSystem, systemPk)
 	var count int64
 	err := row.Scan(&count)
@@ -136,7 +136,7 @@ const getLastStopsForTrips = `-- name: GetLastStopsForTrips :many
 WITH last_stop_sequence AS (
   SELECT trip_pk, MAX(stop_sequence) as stop_sequence
     FROM trip_stop_time
-    WHERE trip_pk = ANY($1::int[])
+    WHERE trip_pk = ANY($1::bigint[])
     GROUP BY trip_pk
 )
 SELECT lss.trip_pk, stop.id, stop.name
@@ -149,12 +149,12 @@ SELECT lss.trip_pk, stop.id, stop.name
 `
 
 type GetLastStopsForTripsRow struct {
-	TripPk int32
+	TripPk int64
 	ID     string
 	Name   string
 }
 
-func (q *Queries) GetLastStopsForTrips(ctx context.Context, tripPks []int32) ([]GetLastStopsForTripsRow, error) {
+func (q *Queries) GetLastStopsForTrips(ctx context.Context, tripPks []int64) ([]GetLastStopsForTripsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getLastStopsForTrips, pq.Array(tripPks))
 	if err != nil {
 		return nil, err
@@ -191,10 +191,10 @@ type GetRouteInSystemParams struct {
 }
 
 type GetRouteInSystemRow struct {
-	Pk                int32
+	Pk                int64
 	ID                string
-	SystemPk          int32
-	SourcePk          int32
+	SystemPk          int64
+	SourcePk          int64
 	Color             sql.NullString
 	TextColor         sql.NullString
 	ShortName         sql.NullString
@@ -203,7 +203,7 @@ type GetRouteInSystemRow struct {
 	Url               sql.NullString
 	SortOrder         sql.NullInt32
 	Type              sql.NullString
-	AgencyPk          int32
+	AgencyPk          int64
 	ContinuousDropOff string
 	ContinuousPickup  string
 	AgencyID          string
@@ -248,11 +248,11 @@ type GetStopInSystemParams struct {
 }
 
 type GetStopInSystemRow struct {
-	Pk                 int32
+	Pk                 int64
 	ID                 string
-	SystemPk           int32
-	SourcePk           int32
-	ParentStopPk       sql.NullInt32
+	SystemPk           int64
+	SourcePk           int64
+	ParentStopPk       sql.NullInt64
 	Name               string
 	Longitude          sql.NullString
 	Latitude           sql.NullString
@@ -264,7 +264,7 @@ type GetStopInSystemRow struct {
 	Type               string
 	WheelchairBoarding sql.NullString
 	ZoneID             sql.NullString
-	Pk_2               int32
+	Pk_2               int64
 	ID_2               string
 	Name_2             string
 	Timezone_2         sql.NullString
@@ -335,10 +335,10 @@ type GetTripParams struct {
 }
 
 type GetTripRow struct {
-	Pk                  int32
+	Pk                  int64
 	ID                  string
-	RoutePk             int32
-	SourcePk            int32
+	RoutePk             int64
+	SourcePk            int64
 	DirectionID         sql.NullBool
 	Delay               sql.NullInt32
 	StartedAt           sql.NullTime
@@ -389,7 +389,7 @@ WHERE alert_agency.agency_pk = $1
 `
 
 type ListActiveAlertsForAgencyParams struct {
-	AgencyPk    int32
+	AgencyPk    int64
 	PresentTime sql.NullTime
 }
 
@@ -428,7 +428,7 @@ FROM route
     INNER JOIN alert_route ON route.pk = alert_route.route_pk
     INNER JOIN alert ON alert_route.alert_pk = alert.pk
     INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
-WHERE route.pk = ANY($1::int[])
+WHERE route.pk = ANY($1::bigint[])
     AND (
         alert_active_period.starts_at < $2
         OR alert_active_period.starts_at IS NULL
@@ -441,13 +441,13 @@ ORDER BY alert.id ASC
 `
 
 type ListActiveAlertsForRoutesParams struct {
-	RoutePks    []int32
+	RoutePks    []int64
 	PresentTime sql.NullTime
 }
 
 type ListActiveAlertsForRoutesRow struct {
-	RoutePk  int32
-	Pk       int32
+	RoutePk  int64
+	Pk       int64
 	ID       string
 	Cause    string
 	Effect   string
@@ -492,7 +492,7 @@ FROM stop
     INNER JOIN alert_stop ON stop.pk = alert_stop.stop_pk
     INNER JOIN alert ON alert_stop.alert_pk = alert.pk
     INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
-WHERE stop.pk = ANY($1::int[])
+WHERE stop.pk = ANY($1::bigint[])
     AND (
         alert_active_period.starts_at < $2
         OR alert_active_period.starts_at IS NULL
@@ -505,13 +505,13 @@ ORDER BY alert.id ASC
 `
 
 type ListActiveAlertsForStopsParams struct {
-	StopPks     []int32
+	StopPks     []int64
 	PresentTime sql.NullTime
 }
 
 type ListActiveAlertsForStopsRow struct {
-	StopPk   int32
-	Pk       int32
+	StopPk   int64
+	Pk       int64
 	ID       string
 	Cause    string
 	Effect   string
@@ -554,7 +554,7 @@ const listAgenciesInSystem = `-- name: ListAgenciesInSystem :many
 SELECT pk, id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email FROM agency WHERE system_pk = $1 ORDER BY id
 `
 
-func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int32) ([]Agency, error) {
+func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]Agency, error) {
 	rows, err := q.db.QueryContext(ctx, listAgenciesInSystem, systemPk)
 	if err != nil {
 		return nil, err
@@ -591,11 +591,11 @@ func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int32) ([]A
 
 const listDirectionNameRulesForStops = `-- name: ListDirectionNameRulesForStops :many
 SELECT pk, id, stop_pk, source_pk, priority, direction_id, track, name FROM direction_name_rule
-WHERE stop_pk = ANY($1::int[])
+WHERE stop_pk = ANY($1::bigint[])
 ORDER BY priority ASC
 `
 
-func (q *Queries) ListDirectionNameRulesForStops(ctx context.Context, stopPks []int32) ([]DirectionNameRule, error) {
+func (q *Queries) ListDirectionNameRulesForStops(ctx context.Context, stopPks []int64) ([]DirectionNameRule, error) {
 	rows, err := q.db.QueryContext(ctx, listDirectionNameRulesForStops, pq.Array(stopPks))
 	if err != nil {
 		return nil, err
@@ -630,10 +630,10 @@ func (q *Queries) ListDirectionNameRulesForStops(ctx context.Context, stopPks []
 const listMessagesForAlerts = `-- name: ListMessagesForAlerts :many
 SELECT pk, alert_pk, header, description, url, language
 FROM alert_message 
-WHERE alert_pk = ANY($1::int[])
+WHERE alert_pk = ANY($1::bigint[])
 `
 
-func (q *Queries) ListMessagesForAlerts(ctx context.Context, alertPks []int32) ([]AlertMessage, error) {
+func (q *Queries) ListMessagesForAlerts(ctx context.Context, alertPks []int64) ([]AlertMessage, error) {
 	rows, err := q.db.QueryContext(ctx, listMessagesForAlerts, pq.Array(alertPks))
 	if err != nil {
 		return nil, err
@@ -664,10 +664,10 @@ func (q *Queries) ListMessagesForAlerts(ctx context.Context, alertPks []int32) (
 }
 
 const listRoutesByPk = `-- name: ListRoutesByPk :many
-SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE route.pk = ANY($1::int[])
+SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE route.pk = ANY($1::bigint[])
 `
 
-func (q *Queries) ListRoutesByPk(ctx context.Context, routePks []int32) ([]Route, error) {
+func (q *Queries) ListRoutesByPk(ctx context.Context, routePks []int64) ([]Route, error) {
 	rows, err := q.db.QueryContext(ctx, listRoutesByPk, pq.Array(routePks))
 	if err != nil {
 		return nil, err
@@ -716,7 +716,7 @@ type ListRoutesInAgencyRow struct {
 	Color sql.NullString
 }
 
-func (q *Queries) ListRoutesInAgency(ctx context.Context, agencyPk int32) ([]ListRoutesInAgencyRow, error) {
+func (q *Queries) ListRoutesInAgency(ctx context.Context, agencyPk int64) ([]ListRoutesInAgencyRow, error) {
 	rows, err := q.db.QueryContext(ctx, listRoutesInAgency, agencyPk)
 	if err != nil {
 		return nil, err
@@ -743,7 +743,7 @@ const listRoutesInSystem = `-- name: ListRoutesInSystem :many
 SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE system_pk = $1 ORDER BY id
 `
 
-func (q *Queries) ListRoutesInSystem(ctx context.Context, systemPk int32) ([]Route, error) {
+func (q *Queries) ListRoutesInSystem(ctx context.Context, systemPk int64) ([]Route, error) {
 	rows, err := q.db.QueryContext(ctx, listRoutesInSystem, systemPk)
 	if err != nil {
 		return nil, err
@@ -801,7 +801,7 @@ type ListServiceMapsForRouteRow struct {
 	StopName sql.NullString
 }
 
-func (q *Queries) ListServiceMapsForRoute(ctx context.Context, routePk int32) ([]ListServiceMapsForRouteRow, error) {
+func (q *Queries) ListServiceMapsForRoute(ctx context.Context, routePk int64) ([]ListServiceMapsForRouteRow, error) {
 	rows, err := q.db.QueryContext(ctx, listServiceMapsForRoute, routePk)
 	if err != nil {
 		return nil, err
@@ -833,7 +833,7 @@ const listServiceMapsForStops = `-- name: ListServiceMapsForStops :many
 WITH RECURSIVE descendent AS (
 	SELECT initial.pk, initial.parent_stop_pk, initial.pk AS descendent_pk
 	  FROM stop initial
-    WHERE initial.pk = ANY($1::int[])
+    WHERE initial.pk = ANY($1::bigint[])
 	UNION (
     SELECT parent.pk, parent.parent_stop_pk, descendent.pk AS descendent_pk
       FROM stop parent
@@ -856,14 +856,14 @@ ORDER BY system_id, route_id
 `
 
 type ListServiceMapsForStopsRow struct {
-	StopPk            int32
+	StopPk            int64
 	ServiceMapGroupID string
 	RouteID           string
 	RouteColor        sql.NullString
 	SystemID          string
 }
 
-func (q *Queries) ListServiceMapsForStops(ctx context.Context, stopPks []int32) ([]ListServiceMapsForStopsRow, error) {
+func (q *Queries) ListServiceMapsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsForStopsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listServiceMapsForStops, pq.Array(stopPks))
 	if err != nil {
 		return nil, err
@@ -897,15 +897,15 @@ SELECT stop.pk, service_map_group.id
 FROM service_map_group
     INNER JOIN stop ON service_map_group.system_pk = stop.system_pk
 WHERE service_map_group.use_for_routes_at_stop
-    AND stop.pk = ANY($1::int[])
+    AND stop.pk = ANY($1::bigint[])
 `
 
 type ListServiceMapsGroupIDsForStopsRow struct {
-	Pk int32
+	Pk int64
 	ID string
 }
 
-func (q *Queries) ListServiceMapsGroupIDsForStops(ctx context.Context, stopPks []int32) ([]ListServiceMapsGroupIDsForStopsRow, error) {
+func (q *Queries) ListServiceMapsGroupIDsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsGroupIDsForStopsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listServiceMapsGroupIDsForStops, pq.Array(stopPks))
 	if err != nil {
 		return nil, err
@@ -932,16 +932,16 @@ const listStopTimesAtStops = `-- name: ListStopTimesAtStops :many
 SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.delay, trip.started_at, trip.updated_at, trip.current_stop_sequence, vehicle.id vehicle_id FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
-    WHERE trip_stop_time.stop_pk = ANY($1::int[])
+    WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
     AND trip.current_stop_sequence >= 0
     AND trip.current_stop_sequence <= trip_stop_time.stop_sequence
     ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time
 `
 
 type ListStopTimesAtStopsRow struct {
-	Pk                   int32
-	StopPk               int32
-	TripPk               int32
+	Pk                   int64
+	StopPk               int64
+	TripPk               int64
 	ArrivalTime          sql.NullTime
 	ArrivalDelay         sql.NullInt32
 	ArrivalUncertainty   sql.NullInt32
@@ -950,10 +950,10 @@ type ListStopTimesAtStopsRow struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
-	Pk_2                 int32
+	Pk_2                 int64
 	ID                   string
-	RoutePk              int32
-	SourcePk             int32
+	RoutePk              int64
+	SourcePk             int64
 	DirectionID          sql.NullBool
 	Delay                sql.NullInt32
 	StartedAt            sql.NullTime
@@ -962,7 +962,7 @@ type ListStopTimesAtStopsRow struct {
 	VehicleID            sql.NullString
 }
 
-func (q *Queries) ListStopTimesAtStops(ctx context.Context, stopPks []int32) ([]ListStopTimesAtStopsRow, error) {
+func (q *Queries) ListStopTimesAtStops(ctx context.Context, stopPks []int64) ([]ListStopTimesAtStopsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listStopTimesAtStops, pq.Array(stopPks))
 	if err != nil {
 		return nil, err
@@ -1030,7 +1030,7 @@ SELECT stop.pk, stop.id, stop.system_pk, stop.source_pk, stop.parent_stop_pk, st
   ON stop.pk = descendent.pk
 `
 
-func (q *Queries) ListStopsInStopTree(ctx context.Context, pk int32) ([]Stop, error) {
+func (q *Queries) ListStopsInStopTree(ctx context.Context, pk int64) ([]Stop, error) {
 	rows, err := q.db.QueryContext(ctx, listStopsInStopTree, pk)
 	if err != nil {
 		return nil, err
@@ -1075,7 +1075,7 @@ SELECT pk, id, system_pk, source_pk, parent_stop_pk, name, longitude, latitude, 
     ORDER BY id
 `
 
-func (q *Queries) ListStopsInSystem(ctx context.Context, systemPk int32) ([]Stop, error) {
+func (q *Queries) ListStopsInSystem(ctx context.Context, systemPk int64) ([]Stop, error) {
 	rows, err := q.db.QueryContext(ctx, listStopsInSystem, systemPk)
 	if err != nil {
 		return nil, err
@@ -1124,9 +1124,9 @@ ORDER BY trip_stop_time.stop_sequence ASC
 `
 
 type ListStopsTimesForTripRow struct {
-	Pk                   int32
-	StopPk               int32
-	TripPk               int32
+	Pk                   int64
+	StopPk               int64
+	TripPk               int64
 	ArrivalTime          sql.NullTime
 	ArrivalDelay         sql.NullInt32
 	ArrivalUncertainty   sql.NullInt32
@@ -1139,7 +1139,7 @@ type ListStopsTimesForTripRow struct {
 	StopName             string
 }
 
-func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int32) ([]ListStopsTimesForTripRow, error) {
+func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]ListStopsTimesForTripRow, error) {
 	rows, err := q.db.QueryContext(ctx, listStopsTimesForTrip, tripPk)
 	if err != nil {
 		return nil, err
@@ -1216,12 +1216,12 @@ const listTransfersFromStops = `-- name: ListTransfersFromStops :many
   FROM transfer
   INNER JOIN stop
     ON stop.pk = transfer.to_stop_pk
-  WHERE transfer.from_stop_pk = ANY($1::int[])
+  WHERE transfer.from_stop_pk = ANY($1::bigint[])
 `
 
 type ListTransfersFromStopsRow struct {
-	FromStopPk      int32
-	ToStopPk        int32
+	FromStopPk      int64
+	ToStopPk        int64
 	ToID            string
 	ToName          string
 	Type            string
@@ -1229,7 +1229,7 @@ type ListTransfersFromStopsRow struct {
 	Distance        sql.NullInt32
 }
 
-func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int32) ([]ListTransfersFromStopsRow, error) {
+func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]ListTransfersFromStopsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listTransfersFromStops, pq.Array(fromStopPks))
 	if err != nil {
 		return nil, err
@@ -1275,12 +1275,12 @@ ORDER BY transfer.pk
 `
 
 type ListTransfersInSystemRow struct {
-	Pk              int32
-	SourcePk        sql.NullInt32
-	ConfigSourcePk  sql.NullInt32
-	SystemPk        sql.NullInt32
-	FromStopPk      int32
-	ToStopPk        int32
+	Pk              int64
+	SourcePk        sql.NullInt64
+	ConfigSourcePk  sql.NullInt64
+	SystemPk        sql.NullInt64
+	FromStopPk      int64
+	ToStopPk        int64
 	Type            string
 	MinTransferTime sql.NullInt32
 	Distance        sql.NullInt32
@@ -1292,7 +1292,7 @@ type ListTransfersInSystemRow struct {
 	ToSystemID      string
 }
 
-func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt32) ([]ListTransfersInSystemRow, error) {
+func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) ([]ListTransfersInSystemRow, error) {
 	rows, err := q.db.QueryContext(ctx, listTransfersInSystem, systemPk)
 	if err != nil {
 		return nil, err
@@ -1339,10 +1339,10 @@ ORDER BY trip.id
 `
 
 type ListTripsInRouteRow struct {
-	Pk                  int32
+	Pk                  int64
 	ID                  string
-	RoutePk             int32
-	SourcePk            int32
+	RoutePk             int64
+	SourcePk            int64
 	DirectionID         sql.NullBool
 	Delay               sql.NullInt32
 	StartedAt           sql.NullTime
@@ -1351,7 +1351,7 @@ type ListTripsInRouteRow struct {
 	VehicleID           sql.NullString
 }
 
-func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int32) ([]ListTripsInRouteRow, error) {
+func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTripsInRouteRow, error) {
 	rows, err := q.db.QueryContext(ctx, listTripsInRoute, routePk)
 	if err != nil {
 		return nil, err
@@ -1392,7 +1392,7 @@ ORDER BY pk DESC
 LIMIT 100
 `
 
-func (q *Queries) ListUpdatesInFeed(ctx context.Context, feedPk int32) ([]FeedUpdate, error) {
+func (q *Queries) ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUpdate, error) {
 	rows, err := q.db.QueryContext(ctx, listUpdatesInFeed, feedPk)
 	if err != nil {
 		return nil, err

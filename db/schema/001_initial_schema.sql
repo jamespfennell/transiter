@@ -1,10 +1,10 @@
 -- +goose Up
 
 CREATE TABLE agency (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    system_pk integer NOT NULL,
-    source_pk integer NOT NULL,
+    system_pk BIGINT NOT NULL,
+    source_pk BIGINT NOT NULL,
     name character varying NOT NULL,
     url character varying NOT NULL,
     timezone character varying NOT NULL,
@@ -17,10 +17,10 @@ CREATE TABLE agency (
 );
 
 CREATE TABLE alert (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    source_pk integer NOT NULL,
-    system_pk integer NOT NULL,
+    source_pk BIGINT NOT NULL,
+    system_pk BIGINT NOT NULL,
     cause character varying NOT NULL,
     effect character varying NOT NULL,
     created_at timestamp with time zone,
@@ -31,20 +31,20 @@ CREATE TABLE alert (
 );
 
 CREATE TABLE alert_active_period (
-    pk SERIAL PRIMARY KEY,
-    alert_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    alert_pk BIGINT NOT NULL,
     starts_at timestamp with time zone,
     ends_at timestamp with time zone
 );
 
 CREATE TABLE alert_agency (
-    alert_pk integer NOT NULL,
-    agency_pk integer NOT NULL
+    alert_pk BIGINT NOT NULL,
+    agency_pk BIGINT NOT NULL
 );
 
 CREATE TABLE alert_message (
-    pk SERIAL PRIMARY KEY,
-    alert_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    alert_pk BIGINT NOT NULL,
     header character varying NOT NULL,
     description character varying NOT NULL,
     url character varying,
@@ -52,25 +52,25 @@ CREATE TABLE alert_message (
 );
 
 CREATE TABLE alert_route (
-    alert_pk integer NOT NULL,
-    route_pk integer NOT NULL
+    alert_pk BIGINT NOT NULL,
+    route_pk BIGINT NOT NULL
 );
 
 CREATE TABLE alert_stop (
-    alert_pk integer NOT NULL,
-    stop_pk integer NOT NULL
+    alert_pk BIGINT NOT NULL,
+    stop_pk BIGINT NOT NULL
 );
 
 CREATE TABLE alert_trip (
-    alert_pk integer NOT NULL,
-    trip_pk integer NOT NULL
+    alert_pk BIGINT NOT NULL,
+    trip_pk BIGINT NOT NULL
 );
 
 CREATE TABLE direction_name_rule (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying,
-    stop_pk integer NOT NULL,
-    source_pk integer NOT NULL,
+    stop_pk BIGINT NOT NULL,
+    source_pk BIGINT NOT NULL,
     priority integer NOT NULL,
     direction_id boolean,
     track character varying,
@@ -82,9 +82,9 @@ CREATE TABLE direction_name_rule (
 CREATE INDEX ix_direction_name_rule_stop_pk_priority ON direction_name_rule USING btree (stop_pk, priority);
 
 CREATE TABLE feed (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    system_pk integer NOT NULL,
+    system_pk BIGINT NOT NULL,
     auto_update_enabled boolean NOT NULL,
     auto_update_period integer,
     config character varying NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE feed (
 
 CREATE TABLE feed_update (
     pk BIGSERIAL PRIMARY KEY,
-    feed_pk integer NOT NULL,
+    feed_pk BIGINT NOT NULL,
     status character varying(16) NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
 
@@ -113,10 +113,10 @@ CREATE INDEX ix_feed_update_status_result_completed_at ON feed_update USING btre
 CREATE INDEX ix_feed_update_success_pk_completed_at ON feed_update USING btree (feed_pk, completed_at) WHERE ((status)::text = 'SUCCESS'::text);
 
 CREATE TABLE route (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    system_pk integer NOT NULL,
-    source_pk integer NOT NULL,
+    system_pk BIGINT NOT NULL,
+    source_pk BIGINT NOT NULL,
     color character varying,
     text_color character varying,
     short_name character varying,
@@ -125,7 +125,7 @@ CREATE TABLE route (
     url character varying,
     sort_order integer,
     type character varying,
-    agency_pk integer NOT NULL,
+    agency_pk BIGINT NOT NULL,
     continuous_drop_off character varying(22) DEFAULT 'NOT_ALLOWED'::character varying NOT NULL,
     continuous_pickup character varying(22) DEFAULT 'NOT_ALLOWED'::character varying NOT NULL,
 
@@ -133,10 +133,10 @@ CREATE TABLE route (
 );
 
 CREATE TABLE scheduled_service (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    system_pk integer NOT NULL,
-    source_pk integer NOT NULL,
+    system_pk BIGINT NOT NULL,
+    source_pk BIGINT NOT NULL,
     monday boolean,
     tuesday boolean,
     wednesday boolean,
@@ -151,22 +151,22 @@ CREATE TABLE scheduled_service (
 );
 
 CREATE TABLE scheduled_service_addition (
-    pk SERIAL PRIMARY KEY,
-    service_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    service_pk BIGINT NOT NULL,
     date date NOT NULL
 );
 
 CREATE TABLE scheduled_service_removal (
-    pk SERIAL PRIMARY KEY,
-    service_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    service_pk BIGINT NOT NULL,
     date date NOT NULL
 );
 
 CREATE TABLE scheduled_trip (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    route_pk integer NOT NULL,
-    service_pk integer NOT NULL,
+    route_pk BIGINT NOT NULL,
+    service_pk BIGINT NOT NULL,
     direction_id boolean,
     bikes_allowed character varying(11) DEFAULT 'UNKNOWN'::character varying NOT NULL,
     block_id character varying,
@@ -178,8 +178,8 @@ CREATE TABLE scheduled_trip (
 );
 
 CREATE TABLE scheduled_trip_frequency (
-    pk SERIAL PRIMARY KEY,
-    trip_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    trip_pk BIGINT NOT NULL,
     start_time time with time zone NOT NULL,
     end_time time with time zone NOT NULL,
     headway integer NOT NULL,
@@ -187,9 +187,9 @@ CREATE TABLE scheduled_trip_frequency (
 );
 
 CREATE TABLE scheduled_trip_stop_time (
-    pk SERIAL PRIMARY KEY,
-    trip_pk integer NOT NULL,
-    stop_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    trip_pk BIGINT NOT NULL,
+    stop_pk BIGINT NOT NULL,
     arrival_time time without time zone,
     departure_time time without time zone,
     stop_sequence integer NOT NULL,
@@ -207,17 +207,17 @@ CREATE TABLE scheduled_trip_stop_time (
 CREATE INDEX scheduled_trip_stop_time_trip_pk_departure_time_idx ON scheduled_trip_stop_time USING btree (trip_pk, departure_time);
 
 CREATE TABLE service_map (
-    pk SERIAL PRIMARY KEY,
-    route_pk integer NOT NULL,
-    group_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    route_pk BIGINT NOT NULL,
+    group_pk BIGINT NOT NULL,
 
     UNIQUE(route_pk, group_pk)
 );
 
 CREATE TABLE service_map_group (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    system_pk integer NOT NULL,
+    system_pk BIGINT NOT NULL,
     conditions character varying,
     threshold double precision NOT NULL,
     use_for_routes_at_stop boolean NOT NULL,
@@ -228,20 +228,20 @@ CREATE TABLE service_map_group (
 );
 
 CREATE TABLE service_map_vertex (
-    pk SERIAL PRIMARY KEY,
-    stop_pk integer NOT NULL,
-    map_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    stop_pk BIGINT NOT NULL,
+    map_pk BIGINT NOT NULL,
     "position" integer NOT NULL,
 
     UNIQUE(map_pk, "position")
 );
 
 CREATE TABLE stop (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    system_pk integer NOT NULL,
-    source_pk integer NOT NULL,
-    parent_stop_pk integer,
+    system_pk BIGINT NOT NULL,
+    source_pk BIGINT NOT NULL,
+    parent_stop_pk BIGINT,
     name character varying NOT NULL,
     longitude numeric(9,6),
     latitude numeric(9,6),
@@ -263,7 +263,7 @@ CREATE INDEX ix_stop_latitude ON stop USING btree (latitude);
 CREATE INDEX ix_stop_longitude ON stop USING btree (longitude);
 
 CREATE TABLE system (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
     name character varying NOT NULL,
     timezone character varying,
@@ -273,8 +273,8 @@ CREATE TABLE system (
 );
 
 CREATE TABLE system_update (
-    pk SERIAL PRIMARY KEY,
-    system_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    system_pk BIGINT NOT NULL,
     status character varying(11) NOT NULL,
     status_message character varying,
     total_duration double precision,
@@ -290,12 +290,12 @@ CREATE TABLE system_update (
 CREATE INDEX system_update_system_pk_system_update_pk_idx ON system_update USING btree (system_pk, pk);
 
 CREATE TABLE transfer (
-    pk SERIAL PRIMARY KEY,
-    source_pk integer,
-    config_source_pk integer,
-    system_pk integer,
-    from_stop_pk integer NOT NULL,
-    to_stop_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    source_pk BIGINT,
+    config_source_pk BIGINT,
+    system_pk BIGINT,
+    from_stop_pk BIGINT NOT NULL,
+    to_stop_pk BIGINT NOT NULL,
     type character varying(11) NOT NULL,
     min_transfer_time integer,
     distance integer,
@@ -304,20 +304,20 @@ CREATE TABLE transfer (
 );
 
 CREATE TABLE transfers_config (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     distance numeric NOT NULL
 );
 
 CREATE TABLE transfers_config_system (
-    transfers_config_pk integer,
-    system_pk integer
+    transfers_config_pk BIGINT,
+    system_pk BIGINT
 );
 
 CREATE TABLE trip (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
-    route_pk integer NOT NULL,
-    source_pk integer NOT NULL,
+    route_pk BIGINT NOT NULL,
+    source_pk BIGINT NOT NULL,
     direction_id boolean,
     delay integer,
     started_at timestamp with time zone,
@@ -328,9 +328,9 @@ CREATE TABLE trip (
 );
 
 CREATE TABLE trip_stop_time (
-    pk SERIAL PRIMARY KEY,
-    stop_pk integer NOT NULL,
-    trip_pk integer NOT NULL,
+    pk BIGSERIAL PRIMARY KEY,
+    stop_pk BIGINT NOT NULL,
+    trip_pk BIGINT NOT NULL,
     arrival_time timestamp with time zone,
     arrival_delay integer,
     arrival_uncertainty integer,
@@ -346,11 +346,11 @@ CREATE TABLE trip_stop_time (
 CREATE INDEX trip_stop_time_stop_pk_arrival_time_idx ON trip_stop_time USING btree (stop_pk, arrival_time);
 
 CREATE TABLE vehicle (
-    pk SERIAL PRIMARY KEY,
+    pk BIGSERIAL PRIMARY KEY,
     id character varying,
-    source_pk integer NOT NULL,
-    system_pk integer NOT NULL,
-    trip_pk integer,
+    source_pk BIGINT NOT NULL,
+    system_pk BIGINT NOT NULL,
+    trip_pk BIGINT,
     label character varying,
     license_plate character varying,
     current_status character varying(13) NOT NULL,
@@ -361,7 +361,7 @@ CREATE TABLE vehicle (
     speed double precision,
     congestion_level character varying(24) NOT NULL,
     updated_at timestamp with time zone,
-    current_stop_pk integer,
+    current_stop_pk BIGINT,
     current_stop_sequence integer,
     occupancy_status character varying(26) NOT NULL,
 

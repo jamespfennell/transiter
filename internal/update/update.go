@@ -97,8 +97,8 @@ func RunInsideTx(ctx context.Context, querier db.Querier, updatePk int64) error 
 	runner := runner{
 		ctx:      ctx,
 		querier:  querier,
-		systemPk: int32(feed.SystemPk),
-		updatePk: int32(updatePk),
+		systemPk: feed.SystemPk,
+		updatePk: updatePk,
 	}
 	fmt.Printf("Parse entites: %+v\n", parsedEntities)
 	return runner.run(parsedEntities)
@@ -129,8 +129,8 @@ func getFeedContent(ctx context.Context, feedConfig *config.FeedConfig) ([]byte,
 type runner struct {
 	ctx      context.Context
 	querier  db.Querier
-	systemPk int32
-	updatePk int32
+	systemPk int64
+	updatePk int64
 }
 
 func (r *runner) run(parsedEntities *parse.Result) error {
@@ -141,7 +141,7 @@ func (r *runner) run(parsedEntities *parse.Result) error {
 }
 
 func (r *runner) updateAgencies(agencies []parse.Agency) error {
-	idToPk := map[string]int32{}
+	idToPk := map[string]int64{}
 	{
 		rows, err := r.querier.MapAgencyPkToIdInSystem(r.ctx, r.systemPk)
 		if err != nil {

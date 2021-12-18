@@ -51,7 +51,7 @@ func (t *Service) ListTransfersInSystem(ctx context.Context, req *api.ListTransf
 		}
 		return nil, err
 	}
-	transfers, err := s.Querier.ListTransfersInSystem(ctx, sql.NullInt32{Valid: true, Int32: system.Pk})
+	transfers, err := s.Querier.ListTransfersInSystem(ctx, sql.NullInt64{Valid: true, Int64: system.Pk})
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	}
 
 	var transfers []db.ListTransfersFromStopsRow
-	stopPkToServiceMaps := map[int32][]*api.ServiceMapForStop{}
+	stopPkToServiceMaps := map[int64][]*api.ServiceMapForStop{}
 	stationPks := stopTree.StationPks()
 	transfers, err = s.Querier.ListTransfersFromStops(ctx, stationPks)
 	if err != nil {
@@ -112,7 +112,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	if err != nil {
 		return nil, err
 	}
-	pkToGroupIdToRoutes := map[int32]map[string][]*api.RoutePreview{}
+	pkToGroupIdToRoutes := map[int64]map[string][]*api.RoutePreview{}
 
 	for _, groupIDRow := range groupIDRows {
 		if _, present := pkToGroupIdToRoutes[groupIDRow.Pk]; !present {
@@ -154,7 +154,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 
 	alerts, err := s.Querier.ListActiveAlertsForStops(
 		ctx, db.ListActiveAlertsForStopsParams{
-			StopPks:     []int32{stop.Pk},
+			StopPks:     []int64{stop.Pk},
 			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
 		})
 	if err != nil {
@@ -163,14 +163,14 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	// TODO: alerts
 
 	var stopTimes []db.ListStopTimesAtStopsRow
-	routePkToRoute := map[int32]*db.Route{}
-	tripPkToLastStop := map[int32]*db.GetLastStopsForTripsRow{}
+	routePkToRoute := map[int64]*db.Route{}
+	tripPkToLastStop := map[int64]*db.GetLastStopsForTripsRow{}
 	stopTimes, err = s.Querier.ListStopTimesAtStops(ctx, stopTree.DescendentPks())
 	if err != nil {
 		return nil, err
 	}
-	var routePks []int32
-	var tripPks []int32
+	var routePks []int64
+	var tripPks []int64
 	for _, stopTime := range stopTimes {
 		routePks = append(routePks, stopTime.RoutePk)
 		tripPks = append(tripPks, stopTime.TripPk)
@@ -272,8 +272,8 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 }
 
 func buildStopTreeResponse(s *session.Session, systemID string,
-	basePk int32, stopTree *stoptree.StopTree, serviceMaps map[int32][]*api.ServiceMapForStop) *api.RelatedStop {
-	stopPkToResponse := map[int32]*api.RelatedStop{}
+	basePk int64, stopTree *stoptree.StopTree, serviceMaps map[int64][]*api.ServiceMapForStop) *api.RelatedStop {
+	stopPkToResponse := map[int64]*api.RelatedStop{}
 	stopTree.VisitDFS(func(node *stoptree.StopTreeNode) {
 		if !stoptree.IsStation(node.Stop) && basePk != node.Stop.Pk {
 			return
@@ -303,7 +303,7 @@ type DirectionNameMatcher struct {
 	rules []db.DirectionNameRule
 }
 
-func NewDirectionNameMatcher(ctx context.Context, querier db.Querier, stopPks []int32) (*DirectionNameMatcher, error) {
+func NewDirectionNameMatcher(ctx context.Context, querier db.Querier, stopPks []int64) (*DirectionNameMatcher, error) {
 	rules, err := querier.ListDirectionNameRulesForStops(ctx, stopPks)
 	if err != nil {
 		return nil, err

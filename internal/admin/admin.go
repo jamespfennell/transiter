@@ -126,7 +126,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	if err != nil {
 		return nil, err
 	}
-	feedIdToPk := map[string]int32{}
+	feedIdToPk := map[string]int64{}
 	for _, feed := range feeds {
 		feedIdToPk[feed.ID] = feed.Pk
 	}

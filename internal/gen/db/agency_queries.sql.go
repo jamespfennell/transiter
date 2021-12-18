@@ -12,7 +12,7 @@ const deleteAgency = `-- name: DeleteAgency :exec
 DELETE FROM agency WHERE pk = $1
 `
 
-func (q *Queries) DeleteAgency(ctx context.Context, pk int32) error {
+func (q *Queries) DeleteAgency(ctx context.Context, pk int64) error {
 	_, err := q.db.ExecContext(ctx, deleteAgency, pk)
 	return err
 }
@@ -27,8 +27,8 @@ VALUES
 
 type InsertAgencyParams struct {
 	ID       string
-	SystemPk int32
-	SourcePk int32
+	SystemPk int64
+	SourcePk int64
 	Name     string
 	Url      string
 	Timezone string
@@ -59,11 +59,11 @@ SELECT pk, id FROM agency WHERE system_pk = $1
 `
 
 type MapAgencyPkToIdInSystemRow struct {
-	Pk int32
+	Pk int64
 	ID string
 }
 
-func (q *Queries) MapAgencyPkToIdInSystem(ctx context.Context, systemPk int32) ([]MapAgencyPkToIdInSystemRow, error) {
+func (q *Queries) MapAgencyPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdInSystemRow, error) {
 	rows, err := q.db.QueryContext(ctx, mapAgencyPkToIdInSystem, systemPk)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ WHERE
 `
 
 type UpdateAgencyParams struct {
-	SourcePk int32
+	SourcePk int64
 	Name     string
 	Url      string
 	Timezone string
@@ -109,7 +109,7 @@ type UpdateAgencyParams struct {
 	Phone    sql.NullString
 	FareUrl  sql.NullString
 	Email    sql.NullString
-	Pk       int32
+	Pk       int64
 }
 
 func (q *Queries) UpdateAgency(ctx context.Context, arg UpdateAgencyParams) error {

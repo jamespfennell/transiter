@@ -11,7 +11,7 @@ const deleteSystem = `-- name: DeleteSystem :exec
 DELETE FROM system WHERE pk = $1
 `
 
-func (q *Queries) DeleteSystem(ctx context.Context, pk int32) error {
+func (q *Queries) DeleteSystem(ctx context.Context, pk int64) error {
 	_, err := q.db.ExecContext(ctx, deleteSystem, pk)
 	return err
 }
@@ -38,7 +38,7 @@ UPDATE system SET name = $1 WHERE pk = $2
 
 type UpdateSystemParams struct {
 	Name string
-	Pk   int32
+	Pk   int64
 }
 
 func (q *Queries) UpdateSystem(ctx context.Context, arg UpdateSystemParams) error {

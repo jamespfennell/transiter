@@ -8,10 +8,10 @@ import (
 )
 
 type Agency struct {
-	Pk       int32
+	Pk       int64
 	ID       string
-	SystemPk int32
-	SourcePk int32
+	SystemPk int64
+	SourcePk int64
 	Name     string
 	Url      string
 	Timezone string
@@ -22,10 +22,10 @@ type Agency struct {
 }
 
 type Alert struct {
-	Pk        int32
+	Pk        int64
 	ID        string
-	SourcePk  int32
-	SystemPk  int32
+	SourcePk  int64
+	SystemPk  int64
 	Cause     string
 	Effect    string
 	CreatedAt sql.NullTime
@@ -34,20 +34,20 @@ type Alert struct {
 }
 
 type AlertActivePeriod struct {
-	Pk       int32
-	AlertPk  int32
+	Pk       int64
+	AlertPk  int64
 	StartsAt sql.NullTime
 	EndsAt   sql.NullTime
 }
 
 type AlertAgency struct {
-	AlertPk  int32
-	AgencyPk int32
+	AlertPk  int64
+	AgencyPk int64
 }
 
 type AlertMessage struct {
-	Pk          int32
-	AlertPk     int32
+	Pk          int64
+	AlertPk     int64
 	Header      string
 	Description string
 	Url         sql.NullString
@@ -55,25 +55,25 @@ type AlertMessage struct {
 }
 
 type AlertRoute struct {
-	AlertPk int32
-	RoutePk int32
+	AlertPk int64
+	RoutePk int64
 }
 
 type AlertStop struct {
-	AlertPk int32
-	StopPk  int32
+	AlertPk int64
+	StopPk  int64
 }
 
 type AlertTrip struct {
-	AlertPk int32
-	TripPk  int32
+	AlertPk int64
+	TripPk  int64
 }
 
 type DirectionNameRule struct {
-	Pk          int32
+	Pk          int64
 	ID          sql.NullString
-	StopPk      int32
-	SourcePk    int32
+	StopPk      int64
+	SourcePk    int64
 	Priority    int32
 	DirectionID sql.NullBool
 	Track       sql.NullString
@@ -81,9 +81,9 @@ type DirectionNameRule struct {
 }
 
 type Feed struct {
-	Pk                int32
+	Pk                int64
 	ID                string
-	SystemPk          int32
+	SystemPk          int64
 	AutoUpdateEnabled bool
 	AutoUpdatePeriod  sql.NullInt32
 	Config            string
@@ -91,7 +91,7 @@ type Feed struct {
 
 type FeedUpdate struct {
 	Pk               int64
-	FeedPk           int32
+	FeedPk           int64
 	Status           string
 	CreatedAt        sql.NullTime
 	CompletedAt      sql.NullTime
@@ -104,10 +104,10 @@ type FeedUpdate struct {
 }
 
 type Route struct {
-	Pk                int32
+	Pk                int64
 	ID                string
-	SystemPk          int32
-	SourcePk          int32
+	SystemPk          int64
+	SourcePk          int64
 	Color             sql.NullString
 	TextColor         sql.NullString
 	ShortName         sql.NullString
@@ -116,16 +116,16 @@ type Route struct {
 	Url               sql.NullString
 	SortOrder         sql.NullInt32
 	Type              sql.NullString
-	AgencyPk          int32
+	AgencyPk          int64
 	ContinuousDropOff string
 	ContinuousPickup  string
 }
 
 type ScheduledService struct {
-	Pk        int32
+	Pk        int64
 	ID        string
-	SystemPk  int32
-	SourcePk  int32
+	SystemPk  int64
+	SourcePk  int64
 	Monday    sql.NullBool
 	Tuesday   sql.NullBool
 	Wednesday sql.NullBool
@@ -138,22 +138,22 @@ type ScheduledService struct {
 }
 
 type ScheduledServiceAddition struct {
-	Pk        int32
-	ServicePk int32
+	Pk        int64
+	ServicePk int64
 	Date      time.Time
 }
 
 type ScheduledServiceRemoval struct {
-	Pk        int32
-	ServicePk int32
+	Pk        int64
+	ServicePk int64
 	Date      time.Time
 }
 
 type ScheduledTrip struct {
-	Pk                   int32
+	Pk                   int64
 	ID                   string
-	RoutePk              int32
-	ServicePk            int32
+	RoutePk              int64
+	ServicePk            int64
 	DirectionID          sql.NullBool
 	BikesAllowed         string
 	BlockID              sql.NullString
@@ -163,8 +163,8 @@ type ScheduledTrip struct {
 }
 
 type ScheduledTripFrequency struct {
-	Pk             int32
-	TripPk         int32
+	Pk             int64
+	TripPk         int64
 	StartTime      time.Time
 	EndTime        time.Time
 	Headway        int32
@@ -172,9 +172,9 @@ type ScheduledTripFrequency struct {
 }
 
 type ScheduledTripStopTime struct {
-	Pk                    int32
-	TripPk                int32
-	StopPk                int32
+	Pk                    int64
+	TripPk                int64
+	StopPk                int64
 	ArrivalTime           sql.NullTime
 	DepartureTime         sql.NullTime
 	StopSequence          int32
@@ -188,15 +188,15 @@ type ScheduledTripStopTime struct {
 }
 
 type ServiceMap struct {
-	Pk      int32
-	RoutePk int32
-	GroupPk int32
+	Pk      int64
+	RoutePk int64
+	GroupPk int64
 }
 
 type ServiceMapGroup struct {
-	Pk                 int32
+	Pk                 int64
 	ID                 string
-	SystemPk           int32
+	SystemPk           int64
 	Conditions         sql.NullString
 	Threshold          float64
 	UseForRoutesAtStop bool
@@ -205,18 +205,18 @@ type ServiceMapGroup struct {
 }
 
 type ServiceMapVertex struct {
-	Pk       int32
-	StopPk   int32
-	MapPk    int32
+	Pk       int64
+	StopPk   int64
+	MapPk    int64
 	Position int32
 }
 
 type Stop struct {
-	Pk                 int32
+	Pk                 int64
 	ID                 string
-	SystemPk           int32
-	SourcePk           int32
-	ParentStopPk       sql.NullInt32
+	SystemPk           int64
+	SourcePk           int64
+	ParentStopPk       sql.NullInt64
 	Name               string
 	Longitude          sql.NullString
 	Latitude           sql.NullString
@@ -231,7 +231,7 @@ type Stop struct {
 }
 
 type System struct {
-	Pk       int32
+	Pk       int64
 	ID       string
 	Name     string
 	Timezone sql.NullString
@@ -239,8 +239,8 @@ type System struct {
 }
 
 type SystemUpdate struct {
-	Pk               int32
-	SystemPk         int32
+	Pk               int64
+	SystemPk         int64
 	Status           string
 	StatusMessage    sql.NullString
 	TotalDuration    sql.NullFloat64
@@ -254,32 +254,32 @@ type SystemUpdate struct {
 }
 
 type Transfer struct {
-	Pk              int32
-	SourcePk        sql.NullInt32
-	ConfigSourcePk  sql.NullInt32
-	SystemPk        sql.NullInt32
-	FromStopPk      int32
-	ToStopPk        int32
+	Pk              int64
+	SourcePk        sql.NullInt64
+	ConfigSourcePk  sql.NullInt64
+	SystemPk        sql.NullInt64
+	FromStopPk      int64
+	ToStopPk        int64
 	Type            string
 	MinTransferTime sql.NullInt32
 	Distance        sql.NullInt32
 }
 
 type TransfersConfig struct {
-	Pk       int32
+	Pk       int64
 	Distance string
 }
 
 type TransfersConfigSystem struct {
-	TransfersConfigPk sql.NullInt32
-	SystemPk          sql.NullInt32
+	TransfersConfigPk sql.NullInt64
+	SystemPk          sql.NullInt64
 }
 
 type Trip struct {
-	Pk                  int32
+	Pk                  int64
 	ID                  string
-	RoutePk             int32
-	SourcePk            int32
+	RoutePk             int64
+	SourcePk            int64
 	DirectionID         sql.NullBool
 	Delay               sql.NullInt32
 	StartedAt           sql.NullTime
@@ -288,9 +288,9 @@ type Trip struct {
 }
 
 type TripStopTime struct {
-	Pk                   int32
-	StopPk               int32
-	TripPk               int32
+	Pk                   int64
+	StopPk               int64
+	TripPk               int64
 	ArrivalTime          sql.NullTime
 	ArrivalDelay         sql.NullInt32
 	ArrivalUncertainty   sql.NullInt32
@@ -302,11 +302,11 @@ type TripStopTime struct {
 }
 
 type Vehicle struct {
-	Pk                  int32
+	Pk                  int64
 	ID                  sql.NullString
-	SourcePk            int32
-	SystemPk            int32
-	TripPk              sql.NullInt32
+	SourcePk            int64
+	SystemPk            int64
+	TripPk              sql.NullInt64
 	Label               sql.NullString
 	LicensePlate        sql.NullString
 	CurrentStatus       string
@@ -317,7 +317,7 @@ type Vehicle struct {
 	Speed               sql.NullFloat64
 	CongestionLevel     string
 	UpdatedAt           sql.NullTime
-	CurrentStopPk       sql.NullInt32
+	CurrentStopPk       sql.NullInt64
 	CurrentStopSequence sql.NullInt32
 	OccupancyStatus     string
 }

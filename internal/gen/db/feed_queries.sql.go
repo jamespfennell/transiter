@@ -12,7 +12,7 @@ const deleteFeed = `-- name: DeleteFeed :exec
 DELETE FROM feed WHERE pk = $1
 `
 
-func (q *Queries) DeleteFeed(ctx context.Context, pk int32) error {
+func (q *Queries) DeleteFeed(ctx context.Context, pk int64) error {
 	_, err := q.db.ExecContext(ctx, deleteFeed, pk)
 	return err
 }
@@ -73,7 +73,7 @@ VALUES
 
 type InsertFeedParams struct {
 	ID                string
-	SystemPk          int32
+	SystemPk          int64
 	AutoUpdateEnabled bool
 	AutoUpdatePeriod  sql.NullInt32
 	Config            string
@@ -99,7 +99,7 @@ RETURNING pk
 `
 
 type InsertFeedUpdateParams struct {
-	FeedPk int32
+	FeedPk int64
 	Status string
 }
 
@@ -150,7 +150,7 @@ const listFeedsInSystem = `-- name: ListFeedsInSystem :many
 SELECT pk, id, system_pk, auto_update_enabled, auto_update_period, config FROM feed WHERE system_pk = $1 ORDER BY id
 `
 
-func (q *Queries) ListFeedsInSystem(ctx context.Context, systemPk int32) ([]Feed, error) {
+func (q *Queries) ListFeedsInSystem(ctx context.Context, systemPk int64) ([]Feed, error) {
 	rows, err := q.db.QueryContext(ctx, listFeedsInSystem, systemPk)
 	if err != nil {
 		return nil, err
@@ -192,7 +192,7 @@ type UpdateFeedParams struct {
 	AutoUpdateEnabled bool
 	AutoUpdatePeriod  sql.NullInt32
 	Config            string
-	FeedPk            int32
+	FeedPk            int64
 }
 
 func (q *Queries) UpdateFeed(ctx context.Context, arg UpdateFeedParams) error {

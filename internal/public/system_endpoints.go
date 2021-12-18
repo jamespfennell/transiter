@@ -56,7 +56,7 @@ func (t *Service) GetSystem(ctx context.Context, req *api.GetSystemRequest) (*ap
 	if err != nil {
 		return nil, err
 	}
-	numTransfers, err := s.Querier.CountTransfersInSystem(ctx, sql.NullInt32{Valid: true, Int32: system.Pk})
+	numTransfers, err := s.Querier.CountTransfersInSystem(ctx, sql.NullInt64{Valid: true, Int64: system.Pk})
 	if err != nil {
 		return nil, err
 	}

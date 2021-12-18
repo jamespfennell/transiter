@@ -28,7 +28,7 @@ func (t *Service) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInS
 	if err != nil {
 		return nil, err
 	}
-	var routePks []int32
+	var routePks []int64
 	for _, route := range routes {
 		routePks = append(routePks, route.Pk)
 	}
@@ -40,7 +40,7 @@ func (t *Service) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInS
 	if err != nil {
 		return nil, err
 	}
-	routePkToAlertRows := map[int32][]*api.AlertPreview{}
+	routePkToAlertRows := map[int64][]*api.AlertPreview{}
 	for _, alert := range alerts {
 		routePkToAlertRows[alert.RoutePk] = append(routePkToAlertRows[alert.RoutePk], &api.AlertPreview{
 			Id:     alert.ID,
@@ -110,13 +110,13 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 
 	alerts, err := s.Querier.ListActiveAlertsForRoutes(
 		ctx, db.ListActiveAlertsForRoutesParams{
-			RoutePks:    []int32{route.Pk},
+			RoutePks:    []int64{route.Pk},
 			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
 		})
 	if err != nil {
 		return nil, err
 	}
-	var alertPks []int32
+	var alertPks []int64
 	for _, alert := range alerts {
 		alertPks = append(alertPks, alert.Pk)
 	}

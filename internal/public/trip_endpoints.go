@@ -26,7 +26,7 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 	if err != nil {
 		return nil, err
 	}
-	var tripPks []int32
+	var tripPks []int64
 	for _, trip := range trips {
 		tripPks = append(tripPks, trip.Pk)
 	}
@@ -35,7 +35,7 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 	if err != nil {
 		return nil, err
 	}
-	tripPkToLastStop := map[int32]*db.GetLastStopsForTripsRow{}
+	tripPkToLastStop := map[int64]*db.GetLastStopsForTripsRow{}
 	for _, row := range rows {
 		row := row
 		tripPkToLastStop[row.TripPk] = &row
