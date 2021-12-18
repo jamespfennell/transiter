@@ -4,11 +4,11 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"encoding/csv"
 	"fmt"
 	"log"
 
 	"github.com/jamespfennell/transiter/config"
+	"github.com/jamespfennell/transiter/internal/csv"
 	"github.com/jamespfennell/transiter/parse"
 )
 
@@ -36,110 +36,31 @@ func (p Parser) Parse(ctx context.Context, content []byte) (*parse.Result, error
 	return result, nil
 }
 
-func readCsvFile(file *zip.File) (parsedCsv, error) {
-	reader, err := file.Open()
+func readCsvFile(zipFile *zip.File) (*csv.File, error) {
+	content, err := zipFile.Open()
 	if err != nil {
-		return parsedCsv{}, err
+		return nil, err
 	}
-	defer reader.Close()
-	csvReader := csv.NewReader(reader)
-	records, err := csvReader.ReadAll()
-	if err != nil {
-		return parsedCsv{}, err
-	}
-	if len(records) == 0 {
-		return parsedCsv{}, fmt.Errorf("file contains no rows")
-	}
-	m := map[string]int{}
-	for i, colHeader := range records[0] {
-		m[colHeader] = i
-	}
-	return parsedCsv{
-		headerMap: m,
-		rows:      records[1:],
-	}, nil
+	defer content.Close()
+	return csv.New(content)
 }
 
-type parsedCsv struct {
-	headerMap map[string]int
-	rows      [][]string
-}
-
-func (p *parsedCsv) iter() parsedCsvIter {
-	return parsedCsvIter{
-		p: p,
-		i: -1,
-	}
-}
-
-type parsedCsvIter struct {
-	p *parsedCsv
-	i int
-}
-
-func (i *parsedCsvIter) next() bool {
-	i.i += 1
-	return i.i < len(i.p.rows)
-}
-
-func (i *parsedCsvIter) get() row {
-	return row{
-		p: i.p,
-		r: i.p.rows[i.i],
-	}
-}
-
-type row struct {
-	p           *parsedCsv
-	r           []string
-	missingKeys []string
-}
-
-func (r *row) get(key string) string {
-	i, ok := r.p.headerMap[key]
-	if !ok || r.r[i] == "" {
-		r.missingKeys = append(r.missingKeys, key)
-		return ""
-	}
-	return r.r[i]
-}
-
-func (r *row) getOr(key string, f func() string) string {
-	i, ok := r.p.headerMap[key]
-	if !ok {
-		return f()
-	}
-	return r.r[i]
-}
-
-func (r *row) getOptional(key string) *string {
-	i, ok := r.p.headerMap[key]
-	if !ok || r.r[i] == "" {
-		return nil
-	}
-	return &r.r[i]
-}
-
-func (r *row) MissingKeys() []string {
-	return r.missingKeys
-}
-
-func parseAgencies(csv parsedCsv) []parse.Agency {
+func parseAgencies(csv *csv.File) []parse.Agency {
 	var agencies []parse.Agency
-	iter := csv.iter()
-	for iter.next() {
-		row := iter.get()
+	iter := csv.Iter()
+	for iter.Next() {
+		row := iter.Get()
 		agency := parse.Agency{
-			Id: row.getOr("agency_id", func() string {
-				return fmt.Sprintf("%s_id", row.get("agency_name"))
+			Id: row.GetOr("agency_id", func() string {
+				return fmt.Sprintf("%s_id", row.Get("agency_name"))
 			}),
-			Name:     row.get("agency_name"),
-			Url:      row.get("agency_url"),
-			Timezone: row.get("agency_timezone"),
-			Language: row.getOptional("agency_lang"),
-			Phone:    row.getOptional("agency_phone"),
-			FareUrl:  row.getOptional("agency_fare_url"),
-			Email:    row.getOptional("agency_email"),
+			Name:     row.Get("agency_name"),
+			Url:      row.Get("agency_url"),
+			Timezone: row.Get("agency_timezone"),
+			Language: row.GetOptional("agency_lang"),
+			Phone:    row.GetOptional("agency_phone"),
+			FareUrl:  row.GetOptional("agency_fare_url"),
+			Email:    row.GetOptional("agency_email"),
 		}
 		if missingKeys := row.MissingKeys(); len(missingKeys) > 0 {
 			log.Printf("Skipping agency %+v because of missing keys %s", agency, missingKeys)
