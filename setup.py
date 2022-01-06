@@ -18,7 +18,7 @@ setup(
     install_requires=[
         "alembic==1.5.7",
         "apscheduler==3.6.3",
-        "celery==4.4.2",
+        "celery==5.2.2",
         "click==7.1.1",
         "decorator==4.4.2",
         "flask==1.1.2",
