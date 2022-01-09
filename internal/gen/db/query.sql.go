@@ -195,14 +195,14 @@ type GetRouteInSystemRow struct {
 	ID                string
 	SystemPk          int64
 	SourcePk          int64
-	Color             sql.NullString
-	TextColor         sql.NullString
+	Color             string
+	TextColor         string
 	ShortName         sql.NullString
 	LongName          sql.NullString
 	Description       sql.NullString
 	Url               sql.NullString
 	SortOrder         sql.NullInt32
-	Type              sql.NullString
+	Type              string
 	AgencyPk          int64
 	ContinuousDropOff string
 	ContinuousPickup  string
@@ -346,7 +346,7 @@ type GetTripRow struct {
 	CurrentStopSequence sql.NullInt32
 	VehicleID           sql.NullString
 	RouteID             string
-	RouteColor          sql.NullString
+	RouteColor          string
 }
 
 func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error) {
@@ -713,7 +713,7 @@ WHERE route.agency_pk = $1
 
 type ListRoutesInAgencyRow struct {
 	ID    string
-	Color sql.NullString
+	Color string
 }
 
 func (q *Queries) ListRoutesInAgency(ctx context.Context, agencyPk int64) ([]ListRoutesInAgencyRow, error) {
@@ -859,7 +859,7 @@ type ListServiceMapsForStopsRow struct {
 	StopPk            int64
 	ServiceMapGroupID string
 	RouteID           string
-	RouteColor        sql.NullString
+	RouteColor        string
 	SystemID          string
 }
 

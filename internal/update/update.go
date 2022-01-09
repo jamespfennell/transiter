@@ -98,6 +98,7 @@ func RunInsideTx(ctx context.Context, querier db.Querier, updatePk int64) error 
 		ctx:      ctx,
 		querier:  querier,
 		systemPk: feed.SystemPk,
+		feedPk:   feed.Pk,
 		updatePk: updatePk,
 	}
 	fmt.Printf("Parse entites: %+v\n", parsedEntities)
@@ -130,26 +131,26 @@ type runner struct {
 	ctx      context.Context
 	querier  db.Querier
 	systemPk int64
+	feedPk   int64
 	updatePk int64
 }
 
 func (r *runner) run(parsedEntities *parse.Result) error {
-	if err := r.updateAgencies(parsedEntities.Agencies); err != nil {
+	agencyIdToPk, err := r.updateAgencies(parsedEntities.Agencies)
+	if err != nil {
+		return err
+	}
+	_, err = r.updateRoutes(parsedEntities.Routes, agencyIdToPk)
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *runner) updateAgencies(agencies []parse.Agency) error {
-	idToPk := map[string]int64{}
-	{
-		rows, err := r.querier.MapAgencyPkToIdInSystem(r.ctx, r.systemPk)
-		if err != nil {
-			return err
-		}
-		for _, row := range rows {
-			idToPk[row.ID] = row.Pk
-		}
+func (r *runner) updateAgencies(agencies []parse.Agency) (map[string]int64, error) {
+	idToPk, err := buildAgencyIdToPkMap(r.ctx, r.querier, r.systemPk)
+	if err != nil {
+		return nil, err
 	}
 	for _, agency := range agencies {
 		var err error
@@ -166,9 +167,8 @@ func (r *runner) updateAgencies(agencies []parse.Agency) error {
 				FareUrl:  apihelpers.ConvertNullString(agency.FareUrl),
 				Email:    apihelpers.ConvertNullString(agency.Email),
 			})
-			delete(idToPk, agency.Id)
 		} else {
-			err = r.querier.InsertAgency(r.ctx, db.InsertAgencyParams{
+			pk, err = r.querier.InsertAgency(r.ctx, db.InsertAgencyParams{
 				ID:       agency.Id,
 				SystemPk: r.systemPk,
 				SourcePk: r.updatePk,
@@ -180,15 +180,109 @@ func (r *runner) updateAgencies(agencies []parse.Agency) error {
 				FareUrl:  apihelpers.ConvertNullString(agency.FareUrl),
 				Email:    apihelpers.ConvertNullString(agency.Email),
 			})
+			idToPk[agency.Id] = pk
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	for _, pk := range idToPk {
-		if err := r.querier.DeleteAgency(r.ctx, pk); err != nil {
-			return err
+	deletedIds, err := r.querier.DeleteStaleAgencies(r.ctx, db.DeleteStaleAgenciesParams{
+		FeedPk:   r.feedPk,
+		UpdatePk: r.updatePk,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range deletedIds {
+		delete(idToPk, id)
+	}
+	return idToPk, nil
+}
+
+func (r *runner) updateRoutes(routes []parse.Route, agencyIdToPk map[string]int64) (map[string]int64, error) {
+	idToPk, err := buildRouteIdToPkMap(r.ctx, r.querier, r.systemPk)
+	if err != nil {
+		return nil, err
+	}
+	for _, route := range routes {
+		agencyPk, ok := agencyIdToPk[route.Agency.Id]
+		if !ok {
+			log.Printf("no agency %q in the database; skipping route %q", route.Agency.Id, route.Id)
+			continue
+		}
+		pk, ok := idToPk[route.Id]
+		if ok {
+			err = r.querier.UpdateRoute(r.ctx, db.UpdateRouteParams{
+				Pk:                pk,
+				SourcePk:          r.updatePk,
+				Color:             route.Color,
+				TextColor:         route.TextColor,
+				ShortName:         apihelpers.ConvertNullString(route.ShortName),
+				LongName:          apihelpers.ConvertNullString(route.LongName),
+				Description:       apihelpers.ConvertNullString(route.Description),
+				Url:               apihelpers.ConvertNullString(route.Url),
+				SortOrder:         apihelpers.ConvertNullInt32(route.SortOrder),
+				Type:              route.Type.String(),
+				ContinuousPickup:  route.ContinuousPickup.String(),
+				ContinuousDropOff: route.ContinuousDropOff.String(),
+				AgencyPk:          agencyPk,
+			})
+		} else {
+			pk, err = r.querier.InsertRoute(r.ctx, db.InsertRouteParams{
+				ID:                route.Id,
+				SystemPk:          r.systemPk,
+				SourcePk:          r.updatePk,
+				Color:             route.Color,
+				TextColor:         route.TextColor,
+				ShortName:         apihelpers.ConvertNullString(route.ShortName),
+				LongName:          apihelpers.ConvertNullString(route.LongName),
+				Description:       apihelpers.ConvertNullString(route.Description),
+				Url:               apihelpers.ConvertNullString(route.Url),
+				SortOrder:         apihelpers.ConvertNullInt32(route.SortOrder),
+				Type:              route.Type.String(),
+				ContinuousPickup:  route.ContinuousPickup.String(),
+				ContinuousDropOff: route.ContinuousDropOff.String(),
+				AgencyPk:          agencyPk,
+			})
+			idToPk[route.Id] = pk
+		}
+		if err != nil {
+			return nil, err
 		}
 	}
-	return nil
+	deletedIds, err := r.querier.DeleteStaleRoutes(r.ctx, db.DeleteStaleRoutesParams{
+		FeedPk:   r.feedPk,
+		UpdatePk: r.updatePk,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range deletedIds {
+		delete(idToPk, id)
+	}
+	return idToPk, nil
+}
+
+func buildAgencyIdToPkMap(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
+	idToPk := map[string]int64{}
+	rows, err := querier.MapAgencyPkToIdInSystem(ctx, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		idToPk[row.ID] = row.Pk
+	}
+	return idToPk, nil
+}
+
+func buildRouteIdToPkMap(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
+	idToPk := map[string]int64{}
+	rows, err := querier.MapRoutePkToIdInSystem(ctx, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		idToPk[row.ID] = row.Pk
+	}
+	return idToPk, nil
 }

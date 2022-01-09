@@ -90,7 +90,7 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 		UpdatedAt:   apihelpers.ConvertSqlNullTime(trip.UpdatedAt),
 		Route: &api.RoutePreview{
 			Id:    trip.RouteID,
-			Color: trip.RouteColor.String,
+			Color: trip.RouteColor,
 			Href:  s.Hrefs.Route(req.SystemId, req.RouteId),
 		},
 		Href: s.Hrefs.Trip(req.SystemId, req.RouteId, req.TripId),

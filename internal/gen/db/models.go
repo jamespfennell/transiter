@@ -108,14 +108,14 @@ type Route struct {
 	ID                string
 	SystemPk          int64
 	SourcePk          int64
-	Color             sql.NullString
-	TextColor         sql.NullString
+	Color             string
+	TextColor         string
 	ShortName         sql.NullString
 	LongName          sql.NullString
 	Description       sql.NullString
 	Url               sql.NullString
 	SortOrder         sql.NullInt32
-	Type              sql.NullString
+	Type              string
 	AgencyPk          int64
 	ContinuousDropOff string
 	ContinuousPickup  string

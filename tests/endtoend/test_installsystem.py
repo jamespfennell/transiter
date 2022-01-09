@@ -26,7 +26,7 @@ STOP_IDS = {
     "2COL",
     "2MEX",
 }
-ROUTE_IDS = {"A", "B"}
+ROUTE_IDS = {"A", "B", "RouteId"}
 FEED_IDS = {"GtfsRealtimeFeed", "gtfsstatic"}
 STOP_ID_TO_USUAL_ROUTES = {
     "1A": ["A"],
@@ -85,7 +85,7 @@ def _test_install_system__transfers(system_id, install_system_1, transiter_host,
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def _test_install_system__routes(system_id, install_system_1, transiter_host, sync):
+def test_install_system__routes(system_id, install_system_1, transiter_host, sync):
 
     install_system_1(system_id, sync=sync)
 
@@ -96,8 +96,22 @@ def _test_install_system__routes(system_id, install_system_1, transiter_host, sy
     routes_response = requests.get(
         transiter_host + "/systems/" + system_id + "/routes"
     ).json()
-    actual_route_ids = set([route["id"] for route in routes_response])
+    actual_route_ids = set([route["id"] for route in routes_response["routes"]])
     assert ROUTE_IDS == actual_route_ids
+
+    route_response =   requests.get(
+        transiter_host + "/systems/" + system_id + "/routes/RouteId"
+    ).json()
+    assert "RouteId" == route_response["id"]
+    assert "RouteColor" == route_response["color"]
+    assert "RouteTextColor" == route_response["textColor"]
+    assert "RouteShortName" == route_response["shortName"]
+    assert "RouteLongName" == route_response["longName"]
+    assert "RouteDesc" == route_response["description"]
+    assert 50 == route_response["sortOrder"]
+    assert "PHONE_AGENCY" == route_response["continuousPickup"]
+    assert "COORDINATE_WITH_DRIVER" == route_response["continuousDropOff"]
+    assert "SUBWAY" == route_response["type"]
 
 
 @pytest.mark.parametrize("sync", [True, False])

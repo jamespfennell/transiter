@@ -359,13 +359,16 @@ message RoutePreviewWithAlerts {
 
 message Route {
   string id = 1;
-  string short_name = 2;
-  string long_name = 3;
+  optional string short_name = 2;
+  optional string long_name = 3;
   string color = 4;
-  // TODO(APIv2): uncomment this field
-  // string text_color = 5;
-  string description = 6;
-  string url = 7;
+  string text_color = 5;
+  optional string description = 6;
+  optional string url = 7;
+  optional int32 sort_order = 13;
+  // TODO: make these enums
+  string continuous_pickup = 14;
+  string continuous_drop_off = 15;
 
   // TODO: make this an enum
   string type = 8;

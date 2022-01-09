@@ -8,21 +8,51 @@ import (
 	"database/sql"
 )
 
-const deleteAgency = `-- name: DeleteAgency :exec
-DELETE FROM agency WHERE pk = $1
+const deleteStaleAgencies = `-- name: DeleteStaleAgencies :many
+DELETE FROM agency
+USING feed_update
+WHERE 
+    feed_update.pk = agency.source_pk
+    AND feed_update.feed_pk = $1
+    AND feed_update.pk != $2
+RETURNING agency.id
 `
 
-func (q *Queries) DeleteAgency(ctx context.Context, pk int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAgency, pk)
-	return err
+type DeleteStaleAgenciesParams struct {
+	FeedPk   int64
+	UpdatePk int64
 }
 
-const insertAgency = `-- name: InsertAgency :exec
+func (q *Queries) DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, deleteStaleAgencies, arg.FeedPk, arg.UpdatePk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertAgency = `-- name: InsertAgency :one
 INSERT INTO agency
     (id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email)
 VALUES
     ($1, $2, $3, $4, $5,
      $6, $7, $8, $9, $10)
+RETURNING pk
 `
 
 type InsertAgencyParams struct {
@@ -38,8 +68,8 @@ type InsertAgencyParams struct {
 	Email    sql.NullString
 }
 
-func (q *Queries) InsertAgency(ctx context.Context, arg InsertAgencyParams) error {
-	_, err := q.db.ExecContext(ctx, insertAgency,
+func (q *Queries) InsertAgency(ctx context.Context, arg InsertAgencyParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, insertAgency,
 		arg.ID,
 		arg.SystemPk,
 		arg.SourcePk,
@@ -51,7 +81,9 @@ func (q *Queries) InsertAgency(ctx context.Context, arg InsertAgencyParams) erro
 		arg.FareUrl,
 		arg.Email,
 	)
-	return err
+	var pk int64
+	err := row.Scan(&pk)
+	return pk, err
 }
 
 const mapAgencyPkToIdInSystem = `-- name: MapAgencyPkToIdInSystem :many

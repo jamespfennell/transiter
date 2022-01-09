@@ -1,12 +1,13 @@
 -- name: MapAgencyPkToIdInSystem :many
 SELECT pk, id FROM agency WHERE system_pk = sqlc.arg(system_pk);
 
--- name: InsertAgency :exec
+-- name: InsertAgency :one
 INSERT INTO agency
     (id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email)
 VALUES
     (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(source_pk), sqlc.arg(name), sqlc.arg(url),
-     sqlc.arg(timezone), sqlc.arg(language), sqlc.arg(phone), sqlc.arg(fare_url), sqlc.arg(email));
+     sqlc.arg(timezone), sqlc.arg(language), sqlc.arg(phone), sqlc.arg(fare_url), sqlc.arg(email))
+RETURNING pk;
 
 -- name: UpdateAgency :exec
 UPDATE agency SET
@@ -21,5 +22,11 @@ UPDATE agency SET
 WHERE
     pk = sqlc.arg(pk);
 
--- name: DeleteAgency :exec
-DELETE FROM agency WHERE pk = sqlc.arg(pk);
+-- name: DeleteStaleAgencies :many
+DELETE FROM agency
+USING feed_update
+WHERE 
+    feed_update.pk = agency.source_pk
+    AND feed_update.feed_pk = sqlc.arg(feed_pk)
+    AND feed_update.pk != sqlc.arg(update_pk)
+RETURNING agency.id;

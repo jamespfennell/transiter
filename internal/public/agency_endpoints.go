@@ -74,7 +74,7 @@ func (t *Service) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSys
 	for _, route := range routes {
 		reply.Routes = append(reply.Routes, &api.RoutePreview{
 			Id:    route.ID,
-			Color: route.Color.String,
+			Color: route.Color,
 			Href:  s.Hrefs.Route(req.SystemId, route.ID),
 		})
 	}

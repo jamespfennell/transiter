@@ -70,9 +70,18 @@ func (r *Row) Get(key string) string {
 		return ""
 	}
 	return r.cells[i]
+
 }
 
-func (r *Row) GetOr(key string, f func() string) string {
+func (r *Row) GetOr(key string, fallback string) string {
+	i, ok := r.file.headerMap[key]
+	if !ok {
+		return fallback
+	}
+	return r.cells[i]
+}
+
+func (r *Row) GetOrCalculate(key string, f func() string) string {
 	i, ok := r.file.headerMap[key]
 	if !ok {
 		return f()

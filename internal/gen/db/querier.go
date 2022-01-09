@@ -15,8 +15,9 @@ type Querier interface {
 	CountStopsInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountSystems(ctx context.Context) (int64, error)
 	CountTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) (int64, error)
-	DeleteAgency(ctx context.Context, pk int64) error
 	DeleteFeed(ctx context.Context, pk int64) error
+	DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) ([]string, error)
+	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) ([]string, error)
 	DeleteSystem(ctx context.Context, pk int64) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
 	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
@@ -26,9 +27,10 @@ type Querier interface {
 	GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (GetStopInSystemRow, error)
 	GetSystem(ctx context.Context, id string) (System, error)
 	GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error)
-	InsertAgency(ctx context.Context, arg InsertAgencyParams) error
+	InsertAgency(ctx context.Context, arg InsertAgencyParams) (int64, error)
 	InsertFeed(ctx context.Context, arg InsertFeedParams) error
 	InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdateParams) (int64, error)
+	InsertRoute(ctx context.Context, arg InsertRouteParams) (int64, error)
 	InsertSystem(ctx context.Context, arg InsertSystemParams) error
 	ListActiveAlertsForAgency(ctx context.Context, arg ListActiveAlertsForAgencyParams) ([]ListActiveAlertsForAgencyRow, error)
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)
@@ -54,8 +56,10 @@ type Querier interface {
 	ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTripsInRouteRow, error)
 	ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUpdate, error)
 	MapAgencyPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdInSystemRow, error)
+	MapRoutePkToIdInSystem(ctx context.Context, systemPk int64) ([]MapRoutePkToIdInSystemRow, error)
 	UpdateAgency(ctx context.Context, arg UpdateAgencyParams) error
 	UpdateFeed(ctx context.Context, arg UpdateFeedParams) error
+	UpdateRoute(ctx context.Context, arg UpdateRouteParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
 }
 

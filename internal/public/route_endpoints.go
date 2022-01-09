@@ -52,7 +52,7 @@ func (t *Service) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInS
 	for _, route := range routes {
 		reply.Routes = append(reply.Routes, &api.RoutePreviewWithAlerts{
 			Id:     route.ID,
-			Color:  route.Color.String,
+			Color:  route.Color,
 			Alerts: routePkToAlertRows[route.Pk],
 			Href:   s.Hrefs.Route(system.ID, route.ID),
 		})
@@ -150,14 +150,18 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 	}
 
 	reply := &api.Route{
-		Id:          route.ID,
-		ShortName:   route.ShortName.String,
-		LongName:    route.LongName.String,
-		Color:       route.Color.String,
-		Description: route.Description.String,
-		Url:         route.Url.String,
-		Type:        route.Type.String,
-		Periodicity: periodicity,
+		Id:                route.ID,
+		ShortName:         apihelpers.ConvertSqlNullString(route.ShortName),
+		LongName:          apihelpers.ConvertSqlNullString(route.LongName),
+		Color:             route.Color,
+		TextColor:         route.TextColor,
+		Description:       apihelpers.ConvertSqlNullString(route.Description),
+		Url:               apihelpers.ConvertSqlNullString(route.Url),
+		SortOrder:         apihelpers.ConvertSqlNullInt32(route.SortOrder),
+		ContinuousPickup:  route.ContinuousPickup,
+		ContinuousDropOff: route.ContinuousDropOff,
+		Type:              route.Type,
+		Periodicity:       periodicity,
 		Agency: &api.AgencyPreview{
 			Id:   route.AgencyID,
 			Name: route.AgencyName,

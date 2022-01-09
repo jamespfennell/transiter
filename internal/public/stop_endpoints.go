@@ -126,7 +126,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		}
 		route := &api.RoutePreview{
 			Id:    serviceMap.RouteID,
-			Color: serviceMap.RouteColor.String,
+			Color: serviceMap.RouteColor,
 			Href:  s.Hrefs.Route(req.SystemId, serviceMap.RouteID),
 		}
 		if serviceMap.SystemID != req.SystemId {
@@ -223,7 +223,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 				UpdatedAt:   apihelpers.ConvertSqlNullTime(stopTime.UpdatedAt),
 				Route: &api.RoutePreview{
 					Id:    route.ID,
-					Color: route.Color.String,
+					Color: route.Color,
 					Href:  s.Hrefs.Route(req.SystemId, route.ID),
 				},
 				LastStop: &api.StopPreview{
