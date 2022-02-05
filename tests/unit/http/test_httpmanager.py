@@ -14,7 +14,7 @@ from transiter.services import views
 
 # NOTE: Most of the test coverage of the HTTP manager comes from the endpoint
 # testing in which the HTTP manager is not mocked. This testing class is
-# designed to capture a few of the cases no captured in the endpoint testing.
+# designed to capture a few of the cases that are not captured in the endpoint testing.
 
 
 def test_unexpected_error():

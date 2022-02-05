@@ -22,4 +22,4 @@ def run(log_level="warning"):
         packages=["transiter.services.systemservice", "transiter.scheduler.server"],
         related_name=None,
     )
-    app.start(argv=["celeryapp", "worker", "-l", log_level])
+    app.start(argv=["worker", "-l", log_level])

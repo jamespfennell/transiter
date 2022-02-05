@@ -154,6 +154,7 @@ def test_install__config_file_from_file_upload(
 
     response = systemendpoints.install("system_id")
 
+    print("Expexted", expected_http_status, "actual", response)
     assert expected_http_status == response.status_code
     install_method.assert_called_once_with(
         system_id="system_id",

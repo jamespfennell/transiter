@@ -147,7 +147,9 @@ def install(system_id):
             status = HttpStatus.BAD_REQUEST
     else:
         status = HttpStatus.ACCEPTED
-    return systemservice.get_update_by_id(system_update_pk), status
+    a = systemservice.get_update_by_id(system_update_pk), status
+    print("Status", a)
+    return a
 
 
 def _get_config_file(config_source_url, uploaded_config_file):
