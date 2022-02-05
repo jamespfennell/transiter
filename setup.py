@@ -32,6 +32,6 @@ setup(
         "pytz==2021.3",
         "requests==2.23.0",
         "sqlalchemy==1.4.5",
-        "strictyaml==1.0.6",
+        "strictyaml==1.6.1",
     ],
 )
