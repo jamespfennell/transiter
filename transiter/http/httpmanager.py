@@ -33,7 +33,7 @@ from transiter.services import views
 logger = logging.getLogger(__name__)
 
 
-class HttpStatus(enum.IntEnum):
+class HttpStatus:
     OK = 200
     CREATED = 201
     ACCEPTED = 202
@@ -138,7 +138,7 @@ def _json_response(func, *args, **kwargs):
     if (
         isinstance(response, tuple)
         and len(response) == 2
-        and isinstance(response[1], HttpStatus)
+        and isinstance(response[1], int)
     ):
         response, status = response
     return flask.Response(

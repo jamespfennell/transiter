@@ -1,4 +1,4 @@
-FROM python:3.8 AS transiter-documentation-builder
+FROM python:3.9 AS transiter-documentation-builder
 
 WORKDIR /transiter-docs
 
@@ -8,10 +8,7 @@ RUN pip install --quiet -r requirements.txt
 COPY docs ./
 RUN mkdocs build
 
-
 FROM python:3.8
-
-MAINTAINER James Fennell jamespfennell@gmail.com
 
 WORKDIR /transiter/source
 
@@ -33,6 +30,11 @@ RUN python setup.py --quiet sdist --dist-dir ../dist bdist_wheel --dist-dir ../d
 
 WORKDIR /transiter
 RUN pip install --quiet dist/*whl
+
+COPY dev-requirements.txt dev-requirements.txt
+RUN pip install -r dev-requirements.txt
+COPY tests tests
+RUN pytest tests/unit
 
 # The base image is never intended to used directly.
 # This command is convenient for debugging.
