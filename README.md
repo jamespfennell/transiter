@@ -17,7 +17,7 @@ The endpoint for a particular stop, for example,
         which transfers to other stops are available,
         and which routes are currently calling at *those* stops.
 You can get a sense for the data that's available by navigating through the 
-    [live demo site](https://demo.transiter.io).
+    [live demo site](https://demo.transiter.dev).
         
 
 ## Getting started
@@ -88,10 +88,10 @@ at San Francisco International Airport (stop ID `SFIA`), just execute:
 ## Possible next steps
 
 - Install [the New York City Subway system](https://github.com/jamespfennell/transiter-nycsubway).
-- Learn how to write [transit system config files](https://docs.transiter.io/docs/systems/) in order to add other transit systems to Transiter (it's very easy!)
-- Write a [custom feed parser](https://docs.transiter.io/docs/feedparsers/) to import data in non-standard format into Transiter.
+- Learn how to write [transit system config files](https://docs.transiter.dev/docs/systems/) in order to add other transit systems to Transiter (it's very easy!)
+- Write a [custom feed parser](https://docs.transiter.dev/docs/feedparsers/) to import data in non-standard format into Transiter.
     
-The [documentation website](https://docs.transiter.io) has much more
+The [documentation website](https://docs.transiter.dev) has much more
 including advice on deployment and monitoring.
 
 ## Development indicators

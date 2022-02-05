@@ -439,7 +439,7 @@ def test_save_feed_configuration(monkeypatch, session_factory):
     feeds_config = {
         FEED_ID_2: {
             "parser": {"built_in": "GTFS_STATIC"},
-            "http": {"url": "https://demo.transiter.io", "headers": {}, "timeout": 40},
+            "http": {"url": "https://demo.transiter.dev", "headers": {}, "timeout": 40},
             "auto_update": {"period": None, "enabled": False},
             "required_for_install": True,
         },
@@ -456,7 +456,7 @@ def test_save_feed_configuration(monkeypatch, session_factory):
         id=FEED_ID_2,
         built_in_parser="GTFS_STATIC",
         custom_parser=None,
-        url="https://demo.transiter.io",
+        url="https://demo.transiter.dev",
         headers="{}",
         http_timeout=40,
         parser_options=None,

@@ -81,7 +81,7 @@ class TestPyEnum(unittest.TestCase):
 
 SYSTEM_NAME = "Test System"
 FEED_ID = "GTFS"
-URL = "https://transiter.io"
+URL = "https://transiter.dev"
 SETTING_VALUE = "value"
 
 

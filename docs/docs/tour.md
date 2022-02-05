@@ -27,12 +27,12 @@ If you navigate to `localhost:8000` in your web browser (or use `curl`), you wil
     "version": "0.4.5",
     "href": "https://github.com/jamespfennell/transiter",
     "docs": {
-      "href": "https://demo.transiter.io/docs/"
+      "href": "https://demo.transiter.dev/docs/"
     }
   },
   "systems": {
     "count": 0,
-    "href": "https://demo.transiter.io/systems"
+    "href": "https://demo.transiter.dev/systems"
   }
 }
 ```
@@ -80,7 +80,7 @@ After it finishes, hit the Transiter landing page again to get,
     "version": "0.4.5",
     "href": "https://github.com/jamespfennell/transiter",
     "docs": {
-      "href": "https://demo.transiter.io/docs/"
+      "href": "https://demo.transiter.dev/docs/"
     }
   },
   "systems": {

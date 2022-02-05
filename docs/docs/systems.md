@@ -231,8 +231,8 @@ you can configure a service map for given "slices" of the timetable
 To see how service maps look in the HTTP API, check out
 the `service_maps` data given in these endpoints:
 
-- [New York City L route](https://demo.transiter.io/systems/nycsubway/routes/L)
-- [New York City Times Square station](https://demo.transiter.io/systems/stops/127-725-902-A27-R16)
+- [New York City L route](https://demo.transiter.dev/systems/nycsubway/routes/L)
+- [New York City Times Square station](https://demo.transiter.dev/systems/stops/127-725-902-A27-R16)
 
 
 ### Configuring service maps

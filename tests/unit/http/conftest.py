@@ -13,6 +13,6 @@ def flask_request(monkeypatch):
 
 @pytest.fixture
 def flask_url(monkeypatch):
-    fake_url = "http://www.transiter.io/entity"
+    fake_url = "http://www.transiter.dev/entity"
     monkeypatch.setattr(flask, "url_for", lambda *args, **kwargs: fake_url)
     return fake_url

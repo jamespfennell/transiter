@@ -18,7 +18,7 @@ Transiter's HTTP endpoints mostly return JSON data; exceptions are specifically 
 In order to avoid stale documentation,
 the structure of the JSON data returned by each endpoint
  is not described here, but can be inspected on the
-[demo site](https://demo.transiter.io) or
+[demo site](https://demo.transiter.dev) or
 by clicking any of the example links below.
 
 !!! warning "Permissions levels"

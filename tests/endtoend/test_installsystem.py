@@ -248,7 +248,7 @@ def test_update_system(system_id, install_system, transiter_host):
         parser:
           built_in: GTFS_STATIC
         http:
-          url: transiter.io
+          url: transiter.dev
         auto_update:
           period: {} seconds
     """

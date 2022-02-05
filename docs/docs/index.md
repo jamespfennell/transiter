@@ -20,7 +20,7 @@ the [Transiter Tour](tour.md) is the best place to start.
 
 ## External links
 
-- [Transiter demo site](https://demo.transiter.io)
+- [Transiter demo site](https://demo.transiter.dev)
 - [Transiter Github repository](https://github.com/jamespfennell/transiter) - submit bug report and feature requests here
 - Transit system Github repositories:
     - [New York City Subway Transiter integration](https://github.com/jamespfennell/transiter-nycsubway)

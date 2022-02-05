@@ -15,4 +15,4 @@ class InternalDocumentationLink(views.View):
 
 @dataclasses.dataclass
 class ExternalDocumentationLink(views.View):
-    href: str = "https://docs.transiter.io"
+    href: str = "https://docs.transiter.dev"
