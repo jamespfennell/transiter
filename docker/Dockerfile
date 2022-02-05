@@ -31,11 +31,6 @@ RUN python setup.py --quiet sdist --dist-dir ../dist bdist_wheel --dist-dir ../d
 WORKDIR /transiter
 RUN pip install --quiet dist/*whl
 
-COPY dev-requirements.txt dev-requirements.txt
-RUN pip install -r dev-requirements.txt
-COPY tests tests
-RUN pytest tests/unit
-
 # The base image is never intended to used directly.
 # This command is convenient for debugging.
 CMD ["/bin/bash"]
