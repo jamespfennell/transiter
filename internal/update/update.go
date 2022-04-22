@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/parse"
-	"github.com/jamespfennell/transiter/parse/gtfsstatic"
 )
 
 func CreateAndRun(ctx context.Context, database *sql.DB, systemId, feedId string) error {
@@ -81,16 +80,14 @@ func RunInsideTx(ctx context.Context, querier db.Querier, updatePk int64) error 
 	if err != nil {
 		return err
 	}
-	var parser parse.Parser
 	switch feedConfig.Parser {
 	case config.GtfsStatic:
-		parser = &gtfsstatic.Parser{
-			Options: &feedConfig.GtfsStaticOptions,
-		}
+		// TODO: support custom GTFS static options
 	default:
 		return fmt.Errorf("unknown parser %q", feedConfig.Parser)
 	}
-	parsedEntities, err := parser.Parse(ctx, content)
+	// TODO: have different update modules for static vs realtime
+	parsedEntities, err := gtfs.ParseStatic(content, gtfs.ParseStaticOptions{})
 	if err != nil {
 		return err
 	}
@@ -135,7 +132,7 @@ type runner struct {
 	updatePk int64
 }
 
-func (r *runner) run(parsedEntities *parse.Result) error {
+func (r *runner) run(parsedEntities *gtfs.Static) error {
 	agencyIdToPk, err := r.updateAgencies(parsedEntities.Agencies)
 	if err != nil {
 		return err
@@ -147,7 +144,7 @@ func (r *runner) run(parsedEntities *parse.Result) error {
 	return nil
 }
 
-func (r *runner) updateAgencies(agencies []parse.Agency) (map[string]int64, error) {
+func (r *runner) updateAgencies(agencies []gtfs.Agency) (map[string]int64, error) {
 	idToPk, err := buildAgencyIdToPkMap(r.ctx, r.querier, r.systemPk)
 	if err != nil {
 		return nil, err
@@ -199,7 +196,7 @@ func (r *runner) updateAgencies(agencies []parse.Agency) (map[string]int64, erro
 	return idToPk, nil
 }
 
-func (r *runner) updateRoutes(routes []parse.Route, agencyIdToPk map[string]int64) (map[string]int64, error) {
+func (r *runner) updateRoutes(routes []gtfs.Route, agencyIdToPk map[string]int64) (map[string]int64, error) {
 	idToPk, err := buildRouteIdToPkMap(r.ctx, r.querier, r.systemPk)
 	if err != nil {
 		return nil, err
