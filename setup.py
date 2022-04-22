@@ -26,7 +26,7 @@ setup(
         "inflection==0.4.0",
         "Jinja2==2.11.3",
         "prometheus-client==0.9.0",
-        "protobuf==3.11.3",
+        "protobuf==3.15.0",
         "psycopg2-binary==2.8.5",
         "pytimeparse==1.1.8",
         "pytz==2021.3",
