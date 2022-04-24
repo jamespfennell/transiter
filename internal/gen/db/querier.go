@@ -18,6 +18,7 @@ type Querier interface {
 	DeleteFeed(ctx context.Context, pk int64) error
 	DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) ([]string, error)
 	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) ([]string, error)
+	DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) ([]string, error)
 	DeleteSystem(ctx context.Context, pk int64) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
 	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
@@ -31,6 +32,7 @@ type Querier interface {
 	InsertFeed(ctx context.Context, arg InsertFeedParams) error
 	InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdateParams) (int64, error)
 	InsertRoute(ctx context.Context, arg InsertRouteParams) (int64, error)
+	InsertStop(ctx context.Context, arg InsertStopParams) (int64, error)
 	InsertSystem(ctx context.Context, arg InsertSystemParams) error
 	ListActiveAlertsForAgency(ctx context.Context, arg ListActiveAlertsForAgencyParams) ([]ListActiveAlertsForAgencyRow, error)
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)
@@ -57,9 +59,12 @@ type Querier interface {
 	ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUpdate, error)
 	MapAgencyPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdInSystemRow, error)
 	MapRoutePkToIdInSystem(ctx context.Context, systemPk int64) ([]MapRoutePkToIdInSystemRow, error)
+	MapStopPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapStopPkToIdInSystemRow, error)
 	UpdateAgency(ctx context.Context, arg UpdateAgencyParams) error
 	UpdateFeed(ctx context.Context, arg UpdateFeedParams) error
 	UpdateRoute(ctx context.Context, arg UpdateRouteParams) error
+	UpdateStop(ctx context.Context, arg UpdateStopParams) error
+	UpdateStopParent(ctx context.Context, arg UpdateStopParentParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
 }
 

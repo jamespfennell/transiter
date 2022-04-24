@@ -236,6 +236,8 @@ message System {
 
 message Stop {
   string id = 1;
+
+  // TODO: name should be optional :/
   string name = 2;
 
   optional string longitude = 3;

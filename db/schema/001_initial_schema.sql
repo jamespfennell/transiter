@@ -242,7 +242,7 @@ CREATE TABLE stop (
     system_pk BIGINT NOT NULL,
     source_pk BIGINT NOT NULL,
     parent_stop_pk BIGINT,
-    name character varying NOT NULL,
+    name character varying,
     longitude numeric(9,6),
     latitude numeric(9,6),
     url character varying,
@@ -251,7 +251,7 @@ CREATE TABLE stop (
     platform_code character varying,
     timezone character varying,
     type character varying(16) NOT NULL,
-    wheelchair_boarding character varying(14),
+    wheelchair_boarding character varying(14) NOT NULL,
     zone_id character varying,
 
     UNIQUE(system_pk, id)

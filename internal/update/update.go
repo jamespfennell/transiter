@@ -141,6 +141,14 @@ func (r *runner) run(parsedEntities *gtfs.Static) error {
 	if err != nil {
 		return err
 	}
+	// TODO: add this logic to the gtfs package?
+	var allStops []gtfs.Stop
+	allStops = append(allStops, parsedEntities.Stops...)
+	allStops = append(allStops, parsedEntities.GroupedStations...)
+	_, err = r.updateStops(allStops)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -260,6 +268,84 @@ func (r *runner) updateRoutes(routes []gtfs.Route, agencyIdToPk map[string]int64
 	return idToPk, nil
 }
 
+func (r *runner) updateStops(stops []gtfs.Stop) (map[string]int64, error) {
+	idToPk, err := buildStopIdToPkMap(r.ctx, r.querier, r.systemPk)
+	if err != nil {
+		return nil, err
+	}
+	for _, stop := range stops {
+		pk, ok := idToPk[stop.Id]
+		if ok {
+			err = r.querier.UpdateStop(r.ctx, db.UpdateStopParams{
+				Pk:                 pk,
+				SourcePk:           r.updatePk,
+				Name:               apihelpers.ConvertNullString(stop.Name),
+				Type:               stop.Type.String(),
+				Longitude:          convertGpsData(stop.Longitude),
+				Latitude:           convertGpsData(stop.Lattitude),
+				Url:                apihelpers.ConvertNullString(stop.Url),
+				Code:               apihelpers.ConvertNullString(stop.Code),
+				Description:        apihelpers.ConvertNullString(stop.Description),
+				PlatformCode:       apihelpers.ConvertNullString(stop.PlatformCode),
+				Timezone:           apihelpers.ConvertNullString(stop.Timezone),
+				WheelchairBoarding: "NOT_SPECIFIED", // TODO, need to make a change to the GTFS package
+				ZoneID:             apihelpers.ConvertNullString(stop.ZoneId),
+			})
+		} else {
+			pk, err = r.querier.InsertStop(r.ctx, db.InsertStopParams{
+				ID:                 stop.Id,
+				SystemPk:           r.systemPk,
+				SourcePk:           r.updatePk,
+				Name:               apihelpers.ConvertNullString(stop.Name),
+				Type:               stop.Type.String(),
+				Longitude:          convertGpsData(stop.Longitude),
+				Latitude:           convertGpsData(stop.Lattitude),
+				Url:                apihelpers.ConvertNullString(stop.Url),
+				Code:               apihelpers.ConvertNullString(stop.Code),
+				Description:        apihelpers.ConvertNullString(stop.Description),
+				PlatformCode:       apihelpers.ConvertNullString(stop.PlatformCode),
+				Timezone:           apihelpers.ConvertNullString(stop.Timezone),
+				WheelchairBoarding: "NOT_SPECIFIED", // TODO, need to make a change to the GTFS package
+				ZoneID:             apihelpers.ConvertNullString(stop.ZoneId),
+			})
+			idToPk[stop.Id] = pk
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	deletedIds, err := r.querier.DeleteStaleStops(r.ctx, db.DeleteStaleStopsParams{
+		FeedPk:   r.feedPk,
+		UpdatePk: r.updatePk,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range deletedIds {
+		delete(idToPk, id)
+	}
+	// We now populate the parent stop field
+	for _, stop := range stops {
+		if stop.Parent == nil {
+			continue
+		}
+		parentStopPk, ok := idToPk[stop.Parent.Id]
+		if !ok {
+			continue
+		}
+		if err := r.querier.UpdateStopParent(r.ctx, db.UpdateStopParentParams{
+			Pk: idToPk[stop.Id],
+			ParentStopPk: sql.NullInt64{
+				Int64: parentStopPk,
+				Valid: true,
+			},
+		}); err != nil {
+			return nil, err
+		}
+	}
+	return idToPk, nil
+}
+
 func buildAgencyIdToPkMap(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
 	idToPk := map[string]int64{}
 	rows, err := querier.MapAgencyPkToIdInSystem(ctx, systemPk)
@@ -282,4 +368,26 @@ func buildRouteIdToPkMap(ctx context.Context, querier db.Querier, systemPk int64
 		idToPk[row.ID] = row.Pk
 	}
 	return idToPk, nil
+}
+
+func buildStopIdToPkMap(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
+	idToPk := map[string]int64{}
+	rows, err := querier.MapStopPkToIdInSystem(ctx, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		idToPk[row.ID] = row.Pk
+	}
+	return idToPk, nil
+}
+
+func convertGpsData(f *float64) sql.NullString {
+	if f == nil {
+		return sql.NullString{}
+	}
+	return sql.NullString{
+		Valid:  true,
+		String: fmt.Sprintf("%f", *f),
+	}
 }

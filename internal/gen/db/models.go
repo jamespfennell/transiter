@@ -217,7 +217,7 @@ type Stop struct {
 	SystemPk           int64
 	SourcePk           int64
 	ParentStopPk       sql.NullInt64
-	Name               string
+	Name               sql.NullString
 	Longitude          sql.NullString
 	Latitude           sql.NullString
 	Url                sql.NullString
@@ -226,7 +226,7 @@ type Stop struct {
 	PlatformCode       sql.NullString
 	Timezone           sql.NullString
 	Type               string
-	WheelchairBoarding sql.NullString
+	WheelchairBoarding string
 	ZoneID             sql.NullString
 }
 

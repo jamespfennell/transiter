@@ -25,6 +25,8 @@ STOP_IDS = {
     "1GN",
     "2COL",
     "2MEX",
+    "StopId",
+    "ParentStopId",
 }
 ROUTE_IDS = {"A", "B", "RouteId"}
 FEED_IDS = {"GtfsRealtimeFeed", "gtfsstatic"}
@@ -50,19 +52,34 @@ def test_install_system__basic_data(system_id, install_system_1, transiter_host,
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def _test_install_system__stops(system_id, install_system_1, transiter_host, sync):
+def test_install_system__stops(system_id, install_system_1, transiter_host, sync):
 
     install_system_1(system_id, sync=sync)
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     stops_count = system_response["stops"]["count"]
-    assert len(STOP_IDS) == stops_count
+    assert len(STOP_IDS) == int(stops_count)
 
     stops_response = requests.get(
         transiter_host + "/systems/" + system_id + "/stops"
     ).json()
-    actual_stop_ids = set([stop["id"] for stop in stops_response])
+    actual_stop_ids = set([stop["id"] for stop in stops_response["stops"]])
     assert STOP_IDS == actual_stop_ids
+
+    stop_response = requests.get(
+        transiter_host + "/systems/" + system_id + "/stops/StopId"
+    ).json()
+    assert "StopId" == stop_response["id"]
+    assert "10.500000" == stop_response["latitude"]
+    assert "20.500000" == stop_response["longitude"]
+    assert "StopUrl" == stop_response["url"]
+    assert "ParentStopId" == stop_response["parentStop"]["id"]
+
+    parent_stop_response = requests.get(
+        transiter_host + "/systems/" + system_id + "/stops/ParentStopId"
+    ).json()
+    assert 1 == len(parent_stop_response["childStops"])
+    assert "StopId" == parent_stop_response["childStops"][0]["id"]
 
 
 @pytest.mark.parametrize("sync", [True, False])
@@ -72,7 +89,7 @@ def _test_install_system__transfers(system_id, install_system_1, transiter_host,
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     stops_count = system_response["transfers"]["count"]
-    assert 3 == stops_count
+    assert 3 == int(stops_count)
 
     stops_response = requests.get(
         transiter_host + "/systems/" + system_id + "/transfers"
@@ -91,7 +108,7 @@ def test_install_system__routes(system_id, install_system_1, transiter_host, syn
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     routes_count = system_response["routes"]["count"]
-    assert len(ROUTE_IDS), routes_count
+    assert len(ROUTE_IDS) == int(routes_count)
 
     routes_response = requests.get(
         transiter_host + "/systems/" + system_id + "/routes"

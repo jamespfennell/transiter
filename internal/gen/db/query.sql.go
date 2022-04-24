@@ -151,7 +151,7 @@ SELECT lss.trip_pk, stop.id, stop.name
 type GetLastStopsForTripsRow struct {
 	TripPk int64
 	ID     string
-	Name   string
+	Name   sql.NullString
 }
 
 func (q *Queries) GetLastStopsForTrips(ctx context.Context, tripPks []int64) ([]GetLastStopsForTripsRow, error) {
@@ -253,7 +253,7 @@ type GetStopInSystemRow struct {
 	SystemPk           int64
 	SourcePk           int64
 	ParentStopPk       sql.NullInt64
-	Name               string
+	Name               sql.NullString
 	Longitude          sql.NullString
 	Latitude           sql.NullString
 	Url                sql.NullString
@@ -262,7 +262,7 @@ type GetStopInSystemRow struct {
 	PlatformCode       sql.NullString
 	Timezone           sql.NullString
 	Type               string
-	WheelchairBoarding sql.NullString
+	WheelchairBoarding string
 	ZoneID             sql.NullString
 	Pk_2               int64
 	ID_2               string
@@ -1136,7 +1136,7 @@ type ListStopsTimesForTripRow struct {
 	StopSequence         int32
 	Track                sql.NullString
 	StopID               string
-	StopName             string
+	StopName             sql.NullString
 }
 
 func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]ListStopsTimesForTripRow, error) {
@@ -1223,7 +1223,7 @@ type ListTransfersFromStopsRow struct {
 	FromStopPk      int64
 	ToStopPk        int64
 	ToID            string
-	ToName          string
+	ToName          sql.NullString
 	Type            string
 	MinTransferTime sql.NullInt32
 	Distance        sql.NullInt32
@@ -1285,10 +1285,10 @@ type ListTransfersInSystemRow struct {
 	MinTransferTime sql.NullInt32
 	Distance        sql.NullInt32
 	FromStopID      string
-	FromStopName    string
+	FromStopName    sql.NullString
 	FromSystemID    string
 	ToStopID        string
-	ToStopName      string
+	ToStopName      sql.NullString
 	ToSystemID      string
 }
 

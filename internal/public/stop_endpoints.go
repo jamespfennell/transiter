@@ -34,7 +34,7 @@ func (t *Service) ListStopsInSystem(ctx context.Context, req *api.ListStopsInSys
 	for _, stop := range stops {
 		result.Stops = append(result.Stops, &api.StopPreview{
 			Id:   stop.ID,
-			Name: stop.Name,
+			Name: stop.Name.String,
 			Href: s.Hrefs.Stop(system.ID, stop.ID),
 		})
 	}
@@ -61,12 +61,12 @@ func (t *Service) ListTransfersInSystem(ctx context.Context, req *api.ListTransf
 		reply.Transfers = append(reply.Transfers, &api.Transfer{
 			FromStop: &api.StopPreview{
 				Id:   transfer.FromStopID,
-				Name: transfer.FromStopName,
+				Name: transfer.FromStopName.String,
 				Href: s.Hrefs.Stop(transfer.FromSystemID, transfer.FromStopID),
 			},
 			ToStop: &api.StopPreview{
 				Id:   transfer.ToStopID,
-				Name: transfer.ToStopName,
+				Name: transfer.ToStopName.String,
 				Href: s.Hrefs.Stop(transfer.ToSystemID, transfer.ToStopID),
 			},
 			Type:            transfer.Type,
@@ -195,7 +195,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	stopTreeResponse := buildStopTreeResponse(&s, req.SystemId, stop.Pk, stopTree, stopPkToServiceMaps)
 	result := &api.Stop{
 		Id:          stop.ID,
-		Name:        stop.Name,
+		Name:        stop.Name.String,
 		Longitude:   &stop.Longitude.String,
 		Latitude:    &stop.Latitude.String,
 		Url:         apihelpers.ConvertSqlNullString(stop.Url),
@@ -228,7 +228,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 				},
 				LastStop: &api.StopPreview{
 					Id:   lastStop.ID,
-					Name: lastStop.Name,
+					Name: lastStop.Name.String,
 					Href: s.Hrefs.Stop(req.SystemId, lastStop.ID),
 				},
 				Href: s.Hrefs.Trip(req.SystemId, route.ID, stopTime.ID),
@@ -253,12 +253,12 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		result.Transfers = append(result.Transfers, &api.TransferAtStop{
 			FromStop: &api.StopPreview{
 				Id:   fromStop.ID,
-				Name: fromStop.Name,
+				Name: fromStop.Name.String,
 				Href: s.Hrefs.Stop(req.SystemId, fromStop.ID),
 			},
 			ToStop: &api.RelatedStop{
 				Id:          transfer.ToID,
-				Name:        transfer.ToName,
+				Name:        transfer.ToName.String,
 				ServiceMaps: stopPkToServiceMaps[transfer.ToStopPk],
 				Href:        s.Hrefs.Stop(req.SystemId, transfer.ToID),
 			},
@@ -280,7 +280,7 @@ func buildStopTreeResponse(s *session.Session, systemID string,
 		}
 		thisResponse := &api.RelatedStop{
 			Id:          node.Stop.ID,
-			Name:        node.Stop.Name,
+			Name:        node.Stop.Name.String,
 			ServiceMaps: serviceMaps[node.Stop.Pk],
 			Href:        s.Hrefs.Stop(systemID, node.Stop.ID),
 		}

@@ -52,7 +52,7 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 			UpdatedAt:   apihelpers.ConvertSqlNullTime(trip.UpdatedAt),
 			LastStop: &api.StopPreview{
 				Id:   lastStop.ID,
-				Name: lastStop.Name,
+				Name: lastStop.Name.String,
 				Href: s.Hrefs.Stop(req.SystemId, lastStop.ID),
 			},
 			Href: s.Hrefs.Trip(req.SystemId, route.ID, trip.ID),
@@ -110,7 +110,7 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 			Departure: buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
 			Stop: &api.StopPreview{
 				Id:   stopTime.StopID,
-				Name: stopTime.StopName,
+				Name: stopTime.StopName.String,
 				Href: s.Hrefs.Stop(req.SystemId, stopTime.StopID),
 			},
 		})

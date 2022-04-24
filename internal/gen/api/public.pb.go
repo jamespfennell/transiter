@@ -1377,7 +1377,8 @@ type Stop struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id          string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// TODO: name should be optional :/
 	Name        string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Longitude   *string              `protobuf:"bytes,3,opt,name=longitude,proto3,oneof" json:"longitude,omitempty"`
 	Latitude    *string              `protobuf:"bytes,4,opt,name=latitude,proto3,oneof" json:"latitude,omitempty"`
