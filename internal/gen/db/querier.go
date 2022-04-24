@@ -19,6 +19,7 @@ type Querier interface {
 	DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) ([]string, error)
 	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) ([]string, error)
 	DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) ([]string, error)
+	DeleteStaleTransfers(ctx context.Context, arg DeleteStaleTransfersParams) error
 	DeleteSystem(ctx context.Context, pk int64) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
 	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
@@ -34,6 +35,7 @@ type Querier interface {
 	InsertRoute(ctx context.Context, arg InsertRouteParams) (int64, error)
 	InsertStop(ctx context.Context, arg InsertStopParams) (int64, error)
 	InsertSystem(ctx context.Context, arg InsertSystemParams) error
+	InsertTransfer(ctx context.Context, arg InsertTransferParams) error
 	ListActiveAlertsForAgency(ctx context.Context, arg ListActiveAlertsForAgencyParams) ([]ListActiveAlertsForAgencyRow, error)
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)
 	ListActiveAlertsForStops(ctx context.Context, arg ListActiveAlertsForStopsParams) ([]ListActiveAlertsForStopsRow, error)

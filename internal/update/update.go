@@ -145,8 +145,11 @@ func (r *runner) run(parsedEntities *gtfs.Static) error {
 	var allStops []gtfs.Stop
 	allStops = append(allStops, parsedEntities.Stops...)
 	allStops = append(allStops, parsedEntities.GroupedStations...)
-	_, err = r.updateStops(allStops)
+	stopIdToPk, err := r.updateStops(allStops)
 	if err != nil {
+		return err
+	}
+	if err := r.updateTransfers(parsedEntities.Transfers, stopIdToPk); err != nil {
 		return err
 	}
 	return nil
@@ -344,6 +347,36 @@ func (r *runner) updateStops(stops []gtfs.Stop) (map[string]int64, error) {
 		}
 	}
 	return idToPk, nil
+}
+
+func (r *runner) updateTransfers(transfers []gtfs.Transfer, stopIdToPk map[string]int64) error {
+	if err := r.querier.DeleteStaleTransfers(r.ctx, db.DeleteStaleTransfersParams{
+		FeedPk:   r.feedPk,
+		UpdatePk: r.updatePk,
+	}); err != nil {
+		return err
+	}
+	for _, transfer := range transfers {
+		fromPk, ok := stopIdToPk[transfer.From.Id]
+		if !ok {
+			continue
+		}
+		toPk, ok := stopIdToPk[transfer.To.Id]
+		if !ok {
+			continue
+		}
+		if err := r.querier.InsertTransfer(r.ctx, db.InsertTransferParams{
+			SystemPk:        apihelpers.ConvertNullInt64(&r.systemPk),
+			SourcePk:        apihelpers.ConvertNullInt64(&r.updatePk),
+			FromStopPk:      fromPk,
+			ToStopPk:        toPk,
+			Type:            transfer.Type.String(),
+			MinTransferTime: apihelpers.ConvertNullInt32(transfer.MinTransferTime),
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func buildAgencyIdToPkMap(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {

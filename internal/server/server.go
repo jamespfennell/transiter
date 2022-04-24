@@ -27,10 +27,10 @@ import (
 func Run(postgresHost string) error {
 	log.Println("Starting Transiter v0.6alpha server")
 	database, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-		"transiter", // user
-		"transiter", // password
+		"transiter", // TODO user
+		"transiter", // TODO password
 		postgresHost,
-		"transiter", // database
+		"transiter", // TODO database
 	))
 	if err != nil {
 		log.Fatalf("Could not connect to DB: %s\n", err)
@@ -69,7 +69,7 @@ func Run(postgresHost string) error {
 			apihelpers.ErrorHandler(),
 		)
 		api.RegisterPublicHandlerServer(ctx, mux, publicService)
-		log.Println("Transiter service HTTP API listening on localhost:8080")
+		log.Println("Public service HTTP API listening on localhost:8080")
 		err := http.ListenAndServe("localhost:8080", mux)
 		fmt.Printf("Closing :8080: %s\n", err)
 	}()
@@ -84,7 +84,7 @@ func Run(postgresHost string) error {
 		if err != nil {
 			return
 		}
-		log.Println("Transiter service gRPC API listening on localhost:8081")
+		log.Println("Public service gRPC API listening on localhost:8081")
 		_ = grpcServer.Serve(lis)
 	}()
 

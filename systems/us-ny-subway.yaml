@@ -21,23 +21,3 @@ feeds:
         - strategy: DEFAULT
           stopId1: "B08"  # Lexington Av/63rd St
           stopId2: "R11"  # Lexington Av/59th St
-
-  - id: DirectionRules
-    requiredForInstall: true
-    autoUpdateEnabled: false
-    
-    url: 'http://web.mta.info/developers/data/nyct/subway/Stations.csv'
-    
-    parser: DIRECTION_RULES
-
-  - id: gtfsrealtime-alerts
-    autoUpdateEnabled: false
-    autoUpdatePeriod: 5s
-  
-    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
-    httpHeaders:
-      X-API-KEY: "{{ .mta_api_key }}"
-  
-    parser: GTFS_REALTIME
-    gtfsRealtimeOptions:
-      extension: "US_NY_SUBWAY_ALERTS"

@@ -296,7 +296,7 @@ CREATE TABLE transfer (
     system_pk BIGINT,
     from_stop_pk BIGINT NOT NULL,
     to_stop_pk BIGINT NOT NULL,
-    type character varying(11) NOT NULL,
+    type character varying(30) NOT NULL,
     min_transfer_time integer,
     distance integer,
 

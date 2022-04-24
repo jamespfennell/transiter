@@ -274,7 +274,6 @@ message RelatedStop {
   optional string href = 9;
 }
 
-
 message TransferAtStop {
   StopPreview from_stop = 1;
   RelatedStop to_stop = 2;

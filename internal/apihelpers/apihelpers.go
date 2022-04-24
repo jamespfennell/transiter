@@ -48,6 +48,13 @@ func ConvertNullInt32(t *int32) sql.NullInt32 {
 	return sql.NullInt32{Valid: true, Int32: *t}
 }
 
+func ConvertNullInt64(t *int64) sql.NullInt64 {
+	if t == nil {
+		return sql.NullInt64{}
+	}
+	return sql.NullInt64{Valid: true, Int64: *t}
+}
+
 func ConvertNullString(t *string) sql.NullString {
 	if t == nil {
 		return sql.NullString{}
