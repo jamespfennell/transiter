@@ -4,7 +4,9 @@
 - implement the gtfs realtime parser and import logic
 - change serial to bigserial everywhere
 
-- move sqlc and bug config files into subdirectores
+- move sqlc and buf config files into subdirectores
 - fix lattitude typo
 - Right now the GPS lat/long are parsed to and from strings - would be good to avoid conversions
 - Rename auto update to periodic update
+
+- Transit topological sort (Split into components -> transitive reduction -> tree-graph-tree decomposition -> 3 x sort)
