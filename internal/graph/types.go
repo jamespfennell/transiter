@@ -76,7 +76,7 @@ type Tree struct {
 }
 
 type TreeNode struct {
-	Label   int64
+	Label    int64
 	Parent   *TreeNode
 	Children []*TreeNode
 }
