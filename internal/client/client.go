@@ -41,23 +41,39 @@ func (c *Client) DeleteSystem(ctx context.Context, systemId string) error {
 	return err
 }
 
-func (c *Client) InstallSystem(ctx context.Context, systemId, configPath string, isFile bool, allowUpdate bool) error {
-	req := api.InstallOrUpdateSystemRequest{
-		SystemId: systemId,
-		NoUpdate: !allowUpdate,
+type InstallSystemArgs struct {
+	SystemId     string
+	ConfigPath   string
+	IsFile       bool
+	AllowUpdate  bool
+	IsTemplate   bool
+	TemplateArgs map[string]string
+}
+
+func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) error {
+	yamlConfig := &api.YamlConfig{
+		IsTemplate:   args.IsTemplate,
+		TemplateArgs: args.TemplateArgs,
 	}
-	if isFile {
-		yaml, err := os.ReadFile(configPath)
+	if args.IsFile {
+		yaml, err := os.ReadFile(args.ConfigPath)
 		if err != nil {
 			return err
 		}
-		req.Config = &api.InstallOrUpdateSystemRequest_YamlConfigContent{
-			YamlConfigContent: string(yaml),
+		yamlConfig.Source = &api.YamlConfig_Content{
+			Content: string(yaml),
 		}
 	} else {
-		req.Config = &api.InstallOrUpdateSystemRequest_YamlConfigUrl{
-			YamlConfigUrl: configPath,
+		yamlConfig.Source = &api.YamlConfig_Url{
+			Url: args.ConfigPath,
 		}
+	}
+	req := api.InstallOrUpdateSystemRequest{
+		SystemId: args.SystemId,
+		NoUpdate: !args.AllowUpdate,
+		Config: &api.InstallOrUpdateSystemRequest_YamlConfig{
+			YamlConfig: yamlConfig,
+		},
 	}
 	_, err := c.adminClient.InstallOrUpdateSystem(ctx, &req)
 	return err

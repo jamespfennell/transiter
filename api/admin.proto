@@ -45,11 +45,19 @@ message InstallOrUpdateSystemRequest {
 
     oneof config {
         SystemConfig system_config = 2;
-        string yaml_config_url = 3;
-        string yaml_config_content = 4;
+        YamlConfig yaml_config = 3;
     }
 
     bool no_update = 5;
+}
+
+message YamlConfig {
+    oneof source {
+        string url = 1;
+        string content = 2;
+    }
+    bool is_template = 3;
+    map<string, string> template_args = 4;
 }
 
 message InstallOrUpdateSystemReply {

@@ -2,6 +2,7 @@
 package admin
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"text/template"
 	"time"
 
 	"github.com/jamespfennell/transiter/config"
@@ -82,13 +84,20 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	switch c := req.GetConfig().(type) {
 	case *api.InstallOrUpdateSystemRequest_SystemConfig:
 		systemConfig = config.ConvertApiSystemConfig(c.SystemConfig)
-	case *api.InstallOrUpdateSystemRequest_YamlConfigUrl:
-		systemConfig, err = getSystemConfigFromUrl(c.YamlConfigUrl)
-		if err != nil {
-			return nil, err
+	case *api.InstallOrUpdateSystemRequest_YamlConfig:
+		var rawConfig []byte
+		switch s := c.YamlConfig.Source.(type) {
+		case *api.YamlConfig_Url:
+			rawConfig, err = getRawSystemConfigFromUrl(s.Url)
+			if err != nil {
+				return nil, err
+			}
+		case *api.YamlConfig_Content:
+			rawConfig = []byte(s.Content)
+		default:
+			return nil, fmt.Errorf("no system configuration provided")
 		}
-	case *api.InstallOrUpdateSystemRequest_YamlConfigContent:
-		systemConfig, err = config.UnmarshalFromYaml([]byte(c.YamlConfigContent))
+		systemConfig, err = parseSystemConfigYaml(rawConfig, c.YamlConfig.GetIsTemplate(), c.YamlConfig.GetTemplateArgs())
 		if err != nil {
 			return nil, err
 		}
@@ -206,7 +215,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 	return &api.DeleteSystemReply{}, nil
 }
 
-func getSystemConfigFromUrl(url string) (*config.SystemConfig, error) {
+func getRawSystemConfigFromUrl(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
@@ -216,10 +225,30 @@ func getSystemConfigFromUrl(url string) (*config.SystemConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
 	}
-	// fmt.Printf("Raw system config Yaml from %s:\n%+v\n", url, string(body))
-	return config.UnmarshalFromYaml(body)
+	return body, nil
 }
 
+func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[string]string) (*config.SystemConfig, error) {
+	if !isTemplate {
+		return config.UnmarshalFromYaml(rawContent)
+	}
+	type Input struct {
+		Args map[string]string
+	}
+	input := Input{Args: templateArgs}
+	tmpl, err := template.New("transiter-system-config").Parse(string(rawContent))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse input as a Go text template: %w", err)
+	}
+	var b bytes.Buffer
+	err = tmpl.Execute(&b, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse input as a Go text template: %w", err)
+	}
+	return config.UnmarshalFromYaml(b.Bytes())
+}
+
+// TODO: move to apihelpers/converters
 func convertNullDuration(d *time.Duration) sql.NullInt32 {
 	if d == nil {
 		return sql.NullInt32{}

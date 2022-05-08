@@ -96,9 +96,9 @@ def install_system(
         response = requests.put(
             transiter_host + "/admin/systems/" + system_id, # + "?sync=" + str(sync).lower(),
             json={
-                "yaml_config_url": source_server_host_within_transiter
-                + "/"
-                + system_config_url
+                "yaml_config": {
+                    "url": source_server_host_within_transiter + "/" + system_config_url
+                },
             },
         )
         if expected_status == "ACTIVE":
