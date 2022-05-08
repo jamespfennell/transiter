@@ -161,7 +161,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 			})
 		}
 		if newFeed.RequiredForInstall {
-			if err := update.CreateAndRunInsideTx(ctx, querier, req.SystemId, newFeed.Id); err != nil {
+			if err := update.CreateAndRunInExistingTx(ctx, querier, req.SystemId, newFeed.Id); err != nil {
 				return nil, err
 			}
 		}
