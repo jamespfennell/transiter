@@ -67,6 +67,7 @@ message DeleteSystemReply {
 message SystemConfig {
     string name = 1;
     repeated FeedConfig feeds = 2;
+    repeated ServiceMapConfig service_maps = 3;
 }
 
 message FeedConfig {
@@ -116,6 +117,29 @@ enum GtfsRealtimeExtension {
     US_NY_SUBWAY_ALERTS = 2;
 }
 
+message ServiceMapConfig {
+    string id = 1;
+
+    message Static {
+        optional int64 starts_earlier_than = 1;
+        optional int64 starts_later_than = 2;
+        optional int64 ends_earlier_than = 3;
+        optional int64 ends_later_than = 4;
+        repeated string days = 5;
+    }
+
+    message Realtime {}
+
+    oneof source {
+        Static static_source = 2;
+        Realtime realtime_source = 3;
+    }
+
+    double threshold = 4;
+
+    bool default_for_routes_at_stop = 5;
+    bool default_for_stops_in_route = 6;
+}
 
 message GetSchedulerStatusRequest {}
 

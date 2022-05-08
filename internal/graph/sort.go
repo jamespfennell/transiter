@@ -12,15 +12,17 @@ var (
 func SortBasic(graph *Graph) ([]Node, error) {
 	var result []Node
 	var stack []Node
-	var startingLabels []string
-	numInNodes := map[string]int{}
+	var startingLabels []int64
+	numInNodes := map[int64]int{}
 	for _, node := range graph.LabelToNode {
 		numInNodes[node.GetLabel()] = node.NumInNodes()
 		if node.NumInNodes() == 0 {
 			startingLabels = append(startingLabels, node.GetLabel())
 		}
 	}
-	sort.Sort(sort.Reverse(sort.StringSlice(startingLabels)))
+	sort.Slice(startingLabels, func(i, j int) bool {
+		return startingLabels[i] < startingLabels[j]
+	})
 	for _, label := range startingLabels {
 		stack = append(stack, graph.LabelToNode[label])
 	}
@@ -46,7 +48,7 @@ func SortBasic(graph *Graph) ([]Node, error) {
 //
 // The algorithm minimizes the total length of the edges.
 func SortTree(root *TreeNode) []Node {
-	labelToWeight := map[string]int{}
+	labelToWeight := map[int64]int{}
 	traversal := DepthFirstTraverse(root, PostOrder)
 	for _, node := range traversal {
 		weight := 1
@@ -64,8 +66,9 @@ func SortTree(root *TreeNode) []Node {
 	return DepthFirstTraverse(root, PreOrder)
 }
 
+// TODO: replace with sort.Slice?
 type treeChildrenSorter struct {
-	labelToWeight map[string]int
+	labelToWeight map[int64]int
 	node          *TreeNode
 }
 

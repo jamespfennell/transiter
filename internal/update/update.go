@@ -13,6 +13,7 @@ import (
 	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/servicemaps"
 )
 
 func CreateAndRun(ctx context.Context, database *sql.DB, systemId, feedId string) error {
@@ -98,7 +99,6 @@ func RunInsideTx(ctx context.Context, querier db.Querier, updatePk int64) error 
 		feedPk:   feed.Pk,
 		updatePk: updatePk,
 	}
-	fmt.Printf("Parse entites: %+v\n", parsedEntities)
 	return runner.run(parsedEntities)
 }
 
@@ -137,19 +137,22 @@ func (r *runner) run(parsedEntities *gtfs.Static) error {
 	if err != nil {
 		return err
 	}
-	_, err = r.updateRoutes(parsedEntities.Routes, agencyIdToPk)
+	routeIdToPk, err := r.updateRoutes(parsedEntities.Routes, agencyIdToPk)
 	if err != nil {
 		return err
 	}
-	// TODO: add this logic to the gtfs package?
-	var allStops []gtfs.Stop
-	allStops = append(allStops, parsedEntities.Stops...)
-	allStops = append(allStops, parsedEntities.GroupedStations...)
-	stopIdToPk, err := r.updateStops(allStops)
+	stopIdToPk, err := r.updateStops(parsedEntities.AllStops())
 	if err != nil {
 		return err
 	}
 	if err := r.updateTransfers(parsedEntities.Transfers, stopIdToPk); err != nil {
+		return err
+	}
+	if err := servicemaps.UpdateStaticMaps(r.ctx, r.querier, servicemaps.UpdateStaticMapsArgs{
+		SystemPk:    r.systemPk,
+		Trips:       parsedEntities.Trips,
+		RouteIdToPk: routeIdToPk,
+	}); err != nil {
 		return err
 	}
 	return nil
@@ -271,7 +274,7 @@ func (r *runner) updateRoutes(routes []gtfs.Route, agencyIdToPk map[string]int64
 	return idToPk, nil
 }
 
-func (r *runner) updateStops(stops []gtfs.Stop) (map[string]int64, error) {
+func (r *runner) updateStops(stops []*gtfs.Stop) (map[string]int64, error) {
 	idToPk, err := buildStopIdToPkMap(r.ctx, r.querier, r.systemPk)
 	if err != nil {
 		return nil, err

@@ -18,7 +18,7 @@ func DepthFirstTraverse(root Node, t TraversalType) []Node {
 		node:            root,
 		numOutNodesSeen: 0,
 	})
-	addedToStack := map[string]bool{}
+	addedToStack := map[int64]bool{}
 	addedToStack[root.GetLabel()] = true
 	var result []Node
 	for len(stack) > 0 {

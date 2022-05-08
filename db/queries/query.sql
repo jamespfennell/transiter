@@ -108,10 +108,10 @@ SELECT lss.trip_pk, stop.id, stop.name
 
 
 -- name: ListServiceMapsGroupIDsForStops :many
-SELECT stop.pk, service_map_group.id
-FROM service_map_group
-    INNER JOIN stop ON service_map_group.system_pk = stop.system_pk
-WHERE service_map_group.use_for_routes_at_stop
+SELECT stop.pk, service_map_config.id
+FROM service_map_config
+    INNER JOIN stop ON service_map_config.system_pk = stop.system_pk
+WHERE service_map_config.default_for_routes_at_stop
     AND stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]); 
 
 -- name: ListServiceMapsForStops :many
@@ -128,15 +128,15 @@ WITH RECURSIVE descendent AS (
       )
   )
 )
-SELECT descendent.pk stop_pk, service_map_group.id service_map_group_id,
+SELECT descendent.pk stop_pk, service_map_config.id service_map_config_id,
   route.id route_id, route.color route_color, system.id system_id
 FROM descendent
   LEFT JOIN service_map_vertex smv ON smv.stop_pk = descendent.descendent_pk
   INNER JOIN service_map ON service_map.pk = smv.map_pk
-  INNER JOIN service_map_group ON service_map_group.pk = service_map.group_pk
+  INNER JOIN service_map_config ON service_map_config.pk = service_map.config_pk
   LEFT JOIN route ON service_map.route_pk = route.pk
   INNER JOIN system ON system.pk = route.system_pk
-WHERE service_map_group.use_for_routes_at_stop
+WHERE service_map_config.default_for_routes_at_stop
 ORDER BY system_id, route_id; 
 
 -- name: ListDirectionNameRulesForStops :many
@@ -155,15 +155,15 @@ SELECT route.*, agency.id agency_id, agency.name agency_name FROM route
     AND route.id = sqlc.arg(route_id);
 
 -- name: ListServiceMapsForRoute :many
-SELECT DISTINCT service_map_group.id group_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
-FROM service_map_group
-  INNER JOIN system ON service_map_group.system_pk = system.pk
+SELECT DISTINCT service_map_config.id group_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
+FROM service_map_config
+  INNER JOIN system ON service_map_config.system_pk = system.pk
   INNER JOIN route ON route.system_pk = system.pk
-  LEFT JOIN service_map ON service_map.group_pk = service_map_group.pk AND service_map.route_pk = sqlc.arg(route_pk)
+  LEFT JOIN service_map ON service_map.config_pk = service_map_config.pk AND service_map.route_pk = sqlc.arg(route_pk)
   LEFT JOIN service_map_vertex ON service_map_vertex.map_pk = service_map.pk
   LEFT JOIN stop ON stop.pk = service_map_vertex.stop_pk
-WHERE service_map_group.use_for_stops_in_route AND route.pk = sqlc.arg(route_pk)
-ORDER BY service_map_group.id, service_map_vertex.position;
+WHERE service_map_config.default_for_stops_in_route AND route.pk = sqlc.arg(route_pk)
+ORDER BY service_map_config.id, service_map_vertex.position;
 
 
 -- name: ListTransfersInSystem :many

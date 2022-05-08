@@ -160,7 +160,7 @@ def test_install_system__feeds(system_id, install_system_1, transiter_host, sync
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def _test_install_system__success__service_map_stop(
+def test_install_system__success__service_map_stop(
     system_id, install_system_1, transiter_host, sync
 ):
     install_system_1(system_id, sync=sync)
@@ -169,17 +169,18 @@ def _test_install_system__success__service_map_stop(
         stop_response = requests.get(
             "{}/systems/{}/stops/{}".format(transiter_host, system_id, stop_id)
         ).json()
-        if len(stop_response["service_maps"]) == 0:
-            actual = []
-        else:
+        actual = None
+        for service_map in stop_response["serviceMaps"]:
+            if service_map["groupId"] != "weekday":
+                continue
             actual = [
-                route["id"] for route in stop_response["service_maps"][0]["routes"]
+                route["id"] for route in service_map["routes"]
             ]
         assert usual_route == actual
 
 
 @pytest.mark.parametrize("sync", [True, False])
-def _test_install_system__service_map_route(
+def test_install_system__service_map_route(
     system_id, install_system_1, transiter_host, sync
 ):
     install_system_1(system_id, sync=sync)
@@ -188,12 +189,12 @@ def _test_install_system__service_map_route(
         route_response = requests.get(
             "{}/systems/{}/routes/{}".format(transiter_host, system_id, route_id)
         ).json()
-        for service_map in route_response["service_maps"]:
-            if service_map["group_id"] != "any_time":
+        actual_stops = None
+        for service_map in route_response["serviceMaps"]:
+            if service_map["groupId"] != "alltimes":
                 continue
             actual_stops = [stop["id"] for stop in service_map["stops"]]
-            assert usual_stops == actual_stops
-            break
+        assert usual_stops == actual_stops
 
 
 def test_install_system__agency(system_id, install_system_1, transiter_host):

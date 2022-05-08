@@ -42,7 +42,7 @@ RUN rm -r internal/genNew
 RUN go build .
 
 # Only build the image if the tests pass
-RUN go test ./...
+RUN SKIP_DATABASE_TESTS=true go test ./...
 
 # We use this buildpack image because it already has SSL certificates installed
 FROM buildpack-deps:buster-curl

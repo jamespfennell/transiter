@@ -209,20 +209,18 @@ CREATE INDEX scheduled_trip_stop_time_trip_pk_departure_time_idx ON scheduled_tr
 CREATE TABLE service_map (
     pk BIGSERIAL PRIMARY KEY,
     route_pk BIGINT NOT NULL,
-    group_pk BIGINT NOT NULL,
+    config_pk BIGINT NOT NULL,
 
-    UNIQUE(route_pk, group_pk)
+    UNIQUE(route_pk, config_pk)
 );
 
-CREATE TABLE service_map_group (
+CREATE TABLE service_map_config (
     pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
     system_pk BIGINT NOT NULL,
-    conditions character varying,
-    threshold double precision NOT NULL,
-    use_for_routes_at_stop boolean NOT NULL,
-    use_for_stops_in_route boolean NOT NULL,
-    source character varying NOT NULL,
+    config bytea,
+    default_for_routes_at_stop boolean NOT NULL,
+    default_for_stops_in_route boolean NOT NULL,
 
     UNIQUE(system_pk, id)
 );
@@ -450,10 +448,10 @@ ALTER TABLE scheduled_trip_stop_time
 ALTER TABLE service_map
     ADD CONSTRAINT fk_service_map_route_pk FOREIGN KEY(route_pk) REFERENCES route(pk) ON DELETE CASCADE;
 ALTER TABLE service_map
-    ADD CONSTRAINT fk_service_map_group_pk FOREIGN KEY(group_pk) REFERENCES service_map_group(pk) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_service_map_config_pk FOREIGN KEY(config_pk) REFERENCES service_map_config(pk) ON DELETE CASCADE;
 
-ALTER TABLE service_map_group
-    ADD CONSTRAINT fk_service_map_group_system_pk FOREIGN KEY(system_pk) REFERENCES system(pk) ON DELETE CASCADE;
+ALTER TABLE service_map_config
+    ADD CONSTRAINT fk_service_map_config_system_pk FOREIGN KEY(system_pk) REFERENCES system(pk) ON DELETE CASCADE;
 
 ALTER TABLE service_map_vertex
     ADD CONSTRAINT fk_service_map_vertex_stop_pk FOREIGN KEY(stop_pk) REFERENCES stop(pk) ON DELETE CASCADE;

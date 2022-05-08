@@ -188,20 +188,18 @@ type ScheduledTripStopTime struct {
 }
 
 type ServiceMap struct {
-	Pk      int64
-	RoutePk int64
-	GroupPk int64
+	Pk       int64
+	RoutePk  int64
+	ConfigPk int64
 }
 
-type ServiceMapGroup struct {
-	Pk                 int64
-	ID                 string
-	SystemPk           int64
-	Conditions         sql.NullString
-	Threshold          float64
-	UseForRoutesAtStop bool
-	UseForStopsInRoute bool
-	Source             string
+type ServiceMapConfig struct {
+	Pk                     int64
+	ID                     string
+	SystemPk               int64
+	Config                 []byte
+	DefaultForRoutesAtStop bool
+	DefaultForStopsInRoute bool
 }
 
 type ServiceMapVertex struct {

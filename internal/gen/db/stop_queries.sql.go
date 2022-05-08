@@ -97,6 +97,61 @@ func (q *Queries) InsertStop(ctx context.Context, arg InsertStopParams) (int64, 
 	return pk, err
 }
 
+const mapStopIdToStationPk = `-- name: MapStopIdToStationPk :many
+WITH RECURSIVE 
+ancestor AS (
+	SELECT 
+    id stop_id, 
+    pk station_pk, 
+    parent_stop_pk,
+    (type = 'STATION' OR type = 'GROUPED_STATION') is_station 
+    FROM stop
+	  WHERE	stop.system_pk = $1
+	UNION
+	SELECT
+    child.stop_id stop_id, 
+    parent.pk station_pk, 
+    parent.parent_stop_pk, 
+    (parent.type = 'STATION' OR parent.type = 'GROUPED_STATION') is_station 
+		FROM stop parent
+		INNER JOIN ancestor child 
+    ON child.parent_stop_pk = parent.pk
+    AND NOT child.is_station
+)
+SELECT stop_id, station_pk
+  FROM ancestor
+  WHERE parent_stop_pk IS NULL
+  OR is_station
+`
+
+type MapStopIdToStationPkRow struct {
+	StopID    string
+	StationPk int64
+}
+
+func (q *Queries) MapStopIdToStationPk(ctx context.Context, systemPk int64) ([]MapStopIdToStationPkRow, error) {
+	rows, err := q.db.QueryContext(ctx, mapStopIdToStationPk, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapStopIdToStationPkRow
+	for rows.Next() {
+		var i MapStopIdToStationPkRow
+		if err := rows.Scan(&i.StopID, &i.StationPk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const mapStopPkToIdInSystem = `-- name: MapStopPkToIdInSystem :many
 SELECT pk, id FROM stop WHERE system_pk = $1
 `

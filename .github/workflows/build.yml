@@ -9,6 +9,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Go build
+        run: go build .
+  
+      - name: Launch Postgres
+        run: docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
+
+      - name: Go test
+        run: go test ./...
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 

@@ -1,6 +1,8 @@
 // Package config contains the definition of the system config Yaml format used by Transiter
 package config
 
+// TODO: move into the /systems directory
+
 import (
 	"encoding/json"
 	"fmt"
@@ -11,8 +13,10 @@ import (
 )
 
 type SystemConfig struct {
-	Name  string
-	Feeds []FeedConfig
+	Name                 string
+	Feeds                []FeedConfig
+	ServiceMaps          []ServiceMapConfig `yaml:"serviceMaps"`
+	NoDefaultServiceMaps bool               `yaml:"noDefaultServiceMaps"`
 }
 
 type FeedConfig struct {
@@ -68,6 +72,28 @@ const (
 
 type GtfsRealtimeOptions struct {
 	Extension GtfsRealtimeExtension
+}
+
+type ServiceMapSource string
+
+const (
+	SERVICE_MAP_SOURCE_STATIC   ServiceMapSource = "STATIC"
+	SERVICE_MAP_SOURCE_REALTIME ServiceMapSource = "REALTIME"
+)
+
+type ServiceMapConfig struct {
+	Id        string
+	Source    ServiceMapSource
+	Threshold float64
+
+	Days              []string
+	StartsEarlierThan *time.Duration `yaml:"startsEarlierThan"`
+	StartsLaterThan   *time.Duration `yaml:"startsLaterThan"`
+	EndsEarlierThan   *time.Duration `yaml:"endsEarlierThan"`
+	EndsLaterThan     *time.Duration `yaml:"endsLaterThan"`
+
+	DefaultForRoutesAtStop bool `yaml:"defaultForRoutesAtStop"`
+	DefaultForStopsInRoute bool `yaml:"defaultForStopsInRoute"`
 }
 
 func ConvertApiSystemConfig(sc *api.SystemConfig) *SystemConfig {
@@ -129,6 +155,35 @@ func convertApiTransfersStrategy(s api.FeedConfig_GtfsStaticParser_TransfersStra
 		return GroupStations
 	}
 	return Default
+}
+
+func ConvertApiServiceMapConfig(in *api.ServiceMapConfig) *ServiceMapConfig {
+	out := &ServiceMapConfig{
+		Id:                     in.Id,
+		Threshold:              in.Threshold,
+		DefaultForRoutesAtStop: in.DefaultForRoutesAtStop,
+		DefaultForStopsInRoute: in.DefaultForStopsInRoute,
+	}
+	switch source := in.Source.(type) {
+	case *api.ServiceMapConfig_RealtimeSource:
+		out.Source = SERVICE_MAP_SOURCE_REALTIME
+	case *api.ServiceMapConfig_StaticSource:
+		out.Source = SERVICE_MAP_SOURCE_STATIC
+		out.StartsEarlierThan = convertApiTimeInDay(source.StaticSource.StartsEarlierThan)
+		out.StartsLaterThan = convertApiTimeInDay(source.StaticSource.StartsLaterThan)
+		out.EndsEarlierThan = convertApiTimeInDay(source.StaticSource.EndsEarlierThan)
+		out.EndsLaterThan = convertApiTimeInDay(source.StaticSource.EndsLaterThan)
+		out.Days = source.StaticSource.Days
+	}
+	return out
+}
+
+func convertApiTimeInDay(in *int64) *time.Duration {
+	if in == nil {
+		return nil
+	}
+	out := time.Duration(*in) * time.Minute
+	return &out
 }
 
 func ConvertSystemConfig(sc *SystemConfig) *api.SystemConfig {
@@ -197,6 +252,38 @@ func convertInternalTransfersStrategy(s TransfersStrategy) api.FeedConfig_GtfsSt
 	return api.FeedConfig_GtfsStaticParser_DEFAULT
 }
 
+func ConvertServiceMapConfig(in *ServiceMapConfig) *api.ServiceMapConfig {
+	out := &api.ServiceMapConfig{
+		Id:                     in.Id,
+		Threshold:              in.Threshold,
+		DefaultForRoutesAtStop: in.DefaultForRoutesAtStop,
+		DefaultForStopsInRoute: in.DefaultForStopsInRoute,
+	}
+	switch in.Source {
+	case SERVICE_MAP_SOURCE_REALTIME:
+		out.Source = &api.ServiceMapConfig_RealtimeSource{}
+	case SERVICE_MAP_SOURCE_STATIC:
+		out.Source = &api.ServiceMapConfig_StaticSource{
+			StaticSource: &api.ServiceMapConfig_Static{
+				StartsEarlierThan: convertTimeInDay(in.StartsEarlierThan),
+				StartsLaterThan:   convertTimeInDay(in.StartsLaterThan),
+				EndsEarlierThan:   convertTimeInDay(in.EndsEarlierThan),
+				EndsLaterThan:     convertTimeInDay(in.EndsLaterThan),
+				Days:              in.Days,
+			},
+		}
+	}
+	return out
+}
+
+func convertTimeInDay(in *time.Duration) *int64 {
+	if in == nil {
+		return nil
+	}
+	out := in.Milliseconds() / (1000 * 60)
+	return &out
+}
+
 func convertMilliseconds(t *int64) *time.Duration {
 	if t == nil {
 		return nil
@@ -218,6 +305,35 @@ func UnmarshalFromYaml(b []byte) (*SystemConfig, error) {
 	if err := yaml.Unmarshal(b, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse Transiter system config Yaml: %w", err)
 	}
+	if len(config.ServiceMaps) == 0 && !config.NoDefaultServiceMaps {
+		sevenAm := 7 * time.Hour
+		sevenPm := 19 * time.Hour
+		config.ServiceMaps = []ServiceMapConfig{
+			{
+				Id:                     "alltimes",
+				Source:                 SERVICE_MAP_SOURCE_STATIC,
+				Threshold:              0.1,
+				DefaultForRoutesAtStop: false,
+				DefaultForStopsInRoute: true,
+			},
+			{
+				Id:                     "weekday",
+				Source:                 SERVICE_MAP_SOURCE_STATIC,
+				Threshold:              0.1,
+				StartsLaterThan:        &sevenAm,
+				EndsEarlierThan:        &sevenPm,
+				Days:                   []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"},
+				DefaultForRoutesAtStop: true,
+				DefaultForStopsInRoute: false,
+			},
+			{
+				Id:                     "realtime",
+				Source:                 SERVICE_MAP_SOURCE_REALTIME,
+				DefaultForRoutesAtStop: true,
+				DefaultForStopsInRoute: true,
+			},
+		}
+	}
 	return &config, nil
 }
 
@@ -235,4 +351,12 @@ func UnmarshalFromJson(b []byte) (*FeedConfig, error) {
 		return nil, err
 	}
 	return &config, nil
+}
+
+func (smc *ServiceMapConfig) MarshalToJson() []byte {
+	b, err := json.Marshal(smc)
+	if err != nil {
+		panic(fmt.Sprintf("unexpected error when marhsalling service map config: %s", err))
+	}
+	return b
 }

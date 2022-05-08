@@ -42,29 +42,29 @@ func TestNewTreeFromGraph_Failure(t *testing.T) {
 		{
 			name: "cycle",
 			edges: []Edge{
-				{"a", "b"},
-				{"b", "a"},
+				{1, 2},
+				{2, 1},
 			},
 		},
 		{
 			name: "edge into cycle",
 			edges: []Edge{
 				// Edge into
-				{"a", "x"},
+				{1, 101},
 				// Cycle
-				{"x", "y"},
-				{"y", "x"},
+				{101, 102},
+				{102, 101},
 			},
 		},
 		{
 			name: "disconnected graph with tree and cycle",
 			edges: []Edge{
 				// Tree
-				{"a", "b"},
+				{1, 2},
 				// Cycle
-				{"x", "y"},
-				{"y", "z"},
-				{"z", "x"},
+				{101, 102},
+				{102, 103},
+				{103, 101},
 			},
 		},
 		{
@@ -98,56 +98,56 @@ func Empty() *Graph {
 
 func TwoNodeCycle() *Graph {
 	return NewGraph([]Edge{
-		{"a", "b"},
-		{"b", "a"},
+		{1, 2},
+		{2, 1},
 	}...)
 }
 
 func ThreeNodeCycle() *Graph {
 	return NewGraph([]Edge{
-		{"a", "b"},
-		{"b", "c"},
-		{"c", "a"},
+		{1, 2},
+		{2, 3},
+		{3, 1},
 	}...)
 }
 
 func ForkingJoiningPaths() *Graph {
 	return NewGraph([]Edge{
-		{"a", "b"},
-		{"b", "c"},
-		{"a", "d"},
-		{"d", "c"},
+		{1, 2},
+		{2, 3},
+		{1, 4},
+		{4, 3},
 	}...)
 }
 
 func TwoPaths() *Graph {
 	return NewGraph([]Edge{
-		{"a", "b"},
-		{"x", "y"},
+		{1, 2},
+		{101, 102},
 	}...)
 }
 
 func ThreeNodePath() *Graph {
 	return NewGraph([]Edge{
-		{"a", "b"},
-		{"b", "c"},
+		{1, 2},
+		{2, 3},
 	}...)
 }
 
 func FourNodeTree() *Graph {
 	return NewGraph([]Edge{
-		{"a", "b"},
-		{"a", "c"},
-		{"c", "d"},
+		{1, 2},
+		{1, 3},
+		{3, 4},
 	}...)
 }
 
 func FiveNodeTree() *Graph {
 	return NewGraph([]Edge{
-		{"a", "b"},
-		{"b", "c"},
-		{"a", "d"},
-		{"d", "e"},
+		{1, 2},
+		{2, 3},
+		{1, 4},
+		{4, 5},
 	}...)
 }
 

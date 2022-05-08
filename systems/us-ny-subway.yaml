@@ -21,3 +21,22 @@ feeds:
         - strategy: DEFAULT
           stopId1: "B08"  # Lexington Av/63rd St
           stopId2: "R11"  # Lexington Av/59th St
+
+serviceMaps:
+  - id: alltimes
+    source: STATIC
+    threshold: 0.05
+    defaultForStopsInRoute: true
+    defaultForRoutesAtStop: true
+
+  - id: realtime
+    source: REALTIME
+    defaultForStopsInRoute: true
+    defaultForRoutesAtStop: true
+
+  - id: weekend
+    source: STATIC
+    threshold: 0.1
+    days: ["Saturday", "Sunday"]
+    startsLaterThan: 7h
+    endsEarlierThan: 19h

@@ -134,8 +134,8 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 				Id: serviceMap.SystemID,
 			}
 		}
-		pkToGroupIdToRoutes[serviceMap.StopPk][serviceMap.ServiceMapGroupID] = append(
-			pkToGroupIdToRoutes[serviceMap.StopPk][serviceMap.ServiceMapGroupID], route)
+		pkToGroupIdToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID] = append(
+			pkToGroupIdToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID], route)
 	}
 	for pk, groupIdToRoutes := range pkToGroupIdToRoutes {
 		for groupId, routes := range groupIdToRoutes {

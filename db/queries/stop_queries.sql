@@ -44,3 +44,29 @@ WHERE
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
     AND feed_update.pk != sqlc.arg(update_pk)
 RETURNING stop.id;
+
+-- name: MapStopIdToStationPk :many
+WITH RECURSIVE 
+ancestor AS (
+	SELECT 
+    id stop_id, 
+    pk station_pk, 
+    parent_stop_pk,
+    (type = 'STATION' OR type = 'GROUPED_STATION') is_station 
+    FROM stop
+	  WHERE	stop.system_pk = sqlc.arg(system_pk)
+	UNION
+	SELECT
+    child.stop_id stop_id, 
+    parent.pk station_pk, 
+    parent.parent_stop_pk, 
+    (parent.type = 'STATION' OR parent.type = 'GROUPED_STATION') is_station 
+		FROM stop parent
+		INNER JOIN ancestor child 
+    ON child.parent_stop_pk = parent.pk
+    AND NOT child.is_station
+)
+SELECT stop_id, station_pk
+  FROM ancestor
+  WHERE parent_stop_pk IS NULL
+  OR is_station;

@@ -16,6 +16,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/scheduler"
+	"github.com/jamespfennell/transiter/internal/servicemaps"
 	"github.com/jamespfennell/transiter/internal/update"
 )
 
@@ -99,7 +100,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	{
 		system, err := querier.GetSystem(ctx, req.SystemId)
 		if err == sql.ErrNoRows {
-			if err = querier.InsertSystem(ctx, db.InsertSystemParams{
+			if _, err = querier.InsertSystem(ctx, db.InsertSystemParams{
 				ID:     req.SystemId,
 				Name:   systemConfig.Name,
 				Status: "ACTIVE",
@@ -122,6 +123,13 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		return nil, err
 	}
 
+	// Service maps need to be updated before feeds. This is because updating a feed config may
+	// trigger a feed update (if required_for_install=true) which may require the updated service
+	// map config. This is tested in the end-to-end tests.
+	if err := servicemaps.UpdateConfig(ctx, querier, system.Pk, systemConfig.ServiceMaps); err != nil {
+		return nil, err
+	}
+
 	feeds, err := querier.ListFeedsInSystem(ctx, system.Pk)
 	if err != nil {
 		return nil, err
@@ -133,14 +141,17 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 
 	for _, newFeed := range systemConfig.Feeds {
 		if pk, ok := feedIdToPk[newFeed.Id]; ok {
-			querier.UpdateFeed(ctx, db.UpdateFeedParams{
+			if err := querier.UpdateFeed(ctx, db.UpdateFeedParams{
 				FeedPk:            pk,
 				AutoUpdateEnabled: newFeed.AutoUpdateEnabled,
 				AutoUpdatePeriod:  convertNullDuration(newFeed.AutoUpdatePeriod),
 				Config:            string(newFeed.MarshalToJson()),
-			})
+			}); err != nil {
+				return nil, err
+			}
 			delete(feedIdToPk, newFeed.Id)
 		} else {
+			// TODO: is there a lint to detect not handling the error here?
 			querier.InsertFeed(ctx, db.InsertFeedParams{
 				ID:                newFeed.Id,
 				SystemPk:          system.Pk,
@@ -162,7 +173,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-	log.Printf("Installed system %+v\n", system.ID)
+	log.Printf("Installed system %q\n", system.ID)
 	s.scheduler.Refresh(ctx, req.SystemId)
 	return &api.InstallOrUpdateSystemReply{}, nil
 }

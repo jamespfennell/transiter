@@ -1,7 +1,7 @@
 package graph
 
 type Node interface {
-	GetLabel() string
+	GetLabel() int64
 	NumInNodes() int
 	InNode(i int) Node
 	NumOutNodes() int
@@ -9,7 +9,7 @@ type Node interface {
 }
 
 type Graph struct {
-	LabelToNode map[string]*GraphNode
+	LabelToNode map[int64]*GraphNode
 }
 
 func (graph *Graph) NumNodes() int {
@@ -17,12 +17,12 @@ func (graph *Graph) NumNodes() int {
 }
 
 type GraphNode struct {
-	Label    string
+	Label    int64
 	InNodes  []*GraphNode
 	OutNodes []*GraphNode
 }
 
-func (n *GraphNode) GetLabel() string {
+func (n *GraphNode) GetLabel() int64 {
 	return n.Label
 }
 
@@ -43,13 +43,13 @@ func (n *GraphNode) OutNode(i int) Node {
 }
 
 type Edge struct {
-	FromLabel string
-	ToLabel   string
+	FromLabel int64
+	ToLabel   int64
 }
 
 func NewGraph(edges ...Edge) *Graph {
 	g := &Graph{
-		LabelToNode: map[string]*GraphNode{},
+		LabelToNode: map[int64]*GraphNode{},
 	}
 	for _, edge := range edges {
 		if _, ok := g.LabelToNode[edge.FromLabel]; !ok {
@@ -72,16 +72,16 @@ func NewGraph(edges ...Edge) *Graph {
 
 type Tree struct {
 	Root        *TreeNode
-	LabelToNode map[string]*TreeNode
+	LabelToNode map[int64]*TreeNode
 }
 
 type TreeNode struct {
-	Label    string
+	Label   int64
 	Parent   *TreeNode
 	Children []*TreeNode
 }
 
-func (n *TreeNode) GetLabel() string {
+func (n *TreeNode) GetLabel() int64 {
 	return n.Label
 }
 
@@ -127,7 +127,7 @@ func NewTreeFromGraph(graph *Graph) (*Tree, bool) {
 		return nil, false
 	}
 	tree := &Tree{
-		LabelToNode: map[string]*TreeNode{},
+		LabelToNode: map[int64]*TreeNode{},
 	}
 	traversal := DepthFirstTraverse(source, PreOrder)
 	if len(traversal) != graph.NumNodes() {

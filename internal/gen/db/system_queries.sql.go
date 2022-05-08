@@ -16,9 +16,10 @@ func (q *Queries) DeleteSystem(ctx context.Context, pk int64) error {
 	return err
 }
 
-const insertSystem = `-- name: InsertSystem :exec
+const insertSystem = `-- name: InsertSystem :one
 INSERT INTO system (id, name, status) 
 VALUES ($1, $2, $3)
+RETURNING pk
 `
 
 type InsertSystemParams struct {
@@ -27,9 +28,11 @@ type InsertSystemParams struct {
 	Status string
 }
 
-func (q *Queries) InsertSystem(ctx context.Context, arg InsertSystemParams) error {
-	_, err := q.db.ExecContext(ctx, insertSystem, arg.ID, arg.Name, arg.Status)
-	return err
+func (q *Queries) InsertSystem(ctx context.Context, arg InsertSystemParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, insertSystem, arg.ID, arg.Name, arg.Status)
+	var pk int64
+	err := row.Scan(&pk)
+	return pk, err
 }
 
 const updateSystem = `-- name: UpdateSystem :exec

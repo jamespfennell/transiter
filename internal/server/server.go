@@ -16,6 +16,7 @@ import (
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/admin"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
+	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public"
@@ -36,7 +37,7 @@ func Run(postgresHost string) error {
 		log.Fatalf("Could not connect to DB: %s\n", err)
 	}
 
-	if err := pingDb(database); err != nil {
+	if err := dbwrappers.Ping(database, 20, 500*time.Millisecond); err != nil {
 		log.Fatalf("Failed to connect to the database; exiting: %s\n", err)
 	}
 
@@ -121,22 +122,4 @@ func Run(postgresHost string) error {
 	wg.Wait()
 	scheduler.Wait()
 	return nil
-}
-
-func pingDb(db *sql.DB) error {
-	var err error
-	nRetries := 20
-	for i := 0; i < nRetries; i++ {
-		err = db.Ping()
-		if err == nil {
-			log.Printf("Database ping successful")
-			break
-		}
-		log.Printf("Failed to ping the database: %s\n", err)
-		if i != nRetries-1 {
-			log.Printf("Will try to ping agaion in 500 milliseconds")
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
-	return err
 }

@@ -312,8 +312,8 @@ github.com/jackc/puddle v0.0.0-20190413234325-e4ced69a3a2b/go.mod h1:m4B5Dj62Y0f
 github.com/jackc/puddle v0.0.0-20190608224051-11cab39313c9/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
 github.com/jackc/puddle v1.1.3/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
 github.com/jackc/puddle v1.2.0/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
-github.com/jamespfennell/gtfs v0.1.4 h1:Ga2/l2hhW+jEmZKwBMmtdK5Coe2HdJnOXbMnFCrz9pE=
-github.com/jamespfennell/gtfs v0.1.4/go.mod h1:r7C0PzYRQs8RDTOwS3wigptt/5syj6pFXE5g5xfmT+8=
+github.com/jamespfennell/gtfs v0.1.5 h1:hXa82Ywy+9WlSYCbcaJco1FjTGSKKQ05Qd02bXnxq+8=
+github.com/jamespfennell/gtfs v0.1.5/go.mod h1:r7C0PzYRQs8RDTOwS3wigptt/5syj6pFXE5g5xfmT+8=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
 github.com/jmoiron/sqlx v1.2.0/go.mod h1:1FEQNm3xlJgrMD+FBdI9+xvCksHtbpVBBw5dYhBSsks=
