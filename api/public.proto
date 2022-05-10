@@ -240,8 +240,8 @@ message Stop {
   // TODO: name should be optional :/
   string name = 2;
 
-  optional string longitude = 3;
-  optional string latitude = 4;
+  optional double longitude = 3;
+  optional double latitude = 4;
   optional string url = 5;
 
   repeated string directions = 7;

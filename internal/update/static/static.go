@@ -3,9 +3,9 @@ package static
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 
+	"github.com/jackc/pgtype"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -305,12 +305,8 @@ func buildStopIdToPkMap(ctx context.Context, querier db.Querier, systemPk int64)
 	return idToPk, nil
 }
 
-func convertGpsData(f *float64) sql.NullString {
-	if f == nil {
-		return sql.NullString{}
-	}
-	return sql.NullString{
-		Valid:  true,
-		String: fmt.Sprintf("%f", *f),
-	}
+func convertGpsData(f *float64) pgtype.Numeric {
+	var r pgtype.Numeric
+	_ = r.Set(f)
+	return r
 }

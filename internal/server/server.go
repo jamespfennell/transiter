@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"net"
@@ -13,6 +12,7 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/admin"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
@@ -27,32 +27,39 @@ import (
 
 func Run(postgresHost string) error {
 	log.Println("Starting Transiter v0.6alpha server")
-	database, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
+	ctx := context.Background()
+	ctx, cancelFunc := context.WithCancel(ctx)
+	defer cancelFunc()
+
+	config, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
 		"transiter", // TODO user
 		"transiter", // TODO password
 		postgresHost,
 		"transiter", // TODO database
 	))
 	if err != nil {
-		log.Fatalf("Could not connect to DB: %s\n", err)
+		return err
 	}
+	config.LazyConnect = true
+	config.MaxConns = 50
+	database, err := pgxpool.ConnectConfig(ctx, config)
+	if err != nil {
+		return fmt.Errorf("could not connect to DB: %w", err)
+	}
+	defer database.Close()
 
-	if err := dbwrappers.Ping(database, 20, 500*time.Millisecond); err != nil {
-		log.Fatalf("Failed to connect to the database; exiting: %s\n", err)
+	if err := dbwrappers.Ping(ctx, database, 20, 500*time.Millisecond); err != nil {
+		return fmt.Errorf("failed to connect to the database: %w", err)
 	}
 
 	log.Println("Database migrations: starting")
-	if err := schema.Migrate(database); err != nil {
+	if err := schema.Migrate(ctx, database); err != nil {
 		log.Fatalf("Could not run the database migrations: %s\n", err)
 	}
 	log.Println("Database migrations: finished")
 
-	ctx := context.Background()
-	ctx, cancelFunc := context.WithCancel(ctx)
-	defer cancelFunc()
-
 	var wg sync.WaitGroup
-	scheduler, err := scheduler.New(ctx, clock.New(), database, func(database *sql.DB) db.Querier { return db.New(database) }, update.CreateAndRun)
+	scheduler, err := scheduler.New(ctx, clock.New(), database, func(database *pgxpool.Pool) db.Querier { return db.New(database) }, update.CreateAndRun)
 	if err != nil {
 		log.Fatalf("Failed to intialize the scheduler: %s\n", err)
 	}

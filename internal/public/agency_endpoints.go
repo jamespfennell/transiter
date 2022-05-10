@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -17,7 +18,7 @@ func (t *Service) ListAgenciesInSystem(ctx context.Context, req *api.ListAgencie
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
@@ -44,7 +45,7 @@ func (t *Service) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSys
 	defer s.Cleanup()
 	agency, err := s.Querier.GetAgencyInSystem(ctx, db.GetAgencyInSystemParams{SystemID: req.SystemId, AgencyID: req.AgencyId})
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("agency %q in system %q not found", req.AgencyId, req.SystemId))
 		}
 		return nil, err

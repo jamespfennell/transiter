@@ -2,9 +2,9 @@ package public
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -17,7 +17,7 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 	route, err := s.Querier.GetRouteInSystem(ctx,
 		db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("route %q in system %q not found", req.RouteId, req.SystemId))
 		}
 		return nil, err
@@ -73,7 +73,7 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 	trip, err := s.Querier.GetTrip(ctx, db.GetTripParams{
 		SystemID: req.SystemId, RouteID: req.RouteId, TripID: req.TripId})
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("trip %q in route %q in system %q not found",
 				req.TripId, req.RouteId, req.SystemId))
 		}

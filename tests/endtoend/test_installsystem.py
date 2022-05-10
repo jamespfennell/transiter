@@ -70,8 +70,8 @@ def test_install_system__stops(system_id, install_system_1, transiter_host, sync
         transiter_host + "/systems/" + system_id + "/stops/StopId"
     ).json()
     assert "StopId" == stop_response["id"]
-    assert "10.500000" == stop_response["latitude"]
-    assert "20.500000" == stop_response["longitude"]
+    assert 10.5 == stop_response["latitude"]
+    assert 20.5 == stop_response["longitude"]
     assert "StopUrl" == stop_response["url"]
     assert "ParentStopId" == stop_response["parentStop"]["id"]
 

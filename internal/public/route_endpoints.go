@@ -8,6 +8,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -19,7 +20,7 @@ func (t *Service) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInS
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
@@ -66,7 +67,7 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 	defer s.Cleanup()
 	route, err := s.Querier.GetRouteInSystem(ctx, db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("route %q in system %q not found", req.RouteId, req.SystemId))
 		}
 		return nil, err

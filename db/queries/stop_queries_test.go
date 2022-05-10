@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jackc/pgtype"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/db/dbtesting"
@@ -81,10 +82,12 @@ func TestMapStopIdToStationPk(t *testing.T) {
 			updatePk := q.Update1Pk()
 			insertStop := func(id string, t gtfs.StopType, parentPk *int64) int64 {
 				pk, err := q.InsertStop(context.Background(), db.InsertStopParams{
-					ID:       id,
-					SystemPk: systemPk,
-					SourcePk: updatePk,
-					Type:     t.String(),
+					ID:        id,
+					SystemPk:  systemPk,
+					SourcePk:  updatePk,
+					Type:      t.String(),
+					Longitude: pgtype.Numeric{Status: pgtype.Null},
+					Latitude:  pgtype.Numeric{Status: pgtype.Null},
 				})
 				q.AssertNilErr(err, fmt.Sprintf("insert stop %q", id))
 				err = q.UpdateStopParent(context.Background(), db.UpdateStopParentParams{

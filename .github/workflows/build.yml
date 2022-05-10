@@ -31,5 +31,5 @@ jobs:
         run: docker-compose -f tests/endtoend/compose.yml up --build --detach sourceserver transiter db
 
       - name: End-to-end tests (run)
-        run: docker-compose -f tests/endtoend/compose.yml up --build testrunner
+        run: docker-compose -f tests/endtoend/compose.yml up --build --exit-code-from testrunner testrunner
     

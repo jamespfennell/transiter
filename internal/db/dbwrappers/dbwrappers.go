@@ -2,10 +2,10 @@ package dbwrappers
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
 
@@ -21,10 +21,10 @@ func MapStopIdToStationPk(ctx context.Context, querier db.Querier, systemPk int6
 	return result, nil
 }
 
-func Ping(db *sql.DB, numRetries int, waitBetweenPings time.Duration) error {
+func Ping(ctx context.Context, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {
 	var err error
 	for i := 0; i < numRetries; i++ {
-		err = db.Ping()
+		err = pool.Ping(ctx)
 		if err == nil {
 			log.Printf("Database ping successful")
 			break

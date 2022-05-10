@@ -2,24 +2,27 @@ package session
 
 import (
 	"context"
-	"database/sql"
 	"log"
 
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
 
 type Session struct {
-	tx      *sql.Tx
+	ctx     context.Context
+	tx      pgx.Tx
 	Querier db.Querier
 	Hrefs   HrefGenerator
 }
 
-func NewSession(database *sql.DB, ctx context.Context) Session {
-	tx, err := database.BeginTx(ctx, nil)
+func NewSession(ctx context.Context, pool *pgxpool.Pool) Session {
+	tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		log.Fatal("Failed to start a database transaction", err)
 	}
 	return Session{
+		ctx:     ctx,
 		tx:      tx,
 		Querier: db.New(tx),
 		Hrefs:   NewHrefGenerator(ctx),
@@ -27,10 +30,10 @@ func NewSession(database *sql.DB, ctx context.Context) Session {
 }
 
 func (s *Session) Cleanup() {
-	s.tx.Rollback()
+	// TODO: return the error here
+	s.tx.Rollback(s.ctx)
 }
 
 func (s *Session) Finish() error {
-	// TODO: nicer error?
-	return s.tx.Commit()
+	return s.tx.Commit(s.ctx)
 }

@@ -2,31 +2,32 @@ package update
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/update/static"
 )
 
-func CreateAndRun(ctx context.Context, database *sql.DB, systemId, feedId string) error {
+func CreateAndRun(ctx context.Context, pool *pgxpool.Pool, systemId, feedId string) error {
 	runInTx := func(f func(querier db.Querier) error) error {
-		tx, err := database.BeginTx(ctx, nil)
+		tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 		if err != nil {
 			return err
 		}
-		defer tx.Rollback()
+		defer tx.Rollback(ctx)
 		err = f(db.New(tx))
 		if err != nil {
 			return err
 		}
-		tx.Commit()
+		tx.Commit(ctx)
 		return nil
 	}
 	var feedPk *int64

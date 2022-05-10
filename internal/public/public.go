@@ -3,24 +3,24 @@ package public
 
 import (
 	"context"
-	"database/sql"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/public/session"
 )
 
 // Service implements the Transiter public service.
 type Service struct {
-	database *sql.DB
+	pool *pgxpool.Pool
 	api.UnimplementedPublicServer
 }
 
-func New(database *sql.DB) *Service {
-	return &Service{database: database}
+func New(pool *pgxpool.Pool) *Service {
+	return &Service{pool: pool}
 }
 
 func (t *Service) newSession(ctx context.Context) session.Session {
-	return session.NewSession(t.database, ctx)
+	return session.NewSession(ctx, t.pool)
 }
 
 func (t *Service) Entrypoint(ctx context.Context, req *api.EntrypointRequest) (*api.EntrypointReply, error) {

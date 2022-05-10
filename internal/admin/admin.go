@@ -13,6 +13,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -24,29 +26,29 @@ import (
 
 // Service implements the Transiter admin service.
 type Service struct {
-	database  *sql.DB
+	pool      *pgxpool.Pool
 	scheduler *scheduler.Scheduler
 	api.UnimplementedTransiterAdminServer
 }
 
-func New(database *sql.DB, scheduler *scheduler.Scheduler) *Service {
+func New(pool *pgxpool.Pool, scheduler *scheduler.Scheduler) *Service {
 	return &Service{
-		database:  database,
+		pool:      pool,
 		scheduler: scheduler,
 	}
 }
 
 func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigRequest) (*api.SystemConfig, error) {
-	tx, err := s.database.BeginTx(ctx, nil)
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 	querier := db.New(tx)
 
 	system, err := querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
@@ -68,16 +70,16 @@ func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigR
 		}
 		reply.Feeds = append(reply.Feeds, config.ConvertFeedConfig(&feedConfig))
 	}
-	return reply, tx.Commit()
+	return reply, tx.Commit(ctx)
 }
 
 func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrUpdateSystemRequest) (*api.InstallOrUpdateSystemReply, error) {
 	log.Printf("Recieved install or update request for system %q", req.SystemId)
-	tx, err := s.database.BeginTx(ctx, nil)
-	defer tx.Rollback()
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback(ctx)
 	querier := db.New(tx)
 
 	var systemConfig *config.SystemConfig
@@ -108,7 +110,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 
 	{
 		system, err := querier.GetSystem(ctx, req.SystemId)
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			if _, err = querier.InsertSystem(ctx, db.InsertSystemParams{
 				ID:     req.SystemId,
 				Name:   systemConfig.Name,
@@ -179,7 +181,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		querier.DeleteFeed(ctx, pk)
 	}
 
-	if err = tx.Commit(); err != nil {
+	if err = tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 	log.Printf("Installed system %q\n", system.ID)
@@ -189,8 +191,8 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 
 func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest) (*api.DeleteSystemReply, error) {
 	log.Printf("Recieved delete request for system %q", req.SystemId)
-	tx, err := s.database.BeginTx(ctx, nil)
-	defer tx.Rollback()
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	defer tx.Rollback(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +200,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 
 	system, err := querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
@@ -207,7 +209,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 	if err := querier.DeleteSystem(ctx, system.Pk); err != nil {
 		return nil, err
 	}
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
 	log.Printf("Deleted system %q", req.SystemId)

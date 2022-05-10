@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/jamespfennell/transiter/internal/apihelpers"
-	_ "github.com/lib/pq"
 	"google.golang.org/grpc/metadata"
 )
 

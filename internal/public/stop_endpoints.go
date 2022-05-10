@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/jamespfennell/transiter/internal/public/stoptree"
 	"log"
 	"sort"
 	"time"
+
+	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v4"
+	"github.com/jamespfennell/transiter/internal/public/stoptree"
 
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -21,7 +24,7 @@ func (t *Service) ListStopsInSystem(ctx context.Context, req *api.ListStopsInSys
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
@@ -46,7 +49,7 @@ func (t *Service) ListTransfersInSystem(ctx context.Context, req *api.ListTransf
 	defer s.Cleanup()
 	system, err := s.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
@@ -83,7 +86,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	// TODO: we can probably remove this call? And just check that the stops tree is non-empty
 	stop, err := s.Querier.GetStopInSystem(ctx, db.GetStopInSystemParams{SystemID: req.SystemId, StopID: req.StopId})
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("stop %q in system %q not found", req.StopId, req.SystemId))
 		}
 		return nil, err
@@ -196,8 +199,8 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	result := &api.Stop{
 		Id:          stop.ID,
 		Name:        stop.Name.String,
-		Longitude:   &stop.Longitude.String,
-		Latitude:    &stop.Latitude.String,
+		Longitude:   convertGpsData(stop.Longitude),
+		Latitude:    convertGpsData(stop.Latitude),
 		Url:         apihelpers.ConvertSqlNullString(stop.Url),
 		Directions:  directionNameMatcher.Directions(),
 		ParentStop:  stopTreeResponse.ParentStop,
@@ -350,4 +353,13 @@ func buildEstimatedTime(time sql.NullTime, delay sql.NullInt32, uncertainty sql.
 		Delay:       apihelpers.ConvertSqlNullInt32(delay),
 		Uncertainty: apihelpers.ConvertSqlNullInt32(uncertainty),
 	}
+}
+
+func convertGpsData(n pgtype.Numeric) *float64 {
+	if n.Status != pgtype.Present {
+		return nil
+	}
+	var r float64
+	n.AssignTo(&r)
+	return &r
 }

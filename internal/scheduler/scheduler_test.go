@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
 
@@ -129,7 +130,7 @@ func TestScheduler(t *testing.T) {
 				{ID: feedId1, AutoUpdatePeriod: sql.NullInt32{Valid: true, Int32: 500}},
 			}
 
-			scheduler, err := New(ctx, clock, nil, func(database *sql.DB) db.Querier { return querier }, updater.UpdateFunc)
+			scheduler, err := New(ctx, clock, nil, func(database *pgxpool.Pool) db.Querier { return querier }, updater.UpdateFunc)
 			if err != nil {
 				t.Fatalf("failed to create scheduler: %s", err)
 			}
@@ -213,7 +214,7 @@ type mockUpdater struct {
 	updateChan chan systemAndFeed
 }
 
-func (m *mockUpdater) UpdateFunc(ctx context.Context, _ *sql.DB, systemId, feedId string) error {
+func (m *mockUpdater) UpdateFunc(ctx context.Context, _ *pgxpool.Pool, systemId, feedId string) error {
 	m.updateChan <- systemAndFeed{systemId: systemId, feedId: feedId}
 	return nil
 }

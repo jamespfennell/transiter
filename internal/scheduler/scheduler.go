@@ -30,22 +30,22 @@ package scheduler
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"sort"
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
 
-type UpdateFunc func(ctx context.Context, database *sql.DB, systemId, feedId string) error
+type UpdateFunc func(ctx context.Context, database *pgxpool.Pool, systemId, feedId string) error
 
-type QuerierFunc func(database *sql.DB) db.Querier
+type QuerierFunc func(database *pgxpool.Pool) db.Querier
 
 type Scheduler struct {
-	database    *sql.DB
+	database    *pgxpool.Pool
 	querierFunc QuerierFunc
 
 	// The refreshAll channels are used to signal to the root scheduler that it should refresh all systems
@@ -64,7 +64,8 @@ type Scheduler struct {
 	doneChan chan struct{}
 }
 
-func New(ctx context.Context, clock clock.Clock, database *sql.DB, querierFunc QuerierFunc, updateFunc UpdateFunc) (*Scheduler, error) {
+// TODO: have an interface for the queriesFunc and updateFunc
+func New(ctx context.Context, clock clock.Clock, database *pgxpool.Pool, querierFunc QuerierFunc, updateFunc UpdateFunc) (*Scheduler, error) {
 	s := &Scheduler{
 		database:          database,
 		querierFunc:       querierFunc,
@@ -80,7 +81,7 @@ func New(ctx context.Context, clock clock.Clock, database *sql.DB, querierFunc Q
 	return s, s.RefreshAll(ctx)
 }
 
-func (s *Scheduler) run(ctx context.Context, clock clock.Clock, database *sql.DB, updateFunc UpdateFunc) {
+func (s *Scheduler) run(ctx context.Context, clock clock.Clock, database *pgxpool.Pool, updateFunc UpdateFunc) {
 	systemSchedulers := map[string]struct {
 		scheduler  *systemScheduler
 		cancelFunc context.CancelFunc

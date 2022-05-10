@@ -2,7 +2,6 @@ package dbtesting
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -34,12 +35,12 @@ func NewQuerier(t *testing.T) *Querier {
 	if skipDatabaseTests {
 		t.Skip("database tests are disabled")
 	}
-	tx, err := getDB(t).BeginTx(context.Background(), nil)
+	tx, err := getDB(t).BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		t.Fatalf("failed to start testing transaction: %+v", err)
 	}
 	t.Cleanup(func() {
-		if err := tx.Rollback(); err != nil {
+		if err := tx.Rollback(context.Background()); err != nil {
 			t.Errorf("failed to rollback testing transaction: %+v", err)
 		}
 	})
@@ -49,17 +50,17 @@ func NewQuerier(t *testing.T) *Querier {
 	}
 }
 
-var d *sql.DB
+var d *pgxpool.Pool
 var dm sync.Mutex
 
-func getDB(t *testing.T) *sql.DB {
+func getDB(t *testing.T) *pgxpool.Pool {
 	dm.Lock()
 	defer dm.Unlock()
 	if d != nil {
 		return d
 	}
 	var err error
-	d, err = sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s?sslmode=disable",
+	d, err = pgxpool.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s?sslmode=disable",
 		"transiter", // TODO customize?
 		"transiter",
 		"localhost:5432",
@@ -67,21 +68,21 @@ func getDB(t *testing.T) *sql.DB {
 	if err != nil {
 		t.Fatalf("failed to connect to Postgres: %+v", err)
 	}
-	if err := dbwrappers.Ping(d, 100, 50*time.Millisecond); err != nil {
+	if err := dbwrappers.Ping(context.Background(), d, 100, 50*time.Millisecond); err != nil {
 		log.Fatalf("Failed to connect to the database; exiting: %s\n", err)
 	}
 
 	dbName := "transitertestdatabase"
-	_, err = d.Exec("DROP DATABASE IF EXISTS " + dbName)
+	_, err = d.Exec(context.Background(), "DROP DATABASE IF EXISTS "+dbName)
 	if err != nil {
 		t.Fatalf("failed to drop Postgres database %s: %+v", dbName, err)
 	}
-	_, err = d.Exec("CREATE DATABASE " + dbName)
+	_, err = d.Exec(context.Background(), "CREATE DATABASE "+dbName)
 	if err != nil {
 		t.Fatalf("failed to create Postgres database %s: %+v", dbName, err)
 	}
 
-	d, err = sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
+	d, err = pgxpool.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
 		"transiter", // TODO customize?
 		"transiter",
 		"localhost:5432",
@@ -92,7 +93,7 @@ func getDB(t *testing.T) *sql.DB {
 	}
 
 	fmt.Println("Running schema migrations")
-	if err := schema.Migrate(d); err != nil {
+	if err := schema.Migrate(context.Background(), d); err != nil {
 		t.Fatalf("failed to run schema migrations: %+v", err)
 	}
 	return d
