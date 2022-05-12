@@ -18,10 +18,8 @@ import (
 	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
-	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public"
 	"github.com/jamespfennell/transiter/internal/scheduler"
-	"github.com/jamespfennell/transiter/internal/update"
 	"google.golang.org/grpc"
 )
 
@@ -42,30 +40,30 @@ func Run(postgresHost string) error {
 	}
 	config.LazyConnect = true
 	config.MaxConns = 50
-	database, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
 		return fmt.Errorf("could not connect to DB: %w", err)
 	}
-	defer database.Close()
+	defer pool.Close()
 
-	if err := dbwrappers.Ping(ctx, database, 20, 500*time.Millisecond); err != nil {
+	if err := dbwrappers.Ping(ctx, pool, 20, 500*time.Millisecond); err != nil {
 		return fmt.Errorf("failed to connect to the database: %w", err)
 	}
 
 	log.Println("Database migrations: starting")
-	if err := schema.Migrate(ctx, database); err != nil {
+	if err := schema.Migrate(ctx, pool); err != nil {
 		log.Fatalf("Could not run the database migrations: %s\n", err)
 	}
 	log.Println("Database migrations: finished")
 
 	var wg sync.WaitGroup
-	scheduler, err := scheduler.New(ctx, clock.New(), database, func(database *pgxpool.Pool) db.Querier { return db.New(database) }, update.CreateAndRun)
+	scheduler, err := scheduler.New(ctx, clock.New(), scheduler.DefaultOps(pool))
 	if err != nil {
 		log.Fatalf("Failed to intialize the scheduler: %s\n", err)
 	}
 
-	publicService := public.New(database)
-	adminService := admin.New(database, scheduler)
+	publicService := public.New(pool)
+	adminService := admin.New(pool, scheduler)
 
 	wg.Add(1)
 	go func() {
