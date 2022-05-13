@@ -175,13 +175,13 @@ func updateStops(ctx context.Context, updateCtx UpdateContext, stops []*gtfs.Sto
 				Name:               apihelpers.ConvertNullString(stop.Name),
 				Type:               stop.Type.String(),
 				Longitude:          convertGpsData(stop.Longitude),
-				Latitude:           convertGpsData(stop.Lattitude),
+				Latitude:           convertGpsData(stop.Latitude),
 				Url:                apihelpers.ConvertNullString(stop.Url),
 				Code:               apihelpers.ConvertNullString(stop.Code),
 				Description:        apihelpers.ConvertNullString(stop.Description),
 				PlatformCode:       apihelpers.ConvertNullString(stop.PlatformCode),
 				Timezone:           apihelpers.ConvertNullString(stop.Timezone),
-				WheelchairBoarding: "NOT_SPECIFIED", // TODO, need to make a change to the GTFS package
+				WheelchairBoarding: stop.WheelchairBoarding.String(),
 				ZoneID:             apihelpers.ConvertNullString(stop.ZoneId),
 			})
 		} else {
@@ -192,13 +192,13 @@ func updateStops(ctx context.Context, updateCtx UpdateContext, stops []*gtfs.Sto
 				Name:               apihelpers.ConvertNullString(stop.Name),
 				Type:               stop.Type.String(),
 				Longitude:          convertGpsData(stop.Longitude),
-				Latitude:           convertGpsData(stop.Lattitude),
+				Latitude:           convertGpsData(stop.Latitude),
 				Url:                apihelpers.ConvertNullString(stop.Url),
 				Code:               apihelpers.ConvertNullString(stop.Code),
 				Description:        apihelpers.ConvertNullString(stop.Description),
 				PlatformCode:       apihelpers.ConvertNullString(stop.PlatformCode),
 				Timezone:           apihelpers.ConvertNullString(stop.Timezone),
-				WheelchairBoarding: "NOT_SPECIFIED", // TODO, need to make a change to the GTFS package
+				WheelchairBoarding: stop.WheelchairBoarding.String(),
 				ZoneID:             apihelpers.ConvertNullString(stop.ZoneId),
 			})
 			idToPk[stop.Id] = pk

@@ -9,7 +9,7 @@ require (
 	github.com/jackc/pgtype v1.10.0
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/jackc/tern v1.13.0
-	github.com/jamespfennell/gtfs v0.1.5
+	github.com/jamespfennell/gtfs v0.1.6
 	github.com/kyleconroy/sqlc v1.13.0
 	github.com/urfave/cli/v2 v2.3.0
 	google.golang.org/genproto v0.0.0-20210903162649-d08c68adba83
