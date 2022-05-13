@@ -198,7 +198,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	stopTreeResponse := buildStopTreeResponse(&s, req.SystemId, stop.Pk, stopTree, stopPkToServiceMaps)
 	result := &api.Stop{
 		Id:          stop.ID,
-		Name:        stop.Name.String,
+		Name:        apihelpers.ConvertSqlNullString(stop.Name),
 		Longitude:   convertGpsData(stop.Longitude),
 		Latitude:    convertGpsData(stop.Latitude),
 		Url:         apihelpers.ConvertSqlNullString(stop.Url),
