@@ -58,33 +58,16 @@ func SortTree(root *TreeNode) []Node {
 		labelToWeight[node.GetLabel()] = weight
 	}
 	for _, node := range traversal {
-		sort.Sort(treeChildrenSorter{
-			labelToWeight: labelToWeight,
-			node:          node.(*TreeNode),
+		children := node.(*TreeNode).Children
+		// We sort the children to make the next traversal deterministic.
+		sort.Slice(children, func(i, j int) bool {
+			l := children[i]
+			r := children[j]
+			if labelToWeight[l.Label] == labelToWeight[r.Label] {
+				return l.Label < r.Label
+			}
+			return labelToWeight[l.Label] < labelToWeight[r.Label]
 		})
 	}
 	return DepthFirstTraverse(root, PreOrder)
-}
-
-// TODO: replace with sort.Slice?
-type treeChildrenSorter struct {
-	labelToWeight map[int64]int
-	node          *TreeNode
-}
-
-func (n treeChildrenSorter) Len() int {
-	return n.node.NumOutNodes()
-}
-
-func (n treeChildrenSorter) Less(i, j int) bool {
-	l := n.node.Children[i]
-	r := n.node.Children[j]
-	if n.labelToWeight[l.Label] == n.labelToWeight[r.Label] {
-		return l.Label < r.Label
-	}
-	return n.labelToWeight[l.Label] < n.labelToWeight[r.Label]
-}
-
-func (n treeChildrenSorter) Swap(i, j int) {
-	n.node.Children[i], n.node.Children[j] = n.node.Children[j], n.node.Children[i]
 }
