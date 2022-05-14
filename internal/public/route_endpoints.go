@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jamespfennell/transiter/internal/apihelpers"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -132,8 +132,8 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 			Cause:  alert.Cause,
 			Effect: alert.Effect,
 			ActivePeriod: &api.Alert_ActivePeriod{
-				StartsAt: apihelpers.ConvertSqlNullTime(alert.StartsAt),
-				EndsAt:   apihelpers.ConvertSqlNullTime(alert.EndsAt),
+				StartsAt: convert.SqlNullTime(alert.StartsAt),
+				EndsAt:   convert.SqlNullTime(alert.EndsAt),
 			},
 		}
 		for _, message := range alertMessages {
@@ -143,8 +143,8 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 			apiAlert.Messages = append(apiAlert.Messages, &api.Alert_Message{
 				Header:      message.Header,
 				Description: message.Description,
-				Url:         apihelpers.ConvertSqlNullString(message.Url),
-				Language:    apihelpers.ConvertSqlNullString(message.Language),
+				Url:         convert.SqlNullString(message.Url),
+				Language:    convert.SqlNullString(message.Language),
 			})
 		}
 		alertsReply = append(alertsReply, &apiAlert)
@@ -152,13 +152,13 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 
 	reply := &api.Route{
 		Id:                route.ID,
-		ShortName:         apihelpers.ConvertSqlNullString(route.ShortName),
-		LongName:          apihelpers.ConvertSqlNullString(route.LongName),
+		ShortName:         convert.SqlNullString(route.ShortName),
+		LongName:          convert.SqlNullString(route.LongName),
 		Color:             route.Color,
 		TextColor:         route.TextColor,
-		Description:       apihelpers.ConvertSqlNullString(route.Description),
-		Url:               apihelpers.ConvertSqlNullString(route.Url),
-		SortOrder:         apihelpers.ConvertSqlNullInt32(route.SortOrder),
+		Description:       convert.SqlNullString(route.Description),
+		Url:               convert.SqlNullString(route.Url),
+		SortOrder:         convert.SqlNullInt32(route.SortOrder),
 		ContinuousPickup:  route.ContinuousPickup,
 		ContinuousDropOff: route.ContinuousDropOff,
 		Type:              route.Type,

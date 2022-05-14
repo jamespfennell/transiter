@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jamespfennell/gtfs"
-	"github.com/jamespfennell/transiter/internal/apihelpers"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/servicemaps"
 )
@@ -60,10 +60,10 @@ func updateAgencies(ctx context.Context, updateCtx UpdateContext, agencies []gtf
 				Name:     agency.Name,
 				Url:      agency.Url,
 				Timezone: agency.Timezone,
-				Language: apihelpers.ConvertNullString(agency.Language),
-				Phone:    apihelpers.ConvertNullString(agency.Phone),
-				FareUrl:  apihelpers.ConvertNullString(agency.FareUrl),
-				Email:    apihelpers.ConvertNullString(agency.Email),
+				Language: convert.NullString(agency.Language),
+				Phone:    convert.NullString(agency.Phone),
+				FareUrl:  convert.NullString(agency.FareUrl),
+				Email:    convert.NullString(agency.Email),
 			})
 		} else {
 			pk, err = updateCtx.Querier.InsertAgency(ctx, db.InsertAgencyParams{
@@ -73,10 +73,10 @@ func updateAgencies(ctx context.Context, updateCtx UpdateContext, agencies []gtf
 				Name:     agency.Name,
 				Url:      agency.Url,
 				Timezone: agency.Timezone,
-				Language: apihelpers.ConvertNullString(agency.Language),
-				Phone:    apihelpers.ConvertNullString(agency.Phone),
-				FareUrl:  apihelpers.ConvertNullString(agency.FareUrl),
-				Email:    apihelpers.ConvertNullString(agency.Email),
+				Language: convert.NullString(agency.Language),
+				Phone:    convert.NullString(agency.Phone),
+				FareUrl:  convert.NullString(agency.FareUrl),
+				Email:    convert.NullString(agency.Email),
 			})
 			idToPk[agency.Id] = pk
 		}
@@ -115,11 +115,11 @@ func updateRoutes(ctx context.Context, updateCtx UpdateContext, routes []gtfs.Ro
 				SourcePk:          updateCtx.UpdatePk,
 				Color:             route.Color,
 				TextColor:         route.TextColor,
-				ShortName:         apihelpers.ConvertNullString(route.ShortName),
-				LongName:          apihelpers.ConvertNullString(route.LongName),
-				Description:       apihelpers.ConvertNullString(route.Description),
-				Url:               apihelpers.ConvertNullString(route.Url),
-				SortOrder:         apihelpers.ConvertNullInt32(route.SortOrder),
+				ShortName:         convert.NullString(route.ShortName),
+				LongName:          convert.NullString(route.LongName),
+				Description:       convert.NullString(route.Description),
+				Url:               convert.NullString(route.Url),
+				SortOrder:         convert.NullInt32(route.SortOrder),
 				Type:              route.Type.String(),
 				ContinuousPickup:  route.ContinuousPickup.String(),
 				ContinuousDropOff: route.ContinuousDropOff.String(),
@@ -132,11 +132,11 @@ func updateRoutes(ctx context.Context, updateCtx UpdateContext, routes []gtfs.Ro
 				SourcePk:          updateCtx.UpdatePk,
 				Color:             route.Color,
 				TextColor:         route.TextColor,
-				ShortName:         apihelpers.ConvertNullString(route.ShortName),
-				LongName:          apihelpers.ConvertNullString(route.LongName),
-				Description:       apihelpers.ConvertNullString(route.Description),
-				Url:               apihelpers.ConvertNullString(route.Url),
-				SortOrder:         apihelpers.ConvertNullInt32(route.SortOrder),
+				ShortName:         convert.NullString(route.ShortName),
+				LongName:          convert.NullString(route.LongName),
+				Description:       convert.NullString(route.Description),
+				Url:               convert.NullString(route.Url),
+				SortOrder:         convert.NullInt32(route.SortOrder),
 				Type:              route.Type.String(),
 				ContinuousPickup:  route.ContinuousPickup.String(),
 				ContinuousDropOff: route.ContinuousDropOff.String(),
@@ -172,34 +172,34 @@ func updateStops(ctx context.Context, updateCtx UpdateContext, stops []*gtfs.Sto
 			err = updateCtx.Querier.UpdateStop(ctx, db.UpdateStopParams{
 				Pk:                 pk,
 				SourcePk:           updateCtx.UpdatePk,
-				Name:               apihelpers.ConvertNullString(stop.Name),
+				Name:               convert.NullString(stop.Name),
 				Type:               stop.Type.String(),
 				Longitude:          convertGpsData(stop.Longitude),
 				Latitude:           convertGpsData(stop.Latitude),
-				Url:                apihelpers.ConvertNullString(stop.Url),
-				Code:               apihelpers.ConvertNullString(stop.Code),
-				Description:        apihelpers.ConvertNullString(stop.Description),
-				PlatformCode:       apihelpers.ConvertNullString(stop.PlatformCode),
-				Timezone:           apihelpers.ConvertNullString(stop.Timezone),
+				Url:                convert.NullString(stop.Url),
+				Code:               convert.NullString(stop.Code),
+				Description:        convert.NullString(stop.Description),
+				PlatformCode:       convert.NullString(stop.PlatformCode),
+				Timezone:           convert.NullString(stop.Timezone),
 				WheelchairBoarding: stop.WheelchairBoarding.String(),
-				ZoneID:             apihelpers.ConvertNullString(stop.ZoneId),
+				ZoneID:             convert.NullString(stop.ZoneId),
 			})
 		} else {
 			pk, err = updateCtx.Querier.InsertStop(ctx, db.InsertStopParams{
 				ID:                 stop.Id,
 				SystemPk:           updateCtx.SystemPk,
 				SourcePk:           updateCtx.UpdatePk,
-				Name:               apihelpers.ConvertNullString(stop.Name),
+				Name:               convert.NullString(stop.Name),
 				Type:               stop.Type.String(),
 				Longitude:          convertGpsData(stop.Longitude),
 				Latitude:           convertGpsData(stop.Latitude),
-				Url:                apihelpers.ConvertNullString(stop.Url),
-				Code:               apihelpers.ConvertNullString(stop.Code),
-				Description:        apihelpers.ConvertNullString(stop.Description),
-				PlatformCode:       apihelpers.ConvertNullString(stop.PlatformCode),
-				Timezone:           apihelpers.ConvertNullString(stop.Timezone),
+				Url:                convert.NullString(stop.Url),
+				Code:               convert.NullString(stop.Code),
+				Description:        convert.NullString(stop.Description),
+				PlatformCode:       convert.NullString(stop.PlatformCode),
+				Timezone:           convert.NullString(stop.Timezone),
 				WheelchairBoarding: stop.WheelchairBoarding.String(),
-				ZoneID:             apihelpers.ConvertNullString(stop.ZoneId),
+				ZoneID:             convert.NullString(stop.ZoneId),
 			})
 			idToPk[stop.Id] = pk
 		}
@@ -256,12 +256,12 @@ func updateTransfers(ctx context.Context, updateCtx UpdateContext, transfers []g
 			continue
 		}
 		if err := updateCtx.Querier.InsertTransfer(ctx, db.InsertTransferParams{
-			SystemPk:        apihelpers.ConvertNullInt64(&updateCtx.SystemPk),
-			SourcePk:        apihelpers.ConvertNullInt64(&updateCtx.UpdatePk),
+			SystemPk:        convert.NullInt64(&updateCtx.SystemPk),
+			SourcePk:        convert.NullInt64(&updateCtx.UpdatePk),
 			FromStopPk:      fromPk,
 			ToStopPk:        toPk,
 			Type:            transfer.Type.String(),
-			MinTransferTime: apihelpers.ConvertNullInt32(transfer.MinTransferTime),
+			MinTransferTime: convert.NullInt32(transfer.MinTransferTime),
 		}); err != nil {
 			return err
 		}

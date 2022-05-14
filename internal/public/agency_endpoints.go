@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jamespfennell/transiter/internal/apihelpers"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -67,10 +67,10 @@ func (t *Service) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSys
 		Name:     agency.Name,
 		Url:      agency.Url,
 		Timezone: agency.Timezone,
-		Language: apihelpers.ConvertSqlNullString(agency.Language),
-		Phone:    apihelpers.ConvertSqlNullString(agency.Phone),
-		FareUrl:  apihelpers.ConvertSqlNullString(agency.FareUrl),
-		Email:    apihelpers.ConvertSqlNullString(agency.Email),
+		Language: convert.SqlNullString(agency.Language),
+		Phone:    convert.SqlNullString(agency.Phone),
+		FareUrl:  convert.SqlNullString(agency.FareUrl),
+		Email:    convert.SqlNullString(agency.Email),
 	}
 	for _, route := range routes {
 		reply.Routes = append(reply.Routes, &api.RoutePreview{

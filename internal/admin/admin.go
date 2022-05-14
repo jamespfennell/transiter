@@ -250,7 +250,7 @@ func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[
 	return config.UnmarshalFromYaml(b.Bytes())
 }
 
-// TODO: move to apihelpers/converters
+// TODO: move to convert/converters
 func convertNullDuration(d *time.Duration) sql.NullInt32 {
 	if d == nil {
 		return sql.NullInt32{}

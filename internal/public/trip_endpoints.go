@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jamespfennell/transiter/internal/apihelpers"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -48,8 +48,8 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 		api_trip := &api.TripPreviewWithAlerts{
 			Id:          trip.ID,
 			DirectionId: trip.DirectionID.Bool,
-			StartedAt:   apihelpers.ConvertSqlNullTime(trip.StartedAt),
-			UpdatedAt:   apihelpers.ConvertSqlNullTime(trip.UpdatedAt),
+			StartedAt:   convert.SqlNullTime(trip.StartedAt),
+			UpdatedAt:   convert.SqlNullTime(trip.UpdatedAt),
 			LastStop: &api.StopPreview{
 				Id:   lastStop.ID,
 				Name: lastStop.Name.String,
@@ -86,8 +86,8 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 	reply := &api.Trip{
 		Id:          trip.ID,
 		DirectionId: trip.DirectionID.Bool,
-		StartedAt:   apihelpers.ConvertSqlNullTime(trip.StartedAt),
-		UpdatedAt:   apihelpers.ConvertSqlNullTime(trip.UpdatedAt),
+		StartedAt:   convert.SqlNullTime(trip.StartedAt),
+		UpdatedAt:   convert.SqlNullTime(trip.UpdatedAt),
 		Route: &api.RoutePreview{
 			Id:    trip.RouteID,
 			Color: trip.RouteColor,
@@ -103,7 +103,7 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 	for _, stopTime := range stopTimes {
 		reply.StopTimes = append(reply.StopTimes, &api.Trip_StopTime{
 			StopSequence: stopTime.StopSequence,
-			Track:        apihelpers.ConvertSqlNullString(stopTime.Track),
+			Track:        convert.SqlNullString(stopTime.Track),
 			Future: stopTime.StopSequence >= 0 && (trip.CurrentStopSequence.Int32 <= stopTime.StopSequence ||
 				!trip.CurrentStopSequence.Valid),
 			Arrival:   buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),

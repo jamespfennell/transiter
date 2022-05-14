@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jamespfennell/gtfs"
-	"github.com/jamespfennell/transiter/internal/apihelpers"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbtesting"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -92,7 +92,7 @@ func TestMapStopIdToStationPk(t *testing.T) {
 				q.AssertNilErr(err, fmt.Sprintf("insert stop %q", id))
 				err = q.UpdateStopParent(context.Background(), db.UpdateStopParentParams{
 					Pk:           pk,
-					ParentStopPk: apihelpers.ConvertNullInt64(parentPk),
+					ParentStopPk: convert.NullInt64(parentPk),
 				})
 				q.AssertNilErr(err, fmt.Sprintf("update parent of stop %q", id))
 				return pk

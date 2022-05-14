@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/internal/public/stoptree"
 
-	"github.com/jamespfennell/transiter/internal/apihelpers"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -198,10 +198,10 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	stopTreeResponse := buildStopTreeResponse(&s, req.SystemId, stop.Pk, stopTree, stopPkToServiceMaps)
 	result := &api.Stop{
 		Id:          stop.ID,
-		Name:        apihelpers.ConvertSqlNullString(stop.Name),
+		Name:        convert.SqlNullString(stop.Name),
 		Longitude:   convertGpsData(stop.Longitude),
 		Latitude:    convertGpsData(stop.Latitude),
-		Url:         apihelpers.ConvertSqlNullString(stop.Url),
+		Url:         convert.SqlNullString(stop.Url),
 		Directions:  directionNameMatcher.Directions(),
 		ParentStop:  stopTreeResponse.ParentStop,
 		ChildStops:  stopTreeResponse.ChildStops,
@@ -213,7 +213,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		lastStop := tripPkToLastStop[stopTime.TripPk]
 		apiStopTime := &api.Stop_StopTime{
 			StopSequence: stopTime.StopSequence,
-			Track:        apihelpers.ConvertSqlNullString(stopTime.Track),
+			Track:        convert.SqlNullString(stopTime.Track),
 			Future: stopTime.StopSequence >= 0 && (stopTime.CurrentStopSequence.Int32 <= stopTime.StopSequence ||
 				!stopTime.CurrentStopSequence.Valid),
 			Direction: directionNameMatcher.Match(&stopTime),
@@ -222,8 +222,8 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 			Trip: &api.TripPreview{
 				Id:          stopTime.ID,
 				DirectionId: stopTime.DirectionID.Bool,
-				StartedAt:   apihelpers.ConvertSqlNullTime(stopTime.StartedAt),
-				UpdatedAt:   apihelpers.ConvertSqlNullTime(stopTime.UpdatedAt),
+				StartedAt:   convert.SqlNullTime(stopTime.StartedAt),
+				UpdatedAt:   convert.SqlNullTime(stopTime.UpdatedAt),
 				Route: &api.RoutePreview{
 					Id:    route.ID,
 					Color: route.Color,
@@ -266,8 +266,8 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 				Href:        s.Hrefs.Stop(req.SystemId, transfer.ToID),
 			},
 			Type:            transfer.Type,
-			MinTransferTime: apihelpers.ConvertSqlNullInt32(transfer.MinTransferTime),
-			Distance:        apihelpers.ConvertSqlNullInt32(transfer.Distance),
+			MinTransferTime: convert.SqlNullInt32(transfer.MinTransferTime),
+			Distance:        convert.SqlNullInt32(transfer.Distance),
 		})
 	}
 	log.Println("GetStopInSystem took", time.Since(startTime))
@@ -349,9 +349,9 @@ func (m *DirectionNameMatcher) Directions() []string {
 
 func buildEstimatedTime(time sql.NullTime, delay sql.NullInt32, uncertainty sql.NullInt32) *api.EstimatedTime {
 	return &api.EstimatedTime{
-		Time:        apihelpers.ConvertSqlNullTime(time),
-		Delay:       apihelpers.ConvertSqlNullInt32(delay),
-		Uncertainty: apihelpers.ConvertSqlNullInt32(uncertainty),
+		Time:        convert.SqlNullTime(time),
+		Delay:       convert.SqlNullInt32(delay),
+		Uncertainty: convert.SqlNullInt32(uncertainty),
 	}
 }
 

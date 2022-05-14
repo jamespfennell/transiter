@@ -5,7 +5,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -14,7 +13,10 @@ type HrefGenerator struct {
 	baseUrl string
 }
 
-var xTransiterHostLower = strings.ToLower(apihelpers.XTransiterHost)
+// TODO(APIv2): rename X-Transiter-BaseURL
+const XTransiterHost = "X-Transiter-Host"
+
+var xTransiterHostLower = strings.ToLower(XTransiterHost)
 
 func NewHrefGenerator(ctx context.Context) HrefGenerator {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {

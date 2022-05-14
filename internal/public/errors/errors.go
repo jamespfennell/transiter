@@ -1,43 +1,57 @@
+// Package errors contains logic for making errors user-friendly at the API boundary.
 package errors
 
 import (
+	"context"
 	"log"
+	"net/http"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type err struct {
+type publicErr struct {
 	*status.Status
 }
 
-func (e err) Error() string {
+func (e publicErr) Error() string {
 	return e.Status.String()
 }
 
-func (e err) GRPCStatus() *status.Status {
+func (e publicErr) GRPCStatus() *status.Status {
 	return e.Status
 }
 
+// NewNotFoundError returns a not found error type.
+//
+// This will be mapped to a 404 error in the API.
 func NewNotFoundError(msg string) error {
-	return err{
+	return publicErr{
 		Status: status.New(codes.NotFound, msg),
 	}
 }
 
-func ProcessError(e error) error {
-	if _, ok := e.(err); ok {
-		return e
-	}
-	if _, ok := e.(interface {
+// ServeMuxOption returns a `runtime.ServeMuxOption` that makes errors user-friendly at the API boundary.
+func ServeMuxOption() runtime.ServeMuxOption {
+	return runtime.WithErrorHandler(errorHandler)
+}
+
+func errorHandler(ctx context.Context, mux *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, req *http.Request, err error) {
+	switch err.(type) {
+	case publicErr:
+		// nothing to do
+	case interface {
 		GRPCStatus() *status.Status
-	}); ok {
-		return e
+	}:
+		// nothing to do
+	default:
+		log.Printf("Unexpected internal error: %s\n", err)
+		s := status.New(codes.Internal, "internal error")
+		s, _ = s.WithDetails(status.Convert(err).Proto())
+		err = publicErr{
+			Status: s,
+		}
 	}
-	log.Printf("Unexpected internal error: %s\n", e)
-	s := status.New(codes.Internal, "internal error")
-	s, _ = s.WithDetails(status.Convert(e).Proto())
-	return err{
-		Status: s,
-	}
+	runtime.DefaultHTTPErrorHandler(ctx, mux, m, w, req, err)
 }

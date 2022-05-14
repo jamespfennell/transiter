@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jamespfennell/transiter/internal/apihelpers"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -80,11 +80,11 @@ func (t *Service) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesR
 		reply.Updates = append(reply.Updates, &api.FeedUpdate{
 			Id:            fmt.Sprintf("%d", update.Pk),
 			Status:        update.Status,
-			Result:        apihelpers.ConvertSqlNullString(update.Result),
-			StackTrace:    apihelpers.ConvertSqlNullString(update.ResultMessage),
-			ContentHash:   apihelpers.ConvertSqlNullString(update.ContentHash),
-			ContentLength: apihelpers.ConvertSqlNullInt32(update.ContentLength),
-			CompletedAt:   apihelpers.ConvertSqlNullTime(update.CompletedAt),
+			Result:        convert.SqlNullString(update.Result),
+			StackTrace:    convert.SqlNullString(update.ResultMessage),
+			ContentHash:   convert.SqlNullString(update.ContentHash),
+			ContentLength: convert.SqlNullInt32(update.ContentLength),
+			CompletedAt:   convert.SqlNullTime(update.CompletedAt),
 		})
 	}
 	return reply, s.Finish()

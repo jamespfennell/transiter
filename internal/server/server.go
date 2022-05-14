@@ -15,12 +15,14 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/admin"
-	"github.com/jamespfennell/transiter/internal/apihelpers"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/public"
+	"github.com/jamespfennell/transiter/internal/public/errors"
+	"github.com/jamespfennell/transiter/internal/public/session"
 	"github.com/jamespfennell/transiter/internal/scheduler"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func Run(postgresHost string) error {
@@ -69,11 +71,7 @@ func Run(postgresHost string) error {
 	go func() {
 		defer cancelFunc()
 		defer wg.Done()
-		mux := runtime.NewServeMux(
-			apihelpers.MarshalerOptions(),
-			apihelpers.IncomingHeaderMatcher(),
-			apihelpers.ErrorHandler(),
-		)
+		mux := newServeMux()
 		api.RegisterPublicHandlerServer(ctx, mux, publicService)
 		log.Println("Public service HTTP API listening on localhost:8080")
 		err := http.ListenAndServe("localhost:8080", mux)
@@ -98,11 +96,7 @@ func Run(postgresHost string) error {
 	go func() {
 		defer cancelFunc()
 		defer wg.Done()
-		mux := runtime.NewServeMux(
-			apihelpers.MarshalerOptions(),
-			apihelpers.IncomingHeaderMatcher(),
-			apihelpers.ErrorHandler(),
-		)
+		mux := newServeMux()
 		api.RegisterPublicHandlerServer(ctx, mux, publicService)
 		api.RegisterTransiterAdminHandlerServer(ctx, mux, adminService)
 		log.Println("Admin service HTTP API listening on localhost:8082")
@@ -127,4 +121,28 @@ func Run(postgresHost string) error {
 	wg.Wait()
 	scheduler.Wait()
 	return nil
+}
+
+func newServeMux() *runtime.ServeMux {
+	return runtime.NewServeMux(
+		// Option to marshal the JSON in a nice way
+		runtime.WithMarshalerOption("*", &runtime.JSONPb{
+			MarshalOptions: protojson.MarshalOptions{
+				Indent:          "  ",
+				Multiline:       true,
+				EmitUnpopulated: true,
+			}}),
+		// Option to match the X-Transiter host header
+		runtime.WithIncomingHeaderMatcher(
+			func(key string) (string, bool) {
+				switch key {
+				case session.XTransiterHost:
+					return key, true
+				default:
+					return runtime.DefaultHeaderMatcher(key)
+				}
+			}),
+		// Option to map internal errors to nice HTTP error
+		errors.ServeMuxOption(),
+	)
 }
