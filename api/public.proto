@@ -294,7 +294,6 @@ message TripPreview {
   RoutePreview route = 2;
   StopPreview last_stop = 3;
   optional int64 started_at = 10;
-  optional int64 updated_at = 11;
   optional VehiclePreview vehicle = 6;
   bool direction_id = 4;
   optional string href = 5;
@@ -306,7 +305,6 @@ message TripPreviewWithAlerts {
   RoutePreview route = 2;
   StopPreview last_stop = 3;
   optional int64 started_at = 10;
-  optional int64 updated_at = 11;
   optional VehiclePreview vehicle = 6;
   bool direction_id = 4;
   optional string href = 5;
@@ -319,7 +317,6 @@ message Trip {
   RoutePreview route = 2;
   StopPreview last_stop = 3;
   optional int64 started_at = 4;
-  optional int64 updated_at = 5;
   optional VehiclePreview vehicle = 6;
   bool direction_id = 7;
 

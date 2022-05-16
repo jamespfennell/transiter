@@ -49,7 +49,6 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 			Id:          trip.ID,
 			DirectionId: trip.DirectionID.Bool,
 			StartedAt:   convert.SqlNullTime(trip.StartedAt),
-			UpdatedAt:   convert.SqlNullTime(trip.UpdatedAt),
 			LastStop: &api.StopPreview{
 				Id:   lastStop.ID,
 				Name: lastStop.Name.String,
@@ -87,7 +86,6 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 		Id:          trip.ID,
 		DirectionId: trip.DirectionID.Bool,
 		StartedAt:   convert.SqlNullTime(trip.StartedAt),
-		UpdatedAt:   convert.SqlNullTime(trip.UpdatedAt),
 		Route: &api.RoutePreview{
 			Id:    trip.RouteID,
 			Color: trip.RouteColor,
@@ -104,10 +102,9 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 		reply.StopTimes = append(reply.StopTimes, &api.Trip_StopTime{
 			StopSequence: stopTime.StopSequence,
 			Track:        convert.SqlNullString(stopTime.Track),
-			Future: stopTime.StopSequence >= 0 && (trip.CurrentStopSequence.Int32 <= stopTime.StopSequence ||
-				!trip.CurrentStopSequence.Valid),
-			Arrival:   buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
-			Departure: buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
+			Future:       !stopTime.Past,
+			Arrival:      buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
+			Departure:    buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
 			Stop: &api.StopPreview{
 				Id:   stopTime.StopID,
 				Name: stopTime.StopName.String,

@@ -278,15 +278,12 @@ type TransfersConfigSystem struct {
 }
 
 type Trip struct {
-	Pk                  int64
-	ID                  string
-	RoutePk             int64
-	SourcePk            int64
-	DirectionID         sql.NullBool
-	Delay               sql.NullInt32
-	StartedAt           sql.NullTime
-	UpdatedAt           sql.NullTime
-	CurrentStopSequence sql.NullInt32
+	Pk          int64
+	ID          string
+	RoutePk     int64
+	SourcePk    int64
+	DirectionID sql.NullBool
+	StartedAt   sql.NullTime
 }
 
 type TripStopTime struct {
@@ -301,6 +298,7 @@ type TripStopTime struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
+	Past                 bool
 }
 
 type Vehicle struct {

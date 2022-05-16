@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jamespfennell/transiter/internal/argsflag"
 	"github.com/jamespfennell/transiter/internal/client"
@@ -112,14 +113,63 @@ func main() {
 				Name:  "server",
 				Usage: "run a Transiter server",
 				Action: func(c *cli.Context) error {
-					return server.Run(c.String("postgres-addr"))
+					return server.Run(server.RunArgs{
+						PostgresAddress:  c.String("postgres-address"),
+						PostgresUser:     c.String("postgres-user"),
+						PostgresPassword: c.String("postgres-password"),
+						PostgresDatabase: c.String("postgres-database"),
+						MaxConnections:   50,
+					})
 				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "postgres-addr",
-						Usage: "Postgres database address",
+						Name:  "postgres-address",
+						Usage: "Postgres address",
 						Value: "localhost:5432",
 					},
+					&cli.StringFlag{
+						Name:  "postgres-user",
+						Usage: "Postgres user",
+						Value: "transiter",
+					},
+					&cli.StringFlag{
+						Name:  "postgres-password",
+						Usage: "Postgres password",
+						Value: "transiter",
+					},
+					&cli.StringFlag{
+						Name:  "postgres-database",
+						Usage: "Postgres database",
+						Value: "transiter",
+					},
+				},
+			},
+			{
+				Name:  "feed",
+				Usage: "perform operations on a data feed",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "update",
+						Usage: "perform a feed update",
+						Action: func(c *cli.Context) error {
+							if c.Args().Len() == 0 {
+								return fmt.Errorf("must provide the ID of the feed to update in the form <system_id>/<feed_id>")
+							}
+							feedAndSystemIds := strings.SplitAfterN(c.Args().Get(0), "/", 2)
+							if len(feedAndSystemIds) != 2 {
+								return fmt.Errorf("must provide the ID of the feed to update in the form <system_id>/<feed_id>")
+							}
+							systemId := strings.TrimSuffix(feedAndSystemIds[0], "/")
+							feedId := feedAndSystemIds[1]
+							if systemId == "" || feedId == "" {
+								return fmt.Errorf("must provide the ID of the feed to update in the form <system_id>/<feed_id>")
+							}
+							return clientAction(func(ctx context.Context, client *client.Client) error {
+								return client.UpdateFeed(ctx, systemId, feedId)
+							})(c)
+						},
+					},
+					// TODO: pause, unpause, status, etc
 				},
 			},
 		},

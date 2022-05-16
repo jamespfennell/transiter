@@ -317,10 +317,7 @@ CREATE TABLE trip (
     route_pk BIGINT NOT NULL,
     source_pk BIGINT NOT NULL,
     direction_id boolean,
-    delay integer,
     started_at timestamp with time zone,
-    updated_at timestamp with time zone,
-    current_stop_sequence integer,
 
     UNIQUE(id, route_pk)
 );
@@ -337,6 +334,7 @@ CREATE TABLE trip_stop_time (
     departure_uncertainty integer,
     stop_sequence integer NOT NULL,
     track character varying,
+    past boolean NOT NULL,
 
     UNIQUE(trip_pk, stop_sequence)
 );

@@ -17,8 +17,7 @@ WITH route_stop_pks AS (
   SELECT DISTINCT trip_stop_time.stop_pk stop_pk FROM trip_stop_time
     INNER JOIN trip ON trip.pk = trip_stop_time.trip_pk
   WHERE trip.route_pk = $1
-    AND trip.current_stop_sequence >= 0
-    AND trip.current_stop_sequence <= trip_stop_time.stop_sequence
+    AND NOT trip_stop_time.past
     AND trip_stop_time.arrival_time IS NOT NULL
 ), diffs AS (
   SELECT EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) diff, COUNT(*) n
@@ -318,7 +317,7 @@ func (q *Queries) GetSystem(ctx context.Context, id string) (System, error) {
 }
 
 const getTrip = `-- name: GetTrip :one
-SELECT trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.delay, trip.started_at, trip.updated_at, trip.current_stop_sequence, vehicle.id AS vehicle_id, route.id route_id, route.color route_color FROM trip
+SELECT trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, vehicle.id AS vehicle_id, route.id route_id, route.color route_color FROM trip
     INNER JOIN route ON route.pk = trip.route_pk
     INNER JOIN system ON system.pk = route.system_pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
@@ -334,18 +333,15 @@ type GetTripParams struct {
 }
 
 type GetTripRow struct {
-	Pk                  int64
-	ID                  string
-	RoutePk             int64
-	SourcePk            int64
-	DirectionID         sql.NullBool
-	Delay               sql.NullInt32
-	StartedAt           sql.NullTime
-	UpdatedAt           sql.NullTime
-	CurrentStopSequence sql.NullInt32
-	VehicleID           sql.NullString
-	RouteID             string
-	RouteColor          string
+	Pk          int64
+	ID          string
+	RoutePk     int64
+	SourcePk    int64
+	DirectionID sql.NullBool
+	StartedAt   sql.NullTime
+	VehicleID   sql.NullString
+	RouteID     string
+	RouteColor  string
 }
 
 func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error) {
@@ -357,10 +353,7 @@ func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, e
 		&i.RoutePk,
 		&i.SourcePk,
 		&i.DirectionID,
-		&i.Delay,
 		&i.StartedAt,
-		&i.UpdatedAt,
-		&i.CurrentStopSequence,
 		&i.VehicleID,
 		&i.RouteID,
 		&i.RouteColor,
@@ -892,12 +885,11 @@ func (q *Queries) ListServiceMapsGroupIDsForStops(ctx context.Context, stopPks [
 }
 
 const listStopTimesAtStops = `-- name: ListStopTimesAtStops :many
-SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.delay, trip.started_at, trip.updated_at, trip.current_stop_sequence, vehicle.id vehicle_id FROM trip_stop_time
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, vehicle.id vehicle_id FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
-    AND trip.current_stop_sequence >= 0
-    AND trip.current_stop_sequence <= trip_stop_time.stop_sequence
+    AND NOT trip_stop_time.past
     ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time
 `
 
@@ -913,15 +905,13 @@ type ListStopTimesAtStopsRow struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
+	Past                 bool
 	Pk_2                 int64
 	ID                   string
 	RoutePk              int64
 	SourcePk             int64
 	DirectionID          sql.NullBool
-	Delay                sql.NullInt32
 	StartedAt            sql.NullTime
-	UpdatedAt            sql.NullTime
-	CurrentStopSequence  sql.NullInt32
 	VehicleID            sql.NullString
 }
 
@@ -946,15 +936,13 @@ func (q *Queries) ListStopTimesAtStops(ctx context.Context, stopPks []int64) ([]
 			&i.DepartureUncertainty,
 			&i.StopSequence,
 			&i.Track,
+			&i.Past,
 			&i.Pk_2,
 			&i.ID,
 			&i.RoutePk,
 			&i.SourcePk,
 			&i.DirectionID,
-			&i.Delay,
 			&i.StartedAt,
-			&i.UpdatedAt,
-			&i.CurrentStopSequence,
 			&i.VehicleID,
 		); err != nil {
 			return nil, err
@@ -1070,7 +1058,7 @@ func (q *Queries) ListStopsInSystem(ctx context.Context, systemPk int64) ([]Stop
 }
 
 const listStopsTimesForTrip = `-- name: ListStopsTimesForTrip :many
-SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, stop.id stop_id, stop.name stop_name
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.past, stop.id stop_id, stop.name stop_name
 FROM trip_stop_time
     INNER JOIN stop ON trip_stop_time.stop_pk = stop.pk
 WHERE trip_stop_time.trip_pk = $1
@@ -1089,6 +1077,7 @@ type ListStopsTimesForTripRow struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
+	Past                 bool
 	StopID               string
 	StopName             sql.NullString
 }
@@ -1114,6 +1103,7 @@ func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]Li
 			&i.DepartureUncertainty,
 			&i.StopSequence,
 			&i.Track,
+			&i.Past,
 			&i.StopID,
 			&i.StopName,
 		); err != nil {
@@ -1274,23 +1264,20 @@ func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk sql.NullIn
 }
 
 const listTripsInRoute = `-- name: ListTripsInRoute :many
-SELECT trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.delay, trip.started_at, trip.updated_at, trip.current_stop_sequence, vehicle.id vehicle_id FROM trip 
+SELECT trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, vehicle.id vehicle_id FROM trip 
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
 WHERE trip.route_pk = $1
 ORDER BY trip.id
 `
 
 type ListTripsInRouteRow struct {
-	Pk                  int64
-	ID                  string
-	RoutePk             int64
-	SourcePk            int64
-	DirectionID         sql.NullBool
-	Delay               sql.NullInt32
-	StartedAt           sql.NullTime
-	UpdatedAt           sql.NullTime
-	CurrentStopSequence sql.NullInt32
-	VehicleID           sql.NullString
+	Pk          int64
+	ID          string
+	RoutePk     int64
+	SourcePk    int64
+	DirectionID sql.NullBool
+	StartedAt   sql.NullTime
+	VehicleID   sql.NullString
 }
 
 func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTripsInRouteRow, error) {
@@ -1308,10 +1295,7 @@ func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTr
 			&i.RoutePk,
 			&i.SourcePk,
 			&i.DirectionID,
-			&i.Delay,
 			&i.StartedAt,
-			&i.UpdatedAt,
-			&i.CurrentStopSequence,
 			&i.VehicleID,
 		); err != nil {
 			return nil, err

@@ -125,6 +125,43 @@ func (q *Queries) MapRoutePkToIdInSystem(ctx context.Context, systemPk int64) ([
 	return items, nil
 }
 
+const mapRoutesInSystem = `-- name: MapRoutesInSystem :many
+SELECT pk, id from route
+WHERE
+    system_pk = $1
+    AND id = ANY($2::text[])
+`
+
+type MapRoutesInSystemParams struct {
+	SystemPk int64
+	RouteIds []string
+}
+
+type MapRoutesInSystemRow struct {
+	Pk int64
+	ID string
+}
+
+func (q *Queries) MapRoutesInSystem(ctx context.Context, arg MapRoutesInSystemParams) ([]MapRoutesInSystemRow, error) {
+	rows, err := q.db.Query(ctx, mapRoutesInSystem, arg.SystemPk, arg.RouteIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapRoutesInSystemRow
+	for rows.Next() {
+		var i MapRoutesInSystemRow
+		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateRoute = `-- name: UpdateRoute :exec
 UPDATE route SET
     source_pk = $1,

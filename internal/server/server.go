@@ -11,7 +11,6 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	_ "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/admin"
@@ -25,23 +24,32 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func Run(postgresHost string) error {
+type RunArgs struct {
+	PostgresAddress  string
+	PostgresUser     string
+	PostgresPassword string
+	PostgresDatabase string
+	MaxConnections   int32
+}
+
+func Run(args RunArgs) error {
 	log.Println("Starting Transiter v0.6alpha server")
 	ctx := context.Background()
 	ctx, cancelFunc := context.WithCancel(ctx)
 	defer cancelFunc()
 
+	// TODO: just provide a postgres connection string? I think this would be simpler
 	config, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-		"transiter", // TODO user
-		"transiter", // TODO password
-		postgresHost,
-		"transiter", // TODO database
+		args.PostgresUser,
+		args.PostgresPassword,
+		args.PostgresAddress,
+		args.PostgresDatabase,
 	))
 	if err != nil {
 		return err
 	}
 	config.LazyConnect = true
-	config.MaxConns = 50
+	config.MaxConns = args.MaxConnections
 	pool, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
 		return fmt.Errorf("could not connect to DB: %w", err)

@@ -37,3 +37,10 @@ WHERE
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
     AND feed_update.pk != sqlc.arg(update_pk)
 RETURNING route.id;
+
+
+-- name: MapRoutesInSystem :many
+SELECT pk, id from route
+WHERE
+    system_pk = sqlc.arg(system_pk)
+    AND id = ANY(sqlc.arg(route_ids)::text[]);

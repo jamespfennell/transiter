@@ -52,8 +52,7 @@ SELECT trip_stop_time.*, trip.*, vehicle.id vehicle_id FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
-    AND trip.current_stop_sequence >= 0
-    AND trip.current_stop_sequence <= trip_stop_time.stop_sequence
+    AND NOT trip_stop_time.past
     ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time;
 
 -- name: ListStopsInStopTree :many
@@ -243,8 +242,7 @@ WITH route_stop_pks AS (
   SELECT DISTINCT trip_stop_time.stop_pk stop_pk FROM trip_stop_time
     INNER JOIN trip ON trip.pk = trip_stop_time.trip_pk
   WHERE trip.route_pk = sqlc.arg(route_pk)
-    AND trip.current_stop_sequence >= 0
-    AND trip.current_stop_sequence <= trip_stop_time.stop_sequence
+    AND NOT trip_stop_time.past
     AND trip_stop_time.arrival_time IS NOT NULL
 ), diffs AS (
   SELECT EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) diff, COUNT(*) n

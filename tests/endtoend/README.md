@@ -45,6 +45,14 @@ The defaults for these are:
 
 - `SOURCE_SERVER_HOST_WITHIN_TRANSITER=SOURCE_SERVER_HOST`
 
+### Manual
+
+Run Transiter using `go run . server`.
+
+Run the source server using `python tests/endtoend/sourceserver/sourceserver.py`.
+
+Run the tests using `pytest path/to/test.py`.
+
 ### Full Docker compose
 
 The easiest way to run the tests is using Docker compose.

@@ -2,6 +2,9 @@ package convert
 
 import (
 	"database/sql"
+	"time"
+
+	"github.com/jamespfennell/gtfs"
 )
 
 func SqlNullTime(t sql.NullTime) *int64 {
@@ -52,4 +55,43 @@ func NullString(t *string) sql.NullString {
 		return sql.NullString{}
 	}
 	return sql.NullString{Valid: true, String: *t}
+}
+
+func DirectionID(d gtfs.DirectionID) sql.NullBool {
+	switch d {
+	case gtfs.DirectionIDFalse:
+		return sql.NullBool{
+			Valid: true,
+			Bool:  false,
+		}
+	case gtfs.DirectionIDTrue:
+		return sql.NullBool{
+			Valid: true,
+			Bool:  true,
+		}
+	default:
+		return sql.NullBool{
+			Valid: false,
+		}
+	}
+}
+
+func NullTime(t *time.Time) sql.NullTime {
+	if t == nil {
+		return sql.NullTime{}
+	}
+	return sql.NullTime{
+		Valid: true,
+		Time:  *t,
+	}
+}
+
+func NullDuration(d *time.Duration) sql.NullInt32 {
+	if d == nil {
+		return sql.NullInt32{}
+	}
+	return sql.NullInt32{
+		Valid: true,
+		Int32: int32(d.Milliseconds() / 1000),
+	}
 }

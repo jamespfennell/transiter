@@ -79,6 +79,14 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 	return err
 }
 
+func (c *Client) UpdateFeed(ctx context.Context, systemId, feedId string) error {
+	_, err := c.adminClient.UpdateFeed(ctx, &api.UpdateFeedRequest{
+		SystemId: systemId,
+		FeedId:   feedId,
+	})
+	return err
+}
+
 func (c *Client) ListSystems(ctx context.Context) error {
 	var req api.ListSystemsRequest
 	rep, err := c.publicClient.ListSystems(ctx, &req)

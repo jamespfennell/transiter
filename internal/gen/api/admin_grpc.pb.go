@@ -21,6 +21,7 @@ type TransiterAdminClient interface {
 	GetSystemConfig(ctx context.Context, in *GetSystemConfigRequest, opts ...grpc.CallOption) (*SystemConfig, error)
 	InstallOrUpdateSystem(ctx context.Context, in *InstallOrUpdateSystemRequest, opts ...grpc.CallOption) (*InstallOrUpdateSystemReply, error)
 	DeleteSystem(ctx context.Context, in *DeleteSystemRequest, opts ...grpc.CallOption) (*DeleteSystemReply, error)
+	UpdateFeed(ctx context.Context, in *UpdateFeedRequest, opts ...grpc.CallOption) (*UpdateFeedReply, error)
 	GetSchedulerStatus(ctx context.Context, in *GetSchedulerStatusRequest, opts ...grpc.CallOption) (*GetSchedulerStatusReply, error)
 	RefreshScheduler(ctx context.Context, in *RefreshSchedulerRequest, opts ...grpc.CallOption) (*RefreshSchedulerReply, error)
 }
@@ -60,6 +61,15 @@ func (c *transiterAdminClient) DeleteSystem(ctx context.Context, in *DeleteSyste
 	return out, nil
 }
 
+func (c *transiterAdminClient) UpdateFeed(ctx context.Context, in *UpdateFeedRequest, opts ...grpc.CallOption) (*UpdateFeedReply, error) {
+	out := new(UpdateFeedReply)
+	err := c.cc.Invoke(ctx, "/TransiterAdmin/UpdateFeed", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *transiterAdminClient) GetSchedulerStatus(ctx context.Context, in *GetSchedulerStatusRequest, opts ...grpc.CallOption) (*GetSchedulerStatusReply, error) {
 	out := new(GetSchedulerStatusReply)
 	err := c.cc.Invoke(ctx, "/TransiterAdmin/GetSchedulerStatus", in, out, opts...)
@@ -85,6 +95,7 @@ type TransiterAdminServer interface {
 	GetSystemConfig(context.Context, *GetSystemConfigRequest) (*SystemConfig, error)
 	InstallOrUpdateSystem(context.Context, *InstallOrUpdateSystemRequest) (*InstallOrUpdateSystemReply, error)
 	DeleteSystem(context.Context, *DeleteSystemRequest) (*DeleteSystemReply, error)
+	UpdateFeed(context.Context, *UpdateFeedRequest) (*UpdateFeedReply, error)
 	GetSchedulerStatus(context.Context, *GetSchedulerStatusRequest) (*GetSchedulerStatusReply, error)
 	RefreshScheduler(context.Context, *RefreshSchedulerRequest) (*RefreshSchedulerReply, error)
 	mustEmbedUnimplementedTransiterAdminServer()
@@ -102,6 +113,9 @@ func (UnimplementedTransiterAdminServer) InstallOrUpdateSystem(context.Context, 
 }
 func (UnimplementedTransiterAdminServer) DeleteSystem(context.Context, *DeleteSystemRequest) (*DeleteSystemReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSystem not implemented")
+}
+func (UnimplementedTransiterAdminServer) UpdateFeed(context.Context, *UpdateFeedRequest) (*UpdateFeedReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateFeed not implemented")
 }
 func (UnimplementedTransiterAdminServer) GetSchedulerStatus(context.Context, *GetSchedulerStatusRequest) (*GetSchedulerStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSchedulerStatus not implemented")
@@ -176,6 +190,24 @@ func _TransiterAdmin_DeleteSystem_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TransiterAdmin_UpdateFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateFeedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransiterAdminServer).UpdateFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/TransiterAdmin/UpdateFeed",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransiterAdminServer).UpdateFeed(ctx, req.(*UpdateFeedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TransiterAdmin_GetSchedulerStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSchedulerStatusRequest)
 	if err := dec(in); err != nil {
@@ -230,6 +262,10 @@ var TransiterAdmin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSystem",
 			Handler:    _TransiterAdmin_DeleteSystem_Handler,
+		},
+		{
+			MethodName: "UpdateFeed",
+			Handler:    _TransiterAdmin_UpdateFeed_Handler,
 		},
 		{
 			MethodName: "GetSchedulerStatus",

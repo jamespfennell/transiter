@@ -23,6 +23,12 @@ service TransiterAdmin {
             };
       }
 
+      rpc UpdateFeed(UpdateFeedRequest) returns (UpdateFeedReply) {
+        option (google.api.http) = {
+                post: "/admin/systems/{system_id}/feeds/{feed_id}"
+            };
+      }
+
       rpc GetSchedulerStatus(GetSchedulerStatusRequest) returns (GetSchedulerStatusReply) {
         option (google.api.http) = {
                 get: "/admin/scheduler"
@@ -148,6 +154,14 @@ message ServiceMapConfig {
     bool default_for_routes_at_stop = 5;
     bool default_for_stops_in_route = 6;
 }
+
+
+message UpdateFeedRequest {
+    string system_id = 1;
+    string feed_id = 2;
+}
+
+message UpdateFeedReply {}
 
 message GetSchedulerStatusRequest {}
 

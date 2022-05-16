@@ -214,16 +214,14 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		apiStopTime := &api.Stop_StopTime{
 			StopSequence: stopTime.StopSequence,
 			Track:        convert.SqlNullString(stopTime.Track),
-			Future: stopTime.StopSequence >= 0 && (stopTime.CurrentStopSequence.Int32 <= stopTime.StopSequence ||
-				!stopTime.CurrentStopSequence.Valid),
-			Direction: directionNameMatcher.Match(&stopTime),
-			Arrival:   buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
-			Departure: buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
+			Future:       !stopTime.Past,
+			Direction:    directionNameMatcher.Match(&stopTime),
+			Arrival:      buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
+			Departure:    buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
 			Trip: &api.TripPreview{
 				Id:          stopTime.ID,
 				DirectionId: stopTime.DirectionID.Bool,
 				StartedAt:   convert.SqlNullTime(stopTime.StartedAt),
-				UpdatedAt:   convert.SqlNullTime(stopTime.UpdatedAt),
 				Route: &api.RoutePreview{
 					Id:    route.ID,
 					Color: route.Color,

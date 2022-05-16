@@ -179,6 +179,43 @@ func (q *Queries) MapStopPkToIdInSystem(ctx context.Context, systemPk int64) ([]
 	return items, nil
 }
 
+const mapStopsInSystem = `-- name: MapStopsInSystem :many
+SELECT pk, id from stop
+WHERE
+    system_pk = $1
+    AND id = ANY($2::text[])
+`
+
+type MapStopsInSystemParams struct {
+	SystemPk int64
+	StopIds  []string
+}
+
+type MapStopsInSystemRow struct {
+	Pk int64
+	ID string
+}
+
+func (q *Queries) MapStopsInSystem(ctx context.Context, arg MapStopsInSystemParams) ([]MapStopsInSystemRow, error) {
+	rows, err := q.db.Query(ctx, mapStopsInSystem, arg.SystemPk, arg.StopIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapStopsInSystemRow
+	for rows.Next() {
+		var i MapStopsInSystemRow
+		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateStop = `-- name: UpdateStop :exec
 UPDATE stop SET
     source_pk = $1,

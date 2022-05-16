@@ -78,7 +78,7 @@ class TestTrip:
                 ).SerializeToString(),
             )
             requests.post(
-                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed?sync=true"
+                f"{transiter_host}/admin/systems/{system_id}/feeds/GtfsRealtimeFeed?sync=true"
             )
 
         stop_id_to_stop_sequence = {
@@ -95,17 +95,17 @@ class TestTrip:
 
             time = stop_id_to_time_2.get(stop_id)
             if time is None or time < current_time:
-                assert [] == response["stop_times"]
+                assert [] == response["stopTimes"]
                 continue
 
-            stop_time = response["stop_times"][0]
+            stop_time = response["stopTimes"][0]
 
             assert stop_time["trip"]["id"] == TRIP_ID
             assert stop_time["trip"]["route"]["id"] == ROUTE_ID
-            assert stop_time["arrival"]["time"] == time
-            assert stop_time["departure"]["time"] == time + 15
+            assert stop_time["arrival"]["time"] == str(time)
+            assert stop_time["departure"]["time"] == str(time + 15)
             if use_stop_sequences:
-                assert stop_time["stop_sequence"] == stop_id_to_stop_sequence[stop_id]
+                assert stop_time["stopSequence"] == stop_id_to_stop_sequence[stop_id]
 
     def test_trip_view(
         self,
@@ -130,7 +130,7 @@ class TestTrip:
                 ).SerializeToString(),
             )
             requests.post(
-                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed?sync=true"
+                f"{transiter_host}/admin/systems/{system_id}/feeds/GtfsRealtimeFeed?sync=true"
             )
 
         stop_ids_in_second_update = {
@@ -153,9 +153,10 @@ class TestTrip:
         response = requests.get(
             f"{transiter_host}/systems/{system_id}/routes/{ROUTE_ID}/trips/{TRIP_ID}"
         ).json()
+        print(response)
         actual_past_stop_ids = []
         actual_future_stop_ids = []
-        for stop_time in response["stop_times"]:
+        for stop_time in response["stopTimes"]:
             stop_id = stop_time["stop"]["id"]
             if stop_time["future"]:
                 actual_future_stop_ids.append(stop_id)

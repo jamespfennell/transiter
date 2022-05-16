@@ -23,11 +23,12 @@ feeds:
           stopId2: "R11"  # Lexington Av/59th St
         
   - id: L
-    autoUpdateEnabled: false
+    autoUpdateEnabled: true
+    autoUpdatePeriod: 5s
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l"
     httpHeaders:
-      X-API-KEY: "{{ .Args.mtaApiKey }}"
+      X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
 

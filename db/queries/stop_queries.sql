@@ -70,3 +70,12 @@ SELECT stop_id, station_pk
   FROM ancestor
   WHERE parent_stop_pk IS NULL
   OR is_station;
+
+
+
+
+-- name: MapStopsInSystem :many
+SELECT pk, id from stop
+WHERE
+    system_pk = sqlc.arg(system_pk)
+    AND id = ANY(sqlc.arg(stop_ids)::text[]);

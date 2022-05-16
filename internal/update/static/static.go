@@ -10,16 +10,10 @@ import (
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/servicemaps"
+	"github.com/jamespfennell/transiter/internal/update/common"
 )
 
-type UpdateContext struct {
-	Querier  db.Querier
-	SystemPk int64
-	FeedPk   int64
-	UpdatePk int64
-}
-
-func Update(ctx context.Context, updateCtx UpdateContext, parsedEntities *gtfs.Static) error {
+func Update(ctx context.Context, updateCtx common.UpdateContext, parsedEntities *gtfs.Static) error {
 	agencyIdToPk, err := updateAgencies(ctx, updateCtx, parsedEntities.Agencies)
 	if err != nil {
 		return err
@@ -45,7 +39,7 @@ func Update(ctx context.Context, updateCtx UpdateContext, parsedEntities *gtfs.S
 	return nil
 }
 
-func updateAgencies(ctx context.Context, updateCtx UpdateContext, agencies []gtfs.Agency) (map[string]int64, error) {
+func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencies []gtfs.Agency) (map[string]int64, error) {
 	idToPk, err := buildAgencyIdToPkMap(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
@@ -97,7 +91,7 @@ func updateAgencies(ctx context.Context, updateCtx UpdateContext, agencies []gtf
 	return idToPk, nil
 }
 
-func updateRoutes(ctx context.Context, updateCtx UpdateContext, routes []gtfs.Route, agencyIdToPk map[string]int64) (map[string]int64, error) {
+func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []gtfs.Route, agencyIdToPk map[string]int64) (map[string]int64, error) {
 	idToPk, err := buildRouteIdToPkMap(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
@@ -161,7 +155,7 @@ func updateRoutes(ctx context.Context, updateCtx UpdateContext, routes []gtfs.Ro
 	return idToPk, nil
 }
 
-func updateStops(ctx context.Context, updateCtx UpdateContext, stops []*gtfs.Stop) (map[string]int64, error) {
+func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []*gtfs.Stop) (map[string]int64, error) {
 	idToPk, err := buildStopIdToPkMap(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
@@ -239,7 +233,7 @@ func updateStops(ctx context.Context, updateCtx UpdateContext, stops []*gtfs.Sto
 	return idToPk, nil
 }
 
-func updateTransfers(ctx context.Context, updateCtx UpdateContext, transfers []gtfs.Transfer, stopIdToPk map[string]int64) error {
+func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transfers []gtfs.Transfer, stopIdToPk map[string]int64) error {
 	if err := updateCtx.Querier.DeleteStaleTransfers(ctx, db.DeleteStaleTransfersParams{
 		FeedPk:   updateCtx.FeedPk,
 		UpdatePk: updateCtx.UpdatePk,
