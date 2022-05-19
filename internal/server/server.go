@@ -25,6 +25,7 @@ import (
 )
 
 type RunArgs struct {
+	PublicHTTPAddr   string
 	PostgresAddress  string
 	PostgresUser     string
 	PostgresPassword string
@@ -81,9 +82,9 @@ func Run(args RunArgs) error {
 		defer wg.Done()
 		mux := newServeMux()
 		api.RegisterPublicHandlerServer(ctx, mux, publicService)
-		log.Println("Public service HTTP API listening on localhost:8080")
-		err := http.ListenAndServe("localhost:8080", mux)
-		fmt.Printf("Closing :8080: %s\n", err)
+		log.Printf("Public HTTP server listening on %s\n", args.PublicHTTPAddr)
+		err := http.ListenAndServe(args.PublicHTTPAddr, mux)
+		fmt.Printf("Closing public service HTTP: %s\n", err)
 	}()
 
 	wg.Add(1)

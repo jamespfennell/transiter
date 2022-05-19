@@ -72,6 +72,34 @@ SELECT stop_id, station_pk
   OR is_station;
 
 
+-- name: MapStopPkToStationPk :many
+WITH RECURSIVE 
+ancestor AS (
+	SELECT 
+    pk stop_pk,
+    pk station_pk, 
+    parent_stop_pk,
+    (type = 'STATION' OR type = 'GROUPED_STATION') is_station 
+    FROM stop
+        WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
+	UNION
+	SELECT
+    child.stop_pk stop_pk,
+    parent.pk station_pk, 
+    parent.parent_stop_pk, 
+    (parent.type = 'STATION' OR parent.type = 'GROUPED_STATION') is_station 
+		FROM stop parent
+		INNER JOIN ancestor child 
+    ON child.parent_stop_pk = parent.pk
+    AND NOT child.is_station
+)
+SELECT stop_pk, station_pk
+  FROM ancestor
+  WHERE parent_stop_pk IS NULL
+  OR is_station;
+
+
+
 
 
 -- name: MapStopsInSystem :many

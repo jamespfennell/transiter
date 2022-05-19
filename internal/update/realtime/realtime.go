@@ -8,6 +8,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/servicemaps"
 	"github.com/jamespfennell/transiter/internal/update/common"
 )
 
@@ -34,12 +35,14 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	for _, routePk := range routeIdToPk {
 		routePks = append(routePks, routePk)
 	}
-	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, updateCtx.FeedPk, routePks)
+	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, routePks)
 	if err != nil {
 		return err
 	}
 
+	var serviceMapTrips []servicemaps.Trip
 	processedIds := map[dbwrappers.TripUID]bool{}
+
 	for _, trip := range trips {
 		routePk, ok := routeIdToPk[trip.ID.RouteID]
 		if !ok {
@@ -86,6 +89,10 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 				stopSequenceToStopTimePk[stopTime.StopSequence] = stopTime.Pk
 			}
 		}
+		serviceMapTrip := servicemaps.Trip{
+			RoutePk:     routePk,
+			DirectionId: convert.DirectionID(trip.ID.DirectionID),
+		}
 		for _, stopTime := range trip.StopTimeUpdates {
 			if stopTime.StopID == nil {
 				continue
@@ -97,6 +104,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 			if stopTime.StopSequence == nil {
 				continue
 			}
+			serviceMapTrip.StopPks = append(serviceMapTrip.StopPks, stopPk)
 			pk, ok := stopSequenceToStopTimePk[int32(*stopTime.StopSequence)]
 			if ok {
 				if err := updateCtx.Querier.UpdateTripStopTime(ctx, db.UpdateTripStopTimeParams{
@@ -131,6 +139,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 				}
 			}
 		}
+		serviceMapTrips = append(serviceMapTrips, serviceMapTrip)
 
 		currentStopSequence := int32(math.MaxInt32)
 		for _, stopTime := range trip.StopTimeUpdates {
@@ -157,13 +166,46 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		}
 	}
 
-	if err := updateCtx.Querier.DeleteStaleTrips(ctx, db.DeleteStaleTripsParams{
+	potentiallyStaleRoutePks, err := updateCtx.Querier.DeleteStaleTrips(ctx, db.DeleteStaleTripsParams{
 		FeedPk:   updateCtx.FeedPk,
 		UpdatePk: updateCtx.UpdatePk,
-	}); err != nil {
+	})
+	if err != nil {
 		return err
 	}
 
+	routePksSet := map[int64]bool{}
+	for _, routePk := range routePks {
+		routePksSet[routePk] = true
+	}
+	var staleRoutePks []int64
+	for _, routePk := range potentiallyStaleRoutePks {
+		if !routePksSet[routePk] {
+			staleRoutePks = append(staleRoutePks, routePk)
+		}
+	}
+
+	var oldServiceMapTrips []servicemaps.Trip
+	for _, trip := range existingTrips {
+		var stopPks []int64
+		for _, stopTime := range trip.StopTimes {
+			stopPks = append(stopPks, stopTime.StopPk)
+		}
+		oldServiceMapTrips = append(oldServiceMapTrips, servicemaps.Trip{
+			RoutePk:     trip.RoutePk,
+			DirectionId: trip.DirectionId,
+			StopPks:     stopPks,
+		})
+	}
+
+	if err := servicemaps.UpdateRealtimeMaps(ctx, updateCtx.Querier, servicemaps.UpdateRealtimeMapsArgs{
+		SystemPk:      updateCtx.SystemPk,
+		OldTrips:      oldServiceMapTrips,
+		NewTrips:      serviceMapTrips,
+		StaleRoutePks: staleRoutePks,
+	}); err != nil {
+		return err
+	}
 	return nil
 }
 

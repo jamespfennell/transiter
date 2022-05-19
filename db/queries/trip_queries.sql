@@ -13,13 +13,10 @@ UPDATE trip SET
 WHERE pk = sqlc.arg(pk);
 
 -- name: ListTripsForUpdate :many
-SELECT trip.pk, trip.id, trip.route_pk
+SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id
 FROM trip
-INNER JOIN feed_update
-    ON feed_update.pk = trip.source_pk
 WHERE
-    feed_update.feed_pk = sqlc.arg(feed_pk)
-    OR trip.route_pk = ANY(sqlc.arg(route_pks)::bigint[]);
+    trip.route_pk = ANY(sqlc.arg(route_pks)::bigint[]);
 
 -- name: ListTripStopTimesForUpdate :many
 SELECT pk, trip_pk, stop_pk, stop_sequence, past FROM trip_stop_time
@@ -64,10 +61,11 @@ DELETE FROM trip_stop_time
 WHERE pk = ANY(sqlc.arg(pks)::bigint[]);
 
 -- TODO: These DeleteStaleT queries can be simpler and just take the update_pk
--- name: DeleteStaleTrips :exec
+-- name: DeleteStaleTrips :many
 DELETE FROM trip
 USING feed_update
 WHERE 
     feed_update.pk = trip.source_pk
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
-    AND feed_update.pk != sqlc.arg(update_pk);
+    AND feed_update.pk != sqlc.arg(update_pk)
+RETURNING trip.route_pk;

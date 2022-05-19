@@ -464,11 +464,13 @@ message EstimatedTime {
 }
 
 message ServiceMapForStop {
+  // TODO: config_id
   string group_id = 1;
   repeated RoutePreview routes = 2;
 }
 
 message ServiceMapForRoute {
+  // TODO: config_id
   string group_id = 1;
   repeated StopPreview stops = 2;
 }

@@ -2,6 +2,7 @@ package dbwrappers
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"time"
 
@@ -17,6 +18,18 @@ func MapStopIdToStationPk(ctx context.Context, querier db.Querier, systemPk int6
 	result := map[string]int64{}
 	for _, row := range rows {
 		result[row.StopID] = row.StationPk
+	}
+	return result, nil
+}
+
+func MapStopPkToStationPk(ctx context.Context, querier db.Querier, stopPks []int64) (map[int64]int64, error) {
+	rows, err := querier.MapStopPkToStationPk(ctx, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	result := map[int64]int64{}
+	for _, row := range rows {
+		result[row.StopPk] = row.StationPk
 	}
 	return result, nil
 }
@@ -57,10 +70,11 @@ type TripUID struct {
 }
 
 type TripForUpdate struct {
-	Pk        int64
-	Id        string
-	RoutePk   int64
-	StopTimes []StopTimeForUpdate
+	Pk          int64
+	Id          string
+	RoutePk     int64
+	DirectionId sql.NullBool
+	StopTimes   []StopTimeForUpdate
 }
 
 type StopTimeForUpdate struct {
@@ -70,11 +84,8 @@ type StopTimeForUpdate struct {
 	Past         bool
 }
 
-func ListTripsForUpdate(ctx context.Context, querier db.Querier, feedPk int64, routePks []int64) (map[TripUID]*TripForUpdate, error) {
-	tripRows, err := querier.ListTripsForUpdate(ctx, db.ListTripsForUpdateParams{
-		FeedPk:   feedPk,
-		RoutePks: routePks,
-	})
+func ListTripsForUpdate(ctx context.Context, querier db.Querier, routePks []int64) (map[TripUID]*TripForUpdate, error) {
+	tripRows, err := querier.ListTripsForUpdate(ctx, routePks)
 	if err != nil {
 		return nil, err
 	}
@@ -86,9 +97,10 @@ func ListTripsForUpdate(ctx context.Context, querier db.Querier, feedPk int64, r
 		tripPks = append(tripPks, tripRow.Pk)
 		tripPkToUid[tripRow.Pk] = uid
 		result[uid] = &TripForUpdate{
-			Pk:      tripRow.Pk,
-			Id:      tripRow.ID,
-			RoutePk: tripRow.RoutePk,
+			Pk:          tripRow.Pk,
+			Id:          tripRow.ID,
+			RoutePk:     tripRow.RoutePk,
+			DirectionId: tripRow.DirectionID,
 		}
 	}
 	stopTimeRows, err := querier.ListTripStopTimesForUpdate(ctx, tripPks)

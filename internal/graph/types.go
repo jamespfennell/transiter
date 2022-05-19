@@ -47,6 +47,19 @@ type Edge struct {
 	ToLabel   int64
 }
 
+// EdgeSetsEqual returns whether the provided sets of edges have the same elements.
+func EdgeSetsEqual(lhs, rhs map[Edge]bool) bool {
+	if len(lhs) != len(rhs) {
+		return false
+	}
+	for edge := range lhs {
+		if !rhs[edge] {
+			return false
+		}
+	}
+	return true
+}
+
 func NewGraph(edges ...Edge) *Graph {
 	g := &Graph{
 		LabelToNode: map[int64]*GraphNode{},

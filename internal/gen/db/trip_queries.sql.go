@@ -10,13 +10,14 @@ import (
 	"database/sql"
 )
 
-const deleteStaleTrips = `-- name: DeleteStaleTrips :exec
+const deleteStaleTrips = `-- name: DeleteStaleTrips :many
 DELETE FROM trip
 USING feed_update
 WHERE 
     feed_update.pk = trip.source_pk
     AND feed_update.feed_pk = $1
     AND feed_update.pk != $2
+RETURNING trip.route_pk
 `
 
 type DeleteStaleTripsParams struct {
@@ -25,9 +26,24 @@ type DeleteStaleTripsParams struct {
 }
 
 // TODO: These DeleteStaleT queries can be simpler and just take the update_pk
-func (q *Queries) DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) error {
-	_, err := q.db.Exec(ctx, deleteStaleTrips, arg.FeedPk, arg.UpdatePk)
-	return err
+func (q *Queries) DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) ([]int64, error) {
+	rows, err := q.db.Query(ctx, deleteStaleTrips, arg.FeedPk, arg.UpdatePk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var route_pk int64
+		if err := rows.Scan(&route_pk); err != nil {
+			return nil, err
+		}
+		items = append(items, route_pk)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const deleteTripStopTimes = `-- name: DeleteTripStopTimes :exec
@@ -149,28 +165,21 @@ func (q *Queries) ListTripStopTimesForUpdate(ctx context.Context, tripPks []int6
 }
 
 const listTripsForUpdate = `-- name: ListTripsForUpdate :many
-SELECT trip.pk, trip.id, trip.route_pk
+SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id
 FROM trip
-INNER JOIN feed_update
-    ON feed_update.pk = trip.source_pk
 WHERE
-    feed_update.feed_pk = $1
-    OR trip.route_pk = ANY($2::bigint[])
+    trip.route_pk = ANY($1::bigint[])
 `
 
-type ListTripsForUpdateParams struct {
-	FeedPk   int64
-	RoutePks []int64
-}
-
 type ListTripsForUpdateRow struct {
-	Pk      int64
-	ID      string
-	RoutePk int64
+	Pk          int64
+	ID          string
+	RoutePk     int64
+	DirectionID sql.NullBool
 }
 
-func (q *Queries) ListTripsForUpdate(ctx context.Context, arg ListTripsForUpdateParams) ([]ListTripsForUpdateRow, error) {
-	rows, err := q.db.Query(ctx, listTripsForUpdate, arg.FeedPk, arg.RoutePks)
+func (q *Queries) ListTripsForUpdate(ctx context.Context, routePks []int64) ([]ListTripsForUpdateRow, error) {
+	rows, err := q.db.Query(ctx, listTripsForUpdate, routePks)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +187,12 @@ func (q *Queries) ListTripsForUpdate(ctx context.Context, arg ListTripsForUpdate
 	var items []ListTripsForUpdateRow
 	for rows.Next() {
 		var i ListTripsForUpdateRow
-		if err := rows.Scan(&i.Pk, &i.ID, &i.RoutePk); err != nil {
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.RoutePk,
+			&i.DirectionID,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

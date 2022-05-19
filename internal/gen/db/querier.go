@@ -25,7 +25,7 @@ type Querier interface {
 	DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) ([]string, error)
 	DeleteStaleTransfers(ctx context.Context, arg DeleteStaleTransfersParams) error
 	// TODO: These DeleteStaleT queries can be simpler and just take the update_pk
-	DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) error
+	DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) ([]int64, error)
 	DeleteSystem(ctx context.Context, pk int64) error
 	DeleteTripStopTimes(ctx context.Context, pks []int64) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
@@ -71,7 +71,7 @@ type Querier interface {
 	ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]ListTransfersFromStopsRow, error)
 	ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) ([]ListTransfersInSystemRow, error)
 	ListTripStopTimesForUpdate(ctx context.Context, tripPks []int64) ([]ListTripStopTimesForUpdateRow, error)
-	ListTripsForUpdate(ctx context.Context, arg ListTripsForUpdateParams) ([]ListTripsForUpdateRow, error)
+	ListTripsForUpdate(ctx context.Context, routePks []int64) ([]ListTripsForUpdateRow, error)
 	ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTripsInRouteRow, error)
 	ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUpdate, error)
 	MapAgencyPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdInSystemRow, error)
@@ -79,6 +79,7 @@ type Querier interface {
 	MapRoutesInSystem(ctx context.Context, arg MapRoutesInSystemParams) ([]MapRoutesInSystemRow, error)
 	MapStopIdToStationPk(ctx context.Context, systemPk int64) ([]MapStopIdToStationPkRow, error)
 	MapStopPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapStopPkToIdInSystemRow, error)
+	MapStopPkToStationPk(ctx context.Context, stopPks []int64) ([]MapStopPkToStationPkRow, error)
 	MapStopsInSystem(ctx context.Context, arg MapStopsInSystemParams) ([]MapStopsInSystemRow, error)
 	MarkTripStopTimesPast(ctx context.Context, arg MarkTripStopTimesPastParams) error
 	UpdateAgency(ctx context.Context, arg UpdateAgencyParams) error

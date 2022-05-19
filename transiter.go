@@ -114,6 +114,7 @@ func main() {
 				Usage: "run a Transiter server",
 				Action: func(c *cli.Context) error {
 					return server.Run(server.RunArgs{
+						PublicHTTPAddr:   c.String("public-http-addr"),
 						PostgresAddress:  c.String("postgres-address"),
 						PostgresUser:     c.String("postgres-user"),
 						PostgresPassword: c.String("postgres-password"),
@@ -122,6 +123,11 @@ func main() {
 					})
 				},
 				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "public-http-addr",
+						Usage: "Address for the public HTTP server to listen on",
+						Value: "localhost:8080",
+					},
 					&cli.StringFlag{
 						Name:  "postgres-address",
 						Usage: "Postgres address",

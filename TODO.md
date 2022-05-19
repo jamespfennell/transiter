@@ -13,5 +13,5 @@
 - service -> server
 - required_for_install -> update_on_update?
 - Id -> ID?
-
+- Can we configure the /admin prefix non-statically?
 - Transit topological sort (Split into components -> transitive reduction -> tree-graph-tree decomposition -> 3 x sort)

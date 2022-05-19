@@ -2,7 +2,9 @@ package servicemaps
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/jamespfennell/gtfs"
@@ -61,7 +63,6 @@ type UpdateStaticMapsArgs struct {
 
 // UpdateStaticMaps updates the static service maps
 func UpdateStaticMaps(ctx context.Context, querier db.Querier, args UpdateStaticMapsArgs) error {
-
 	configs, err := ListConfigsInSystem(ctx, querier, args.SystemPk)
 	if err != nil {
 		return err
@@ -77,29 +78,36 @@ func UpdateStaticMaps(ctx context.Context, querier db.Querier, args UpdateStatic
 			continue
 		}
 		routePkToStopPks := buildStaticMaps(&smc.Config, args.RouteIdToPk, stopIdToStationPk, args.Trips)
-		for routePk, stopPks := range routePkToStopPks {
-			if err := querier.DeleteServiceMap(ctx, db.DeleteServiceMapParams{
-				ConfigPk: smc.Pk,
-				RoutePk:  routePk,
+		if err := persistMaps(ctx, querier, &smc, routePkToStopPks); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func persistMaps(ctx context.Context, querier db.Querier, smc *Config, routePkToStopPks map[int64][]int64) error {
+	for routePk, stopPks := range routePkToStopPks {
+		if err := querier.DeleteServiceMap(ctx, db.DeleteServiceMapParams{
+			ConfigPk: smc.Pk,
+			RoutePk:  routePk,
+		}); err != nil {
+			return err
+		}
+		// TODO: consider not deleting and then inserting
+		mapPk, err := querier.InsertServiceMap(ctx, db.InsertServiceMapParams{
+			ConfigPk: smc.Pk,
+			RoutePk:  routePk,
+		})
+		if err != nil {
+			return err
+		}
+		for i, stopPk := range stopPks {
+			if err := querier.InsertServiceMapStop(ctx, db.InsertServiceMapStopParams{
+				MapPk:    mapPk,
+				StopPk:   stopPk,
+				Position: int32(i),
 			}); err != nil {
 				return err
-			}
-			// TODO: consider not deleting and then inserting
-			mapPk, err := querier.InsertServiceMap(ctx, db.InsertServiceMapParams{
-				ConfigPk: smc.Pk,
-				RoutePk:  routePk,
-			})
-			if err != nil {
-				return err
-			}
-			for i, stopPk := range stopPks {
-				if err := querier.InsertServiceMapStop(ctx, db.InsertServiceMapStopParams{
-					MapPk:    mapPk,
-					StopPk:   stopPk,
-					Position: int32(i),
-				}); err != nil {
-					return err
-				}
 			}
 		}
 	}
@@ -108,7 +116,6 @@ func UpdateStaticMaps(ctx context.Context, querier db.Querier, args UpdateStatic
 
 func buildStaticMaps(smc *config.ServiceMapConfig, routeIdToPk map[string]int64, stopIdToStationPk map[string]int64, trips []gtfs.ScheduledTrip) map[int64][]int64 {
 	routePkToEdges := map[int64]map[graph.Edge]bool{}
-	routePkToStopPks := map[int64][]int64{}
 	for _, routePk := range routeIdToPk {
 		routePkToEdges[routePk] = map[graph.Edge]bool{}
 	}
@@ -134,6 +141,11 @@ func buildStaticMaps(smc *config.ServiceMapConfig, routeIdToPk map[string]int64,
 			}] = true
 		}
 	}
+	return buildMaps(routePkToEdges)
+}
+
+func buildMaps(routePkToEdges map[int64]map[graph.Edge]bool) map[int64][]int64 {
+	routePkToStopPks := map[int64][]int64{}
 	for routePk, edgesSet := range routePkToEdges {
 		var edges []graph.Edge
 		for edge := range edgesSet {
@@ -149,6 +161,97 @@ func buildStaticMaps(smc *config.ServiceMapConfig, routeIdToPk map[string]int64,
 		}
 	}
 	return routePkToStopPks
+}
+
+type Trip struct {
+	RoutePk     int64
+	DirectionId sql.NullBool
+	StopPks     []int64
+}
+
+type UpdateRealtimeMapsArgs struct {
+	SystemPk      int64
+	OldTrips      []Trip
+	NewTrips      []Trip
+	StaleRoutePks []int64
+}
+
+// UpdateRealtimeMaps updates the realtime service maps
+func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, args UpdateRealtimeMapsArgs) error {
+	fmt.Println(args)
+	stopPksSet := map[int64]bool{}
+	var stopPks []int64
+	for _, trips := range [][]Trip{args.OldTrips, args.NewTrips} {
+		for _, trip := range trips {
+			for _, stopPk := range trip.StopPks {
+				if !stopPksSet[stopPk] {
+					stopPks = append(stopPks, stopPk)
+				}
+				stopPksSet[stopPk] = true
+			}
+		}
+	}
+
+	stopPkToStationPk, err := dbwrappers.MapStopPkToStationPk(ctx, querier, stopPks)
+	if err != nil {
+		return err
+	}
+
+	routePkToOldEdges := buildRealtimeMapEdges(args.OldTrips, stopPkToStationPk)
+	routePkToNewEdges := buildRealtimeMapEdges(args.NewTrips, stopPkToStationPk)
+	for routePk, oldEdges := range routePkToOldEdges {
+		newEdges := routePkToNewEdges[routePk]
+		if graph.EdgeSetsEqual(oldEdges, newEdges) {
+			delete(routePkToNewEdges, routePk)
+		}
+	}
+	for _, routePk := range args.StaleRoutePks {
+		routePkToNewEdges[routePk] = map[graph.Edge]bool{}
+	}
+
+	routePkToStopPks := buildMaps(routePkToNewEdges)
+	configs, err := ListConfigsInSystem(ctx, querier, args.SystemPk)
+	if err != nil {
+		return err
+	}
+	for _, smc := range configs {
+		if smc.Config.Source != config.SERVICE_MAP_SOURCE_REALTIME {
+			continue
+		}
+		if err := persistMaps(ctx, querier, &smc, routePkToStopPks); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func buildRealtimeMapEdges(trips []Trip, stopPkToStationPk map[int64]int64) map[int64]map[graph.Edge]bool {
+	m := map[int64]map[graph.Edge]bool{}
+	for _, trip := range trips {
+		if !trip.DirectionId.Valid {
+			continue
+		}
+		if _, ok := m[trip.RoutePk]; !ok {
+			m[trip.RoutePk] = map[graph.Edge]bool{}
+		}
+		for i := 1; i < len(trip.StopPks); i++ {
+			var edge graph.Edge
+			switch trip.DirectionId.Bool {
+			case true:
+				edge = graph.Edge{
+					FromLabel: stopPkToStationPk[trip.StopPks[i-1]],
+					ToLabel:   stopPkToStationPk[trip.StopPks[i]],
+				}
+			case false:
+				edge = graph.Edge{
+					FromLabel: stopPkToStationPk[trip.StopPks[i]],
+					ToLabel:   stopPkToStationPk[trip.StopPks[i-1]],
+				}
+			}
+			m[trip.RoutePk][edge] = true
+		}
+	}
+	return m
 }
 
 type Config struct {

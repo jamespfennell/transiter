@@ -3004,6 +3004,7 @@ type ServiceMapForStop struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// TODO: config_id
 	GroupId string          `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
 	Routes  []*RoutePreview `protobuf:"bytes,2,rep,name=routes,proto3" json:"routes,omitempty"`
 }
@@ -3059,6 +3060,7 @@ type ServiceMapForRoute struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// TODO: config_id
 	GroupId string         `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
 	Stops   []*StopPreview `protobuf:"bytes,2,rep,name=stops,proto3" json:"stops,omitempty"`
 }
