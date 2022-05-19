@@ -68,9 +68,15 @@ func Run(args RunArgs) error {
 	log.Println("Database migrations: finished")
 
 	var wg sync.WaitGroup
-	scheduler, err := scheduler.New(ctx, clock.New(), scheduler.DefaultOps(pool))
-	if err != nil {
-		log.Fatalf("Failed to intialize the scheduler: %s\n", err)
+	scheduler := scheduler.New()
+
+	wg.Add(1)
+	go func() {
+		scheduler.Run(ctx, clock.New(), pool)
+		wg.Done()
+	}()
+	if err := scheduler.RefreshAll(ctx); err != nil {
+		return fmt.Errorf("failed to intialize the scheduler: %w", err)
 	}
 
 	publicService := public.New(pool)
@@ -128,7 +134,6 @@ func Run(args RunArgs) error {
 	}()
 
 	wg.Wait()
-	scheduler.Wait()
 	return nil
 }
 

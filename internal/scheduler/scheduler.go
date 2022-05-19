@@ -144,26 +144,24 @@ type Scheduler struct {
 	// The status channels are used to get status from the scheduler
 	statusRequest chan struct{}
 	statusReply   chan []FeedStatus
-
-	// doneChan is closed when the scheduler shuts down
-	doneChan chan struct{}
 }
 
-func New(ctx context.Context, clock clock.Clock, ops Ops) (*Scheduler, error) {
-	s := &Scheduler{
+func New() *Scheduler {
+	return &Scheduler{
 		refreshAllRequest: make(chan struct{}),
 		refreshAllReply:   make(chan error),
 		refreshRequest:    make(chan string),
 		refreshReply:      make(chan error),
 		statusRequest:     make(chan struct{}),
 		statusReply:       make(chan []FeedStatus),
-		doneChan:          make(chan struct{}),
 	}
-	go s.run(ctx, clock, ops)
-	return s, s.RefreshAll(ctx)
 }
 
-func (s *Scheduler) run(ctx context.Context, clock clock.Clock, ops Ops) {
+func (s *Scheduler) Run(ctx context.Context, clock clock.Clock, pool *pgxpool.Pool) {
+	s.RunWithOps(ctx, clock, DefaultOps(pool))
+}
+
+func (s *Scheduler) RunWithOps(ctx context.Context, clock clock.Clock, ops Ops) {
 	systemSchedulers := map[string]struct {
 		scheduler  *systemScheduler
 		cancelFunc context.CancelFunc
@@ -198,7 +196,6 @@ func (s *Scheduler) run(ctx context.Context, clock clock.Clock, ops Ops) {
 			for systemId := range systemSchedulers {
 				stopScheduler(systemId)
 			}
-			close(s.doneChan)
 			return
 		case <-s.refreshAllRequest:
 			msg, err := ops.ListSystemConfigs(ctx)
@@ -243,10 +240,6 @@ func (s *Scheduler) run(ctx context.Context, clock clock.Clock, ops Ops) {
 			s.statusReply <- response
 		}
 	}
-}
-
-func (s *Scheduler) Wait() {
-	<-s.doneChan
 }
 
 func (s *Scheduler) RefreshAll(ctx context.Context) error {

@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -174,8 +175,14 @@ func TestScheduler(t *testing.T) {
 			}
 			clock := clock.NewMock()
 
-			scheduler, err := New(ctx, clock, &ops)
-			if err != nil {
+			scheduler := New()
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func() {
+				scheduler.RunWithOps(ctx, clock, &ops)
+				wg.Done()
+			}()
+			if err := scheduler.RefreshAll(ctx); err != nil {
 				t.Fatalf("failed to create scheduler: %s", err)
 			}
 
@@ -207,7 +214,7 @@ func TestScheduler(t *testing.T) {
 			}
 
 			cancelFunc()
-			scheduler.Wait()
+			wg.Wait()
 			close(ops.updateChan)
 			for update := range ops.updateChan {
 				t.Errorf("Unexpected update after scheduler stopped: %s", update)
