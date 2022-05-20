@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/config"
+	"github.com/jamespfennell/transiter/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -69,13 +70,8 @@ func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigR
 
 func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrUpdateSystemRequest) (*api.InstallOrUpdateSystemReply, error) {
 	log.Printf("Recieved install or update request for system %q", req.SystemId)
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback(ctx)
-	querier := db.New(tx)
 
+	var err error
 	var systemConfig *config.SystemConfig
 	switch c := req.GetConfig().(type) {
 	case *api.InstallOrUpdateSystemRequest_SystemConfig:
@@ -102,49 +98,112 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	}
 	log.Printf("Config for install/update for system %s:\n%+v\n", req.SystemId, systemConfig)
 
-	{
-		system, err := querier.GetSystem(ctx, req.SystemId)
-		if err == pgx.ErrNoRows {
-			if _, err = querier.InsertSystem(ctx, db.InsertSystemParams{
-				ID:     req.SystemId,
-				Name:   systemConfig.Name,
-				Status: "ACTIVE",
-			}); err != nil {
-				return nil, err
+	if req.Synchronous {
+		if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+			querier := db.New(tx)
+			keepGoing, err := beginSystemInstall(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
+			if err != nil {
+				return err
 			}
-		} else if err != nil {
+			if !keepGoing {
+				return nil
+			}
+			err = performSystemInstall(ctx, querier, req.SystemId, systemConfig)
+			if err := finishSystemInstall(ctx, querier, req.SystemId, err); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
 			return nil, err
-		} else {
-			if err = querier.UpdateSystem(ctx, db.UpdateSystemParams{
-				Pk:   system.Pk,
-				Name: systemConfig.Name,
-			}); err != nil {
-				return nil, err
-			}
+		}
+		log.Printf("Installed system %q\n", req.SystemId)
+		s.scheduler.Reset(ctx, req.SystemId)
+	} else {
+		var keepGoing bool
+		if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+			querier := db.New(tx)
+			var err error
+			keepGoing, err = beginSystemInstall(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
+			return err
+		}); err != nil {
+			return nil, err
+		}
+		if keepGoing {
+			go func() {
+				// TODO: can we wire through the context on the server?
+				ctx := context.Background()
+				err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+					return performSystemInstall(ctx, db.New(tx), req.SystemId, systemConfig)
+				})
+				if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+					return finishSystemInstall(ctx, db.New(tx), req.SystemId, err)
+				}); err != nil {
+					log.Printf("Failed to finish installing system %q: %s", req.SystemId, err)
+					return
+				}
+				log.Printf("Installed system %q\n", req.SystemId)
+				s.scheduler.Reset(ctx, req.SystemId)
+			}()
 		}
 	}
-	system, err := querier.GetSystem(ctx, req.SystemId)
+	return &api.InstallOrUpdateSystemReply{}, nil
+}
+
+func beginSystemInstall(ctx context.Context, querier db.Querier, systemId string, systemName string, installOnly bool) (bool, error) {
+	system, err := querier.GetSystem(ctx, systemId)
+	if err == pgx.ErrNoRows {
+		if _, err = querier.InsertSystem(ctx, db.InsertSystemParams{
+			ID:     systemId,
+			Name:   systemName,
+			Status: constants.Installing,
+		}); err != nil {
+			return false, err
+		}
+	} else if err != nil {
+		return false, err
+	} else {
+		if installOnly && system.Status == constants.Active {
+			return false, nil
+		}
+		if err = querier.UpdateSystemStatus(ctx, db.UpdateSystemStatusParams{
+			Pk:     system.Pk,
+			Status: constants.Updating,
+		}); err != nil {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
+func performSystemInstall(ctx context.Context, querier db.Querier, systemId string, config *config.SystemConfig) error {
+	system, err := querier.GetSystem(ctx, systemId)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	if err := querier.UpdateSystem(ctx, db.UpdateSystemParams{
+		Pk:   system.Pk,
+		Name: config.Name,
+	}); err != nil {
+		return err
 	}
 
 	// Service maps need to be updated before feeds. This is because updating a feed config may
 	// trigger a feed update (if required_for_install=true) which may require the updated service
 	// map config. This is tested in the end-to-end tests.
-	if err := servicemaps.UpdateConfig(ctx, querier, system.Pk, systemConfig.ServiceMaps); err != nil {
-		return nil, err
+	if err := servicemaps.UpdateConfig(ctx, querier, system.Pk, config.ServiceMaps); err != nil {
+		return err
 	}
 
 	feeds, err := querier.ListFeedsInSystem(ctx, system.Pk)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	feedIdToPk := map[string]int64{}
 	for _, feed := range feeds {
 		feedIdToPk[feed.ID] = feed.Pk
 	}
 
-	for _, newFeed := range systemConfig.Feeds {
+	for _, newFeed := range config.Feeds {
 		if pk, ok := feedIdToPk[newFeed.Id]; ok {
 			if err := querier.UpdateFeed(ctx, db.UpdateFeedParams{
 				FeedPk:                pk,
@@ -152,7 +211,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 				PeriodicUpdatePeriod:  convertNullDuration(newFeed.PeriodicUpdatePeriod),
 				Config:                string(newFeed.MarshalToJson()),
 			}); err != nil {
-				return nil, err
+				return err
 			}
 			delete(feedIdToPk, newFeed.Id)
 		} else {
@@ -166,21 +225,39 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 			})
 		}
 		if newFeed.RequiredForInstall {
-			if err := update.CreateAndRunInExistingTx(ctx, querier, req.SystemId, newFeed.Id); err != nil {
-				return nil, err
+			if err := update.CreateAndRunInExistingTx(ctx, querier, systemId, newFeed.Id); err != nil {
+				return err
 			}
 		}
 	}
 	for _, pk := range feedIdToPk {
 		querier.DeleteFeed(ctx, pk)
 	}
+	return nil
+}
 
-	if err = tx.Commit(ctx); err != nil {
-		return nil, err
+func finishSystemInstall(ctx context.Context, querier db.Querier, systemId string, installErr error) error {
+	system, err := querier.GetSystem(ctx, systemId)
+	if err != nil {
+		return err
 	}
-	log.Printf("Installed system %q\n", system.ID)
-	s.scheduler.Reset(ctx, req.SystemId)
-	return &api.InstallOrUpdateSystemReply{}, nil
+	var newStatus string
+	if installErr != nil {
+		if system.Status == constants.Installing {
+			newStatus = constants.InstallFailed
+		} else {
+			newStatus = constants.UpdateFailed
+		}
+	} else {
+		newStatus = constants.Active
+	}
+	if err := querier.UpdateSystemStatus(ctx, db.UpdateSystemStatusParams{
+		Pk:     system.Pk,
+		Status: newStatus,
+	}); err != nil {
+		return err
+	}
+	return installErr
 }
 
 func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest) (*api.DeleteSystemReply, error) {

@@ -94,11 +94,12 @@ def install_system(
         source_server.put(system_config_url, system_config)
 
         response = requests.put(
-            transiter_host + "/admin/systems/" + system_id, # + "?sync=" + str(sync).lower(),
+            transiter_host + "/admin/systems/" + system_id,
             json={
                 "yaml_config": {
                     "url": source_server_host_within_transiter + "/" + system_config_url
                 },
+                "synchronous": sync,
             },
         )
         if expected_status == "ACTIVE":
@@ -106,12 +107,12 @@ def install_system(
             # print(json.dumps(response.json(), indent=2))
             response.raise_for_status()
         if not sync:
-            for _ in range(20):
+            for _ in range(100):
                 response = requests.get(transiter_host + "/systems/" + system_id)
                 response.raise_for_status()
                 if response.json()["status"] == expected_status:
                     break
-                time.sleep(0.6)
+                time.sleep(0.05)
             assert response.json()["status"] == expected_status
 
         request.addfinalizer(delete)

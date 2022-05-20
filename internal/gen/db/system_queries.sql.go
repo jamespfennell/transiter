@@ -38,7 +38,10 @@ func (q *Queries) InsertSystem(ctx context.Context, arg InsertSystemParams) (int
 }
 
 const updateSystem = `-- name: UpdateSystem :exec
-UPDATE system SET name = $1 WHERE pk = $2
+UPDATE system 
+SET
+    name = $1
+WHERE pk = $2
 `
 
 type UpdateSystemParams struct {
@@ -48,5 +51,22 @@ type UpdateSystemParams struct {
 
 func (q *Queries) UpdateSystem(ctx context.Context, arg UpdateSystemParams) error {
 	_, err := q.db.Exec(ctx, updateSystem, arg.Name, arg.Pk)
+	return err
+}
+
+const updateSystemStatus = `-- name: UpdateSystemStatus :exec
+UPDATE system 
+SET
+    status = $1
+WHERE pk = $2
+`
+
+type UpdateSystemStatusParams struct {
+	Status string
+	Pk     int64
+}
+
+func (q *Queries) UpdateSystemStatus(ctx context.Context, arg UpdateSystemStatusParams) error {
+	_, err := q.db.Exec(ctx, updateSystemStatus, arg.Status, arg.Pk)
 	return err
 }

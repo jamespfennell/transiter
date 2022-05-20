@@ -89,6 +89,7 @@ type Querier interface {
 	UpdateStop(ctx context.Context, arg UpdateStopParams) error
 	UpdateStopParent(ctx context.Context, arg UpdateStopParentParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
+	UpdateSystemStatus(ctx context.Context, arg UpdateSystemStatusParams) error
 	UpdateTrip(ctx context.Context, arg UpdateTripParams) error
 	UpdateTripStopTime(ctx context.Context, arg UpdateTripStopTimeParams) error
 }

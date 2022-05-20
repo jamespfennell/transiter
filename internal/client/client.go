@@ -69,14 +69,32 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 		}
 	}
 	req := api.InstallOrUpdateSystemRequest{
-		SystemId: args.SystemId,
-		NoUpdate: !args.AllowUpdate,
+		SystemId:    args.SystemId,
+		InstallOnly: !args.AllowUpdate,
 		Config: &api.InstallOrUpdateSystemRequest_YamlConfig{
 			YamlConfig: yamlConfig,
 		},
+		Synchronous: false,
 	}
 	_, err := c.adminClient.InstallOrUpdateSystem(ctx, &req)
-	return err
+	if err != nil {
+		return err
+	}
+
+	for {
+		system, err := c.publicClient.GetSystem(ctx, &api.GetSystemRequest{SystemId: args.SystemId})
+		if err != nil {
+			return fmt.Errorf("failed to poll system status: %w", err)
+		}
+		switch system.Status {
+		case api.System_ACTIVE:
+			return nil
+		case api.System_INSTALL_FAILED, api.System_UPDATE_FAILED:
+			return fmt.Errorf("failed to install/update system")
+		default:
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 }
 
 func (c *Client) UpdateFeed(ctx context.Context, systemId, feedId string) error {

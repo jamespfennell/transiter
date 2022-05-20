@@ -217,11 +217,12 @@ message System {
 
   enum Status {
     UNKNOWN = 0;
-    SCHEDULED = 1;
-    INSTALLING = 2;
-    ACTIVE = 3;
-    INSTALL_FAILED = 4;
-    DELETING = 5;
+    INSTALLING = 1;
+    ACTIVE = 2;
+    INSTALL_FAILED = 3;
+    UPDATING = 4;
+    UPDATE_FAILED = 5;
+    DELETING = 6;
   }
   Status status = 3;
 

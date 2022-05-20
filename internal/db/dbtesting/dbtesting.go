@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jamespfennell/transiter/db/constants"
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -104,7 +105,7 @@ func (q *Querier) System1() db.System {
 		_, err := q.InsertSystem(context.Background(), db.InsertSystemParams{
 			ID:     q.System1Id(),
 			Name:   q.System1Id(),
-			Status: "INSTALLED",
+			Status: constants.Active,
 		})
 		q.AssertNilErr(err, "insert system 1")
 		q.system1Created = true

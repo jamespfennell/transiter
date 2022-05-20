@@ -54,7 +54,18 @@ message InstallOrUpdateSystemRequest {
         YamlConfig yaml_config = 3;
     }
 
-    bool no_update = 5;
+    // If true, do nothing if the system already exist.
+    bool install_only = 4;
+
+    // If false (the default), the system configuration is validated before the request finishes
+    // but databse updates are performed asynchronously. The status of the operation can 
+    // be polled using GetSystem and inspecting the status field.
+    //
+    // If true, the operation is perfomed synchronously in the request and in a single database transaction.
+    // In this case, if the install or update fails there will no database artifacts. The catch
+    // is that installs can take a long time and the request may be cancelled before it completes
+    // e.g. by an intermediate proxy.
+    bool synchronous = 5;
 }
 
 message YamlConfig {
