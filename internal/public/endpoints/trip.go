@@ -1,4 +1,4 @@
-package public
+package endpoints
 
 import (
 	"context"
@@ -11,10 +11,8 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRouteRequest) (*api.ListTripsInRouteReply, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	route, err := s.Querier.GetRouteInSystem(ctx,
+func ListTripsInRoute(ctx context.Context, r *Context, req *api.ListTripsInRouteRequest) (*api.ListTripsInRouteReply, error) {
+	route, err := r.Querier.GetRouteInSystem(ctx,
 		db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -22,7 +20,7 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 		}
 		return nil, err
 	}
-	trips, err := s.Querier.ListTripsInRoute(ctx, route.Pk)
+	trips, err := r.Querier.ListTripsInRoute(ctx, route.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +29,7 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 		tripPks = append(tripPks, trip.Pk)
 	}
 	// TODO: deduplicate this between the GetStop endpoint
-	rows, err := s.Querier.GetLastStopsForTrips(ctx, tripPks)
+	rows, err := r.Querier.GetLastStopsForTrips(ctx, tripPks)
 	if err != nil {
 		return nil, err
 	}
@@ -52,9 +50,9 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 			LastStop: &api.StopPreview{
 				Id:   lastStop.ID,
 				Name: lastStop.Name.String,
-				Href: s.Hrefs.Stop(req.SystemId, lastStop.ID),
+				Href: r.Href.Stop(req.SystemId, lastStop.ID),
 			},
-			Href: s.Hrefs.Trip(req.SystemId, route.ID, trip.ID),
+			Href: r.Href.Trip(req.SystemId, route.ID, trip.ID),
 		}
 		if trip.VehicleID.Valid {
 			api_trip.Vehicle = &api.VehiclePreview{
@@ -63,13 +61,11 @@ func (t *Service) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRout
 		}
 		reply.Trips = append(reply.Trips, api_trip)
 	}
-	return reply, s.Finish()
+	return reply, nil
 }
 
-func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Trip, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	trip, err := s.Querier.GetTrip(ctx, db.GetTripParams{
+func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Trip, error) {
+	trip, err := r.Querier.GetTrip(ctx, db.GetTripParams{
 		SystemID: req.SystemId, RouteID: req.RouteId, TripID: req.TripId})
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -78,7 +74,7 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 		}
 		return nil, err
 	}
-	stopTimes, err := s.Querier.ListStopsTimesForTrip(ctx, trip.Pk)
+	stopTimes, err := r.Querier.ListStopsTimesForTrip(ctx, trip.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +85,9 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 		Route: &api.RoutePreview{
 			Id:    trip.RouteID,
 			Color: trip.RouteColor,
-			Href:  s.Hrefs.Route(req.SystemId, req.RouteId),
+			Href:  r.Href.Route(req.SystemId, req.RouteId),
 		},
-		Href: s.Hrefs.Trip(req.SystemId, req.RouteId, req.TripId),
+		Href: r.Href.Trip(req.SystemId, req.RouteId, req.TripId),
 	}
 	if trip.VehicleID.Valid {
 		reply.Vehicle = &api.VehiclePreview{
@@ -108,9 +104,9 @@ func (t *Service) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tr
 			Stop: &api.StopPreview{
 				Id:   stopTime.StopID,
 				Name: stopTime.StopName.String,
-				Href: s.Hrefs.Stop(req.SystemId, stopTime.StopID),
+				Href: r.Href.Stop(req.SystemId, stopTime.StopID),
 			},
 		})
 	}
-	return reply, s.Finish()
+	return reply, nil
 }

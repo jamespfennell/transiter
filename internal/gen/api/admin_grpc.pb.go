@@ -89,7 +89,7 @@ func (c *transiterAdminClient) ResetScheduler(ctx context.Context, in *ResetSche
 }
 
 // TransiterAdminServer is the server API for TransiterAdmin service.
-// All implementations must embed UnimplementedTransiterAdminServer
+// All implementations should embed UnimplementedTransiterAdminServer
 // for forward compatibility
 type TransiterAdminServer interface {
 	GetSystemConfig(context.Context, *GetSystemConfigRequest) (*SystemConfig, error)
@@ -98,10 +98,9 @@ type TransiterAdminServer interface {
 	UpdateFeed(context.Context, *UpdateFeedRequest) (*UpdateFeedReply, error)
 	GetSchedulerStatus(context.Context, *GetSchedulerStatusRequest) (*GetSchedulerStatusReply, error)
 	ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error)
-	mustEmbedUnimplementedTransiterAdminServer()
 }
 
-// UnimplementedTransiterAdminServer must be embedded to have forward compatible implementations.
+// UnimplementedTransiterAdminServer should be embedded to have forward compatible implementations.
 type UnimplementedTransiterAdminServer struct {
 }
 
@@ -123,7 +122,6 @@ func (UnimplementedTransiterAdminServer) GetSchedulerStatus(context.Context, *Ge
 func (UnimplementedTransiterAdminServer) ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetScheduler not implemented")
 }
-func (UnimplementedTransiterAdminServer) mustEmbedUnimplementedTransiterAdminServer() {}
 
 // UnsafeTransiterAdminServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to TransiterAdminServer will

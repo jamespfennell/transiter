@@ -1,4 +1,4 @@
-package public
+package endpoints
 
 import (
 	"context"
@@ -13,17 +13,15 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *Service) ListAgenciesInSystem(ctx context.Context, req *api.ListAgenciesInSystemRequest) (*api.ListAgenciesInSystemReply, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	system, err := s.Querier.GetSystem(ctx, req.SystemId)
+func ListAgenciesInSystem(ctx context.Context, r *Context, req *api.ListAgenciesInSystemRequest) (*api.ListAgenciesInSystemReply, error) {
+	system, err := r.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
 	}
-	agencies, err := s.Querier.ListAgenciesInSystem(ctx, system.Pk)
+	agencies, err := r.Querier.ListAgenciesInSystem(ctx, system.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -33,28 +31,26 @@ func (t *Service) ListAgenciesInSystem(ctx context.Context, req *api.ListAgencie
 			Id:     agency.ID,
 			Name:   agency.Name,
 			Alerts: []string{},
-			Href:   s.Hrefs.Agency(req.SystemId, agency.ID),
+			Href:   r.Href.Agency(req.SystemId, agency.ID),
 		}
 		reply.Agencies = append(reply.Agencies, api_agency)
 	}
-	return reply, s.Finish()
+	return reply, nil
 }
 
-func (t *Service) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSystemRequest) (*api.Agency, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	agency, err := s.Querier.GetAgencyInSystem(ctx, db.GetAgencyInSystemParams{SystemID: req.SystemId, AgencyID: req.AgencyId})
+func GetAgencyInSystem(ctx context.Context, r *Context, req *api.GetAgencyInSystemRequest) (*api.Agency, error) {
+	agency, err := r.Querier.GetAgencyInSystem(ctx, db.GetAgencyInSystemParams{SystemID: req.SystemId, AgencyID: req.AgencyId})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("agency %q in system %q not found", req.AgencyId, req.SystemId))
 		}
 		return nil, err
 	}
-	routes, err := s.Querier.ListRoutesInAgency(ctx, agency.Pk)
+	routes, err := r.Querier.ListRoutesInAgency(ctx, agency.Pk)
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := s.Querier.ListActiveAlertsForAgency(
+	alerts, err := r.Querier.ListActiveAlertsForAgency(
 		ctx, db.ListActiveAlertsForAgencyParams{
 			AgencyPk:    agency.Pk,
 			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
@@ -76,7 +72,7 @@ func (t *Service) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSys
 		reply.Routes = append(reply.Routes, &api.RoutePreview{
 			Id:    route.ID,
 			Color: route.Color,
-			Href:  s.Hrefs.Route(req.SystemId, route.ID),
+			Href:  r.Href.Route(req.SystemId, route.ID),
 		})
 	}
 	for _, alert := range alerts {
@@ -86,5 +82,5 @@ func (t *Service) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSys
 			Effect: alert.Effect,
 		})
 	}
-	return reply, s.Finish()
+	return reply, nil
 }

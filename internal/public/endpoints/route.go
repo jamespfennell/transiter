@@ -1,4 +1,4 @@
-package public
+package endpoints
 
 import (
 	"context"
@@ -15,17 +15,15 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *Service) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInSystemRequest) (*api.ListRoutesInSystemReply, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	system, err := s.Querier.GetSystem(ctx, req.SystemId)
+func ListRoutesInSystem(ctx context.Context, r *Context, req *api.ListRoutesInSystemRequest) (*api.ListRoutesInSystemReply, error) {
+	system, err := r.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
 	}
-	routes, err := s.Querier.ListRoutesInSystem(ctx, system.Pk)
+	routes, err := r.Querier.ListRoutesInSystem(ctx, system.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +31,7 @@ func (t *Service) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInS
 	for _, route := range routes {
 		routePks = append(routePks, route.Pk)
 	}
-	alerts, err := s.Querier.ListActiveAlertsForRoutes(
+	alerts, err := r.Querier.ListActiveAlertsForRoutes(
 		ctx, db.ListActiveAlertsForRoutesParams{
 			RoutePks:    routePks,
 			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
@@ -55,24 +53,22 @@ func (t *Service) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInS
 			Id:     route.ID,
 			Color:  route.Color,
 			Alerts: routePkToAlertRows[route.Pk],
-			Href:   s.Hrefs.Route(system.ID, route.ID),
+			Href:   r.Href.Route(system.ID, route.ID),
 		})
 	}
-	return reply, s.Finish()
+	return reply, nil
 }
 
-func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSystemRequest) (*api.Route, error) {
+func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystemRequest) (*api.Route, error) {
 	startTime := time.Now()
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	route, err := s.Querier.GetRouteInSystem(ctx, db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
+	route, err := r.Querier.GetRouteInSystem(ctx, db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("route %q in system %q not found", req.RouteId, req.SystemId))
 		}
 		return nil, err
 	}
-	service_map_rows, err := s.Querier.ListServiceMapsForRoute(ctx, route.Pk)
+	service_map_rows, err := r.Querier.ListServiceMapsForRoute(ctx, route.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +87,7 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 			&api.StopPreview{
 				Id:   row.StopID.String,
 				Name: row.StopName.String,
-				Href: s.Hrefs.Stop(req.SystemId, row.StopID.String),
+				Href: r.Href.Stop(req.SystemId, row.StopID.String),
 			},
 		)
 	}
@@ -99,7 +95,7 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 	for _, serviceMap := range groupIdToServiceMap {
 		serviceMapsReply = append(serviceMapsReply, serviceMap)
 	}
-	periodicityI, err := s.Querier.CalculatePeriodicityForRoute(ctx, route.Pk)
+	periodicityI, err := r.Querier.CalculatePeriodicityForRoute(ctx, route.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +105,7 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 		periodicity = &convert
 	}
 
-	alerts, err := s.Querier.ListActiveAlertsForRoutes(
+	alerts, err := r.Querier.ListActiveAlertsForRoutes(
 		ctx, db.ListActiveAlertsForRoutesParams{
 			RoutePks:    []int64{route.Pk},
 			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
@@ -121,7 +117,7 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 	for _, alert := range alerts {
 		alertPks = append(alertPks, alert.Pk)
 	}
-	alertMessages, err := s.Querier.ListMessagesForAlerts(ctx, alertPks)
+	alertMessages, err := r.Querier.ListMessagesForAlerts(ctx, alertPks)
 	if err != nil {
 		return nil, err
 	}
@@ -166,11 +162,11 @@ func (t *Service) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSyste
 		Agency: &api.AgencyPreview{
 			Id:   route.AgencyID,
 			Name: route.AgencyName,
-			Href: s.Hrefs.Agency(req.SystemId, route.AgencyID),
+			Href: r.Href.Agency(req.SystemId, route.AgencyID),
 		},
 		ServiceMaps: serviceMapsReply,
 		Alerts:      alertsReply,
 	}
 	log.Println("GetRouteInSystem took", time.Since(startTime))
-	return reply, s.Finish()
+	return reply, nil
 }

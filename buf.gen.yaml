@@ -8,6 +8,7 @@ plugins:
     out: internal/gen
     opt:
       - paths=source_relative
+      - require_unimplemented_servers=false
   - name: grpc-gateway
     out: internal/gen
     opt:

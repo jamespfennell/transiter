@@ -179,7 +179,7 @@ func (c *publicClient) ListTransfersInSystem(ctx context.Context, in *ListTransf
 }
 
 // PublicServer is the server API for Public service.
-// All implementations must embed UnimplementedPublicServer
+// All implementations should embed UnimplementedPublicServer
 // for forward compatibility
 type PublicServer interface {
 	Entrypoint(context.Context, *EntrypointRequest) (*EntrypointReply, error)
@@ -197,10 +197,9 @@ type PublicServer interface {
 	GetFeedInSystem(context.Context, *GetFeedInSystemRequest) (*Feed, error)
 	ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error)
 	ListTransfersInSystem(context.Context, *ListTransfersInSystemRequest) (*ListTransfersInSystemReply, error)
-	mustEmbedUnimplementedPublicServer()
 }
 
-// UnimplementedPublicServer must be embedded to have forward compatible implementations.
+// UnimplementedPublicServer should be embedded to have forward compatible implementations.
 type UnimplementedPublicServer struct {
 }
 
@@ -249,7 +248,6 @@ func (UnimplementedPublicServer) ListFeedUpdates(context.Context, *ListFeedUpdat
 func (UnimplementedPublicServer) ListTransfersInSystem(context.Context, *ListTransfersInSystemRequest) (*ListTransfersInSystemReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTransfersInSystem not implemented")
 }
-func (UnimplementedPublicServer) mustEmbedUnimplementedPublicServer() {}
 
 // UnsafePublicServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to PublicServer will

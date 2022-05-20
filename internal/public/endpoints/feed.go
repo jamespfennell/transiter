@@ -1,4 +1,4 @@
-package public
+package endpoints
 
 import (
 	"context"
@@ -12,17 +12,15 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func (t *Service) ListFeedsInSystem(ctx context.Context, req *api.ListFeedsInSystemRequest) (*api.ListFeedsInSystemReply, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	system, err := s.Querier.GetSystem(ctx, req.SystemId)
+func ListFeedsInSystem(ctx context.Context, r *Context, req *api.ListFeedsInSystemRequest) (*api.ListFeedsInSystemReply, error) {
+	system, err := r.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
 	}
-	feeds, err := s.Querier.ListFeedsInSystem(ctx, system.Pk)
+	feeds, err := r.Querier.ListFeedsInSystem(ctx, system.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -33,17 +31,15 @@ func (t *Service) ListFeedsInSystem(ctx context.Context, req *api.ListFeedsInSys
 			Id:                    feed.ID,
 			PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
 			PeriodicUpdatePeriod:  periodicUpdatePeriod(&feed),
-			Href:                  s.Hrefs.Feed(system.ID, feed.ID),
+			Href:                  r.Href.Feed(system.ID, feed.ID),
 		}
 		result.Feeds = append(result.Feeds, api_feed)
 	}
-	return result, s.Finish()
+	return result, nil
 }
 
-func (t *Service) GetFeedInSystem(ctx context.Context, req *api.GetFeedInSystemRequest) (*api.Feed, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	feed, err := s.Querier.GetFeedInSystem(ctx, db.GetFeedInSystemParams{SystemID: req.SystemId, FeedID: req.FeedId})
+func GetFeedInSystem(ctx context.Context, r *Context, req *api.GetFeedInSystemRequest) (*api.Feed, error) {
+	feed, err := r.Querier.GetFeedInSystem(ctx, db.GetFeedInSystemParams{SystemID: req.SystemId, FeedID: req.FeedId})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("feed %q in system %q not found", req.FeedId, req.SystemId))
@@ -55,23 +51,21 @@ func (t *Service) GetFeedInSystem(ctx context.Context, req *api.GetFeedInSystemR
 		PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
 		PeriodicUpdatePeriod:  periodicUpdatePeriod(&feed),
 		Updates: &api.Feed_Updates{
-			Href: s.Hrefs.FeedUpdates(req.SystemId, req.FeedId),
+			Href: r.Href.FeedUpdates(req.SystemId, req.FeedId),
 		},
 	}
-	return reply, s.Finish()
+	return reply, nil
 }
 
-func (t *Service) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesRequest) (*api.ListFeedUpdatesReply, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	feed, err := s.Querier.GetFeedInSystem(ctx, db.GetFeedInSystemParams{SystemID: req.SystemId, FeedID: req.FeedId})
+func ListFeedUpdates(ctx context.Context, r *Context, req *api.ListFeedUpdatesRequest) (*api.ListFeedUpdatesReply, error) {
+	feed, err := r.Querier.GetFeedInSystem(ctx, db.GetFeedInSystemParams{SystemID: req.SystemId, FeedID: req.FeedId})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("feed %q in system %q not found", req.FeedId, req.SystemId))
 		}
 		return nil, err
 	}
-	updates, err := s.Querier.ListUpdatesInFeed(ctx, feed.Pk)
+	updates, err := r.Querier.ListUpdatesInFeed(ctx, feed.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +81,7 @@ func (t *Service) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesR
 			CompletedAt:   convert.SqlNullTime(update.CompletedAt),
 		})
 	}
-	return reply, s.Finish()
+	return reply, nil
 }
 
 func periodicUpdatePeriod(feed *db.Feed) *string {

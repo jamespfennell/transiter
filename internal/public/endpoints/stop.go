@@ -1,4 +1,4 @@
-package public
+package endpoints
 
 import (
 	"context"
@@ -16,20 +16,17 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
-	"github.com/jamespfennell/transiter/internal/public/session"
 )
 
-func (t *Service) ListStopsInSystem(ctx context.Context, req *api.ListStopsInSystemRequest) (*api.ListStopsInSystemReply, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	system, err := s.Querier.GetSystem(ctx, req.SystemId)
+func ListStopsInSystem(ctx context.Context, r *Context, req *api.ListStopsInSystemRequest) (*api.ListStopsInSystemReply, error) {
+	system, err := r.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
 	}
-	stops, err := s.Querier.ListStopsInSystem(ctx, system.Pk)
+	stops, err := r.Querier.ListStopsInSystem(ctx, system.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -38,23 +35,21 @@ func (t *Service) ListStopsInSystem(ctx context.Context, req *api.ListStopsInSys
 		result.Stops = append(result.Stops, &api.StopPreview{
 			Id:   stop.ID,
 			Name: stop.Name.String,
-			Href: s.Hrefs.Stop(system.ID, stop.ID),
+			Href: r.Href.Stop(system.ID, stop.ID),
 		})
 	}
-	return result, s.Finish()
+	return result, nil
 }
 
-func (t *Service) ListTransfersInSystem(ctx context.Context, req *api.ListTransfersInSystemRequest) (*api.ListTransfersInSystemReply, error) {
-	s := t.newSession(ctx)
-	defer s.Cleanup()
-	system, err := s.Querier.GetSystem(ctx, req.SystemId)
+func ListTransfersInSystem(ctx context.Context, r *Context, req *api.ListTransfersInSystemRequest) (*api.ListTransfersInSystemReply, error) {
+	system, err := r.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
 		}
 		return nil, err
 	}
-	transfers, err := s.Querier.ListTransfersInSystem(ctx, sql.NullInt64{Valid: true, Int64: system.Pk})
+	transfers, err := r.Querier.ListTransfersInSystem(ctx, sql.NullInt64{Valid: true, Int64: system.Pk})
 	if err != nil {
 		return nil, err
 	}
@@ -65,12 +60,12 @@ func (t *Service) ListTransfersInSystem(ctx context.Context, req *api.ListTransf
 			FromStop: &api.StopPreview{
 				Id:   transfer.FromStopID,
 				Name: transfer.FromStopName.String,
-				Href: s.Hrefs.Stop(transfer.FromSystemID, transfer.FromStopID),
+				Href: r.Href.Stop(transfer.FromSystemID, transfer.FromStopID),
 			},
 			ToStop: &api.StopPreview{
 				Id:   transfer.ToStopID,
 				Name: transfer.ToStopName.String,
-				Href: s.Hrefs.Stop(transfer.ToSystemID, transfer.ToStopID),
+				Href: r.Href.Stop(transfer.ToSystemID, transfer.ToStopID),
 			},
 			Type:            transfer.Type,
 			MinTransferTime: transfer.MinTransferTime.Int32,
@@ -79,19 +74,17 @@ func (t *Service) ListTransfersInSystem(ctx context.Context, req *api.ListTransf
 	return reply, nil
 }
 
-func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemRequest) (*api.Stop, error) {
+func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRequest) (*api.Stop, error) {
 	startTime := time.Now()
-	s := t.newSession(ctx)
-	defer s.Cleanup()
 	// TODO: we can probably remove this call? And just check that the stops tree is non-empty
-	stop, err := s.Querier.GetStopInSystem(ctx, db.GetStopInSystemParams{SystemID: req.SystemId, StopID: req.StopId})
+	stop, err := r.Querier.GetStopInSystem(ctx, db.GetStopInSystemParams{SystemID: req.SystemId, StopID: req.StopId})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("stop %q in system %q not found", req.StopId, req.SystemId))
 		}
 		return nil, err
 	}
-	stopTree, err := stoptree.NewStopTree(ctx, s.Querier, stop.Pk)
+	stopTree, err := stoptree.NewStopTree(ctx, r.Querier, stop.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +92,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	var transfers []db.ListTransfersFromStopsRow
 	stopPkToServiceMaps := map[int64][]*api.ServiceMapForStop{}
 	stationPks := stopTree.StationPks()
-	transfers, err = s.Querier.ListTransfersFromStops(ctx, stationPks)
+	transfers, err = r.Querier.ListTransfersFromStops(ctx, stationPks)
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +100,11 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		stationPks = append(stationPks, transfer.ToStopPk)
 	}
 
-	groupIDRows, err := s.Querier.ListServiceMapsGroupIDsForStops(ctx, stationPks)
+	groupIDRows, err := r.Querier.ListServiceMapsGroupIDsForStops(ctx, stationPks)
 	if err != nil {
 		return nil, err
 	}
-	serviceMaps, err := s.Querier.ListServiceMapsForStops(ctx, stationPks)
+	serviceMaps, err := r.Querier.ListServiceMapsForStops(ctx, stationPks)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +123,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		route := &api.RoutePreview{
 			Id:    serviceMap.RouteID,
 			Color: serviceMap.RouteColor,
-			Href:  s.Hrefs.Route(req.SystemId, serviceMap.RouteID),
+			Href:  r.Href.Route(req.SystemId, serviceMap.RouteID),
 		}
 		if serviceMap.SystemID != req.SystemId {
 			route.System = &api.System{
@@ -150,12 +143,12 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		}
 	}
 
-	directionNameMatcher, err := NewDirectionNameMatcher(ctx, s.Querier, stopTree.DescendentPks())
+	directionNameMatcher, err := NewDirectionNameMatcher(ctx, r.Querier, stopTree.DescendentPks())
 	if err != nil {
 		return nil, err
 	}
 
-	alerts, err := s.Querier.ListActiveAlertsForStops(
+	alerts, err := r.Querier.ListActiveAlertsForStops(
 		ctx, db.ListActiveAlertsForStopsParams{
 			StopPks:     []int64{stop.Pk},
 			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
@@ -168,7 +161,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 	var stopTimes []db.ListStopTimesAtStopsRow
 	routePkToRoute := map[int64]*db.Route{}
 	tripPkToLastStop := map[int64]*db.GetLastStopsForTripsRow{}
-	stopTimes, err = s.Querier.ListStopTimesAtStops(ctx, stopTree.DescendentPks())
+	stopTimes, err = r.Querier.ListStopTimesAtStops(ctx, stopTree.DescendentPks())
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +171,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		routePks = append(routePks, stopTime.RoutePk)
 		tripPks = append(tripPks, stopTime.TripPk)
 	}
-	routes, err := s.Querier.ListRoutesByPk(ctx, routePks)
+	routes, err := r.Querier.ListRoutesByPk(ctx, routePks)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +179,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		route := route
 		routePkToRoute[route.Pk] = &route
 	}
-	rows, err := s.Querier.GetLastStopsForTrips(ctx, tripPks)
+	rows, err := r.Querier.GetLastStopsForTrips(ctx, tripPks)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +188,7 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		tripPkToLastStop[row.TripPk] = &row
 	}
 
-	stopTreeResponse := buildStopTreeResponse(&s, req.SystemId, stop.Pk, stopTree, stopPkToServiceMaps)
+	stopTreeResponse := buildStopTreeResponse(r, req.SystemId, stop.Pk, stopTree, stopPkToServiceMaps)
 	result := &api.Stop{
 		Id:          stop.ID,
 		Name:        convert.SqlNullString(stop.Name),
@@ -225,14 +218,14 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 				Route: &api.RoutePreview{
 					Id:    route.ID,
 					Color: route.Color,
-					Href:  s.Hrefs.Route(req.SystemId, route.ID),
+					Href:  r.Href.Route(req.SystemId, route.ID),
 				},
 				LastStop: &api.StopPreview{
 					Id:   lastStop.ID,
 					Name: lastStop.Name.String,
-					Href: s.Hrefs.Stop(req.SystemId, lastStop.ID),
+					Href: r.Href.Stop(req.SystemId, lastStop.ID),
 				},
-				Href: s.Hrefs.Trip(req.SystemId, route.ID, stopTime.ID),
+				Href: r.Href.Trip(req.SystemId, route.ID, stopTime.ID),
 			},
 		}
 		if stopTime.VehicleID.Valid {
@@ -255,13 +248,13 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 			FromStop: &api.StopPreview{
 				Id:   fromStop.ID,
 				Name: fromStop.Name.String,
-				Href: s.Hrefs.Stop(req.SystemId, fromStop.ID),
+				Href: r.Href.Stop(req.SystemId, fromStop.ID),
 			},
 			ToStop: &api.RelatedStop{
 				Id:          transfer.ToID,
 				Name:        transfer.ToName.String,
 				ServiceMaps: stopPkToServiceMaps[transfer.ToStopPk],
-				Href:        s.Hrefs.Stop(req.SystemId, transfer.ToID),
+				Href:        r.Href.Stop(req.SystemId, transfer.ToID),
 			},
 			Type:            transfer.Type,
 			MinTransferTime: convert.SqlNullInt32(transfer.MinTransferTime),
@@ -269,10 +262,10 @@ func (t *Service) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemR
 		})
 	}
 	log.Println("GetStopInSystem took", time.Since(startTime))
-	return result, s.Finish()
+	return result, nil
 }
 
-func buildStopTreeResponse(s *session.Session, systemID string,
+func buildStopTreeResponse(r *Context, systemID string,
 	basePk int64, stopTree *stoptree.StopTree, serviceMaps map[int64][]*api.ServiceMapForStop) *api.RelatedStop {
 	stopPkToResponse := map[int64]*api.RelatedStop{}
 	stopTree.VisitDFS(func(node *stoptree.StopTreeNode) {
@@ -283,7 +276,7 @@ func buildStopTreeResponse(s *session.Session, systemID string,
 			Id:          node.Stop.ID,
 			Name:        node.Stop.Name.String,
 			ServiceMaps: serviceMaps[node.Stop.Pk],
-			Href:        s.Hrefs.Stop(systemID, node.Stop.ID),
+			Href:        r.Href.Stop(systemID, node.Stop.ID),
 		}
 		if node.Parent != nil {
 			if parentResponse, ok := stopPkToResponse[node.Parent.Stop.Pk]; ok {

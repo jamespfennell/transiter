@@ -39,38 +39,32 @@ func New(pool *pgxpool.Pool, scheduler *scheduler.Scheduler) *Service {
 }
 
 func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigRequest) (*api.SystemConfig, error) {
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback(ctx)
-	querier := db.New(tx)
-
-	system, err := querier.GetSystem(ctx, req.SystemId)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
+	reply := &api.SystemConfig{}
+	err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		querier := db.New(tx)
+		system, err := querier.GetSystem(ctx, req.SystemId)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
+			}
+			return err
 		}
-		return nil, err
-	}
-	feeds, err := querier.ListFeedsInSystem(ctx, system.Pk)
-	if err != nil {
-		return nil, err
-	}
-
-	reply := &api.SystemConfig{
-		Name: system.Name,
-	}
-	for _, feed := range feeds {
-		feed := feed
-		var feedConfig config.FeedConfig
-		if err := json.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
-			log.Panicln("Failed to unmarshal feed config from the DB:", err)
-			return nil, err
+		reply.Name = system.Name
+		feeds, err := querier.ListFeedsInSystem(ctx, system.Pk)
+		if err != nil {
+			return err
 		}
-		reply.Feeds = append(reply.Feeds, config.ConvertFeedConfig(&feedConfig))
-	}
-	return reply, tx.Commit(ctx)
+		for _, feed := range feeds {
+			feed := feed
+			var feedConfig config.FeedConfig
+			if err := json.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
+				return err
+			}
+			reply.Feeds = append(reply.Feeds, config.ConvertFeedConfig(&feedConfig))
+		}
+		return nil
+	})
+	return reply, err
 }
 
 func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrUpdateSystemRequest) (*api.InstallOrUpdateSystemReply, error) {
@@ -191,25 +185,17 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 
 func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest) (*api.DeleteSystemReply, error) {
 	log.Printf("Recieved delete request for system %q", req.SystemId)
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
-	defer tx.Rollback(ctx)
-	if err != nil {
-		return nil, err
-	}
-	querier := db.New(tx)
-
-	system, err := querier.GetSystem(ctx, req.SystemId)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
+	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		querier := db.New(tx)
+		system, err := querier.GetSystem(ctx, req.SystemId)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
+			}
+			return err
 		}
-		return nil, err
-	}
-
-	if err := querier.DeleteSystem(ctx, system.Pk); err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(ctx); err != nil {
+		return querier.DeleteSystem(ctx, system.Pk)
+	}); err != nil {
 		return nil, err
 	}
 	log.Printf("Deleted system %q", req.SystemId)
