@@ -86,7 +86,7 @@ func run[S, T any](ctx context.Context, s *Server, f func(context.Context, *endp
 	var t T
 	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
 		var err error
-		t, err = f(ctx, &endpoints.Context{db.New(tx), href.NewGenerator(ctx)}, req)
+		t, err = f(ctx, &endpoints.Context{Querier: db.New(tx), Href: href.NewGenerator(ctx)}, req)
 		return err
 	}); err != nil {
 		var t T
