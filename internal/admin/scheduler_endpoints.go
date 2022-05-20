@@ -23,11 +23,11 @@ func (s *Service) GetSchedulerStatus(ctx context.Context, req *api.GetSchedulerS
 	return reply, nil
 }
 
-func (s *Service) RefreshScheduler(ctx context.Context, req *api.RefreshSchedulerRequest) (*api.RefreshSchedulerReply, error) {
-	if err := s.scheduler.RefreshAll(ctx); err != nil {
+func (s *Service) ResetScheduler(ctx context.Context, req *api.ResetSchedulerRequest) (*api.ResetSchedulerReply, error) {
+	if err := s.scheduler.ResetAll(ctx); err != nil {
 		return nil, err
 	}
-	return &api.RefreshSchedulerReply{}, nil
+	return &api.ResetSchedulerReply{}, nil
 }
 
 func convert(t time.Time) int64 {

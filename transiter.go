@@ -91,20 +91,20 @@ func main() {
 			},
 			{
 				Name:  "scheduler",
-				Usage: "perform operations on the Transiter server scheduler",
+				Usage: "perform operations on the Transiter feed update scheduler",
 				Subcommands: []*cli.Command{
 					{
 						Name:  "status",
-						Usage: "get the list of periodic update tasks currently scheduled",
+						Usage: "list the active periodic feed update tasks",
 						Action: clientAction(func(ctx context.Context, client *client.Client) error {
 							return client.SchedulerStatus(ctx)
 						}),
 					},
 					{
-						Name:  "refresh",
-						Usage: "refresh the set of feed auto update tasks the scheduler is scheduling",
+						Name:  "reset",
+						Usage: "reset all of the periodic feed update tasks",
 						Action: clientAction(func(ctx context.Context, client *client.Client) error {
-							return client.RefreshScheduler(ctx)
+							return client.ResetScheduler(ctx)
 						}),
 					},
 				},

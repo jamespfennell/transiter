@@ -85,8 +85,8 @@ CREATE TABLE feed (
     pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
     system_pk BIGINT NOT NULL,
-    auto_update_enabled boolean NOT NULL,
-    auto_update_period integer,
+    periodic_update_enabled boolean NOT NULL,
+    periodic_update_period integer,
     config character varying NOT NULL,
 
     UNIQUE(system_pk, id)

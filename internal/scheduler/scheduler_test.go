@@ -17,19 +17,19 @@ const systemId2 = "systemId2"
 const feedId3 = "feedId3"
 
 func TestScheduler(t *testing.T) {
-	refreshSystem1 := func(s *Scheduler) error {
-		return s.Refresh(context.Background(), systemId1)
+	resetSystem1 := func(s *Scheduler) error {
+		return s.Reset(context.Background(), systemId1)
 	}
-	refreshSystem2 := func(s *Scheduler) error {
-		return s.Refresh(context.Background(), systemId2)
+	resetSystem2 := func(s *Scheduler) error {
+		return s.Reset(context.Background(), systemId2)
 	}
-	refreshAll := func(s *Scheduler) error {
-		return s.RefreshAll(context.Background())
+	resetAll := func(s *Scheduler) error {
+		return s.ResetAll(context.Background())
 	}
 	testCases := []struct {
 		description     string
 		update          []SystemConfig
-		refreshF        func(*Scheduler) error
+		resetF          func(*Scheduler) error
 		runningPeriod   time.Duration
 		expectedUpdates map[systemAndFeed]int
 	}{
@@ -46,7 +46,7 @@ func TestScheduler(t *testing.T) {
 					},
 				},
 			},
-			refreshF:      refreshSystem1,
+			resetF:        resetSystem1,
 			runningPeriod: 2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{
 				{systemId: systemId1, feedId: feedId1}: 2,
@@ -69,7 +69,7 @@ func TestScheduler(t *testing.T) {
 					},
 				},
 			},
-			refreshF:      refreshSystem1,
+			resetF:        resetSystem1,
 			runningPeriod: 2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{
 				{systemId: systemId1, feedId: feedId1}: 4,
@@ -84,19 +84,19 @@ func TestScheduler(t *testing.T) {
 					FeedConfigs: []FeedConfig{},
 				},
 			},
-			refreshF:        refreshSystem1,
+			resetF:          resetSystem1,
 			runningPeriod:   2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{},
 		},
 		{
 			description:     "remove system",
 			update:          []SystemConfig{},
-			refreshF:        refreshSystem1,
+			resetF:          resetSystem1,
 			runningPeriod:   2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{},
 		},
 		{
-			description: "new system, only refresh the new one",
+			description: "new system, only reset the new one",
 			update: []SystemConfig{
 				{
 					Id: systemId1,
@@ -117,7 +117,7 @@ func TestScheduler(t *testing.T) {
 					},
 				},
 			},
-			refreshF:      refreshSystem2,
+			resetF:        resetSystem2,
 			runningPeriod: 2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{
 				{systemId: systemId1, feedId: feedId1}: 4,
@@ -125,7 +125,7 @@ func TestScheduler(t *testing.T) {
 			},
 		},
 		{
-			description: "new system, refresh all",
+			description: "new system, reset all",
 			update: []SystemConfig{
 				{
 					Id: systemId1,
@@ -146,7 +146,7 @@ func TestScheduler(t *testing.T) {
 					},
 				},
 			},
-			refreshF:      refreshAll,
+			resetF:        resetAll,
 			runningPeriod: 2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{
 				{systemId: systemId1, feedId: feedId1}: 4,
@@ -179,10 +179,10 @@ func TestScheduler(t *testing.T) {
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
-				scheduler.RunWithOps(ctx, clock, &ops)
+				scheduler.RunWithClockAndOps(ctx, clock, &ops)
 				wg.Done()
 			}()
-			if err := scheduler.RefreshAll(ctx); err != nil {
+			if err := scheduler.ResetAll(ctx); err != nil {
 				t.Fatalf("failed to create scheduler: %s", err)
 			}
 
@@ -198,8 +198,8 @@ func TestScheduler(t *testing.T) {
 
 			ops.currentConfig = tc.update
 
-			if err := tc.refreshF(scheduler); err != nil {
-				t.Errorf("Unexpected error when refreshing: %s", err)
+			if err := tc.resetF(scheduler); err != nil {
+				t.Errorf("Unexpected error when reseting: %s", err)
 			}
 
 			clock.Add(tc.runningPeriod)

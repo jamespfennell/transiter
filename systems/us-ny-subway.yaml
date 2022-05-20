@@ -3,8 +3,8 @@ name: New York City Subway
 feeds:
   - id: gtfsstatic
     requiredForInstall: true
-    autoUpdateEnabled: true
-    autoUpdatePeriod: 24h
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 24h
 
     url: 'http://web.mta.info/developers/data/nyct/subway/google_transit.zip'
 
@@ -23,8 +23,8 @@ feeds:
           stopId2: "R11"  # Lexington Av/59th St
         
   - id: L
-    autoUpdateEnabled: true
-    autoUpdatePeriod: 5s
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l"
     httpHeaders:

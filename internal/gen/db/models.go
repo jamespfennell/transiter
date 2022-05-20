@@ -85,12 +85,12 @@ type DirectionNameRule struct {
 }
 
 type Feed struct {
-	Pk                int64
-	ID                string
-	SystemPk          int64
-	AutoUpdateEnabled bool
-	AutoUpdatePeriod  sql.NullInt32
-	Config            string
+	Pk                    int64
+	ID                    string
+	SystemPk              int64
+	PeriodicUpdateEnabled bool
+	PeriodicUpdatePeriod  sql.NullInt32
+	Config                string
 }
 
 type FeedUpdate struct {

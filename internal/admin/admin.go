@@ -153,10 +153,10 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	for _, newFeed := range systemConfig.Feeds {
 		if pk, ok := feedIdToPk[newFeed.Id]; ok {
 			if err := querier.UpdateFeed(ctx, db.UpdateFeedParams{
-				FeedPk:            pk,
-				AutoUpdateEnabled: newFeed.AutoUpdateEnabled,
-				AutoUpdatePeriod:  convertNullDuration(newFeed.AutoUpdatePeriod),
-				Config:            string(newFeed.MarshalToJson()),
+				FeedPk:                pk,
+				PeriodicUpdateEnabled: newFeed.PeriodicUpdateEnabled,
+				PeriodicUpdatePeriod:  convertNullDuration(newFeed.PeriodicUpdatePeriod),
+				Config:                string(newFeed.MarshalToJson()),
 			}); err != nil {
 				return nil, err
 			}
@@ -164,11 +164,11 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		} else {
 			// TODO: is there a lint to detect not handling the error here?
 			querier.InsertFeed(ctx, db.InsertFeedParams{
-				ID:                newFeed.Id,
-				SystemPk:          system.Pk,
-				AutoUpdateEnabled: newFeed.AutoUpdateEnabled,
-				AutoUpdatePeriod:  convertNullDuration(newFeed.AutoUpdatePeriod),
-				Config:            string(newFeed.MarshalToJson()),
+				ID:                    newFeed.Id,
+				SystemPk:              system.Pk,
+				PeriodicUpdateEnabled: newFeed.PeriodicUpdateEnabled,
+				PeriodicUpdatePeriod:  convertNullDuration(newFeed.PeriodicUpdatePeriod),
+				Config:                string(newFeed.MarshalToJson()),
 			})
 		}
 		if newFeed.RequiredForInstall {
@@ -185,7 +185,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		return nil, err
 	}
 	log.Printf("Installed system %q\n", system.ID)
-	s.scheduler.Refresh(ctx, req.SystemId)
+	s.scheduler.Reset(ctx, req.SystemId)
 	return &api.InstallOrUpdateSystemReply{}, nil
 }
 
@@ -213,7 +213,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 		return nil, err
 	}
 	log.Printf("Deleted system %q", req.SystemId)
-	s.scheduler.Refresh(ctx, req.SystemId)
+	s.scheduler.Reset(ctx, req.SystemId)
 	return &api.DeleteSystemReply{}, nil
 }
 

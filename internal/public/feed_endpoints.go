@@ -30,10 +30,10 @@ func (t *Service) ListFeedsInSystem(ctx context.Context, req *api.ListFeedsInSys
 	for _, feed := range feeds {
 		feed := feed
 		api_feed := &api.FeedPreview{
-			Id:                feed.ID,
-			AutoUpdateEnabled: feed.AutoUpdateEnabled,
-			AutoUpdatePeriod:  autoUpdatePeriod(&feed),
-			Href:              s.Hrefs.Feed(system.ID, feed.ID),
+			Id:                    feed.ID,
+			PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
+			PeriodicUpdatePeriod:  periodicUpdatePeriod(&feed),
+			Href:                  s.Hrefs.Feed(system.ID, feed.ID),
 		}
 		result.Feeds = append(result.Feeds, api_feed)
 	}
@@ -51,9 +51,9 @@ func (t *Service) GetFeedInSystem(ctx context.Context, req *api.GetFeedInSystemR
 		return nil, err
 	}
 	reply := &api.Feed{
-		Id:                feed.ID,
-		AutoUpdateEnabled: feed.AutoUpdateEnabled,
-		AutoUpdatePeriod:  autoUpdatePeriod(&feed),
+		Id:                    feed.ID,
+		PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
+		PeriodicUpdatePeriod:  periodicUpdatePeriod(&feed),
 		Updates: &api.Feed_Updates{
 			Href: s.Hrefs.FeedUpdates(req.SystemId, req.FeedId),
 		},
@@ -90,9 +90,9 @@ func (t *Service) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesR
 	return reply, s.Finish()
 }
 
-func autoUpdatePeriod(feed *db.Feed) *string {
-	if feed.AutoUpdatePeriod.Valid && feed.AutoUpdatePeriod.Int32 > 0 {
-		d := (time.Millisecond * time.Duration(feed.AutoUpdatePeriod.Int32)).String()
+func periodicUpdatePeriod(feed *db.Feed) *string {
+	if feed.PeriodicUpdatePeriod.Valid && feed.PeriodicUpdatePeriod.Int32 > 0 {
+		d := (time.Millisecond * time.Duration(feed.PeriodicUpdatePeriod.Int32)).String()
 		return &d
 	}
 	return nil

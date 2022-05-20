@@ -24,8 +24,8 @@ type FeedConfig struct {
 
 	RequiredForInstall bool `yaml:"requiredForInstall"`
 
-	AutoUpdateEnabled bool           `yaml:"autoUpdateEnabled"`
-	AutoUpdatePeriod  *time.Duration `yaml:"autoUpdatePeriod"`
+	PeriodicUpdateEnabled bool           `yaml:"periodicUpdateEnabled"`
+	PeriodicUpdatePeriod  *time.Duration `yaml:"periodicUpdatePeriod"`
 
 	Url         string
 	HttpTimeout *time.Duration    `yaml:"httpTimeout"`
@@ -108,12 +108,12 @@ func ConvertApiSystemConfig(sc *api.SystemConfig) *SystemConfig {
 
 func ConvertApiFeedConfig(fc *api.FeedConfig) *FeedConfig {
 	result := &FeedConfig{
-		RequiredForInstall: fc.RequiredForInstall,
-		AutoUpdateEnabled:  fc.AutoUpdateEnabled,
-		AutoUpdatePeriod:   convertMilliseconds(fc.AutoUpdatePeriod),
-		Url:                fc.Url,
-		HttpTimeout:        convertMilliseconds(fc.HttpTimeout),
-		HttpHeaders:        fc.HttpHeaders,
+		RequiredForInstall:    fc.RequiredForInstall,
+		PeriodicUpdateEnabled: fc.PeriodicUpdateEnabled,
+		PeriodicUpdatePeriod:  convertMilliseconds(fc.PeriodicUpdatePeriod),
+		Url:                   fc.Url,
+		HttpTimeout:           convertMilliseconds(fc.HttpTimeout),
+		HttpHeaders:           fc.HttpHeaders,
 	}
 
 	switch parser := fc.Parser.(type) {
@@ -198,12 +198,12 @@ func ConvertSystemConfig(sc *SystemConfig) *api.SystemConfig {
 
 func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 	result := &api.FeedConfig{
-		RequiredForInstall: fc.RequiredForInstall,
-		AutoUpdateEnabled:  fc.AutoUpdateEnabled,
-		AutoUpdatePeriod:   convertDuration(fc.AutoUpdatePeriod),
-		Url:                fc.Url,
-		HttpTimeout:        convertDuration(fc.HttpTimeout),
-		HttpHeaders:        fc.HttpHeaders,
+		RequiredForInstall:    fc.RequiredForInstall,
+		PeriodicUpdateEnabled: fc.PeriodicUpdateEnabled,
+		PeriodicUpdatePeriod:  convertDuration(fc.PeriodicUpdatePeriod),
+		Url:                   fc.Url,
+		HttpTimeout:           convertDuration(fc.HttpTimeout),
+		HttpHeaders:           fc.HttpHeaders,
 	}
 	switch fc.Parser {
 	case GtfsStatic:

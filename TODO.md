@@ -6,9 +6,7 @@
 - change serial to bigserial everywhere
 
 - move sqlc and buf config files into subdirectores
-- fix lattitude typo
 - Right now the GPS lat/long are parsed to and from strings - would be good to avoid conversions
-- Rename auto update to periodic update
 - Service map group -> service map config
 - directionRules -> StopHeadsignRules
 - service -> server

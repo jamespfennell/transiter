@@ -35,7 +35,7 @@ service TransiterAdmin {
             };
       }
 
-      rpc RefreshScheduler(RefreshSchedulerRequest) returns (RefreshSchedulerReply) {
+      rpc ResetScheduler(ResetSchedulerRequest) returns (ResetSchedulerReply) {
         option (google.api.http) = {
                 post: "/admin/scheduler"
             };
@@ -89,8 +89,8 @@ message FeedConfig {
 
     bool required_for_install = 8;
 
-    bool auto_update_enabled = 6;
-    optional int64 auto_update_period = 7;
+    bool periodic_update_enabled = 6;
+    optional int64 periodic_update_period = 7;
     
     string url = 2;
     optional int64 http_timeout = 22;
@@ -177,6 +177,6 @@ message GetSchedulerStatusReply {
     repeated Feed feeds = 1;
 }
 
-message RefreshSchedulerRequest {}
+message ResetSchedulerRequest {}
 
-message RefreshSchedulerReply {}
+message ResetSchedulerReply {}

@@ -23,7 +23,7 @@ type TransiterAdminClient interface {
 	DeleteSystem(ctx context.Context, in *DeleteSystemRequest, opts ...grpc.CallOption) (*DeleteSystemReply, error)
 	UpdateFeed(ctx context.Context, in *UpdateFeedRequest, opts ...grpc.CallOption) (*UpdateFeedReply, error)
 	GetSchedulerStatus(ctx context.Context, in *GetSchedulerStatusRequest, opts ...grpc.CallOption) (*GetSchedulerStatusReply, error)
-	RefreshScheduler(ctx context.Context, in *RefreshSchedulerRequest, opts ...grpc.CallOption) (*RefreshSchedulerReply, error)
+	ResetScheduler(ctx context.Context, in *ResetSchedulerRequest, opts ...grpc.CallOption) (*ResetSchedulerReply, error)
 }
 
 type transiterAdminClient struct {
@@ -79,9 +79,9 @@ func (c *transiterAdminClient) GetSchedulerStatus(ctx context.Context, in *GetSc
 	return out, nil
 }
 
-func (c *transiterAdminClient) RefreshScheduler(ctx context.Context, in *RefreshSchedulerRequest, opts ...grpc.CallOption) (*RefreshSchedulerReply, error) {
-	out := new(RefreshSchedulerReply)
-	err := c.cc.Invoke(ctx, "/TransiterAdmin/RefreshScheduler", in, out, opts...)
+func (c *transiterAdminClient) ResetScheduler(ctx context.Context, in *ResetSchedulerRequest, opts ...grpc.CallOption) (*ResetSchedulerReply, error) {
+	out := new(ResetSchedulerReply)
+	err := c.cc.Invoke(ctx, "/TransiterAdmin/ResetScheduler", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ type TransiterAdminServer interface {
 	DeleteSystem(context.Context, *DeleteSystemRequest) (*DeleteSystemReply, error)
 	UpdateFeed(context.Context, *UpdateFeedRequest) (*UpdateFeedReply, error)
 	GetSchedulerStatus(context.Context, *GetSchedulerStatusRequest) (*GetSchedulerStatusReply, error)
-	RefreshScheduler(context.Context, *RefreshSchedulerRequest) (*RefreshSchedulerReply, error)
+	ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error)
 	mustEmbedUnimplementedTransiterAdminServer()
 }
 
@@ -120,8 +120,8 @@ func (UnimplementedTransiterAdminServer) UpdateFeed(context.Context, *UpdateFeed
 func (UnimplementedTransiterAdminServer) GetSchedulerStatus(context.Context, *GetSchedulerStatusRequest) (*GetSchedulerStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSchedulerStatus not implemented")
 }
-func (UnimplementedTransiterAdminServer) RefreshScheduler(context.Context, *RefreshSchedulerRequest) (*RefreshSchedulerReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RefreshScheduler not implemented")
+func (UnimplementedTransiterAdminServer) ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetScheduler not implemented")
 }
 func (UnimplementedTransiterAdminServer) mustEmbedUnimplementedTransiterAdminServer() {}
 
@@ -226,20 +226,20 @@ func _TransiterAdmin_GetSchedulerStatus_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TransiterAdmin_RefreshScheduler_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RefreshSchedulerRequest)
+func _TransiterAdmin_ResetScheduler_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetSchedulerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TransiterAdminServer).RefreshScheduler(ctx, in)
+		return srv.(TransiterAdminServer).ResetScheduler(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TransiterAdmin/RefreshScheduler",
+		FullMethod: "/TransiterAdmin/ResetScheduler",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransiterAdminServer).RefreshScheduler(ctx, req.(*RefreshSchedulerRequest))
+		return srv.(TransiterAdminServer).ResetScheduler(ctx, req.(*ResetSchedulerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -272,8 +272,8 @@ var TransiterAdmin_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TransiterAdmin_GetSchedulerStatus_Handler,
 		},
 		{
-			MethodName: "RefreshScheduler",
-			Handler:    _TransiterAdmin_RefreshScheduler_Handler,
+			MethodName: "ResetScheduler",
+			Handler:    _TransiterAdmin_ResetScheduler_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

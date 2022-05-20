@@ -381,8 +381,8 @@ message Route {
 
 message Feed {
   string id = 1;
-  bool auto_update_enabled = 2;
-  optional string auto_update_period = 3;
+  bool periodic_update_enabled = 2;
+  optional string periodic_update_period = 3;
 
   message Updates {
     optional string href = 1;
@@ -392,8 +392,8 @@ message Feed {
 
 message FeedPreview {
   string id = 1;
-  bool auto_update_enabled = 2;
-  optional string auto_update_period = 3;
+  bool periodic_update_enabled = 2;
+  optional string periodic_update_period = 3;
   optional string href = 4;
 }
 

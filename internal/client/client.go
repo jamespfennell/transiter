@@ -131,9 +131,9 @@ func (c *Client) SchedulerStatus(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) RefreshScheduler(ctx context.Context) error {
-	var req api.RefreshSchedulerRequest
-	_, err := c.adminClient.RefreshScheduler(ctx, &req)
+func (c *Client) ResetScheduler(ctx context.Context) error {
+	var req api.ResetSchedulerRequest
+	_, err := c.adminClient.ResetScheduler(ctx, &req)
 	return err
 }
 

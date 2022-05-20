@@ -294,8 +294,8 @@ def test_update_system(system_id, install_system, transiter_host):
     feeds:
       - id: feed_1
         requiredForInstall: false
-        autoUpdateEnabled: true
-        autoUpdatePeriod: {}s
+        periodicUpdateEnabled: true
+        periodicUpdatePeriod: {}s
         url: transiter.io
         parser: GTFS_STATIC
     """
@@ -307,7 +307,7 @@ def test_update_system(system_id, install_system, transiter_host):
     feed_data = requests.get(
         transiter_host + "/systems/" + system_id + "/feeds/feed_1"
     ).json()
-    assert "5s" == feed_data["autoUpdatePeriod"]
+    assert "5s" == feed_data["periodicUpdatePeriod"]
 
     install_system(system_id, config.format("name2", 15))
 
@@ -316,4 +316,4 @@ def test_update_system(system_id, install_system, transiter_host):
     feed_data = requests.get(
         transiter_host + "/systems/" + system_id + "/feeds/feed_1"
     ).json()
-    assert "15s" == feed_data["autoUpdatePeriod"]
+    assert "15s" == feed_data["periodicUpdatePeriod"]

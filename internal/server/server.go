@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/db/schema"
@@ -72,10 +71,10 @@ func Run(args RunArgs) error {
 
 	wg.Add(1)
 	go func() {
-		scheduler.Run(ctx, clock.New(), pool)
+		scheduler.Run(ctx, pool)
 		wg.Done()
 	}()
-	if err := scheduler.RefreshAll(ctx); err != nil {
+	if err := scheduler.ResetAll(ctx); err != nil {
 		return fmt.Errorf("failed to intialize the scheduler: %w", err)
 	}
 

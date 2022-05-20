@@ -30,14 +30,14 @@ func TestConvertFeedConfig(t *testing.T) {
 	}{
 		{
 			apiConfig: &api.FeedConfig{
-				RequiredForInstall: true,
-				AutoUpdateEnabled:  true,
-				AutoUpdatePeriod:   &timeoutMs,
+				RequiredForInstall:    true,
+				PeriodicUpdateEnabled: true,
+				PeriodicUpdatePeriod:  &timeoutMs,
 			},
 			internalConfig: &FeedConfig{
-				RequiredForInstall: true,
-				AutoUpdateEnabled:  true,
-				AutoUpdatePeriod:   &timeoutDuration,
+				RequiredForInstall:    true,
+				PeriodicUpdateEnabled: true,
+				PeriodicUpdatePeriod:  &timeoutDuration,
 			},
 		},
 		{
