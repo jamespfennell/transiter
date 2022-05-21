@@ -173,13 +173,13 @@ type InstallOrUpdateSystemRequest struct {
 	//	*InstallOrUpdateSystemRequest_SystemConfig
 	//	*InstallOrUpdateSystemRequest_YamlConfig
 	Config isInstallOrUpdateSystemRequest_Config `protobuf_oneof:"config"`
-	// If true, and the system already exists, do nothing.
+	// If true, do nothing if the system already exist.
 	InstallOnly bool `protobuf:"varint,4,opt,name=install_only,json=installOnly,proto3" json:"install_only,omitempty"`
-	// If false (the default), the system configuration is persisted before the request finishes
-	// but any necessary feed updates are performed asynchronously. The status of the operation can
-	// be polled using GetSystem.
+	// If false (the default), the system configuration is validated before the request finishes
+	// but databse updates are performed asynchronously. The status of the operation can
+	// be polled using GetSystem and inspecting the status field.
 	//
-	// If true, the operation is perfomed synchronously and in a single databse transaction.
+	// If true, the operation is perfomed synchronously in the request and in a single database transaction.
 	// In this case, if the install or update fails there will no database artifacts. The catch
 	// is that installs can take a long time and the request may be cancelled before it completes
 	// e.g. by an intermediate proxy.
