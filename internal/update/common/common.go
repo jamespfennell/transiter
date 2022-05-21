@@ -1,3 +1,4 @@
+// Package common contains types used by all update code.
 package common
 
 import "github.com/jamespfennell/transiter/internal/gen/db"

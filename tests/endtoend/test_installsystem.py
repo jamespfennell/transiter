@@ -25,10 +25,10 @@ STOP_IDS = {
     "1GN",
     "2COL",
     "2MEX",
-    "StopId",
-    "ParentStopId",
+    "StopID",
+    "ParentStopID",
 }
-ROUTE_IDS = {"A", "B", "RouteId"}
+ROUTE_IDS = {"A", "B", "RouteID"}
 FEED_IDS = {"GtfsRealtimeFeed", "gtfsstatic"}
 STOP_ID_TO_USUAL_ROUTES = {
     "1A": ["A"],
@@ -67,19 +67,19 @@ def test_install_system__stops(system_id, install_system_1, transiter_host, sync
     assert STOP_IDS == actual_stop_ids
 
     stop_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops/StopId"
+        transiter_host + "/systems/" + system_id + "/stops/StopID"
     ).json()
-    assert "StopId" == stop_response["id"]
+    assert "StopID" == stop_response["id"]
     assert 10.5 == stop_response["latitude"]
     assert 20.5 == stop_response["longitude"]
     assert "StopUrl" == stop_response["url"]
-    assert "ParentStopId" == stop_response["parentStop"]["id"]
+    assert "ParentStopID" == stop_response["parentStop"]["id"]
 
     parent_stop_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops/ParentStopId"
+        transiter_host + "/systems/" + system_id + "/stops/ParentStopID"
     ).json()
     assert 1 == len(parent_stop_response["childStops"])
-    assert "StopId" == parent_stop_response["childStops"][0]["id"]
+    assert "StopID" == parent_stop_response["childStops"][0]["id"]
 
 
 @pytest.mark.parametrize("sync", [True, False])
@@ -129,9 +129,9 @@ def test_install_system__routes(system_id, install_system_1, transiter_host, syn
     assert ROUTE_IDS == actual_route_ids
 
     route_response =   requests.get(
-        transiter_host + "/systems/" + system_id + "/routes/RouteId"
+        transiter_host + "/systems/" + system_id + "/routes/RouteID"
     ).json()
-    assert "RouteId" == route_response["id"]
+    assert "RouteID" == route_response["id"]
     assert "RouteColor" == route_response["color"]
     assert "RouteTextColor" == route_response["textColor"]
     assert "RouteShortName" == route_response["shortName"]

@@ -14,7 +14,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
 
-func TestMapStopIdToStationPk(t *testing.T) {
+func TestMapStopIDToStationPk(t *testing.T) {
 	type insertStopFunc func(string, gtfs.StopType, *int64) int64
 	for _, tc := range []struct {
 		name     string
@@ -98,12 +98,12 @@ func TestMapStopIdToStationPk(t *testing.T) {
 				return pk
 			}
 			want := tc.wantFunc(insertStop)
-			got, err := dbwrappers.MapStopIdToStationPk(context.Background(), q, systemPk)
+			got, err := dbwrappers.MapStopIDToStationPk(context.Background(), q, systemPk)
 			if err != nil {
-				t.Fatalf("MapStopIdToStationPk() err = %+v, want err = nil", err)
+				t.Fatalf("MapStopIDToStationPk() err = %+v, want err = nil", err)
 			}
 			if !reflect.DeepEqual(got, want) {
-				t.Fatalf("MapStopIdToStationPk()\n got = %+v\nwant = %+v", got, want)
+				t.Fatalf("MapStopIDToStationPk()\n got = %+v\nwant = %+v", got, want)
 			}
 		})
 	}

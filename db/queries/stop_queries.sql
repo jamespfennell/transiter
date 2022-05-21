@@ -45,7 +45,7 @@ WHERE
     AND feed_update.pk != sqlc.arg(update_pk)
 RETURNING stop.id;
 
--- name: MapStopIdToStationPk :many
+-- name: MapStopIDToStationPk :many
 WITH RECURSIVE 
 ancestor AS (
 	SELECT 

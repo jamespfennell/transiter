@@ -22,5 +22,5 @@ stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,stop_code,stop_
 1GN,Guanabana St. Station,0,0,0,1G,,,,,,,,
 2COL,Avenida de Colombia,0,0,1,,,,,,,,,
 2MEX,Avenida de Mexico,0,0,1,,,,,,,,,
-StopId,StopName,10.5,20.5,1,ParentStopId,StopCode,StopDesc,ZoneId,StopUrl,StopTimezone,0,LevelId,PlatformCode
-ParentStopId,,,,,,,,,,,,,
+StopID,StopName,10.5,20.5,1,ParentStopID,StopCode,StopDesc,ZoneId,StopUrl,StopTimezone,0,LevelId,PlatformCode
+ParentStopID,,,,,,,,,,,,,

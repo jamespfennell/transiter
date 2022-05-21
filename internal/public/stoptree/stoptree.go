@@ -1,3 +1,4 @@
+// Package stoptree is used for creating the tree of stops corresponding to a single stop.
 package stoptree
 
 import (

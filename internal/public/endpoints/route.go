@@ -68,22 +68,22 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 		}
 		return nil, err
 	}
-	service_map_rows, err := r.Querier.ListServiceMapsForRoute(ctx, route.Pk)
+	serviceMapRows, err := r.Querier.ListServiceMapsForRoute(ctx, route.Pk)
 	if err != nil {
 		return nil, err
 	}
-	groupIdToServiceMap := map[string]*api.ServiceMapForRoute{}
-	for _, row := range service_map_rows {
-		if _, ok := groupIdToServiceMap[row.GroupID]; !ok {
-			groupIdToServiceMap[row.GroupID] = &api.ServiceMapForRoute{
+	groupIDToServiceMap := map[string]*api.ServiceMapForRoute{}
+	for _, row := range serviceMapRows {
+		if _, ok := groupIDToServiceMap[row.GroupID]; !ok {
+			groupIDToServiceMap[row.GroupID] = &api.ServiceMapForRoute{
 				GroupId: row.GroupID,
 			}
 		}
 		if !row.StopID.Valid {
 			continue
 		}
-		groupIdToServiceMap[row.GroupID].Stops = append(
-			groupIdToServiceMap[row.GroupID].Stops,
+		groupIDToServiceMap[row.GroupID].Stops = append(
+			groupIDToServiceMap[row.GroupID].Stops,
 			&api.StopPreview{
 				Id:   row.StopID.String,
 				Name: row.StopName.String,
@@ -92,7 +92,7 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 		)
 	}
 	serviceMapsReply := []*api.ServiceMapForRoute{}
-	for _, serviceMap := range groupIdToServiceMap {
+	for _, serviceMap := range groupIDToServiceMap {
 		serviceMapsReply = append(serviceMapsReply, serviceMap)
 	}
 	periodicityI, err := r.Querier.CalculatePeriodicityForRoute(ctx, route.Pk)
@@ -128,8 +128,8 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 			Cause:  alert.Cause,
 			Effect: alert.Effect,
 			ActivePeriod: &api.Alert_ActivePeriod{
-				StartsAt: convert.SqlNullTime(alert.StartsAt),
-				EndsAt:   convert.SqlNullTime(alert.EndsAt),
+				StartsAt: convert.SQLNullTime(alert.StartsAt),
+				EndsAt:   convert.SQLNullTime(alert.EndsAt),
 			},
 		}
 		for _, message := range alertMessages {
@@ -139,8 +139,8 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 			apiAlert.Messages = append(apiAlert.Messages, &api.Alert_Message{
 				Header:      message.Header,
 				Description: message.Description,
-				Url:         convert.SqlNullString(message.Url),
-				Language:    convert.SqlNullString(message.Language),
+				Url:         convert.SQLNullString(message.Url),
+				Language:    convert.SQLNullString(message.Language),
 			})
 		}
 		alertsReply = append(alertsReply, &apiAlert)
@@ -148,13 +148,13 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 
 	reply := &api.Route{
 		Id:                route.ID,
-		ShortName:         convert.SqlNullString(route.ShortName),
-		LongName:          convert.SqlNullString(route.LongName),
+		ShortName:         convert.SQLNullString(route.ShortName),
+		LongName:          convert.SQLNullString(route.LongName),
 		Color:             route.Color,
 		TextColor:         route.TextColor,
-		Description:       convert.SqlNullString(route.Description),
-		Url:               convert.SqlNullString(route.Url),
-		SortOrder:         convert.SqlNullInt32(route.SortOrder),
+		Description:       convert.SQLNullString(route.Description),
+		Url:               convert.SQLNullString(route.Url),
+		SortOrder:         convert.SQLNullInt32(route.SortOrder),
 		ContinuousPickup:  route.ContinuousPickup,
 		ContinuousDropOff: route.ContinuousDropOff,
 		Type:              route.Type,

@@ -1,3 +1,4 @@
+// Package realtime contains the code for updating the database from a GTFS realtime feed.
 package realtime
 
 import (
@@ -22,17 +23,17 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, parsedEntities 
 func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gtfs.Trip) error {
 	// ASSUMPTIONS: route ID is populated. If not, get it from the static data in an earlier phase
 
-	stopIdToPk, err := dbwrappers.MapStopIdToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIdsInTrips(trips))
+	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDsInTrips(trips))
 	if err != nil {
 		return err
 	}
-	routeIdToPk, err := dbwrappers.MapRouteIdToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, routeIdsInTrips(trips))
+	routeIDToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, routeIDsInTrips(trips))
 	if err != nil {
 		return err
 	}
 
 	var routePks []int64
-	for _, routePk := range routeIdToPk {
+	for _, routePk := range routeIDToPk {
 		routePks = append(routePks, routePk)
 	}
 	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, routePks)
@@ -44,19 +45,19 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	processedIds := map[dbwrappers.TripUID]bool{}
 
 	for _, trip := range trips {
-		routePk, ok := routeIdToPk[trip.ID.RouteID]
+		routePk, ok := routeIDToPk[trip.ID.RouteID]
 		if !ok {
 			continue
 		}
 
-		uid := dbwrappers.TripUID{RoutePk: routePk, Id: trip.ID.ID}
+		uid := dbwrappers.TripUID{RoutePk: routePk, ID: trip.ID.ID}
 		if processedIds[uid] {
 			continue
 		}
 		processedIds[uid] = true
 
 		existingTrip := existingTrips[uid]
-		populateStopSequences(&trip, existingTrip, stopIdToPk)
+		populateStopSequences(&trip, existingTrip, stopIDToPk)
 
 		var tripPk int64
 		if existingTrip != nil {
@@ -91,13 +92,13 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		}
 		serviceMapTrip := servicemaps.Trip{
 			RoutePk:     routePk,
-			DirectionId: convert.DirectionID(trip.ID.DirectionID),
+			DirectionID: convert.DirectionID(trip.ID.DirectionID),
 		}
 		for _, stopTime := range trip.StopTimeUpdates {
 			if stopTime.StopID == nil {
 				continue
 			}
-			stopPk, ok := stopIdToPk[*stopTime.StopID]
+			stopPk, ok := stopIDToPk[*stopTime.StopID]
 			if !ok {
 				continue
 			}
@@ -193,7 +194,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		}
 		oldServiceMapTrips = append(oldServiceMapTrips, servicemaps.Trip{
 			RoutePk:     trip.RoutePk,
-			DirectionId: trip.DirectionId,
+			DirectionID: trip.DirectionID,
 			StopPks:     stopPks,
 		})
 	}
@@ -209,37 +210,37 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	return nil
 }
 
-func stopIdsInTrips(trips []gtfs.Trip) []string {
+func stopIDsInTrips(trips []gtfs.Trip) []string {
 	set := map[string]bool{}
 	for i := range trips {
 		for j := range trips[i].StopTimeUpdates {
-			stopId := trips[i].StopTimeUpdates[j].StopID
-			if stopId == nil {
+			stopID := trips[i].StopTimeUpdates[j].StopID
+			if stopID == nil {
 				continue
 			}
-			set[*stopId] = true
+			set[*stopID] = true
 		}
 	}
-	var stopIds []string
-	for stopId := range set {
-		stopIds = append(stopIds, stopId)
+	var stopIDs []string
+	for stopID := range set {
+		stopIDs = append(stopIDs, stopID)
 	}
-	return stopIds
+	return stopIDs
 }
 
-func routeIdsInTrips(trips []gtfs.Trip) []string {
+func routeIDsInTrips(trips []gtfs.Trip) []string {
 	set := map[string]bool{}
 	for i := range trips {
 		set[trips[i].ID.RouteID] = true
 	}
-	var routeIds []string
-	for routeId := range set {
-		routeIds = append(routeIds, routeId)
+	var routeIDs []string
+	for routeID := range set {
+		routeIDs = append(routeIDs, routeID)
 	}
-	return routeIds
+	return routeIDs
 }
 
-func populateStopSequences(trip *gtfs.Trip, current *dbwrappers.TripForUpdate, stopIdToPk map[string]int64) {
+func populateStopSequences(trip *gtfs.Trip, current *dbwrappers.TripForUpdate, stopIDToPk map[string]int64) {
 	stopPkToCurrentSequence := map[int64]int64{}
 	if current != nil {
 		for _, stopTime := range current.StopTimes {
@@ -258,7 +259,7 @@ func populateStopSequences(trip *gtfs.Trip, current *dbwrappers.TripForUpdate, s
 		if stopTime.StopID == nil {
 			continue
 		}
-		stopPk, ok := stopIdToPk[*stopTime.StopID]
+		stopPk, ok := stopIDToPk[*stopTime.StopID]
 		if !ok {
 			continue
 		}

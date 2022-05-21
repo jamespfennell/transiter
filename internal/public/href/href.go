@@ -1,3 +1,4 @@
+// Package href contains a facility for generating links to entities in the REST API.
 package href
 
 import (
@@ -10,9 +11,11 @@ import (
 
 type Generator struct {
 	enabled bool
-	baseUrl string
+	baseURL string
 }
 
+// XTransiterHost is the key of the HTTP header whose value is used as the base URL in all link values.
+//
 // TODO(APIv2): rename X-Transiter-BaseURL
 const XTransiterHost = "X-Transiter-Host"
 
@@ -20,8 +23,8 @@ var xTransiterHostLower = strings.ToLower(XTransiterHost)
 
 func NewGenerator(ctx context.Context) Generator {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if baseUrl, ok := md[xTransiterHostLower]; ok {
-			return Generator{enabled: true, baseUrl: baseUrl[0]}
+		if baseURL, ok := md[xTransiterHostLower]; ok {
+			return Generator{enabled: true, baseURL: baseURL[0]}
 		}
 	}
 	return Generator{}
@@ -31,58 +34,58 @@ func (h Generator) Systems() *string {
 	return h.generate("systems")
 }
 
-func (h Generator) System(system_id string) *string {
-	return h.generate("systems", system_id)
+func (h Generator) System(systemID string) *string {
+	return h.generate("systems", systemID)
 }
 
-func (h Generator) AgenciesInSystem(system_id string) *string {
-	return h.generate("systems", system_id, "agencies")
+func (h Generator) AgenciesInSystem(systemID string) *string {
+	return h.generate("systems", systemID, "agencies")
 }
 
-func (h Generator) FeedsInSystem(system_id string) *string {
-	return h.generate("systems", system_id, "feeds")
+func (h Generator) FeedsInSystem(systemID string) *string {
+	return h.generate("systems", systemID, "feeds")
 }
 
-func (h Generator) RoutesInSystem(system_id string) *string {
-	return h.generate("systems", system_id, "routes")
+func (h Generator) RoutesInSystem(systemID string) *string {
+	return h.generate("systems", systemID, "routes")
 }
 
-func (h Generator) StopsInSystem(system_id string) *string {
-	return h.generate("systems", system_id, "stops")
+func (h Generator) StopsInSystem(systemID string) *string {
+	return h.generate("systems", systemID, "stops")
 }
 
-func (h Generator) TransfersInSystem(system_id string) *string {
-	return h.generate("systems", system_id, "transfers")
+func (h Generator) TransfersInSystem(systemID string) *string {
+	return h.generate("systems", systemID, "transfers")
 }
 
-func (h Generator) Agency(system_id string, agency_id string) *string {
-	return h.generate("systems", system_id, "agencies", agency_id)
+func (h Generator) Agency(systemID string, agencyID string) *string {
+	return h.generate("systems", systemID, "agencies", agencyID)
 }
 
-func (h Generator) Feed(system_id string, feed_id string) *string {
-	return h.generate("systems", system_id, "feeds", feed_id)
+func (h Generator) Feed(systemID string, feedID string) *string {
+	return h.generate("systems", systemID, "feeds", feedID)
 }
 
-func (h Generator) FeedUpdates(system_id string, feed_id string) *string {
-	return h.generate("systems", system_id, "feeds", feed_id, "updates")
+func (h Generator) FeedUpdates(systemID string, feedID string) *string {
+	return h.generate("systems", systemID, "feeds", feedID, "updates")
 }
 
-func (h Generator) Route(system_id string, route_id string) *string {
-	return h.generate("systems", system_id, "routes", route_id)
+func (h Generator) Route(systemID string, routeID string) *string {
+	return h.generate("systems", systemID, "routes", routeID)
 }
 
-func (h Generator) Trip(system_id string, route_id string, trip_id string) *string {
-	return h.generate("systems", system_id, "routes", route_id, "trips", trip_id)
+func (h Generator) Trip(systemID string, routeID string, tripID string) *string {
+	return h.generate("systems", systemID, "routes", routeID, "trips", tripID)
 }
 
-func (h Generator) Stop(system_id string, stop_id string) *string {
-	return h.generate("systems", system_id, "stops", stop_id)
+func (h Generator) Stop(systemID string, stopID string) *string {
+	return h.generate("systems", systemID, "stops", stopID)
 }
 
 func (h Generator) generate(elem ...string) *string {
 	if !h.enabled {
 		return nil
 	}
-	res := h.baseUrl + "/" + path.Join(elem...)
+	res := h.baseURL + "/" + path.Join(elem...)
 	return &res
 }

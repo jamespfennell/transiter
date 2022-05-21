@@ -98,7 +98,7 @@ func (q *Queries) InsertStop(ctx context.Context, arg InsertStopParams) (int64, 
 	return pk, err
 }
 
-const mapStopIdToStationPk = `-- name: MapStopIdToStationPk :many
+const mapStopIDToStationPk = `-- name: MapStopIDToStationPk :many
 WITH RECURSIVE 
 ancestor AS (
 	SELECT 
@@ -125,20 +125,20 @@ SELECT stop_id, station_pk
   OR is_station
 `
 
-type MapStopIdToStationPkRow struct {
+type MapStopIDToStationPkRow struct {
 	StopID    string
 	StationPk int64
 }
 
-func (q *Queries) MapStopIdToStationPk(ctx context.Context, systemPk int64) ([]MapStopIdToStationPkRow, error) {
-	rows, err := q.db.Query(ctx, mapStopIdToStationPk, systemPk)
+func (q *Queries) MapStopIDToStationPk(ctx context.Context, systemPk int64) ([]MapStopIDToStationPkRow, error) {
+	rows, err := q.db.Query(ctx, mapStopIDToStationPk, systemPk)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MapStopIdToStationPkRow
+	var items []MapStopIDToStationPkRow
 	for rows.Next() {
-		var i MapStopIdToStationPkRow
+		var i MapStopIDToStationPkRow
 		if err := rows.Scan(&i.StopID, &i.StationPk); err != nil {
 			return nil, err
 		}

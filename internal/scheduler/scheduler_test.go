@@ -10,18 +10,18 @@ import (
 	"github.com/benbjohnson/clock"
 )
 
-const systemId1 = "systemId1"
-const feedId1 = "feedId1"
-const feedId2 = "feedId2"
-const systemId2 = "systemId2"
-const feedId3 = "feedId3"
+const systemID1 = "systemID1"
+const feedID1 = "feedID1"
+const feedID2 = "feedID2"
+const systemID2 = "systemID2"
+const feedID3 = "feedID3"
 
 func TestScheduler(t *testing.T) {
 	resetSystem1 := func(s *Scheduler) error {
-		return s.Reset(context.Background(), systemId1)
+		return s.Reset(context.Background(), systemID1)
 	}
 	resetSystem2 := func(s *Scheduler) error {
-		return s.Reset(context.Background(), systemId2)
+		return s.Reset(context.Background(), systemID2)
 	}
 	resetAll := func(s *Scheduler) error {
 		return s.ResetAll(context.Background())
@@ -37,10 +37,10 @@ func TestScheduler(t *testing.T) {
 			description: "just change periodicity of one feed",
 			update: []SystemConfig{
 				{
-					Id: systemId1,
+					ID: systemID1,
 					FeedConfigs: []FeedConfig{
 						{
-							Id:     feedId1,
+							ID:     feedID1,
 							Period: 1000 * time.Millisecond,
 						},
 					},
@@ -49,21 +49,21 @@ func TestScheduler(t *testing.T) {
 			resetF:        resetSystem1,
 			runningPeriod: 2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{
-				{systemId: systemId1, feedId: feedId1}: 2,
+				{systemID: systemID1, feedID: feedID1}: 2,
 			},
 		},
 		{
 			description: "new feed in same system",
 			update: []SystemConfig{
 				{
-					Id: systemId1,
+					ID: systemID1,
 					FeedConfigs: []FeedConfig{
 						{
-							Id:     feedId1,
+							ID:     feedID1,
 							Period: 500 * time.Millisecond,
 						},
 						{
-							Id:     feedId2,
+							ID:     feedID2,
 							Period: 500 * time.Millisecond,
 						},
 					},
@@ -72,15 +72,15 @@ func TestScheduler(t *testing.T) {
 			resetF:        resetSystem1,
 			runningPeriod: 2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{
-				{systemId: systemId1, feedId: feedId1}: 4,
-				{systemId: systemId1, feedId: feedId2}: 4,
+				{systemID: systemID1, feedID: feedID1}: 4,
+				{systemID: systemID1, feedID: feedID2}: 4,
 			},
 		},
 		{
 			description: "remove feed in system",
 			update: []SystemConfig{
 				{
-					Id:          systemId1,
+					ID:          systemID1,
 					FeedConfigs: []FeedConfig{},
 				},
 			},
@@ -99,19 +99,19 @@ func TestScheduler(t *testing.T) {
 			description: "new system, only reset the new one",
 			update: []SystemConfig{
 				{
-					Id: systemId1,
+					ID: systemID1,
 					FeedConfigs: []FeedConfig{
 						{
-							Id:     feedId1,
+							ID:     feedID1,
 							Period: 500 * time.Millisecond,
 						},
 					},
 				},
 				{
-					Id: systemId2,
+					ID: systemID2,
 					FeedConfigs: []FeedConfig{
 						{
-							Id:     feedId3,
+							ID:     feedID3,
 							Period: 500 * time.Millisecond,
 						},
 					},
@@ -120,27 +120,27 @@ func TestScheduler(t *testing.T) {
 			resetF:        resetSystem2,
 			runningPeriod: 2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{
-				{systemId: systemId1, feedId: feedId1}: 4,
-				{systemId: systemId2, feedId: feedId3}: 4,
+				{systemID: systemID1, feedID: feedID1}: 4,
+				{systemID: systemID2, feedID: feedID3}: 4,
 			},
 		},
 		{
 			description: "new system, reset all",
 			update: []SystemConfig{
 				{
-					Id: systemId1,
+					ID: systemID1,
 					FeedConfigs: []FeedConfig{
 						{
-							Id:     feedId1,
+							ID:     feedID1,
 							Period: 500 * time.Millisecond,
 						},
 					},
 				},
 				{
-					Id: systemId2,
+					ID: systemID2,
 					FeedConfigs: []FeedConfig{
 						{
-							Id:     feedId3,
+							ID:     feedID3,
 							Period: 500 * time.Millisecond,
 						},
 					},
@@ -149,8 +149,8 @@ func TestScheduler(t *testing.T) {
 			resetF:        resetAll,
 			runningPeriod: 2000 * time.Millisecond,
 			expectedUpdates: map[systemAndFeed]int{
-				{systemId: systemId1, feedId: feedId1}: 4,
-				{systemId: systemId2, feedId: feedId3}: 4,
+				{systemID: systemID1, feedID: feedID1}: 4,
+				{systemID: systemID2, feedID: feedID3}: 4,
 			},
 		},
 	}
@@ -162,10 +162,10 @@ func TestScheduler(t *testing.T) {
 			ops := testOps{
 				currentConfig: []SystemConfig{
 					{
-						Id: systemId1,
+						ID: systemID1,
 						FeedConfigs: []FeedConfig{
 							{
-								Id:     feedId1,
+								ID:     feedID1,
 								Period: 500 * time.Millisecond,
 							},
 						},
@@ -190,7 +190,7 @@ func TestScheduler(t *testing.T) {
 
 			updates := ops.getUpdates(4)
 			expected := map[systemAndFeed]int{
-				{systemId: systemId1, feedId: feedId1}: 4,
+				{systemID: systemID1, feedID: feedID1}: 4,
 			}
 			if !reflect.DeepEqual(expected, updates) {
 				t.Errorf("Updates got = %+v, want = %+v", updates, expected)
@@ -232,17 +232,17 @@ func (ops *testOps) ListSystemConfigs(ctx context.Context) ([]SystemConfig, erro
 	return ops.currentConfig, nil
 }
 
-func (ops *testOps) GetSystemConfig(ctx context.Context, systemId string) (SystemConfig, error) {
+func (ops *testOps) GetSystemConfig(ctx context.Context, systemID string) (SystemConfig, error) {
 	for _, config := range ops.currentConfig {
-		if config.Id == systemId {
+		if config.ID == systemID {
 			return config, nil
 		}
 	}
-	return SystemConfig{Id: systemId}, nil
+	return SystemConfig{ID: systemID}, nil
 }
 
-func (ops *testOps) UpdateFeed(ctx context.Context, systemId, feedId string) error {
-	ops.updateChan <- systemAndFeed{systemId: systemId, feedId: feedId}
+func (ops *testOps) UpdateFeed(ctx context.Context, systemID, feedID string) error {
+	ops.updateChan <- systemAndFeed{systemID: systemID, feedID: feedID}
 	return nil
 }
 
@@ -268,5 +268,5 @@ func (ops *testOps) getUpdates(num int) map[systemAndFeed]int {
 }
 
 type systemAndFeed struct {
-	systemId, feedId string
+	systemID, feedID string
 }

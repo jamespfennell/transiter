@@ -27,13 +27,13 @@ func ListFeedsInSystem(ctx context.Context, r *Context, req *api.ListFeedsInSyst
 	result := &api.ListFeedsInSystemReply{}
 	for _, feed := range feeds {
 		feed := feed
-		api_feed := &api.FeedPreview{
+		apiFeed := &api.FeedPreview{
 			Id:                    feed.ID,
 			PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
 			PeriodicUpdatePeriod:  periodicUpdatePeriod(&feed),
 			Href:                  r.Href.Feed(system.ID, feed.ID),
 		}
-		result.Feeds = append(result.Feeds, api_feed)
+		result.Feeds = append(result.Feeds, apiFeed)
 	}
 	return result, nil
 }
@@ -74,11 +74,11 @@ func ListFeedUpdates(ctx context.Context, r *Context, req *api.ListFeedUpdatesRe
 		reply.Updates = append(reply.Updates, &api.FeedUpdate{
 			Id:            fmt.Sprintf("%d", update.Pk),
 			Status:        update.Status,
-			Result:        convert.SqlNullString(update.Result),
-			StackTrace:    convert.SqlNullString(update.ResultMessage),
-			ContentHash:   convert.SqlNullString(update.ContentHash),
-			ContentLength: convert.SqlNullInt32(update.ContentLength),
-			CompletedAt:   convert.SqlNullTime(update.CompletedAt),
+			Result:        convert.SQLNullString(update.Result),
+			StackTrace:    convert.SQLNullString(update.ResultMessage),
+			ContentHash:   convert.SQLNullString(update.ContentHash),
+			ContentLength: convert.SQLNullInt32(update.ContentLength),
+			CompletedAt:   convert.SQLNullTime(update.CompletedAt),
 		})
 	}
 	return reply, nil

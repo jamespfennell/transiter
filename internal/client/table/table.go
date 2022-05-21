@@ -1,3 +1,4 @@
+// Package table contains a utility for printing tables on the command line.
 package table
 
 import (

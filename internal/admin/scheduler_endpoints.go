@@ -12,8 +12,8 @@ func (s *Service) GetSchedulerStatus(ctx context.Context, req *api.GetSchedulerS
 	feeds := s.scheduler.Status()
 	for _, feed := range feeds {
 		reply.Feeds = append(reply.Feeds, &api.GetSchedulerStatusReply_Feed{
-			SystemId:             feed.SystemId,
-			FeedId:               feed.FeedId,
+			SystemId:             feed.SystemID,
+			FeedId:               feed.FeedID,
 			Period:               feed.Period.Milliseconds(),
 			LastSuccessfulUpdate: convert(feed.LastSuccessfulUpdate),
 			LastFinishedUpdate:   convert(feed.LastFinishedUpdate),

@@ -1,3 +1,4 @@
+// Package schema contains the migrations runner.
 package schema
 
 import (
@@ -13,7 +14,7 @@ import (
 //go:embed *.sql
 var migrations embed.FS
 
-// Migrate Applies all migrations to the databse.
+// Migrate applies all migrations to the databse.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	conn, err := pool.Acquire(ctx)
 	if err != nil {

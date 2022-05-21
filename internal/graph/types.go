@@ -1,3 +1,6 @@
+// Package graph contains type definitions for graphs and algorithms that operate on them.
+//
+// This package is used in service maps logic.
 package graph
 
 type Node interface {

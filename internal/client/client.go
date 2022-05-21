@@ -1,3 +1,6 @@
+// Package client is a client library for interacting with a Transiter server.
+//
+// It wraps the raw gRPC API with a more idiomatic interface.
 package client
 
 import (
@@ -35,14 +38,14 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *Client) DeleteSystem(ctx context.Context, systemId string) error {
-	req := api.DeleteSystemRequest{SystemId: systemId}
+func (c *Client) DeleteSystem(ctx context.Context, systemID string) error {
+	req := api.DeleteSystemRequest{SystemId: systemID}
 	_, err := c.adminClient.DeleteSystem(ctx, &req)
 	return err
 }
 
 type InstallSystemArgs struct {
-	SystemId     string
+	SystemID     string
 	ConfigPath   string
 	IsFile       bool
 	AllowUpdate  bool
@@ -69,7 +72,7 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 		}
 	}
 	req := api.InstallOrUpdateSystemRequest{
-		SystemId:    args.SystemId,
+		SystemId:    args.SystemID,
 		InstallOnly: !args.AllowUpdate,
 		Config: &api.InstallOrUpdateSystemRequest_YamlConfig{
 			YamlConfig: yamlConfig,
@@ -82,7 +85,7 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 	}
 
 	for {
-		system, err := c.publicClient.GetSystem(ctx, &api.GetSystemRequest{SystemId: args.SystemId})
+		system, err := c.publicClient.GetSystem(ctx, &api.GetSystemRequest{SystemId: args.SystemID})
 		if err != nil {
 			return fmt.Errorf("failed to poll system status: %w", err)
 		}
@@ -97,10 +100,10 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 	}
 }
 
-func (c *Client) UpdateFeed(ctx context.Context, systemId, feedId string) error {
+func (c *Client) UpdateFeed(ctx context.Context, systemID, feedID string) error {
 	_, err := c.adminClient.UpdateFeed(ctx, &api.UpdateFeedRequest{
-		SystemId: systemId,
-		FeedId:   feedId,
+		SystemId: systemID,
+		FeedId:   feedID,
 	})
 	return err
 }

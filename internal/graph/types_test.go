@@ -151,7 +151,7 @@ func FiveNodeTree() *Graph {
 	}...)
 }
 
-func FiveNodeTree_Tree() *Tree {
+func FiveNodeTreeAsTree() *Tree {
 	tree, _ := NewTreeFromGraph(FiveNodeTree())
 	return tree
 }

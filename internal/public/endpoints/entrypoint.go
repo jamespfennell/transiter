@@ -1,3 +1,4 @@
+// Package endpoints contains the logic for each public API endpoint.
 package endpoints
 
 import (

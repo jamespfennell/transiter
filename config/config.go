@@ -20,16 +20,16 @@ type SystemConfig struct {
 }
 
 type FeedConfig struct {
-	Id string
+	ID string
 
 	RequiredForInstall bool `yaml:"requiredForInstall"`
 
 	PeriodicUpdateEnabled bool           `yaml:"periodicUpdateEnabled"`
 	PeriodicUpdatePeriod  *time.Duration `yaml:"periodicUpdatePeriod"`
 
-	Url         string
-	HttpTimeout *time.Duration    `yaml:"httpTimeout"`
-	HttpHeaders map[string]string `yaml:"httpHeaders"`
+	URL         string
+	HTTPTimeout *time.Duration    `yaml:"httpTimeout"`
+	HTTPHeaders map[string]string `yaml:"httpHeaders"`
 
 	Parser              Parser
 	GtfsStaticOptions   GtfsStaticOptions   `yaml:"gtfsStaticOptions"`
@@ -57,8 +57,8 @@ type GtfsStaticOptions struct {
 }
 
 type TransfersException struct {
-	StopId1  string
-	StopId2  string
+	StopID1  string
+	StopID2  string
 	Strategy TransfersStrategy
 }
 
@@ -77,12 +77,12 @@ type GtfsRealtimeOptions struct {
 type ServiceMapSource string
 
 const (
-	SERVICE_MAP_SOURCE_STATIC   ServiceMapSource = "STATIC"
-	SERVICE_MAP_SOURCE_REALTIME ServiceMapSource = "REALTIME"
+	ServiceMapSourceStatic   ServiceMapSource = "STATIC"
+	ServiceMapSourceRealtime ServiceMapSource = "REALTIME"
 )
 
 type ServiceMapConfig struct {
-	Id        string
+	ID        string
 	Source    ServiceMapSource
 	Threshold float64
 
@@ -96,24 +96,24 @@ type ServiceMapConfig struct {
 	DefaultForStopsInRoute bool `yaml:"defaultForStopsInRoute"`
 }
 
-func ConvertApiSystemConfig(sc *api.SystemConfig) *SystemConfig {
+func ConvertAPISystemConfig(sc *api.SystemConfig) *SystemConfig {
 	result := &SystemConfig{
 		Name: sc.Name,
 	}
 	for _, feed := range sc.Feeds {
-		result.Feeds = append(result.Feeds, *ConvertApiFeedConfig(feed))
+		result.Feeds = append(result.Feeds, *ConvertAPIFeedConfig(feed))
 	}
 	return result
 }
 
-func ConvertApiFeedConfig(fc *api.FeedConfig) *FeedConfig {
+func ConvertAPIFeedConfig(fc *api.FeedConfig) *FeedConfig {
 	result := &FeedConfig{
 		RequiredForInstall:    fc.RequiredForInstall,
 		PeriodicUpdateEnabled: fc.PeriodicUpdateEnabled,
 		PeriodicUpdatePeriod:  convertMilliseconds(fc.PeriodicUpdatePeriod),
-		Url:                   fc.Url,
-		HttpTimeout:           convertMilliseconds(fc.HttpTimeout),
-		HttpHeaders:           fc.HttpHeaders,
+		URL:                   fc.Url,
+		HTTPTimeout:           convertMilliseconds(fc.HttpTimeout),
+		HTTPHeaders:           fc.HttpHeaders,
 	}
 
 	switch parser := fc.Parser.(type) {
@@ -121,14 +121,14 @@ func ConvertApiFeedConfig(fc *api.FeedConfig) *FeedConfig {
 		var internalExceptions []TransfersException
 		for _, exception := range parser.GtfsStaticParser.TransfersExceptions {
 			internalExceptions = append(internalExceptions, TransfersException{
-				StopId1:  exception.StopId_1,
-				StopId2:  exception.StopId_2,
-				Strategy: convertApiTransfersStrategy(exception.Strategy),
+				StopID1:  exception.StopId_1,
+				StopID2:  exception.StopId_2,
+				Strategy: convertAPITransfersStrategy(exception.Strategy),
 			})
 		}
 		result.Parser = GtfsStatic
 		result.GtfsStaticOptions = GtfsStaticOptions{
-			TransfersStrategy:   convertApiTransfersStrategy(parser.GtfsStaticParser.TransfersStrategy),
+			TransfersStrategy:   convertAPITransfersStrategy(parser.GtfsStaticParser.TransfersStrategy),
 			TransfersExceptions: internalExceptions,
 		}
 	case *api.FeedConfig_GtfsRealtimeParser_:
@@ -147,7 +147,7 @@ func ConvertApiFeedConfig(fc *api.FeedConfig) *FeedConfig {
 	return result
 }
 
-func convertApiTransfersStrategy(s api.FeedConfig_GtfsStaticParser_TransfersStrategy) TransfersStrategy {
+func convertAPITransfersStrategy(s api.FeedConfig_GtfsStaticParser_TransfersStrategy) TransfersStrategy {
 	switch s {
 	case api.FeedConfig_GtfsStaticParser_DEFAULT:
 		return Default
@@ -157,28 +157,28 @@ func convertApiTransfersStrategy(s api.FeedConfig_GtfsStaticParser_TransfersStra
 	return Default
 }
 
-func ConvertApiServiceMapConfig(in *api.ServiceMapConfig) *ServiceMapConfig {
+func ConvertAPIServiceMapConfig(in *api.ServiceMapConfig) *ServiceMapConfig {
 	out := &ServiceMapConfig{
-		Id:                     in.Id,
+		ID:                     in.Id,
 		Threshold:              in.Threshold,
 		DefaultForRoutesAtStop: in.DefaultForRoutesAtStop,
 		DefaultForStopsInRoute: in.DefaultForStopsInRoute,
 	}
 	switch source := in.Source.(type) {
 	case *api.ServiceMapConfig_RealtimeSource:
-		out.Source = SERVICE_MAP_SOURCE_REALTIME
+		out.Source = ServiceMapSourceRealtime
 	case *api.ServiceMapConfig_StaticSource:
-		out.Source = SERVICE_MAP_SOURCE_STATIC
-		out.StartsEarlierThan = convertApiTimeInDay(source.StaticSource.StartsEarlierThan)
-		out.StartsLaterThan = convertApiTimeInDay(source.StaticSource.StartsLaterThan)
-		out.EndsEarlierThan = convertApiTimeInDay(source.StaticSource.EndsEarlierThan)
-		out.EndsLaterThan = convertApiTimeInDay(source.StaticSource.EndsLaterThan)
+		out.Source = ServiceMapSourceStatic
+		out.StartsEarlierThan = convertAPITimeInDay(source.StaticSource.StartsEarlierThan)
+		out.StartsLaterThan = convertAPITimeInDay(source.StaticSource.StartsLaterThan)
+		out.EndsEarlierThan = convertAPITimeInDay(source.StaticSource.EndsEarlierThan)
+		out.EndsLaterThan = convertAPITimeInDay(source.StaticSource.EndsLaterThan)
 		out.Days = source.StaticSource.Days
 	}
 	return out
 }
 
-func convertApiTimeInDay(in *int64) *time.Duration {
+func convertAPITimeInDay(in *int64) *time.Duration {
 	if in == nil {
 		return nil
 	}
@@ -201,17 +201,17 @@ func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 		RequiredForInstall:    fc.RequiredForInstall,
 		PeriodicUpdateEnabled: fc.PeriodicUpdateEnabled,
 		PeriodicUpdatePeriod:  convertDuration(fc.PeriodicUpdatePeriod),
-		Url:                   fc.Url,
-		HttpTimeout:           convertDuration(fc.HttpTimeout),
-		HttpHeaders:           fc.HttpHeaders,
+		Url:                   fc.URL,
+		HttpTimeout:           convertDuration(fc.HTTPTimeout),
+		HttpHeaders:           fc.HTTPHeaders,
 	}
 	switch fc.Parser {
 	case GtfsStatic:
 		var apiExceptions []*api.FeedConfig_GtfsStaticParser_TransfersExceptions
 		for _, exception := range fc.GtfsStaticOptions.TransfersExceptions {
 			apiExceptions = append(apiExceptions, &api.FeedConfig_GtfsStaticParser_TransfersExceptions{
-				StopId_1: exception.StopId1,
-				StopId_2: exception.StopId2,
+				StopId_1: exception.StopID1,
+				StopId_2: exception.StopID2,
 				Strategy: convertInternalTransfersStrategy(exception.Strategy),
 			})
 		}
@@ -254,15 +254,15 @@ func convertInternalTransfersStrategy(s TransfersStrategy) api.FeedConfig_GtfsSt
 
 func ConvertServiceMapConfig(in *ServiceMapConfig) *api.ServiceMapConfig {
 	out := &api.ServiceMapConfig{
-		Id:                     in.Id,
+		Id:                     in.ID,
 		Threshold:              in.Threshold,
 		DefaultForRoutesAtStop: in.DefaultForRoutesAtStop,
 		DefaultForStopsInRoute: in.DefaultForStopsInRoute,
 	}
 	switch in.Source {
-	case SERVICE_MAP_SOURCE_REALTIME:
+	case ServiceMapSourceRealtime:
 		out.Source = &api.ServiceMapConfig_RealtimeSource{}
-	case SERVICE_MAP_SOURCE_STATIC:
+	case ServiceMapSourceStatic:
 		out.Source = &api.ServiceMapConfig_StaticSource{
 			StaticSource: &api.ServiceMapConfig_Static{
 				StartsEarlierThan: convertTimeInDay(in.StartsEarlierThan),
@@ -310,15 +310,15 @@ func UnmarshalFromYaml(b []byte) (*SystemConfig, error) {
 		sevenPm := 19 * time.Hour
 		config.ServiceMaps = []ServiceMapConfig{
 			{
-				Id:                     "alltimes",
-				Source:                 SERVICE_MAP_SOURCE_STATIC,
+				ID:                     "alltimes",
+				Source:                 ServiceMapSourceStatic,
 				Threshold:              0.1,
 				DefaultForRoutesAtStop: false,
 				DefaultForStopsInRoute: true,
 			},
 			{
-				Id:                     "weekday",
-				Source:                 SERVICE_MAP_SOURCE_STATIC,
+				ID:                     "weekday",
+				Source:                 ServiceMapSourceStatic,
 				Threshold:              0.1,
 				StartsLaterThan:        &sevenAm,
 				EndsEarlierThan:        &sevenPm,
@@ -327,8 +327,8 @@ func UnmarshalFromYaml(b []byte) (*SystemConfig, error) {
 				DefaultForStopsInRoute: false,
 			},
 			{
-				Id:                     "realtime",
-				Source:                 SERVICE_MAP_SOURCE_REALTIME,
+				ID:                     "realtime",
+				Source:                 ServiceMapSourceRealtime,
 				DefaultForRoutesAtStop: true,
 				DefaultForStopsInRoute: true,
 			},
@@ -337,7 +337,7 @@ func UnmarshalFromYaml(b []byte) (*SystemConfig, error) {
 	return &config, nil
 }
 
-func (fc *FeedConfig) MarshalToJson() []byte {
+func (fc *FeedConfig) MarshalToJSON() []byte {
 	b, err := json.Marshal(fc)
 	if err != nil {
 		panic(fmt.Sprintf("unexpected error when marhsalling feed config: %s", err))
@@ -345,7 +345,7 @@ func (fc *FeedConfig) MarshalToJson() []byte {
 	return b
 }
 
-func UnmarshalFromJson(b []byte) (*FeedConfig, error) {
+func UnmarshalFromJSON(b []byte) (*FeedConfig, error) {
 	var config FeedConfig
 	if err := json.Unmarshal(b, &config); err != nil {
 		return nil, err
@@ -353,7 +353,7 @@ func UnmarshalFromJson(b []byte) (*FeedConfig, error) {
 	return &config, nil
 }
 
-func (smc *ServiceMapConfig) MarshalToJson() []byte {
+func (smc *ServiceMapConfig) MarshalToJSON() []byte {
 	b, err := json.Marshal(smc)
 	if err != nil {
 		panic(fmt.Sprintf("unexpected error when marhsalling service map config: %s", err))

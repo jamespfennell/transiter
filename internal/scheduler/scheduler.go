@@ -43,12 +43,12 @@ import (
 )
 
 type SystemConfig struct {
-	Id          string
+	ID          string
 	FeedConfigs []FeedConfig
 }
 
 type FeedConfig struct {
-	Id     string
+	ID     string
 	Period time.Duration
 }
 
@@ -60,10 +60,10 @@ type Ops interface {
 	ListSystemConfigs(ctx context.Context) ([]SystemConfig, error)
 
 	// Get the system config for a system.
-	GetSystemConfig(ctx context.Context, systemId string) (SystemConfig, error)
+	GetSystemConfig(ctx context.Context, systemID string) (SystemConfig, error)
 
 	// UpdateFeed updates the specified feed.
-	UpdateFeed(ctx context.Context, systemId, feedId string) error
+	UpdateFeed(ctx context.Context, systemID, feedID string) error
 }
 
 func DefaultOps(pool *pgxpool.Pool) Ops {
@@ -96,12 +96,12 @@ func (ops *defaultSchedulerOps) ListSystemConfigs(ctx context.Context) ([]System
 	return configs, nil
 }
 
-func (ops *defaultSchedulerOps) GetSystemConfig(ctx context.Context, systemId string) (SystemConfig, error) {
+func (ops *defaultSchedulerOps) GetSystemConfig(ctx context.Context, systemID string) (SystemConfig, error) {
 	var config SystemConfig
 	if err := ops.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		querier := db.New(tx)
 		var err error
-		config, err = buildSystemConfig(ctx, querier, systemId)
+		config, err = buildSystemConfig(ctx, querier, systemID)
 		return err
 	}); err != nil {
 		return SystemConfig{}, err
@@ -109,13 +109,13 @@ func (ops *defaultSchedulerOps) GetSystemConfig(ctx context.Context, systemId st
 	return config, nil
 }
 
-func (ops *defaultSchedulerOps) UpdateFeed(ctx context.Context, systemId, feedId string) error {
-	return update.CreateAndRun(ctx, ops.pool, systemId, feedId)
+func (ops *defaultSchedulerOps) UpdateFeed(ctx context.Context, systemID, feedID string) error {
+	return update.CreateAndRun(ctx, ops.pool, systemID, feedID)
 }
 
-func buildSystemConfig(ctx context.Context, querier db.Querier, systemId string) (SystemConfig, error) {
-	systemConfig := SystemConfig{Id: systemId}
-	feeds, err := querier.ListAutoUpdateFeedsForSystem(ctx, systemId)
+func buildSystemConfig(ctx context.Context, querier db.Querier, systemID string) (SystemConfig, error) {
+	systemConfig := SystemConfig{ID: systemID}
+	feeds, err := querier.ListAutoUpdateFeedsForSystem(ctx, systemID)
 	if err != nil {
 		return SystemConfig{}, err
 	}
@@ -125,7 +125,7 @@ func buildSystemConfig(ctx context.Context, querier db.Querier, systemId string)
 			period = time.Millisecond * time.Duration(feed.PeriodicUpdatePeriod.Int32)
 		}
 		systemConfig.FeedConfigs = append(systemConfig.FeedConfigs, FeedConfig{
-			Id:     feed.ID,
+			ID:     feed.ID,
 			Period: period,
 		})
 	}
@@ -166,35 +166,35 @@ func (s *Scheduler) RunWithClockAndOps(ctx context.Context, clock clock.Clock, o
 		scheduler  *systemScheduler
 		cancelFunc context.CancelFunc
 	}{}
-	resetScheduler := func(systemId string, feedsMsg []FeedConfig) {
-		if ss, ok := systemSchedulers[systemId]; ok {
+	resetScheduler := func(systemID string, feedsMsg []FeedConfig) {
+		if ss, ok := systemSchedulers[systemID]; ok {
 			ss.scheduler.reset(feedsMsg)
 			return
 		}
 		systemCtx, cancelFunc := context.WithCancel(ctx)
-		systemSchedulers[systemId] = struct {
+		systemSchedulers[systemID] = struct {
 			scheduler  *systemScheduler
 			cancelFunc context.CancelFunc
 		}{
-			scheduler:  newSystemScheduler(systemCtx, clock, ops, systemId),
+			scheduler:  newSystemScheduler(systemCtx, clock, ops, systemID),
 			cancelFunc: cancelFunc,
 		}
-		systemSchedulers[systemId].scheduler.reset(feedsMsg)
+		systemSchedulers[systemID].scheduler.reset(feedsMsg)
 	}
-	stopScheduler := func(systemId string) {
-		ss, ok := systemSchedulers[systemId]
+	stopScheduler := func(systemID string) {
+		ss, ok := systemSchedulers[systemID]
 		if !ok {
 			return
 		}
 		ss.cancelFunc()
 		ss.scheduler.wait()
-		delete(systemSchedulers, systemId)
+		delete(systemSchedulers, systemID)
 	}
 	for {
 		select {
 		case <-ctx.Done():
-			for systemId := range systemSchedulers {
-				stopScheduler(systemId)
+			for systemID := range systemSchedulers {
+				stopScheduler(systemID)
 			}
 			return
 		case <-s.resetAllRequest:
@@ -206,26 +206,26 @@ func (s *Scheduler) RunWithClockAndOps(ctx context.Context, clock clock.Clock, o
 			log.Printf("Reseting scheduler")
 			updatedSystemIds := map[string]bool{}
 			for _, systemMsg := range msg {
-				updatedSystemIds[systemMsg.Id] = true
-				resetScheduler(systemMsg.Id, systemMsg.FeedConfigs)
+				updatedSystemIds[systemMsg.ID] = true
+				resetScheduler(systemMsg.ID, systemMsg.FeedConfigs)
 			}
-			for systemId := range systemSchedulers {
-				if updatedSystemIds[systemId] {
+			for systemID := range systemSchedulers {
+				if updatedSystemIds[systemID] {
 					continue
 				}
-				stopScheduler(systemId)
+				stopScheduler(systemID)
 			}
 			s.resetAllReply <- nil
-		case systemId := <-s.resetRequest:
-			msg, err := ops.GetSystemConfig(ctx, systemId)
+		case systemID := <-s.resetRequest:
+			msg, err := ops.GetSystemConfig(ctx, systemID)
 			if err != nil {
-				s.resetReply <- fmt.Errorf("failed to get data for system %s during scheduler reset: %w", systemId, err)
+				s.resetReply <- fmt.Errorf("failed to get data for system %s during scheduler reset: %w", systemID, err)
 				break
 			}
 			if len(msg.FeedConfigs) == 0 {
-				stopScheduler(msg.Id)
+				stopScheduler(msg.ID)
 			} else {
-				resetScheduler(msg.Id, msg.FeedConfigs)
+				resetScheduler(msg.ID, msg.FeedConfigs)
 			}
 			s.resetReply <- nil
 		case <-s.statusRequest:
@@ -249,9 +249,9 @@ func (s *Scheduler) ResetAll(ctx context.Context) error {
 	}
 }
 
-func (s *Scheduler) Reset(ctx context.Context, systemId string) error {
-	log.Printf("Preparing to reset scheduler for system %q\n", systemId)
-	s.resetRequest <- systemId
+func (s *Scheduler) Reset(ctx context.Context, systemID string) error {
+	log.Printf("Preparing to reset scheduler for system %q\n", systemID)
+	s.resetRequest <- systemID
 	select {
 	case err := <-s.resetReply:
 		return err
@@ -261,8 +261,8 @@ func (s *Scheduler) Reset(ctx context.Context, systemId string) error {
 }
 
 type FeedStatus struct {
-	SystemId             string
-	FeedId               string
+	SystemID             string
+	FeedID               string
 	Period               time.Duration
 	LastFinishedUpdate   time.Time
 	LastSuccessfulUpdate time.Time
@@ -273,10 +273,10 @@ func (s *Scheduler) Status() []FeedStatus {
 	s.statusRequest <- struct{}{}
 	feeds := <-s.statusReply
 	sort.Slice(feeds, func(i, j int) bool {
-		if feeds[i].SystemId == feeds[j].SystemId {
-			return feeds[i].FeedId < feeds[j].FeedId
+		if feeds[i].SystemID == feeds[j].SystemID {
+			return feeds[i].FeedID < feeds[j].FeedID
 		}
-		return feeds[i].SystemId < feeds[j].SystemId
+		return feeds[i].SystemID < feeds[j].SystemID
 	})
 	return feeds
 }
@@ -292,7 +292,7 @@ type systemScheduler struct {
 	doneChan chan struct{}
 }
 
-func newSystemScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemId string) *systemScheduler {
+func newSystemScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemID string) *systemScheduler {
 	ss := &systemScheduler{
 		resetRequest:  make(chan []FeedConfig),
 		resetReply:    make(chan struct{}),
@@ -300,11 +300,11 @@ func newSystemScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemI
 		statusReply:   make(chan []FeedStatus),
 		doneChan:      make(chan struct{}),
 	}
-	go ss.run(ctx, clock, ops, systemId)
+	go ss.run(ctx, clock, ops, systemID)
 	return ss
 }
 
-func (s *systemScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, systemId string) {
+func (s *systemScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, systemID string) {
 	feedSchedulers := map[string]struct {
 		scheduler  *feedScheduler
 		cancelFunc context.CancelFunc
@@ -321,26 +321,26 @@ func (s *systemScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, s
 		case msg := <-s.resetRequest:
 			updatedFeedIds := map[string]bool{}
 			for _, feed := range msg {
-				updatedFeedIds[feed.Id] = true
-				if _, ok := feedSchedulers[feed.Id]; !ok {
+				updatedFeedIds[feed.ID] = true
+				if _, ok := feedSchedulers[feed.ID]; !ok {
 					feedCtx, cancelFunc := context.WithCancel(ctx)
-					feedSchedulers[feed.Id] = struct {
+					feedSchedulers[feed.ID] = struct {
 						scheduler  *feedScheduler
 						cancelFunc context.CancelFunc
 					}{
-						scheduler:  newFeedScheduler(feedCtx, clock, ops, systemId, feed.Id),
+						scheduler:  newFeedScheduler(feedCtx, clock, ops, systemID, feed.ID),
 						cancelFunc: cancelFunc,
 					}
 				}
-				feedSchedulers[feed.Id].scheduler.reset(feed.Period)
+				feedSchedulers[feed.ID].scheduler.reset(feed.Period)
 			}
-			for feedId, fs := range feedSchedulers {
-				if updatedFeedIds[feedId] {
+			for feedID, fs := range feedSchedulers {
+				if updatedFeedIds[feedID] {
 					continue
 				}
 				fs.cancelFunc()
 				fs.scheduler.wait()
-				delete(feedSchedulers, feedId)
+				delete(feedSchedulers, feedID)
 			}
 			s.resetReply <- struct{}{}
 		case <-s.statusRequest:
@@ -379,7 +379,7 @@ type feedScheduler struct {
 	doneChan chan struct{}
 }
 
-func newFeedScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemId, feedId string) *feedScheduler {
+func newFeedScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemID, feedID string) *feedScheduler {
 	fs := &feedScheduler{
 		resetRequest: make(chan time.Duration),
 		resetReply:   make(chan struct{}),
@@ -390,11 +390,11 @@ func newFeedScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemId,
 		updateFinished: make(chan error),
 		doneChan:       make(chan struct{}),
 	}
-	go fs.run(ctx, clock, ops, systemId, feedId)
+	go fs.run(ctx, clock, ops, systemID, feedID)
 	return fs
 }
 
-func (fs *feedScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, systemId, feedId string) {
+func (fs *feedScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, systemID, feedID string) {
 	period := time.Duration(0)
 	// TODO: what is this about?
 	ticker := clock.Ticker(time.Hour * 50000)
@@ -422,7 +422,7 @@ func (fs *feedScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, sy
 			}
 			updateRunning = true
 			go func() {
-				fs.updateFinished <- ops.UpdateFeed(ctx, systemId, feedId)
+				fs.updateFinished <- ops.UpdateFeed(ctx, systemID, feedID)
 			}()
 		case err := <-fs.updateFinished:
 			now := time.Now()
@@ -433,8 +433,8 @@ func (fs *feedScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, sy
 			updateRunning = false
 		case <-fs.statusRequest:
 			fs.statusReply <- FeedStatus{
-				SystemId:             systemId,
-				FeedId:               feedId,
+				SystemID:             systemID,
+				FeedID:               feedID,
 				CurrentlyRunning:     updateRunning,
 				LastFinishedUpdate:   lastFinishedUpdate,
 				LastSuccessfulUpdate: lastSuccesfulUpdate,

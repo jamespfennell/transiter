@@ -108,17 +108,17 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 	if err != nil {
 		return nil, err
 	}
-	pkToGroupIdToRoutes := map[int64]map[string][]*api.RoutePreview{}
+	pkToGroupIDToRoutes := map[int64]map[string][]*api.RoutePreview{}
 
 	for _, groupIDRow := range groupIDRows {
-		if _, present := pkToGroupIdToRoutes[groupIDRow.Pk]; !present {
-			pkToGroupIdToRoutes[groupIDRow.Pk] = map[string][]*api.RoutePreview{}
+		if _, present := pkToGroupIDToRoutes[groupIDRow.Pk]; !present {
+			pkToGroupIDToRoutes[groupIDRow.Pk] = map[string][]*api.RoutePreview{}
 		}
-		pkToGroupIdToRoutes[groupIDRow.Pk][groupIDRow.ID] = []*api.RoutePreview{}
+		pkToGroupIDToRoutes[groupIDRow.Pk][groupIDRow.ID] = []*api.RoutePreview{}
 	}
 	for _, serviceMap := range serviceMaps {
-		if _, present := pkToGroupIdToRoutes[serviceMap.StopPk]; !present {
-			pkToGroupIdToRoutes[serviceMap.StopPk] = map[string][]*api.RoutePreview{}
+		if _, present := pkToGroupIDToRoutes[serviceMap.StopPk]; !present {
+			pkToGroupIDToRoutes[serviceMap.StopPk] = map[string][]*api.RoutePreview{}
 		}
 		route := &api.RoutePreview{
 			Id:    serviceMap.RouteID,
@@ -130,14 +130,14 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 				Id: serviceMap.SystemID,
 			}
 		}
-		pkToGroupIdToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID] = append(
-			pkToGroupIdToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID], route)
+		pkToGroupIDToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID] = append(
+			pkToGroupIDToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID], route)
 	}
-	for pk, groupIdToRoutes := range pkToGroupIdToRoutes {
-		for groupId, routes := range groupIdToRoutes {
+	for pk, groupIDToRoutes := range pkToGroupIDToRoutes {
+		for groupID, routes := range groupIDToRoutes {
 			stopPkToServiceMaps[pk] = append(stopPkToServiceMaps[pk],
 				&api.ServiceMapForStop{
-					GroupId: groupId,
+					GroupId: groupID,
 					Routes:  routes,
 				})
 		}
@@ -191,10 +191,10 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 	stopTreeResponse := buildStopTreeResponse(r, req.SystemId, stop.Pk, stopTree, stopPkToServiceMaps)
 	result := &api.Stop{
 		Id:          stop.ID,
-		Name:        convert.SqlNullString(stop.Name),
+		Name:        convert.SQLNullString(stop.Name),
 		Longitude:   convertGpsData(stop.Longitude),
 		Latitude:    convertGpsData(stop.Latitude),
-		Url:         convert.SqlNullString(stop.Url),
+		Url:         convert.SQLNullString(stop.Url),
 		Directions:  directionNameMatcher.Directions(),
 		ParentStop:  stopTreeResponse.ParentStop,
 		ChildStops:  stopTreeResponse.ChildStops,
@@ -206,7 +206,7 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 		lastStop := tripPkToLastStop[stopTime.TripPk]
 		apiStopTime := &api.Stop_StopTime{
 			StopSequence: stopTime.StopSequence,
-			Track:        convert.SqlNullString(stopTime.Track),
+			Track:        convert.SQLNullString(stopTime.Track),
 			Future:       !stopTime.Past,
 			Direction:    directionNameMatcher.Match(&stopTime),
 			Arrival:      buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
@@ -214,7 +214,7 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 			Trip: &api.TripPreview{
 				Id:          stopTime.ID,
 				DirectionId: stopTime.DirectionID.Bool,
-				StartedAt:   convert.SqlNullTime(stopTime.StartedAt),
+				StartedAt:   convert.SQLNullTime(stopTime.StartedAt),
 				Route: &api.RoutePreview{
 					Id:    route.ID,
 					Color: route.Color,
@@ -257,8 +257,8 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 				Href:        r.Href.Stop(req.SystemId, transfer.ToID),
 			},
 			Type:            transfer.Type,
-			MinTransferTime: convert.SqlNullInt32(transfer.MinTransferTime),
-			Distance:        convert.SqlNullInt32(transfer.Distance),
+			MinTransferTime: convert.SQLNullInt32(transfer.MinTransferTime),
+			Distance:        convert.SQLNullInt32(transfer.Distance),
 		})
 	}
 	log.Println("GetStopInSystem took", time.Since(startTime))
@@ -305,19 +305,19 @@ func NewDirectionNameMatcher(ctx context.Context, querier db.Querier, stopPks []
 	return &DirectionNameMatcher{rules: rules}, nil
 }
 
-func (m *DirectionNameMatcher) Match(stop_time *db.ListStopTimesAtStopsRow) *string {
+func (m *DirectionNameMatcher) Match(stopTime *db.ListStopTimesAtStopsRow) *string {
 	for _, rule := range m.rules {
-		if stop_time.StopPk != rule.StopPk {
+		if stopTime.StopPk != rule.StopPk {
 			continue
 		}
-		if stop_time.DirectionID.Valid &&
+		if stopTime.DirectionID.Valid &&
 			rule.DirectionID.Valid &&
-			stop_time.DirectionID.Bool != rule.DirectionID.Bool {
+			stopTime.DirectionID.Bool != rule.DirectionID.Bool {
 			continue
 		}
-		if stop_time.Track.Valid &&
+		if stopTime.Track.Valid &&
 			rule.Track.Valid &&
-			stop_time.Track.String != rule.Track.String {
+			stopTime.Track.String != rule.Track.String {
 			continue
 		}
 		return &rule.Name
@@ -340,9 +340,9 @@ func (m *DirectionNameMatcher) Directions() []string {
 
 func buildEstimatedTime(time sql.NullTime, delay sql.NullInt32, uncertainty sql.NullInt32) *api.EstimatedTime {
 	return &api.EstimatedTime{
-		Time:        convert.SqlNullTime(time),
-		Delay:       convert.SqlNullInt32(delay),
-		Uncertainty: convert.SqlNullInt32(uncertainty),
+		Time:        convert.SQLNullTime(time),
+		Delay:       convert.SQLNullInt32(delay),
+		Uncertainty: convert.SQLNullInt32(uncertainty),
 	}
 }
 

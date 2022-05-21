@@ -1,3 +1,4 @@
+// Package servicemaps contains all of the logic for Transiter's service maps features.
 package servicemaps
 
 import (
@@ -20,26 +21,26 @@ func UpdateConfig(ctx context.Context, querier db.Querier, systemPk int64, confi
 	if err != nil {
 		return nil
 	}
-	configIdToPk := map[string]int64{}
+	configIDToPk := map[string]int64{}
 	for _, config := range config {
-		configIdToPk[config.ID] = config.Pk
+		configIDToPk[config.ID] = config.Pk
 	}
 	for _, newConfig := range configs {
-		if pk, ok := configIdToPk[newConfig.Id]; ok {
+		if pk, ok := configIDToPk[newConfig.ID]; ok {
 			if err := querier.UpdateServiceMapConfig(ctx, db.UpdateServiceMapConfigParams{
 				Pk:                     pk,
-				Config:                 newConfig.MarshalToJson(),
+				Config:                 newConfig.MarshalToJSON(),
 				DefaultForRoutesAtStop: newConfig.DefaultForRoutesAtStop,
 				DefaultForStopsInRoute: newConfig.DefaultForStopsInRoute,
 			}); err != nil {
 				return err
 			}
-			delete(configIdToPk, newConfig.Id)
+			delete(configIDToPk, newConfig.ID)
 		} else {
 			if err := querier.InsertServiceMapConfig(ctx, db.InsertServiceMapConfigParams{
-				ID:                     newConfig.Id,
+				ID:                     newConfig.ID,
 				SystemPk:               systemPk,
-				Config:                 newConfig.MarshalToJson(),
+				Config:                 newConfig.MarshalToJSON(),
 				DefaultForRoutesAtStop: newConfig.DefaultForRoutesAtStop,
 				DefaultForStopsInRoute: newConfig.DefaultForStopsInRoute,
 			}); err != nil {
@@ -47,7 +48,7 @@ func UpdateConfig(ctx context.Context, querier db.Querier, systemPk int64, confi
 			}
 		}
 	}
-	for _, pk := range configIdToPk {
+	for _, pk := range configIDToPk {
 		if err := querier.DeleteServiceMapConfig(ctx, pk); err != nil {
 			return err
 		}
@@ -58,7 +59,7 @@ func UpdateConfig(ctx context.Context, querier db.Querier, systemPk int64, confi
 type UpdateStaticMapsArgs struct {
 	SystemPk    int64
 	Trips       []gtfs.ScheduledTrip
-	RouteIdToPk map[string]int64
+	RouteIDToPk map[string]int64
 }
 
 // UpdateStaticMaps updates the static service maps
@@ -68,16 +69,16 @@ func UpdateStaticMaps(ctx context.Context, querier db.Querier, args UpdateStatic
 		return err
 	}
 
-	stopIdToStationPk, err := dbwrappers.MapStopIdToStationPk(ctx, querier, args.SystemPk)
+	stopIDToStationPk, err := dbwrappers.MapStopIDToStationPk(ctx, querier, args.SystemPk)
 	if err != nil {
 		return err
 	}
 
 	for _, smc := range configs {
-		if smc.Config.Source != config.SERVICE_MAP_SOURCE_STATIC {
+		if smc.Config.Source != config.ServiceMapSourceStatic {
 			continue
 		}
-		routePkToStopPks := buildStaticMaps(&smc.Config, args.RouteIdToPk, stopIdToStationPk, args.Trips)
+		routePkToStopPks := buildStaticMaps(&smc.Config, args.RouteIDToPk, stopIDToStationPk, args.Trips)
 		if err := persistMaps(ctx, querier, &smc, routePkToStopPks); err != nil {
 			return err
 		}
@@ -114,13 +115,13 @@ func persistMaps(ctx context.Context, querier db.Querier, smc *Config, routePkTo
 	return nil
 }
 
-func buildStaticMaps(smc *config.ServiceMapConfig, routeIdToPk map[string]int64, stopIdToStationPk map[string]int64, trips []gtfs.ScheduledTrip) map[int64][]int64 {
+func buildStaticMaps(smc *config.ServiceMapConfig, routeIDToPk map[string]int64, stopIDToStationPk map[string]int64, trips []gtfs.ScheduledTrip) map[int64][]int64 {
 	routePkToEdges := map[int64]map[graph.Edge]bool{}
-	for _, routePk := range routeIdToPk {
+	for _, routePk := range routeIDToPk {
 		routePkToEdges[routePk] = map[graph.Edge]bool{}
 	}
 	for _, trip := range trips {
-		routePk, ok := routeIdToPk[trip.Route.Id]
+		routePk, ok := routeIDToPk[trip.Route.Id]
 		if !ok {
 			continue
 		}
@@ -128,16 +129,16 @@ func buildStaticMaps(smc *config.ServiceMapConfig, routeIdToPk map[string]int64,
 			continue
 		}
 		// TODO: filter the trip based on the service map config
-		directionId := *trip.DirectionId
+		directionID := *trip.DirectionId
 		for j := 1; j < len(trip.StopTimes); j++ {
 			from, to := j-1, j
-			if !directionId {
+			if !directionID {
 				from, to = j, j-1
 			}
 			// TODO: what if the stop IDs don't exist?
 			routePkToEdges[routePk][graph.Edge{
-				FromLabel: stopIdToStationPk[trip.StopTimes[from].Stop.Id],
-				ToLabel:   stopIdToStationPk[trip.StopTimes[to].Stop.Id],
+				FromLabel: stopIDToStationPk[trip.StopTimes[from].Stop.Id],
+				ToLabel:   stopIDToStationPk[trip.StopTimes[to].Stop.Id],
 			}] = true
 		}
 	}
@@ -165,7 +166,7 @@ func buildMaps(routePkToEdges map[int64]map[graph.Edge]bool) map[int64][]int64 {
 
 type Trip struct {
 	RoutePk     int64
-	DirectionId sql.NullBool
+	DirectionID sql.NullBool
 	StopPks     []int64
 }
 
@@ -215,7 +216,7 @@ func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, args UpdateReal
 		return err
 	}
 	for _, smc := range configs {
-		if smc.Config.Source != config.SERVICE_MAP_SOURCE_REALTIME {
+		if smc.Config.Source != config.ServiceMapSourceRealtime {
 			continue
 		}
 		if err := persistMaps(ctx, querier, &smc, routePkToStopPks); err != nil {
@@ -228,7 +229,7 @@ func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, args UpdateReal
 func buildRealtimeMapEdges(trips []Trip, stopPkToStationPk map[int64]int64) map[int64]map[graph.Edge]bool {
 	m := map[int64]map[graph.Edge]bool{}
 	for _, trip := range trips {
-		if !trip.DirectionId.Valid {
+		if !trip.DirectionID.Valid {
 			continue
 		}
 		if _, ok := m[trip.RoutePk]; !ok {
@@ -236,7 +237,7 @@ func buildRealtimeMapEdges(trips []Trip, stopPkToStationPk map[int64]int64) map[
 		}
 		for i := 1; i < len(trip.StopPks); i++ {
 			var edge graph.Edge
-			switch trip.DirectionId.Bool {
+			switch trip.DirectionID.Bool {
 			case true:
 				edge = graph.Edge{
 					FromLabel: stopPkToStationPk[trip.StopPks[i-1]],

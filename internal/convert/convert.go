@@ -1,3 +1,4 @@
+// Package convert contains type converters.
 package convert
 
 import (
@@ -7,7 +8,7 @@ import (
 	"github.com/jamespfennell/gtfs"
 )
 
-func SqlNullTime(t sql.NullTime) *int64 {
+func SQLNullTime(t sql.NullTime) *int64 {
 	if !t.Valid {
 		return nil
 	}
@@ -15,21 +16,21 @@ func SqlNullTime(t sql.NullTime) *int64 {
 	return &r
 }
 
-func SqlNullString(t sql.NullString) *string {
+func SQLNullString(t sql.NullString) *string {
 	if !t.Valid {
 		return nil
 	}
 	return &t.String
 }
 
-func SqlNullFloat64(t sql.NullFloat64) *float64 {
+func SQLNullFloat64(t sql.NullFloat64) *float64 {
 	if !t.Valid {
 		return nil
 	}
 	return &t.Float64
 }
 
-func SqlNullInt32(t sql.NullInt32) *int32 {
+func SQLNullInt32(t sql.NullInt32) *int32 {
 	if !t.Valid {
 		return nil
 	}

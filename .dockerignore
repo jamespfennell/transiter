@@ -15,3 +15,5 @@
 !parse/*
 !config/*
 !internal/*
+
+internal/gen/staticcheck.conf

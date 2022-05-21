@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	Url          = "url"
+	URL          = "url"
 	HeaderKey    = "headerKey"
 	HeaderValue  = "headerValue"
-	StopId1      = "stopId1"
-	StopId2      = "stopId2"
-	ServiceMapId = "serviceMapId"
+	StopID1      = "stopID1"
+	StopID2      = "stopID2"
+	ServiceMapID = "serviceMapId"
 )
 
 func TestConvertFeedConfig(t *testing.T) {
@@ -42,16 +42,16 @@ func TestConvertFeedConfig(t *testing.T) {
 		},
 		{
 			apiConfig: &api.FeedConfig{
-				Url:         Url,
+				Url:         URL,
 				HttpTimeout: &timeoutMs,
 				HttpHeaders: map[string]string{
 					HeaderKey: HeaderValue,
 				},
 			},
 			internalConfig: &FeedConfig{
-				Url:         Url,
-				HttpTimeout: &timeoutDuration,
-				HttpHeaders: map[string]string{
+				URL:         URL,
+				HTTPTimeout: &timeoutDuration,
+				HTTPHeaders: map[string]string{
 					HeaderKey: HeaderValue,
 				},
 			},
@@ -63,8 +63,8 @@ func TestConvertFeedConfig(t *testing.T) {
 						TransfersStrategy: api.FeedConfig_GtfsStaticParser_GROUP_STATIONS,
 						TransfersExceptions: []*api.FeedConfig_GtfsStaticParser_TransfersExceptions{
 							{
-								StopId_1: StopId1,
-								StopId_2: StopId2,
+								StopId_1: StopID1,
+								StopId_2: StopID2,
 								Strategy: api.FeedConfig_GtfsStaticParser_DEFAULT,
 							},
 						},
@@ -77,8 +77,8 @@ func TestConvertFeedConfig(t *testing.T) {
 					TransfersStrategy: GroupStations,
 					TransfersExceptions: []TransfersException{
 						{
-							StopId1:  StopId1,
-							StopId2:  StopId2,
+							StopID1:  StopID1,
+							StopID2:  StopID2,
 							Strategy: Default,
 						},
 					},
@@ -123,17 +123,17 @@ func TestConvertFeedConfig(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d-apiToInternal", i), func(t *testing.T) {
-			convertedInternalConfig := ConvertApiFeedConfig(tc.apiConfig)
+			convertedInternalConfig := ConvertAPIFeedConfig(tc.apiConfig)
 			if !reflect.DeepEqual(convertedInternalConfig, tc.internalConfig) {
 				t.Errorf("Converted internal config:\n%+v\nis not equal to the expected config:\n%+v\n",
 					convertedInternalConfig, tc.internalConfig)
 			}
 		})
 		t.Run(fmt.Sprintf("%d-internalToApi", i), func(t *testing.T) {
-			convertedApiConfig := ConvertFeedConfig(tc.internalConfig)
-			if !proto.Equal(convertedApiConfig, tc.apiConfig) {
+			convertedAPIConfig := ConvertFeedConfig(tc.internalConfig)
+			if !proto.Equal(convertedAPIConfig, tc.apiConfig) {
 				t.Errorf("Converted API config:\n%+v\nis not equal to the expected config:\n%+v\n",
-					convertedApiConfig, tc.apiConfig)
+					convertedAPIConfig, tc.apiConfig)
 			}
 		})
 	}
@@ -151,21 +151,21 @@ func TestConvertServiceMapsConfig(t *testing.T) {
 	}{
 		{
 			apiConfig: &api.ServiceMapConfig{
-				Id:                     ServiceMapId,
+				Id:                     ServiceMapID,
 				Source:                 &api.ServiceMapConfig_RealtimeSource{},
 				DefaultForRoutesAtStop: true,
 				DefaultForStopsInRoute: false,
 			},
 			internalConfig: &ServiceMapConfig{
-				Id:                     ServiceMapId,
-				Source:                 SERVICE_MAP_SOURCE_REALTIME,
+				ID:                     ServiceMapID,
+				Source:                 ServiceMapSourceRealtime,
 				DefaultForRoutesAtStop: true,
 				DefaultForStopsInRoute: false,
 			},
 		},
 		{
 			apiConfig: &api.ServiceMapConfig{
-				Id: ServiceMapId,
+				Id: ServiceMapID,
 				Source: &api.ServiceMapConfig_StaticSource{
 					StaticSource: &api.ServiceMapConfig_Static{
 						StartsEarlierThan: &t1Int64,
@@ -177,8 +177,8 @@ func TestConvertServiceMapsConfig(t *testing.T) {
 				DefaultForStopsInRoute: true,
 			},
 			internalConfig: &ServiceMapConfig{
-				Id:                     ServiceMapId,
-				Source:                 SERVICE_MAP_SOURCE_STATIC,
+				ID:                     ServiceMapID,
+				Source:                 ServiceMapSourceStatic,
 				StartsEarlierThan:      &t1Duration,
 				EndsEarlierThan:        &t2Duration,
 				Days:                   []string{"Monday", "Tuesday"},
@@ -190,17 +190,17 @@ func TestConvertServiceMapsConfig(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d-apiToInternal", i), func(t *testing.T) {
-			convertedInternalConfig := ConvertApiServiceMapConfig(tc.apiConfig)
+			convertedInternalConfig := ConvertAPIServiceMapConfig(tc.apiConfig)
 			if !reflect.DeepEqual(convertedInternalConfig, tc.internalConfig) {
 				t.Errorf("Converted internal config:\n%+v\nis not equal to the expected config:\n%+v\n",
 					convertedInternalConfig, tc.internalConfig)
 			}
 		})
 		t.Run(fmt.Sprintf("%d-internalToApi", i), func(t *testing.T) {
-			convertedApiConfig := ConvertServiceMapConfig(tc.internalConfig)
-			if !proto.Equal(convertedApiConfig, tc.apiConfig) {
+			convertedAPIConfig := ConvertServiceMapConfig(tc.internalConfig)
+			if !proto.Equal(convertedAPIConfig, tc.apiConfig) {
 				t.Errorf("Converted API config:\n%+v\nis not equal to the expected config:\n%+v\n",
-					convertedApiConfig, tc.apiConfig)
+					convertedAPIConfig, tc.apiConfig)
 			}
 		})
 	}

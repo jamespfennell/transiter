@@ -13,14 +13,14 @@ feeds:
       transfersStrategy: GROUP_STATIONS
       transfersExceptions:
         - strategy: DEFAULT
-          stopId1: "254"  # Livonia Av
-          stopId2: "L26"  # Julius St
+          stopID1: "254"  # Livonia Av
+          stopID2: "L26"  # Julius St
         - strategy: DEFAULT
-          stopId1: "B08"  # Lexington Av/63rd St
-          stopId2: "629"  # Lexington Av/59th St
+          stopID1: "B08"  # Lexington Av/63rd St
+          stopID2: "629"  # Lexington Av/59th St
         - strategy: DEFAULT
-          stopId1: "B08"  # Lexington Av/63rd St
-          stopId2: "R11"  # Lexington Av/59th St
+          stopID1: "B08"  # Lexington Av/63rd St
+          stopID2: "R11"  # Lexington Av/59th St
         
   - id: L
     periodicUpdateEnabled: true

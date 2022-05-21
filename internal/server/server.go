@@ -1,3 +1,4 @@
+// Package server implements the Transiter server process.
 package server
 
 import (

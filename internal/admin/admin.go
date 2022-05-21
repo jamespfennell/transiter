@@ -1,4 +1,4 @@
-// Package admin contains the implementation of the Transiter admin service.
+// Package admin contains the implementation of the Transiter admin API.
 package admin
 
 import (
@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/config"
-	"github.com/jamespfennell/transiter/db/constants"
+	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -25,11 +25,10 @@ import (
 	"github.com/jamespfennell/transiter/internal/update"
 )
 
-// Service implements the Transiter admin service.
+// Service implements the Transiter admin API.
 type Service struct {
 	pool      *pgxpool.Pool
 	scheduler *scheduler.Scheduler
-	api.UnimplementedTransiterAdminServer
 }
 
 func New(pool *pgxpool.Pool, scheduler *scheduler.Scheduler) *Service {
@@ -75,12 +74,12 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	var systemConfig *config.SystemConfig
 	switch c := req.GetConfig().(type) {
 	case *api.InstallOrUpdateSystemRequest_SystemConfig:
-		systemConfig = config.ConvertApiSystemConfig(c.SystemConfig)
+		systemConfig = config.ConvertAPISystemConfig(c.SystemConfig)
 	case *api.InstallOrUpdateSystemRequest_YamlConfig:
 		var rawConfig []byte
 		switch s := c.YamlConfig.Source.(type) {
 		case *api.YamlConfig_Url:
-			rawConfig, err = getRawSystemConfigFromUrl(s.Url)
+			rawConfig, err = getRawSystemConfigFromURL(s.Url)
 			if err != nil {
 				return nil, err
 			}
@@ -149,11 +148,11 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	return &api.InstallOrUpdateSystemReply{}, nil
 }
 
-func beginSystemInstall(ctx context.Context, querier db.Querier, systemId string, systemName string, installOnly bool) (bool, error) {
-	system, err := querier.GetSystem(ctx, systemId)
+func beginSystemInstall(ctx context.Context, querier db.Querier, systemID string, systemName string, installOnly bool) (bool, error) {
+	system, err := querier.GetSystem(ctx, systemID)
 	if err == pgx.ErrNoRows {
 		if _, err = querier.InsertSystem(ctx, db.InsertSystemParams{
-			ID:     systemId,
+			ID:     systemID,
 			Name:   systemName,
 			Status: constants.Installing,
 		}); err != nil {
@@ -175,8 +174,8 @@ func beginSystemInstall(ctx context.Context, querier db.Querier, systemId string
 	return true, nil
 }
 
-func performSystemInstall(ctx context.Context, querier db.Querier, systemId string, config *config.SystemConfig) error {
-	system, err := querier.GetSystem(ctx, systemId)
+func performSystemInstall(ctx context.Context, querier db.Querier, systemID string, config *config.SystemConfig) error {
+	system, err := querier.GetSystem(ctx, systemID)
 	if err != nil {
 		return err
 	}
@@ -198,46 +197,46 @@ func performSystemInstall(ctx context.Context, querier db.Querier, systemId stri
 	if err != nil {
 		return err
 	}
-	feedIdToPk := map[string]int64{}
+	feedIDToPk := map[string]int64{}
 	for _, feed := range feeds {
-		feedIdToPk[feed.ID] = feed.Pk
+		feedIDToPk[feed.ID] = feed.Pk
 	}
 
 	for _, newFeed := range config.Feeds {
-		if pk, ok := feedIdToPk[newFeed.Id]; ok {
+		if pk, ok := feedIDToPk[newFeed.ID]; ok {
 			if err := querier.UpdateFeed(ctx, db.UpdateFeedParams{
 				FeedPk:                pk,
 				PeriodicUpdateEnabled: newFeed.PeriodicUpdateEnabled,
 				PeriodicUpdatePeriod:  convertNullDuration(newFeed.PeriodicUpdatePeriod),
-				Config:                string(newFeed.MarshalToJson()),
+				Config:                string(newFeed.MarshalToJSON()),
 			}); err != nil {
 				return err
 			}
-			delete(feedIdToPk, newFeed.Id)
+			delete(feedIDToPk, newFeed.ID)
 		} else {
 			// TODO: is there a lint to detect not handling the error here?
 			querier.InsertFeed(ctx, db.InsertFeedParams{
-				ID:                    newFeed.Id,
+				ID:                    newFeed.ID,
 				SystemPk:              system.Pk,
 				PeriodicUpdateEnabled: newFeed.PeriodicUpdateEnabled,
 				PeriodicUpdatePeriod:  convertNullDuration(newFeed.PeriodicUpdatePeriod),
-				Config:                string(newFeed.MarshalToJson()),
+				Config:                string(newFeed.MarshalToJSON()),
 			})
 		}
 		if newFeed.RequiredForInstall {
-			if err := update.CreateAndRunInExistingTx(ctx, querier, systemId, newFeed.Id); err != nil {
+			if err := update.CreateAndRunInExistingTx(ctx, querier, systemID, newFeed.ID); err != nil {
 				return err
 			}
 		}
 	}
-	for _, pk := range feedIdToPk {
+	for _, pk := range feedIDToPk {
 		querier.DeleteFeed(ctx, pk)
 	}
 	return nil
 }
 
-func finishSystemInstall(ctx context.Context, querier db.Querier, systemId string, installErr error) error {
-	system, err := querier.GetSystem(ctx, systemId)
+func finishSystemInstall(ctx context.Context, querier db.Querier, systemID string, installErr error) error {
+	system, err := querier.GetSystem(ctx, systemID)
 	if err != nil {
 		return err
 	}
@@ -280,7 +279,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 	return &api.DeleteSystemReply{}, nil
 }
 
-func getRawSystemConfigFromUrl(url string) ([]byte, error) {
+func getRawSystemConfigFromURL(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
