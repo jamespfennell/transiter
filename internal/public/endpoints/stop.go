@@ -100,7 +100,7 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 		stationPks = append(stationPks, transfer.ToStopPk)
 	}
 
-	groupIDRows, err := r.Querier.ListServiceMapsGroupIDsForStops(ctx, stationPks)
+	configIDRows, err := r.Querier.ListServiceMapsConfigIDsForStops(ctx, stationPks)
 	if err != nil {
 		return nil, err
 	}
@@ -108,17 +108,17 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 	if err != nil {
 		return nil, err
 	}
-	pkToGroupIDToRoutes := map[int64]map[string][]*api.RoutePreview{}
+	pkToConfigIDToRoutes := map[int64]map[string][]*api.RoutePreview{}
 
-	for _, groupIDRow := range groupIDRows {
-		if _, present := pkToGroupIDToRoutes[groupIDRow.Pk]; !present {
-			pkToGroupIDToRoutes[groupIDRow.Pk] = map[string][]*api.RoutePreview{}
+	for _, configIDRow := range configIDRows {
+		if _, present := pkToConfigIDToRoutes[configIDRow.Pk]; !present {
+			pkToConfigIDToRoutes[configIDRow.Pk] = map[string][]*api.RoutePreview{}
 		}
-		pkToGroupIDToRoutes[groupIDRow.Pk][groupIDRow.ID] = []*api.RoutePreview{}
+		pkToConfigIDToRoutes[configIDRow.Pk][configIDRow.ID] = []*api.RoutePreview{}
 	}
 	for _, serviceMap := range serviceMaps {
-		if _, present := pkToGroupIDToRoutes[serviceMap.StopPk]; !present {
-			pkToGroupIDToRoutes[serviceMap.StopPk] = map[string][]*api.RoutePreview{}
+		if _, present := pkToConfigIDToRoutes[serviceMap.StopPk]; !present {
+			pkToConfigIDToRoutes[serviceMap.StopPk] = map[string][]*api.RoutePreview{}
 		}
 		route := &api.RoutePreview{
 			Id:    serviceMap.RouteID,
@@ -130,20 +130,20 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 				Id: serviceMap.SystemID,
 			}
 		}
-		pkToGroupIDToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID] = append(
-			pkToGroupIDToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID], route)
+		pkToConfigIDToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID] = append(
+			pkToConfigIDToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID], route)
 	}
-	for pk, groupIDToRoutes := range pkToGroupIDToRoutes {
-		for groupID, routes := range groupIDToRoutes {
+	for pk, configIDToRoutes := range pkToConfigIDToRoutes {
+		for configID, routes := range configIDToRoutes {
 			stopPkToServiceMaps[pk] = append(stopPkToServiceMaps[pk],
 				&api.ServiceMapForStop{
-					GroupId: groupID,
-					Routes:  routes,
+					ConfigId: configID,
+					Routes:   routes,
 				})
 		}
 	}
 
-	directionNameMatcher, err := NewDirectionNameMatcher(ctx, r.Querier, stopTree.DescendentPks())
+	stopHeadsignMatcher, err := NewStopHeadsignMatcher(ctx, r.Querier, stopTree.DescendentPks())
 	if err != nil {
 		return nil, err
 	}
@@ -190,15 +190,15 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 
 	stopTreeResponse := buildStopTreeResponse(r, req.SystemId, stop.Pk, stopTree, stopPkToServiceMaps)
 	result := &api.Stop{
-		Id:          stop.ID,
-		Name:        convert.SQLNullString(stop.Name),
-		Longitude:   convertGpsData(stop.Longitude),
-		Latitude:    convertGpsData(stop.Latitude),
-		Url:         convert.SQLNullString(stop.Url),
-		Directions:  directionNameMatcher.Directions(),
-		ParentStop:  stopTreeResponse.ParentStop,
-		ChildStops:  stopTreeResponse.ChildStops,
-		ServiceMaps: stopTreeResponse.ServiceMaps,
+		Id:            stop.ID,
+		Name:          convert.SQLNullString(stop.Name),
+		Longitude:     convertGpsData(stop.Longitude),
+		Latitude:      convertGpsData(stop.Latitude),
+		Url:           convert.SQLNullString(stop.Url),
+		StopHeadsigns: stopHeadsignMatcher.AllHeadsigns(),
+		ParentStop:    stopTreeResponse.ParentStop,
+		ChildStops:    stopTreeResponse.ChildStops,
+		ServiceMaps:   stopTreeResponse.ServiceMaps,
 	}
 	for _, stopTime := range stopTimes {
 		stopTime := stopTime
@@ -208,7 +208,7 @@ func GetStopInSystem(ctx context.Context, r *Context, req *api.GetStopInSystemRe
 			StopSequence: stopTime.StopSequence,
 			Track:        convert.SQLNullString(stopTime.Track),
 			Future:       !stopTime.Past,
-			Direction:    directionNameMatcher.Match(&stopTime),
+			Headsign:     stopHeadsignMatcher.Match(&stopTime),
 			Arrival:      buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
 			Departure:    buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
 			Trip: &api.TripPreview{
@@ -293,19 +293,19 @@ func buildStopTreeResponse(r *Context, systemID string,
 	return stopPkToResponse[basePk]
 }
 
-type DirectionNameMatcher struct {
-	rules []db.DirectionNameRule
+type StopHeadsignMatcher struct {
+	rules []db.StopHeadsignRule
 }
 
-func NewDirectionNameMatcher(ctx context.Context, querier db.Querier, stopPks []int64) (*DirectionNameMatcher, error) {
-	rules, err := querier.ListDirectionNameRulesForStops(ctx, stopPks)
+func NewStopHeadsignMatcher(ctx context.Context, querier db.Querier, stopPks []int64) (*StopHeadsignMatcher, error) {
+	rules, err := querier.ListStopHeadsignRulesForStops(ctx, stopPks)
 	if err != nil {
 		return nil, err
 	}
-	return &DirectionNameMatcher{rules: rules}, nil
+	return &StopHeadsignMatcher{rules: rules}, nil
 }
 
-func (m *DirectionNameMatcher) Match(stopTime *db.ListStopTimesAtStopsRow) *string {
+func (m *StopHeadsignMatcher) Match(stopTime *db.ListStopTimesAtStopsRow) *string {
 	for _, rule := range m.rules {
 		if stopTime.StopPk != rule.StopPk {
 			continue
@@ -320,15 +320,15 @@ func (m *DirectionNameMatcher) Match(stopTime *db.ListStopTimesAtStopsRow) *stri
 			stopTime.Track.String != rule.Track.String {
 			continue
 		}
-		return &rule.Name
+		return &rule.Headsign
 	}
 	return nil
 }
 
-func (m *DirectionNameMatcher) Directions() []string {
+func (m *StopHeadsignMatcher) AllHeadsigns() []string {
 	names := map[string]bool{}
 	for _, rule := range m.rules {
-		names[rule.Name] = true
+		names[rule.Headsign] = true
 	}
 	var result []string
 	for name := range names {

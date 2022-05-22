@@ -244,7 +244,7 @@ message Stop {
   optional double latitude = 4;
   optional string url = 5;
 
-  repeated string directions = 7;
+  repeated string stop_headsigns = 7;
 
   optional RelatedStop parent_stop = 13;
   repeated RelatedStop child_stops = 14;
@@ -256,7 +256,7 @@ message Stop {
     EstimatedTime departure = 2;
     bool future = 4;
     int32 stop_sequence = 5;
-    optional string direction = 6;
+    optional string headsign = 6;
     optional string track = 3;
     TripPreview trip = 7;
   }
@@ -326,7 +326,7 @@ message Trip {
     EstimatedTime departure = 2;
     bool future = 4;
     int32 stop_sequence = 5;
-    optional string direction = 6;
+    optional string headsign = 6;
     optional string track = 3;
     StopPreview stop = 7;
   }
@@ -465,14 +465,12 @@ message EstimatedTime {
 }
 
 message ServiceMapForStop {
-  // TODO: config_id
-  string group_id = 1;
+  string config_id = 1;
   repeated RoutePreview routes = 2;
 }
 
 message ServiceMapForRoute {
-  // TODO: config_id
-  string group_id = 1;
+  string config_id = 1;
   repeated StopPreview stops = 2;
 }
 

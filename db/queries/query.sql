@@ -106,7 +106,7 @@ SELECT lss.trip_pk, stop.id, stop.name
   WHERE transfer.from_stop_pk = ANY(sqlc.arg(from_stop_pks)::bigint[]);
 
 
--- name: ListServiceMapsGroupIDsForStops :many
+-- name: ListServiceMapsConfigIDsForStops :many
 SELECT stop.pk, service_map_config.id
 FROM service_map_config
     INNER JOIN stop ON service_map_config.system_pk = stop.system_pk
@@ -138,8 +138,8 @@ FROM descendent
 WHERE service_map_config.default_for_routes_at_stop
 ORDER BY system_id, route_id; 
 
--- name: ListDirectionNameRulesForStops :many
-SELECT * FROM direction_name_rule
+-- name: ListStopHeadsignRulesForStops :many
+SELECT * FROM stop_headsign_rule
 WHERE stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
 ORDER BY priority ASC;
 
@@ -154,7 +154,7 @@ SELECT route.*, agency.id agency_id, agency.name agency_name FROM route
     AND route.id = sqlc.arg(route_id);
 
 -- name: ListServiceMapsForRoute :many
-SELECT DISTINCT service_map_config.id group_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
+SELECT DISTINCT service_map_config.id config_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
 FROM service_map_config
   INNER JOIN system ON service_map_config.system_pk = system.pk
   INNER JOIN route ON route.system_pk = system.pk

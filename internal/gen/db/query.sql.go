@@ -569,41 +569,6 @@ func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]A
 	return items, nil
 }
 
-const listDirectionNameRulesForStops = `-- name: ListDirectionNameRulesForStops :many
-SELECT pk, id, stop_pk, source_pk, priority, direction_id, track, name FROM direction_name_rule
-WHERE stop_pk = ANY($1::bigint[])
-ORDER BY priority ASC
-`
-
-func (q *Queries) ListDirectionNameRulesForStops(ctx context.Context, stopPks []int64) ([]DirectionNameRule, error) {
-	rows, err := q.db.Query(ctx, listDirectionNameRulesForStops, stopPks)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []DirectionNameRule
-	for rows.Next() {
-		var i DirectionNameRule
-		if err := rows.Scan(
-			&i.Pk,
-			&i.ID,
-			&i.StopPk,
-			&i.SourcePk,
-			&i.Priority,
-			&i.DirectionID,
-			&i.Track,
-			&i.Name,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listMessagesForAlerts = `-- name: ListMessagesForAlerts :many
 SELECT pk, alert_pk, header, description, url, language
 FROM alert_message 
@@ -747,8 +712,41 @@ func (q *Queries) ListRoutesInSystem(ctx context.Context, systemPk int64) ([]Rou
 	return items, nil
 }
 
+const listServiceMapsConfigIDsForStops = `-- name: ListServiceMapsConfigIDsForStops :many
+SELECT stop.pk, service_map_config.id
+FROM service_map_config
+    INNER JOIN stop ON service_map_config.system_pk = stop.system_pk
+WHERE service_map_config.default_for_routes_at_stop
+    AND stop.pk = ANY($1::bigint[])
+`
+
+type ListServiceMapsConfigIDsForStopsRow struct {
+	Pk int64
+	ID string
+}
+
+func (q *Queries) ListServiceMapsConfigIDsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsConfigIDsForStopsRow, error) {
+	rows, err := q.db.Query(ctx, listServiceMapsConfigIDsForStops, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceMapsConfigIDsForStopsRow
+	for rows.Next() {
+		var i ListServiceMapsConfigIDsForStopsRow
+		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listServiceMapsForRoute = `-- name: ListServiceMapsForRoute :many
-SELECT DISTINCT service_map_config.id group_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
+SELECT DISTINCT service_map_config.id config_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
 FROM service_map_config
   INNER JOIN system ON service_map_config.system_pk = system.pk
   INNER JOIN route ON route.system_pk = system.pk
@@ -760,7 +758,7 @@ ORDER BY service_map_config.id, service_map_vertex.position
 `
 
 type ListServiceMapsForRouteRow struct {
-	GroupID  string
+	ConfigID string
 	Position sql.NullInt32
 	StopID   sql.NullString
 	StopName sql.NullString
@@ -776,7 +774,7 @@ func (q *Queries) ListServiceMapsForRoute(ctx context.Context, routePk int64) ([
 	for rows.Next() {
 		var i ListServiceMapsForRouteRow
 		if err := rows.Scan(
-			&i.GroupID,
+			&i.ConfigID,
 			&i.Position,
 			&i.StopID,
 			&i.StopName,
@@ -851,29 +849,31 @@ func (q *Queries) ListServiceMapsForStops(ctx context.Context, stopPks []int64) 
 	return items, nil
 }
 
-const listServiceMapsGroupIDsForStops = `-- name: ListServiceMapsGroupIDsForStops :many
-SELECT stop.pk, service_map_config.id
-FROM service_map_config
-    INNER JOIN stop ON service_map_config.system_pk = stop.system_pk
-WHERE service_map_config.default_for_routes_at_stop
-    AND stop.pk = ANY($1::bigint[])
+const listStopHeadsignRulesForStops = `-- name: ListStopHeadsignRulesForStops :many
+SELECT pk, id, stop_pk, source_pk, priority, direction_id, track, headsign FROM stop_headsign_rule
+WHERE stop_pk = ANY($1::bigint[])
+ORDER BY priority ASC
 `
 
-type ListServiceMapsGroupIDsForStopsRow struct {
-	Pk int64
-	ID string
-}
-
-func (q *Queries) ListServiceMapsGroupIDsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsGroupIDsForStopsRow, error) {
-	rows, err := q.db.Query(ctx, listServiceMapsGroupIDsForStops, stopPks)
+func (q *Queries) ListStopHeadsignRulesForStops(ctx context.Context, stopPks []int64) ([]StopHeadsignRule, error) {
+	rows, err := q.db.Query(ctx, listStopHeadsignRulesForStops, stopPks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListServiceMapsGroupIDsForStopsRow
+	var items []StopHeadsignRule
 	for rows.Next() {
-		var i ListServiceMapsGroupIDsForStopsRow
-		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
+		var i StopHeadsignRule
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.StopPk,
+			&i.SourcePk,
+			&i.Priority,
+			&i.DirectionID,
+			&i.Track,
+			&i.Headsign,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

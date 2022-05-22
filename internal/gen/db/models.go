@@ -73,17 +73,6 @@ type AlertTrip struct {
 	TripPk  int64
 }
 
-type DirectionNameRule struct {
-	Pk          int64
-	ID          sql.NullString
-	StopPk      int64
-	SourcePk    int64
-	Priority    int32
-	DirectionID sql.NullBool
-	Track       sql.NullString
-	Name        string
-}
-
 type Feed struct {
 	Pk                    int64
 	ID                    string
@@ -230,6 +219,17 @@ type Stop struct {
 	Type               string
 	WheelchairBoarding string
 	ZoneID             sql.NullString
+}
+
+type StopHeadsignRule struct {
+	Pk          int64
+	ID          sql.NullString
+	StopPk      int64
+	SourcePk    int64
+	Priority    int32
+	DirectionID sql.NullBool
+	Track       sql.NullString
+	Headsign    string
 }
 
 type System struct {

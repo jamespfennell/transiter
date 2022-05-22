@@ -171,7 +171,7 @@ def test_install_system__success__service_map_stop(
         ).json()
         actual = None
         for service_map in stop_response["serviceMaps"]:
-            if service_map["groupId"] != "weekday":
+            if service_map["configId"] != "weekday":
                 continue
             actual = [
                 route["id"] for route in service_map["routes"]
@@ -191,7 +191,7 @@ def test_install_system__service_map_route(
         ).json()
         actual_stops = None
         for service_map in route_response["serviceMaps"]:
-            if service_map["groupId"] != "alltimes":
+            if service_map["configId"] != "alltimes":
                 continue
             actual_stops = [stop["id"] for stop in service_map["stops"]]
         assert usual_stops == actual_stops

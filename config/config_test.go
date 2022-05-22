@@ -113,10 +113,10 @@ func TestConvertFeedConfig(t *testing.T) {
 		},
 		{
 			apiConfig: &api.FeedConfig{
-				Parser: &api.FeedConfig_DirectionRulesParser_{},
+				Parser: &api.FeedConfig_NyctStopHeadsignRulesParser_{},
 			},
 			internalConfig: &FeedConfig{
-				Parser: DirectionRules,
+				Parser: NyctStopHeadsignRules,
 			},
 		},
 	}

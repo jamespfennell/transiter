@@ -138,7 +138,7 @@ def _perform_service_map_test(
     stop_ids = None
     for service_map in route_data["serviceMaps"]:
         print(service_map)
-        if service_map["groupId"] != "realtime":
+        if service_map["configId"] != "realtime":
             continue
         stop_ids = [stop["id"] for stop in service_map["stops"]]
     assert expected_map_stop_ids == stop_ids

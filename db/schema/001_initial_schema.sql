@@ -66,7 +66,7 @@ CREATE TABLE alert_trip (
     trip_pk BIGINT NOT NULL
 );
 
-CREATE TABLE direction_name_rule (
+CREATE TABLE stop_headsign_rule (
     pk BIGSERIAL PRIMARY KEY,
     id character varying,
     stop_pk BIGINT NOT NULL,
@@ -74,12 +74,12 @@ CREATE TABLE direction_name_rule (
     priority integer NOT NULL,
     direction_id boolean,
     track character varying,
-    name character varying NOT NULL,
+    headsign character varying NOT NULL,
 
     UNIQUE(source_pk, id)
 );
 
-CREATE INDEX ix_direction_name_rule_stop_pk_priority ON direction_name_rule USING btree (stop_pk, priority);
+CREATE INDEX ix_stop_headsign_rule_stop_pk_priority ON stop_headsign_rule USING btree (stop_pk, priority);
 
 CREATE TABLE feed (
     pk BIGSERIAL PRIMARY KEY,
@@ -401,10 +401,10 @@ ALTER TABLE alert_trip
 ALTER TABLE alert_trip
     ADD CONSTRAINT fk_alert_trip_trip_pk FOREIGN KEY(trip_pk) REFERENCES trip(pk) ON DELETE CASCADE;
 
-ALTER TABLE direction_name_rule
-    ADD CONSTRAINT fk_direction_name_rule_source_pk FOREIGN KEY (source_pk) REFERENCES feed_update(pk) ON DELETE CASCADE;
-ALTER TABLE direction_name_rule
-    ADD CONSTRAINT fk_direction_name_rule_stop_pk FOREIGN KEY(stop_pk) REFERENCES stop(pk) ON DELETE CASCADE;
+ALTER TABLE stop_headsign_rule
+    ADD CONSTRAINT fk_stop_headsign_rule_source_pk FOREIGN KEY (source_pk) REFERENCES feed_update(pk) ON DELETE CASCADE;
+ALTER TABLE stop_headsign_rule
+    ADD CONSTRAINT fk_stop_headsign_rule_stop_pk FOREIGN KEY(stop_pk) REFERENCES stop(pk) ON DELETE CASCADE;
 
 ALTER TABLE feed
     ADD CONSTRAINT fk_feed_system_pk FOREIGN KEY(system_pk) REFERENCES system(pk) ON DELETE CASCADE;
