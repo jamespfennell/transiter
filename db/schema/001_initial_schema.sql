@@ -68,15 +68,11 @@ CREATE TABLE alert_trip (
 
 CREATE TABLE stop_headsign_rule (
     pk BIGSERIAL PRIMARY KEY,
-    id character varying,
-    stop_pk BIGINT NOT NULL,
     source_pk BIGINT NOT NULL,
     priority integer NOT NULL,
-    direction_id boolean,
+    stop_pk BIGINT NOT NULL,
     track character varying,
-    headsign character varying NOT NULL,
-
-    UNIQUE(source_pk, id)
+    headsign character varying NOT NULL
 );
 
 CREATE INDEX ix_stop_headsign_rule_stop_pk_priority ON stop_headsign_rule USING btree (stop_pk, priority);

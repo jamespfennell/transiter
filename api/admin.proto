@@ -126,12 +126,12 @@ message FeedConfig {
         optional GtfsRealtimeExtension extension = 1;
     }
 
-    message NyctStopHeadsignRulesParser{}
+    message NyctSubwayCsvParser{}
 
     oneof parser {
         GtfsStaticParser gtfs_static_parser = 3;
         GtfsRealtimeParser gtfs_realtime_parser = 4;
-        NyctStopHeadsignRulesParser nyct_stop_headsign_rules_parser = 5;
+        NyctSubwayCsvParser nyct_subway_csv_parser = 5;
     }
 
 }

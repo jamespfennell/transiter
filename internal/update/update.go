@@ -16,6 +16,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/update/common"
+	"github.com/jamespfennell/transiter/internal/update/nyctsubwaycsv"
 	"github.com/jamespfennell/transiter/internal/update/realtime"
 	"github.com/jamespfennell/transiter/internal/update/static"
 )
@@ -80,6 +81,7 @@ func RunInExistingTx(ctx context.Context, querier db.Querier, systemID string, u
 	}
 	switch feedConfig.Parser {
 	case config.GtfsStatic:
+		// TODO: move the parsing into the static module
 		// TODO: support custom GTFS static options
 		parsedEntities, err := gtfs.ParseStatic(content, gtfs.ParseStaticOptions{})
 		if err != nil {
@@ -95,6 +97,8 @@ func RunInExistingTx(ctx context.Context, querier db.Querier, systemID string, u
 			return err
 		}
 		return realtime.Update(ctx, updateCtx, parsedEntities)
+	case config.NyctSubwayCsv:
+		return nyctsubwaycsv.ParseAndUpdate(ctx, updateCtx, content)
 	default:
 		return fmt.Errorf("unknown parser %q", feedConfig.Parser)
 	}

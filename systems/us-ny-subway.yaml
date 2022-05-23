@@ -21,7 +21,22 @@ feeds:
         - strategy: DEFAULT
           stopID1: "B08"  # Lexington Av/63rd St
           stopID2: "R11"  # Lexington Av/59th St
-        
+
+  - id: subwaycsv
+    requiredForInstall: true
+    url: 'https://atisdata.s3.amazonaws.com/Station/Stations.csv'
+    parser: NYCT_SUBWAY_CSV
+
+  - id: G
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+    parser: GTFS_REALTIME
+
   - id: L
     periodicUpdateEnabled: true
     periodicUpdatePeriod: 5s

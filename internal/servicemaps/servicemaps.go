@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/jamespfennell/gtfs"
@@ -179,7 +178,6 @@ type UpdateRealtimeMapsArgs struct {
 
 // UpdateRealtimeMaps updates the realtime service maps
 func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, args UpdateRealtimeMapsArgs) error {
-	fmt.Println(args)
 	stopPksSet := map[int64]bool{}
 	var stopPks []int64
 	for _, trips := range [][]Trip{args.OldTrips, args.NewTrips} {

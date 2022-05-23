@@ -39,9 +39,9 @@ type FeedConfig struct {
 type Parser string
 
 const (
-	GtfsStatic            Parser = "GTFS_STATIC"
-	GtfsRealtime          Parser = "GTFS_REALTIME"
-	NyctStopHeadsignRules Parser = "NYCT_STOP_HEADSIGN_RULES"
+	GtfsStatic    Parser = "GTFS_STATIC"
+	GtfsRealtime  Parser = "GTFS_REALTIME"
+	NyctSubwayCsv Parser = "NYCT_SUBWAY_CSV"
 )
 
 type TransfersStrategy string
@@ -141,8 +141,8 @@ func ConvertAPIFeedConfig(fc *api.FeedConfig) *FeedConfig {
 				result.GtfsRealtimeOptions.Extension = UsNySubwayTrips
 			}
 		}
-	case *api.FeedConfig_NyctStopHeadsignRulesParser_:
-		result.Parser = NyctStopHeadsignRules
+	case *api.FeedConfig_NyctSubwayCsvParser_:
+		result.Parser = NyctSubwayCsv
 	}
 	return result
 }
@@ -236,8 +236,8 @@ func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 				Extension: apiExt,
 			},
 		}
-	case NyctStopHeadsignRules:
-		result.Parser = &api.FeedConfig_NyctStopHeadsignRulesParser_{}
+	case NyctSubwayCsv:
+		result.Parser = &api.FeedConfig_NyctSubwayCsvParser_{}
 	}
 	return result
 }

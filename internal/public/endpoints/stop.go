@@ -310,11 +310,6 @@ func (m *StopHeadsignMatcher) Match(stopTime *db.ListStopTimesAtStopsRow) *strin
 		if stopTime.StopPk != rule.StopPk {
 			continue
 		}
-		if stopTime.DirectionID.Valid &&
-			rule.DirectionID.Valid &&
-			stopTime.DirectionID.Bool != rule.DirectionID.Bool {
-			continue
-		}
 		if stopTime.Track.Valid &&
 			rule.Track.Valid &&
 			stopTime.Track.String != rule.Track.String {

@@ -26,6 +26,7 @@ type Querier interface {
 	DeleteStaleTransfers(ctx context.Context, arg DeleteStaleTransfersParams) error
 	// TODO: These DeleteStaleT queries can be simpler and just take the update_pk
 	DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) ([]int64, error)
+	DeleteStopHeadsignRules(ctx context.Context, sourcePk int64) error
 	DeleteSystem(ctx context.Context, pk int64) error
 	DeleteTripStopTimes(ctx context.Context, pks []int64) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
@@ -44,6 +45,7 @@ type Querier interface {
 	InsertServiceMapConfig(ctx context.Context, arg InsertServiceMapConfigParams) error
 	InsertServiceMapStop(ctx context.Context, arg InsertServiceMapStopParams) error
 	InsertStop(ctx context.Context, arg InsertStopParams) (int64, error)
+	InsertStopHeadSignRule(ctx context.Context, arg InsertStopHeadSignRuleParams) error
 	InsertSystem(ctx context.Context, arg InsertSystemParams) (int64, error)
 	InsertTransfer(ctx context.Context, arg InsertTransferParams) error
 	InsertTrip(ctx context.Context, arg InsertTripParams) (int64, error)
