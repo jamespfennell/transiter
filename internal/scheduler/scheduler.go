@@ -39,6 +39,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/scheduler/ticker"
 	"github.com/jamespfennell/transiter/internal/update"
 )
 
@@ -283,22 +284,20 @@ func (s *Scheduler) Status() []FeedStatus {
 
 type systemScheduler struct {
 	resetRequest chan []FeedConfig
-	resetReply   chan struct{}
 
 	// The status channels are used to get status from the scheduler loop
 	statusRequest chan struct{}
 	statusReply   chan []FeedStatus
 
-	doneChan chan struct{}
+	opDone chan struct{}
 }
 
 func newSystemScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemID string) *systemScheduler {
 	ss := &systemScheduler{
 		resetRequest:  make(chan []FeedConfig),
-		resetReply:    make(chan struct{}),
 		statusRequest: make(chan struct{}),
 		statusReply:   make(chan []FeedStatus),
-		doneChan:      make(chan struct{}),
+		opDone:        make(chan struct{}),
 	}
 	go ss.run(ctx, clock, ops, systemID)
 	return ss
@@ -316,7 +315,7 @@ func (s *systemScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, s
 				fs.cancelFunc()
 				fs.scheduler.wait()
 			}
-			close(s.doneChan)
+			close(s.opDone)
 			return
 		case msg := <-s.resetRequest:
 			updatedFeedIds := map[string]bool{}
@@ -328,11 +327,12 @@ func (s *systemScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, s
 						scheduler  *feedScheduler
 						cancelFunc context.CancelFunc
 					}{
-						scheduler:  newFeedScheduler(feedCtx, clock, ops, systemID, feed.ID),
+						scheduler:  newFeedScheduler(feedCtx, clock, ops, systemID, feed.ID, feed.Period),
 						cancelFunc: cancelFunc,
 					}
+				} else {
+					feedSchedulers[feed.ID].scheduler.reset(feed.Period)
 				}
-				feedSchedulers[feed.ID].scheduler.reset(feed.Period)
 			}
 			for feedID, fs := range feedSchedulers {
 				if updatedFeedIds[feedID] {
@@ -342,7 +342,7 @@ func (s *systemScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, s
 				fs.scheduler.wait()
 				delete(feedSchedulers, feedID)
 			}
-			s.resetReply <- struct{}{}
+			s.opDone <- struct{}{}
 		case <-s.statusRequest:
 			var response []FeedStatus
 			for _, fs := range feedSchedulers {
@@ -355,7 +355,7 @@ func (s *systemScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, s
 
 func (s *systemScheduler) reset(msg []FeedConfig) {
 	s.resetRequest <- msg
-	<-s.resetReply
+	<-s.opDone
 }
 
 func (s *systemScheduler) status() []FeedStatus {
@@ -364,40 +364,38 @@ func (s *systemScheduler) status() []FeedStatus {
 }
 
 func (s *systemScheduler) wait() {
-	<-s.doneChan
+	<-s.opDone
 }
 
 type feedScheduler struct {
 	resetRequest chan time.Duration
-	resetReply   chan struct{}
 
 	statusRequest chan struct{}
 	statusReply   chan FeedStatus
 
 	updateFinished chan error
 
-	doneChan chan struct{}
+	opDone chan struct{}
 }
 
-func newFeedScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemID, feedID string) *feedScheduler {
+func newFeedScheduler(ctx context.Context, clock clock.Clock, ops Ops, systemID, feedID string, period time.Duration) *feedScheduler {
 	fs := &feedScheduler{
 		resetRequest: make(chan time.Duration),
-		resetReply:   make(chan struct{}),
 
 		statusRequest: make(chan struct{}),
 		statusReply:   make(chan FeedStatus),
 
 		updateFinished: make(chan error),
-		doneChan:       make(chan struct{}),
+		opDone:         make(chan struct{}),
 	}
-	go fs.run(ctx, clock, ops, systemID, feedID)
+	go fs.run(ctx, clock, ops, systemID, feedID, period)
+	<-fs.opDone
 	return fs
 }
 
-func (fs *feedScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, systemID, feedID string) {
-	period := time.Duration(0)
-	// TODO: what is this about?
-	ticker := clock.Ticker(time.Hour * 50000)
+func (fs *feedScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, systemID, feedID string, period time.Duration) {
+	ticker := ticker.New(clock, period)
+	fs.opDone <- struct{}{}
 	var lastSuccesfulUpdate time.Time
 	var lastFinishedUpdate time.Time
 	updateRunning := false
@@ -408,14 +406,11 @@ func (fs *feedScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, sy
 			if updateRunning {
 				<-fs.updateFinished
 			}
-			close(fs.doneChan)
+			close(fs.opDone)
 			return
-		case newPeriod := <-fs.resetRequest:
-			if period != newPeriod {
-				period = newPeriod
-				ticker.Reset(period)
-			}
-			fs.resetReply <- struct{}{}
+		case period = <-fs.resetRequest:
+			ticker.Reset(period)
+			fs.opDone <- struct{}{}
 		case <-ticker.C:
 			if updateRunning {
 				continue
@@ -446,7 +441,7 @@ func (fs *feedScheduler) run(ctx context.Context, clock clock.Clock, ops Ops, sy
 
 func (fs *feedScheduler) reset(period time.Duration) {
 	fs.resetRequest <- period
-	<-fs.resetReply
+	<-fs.opDone
 }
 
 func (fs *feedScheduler) status() FeedStatus {
@@ -455,5 +450,5 @@ func (fs *feedScheduler) status() FeedStatus {
 }
 
 func (fs *feedScheduler) wait() {
-	<-fs.doneChan
+	<-fs.opDone
 }

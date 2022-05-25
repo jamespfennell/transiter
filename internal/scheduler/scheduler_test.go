@@ -195,7 +195,6 @@ func TestScheduler(t *testing.T) {
 			if !reflect.DeepEqual(expected, updates) {
 				t.Errorf("Updates got = %+v, want = %+v", updates, expected)
 			}
-
 			ops.currentConfig = tc.update
 
 			if err := tc.resetF(scheduler); err != nil {

@@ -145,7 +145,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		currentStopSequence := int32(math.MaxInt32)
 		for _, stopTime := range trip.StopTimeUpdates {
 			if stopTime.StopSequence != nil {
-				currentStopSequence = int32(*trip.StopTimeUpdates[0].StopSequence)
+				currentStopSequence = int32(*stopTime.StopSequence)
 				break
 			}
 		}

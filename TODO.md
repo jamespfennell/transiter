@@ -11,3 +11,4 @@
 - required_for_install -> update_on_update?
 - Can we configure the /admin prefix non-statically? Yeah, we just have to add HTTP middleware
 - Transit topological sort (Split into components -> transitive reduction -> tree-graph-tree decomposition -> 3 x sort)
+- Add new index on service map vertex

@@ -27,6 +27,37 @@ feeds:
     url: 'https://atisdata.s3.amazonaws.com/Station/Stations.csv'
     parser: NYCT_SUBWAY_CSV
 
+  - id: "1234567"
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+    parser: GTFS_REALTIME
+
+  - id: ACE
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+    parser: GTFS_REALTIME
+
+  - id: BDFM
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+    parser: GTFS_REALTIME
+
+
   - id: G
     periodicUpdateEnabled: true
     periodicUpdatePeriod: 5s
@@ -37,11 +68,41 @@ feeds:
 
     parser: GTFS_REALTIME
 
+  - id: JZ
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-jz"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+    parser: GTFS_REALTIME
+
   - id: L
     periodicUpdateEnabled: true
     periodicUpdatePeriod: 5s
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+    parser: GTFS_REALTIME
+
+  - id: NQRW
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+    parser: GTFS_REALTIME
+
+  - id: SIR
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-si"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
