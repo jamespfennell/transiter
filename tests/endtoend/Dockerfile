@@ -8,10 +8,10 @@ RUN pip install -r requirements.txt
 COPY data data
 COPY conftest.py .
 COPY __init__.py .
+COPY gtfs_realtime_pb2.py .
 COPY gtfsrealtimegenerator.py .
 COPY test_installsystem.py .
 COPY test_servicemaps.py .
 COPY test_trips.py .
 
-ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 ENTRYPOINT ["pytest"]

@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 import requests
-from google.transit import gtfs_realtime_pb2 as gtfs
+from . import gtfs_realtime_pb2 as gtfs
 
 
 TRIP_ID = "trip_id"

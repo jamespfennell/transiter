@@ -1,4 +1,4 @@
-from google.transit import gtfs_realtime_pb2
+from . import gtfs_realtime_pb2
 
 
 class FeedTrip:
