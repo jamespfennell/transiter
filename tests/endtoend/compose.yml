@@ -12,7 +12,7 @@ services:
       - POSTGRES_DB=transiter
 
   transiter:
-    image: jamespfennell/transiter:latest
+    image: jamespfennell/transiter-go:latest
     expose:
       - "8082"
     ports:

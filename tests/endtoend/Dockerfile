@@ -13,4 +13,5 @@ COPY test_installsystem.py .
 COPY test_servicemaps.py .
 COPY test_trips.py .
 
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 ENTRYPOINT ["pytest"]
