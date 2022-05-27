@@ -112,42 +112,61 @@ func main() {
 			{
 				Name:  "server",
 				Usage: "run a Transiter server",
-				Action: func(c *cli.Context) error {
-					return server.Run(server.RunArgs{
-						PublicHTTPAddr:   c.String("public-http-addr"),
-						PostgresAddress:  c.String("postgres-address"),
-						PostgresUser:     c.String("postgres-user"),
-						PostgresPassword: c.String("postgres-password"),
-						PostgresDatabase: c.String("postgres-database"),
-						MaxConnections:   50,
-					})
-				},
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "public-http-addr",
-						Usage: "Address for the public HTTP server to listen on",
-						Value: "localhost:8080",
+						Usage: "Address the public HTTP server will listen on. Set to - to disable the public HTTP API.",
+						Value: "0.0.0.0:8080",
 					},
 					&cli.StringFlag{
-						Name:  "postgres-address",
-						Usage: "Postgres address",
-						Value: "localhost:5432",
+						Name:  "public-grpc-addr",
+						Usage: "Address the public gRPC server will listen on. Set to - to disable the public gRPC API.",
+						Value: "0.0.0.0:8081",
 					},
 					&cli.StringFlag{
-						Name:  "postgres-user",
-						Usage: "Postgres user",
-						Value: "transiter",
+						Name:  "admin-http-addr",
+						Usage: "Address the admin HTTP server will listen on. Set to - to disable the admin HTTP API.",
+						Value: "0.0.0.0:8082",
 					},
 					&cli.StringFlag{
-						Name:  "postgres-password",
-						Usage: "Postgres password",
-						Value: "transiter",
+						Name:  "admin-grpc-addr",
+						Usage: "Address the admin gRPC server will listen on. Set to - to disable the admin gRPC HTTP API.",
+						Value: "0.0.0.0:8083",
 					},
 					&cli.StringFlag{
-						Name:  "postgres-database",
-						Usage: "Postgres database",
-						Value: "transiter",
+						Name:    "postgres-connection-string",
+						Aliases: []string{"p"},
+						Usage:   "Postgres connection string",
+						Value:   "postgres://transiter:transiter@localhost:5432/transiter?sslmode=disable",
 					},
+					&cli.BoolFlag{
+						Name:  "read-only",
+						Usage: "Run in read only mode (no admin APIs, no scheduler, read only database interactions)",
+						Value: false,
+					},
+					&cli.BoolFlag{
+						Name:  "disable-scheduler",
+						Usage: "Don't run the feed update scheduler",
+						Value: false,
+					},
+					&cli.Int64Flag{
+						Name:  "max-connections",
+						Usage: "Maximum size of the Postgres connection pool",
+						Value: 50,
+					},
+				},
+				Action: func(c *cli.Context) error {
+					args := server.RunArgs{
+						PublicHTTPAddr:   c.String("public-http-addr"),
+						PublicGrpcAddr:   c.String("public-grpc-addr"),
+						AdminHTTPAddr:    c.String("admin-http-addr"),
+						AdminGrpcAddr:    c.String("admin-grpc-addr"),
+						PostgresConnStr:  c.String("postgres-connection-string"),
+						MaxConnections:   int32(c.Int64("max-connections")),
+						DisableScheduler: c.Bool("disable-scheduler"),
+						ReadOnly:         c.Bool("read-only"),
+					}
+					return server.Run(args)
 				},
 			},
 			{

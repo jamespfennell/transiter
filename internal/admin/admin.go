@@ -28,10 +28,10 @@ import (
 // Service implements the Transiter admin API.
 type Service struct {
 	pool      *pgxpool.Pool
-	scheduler *scheduler.Scheduler
+	scheduler scheduler.Scheduler
 }
 
-func New(pool *pgxpool.Pool, scheduler *scheduler.Scheduler) *Service {
+func New(pool *pgxpool.Pool, scheduler scheduler.Scheduler) *Service {
 	return &Service{
 		pool:      pool,
 		scheduler: scheduler,

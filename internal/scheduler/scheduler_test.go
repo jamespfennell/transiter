@@ -17,19 +17,19 @@ const systemID2 = "systemID2"
 const feedID3 = "feedID3"
 
 func TestScheduler(t *testing.T) {
-	resetSystem1 := func(s *Scheduler) error {
+	resetSystem1 := func(s *RealScheduler) error {
 		return s.Reset(context.Background(), systemID1)
 	}
-	resetSystem2 := func(s *Scheduler) error {
+	resetSystem2 := func(s *RealScheduler) error {
 		return s.Reset(context.Background(), systemID2)
 	}
-	resetAll := func(s *Scheduler) error {
+	resetAll := func(s *RealScheduler) error {
 		return s.ResetAll(context.Background())
 	}
 	testCases := []struct {
 		description     string
 		update          []SystemConfig
-		resetF          func(*Scheduler) error
+		resetF          func(*RealScheduler) error
 		runningPeriod   time.Duration
 		expectedUpdates map[systemAndFeed]int
 	}{

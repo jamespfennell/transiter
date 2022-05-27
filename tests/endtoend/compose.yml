@@ -20,7 +20,7 @@ services:
       - "8081:8081"
       - "8082:8082"
       - "8083:8083"
-    command: server --postgres-address "db:5432"
+    command: server --postgres-connection-string "postgres://transiter:transiter@db:5432/transiter"
 
   sourceserver:
     build:
