@@ -14,9 +14,6 @@ class SourceServerClient:
         self._base_url = base_url
         self._add_finalizer = add_finalizer
 
-    def put(self, url, content):
-        requests.put(self._base_url + "/" + url, data=content).raise_for_status()
-
     def create(self, prefix="", suffix=""):
         response = requests.post(
             self._base_url, params={"prefix": prefix, "suffix": suffix}
@@ -26,6 +23,12 @@ class SourceServerClient:
         self._add_finalizer(self._delete_factory(created_url))
         self._created_urls.append(created_url)
         return created_url
+
+    def put(self, url, content):
+        requests.put(self._base_url + "/" + url, data=content).raise_for_status()
+
+    def delete(self, url):
+        requests.delete(self._base_url + "/" + url).raise_for_status()
 
     def _delete_factory(self, url):
         full_url = self._base_url + "/" + url
