@@ -13,8 +13,15 @@ import (
 	"github.com/jamespfennell/transiter/internal/update/common"
 )
 
-func Update(ctx context.Context, updateCtx common.UpdateContext, parsedEntities *gtfs.Realtime) error {
-	if err := updateTrips(ctx, updateCtx, parsedEntities.Trips); err != nil {
+func Parse(content []byte) (*gtfs.Realtime, error) {
+	// TODO: support custom GTFS realtime options
+	return gtfs.ParseRealtime(content, &gtfs.ParseRealtimeOptions{
+		UseNyctExtension: true,
+	})
+}
+
+func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Realtime) error {
+	if err := updateTrips(ctx, updateCtx, data.Trips); err != nil {
 		return err
 	}
 	return nil

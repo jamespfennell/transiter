@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const deleteFeed = `-- name: DeleteFeed :exec
@@ -16,6 +17,40 @@ DELETE FROM feed WHERE pk = $1
 
 func (q *Queries) DeleteFeed(ctx context.Context, pk int64) error {
 	_, err := q.db.Exec(ctx, deleteFeed, pk)
+	return err
+}
+
+const finishFeedUpdate = `-- name: FinishFeedUpdate :exec
+UPDATE feed_update
+SET status = $1,
+    result = $2,
+    ended_at = $3,
+    content_length = $4,
+    content_hash = $5,
+    error_message = $6
+WHERE pk = $7
+`
+
+type FinishFeedUpdateParams struct {
+	Status        string
+	Result        sql.NullString
+	EndedAt       sql.NullTime
+	ContentLength sql.NullInt32
+	ContentHash   sql.NullString
+	ErrorMessage  sql.NullString
+	UpdatePk      int64
+}
+
+func (q *Queries) FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdateParams) error {
+	_, err := q.db.Exec(ctx, finishFeedUpdate,
+		arg.Status,
+		arg.Result,
+		arg.EndedAt,
+		arg.ContentLength,
+		arg.ContentHash,
+		arg.ErrorMessage,
+		arg.UpdatePk,
+	)
 	return err
 }
 
@@ -65,6 +100,21 @@ func (q *Queries) GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams
 	return i, err
 }
 
+const getLastFeedUpdateContentHash = `-- name: GetLastFeedUpdateContentHash :one
+SELECT content_hash
+FROM feed_update
+WHERE feed_pk = $1 AND status = 'SUCCESS'
+ORDER BY ended_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLastFeedUpdateContentHash(ctx context.Context, feedPk int64) (sql.NullString, error) {
+	row := q.db.QueryRow(ctx, getLastFeedUpdateContentHash, feedPk)
+	var content_hash sql.NullString
+	err := row.Scan(&content_hash)
+	return content_hash, err
+}
+
 const insertFeed = `-- name: InsertFeed :exec
 INSERT INTO feed
     (id, system_pk, periodic_update_enabled, periodic_update_period, config)
@@ -94,19 +144,20 @@ func (q *Queries) InsertFeed(ctx context.Context, arg InsertFeedParams) error {
 
 const insertFeedUpdate = `-- name: InsertFeedUpdate :one
 INSERT INTO feed_update
-    (feed_pk, status)
+    (feed_pk, status, started_at)
 VALUES
-    ($1, $2)
+    ($1, $2, $3)
 RETURNING pk
 `
 
 type InsertFeedUpdateParams struct {
-	FeedPk int64
-	Status string
+	FeedPk    int64
+	Status    string
+	StartedAt time.Time
 }
 
 func (q *Queries) InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdateParams) (int64, error) {
-	row := q.db.QueryRow(ctx, insertFeedUpdate, arg.FeedPk, arg.Status)
+	row := q.db.QueryRow(ctx, insertFeedUpdate, arg.FeedPk, arg.Status, arg.StartedAt)
 	var pk int64
 	err := row.Scan(&pk)
 	return pk, err

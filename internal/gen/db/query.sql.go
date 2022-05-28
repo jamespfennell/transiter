@@ -1307,7 +1307,7 @@ func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTr
 }
 
 const listUpdatesInFeed = `-- name: ListUpdatesInFeed :many
-SELECT pk, feed_pk, status, created_at, completed_at, content_created_at, content_hash, content_length, result, result_message, total_duration FROM feed_update 
+SELECT pk, feed_pk, status, started_at, ended_at, result, content_length, content_hash, error_message FROM feed_update 
 WHERE feed_pk = $1
 ORDER BY pk DESC
 LIMIT 100
@@ -1326,14 +1326,12 @@ func (q *Queries) ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUp
 			&i.Pk,
 			&i.FeedPk,
 			&i.Status,
-			&i.CreatedAt,
-			&i.CompletedAt,
-			&i.ContentCreatedAt,
-			&i.ContentHash,
-			&i.ContentLength,
+			&i.StartedAt,
+			&i.EndedAt,
 			&i.Result,
-			&i.ResultMessage,
-			&i.TotalDuration,
+			&i.ContentLength,
+			&i.ContentHash,
+			&i.ErrorMessage,
 		); err != nil {
 			return nil, err
 		}

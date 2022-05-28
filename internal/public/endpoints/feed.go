@@ -71,14 +71,15 @@ func ListFeedUpdates(ctx context.Context, r *Context, req *api.ListFeedUpdatesRe
 	}
 	reply := &api.ListFeedUpdatesReply{}
 	for _, update := range updates {
+		// TODO: update the public API field names to match the database
 		reply.Updates = append(reply.Updates, &api.FeedUpdate{
 			Id:            fmt.Sprintf("%d", update.Pk),
 			Status:        update.Status,
 			Result:        convert.SQLNullString(update.Result),
-			StackTrace:    convert.SQLNullString(update.ResultMessage),
+			StackTrace:    convert.SQLNullString(update.ErrorMessage),
 			ContentHash:   convert.SQLNullString(update.ContentHash),
 			ContentLength: convert.SQLNullInt32(update.ContentLength),
-			CompletedAt:   convert.SQLNullTime(update.CompletedAt),
+			CompletedAt:   convert.SQLNullTime(update.EndedAt),
 		})
 	}
 	return reply, nil

@@ -83,17 +83,15 @@ type Feed struct {
 }
 
 type FeedUpdate struct {
-	Pk               int64
-	FeedPk           int64
-	Status           string
-	CreatedAt        sql.NullTime
-	CompletedAt      sql.NullTime
-	ContentCreatedAt sql.NullTime
-	ContentHash      sql.NullString
-	ContentLength    sql.NullInt32
-	Result           sql.NullString
-	ResultMessage    sql.NullString
-	TotalDuration    sql.NullInt32
+	Pk            int64
+	FeedPk        int64
+	Status        string
+	StartedAt     time.Time
+	EndedAt       sql.NullTime
+	Result        sql.NullString
+	ContentLength sql.NullInt32
+	ContentHash   sql.NullString
+	ErrorMessage  sql.NullString
 }
 
 type Route struct {

@@ -149,6 +149,11 @@ func main() {
 						Usage: "Don't run the feed update scheduler",
 						Value: false,
 					},
+					&cli.BoolFlag{
+						Name:  "no-public-metrics",
+						Usage: "Don't report Prometheous metrics on the public HTTP server",
+						Value: false,
+					},
 					&cli.Int64Flag{
 						Name:  "max-connections",
 						Usage: "Maximum size of the Postgres connection pool",
@@ -164,6 +169,7 @@ func main() {
 						PostgresConnStr:  c.String("postgres-connection-string"),
 						MaxConnections:   int32(c.Int64("max-connections")),
 						DisableScheduler: c.Bool("disable-scheduler"),
+						NoPublicMetrics:  c.Bool("no-public-metrics"),
 						ReadOnly:         c.Bool("read-only"),
 					}
 					return server.Run(args)

@@ -29,9 +29,11 @@ type Querier interface {
 	DeleteStopHeadsignRules(ctx context.Context, sourcePk int64) error
 	DeleteSystem(ctx context.Context, pk int64) error
 	DeleteTripStopTimes(ctx context.Context, pks []int64) error
+	FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdateParams) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
 	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
 	GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error)
+	GetLastFeedUpdateContentHash(ctx context.Context, feedPk int64) (sql.NullString, error)
 	GetLastStopsForTrips(ctx context.Context, tripPks []int64) ([]GetLastStopsForTripsRow, error)
 	GetRouteInSystem(ctx context.Context, arg GetRouteInSystemParams) (GetRouteInSystemRow, error)
 	GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (GetStopInSystemRow, error)

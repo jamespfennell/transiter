@@ -14,25 +14,30 @@ import (
 	"github.com/jamespfennell/transiter/internal/update/common"
 )
 
-func Update(ctx context.Context, updateCtx common.UpdateContext, parsedEntities *gtfs.Static) error {
-	agencyIDToPk, err := updateAgencies(ctx, updateCtx, parsedEntities.Agencies)
+func Parse(content []byte) (*gtfs.Static, error) {
+	// TODO: support custom GTFS static options
+	return gtfs.ParseStatic(content, gtfs.ParseStaticOptions{})
+}
+
+func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Static) error {
+	agencyIDToPk, err := updateAgencies(ctx, updateCtx, data.Agencies)
 	if err != nil {
 		return err
 	}
-	routeIDToPk, err := updateRoutes(ctx, updateCtx, parsedEntities.Routes, agencyIDToPk)
+	routeIDToPk, err := updateRoutes(ctx, updateCtx, data.Routes, agencyIDToPk)
 	if err != nil {
 		return err
 	}
-	stopIDToPk, err := updateStops(ctx, updateCtx, parsedEntities.AllStops())
+	stopIDToPk, err := updateStops(ctx, updateCtx, data.AllStops())
 	if err != nil {
 		return err
 	}
-	if err := updateTransfers(ctx, updateCtx, parsedEntities.Transfers, stopIDToPk); err != nil {
+	if err := updateTransfers(ctx, updateCtx, data.Transfers, stopIDToPk); err != nil {
 		return err
 	}
 	if err := servicemaps.UpdateStaticMaps(ctx, updateCtx.Querier, servicemaps.UpdateStaticMapsArgs{
 		SystemPk:    updateCtx.SystemPk,
-		Trips:       parsedEntities.Trips,
+		Trips:       data.Trips,
 		RouteIDToPk: routeIDToPk,
 	}); err != nil {
 		return err

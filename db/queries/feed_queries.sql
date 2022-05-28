@@ -38,7 +38,24 @@ WHERE feed.periodic_update_enabled
 
 -- name: InsertFeedUpdate :one
 INSERT INTO feed_update
-    (feed_pk, status)
+    (feed_pk, status, started_at)
 VALUES
-    (sqlc.arg(feed_pk), sqlc.arg(status))
+    (sqlc.arg(feed_pk), sqlc.arg(status), sqlc.arg(started_at))
 RETURNING pk;
+
+-- name: GetLastFeedUpdateContentHash :one
+SELECT content_hash
+FROM feed_update
+WHERE feed_pk = sqlc.arg(feed_pk) AND status = 'SUCCESS'
+ORDER BY ended_at DESC
+LIMIT 1;
+
+-- name: FinishFeedUpdate :exec
+UPDATE feed_update
+SET status = sqlc.arg(status),
+    result = sqlc.arg(result),
+    ended_at = sqlc.arg(ended_at),
+    content_length = sqlc.arg(content_length),
+    content_hash = sqlc.arg(content_hash),
+    error_message = sqlc.arg(error_message)
+WHERE pk = sqlc.arg(update_pk);

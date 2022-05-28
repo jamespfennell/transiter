@@ -92,21 +92,19 @@ CREATE TABLE feed_update (
     pk BIGSERIAL PRIMARY KEY,
     feed_pk BIGINT NOT NULL,
     status character varying(16) NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    started_at timestamp with time zone NOT NULL,
 
     -- the following fields are only populated when the update completes
-    completed_at timestamp with time zone,
-    content_created_at timestamp with time zone,
-    content_hash character varying,
+    ended_at timestamp with time zone,
+    result character varying(30),
     content_length integer,
-    result character varying(16),
-    result_message character varying,
-    total_duration integer
+    content_hash character varying,
+    error_message character varying
 );
 
 CREATE INDEX ix_feed_update_feed_feed_update ON feed_update USING btree (feed_pk, pk);
-CREATE INDEX ix_feed_update_status_result_completed_at ON feed_update USING btree (feed_pk, status, result, completed_at);
-CREATE INDEX ix_feed_update_success_pk_completed_at ON feed_update USING btree (feed_pk, completed_at) WHERE ((status)::text = 'SUCCESS'::text);
+CREATE INDEX ix_feed_update_status_result_ended_at ON feed_update USING btree (feed_pk, status, result, ended_at);
+CREATE INDEX ix_feed_update_success_pk_ended_at ON feed_update USING btree (feed_pk, ended_at) WHERE ((status)::text = 'SUCCESS'::text);
 
 CREATE TABLE route (
     pk BIGSERIAL PRIMARY KEY,
@@ -266,6 +264,8 @@ CREATE TABLE system (
     UNIQUE(id)
 );
 
+
+-- TODO: delete this?!?!
 CREATE TABLE system_update (
     pk BIGSERIAL PRIMARY KEY,
     system_pk BIGINT NOT NULL,

@@ -16,6 +16,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/admin"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
+	"github.com/jamespfennell/transiter/internal/monitoring"
 	"github.com/jamespfennell/transiter/internal/public"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/public/href"
@@ -32,6 +33,7 @@ type RunArgs struct {
 	PostgresConnStr  string
 	MaxConnections   int32
 	DisableScheduler bool
+	NoPublicMetrics  bool
 	ReadOnly         bool
 }
 
@@ -95,8 +97,13 @@ func Run(args RunArgs) error {
 			defer wg.Done()
 			mux := newServeMux()
 			api.RegisterPublicHandlerServer(ctx, mux, publicService)
+			h := http.NewServeMux()
+			h.Handle("/", mux)
+			if !args.NoPublicMetrics {
+				h.Handle("/metrics", monitoring.Handler())
+			}
 			log.Printf("Public HTTP API listening on %s\n", args.PublicHTTPAddr)
-			_ = http.ListenAndServe(args.PublicHTTPAddr, mux)
+			_ = http.ListenAndServe(args.PublicHTTPAddr, h)
 		}()
 	}
 
