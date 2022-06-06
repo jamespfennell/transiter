@@ -16,7 +16,8 @@ import (
 func Parse(content []byte) (*gtfs.Realtime, error) {
 	// TODO: support custom GTFS realtime options
 	return gtfs.ParseRealtime(content, &gtfs.ParseRealtimeOptions{
-		UseNyctExtension: true,
+		UseNyctExtension:               true,
+		NyctFilterStaleUnassignedTrips: true,
 	})
 }
 
