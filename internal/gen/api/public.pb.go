@@ -2257,7 +2257,8 @@ type Route struct {
 	Periodicity *float64              `protobuf:"fixed64,9,opt,name=periodicity,proto3,oneof" json:"periodicity,omitempty"`
 	Agency      *AgencyPreview        `protobuf:"bytes,10,opt,name=agency,proto3" json:"agency,omitempty"`
 	ServiceMaps []*ServiceMapForRoute `protobuf:"bytes,11,rep,name=service_maps,json=serviceMaps,proto3" json:"service_maps,omitempty"`
-	Alerts      []*Alert              `protobuf:"bytes,12,rep,name=alerts,proto3" json:"alerts,omitempty"`
+	// TODO(APIv2): alert preview
+	Alerts []*Alert `protobuf:"bytes,12,rep,name=alerts,proto3" json:"alerts,omitempty"`
 }
 
 func (x *Route) Reset() {
