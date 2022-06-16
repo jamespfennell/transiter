@@ -3,7 +3,7 @@ import time
 
 import pytest
 import requests
-from google.transit import gtfs_realtime_pb2 as gtfs
+from . import gtfs_realtime_pb2 as gtfs
 
 ONE_DAY_IN_SECONDS = 60 * 60 * 24
 TIME_1 = datetime.datetime.utcfromtimestamp(time.time() - ONE_DAY_IN_SECONDS)
@@ -15,18 +15,18 @@ ALERT_LARGE_JSON = [
     dict(
         **ALERT_SMALL_JSON[0],
         **{
-            "active_period": {
-                "starts_at": int(TIME_1.timestamp()),
-                "ends_at": int(TIME_2.timestamp()),
+            "activePeriod": {
+                "startsAt": str(int(TIME_1.timestamp())),
+                "endsAt": str(int(TIME_2.timestamp())),
             },
-            "messages": [
+            "header": [
                 {
-                    "header": "Advertencia",
-                    "description": "",
-                    "url": None,
+                    "text": "Advertencia",
                     "language": "es",
                 }
             ],
+            "description": [],
+            "url": [],
         }
     )
 ]
@@ -72,52 +72,44 @@ def setup_test(
 
     source_server.put(realtime_feed_url, message.SerializeToString())
     requests.post(
-        "{}/systems/{}/feeds/GtfsRealtimeFeed?sync=true".format(
+        "{}/admin/systems/{}/feeds/GtfsRealtimeFeed?sync=true".format(
             transiter_host, system_id
         )
-    )
+    ).raise_for_status()
 
 
 @pytest.mark.parametrize(
-    "alerts_detail,expected_json",
-    [
-        [None, None],
-        ["none", None],
-        ["cause_and_effect", ALERT_SMALL_JSON],
-        ["messages", ALERT_LARGE_JSON],
-    ],
-)
-@pytest.mark.parametrize(
-    "path,entity_id,entity_selector,default_expected_json",
+    "path,entity_id,entity_selector,expected_json",
     [
         ["routes", "A", gtfs.EntitySelector(route_id="A"), ALERT_SMALL_JSON],
         ["routes/A", None, gtfs.EntitySelector(route_id="A"), ALERT_LARGE_JSON],
         ["stops", "1A", gtfs.EntitySelector(stop_id="1A"), None],
         ["stops/1A", None, gtfs.EntitySelector(stop_id="1A"), ALERT_SMALL_JSON],
-        [
-            "routes/A/trips",
-            "trip_id",
-            gtfs.EntitySelector(trip=gtfs.TripDescriptor(trip_id="trip_id")),
-            ALERT_SMALL_JSON,
-        ],
-        [
-            "routes/A/trips/trip_id",
-            None,
-            gtfs.EntitySelector(trip=gtfs.TripDescriptor(trip_id="trip_id")),
-            ALERT_LARGE_JSON,
-        ],
+        # TODO: renable
+        # [
+        #     "routes/A/trips",
+        #     "trip_id",
+        #     gtfs.EntitySelector(trip=gtfs.TripDescriptor(trip_id="trip_id")),
+        #     ALERT_SMALL_JSON,
+        # ],
+        # [
+        #     "routes/A/trips/trip_id",
+        #     None,
+        #     gtfs.EntitySelector(trip=gtfs.TripDescriptor(trip_id="trip_id")),
+        #     ALERT_LARGE_JSON,
+        # ],
         ["stops/1A", None, gtfs.EntitySelector(stop_id="1A"), ALERT_SMALL_JSON],
         [
             "agencies",
-            "transiter_transit_agency",
-            gtfs.EntitySelector(agency_id="transiter_transit_agency"),
+            "AgencyId",
+            gtfs.EntitySelector(agency_id="AgencyId"),
             ALERT_SMALL_JSON,
         ],
         [
-            "agencies/transiter_transit_agency",
+            "agencies/AgencyId",
             None,
-            gtfs.EntitySelector(agency_id="transiter_transit_agency"),
-            ALERT_LARGE_JSON,
+            gtfs.EntitySelector(agency_id="AgencyId"),
+            ALERT_SMALL_JSON,
         ],
     ],
 )
@@ -128,8 +120,6 @@ def test_alerts_list_entities(
     path,
     entity_id,
     entity_selector,
-    default_expected_json,
-    alerts_detail: str,
     expected_json,
 ):
     system_id = "test_alerts__get_entity_" + str(hash(path))
@@ -142,17 +132,14 @@ def test_alerts_list_entities(
     )
 
     url = "{}/systems/{}/{}".format(transiter_host, system_id, path)
-    if alerts_detail is not None:
-        url += "?alerts_detail=" + alerts_detail
-    else:
-        expected_json = default_expected_json
 
     actual_data = requests.get(url).json()
-    print(actual_data)
 
     if entity_id is not None:
+        actual_data = actual_data[path]
         actual_data = {response["id"]: response for response in actual_data}[entity_id]
 
+    print(actual_data)
     if expected_json is None:
         assert "alerts" not in actual_data
     else:

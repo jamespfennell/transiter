@@ -361,58 +361,8 @@ func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, e
 	return i, err
 }
 
-const listActiveAlertsForAgency = `-- name: ListActiveAlertsForAgency :many
-SELECT alert.id, alert.cause, alert.effect
-FROM alert_agency
-    INNER JOIN alert ON alert_agency.alert_pk = alert.pk
-WHERE alert_agency.agency_pk = $1
-    AND EXISTS (
-        SELECT 1 FROM alert_active_period
-        WHERE alert_active_period.alert_pk = alert.pk
-        AND (
-            alert_active_period.starts_at < $2
-            OR alert_active_period.starts_at IS NULL
-        )
-        AND (
-            alert_active_period.ends_at > $2
-            OR alert_active_period.ends_at IS NULL
-        )
-    )
-`
-
-type ListActiveAlertsForAgencyParams struct {
-	AgencyPk    int64
-	PresentTime sql.NullTime
-}
-
-type ListActiveAlertsForAgencyRow struct {
-	ID     string
-	Cause  string
-	Effect string
-}
-
-func (q *Queries) ListActiveAlertsForAgency(ctx context.Context, arg ListActiveAlertsForAgencyParams) ([]ListActiveAlertsForAgencyRow, error) {
-	rows, err := q.db.Query(ctx, listActiveAlertsForAgency, arg.AgencyPk, arg.PresentTime)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListActiveAlertsForAgencyRow
-	for rows.Next() {
-		var i ListActiveAlertsForAgencyRow
-		if err := rows.Scan(&i.ID, &i.Cause, &i.Effect); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listActiveAlertsForRoutes = `-- name: ListActiveAlertsForRoutes :many
-SELECT route.pk route_pk, alert.pk, alert.id, alert.cause, alert.effect, alert_active_period.starts_at, alert_active_period.ends_at
+SELECT route.pk route_pk, alert.pk, alert.id, alert.source_pk, alert.system_pk, alert.cause, alert.effect, alert.header, alert.description, alert.url, alert.hash, alert_active_period.starts_at, alert_active_period.ends_at
 FROM route
     INNER JOIN alert_route ON route.pk = alert_route.route_pk
     INNER JOIN alert ON alert_route.alert_pk = alert.pk
@@ -435,13 +385,19 @@ type ListActiveAlertsForRoutesParams struct {
 }
 
 type ListActiveAlertsForRoutesRow struct {
-	RoutePk  int64
-	Pk       int64
-	ID       string
-	Cause    string
-	Effect   string
-	StartsAt sql.NullTime
-	EndsAt   sql.NullTime
+	RoutePk     int64
+	Pk          int64
+	ID          string
+	SourcePk    int64
+	SystemPk    int64
+	Cause       string
+	Effect      string
+	Header      string
+	Description string
+	Url         string
+	Hash        string
+	StartsAt    sql.NullTime
+	EndsAt      sql.NullTime
 }
 
 func (q *Queries) ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error) {
@@ -457,8 +413,14 @@ func (q *Queries) ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveA
 			&i.RoutePk,
 			&i.Pk,
 			&i.ID,
+			&i.SourcePk,
+			&i.SystemPk,
 			&i.Cause,
 			&i.Effect,
+			&i.Header,
+			&i.Description,
+			&i.Url,
+			&i.Hash,
 			&i.StartsAt,
 			&i.EndsAt,
 		); err != nil {
@@ -558,39 +520,6 @@ func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]A
 			&i.Phone,
 			&i.FareUrl,
 			&i.Email,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listMessagesForAlerts = `-- name: ListMessagesForAlerts :many
-SELECT pk, alert_pk, header, description, url, language
-FROM alert_message 
-WHERE alert_pk = ANY($1::bigint[])
-`
-
-func (q *Queries) ListMessagesForAlerts(ctx context.Context, alertPks []int64) ([]AlertMessage, error) {
-	rows, err := q.db.Query(ctx, listMessagesForAlerts, alertPks)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []AlertMessage
-	for rows.Next() {
-		var i AlertMessage
-		if err := rows.Scan(
-			&i.Pk,
-			&i.AlertPk,
-			&i.Header,
-			&i.Description,
-			&i.Url,
-			&i.Language,
 		); err != nil {
 			return nil, err
 		}

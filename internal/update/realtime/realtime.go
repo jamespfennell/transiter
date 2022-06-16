@@ -3,7 +3,12 @@ package realtime
 
 import (
 	"context"
+	"crypto/md5"
+	"database/sql"
+	"encoding/json"
+	"fmt"
 	"math"
+	"time"
 
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/gtfs/extensions"
@@ -37,6 +42,9 @@ func Parse(content []byte, opts config.GtfsRealtimeOptions) (*gtfs.Realtime, err
 
 func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Realtime) error {
 	if err := updateTrips(ctx, updateCtx, data.Trips); err != nil {
+		return err
+	}
+	if err := updateAlerts(ctx, updateCtx, data.Alerts); err != nil {
 		return err
 	}
 	return nil
@@ -299,4 +307,189 @@ func populateStopSequences(trip *gtfs.Trip, current *dbwrappers.TripForUpdate, s
 		newSequence := uint32(currentSeq)
 		trip.StopTimeUpdates[i].StopSequence = &newSequence
 	}
+}
+
+func updateAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []gtfs.Alert) error {
+	idToPkAndHash, err := mapAlertIDToPkAndHash(ctx, updateCtx, alerts)
+	if err != nil {
+		return err
+	}
+	idToHash := map[string]string{}
+	var unchangedAlertPks []int64
+	var updatedAlertPks []int64
+	var alertsToInsert []*gtfs.Alert
+	for i := range alerts {
+		alert := &alerts[i]
+		idToHash[alert.ID] = calculateHash(alert)
+		if pkAndHash, alreadyExists := idToPkAndHash[alert.ID]; alreadyExists {
+			if idToHash[alert.ID] == pkAndHash.Hash {
+				unchangedAlertPks = append(unchangedAlertPks, pkAndHash.Pk)
+				continue
+			}
+			updatedAlertPks = append(updatedAlertPks, pkAndHash.Pk)
+		}
+		alertsToInsert = append(alertsToInsert, alert)
+	}
+	if err := updateCtx.Querier.DeleteAlerts(ctx, updatedAlertPks); err != nil {
+		return err
+	}
+	if err := insertAlerts(ctx, updateCtx, alertsToInsert, idToHash); err != nil {
+		return err
+	}
+	if err := updateCtx.Querier.MarkAlertsFresh(ctx, db.MarkAlertsFreshParams{
+		AlertPks: unchangedAlertPks,
+		UpdatePk: updateCtx.UpdatePk,
+	}); err != nil {
+		return err
+	}
+	if err := updateCtx.Querier.DeleteStaleAlerts(ctx, db.DeleteStaleAlertsParams{
+		FeedPk:   updateCtx.FeedPk,
+		UpdatePk: updateCtx.UpdatePk,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+type pkAndHash struct {
+	Pk   int64
+	Hash string
+}
+
+func mapAlertIDToPkAndHash(ctx context.Context, updateCtx common.UpdateContext, alerts []gtfs.Alert) (map[string]pkAndHash, error) {
+	var ids []string
+	for i := range alerts {
+		ids = append(ids, alerts[i].ID)
+	}
+	rows, err := updateCtx.Querier.ListAlertPksAndHashes(ctx, db.ListAlertPksAndHashesParams{
+		AlertIds: ids,
+		SystemPk: updateCtx.SystemPk,
+	})
+	if err != nil {
+		return nil, err
+	}
+	m := map[string]pkAndHash{}
+	for _, row := range rows {
+		m[row.ID] = pkAndHash{
+			Pk:   row.Pk,
+			Hash: row.Hash,
+		}
+	}
+	return m, nil
+}
+
+func calculateHash(alert *gtfs.Alert) string {
+	b, err := json.Marshal(alert)
+	if err != nil {
+		// This case will probably never happen
+		return fmt.Sprintf("error-hash-%s: %s", time.Now(), err)
+	}
+	return fmt.Sprintf("%x", md5.Sum(b))
+}
+
+func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []*gtfs.Alert, idToHash map[string]string) error {
+	// There are generally few agencies, so if an agency is referenced in informed entities we just retrieve all of them.
+	// This saves us from writing a specific SQL query for this case.
+	var agencyReferenced bool
+	var routeIDs []string
+	var stopIDs []string
+	for _, alert := range alerts {
+		for _, informedEntity := range alert.InformedEntities {
+			if informedEntity.AgencyID != nil {
+				agencyReferenced = true
+			}
+			if informedEntity.RouteID != nil {
+				routeIDs = append(routeIDs, *informedEntity.RouteID)
+			}
+			if informedEntity.StopID != nil {
+				stopIDs = append(stopIDs, *informedEntity.StopID)
+			}
+		}
+	}
+	agencyIDToPk := map[string]int64{}
+	if agencyReferenced {
+		var err error
+		agencyIDToPk, err = dbwrappers.MapAgencyIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+		if err != nil {
+			return err
+		}
+	}
+	routeIDToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, routeIDs)
+	if err != nil {
+		return err
+	}
+	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDs)
+	if err != nil {
+		return err
+	}
+	for _, alert := range alerts {
+		pk, err := updateCtx.Querier.InsertAlert(ctx, db.InsertAlertParams{
+			ID:          alert.ID,
+			SystemPk:    updateCtx.SystemPk,
+			SourcePk:    updateCtx.UpdatePk,
+			Cause:       alert.Cause.String(),
+			Effect:      alert.Effect.String(),
+			Header:      convertAlertText(alert.Header),
+			Description: convertAlertText(alert.Description),
+			Url:         convertAlertText(alert.URL),
+			Hash:        idToHash[alert.ID],
+		})
+		if err != nil {
+			return err
+		}
+		for _, informedEntity := range alert.InformedEntities {
+			if informedEntity.AgencyID != nil {
+				if agencyPk, ok := agencyIDToPk[*informedEntity.AgencyID]; ok {
+					if err := updateCtx.Querier.InsertAlertAgency(ctx, db.InsertAlertAgencyParams{
+						AlertPk:  pk,
+						AgencyPk: agencyPk,
+					}); err != nil {
+						return err
+					}
+				}
+			}
+			if informedEntity.RouteID != nil {
+				if routePk, ok := routeIDToPk[*informedEntity.RouteID]; ok {
+					if err := updateCtx.Querier.InsertAlertRoute(ctx, db.InsertAlertRouteParams{
+						AlertPk: pk,
+						RoutePk: routePk,
+					}); err != nil {
+						return err
+					}
+				}
+			}
+			if informedEntity.StopID != nil {
+				if stopPk, ok := stopIDToPk[*informedEntity.StopID]; ok {
+					if err := updateCtx.Querier.InsertAlertStop(ctx, db.InsertAlertStopParams{
+						AlertPk: pk,
+						StopPk:  stopPk,
+					}); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		for _, activePeriod := range alert.ActivePeriods {
+			if err := updateCtx.Querier.InsertAlertActivePeriod(ctx, db.InsertAlertActivePeriodParams{
+				AlertPk: pk,
+				// TODO: may be null
+				StartsAt: sql.NullTime{
+					Valid: true,
+					Time:  activePeriod.StartsAt,
+				},
+				EndsAt: sql.NullTime{
+					Valid: true,
+					Time:  activePeriod.EndsAt,
+				},
+			}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func convertAlertText(text []gtfs.AlertText) string {
+	b, _ := json.Marshal(text)
+	return string(b)
 }

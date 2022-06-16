@@ -179,7 +179,7 @@ WHERE transfer.system_pk = $1
 ORDER BY transfer.pk;
 
 -- name: ListActiveAlertsForRoutes :many
-SELECT route.pk route_pk, alert.pk, alert.id, alert.cause, alert.effect, alert_active_period.starts_at, alert_active_period.ends_at
+SELECT route.pk route_pk, alert.*, alert_active_period.starts_at, alert_active_period.ends_at
 FROM route
     INNER JOIN alert_route ON route.pk = alert_route.route_pk
     INNER JOIN alert ON alert_route.alert_pk = alert.pk
@@ -214,28 +214,6 @@ WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
 ORDER BY alert.id ASC;
 
 
--- name: ListActiveAlertsForAgency :many
-SELECT alert.id, alert.cause, alert.effect
-FROM alert_agency
-    INNER JOIN alert ON alert_agency.alert_pk = alert.pk
-WHERE alert_agency.agency_pk = sqlc.arg(agency_pk)
-    AND EXISTS (
-        SELECT 1 FROM alert_active_period
-        WHERE alert_active_period.alert_pk = alert.pk
-        AND (
-            alert_active_period.starts_at < sqlc.arg(present_time)
-            OR alert_active_period.starts_at IS NULL
-        )
-        AND (
-            alert_active_period.ends_at > sqlc.arg(present_time)
-            OR alert_active_period.ends_at IS NULL
-        )
-    );
-
--- name: ListMessagesForAlerts :many
-SELECT *
-FROM alert_message 
-WHERE alert_pk = ANY(sqlc.arg(alert_pks)::bigint[]);
 
 -- name: CalculatePeriodicityForRoute :one
 WITH route_stop_pks AS (

@@ -23,9 +23,10 @@ CREATE TABLE alert (
     system_pk BIGINT NOT NULL,
     cause character varying NOT NULL,
     effect character varying NOT NULL,
-    created_at timestamp with time zone,
-    sort_order integer,
-    updated_at timestamp with time zone,
+    header character varying NOT NULL,
+    description character varying NOT NULL,
+    url character varying NOT NULL,
+    hash character varying NOT NULL,
 
     UNIQUE(system_pk, id)
 );
@@ -40,15 +41,6 @@ CREATE TABLE alert_active_period (
 CREATE TABLE alert_agency (
     alert_pk BIGINT NOT NULL,
     agency_pk BIGINT NOT NULL
-);
-
-CREATE TABLE alert_message (
-    pk BIGSERIAL PRIMARY KEY,
-    alert_pk BIGINT NOT NULL,
-    header character varying NOT NULL,
-    description character varying NOT NULL,
-    url character varying,
-    language character varying
 );
 
 CREATE TABLE alert_route (
@@ -378,9 +370,6 @@ ALTER TABLE alert_agency
     ADD CONSTRAINT fk_alert_agency_alert_pk FOREIGN KEY(alert_pk) REFERENCES alert(pk) ON DELETE CASCADE;
 ALTER TABLE alert_agency
     ADD CONSTRAINT fk_alert_agency_agency_pk FOREIGN KEY(agency_pk) REFERENCES agency(pk) ON DELETE CASCADE;
-
-ALTER TABLE alert_message
-    ADD CONSTRAINT fk_alert_message_alert_pk FOREIGN KEY(alert_pk) REFERENCES alert(pk) ON DELETE CASCADE;
 
 ALTER TABLE alert_route
     ADD CONSTRAINT fk_alert_route_alert_pk FOREIGN KEY(alert_pk) REFERENCES alert(pk) ON DELETE CASCADE;

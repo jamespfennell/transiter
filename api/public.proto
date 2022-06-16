@@ -93,6 +93,8 @@ service Public {
             get: "/systems/{system_id}/transfers"
         };
   }
+
+  // TODO: ListAlertsInSystem
 }
 
 message EntrypointRequest {}
@@ -377,6 +379,7 @@ message Route {
 
   repeated ServiceMapForRoute service_maps = 11;
 
+  // TODO(APIv2): alert preview
   repeated Alert alerts = 12;
 }
 
@@ -416,7 +419,7 @@ message Agency {
 message AgencyPreviewWithAlerts {
   string id = 1;
   string name = 2;
-  repeated string alerts = 4;
+  repeated AlertPreview alerts = 4;
   optional string href = 3;
 }
 
@@ -449,13 +452,16 @@ message Alert {
   }
   ActivePeriod active_period = 4;
 
-  message Message {
-    string header = 1;
-    string description = 2;
-    optional string language = 3;
-    optional string url = 4;
-  }
-  repeated Message messages = 5;
+  repeated AlertText header = 5;
+  repeated AlertText description = 6;
+  repeated AlertText url = 7;
+
+  // TODO: informed entites
+}
+
+message AlertText {
+  string text = 1;
+  string language = 2;
 }
 
 message EstimatedTime {

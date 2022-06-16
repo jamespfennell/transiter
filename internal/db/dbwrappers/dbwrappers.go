@@ -35,6 +35,18 @@ func MapStopPkToStationPk(ctx context.Context, querier db.Querier, stopPks []int
 	return result, nil
 }
 
+func MapAgencyIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
+	rows, err := querier.MapAgencyPkToIdInSystem(ctx, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	result := map[string]int64{}
+	for _, row := range rows {
+		result[row.ID] = row.Pk
+	}
+	return result, nil
+}
+
 func MapStopIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk int64, stopIDs []string) (map[string]int64, error) {
 	rows, err := querier.MapStopsInSystem(ctx, db.MapStopsInSystemParams{
 		SystemPk: systemPk,

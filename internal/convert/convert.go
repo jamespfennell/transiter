@@ -3,9 +3,11 @@ package convert
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/jamespfennell/gtfs"
+	"github.com/jamespfennell/transiter/internal/gen/api"
 )
 
 func SQLNullTime(t sql.NullTime) *int64 {
@@ -95,4 +97,17 @@ func NullDuration(d *time.Duration) sql.NullInt32 {
 		Valid: true,
 		Int32: int32(d.Milliseconds() / 1000),
 	}
+}
+
+func AlertText(s string) []*api.AlertText {
+	var in []gtfs.AlertText
+	json.Unmarshal([]byte(s), &in)
+	var out []*api.AlertText
+	for _, text := range in {
+		out = append(out, &api.AlertText{
+			Text:     text.Text,
+			Language: text.Language,
+		})
+	}
+	return out
 }

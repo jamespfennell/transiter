@@ -26,15 +26,16 @@ type Agency struct {
 }
 
 type Alert struct {
-	Pk        int64
-	ID        string
-	SourcePk  int64
-	SystemPk  int64
-	Cause     string
-	Effect    string
-	CreatedAt sql.NullTime
-	SortOrder sql.NullInt32
-	UpdatedAt sql.NullTime
+	Pk          int64
+	ID          string
+	SourcePk    int64
+	SystemPk    int64
+	Cause       string
+	Effect      string
+	Header      string
+	Description string
+	Url         string
+	Hash        string
 }
 
 type AlertActivePeriod struct {
@@ -47,15 +48,6 @@ type AlertActivePeriod struct {
 type AlertAgency struct {
 	AlertPk  int64
 	AgencyPk int64
-}
-
-type AlertMessage struct {
-	Pk          int64
-	AlertPk     int64
-	Header      string
-	Description string
-	Url         sql.NullString
-	Language    sql.NullString
 }
 
 type AlertRoute struct {

@@ -27,10 +27,15 @@ func ListAgenciesInSystem(ctx context.Context, r *Context, req *api.ListAgencies
 	}
 	reply := &api.ListAgenciesInSystemReply{}
 	for _, agency := range agencies {
+		// TODO: should probably batch these
+		alerts, err := getAlertsForAgencies(ctx, r.Querier, []int64{agency.Pk})
+		if err != nil {
+			return nil, err
+		}
 		apiAgency := &api.AgencyPreviewWithAlerts{
 			Id:     agency.ID,
 			Name:   agency.Name,
-			Alerts: []string{},
+			Alerts: alerts,
 			Href:   r.Href.Agency(req.SystemId, agency.ID),
 		}
 		reply.Agencies = append(reply.Agencies, apiAgency)
@@ -50,11 +55,7 @@ func GetAgencyInSystem(ctx context.Context, r *Context, req *api.GetAgencyInSyst
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := r.Querier.ListActiveAlertsForAgency(
-		ctx, db.ListActiveAlertsForAgencyParams{
-			AgencyPk:    agency.Pk,
-			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
-		})
+	alerts, err := getAlertsForAgencies(ctx, r.Querier, []int64{agency.Pk})
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +68,7 @@ func GetAgencyInSystem(ctx context.Context, r *Context, req *api.GetAgencyInSyst
 		Phone:    convert.SQLNullString(agency.Phone),
 		FareUrl:  convert.SQLNullString(agency.FareUrl),
 		Email:    convert.SQLNullString(agency.Email),
+		Alerts:   alerts,
 	}
 	for _, route := range routes {
 		reply.Routes = append(reply.Routes, &api.RoutePreview{
@@ -75,12 +77,25 @@ func GetAgencyInSystem(ctx context.Context, r *Context, req *api.GetAgencyInSyst
 			Href:  r.Href.Route(req.SystemId, route.ID),
 		})
 	}
-	for _, alert := range alerts {
-		reply.Alerts = append(reply.Alerts, &api.AlertPreview{
+
+	return reply, nil
+}
+
+func getAlertsForAgencies(ctx context.Context, querier db.Querier, agencyPks []int64) ([]*api.AlertPreview, error) {
+	dbAlerts, err := querier.ListActiveAlertsForAgencies(ctx, db.ListActiveAlertsForAgenciesParams{
+		AgencyPks:   agencyPks,
+		PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
+	})
+	if err != nil {
+		return nil, err
+	}
+	var alerts []*api.AlertPreview
+	for _, alert := range dbAlerts {
+		alerts = append(alerts, &api.AlertPreview{
 			Id:     alert.ID,
 			Cause:  alert.Cause,
 			Effect: alert.Effect,
 		})
 	}
-	return reply, nil
+	return alerts, nil
 }

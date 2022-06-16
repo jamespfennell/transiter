@@ -113,17 +113,9 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 	if err != nil {
 		return nil, err
 	}
-	var alertPks []int64
-	for _, alert := range alerts {
-		alertPks = append(alertPks, alert.Pk)
-	}
-	alertMessages, err := r.Querier.ListMessagesForAlerts(ctx, alertPks)
-	if err != nil {
-		return nil, err
-	}
 	var alertsReply []*api.Alert
 	for _, alert := range alerts {
-		apiAlert := api.Alert{
+		alertsReply = append(alertsReply, &api.Alert{
 			Id:     alert.ID,
 			Cause:  alert.Cause,
 			Effect: alert.Effect,
@@ -131,19 +123,10 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 				StartsAt: convert.SQLNullTime(alert.StartsAt),
 				EndsAt:   convert.SQLNullTime(alert.EndsAt),
 			},
-		}
-		for _, message := range alertMessages {
-			if message.AlertPk != alert.Pk {
-				continue
-			}
-			apiAlert.Messages = append(apiAlert.Messages, &api.Alert_Message{
-				Header:      message.Header,
-				Description: message.Description,
-				Url:         convert.SQLNullString(message.Url),
-				Language:    convert.SQLNullString(message.Language),
-			})
-		}
-		alertsReply = append(alertsReply, &apiAlert)
+			Header:      convert.AlertText(alert.Header),
+			Description: convert.AlertText(alert.Description),
+			Url:         convert.AlertText(alert.Url),
+		})
 	}
 
 	reply := &api.Route{
