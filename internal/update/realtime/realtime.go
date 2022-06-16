@@ -6,6 +6,10 @@ import (
 	"math"
 
 	"github.com/jamespfennell/gtfs"
+	"github.com/jamespfennell/gtfs/extensions"
+	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
+	"github.com/jamespfennell/gtfs/extensions/nycttrips"
+	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -13,11 +17,21 @@ import (
 	"github.com/jamespfennell/transiter/internal/update/common"
 )
 
-func Parse(content []byte) (*gtfs.Realtime, error) {
-	// TODO: support custom GTFS realtime options
+func Parse(content []byte, opts config.GtfsRealtimeOptions) (*gtfs.Realtime, error) {
+	var extension extensions.Extension
+	switch opts.Extension {
+	case config.NyctTrips:
+		// TODO: support customizing this
+		extension = nycttrips.Extension(true)
+	case config.NyctAlerts:
+		var extensionOpts nyctalerts.ExtensionOpts
+		if opts.NyctAlertsOptions != nil {
+			extensionOpts = *opts.NyctAlertsOptions
+		}
+		extension = nyctalerts.Extension(extensionOpts)
+	}
 	return gtfs.ParseRealtime(content, &gtfs.ParseRealtimeOptions{
-		UseNyctExtension:               true,
-		NyctFilterStaleUnassignedTrips: true,
+		Extension: extension,
 	})
 }
 

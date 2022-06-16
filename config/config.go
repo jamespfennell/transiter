@@ -4,10 +4,12 @@ package config
 // TODO: move into the /systems directory
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"gopkg.in/yaml.v3"
 )
@@ -31,7 +33,8 @@ type FeedConfig struct {
 	HTTPTimeout *time.Duration    `yaml:"httpTimeout"`
 	HTTPHeaders map[string]string `yaml:"httpHeaders"`
 
-	Parser              Parser
+	Parser Parser
+	// TODO: these next options should be pointers
 	GtfsStaticOptions   GtfsStaticOptions   `yaml:"gtfsStaticOptions"`
 	GtfsRealtimeOptions GtfsRealtimeOptions `yaml:"gtfsRealtimeOptions"`
 }
@@ -44,34 +47,19 @@ const (
 	NyctSubwayCsv Parser = "NYCT_SUBWAY_CSV"
 )
 
-type TransfersStrategy string
-
-const (
-	Default       TransfersStrategy = "DEFAULT"
-	GroupStations TransfersStrategy = "GROUP_STATIONS"
-)
-
-type GtfsStaticOptions struct {
-	TransfersStrategy   TransfersStrategy
-	TransfersExceptions []TransfersException
-}
-
-type TransfersException struct {
-	StopID1  string
-	StopID2  string
-	Strategy TransfersStrategy
-}
+type GtfsStaticOptions struct{}
 
 type GtfsRealtimeExtension string
 
 const (
-	NoExtension      GtfsRealtimeExtension = ""
-	UsNySubwayTrips  GtfsRealtimeExtension = "US_NY_SUBWAY_TRIPS"
-	UsNySubwayAlerts GtfsRealtimeExtension = "US_NY_SUBWAY_ALERTS"
+	NoExtension GtfsRealtimeExtension = ""
+	NyctTrips   GtfsRealtimeExtension = "NYCT_TRIPS"
+	NyctAlerts  GtfsRealtimeExtension = "NYCT_ALERTS"
 )
 
 type GtfsRealtimeOptions struct {
-	Extension GtfsRealtimeExtension
+	Extension         GtfsRealtimeExtension
+	NyctAlertsOptions *nyctalerts.ExtensionOpts `yaml:"nyctAlertsOptions"`
 }
 
 type ServiceMapSource string
@@ -118,43 +106,34 @@ func ConvertAPIFeedConfig(fc *api.FeedConfig) *FeedConfig {
 
 	switch parser := fc.Parser.(type) {
 	case *api.FeedConfig_GtfsStaticParser_:
-		var internalExceptions []TransfersException
-		for _, exception := range parser.GtfsStaticParser.TransfersExceptions {
-			internalExceptions = append(internalExceptions, TransfersException{
-				StopID1:  exception.StopId_1,
-				StopID2:  exception.StopId_2,
-				Strategy: convertAPITransfersStrategy(exception.Strategy),
-			})
-		}
 		result.Parser = GtfsStatic
-		result.GtfsStaticOptions = GtfsStaticOptions{
-			TransfersStrategy:   convertAPITransfersStrategy(parser.GtfsStaticParser.TransfersStrategy),
-			TransfersExceptions: internalExceptions,
-		}
 	case *api.FeedConfig_GtfsRealtimeParser_:
 		result.Parser = GtfsRealtime
-		if parser.GtfsRealtimeParser.Extension != nil {
-			switch *parser.GtfsRealtimeParser.Extension {
-			case api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS:
-				result.GtfsRealtimeOptions.Extension = UsNySubwayAlerts
-			case api.GtfsRealtimeExtension_US_NY_SUBWAY_TRIPS:
-				result.GtfsRealtimeOptions.Extension = UsNySubwayTrips
+		switch extension := parser.GtfsRealtimeParser.Extension.(type) {
+		case *api.FeedConfig_GtfsRealtimeParser_NoExtension_:
+			result.GtfsRealtimeOptions.Extension = NoExtension
+		case *api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension_:
+			result.GtfsRealtimeOptions.Extension = NyctTrips
+		case *api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_:
+			result.GtfsRealtimeOptions.Extension = NyctAlerts
+			deduplicationPolicy := nyctalerts.NoDeduplication
+			switch extension.NyctAlertsExtension.ElevatorAlertsDeduplicationPolicy {
+			case api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_DEDUPLICATE_IN_STATION:
+				deduplicationPolicy = nyctalerts.DeduplicateInStation
+			case api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_DEDUPLICATE_IN_COMPLEX:
+				deduplicationPolicy = nyctalerts.DeduplicateInComplex
+			}
+			result.GtfsRealtimeOptions.NyctAlertsOptions = &nyctalerts.ExtensionOpts{
+				ElevatorAlertsDeduplicationPolicy:   deduplicationPolicy,
+				ElevatorAlertsInformUsingStationIDs: extension.NyctAlertsExtension.ElevatorAlertsInformUsingStationIds,
+				SkipTimetabledNoServiceAlerts:       extension.NyctAlertsExtension.SkipTimetabledNoServiceAlerts,
+				AddNyctMetadata:                     extension.NyctAlertsExtension.AddNyctMetadata,
 			}
 		}
 	case *api.FeedConfig_NyctSubwayCsvParser_:
 		result.Parser = NyctSubwayCsv
 	}
 	return result
-}
-
-func convertAPITransfersStrategy(s api.FeedConfig_GtfsStaticParser_TransfersStrategy) TransfersStrategy {
-	switch s {
-	case api.FeedConfig_GtfsStaticParser_DEFAULT:
-		return Default
-	case api.FeedConfig_GtfsStaticParser_GROUP_STATIONS:
-		return GroupStations
-	}
-	return Default
 }
 
 func ConvertAPIServiceMapConfig(in *api.ServiceMapConfig) *ServiceMapConfig {
@@ -207,49 +186,42 @@ func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 	}
 	switch fc.Parser {
 	case GtfsStatic:
-		var apiExceptions []*api.FeedConfig_GtfsStaticParser_TransfersExceptions
-		for _, exception := range fc.GtfsStaticOptions.TransfersExceptions {
-			apiExceptions = append(apiExceptions, &api.FeedConfig_GtfsStaticParser_TransfersExceptions{
-				StopId_1: exception.StopID1,
-				StopId_2: exception.StopID2,
-				Strategy: convertInternalTransfersStrategy(exception.Strategy),
-			})
-		}
-		result.Parser = &api.FeedConfig_GtfsStaticParser_{
-			GtfsStaticParser: &api.FeedConfig_GtfsStaticParser{
-				TransfersStrategy:   convertInternalTransfersStrategy(fc.GtfsStaticOptions.TransfersStrategy),
-				TransfersExceptions: apiExceptions,
-			},
-		}
+		result.Parser = &api.FeedConfig_GtfsStaticParser_{}
 	case GtfsRealtime:
-		var apiExt *api.GtfsRealtimeExtension
+		p := &api.FeedConfig_GtfsRealtimeParser{
+			Extension: &api.FeedConfig_GtfsRealtimeParser_NoExtension_{},
+		}
 		switch fc.GtfsRealtimeOptions.Extension {
-		case UsNySubwayAlerts:
-			e := api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS
-			apiExt = &e
-		case UsNySubwayTrips:
-			e := api.GtfsRealtimeExtension_US_NY_SUBWAY_TRIPS
-			apiExt = &e
+		case NyctTrips:
+			p.Extension = &api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension_{}
+		case NyctAlerts:
+			var inOpts nyctalerts.ExtensionOpts
+			if fc.GtfsRealtimeOptions.NyctAlertsOptions != nil {
+				inOpts = *fc.GtfsRealtimeOptions.NyctAlertsOptions
+			}
+			deduplicationPolicy := api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_NO_DEDUPLICATION
+			switch inOpts.ElevatorAlertsDeduplicationPolicy {
+			case nyctalerts.DeduplicateInStation:
+				deduplicationPolicy = api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_DEDUPLICATE_IN_STATION
+			case nyctalerts.DeduplicateInComplex:
+				deduplicationPolicy = api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_DEDUPLICATE_IN_COMPLEX
+			}
+			p.Extension = &api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_{
+				NyctAlertsExtension: &api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension{
+					ElevatorAlertsDeduplicationPolicy:   deduplicationPolicy,
+					ElevatorAlertsInformUsingStationIds: inOpts.ElevatorAlertsInformUsingStationIDs,
+					SkipTimetabledNoServiceAlerts:       inOpts.SkipTimetabledNoServiceAlerts,
+					AddNyctMetadata:                     inOpts.AddNyctMetadata,
+				},
+			}
 		}
 		result.Parser = &api.FeedConfig_GtfsRealtimeParser_{
-			GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{
-				Extension: apiExt,
-			},
+			GtfsRealtimeParser: p,
 		}
 	case NyctSubwayCsv:
 		result.Parser = &api.FeedConfig_NyctSubwayCsvParser_{}
 	}
 	return result
-}
-
-func convertInternalTransfersStrategy(s TransfersStrategy) api.FeedConfig_GtfsStaticParser_TransfersStrategy {
-	switch s {
-	case Default:
-		return api.FeedConfig_GtfsStaticParser_DEFAULT
-	case GroupStations:
-		return api.FeedConfig_GtfsStaticParser_GROUP_STATIONS
-	}
-	return api.FeedConfig_GtfsStaticParser_DEFAULT
 }
 
 func ConvertServiceMapConfig(in *ServiceMapConfig) *api.ServiceMapConfig {
@@ -302,7 +274,9 @@ func convertDuration(t *time.Duration) *int64 {
 
 func UnmarshalFromYaml(b []byte) (*SystemConfig, error) {
 	var config SystemConfig
-	if err := yaml.Unmarshal(b, &config); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(b))
+	dec.KnownFields(true)
+	if err := dec.Decode(&config); err != nil {
 		return nil, fmt.Errorf("failed to parse Transiter system config Yaml: %w", err)
 	}
 	if len(config.ServiceMaps) == 0 && !config.NoDefaultServiceMaps {

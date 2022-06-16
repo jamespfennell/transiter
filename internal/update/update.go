@@ -175,7 +175,7 @@ func run(ctx context.Context, querier db.Querier, systemID string, updatePk int6
 		updateErr = static.Update(ctx, updateCtx, data)
 	case config.GtfsRealtime:
 		var data *gtfs.Realtime
-		data, parseErr = realtime.Parse(content)
+		data, parseErr = realtime.Parse(content, feedConfig.GtfsRealtimeOptions)
 		if parseErr != nil {
 			break
 		}

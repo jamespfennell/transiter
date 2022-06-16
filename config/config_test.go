@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"google.golang.org/protobuf/proto"
 )
@@ -22,7 +23,6 @@ const (
 func TestConvertFeedConfig(t *testing.T) {
 	var timeoutMs int64 = 5000
 	timeoutDuration := time.Second * 5
-	alertsExt := api.GtfsRealtimeExtension_US_NY_SUBWAY_ALERTS
 
 	testCases := []struct {
 		apiConfig      *api.FeedConfig
@@ -58,29 +58,37 @@ func TestConvertFeedConfig(t *testing.T) {
 		},
 		{
 			apiConfig: &api.FeedConfig{
-				Parser: &api.FeedConfig_GtfsStaticParser_{
-					GtfsStaticParser: &api.FeedConfig_GtfsStaticParser{
-						TransfersStrategy: api.FeedConfig_GtfsStaticParser_GROUP_STATIONS,
-						TransfersExceptions: []*api.FeedConfig_GtfsStaticParser_TransfersExceptions{
-							{
-								StopId_1: StopID1,
-								StopId_2: StopID2,
-								Strategy: api.FeedConfig_GtfsStaticParser_DEFAULT,
+				Parser: &api.FeedConfig_GtfsStaticParser_{},
+			},
+			internalConfig: &FeedConfig{
+				Parser:            GtfsStatic,
+				GtfsStaticOptions: GtfsStaticOptions{},
+			},
+		},
+		{
+			apiConfig: &api.FeedConfig{
+				Parser: &api.FeedConfig_GtfsRealtimeParser_{
+					GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{
+						Extension: &api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_{
+							NyctAlertsExtension: &api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension{
+								ElevatorAlertsDeduplicationPolicy:   api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_DEDUPLICATE_IN_COMPLEX,
+								ElevatorAlertsInformUsingStationIds: true,
+								SkipTimetabledNoServiceAlerts:       true,
+								AddNyctMetadata:                     true,
 							},
 						},
 					},
 				},
 			},
 			internalConfig: &FeedConfig{
-				Parser: GtfsStatic,
-				GtfsStaticOptions: GtfsStaticOptions{
-					TransfersStrategy: GroupStations,
-					TransfersExceptions: []TransfersException{
-						{
-							StopID1:  StopID1,
-							StopID2:  StopID2,
-							Strategy: Default,
-						},
+				Parser: GtfsRealtime,
+				GtfsRealtimeOptions: GtfsRealtimeOptions{
+					Extension: NyctAlerts,
+					NyctAlertsOptions: &nyctalerts.ExtensionOpts{
+						ElevatorAlertsDeduplicationPolicy:   nyctalerts.DeduplicateInComplex,
+						ElevatorAlertsInformUsingStationIDs: true,
+						SkipTimetabledNoServiceAlerts:       true,
+						AddNyctMetadata:                     true,
 					},
 				},
 			},
@@ -89,21 +97,23 @@ func TestConvertFeedConfig(t *testing.T) {
 			apiConfig: &api.FeedConfig{
 				Parser: &api.FeedConfig_GtfsRealtimeParser_{
 					GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{
-						Extension: &alertsExt,
+						Extension: &api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension_{},
 					},
 				},
 			},
 			internalConfig: &FeedConfig{
 				Parser: GtfsRealtime,
 				GtfsRealtimeOptions: GtfsRealtimeOptions{
-					Extension: UsNySubwayAlerts,
+					Extension: NyctTrips,
 				},
 			},
 		},
 		{
 			apiConfig: &api.FeedConfig{
 				Parser: &api.FeedConfig_GtfsRealtimeParser_{
-					GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{},
+					GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{
+						Extension: &api.FeedConfig_GtfsRealtimeParser_NoExtension_{},
+					},
 				},
 			},
 			internalConfig: &FeedConfig{

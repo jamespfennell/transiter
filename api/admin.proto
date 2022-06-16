@@ -107,23 +107,30 @@ message FeedConfig {
     optional int64 http_timeout = 22;
     map<string, string> http_headers = 23;
 
-    message GtfsStaticParser{
-        enum TransfersStrategy {
-            DEFAULT = 0;
-            GROUP_STATIONS = 1;
-        }
-        TransfersStrategy transfers_strategy = 1;
-
-        message TransfersExceptions {
-            string stop_id_1 = 1;
-            string stop_id_2 = 2;
-            TransfersStrategy strategy = 3;
-        }
-        repeated TransfersExceptions transfers_exceptions = 2;
-    }
+    message GtfsStaticParser{}
 
     message GtfsRealtimeParser {
-        optional GtfsRealtimeExtension extension = 1;
+        message NoExtension {}
+
+        message NyctTripsExtension {}
+
+        message NyctAlertsExtension {
+            enum ElevatorAlertsDeduplicationPolicy {
+                NO_DEDUPLICATION = 0;
+                DEDUPLICATE_IN_STATION = 1;
+                DEDUPLICATE_IN_COMPLEX = 2;
+            }
+            ElevatorAlertsDeduplicationPolicy elevator_alerts_deduplication_policy = 1;
+            bool elevator_alerts_inform_using_station_ids = 2;
+            bool skip_timetabled_no_service_alerts = 3;
+            bool add_nyct_metadata = 4;
+        }
+
+        oneof extension {
+            NoExtension no_extension = 1;
+            NyctTripsExtension nyct_trips_extension = 2;
+            NyctAlertsExtension nyct_alerts_extension = 3;
+        }
     }
 
     message NyctSubwayCsvParser{}
@@ -134,12 +141,6 @@ message FeedConfig {
         NyctSubwayCsvParser nyct_subway_csv_parser = 5;
     }
 
-}
-
-enum GtfsRealtimeExtension {
-    UNSPECIFIED = 0;
-    US_NY_SUBWAY_TRIPS = 1;
-    US_NY_SUBWAY_ALERTS = 2;
 }
 
 message ServiceMapConfig {

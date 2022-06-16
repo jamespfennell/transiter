@@ -9,23 +9,28 @@ feeds:
     url: 'http://web.mta.info/developers/data/nyct/subway/google_transit.zip'
 
     parser: GTFS_STATIC
-    gtfsStaticOptions:
-      transfersStrategy: GROUP_STATIONS
-      transfersExceptions:
-        - strategy: DEFAULT
-          stopID1: "254"  # Livonia Av
-          stopID2: "L26"  # Julius St
-        - strategy: DEFAULT
-          stopID1: "B08"  # Lexington Av/63rd St
-          stopID2: "629"  # Lexington Av/59th St
-        - strategy: DEFAULT
-          stopID1: "B08"  # Lexington Av/63rd St
-          stopID2: "R11"  # Lexington Av/59th St
 
   - id: subwaycsv
     requiredForInstall: true
     url: 'https://atisdata.s3.amazonaws.com/Station/Stations.csv'
     parser: NYCT_SUBWAY_CSV
+
+  - id: "alerts"
+    periodicUpdateEnabled: true
+    periodicUpdatePeriod: 5s
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+    parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_ALERTS
+      nyctAlertsOptions:
+        elevatoralertsdeduplicationpolicy: 2 # DEDUPLICATE_IN_COMPLEX / TODO deserialize from string
+        elevatoralertsinformusingstationids: true
+        skiptimetablednoservicealerts: true
+        addnyctmetadata: true
 
   - id: "1234567"
     periodicUpdateEnabled: true
@@ -36,6 +41,8 @@ feeds:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_TRIPS
 
   - id: ACE
     periodicUpdateEnabled: true
@@ -56,6 +63,8 @@ feeds:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_TRIPS
 
 
   - id: G
@@ -67,6 +76,8 @@ feeds:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_TRIPS
 
   - id: JZ
     periodicUpdateEnabled: true
@@ -77,6 +88,8 @@ feeds:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_TRIPS
 
   - id: L
     periodicUpdateEnabled: true
@@ -87,6 +100,8 @@ feeds:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_TRIPS
 
   - id: NQRW
     periodicUpdateEnabled: true
@@ -97,6 +112,8 @@ feeds:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_TRIPS
 
   - id: SIR
     periodicUpdateEnabled: true
@@ -107,6 +124,8 @@ feeds:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_TRIPS
 
 serviceMaps:
   - id: alltimes
