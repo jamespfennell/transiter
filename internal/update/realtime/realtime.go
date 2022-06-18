@@ -26,8 +26,11 @@ func Parse(content []byte, opts config.GtfsRealtimeOptions) (*gtfs.Realtime, err
 	var extension extensions.Extension
 	switch opts.Extension {
 	case config.NyctTrips:
-		// TODO: support customizing this
-		extension = nycttrips.Extension(true)
+		var extensionOpts nycttrips.ExtensionOpts
+		if opts.NyctTripsOptions != nil {
+			extensionOpts = *opts.NyctTripsOptions
+		}
+		extension = nycttrips.Extension(extensionOpts)
 	case config.NyctAlerts:
 		var extensionOpts nyctalerts.ExtensionOpts
 		if opts.NyctAlertsOptions != nil {
@@ -471,16 +474,9 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 		}
 		for _, activePeriod := range alert.ActivePeriods {
 			if err := updateCtx.Querier.InsertAlertActivePeriod(ctx, db.InsertAlertActivePeriodParams{
-				AlertPk: pk,
-				// TODO: may be null
-				StartsAt: sql.NullTime{
-					Valid: true,
-					Time:  activePeriod.StartsAt,
-				},
-				EndsAt: sql.NullTime{
-					Valid: true,
-					Time:  activePeriod.EndsAt,
-				},
+				AlertPk:  pk,
+				StartsAt: convertOptionalTime(activePeriod.StartsAt),
+				EndsAt:   convertOptionalTime(activePeriod.EndsAt),
 			}); err != nil {
 				return err
 			}
@@ -492,4 +488,14 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 func convertAlertText(text []gtfs.AlertText) string {
 	b, _ := json.Marshal(text)
 	return string(b)
+}
+
+func convertOptionalTime(in *time.Time) sql.NullTime {
+	if in == nil {
+		return sql.NullTime{}
+	}
+	return sql.NullTime{
+		Valid: true,
+		Time:  *in,
+	}
 }

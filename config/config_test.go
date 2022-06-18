@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
+	"github.com/jamespfennell/gtfs/extensions/nycttrips"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"google.golang.org/protobuf/proto"
 )
@@ -97,7 +98,11 @@ func TestConvertFeedConfig(t *testing.T) {
 			apiConfig: &api.FeedConfig{
 				Parser: &api.FeedConfig_GtfsRealtimeParser_{
 					GtfsRealtimeParser: &api.FeedConfig_GtfsRealtimeParser{
-						Extension: &api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension_{},
+						Extension: &api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension_{
+							NyctTripsExtension: &api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension{
+								FilterStaleUnassignedTrips: true,
+							},
+						},
 					},
 				},
 			},
@@ -105,6 +110,9 @@ func TestConvertFeedConfig(t *testing.T) {
 				Parser: GtfsRealtime,
 				GtfsRealtimeOptions: GtfsRealtimeOptions{
 					Extension: NyctTrips,
+					NyctTripsOptions: &nycttrips.ExtensionOpts{
+						FilterStaleUnassignedTrips: true,
+					},
 				},
 			},
 		},

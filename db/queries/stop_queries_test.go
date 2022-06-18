@@ -43,31 +43,9 @@ func TestMapStopIDToStationPk(t *testing.T) {
 			},
 		},
 		{
-			name: "platform with grouped station",
-			wantFunc: func(insertStop insertStopFunc) map[string]int64 {
-				stationPk := insertStop("station", gtfs.GroupedStation, nil)
-				insertStop("platform", gtfs.Platform, &stationPk)
-				return map[string]int64{
-					"station":  stationPk,
-					"platform": stationPk,
-				}
-			},
-		},
-		{
 			name: "two stations",
 			wantFunc: func(insertStop insertStopFunc) map[string]int64 {
 				parentPk := insertStop("parent", gtfs.Station, nil)
-				childPk := insertStop("child", gtfs.Station, &parentPk)
-				return map[string]int64{
-					"parent": parentPk,
-					"child":  childPk,
-				}
-			},
-		},
-		{
-			name: "station and grouped station",
-			wantFunc: func(insertStop insertStopFunc) map[string]int64 {
-				parentPk := insertStop("parent", gtfs.GroupedStation, nil)
 				childPk := insertStop("child", gtfs.Station, &parentPk)
 				return map[string]int64{
 					"parent": parentPk,

@@ -8,7 +8,8 @@
 - move sqlc and buf config files into subdirectores
 - Right now the GPS lat/long are parsed to and from strings - would be good to avoid conversions
 - service -> server
-- required_for_install -> update_on_update?
+- required_for_install -> also have required_for_update?
 - Can we configure the /admin prefix non-statically? Yeah, we just have to add HTTP middleware
 - Transit topological sort (Split into components -> transitive reduction -> tree-graph-tree decomposition -> 3 x sort)
 - Add new index on service map vertex
+- Support GPS sort

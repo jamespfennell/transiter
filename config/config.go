@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
+	"github.com/jamespfennell/gtfs/extensions/nycttrips"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"gopkg.in/yaml.v3"
 )
@@ -59,6 +60,7 @@ const (
 
 type GtfsRealtimeOptions struct {
 	Extension         GtfsRealtimeExtension
+	NyctTripsOptions  *nycttrips.ExtensionOpts  `yaml:"nyctTripsOptions"`
 	NyctAlertsOptions *nyctalerts.ExtensionOpts `yaml:"nyctAlertsOptions"`
 }
 
@@ -114,6 +116,9 @@ func ConvertAPIFeedConfig(fc *api.FeedConfig) *FeedConfig {
 			result.GtfsRealtimeOptions.Extension = NoExtension
 		case *api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension_:
 			result.GtfsRealtimeOptions.Extension = NyctTrips
+			result.GtfsRealtimeOptions.NyctTripsOptions = &nycttrips.ExtensionOpts{
+				FilterStaleUnassignedTrips: extension.NyctTripsExtension.FilterStaleUnassignedTrips,
+			}
 		case *api.FeedConfig_GtfsRealtimeParser_NyctAlertsExtension_:
 			result.GtfsRealtimeOptions.Extension = NyctAlerts
 			deduplicationPolicy := nyctalerts.NoDeduplication
@@ -193,7 +198,15 @@ func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 		}
 		switch fc.GtfsRealtimeOptions.Extension {
 		case NyctTrips:
-			p.Extension = &api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension_{}
+			var inOpts nycttrips.ExtensionOpts
+			if fc.GtfsRealtimeOptions.NyctTripsOptions != nil {
+				inOpts = *fc.GtfsRealtimeOptions.NyctTripsOptions
+			}
+			p.Extension = &api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension_{
+				NyctTripsExtension: &api.FeedConfig_GtfsRealtimeParser_NyctTripsExtension{
+					FilterStaleUnassignedTrips: inOpts.FilterStaleUnassignedTrips,
+				},
+			}
 		case NyctAlerts:
 			var inOpts nyctalerts.ExtensionOpts
 			if fc.GtfsRealtimeOptions.NyctAlertsOptions != nil {

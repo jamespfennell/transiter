@@ -52,7 +52,7 @@ ancestor AS (
     id stop_id, 
     pk station_pk, 
     parent_stop_pk,
-    (type = 'STATION' OR type = 'GROUPED_STATION') is_station 
+    (type = 'STATION') is_station 
     FROM stop
 	  WHERE	stop.system_pk = sqlc.arg(system_pk)
 	UNION
@@ -60,7 +60,7 @@ ancestor AS (
     child.stop_id stop_id, 
     parent.pk station_pk, 
     parent.parent_stop_pk, 
-    (parent.type = 'STATION' OR parent.type = 'GROUPED_STATION') is_station 
+    (parent.type = 'STATION') is_station 
 		FROM stop parent
 		INNER JOIN ancestor child 
     ON child.parent_stop_pk = parent.pk
@@ -79,7 +79,7 @@ ancestor AS (
     pk stop_pk,
     pk station_pk, 
     parent_stop_pk,
-    (type = 'STATION' OR type = 'GROUPED_STATION') is_station 
+    (type = 'STATION') is_station 
     FROM stop
         WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
 	UNION
@@ -87,7 +87,7 @@ ancestor AS (
     child.stop_pk stop_pk,
     parent.pk station_pk, 
     parent.parent_stop_pk, 
-    (parent.type = 'STATION' OR parent.type = 'GROUPED_STATION') is_station 
+    (parent.type = 'STATION') is_station 
 		FROM stop parent
 		INNER JOIN ancestor child 
     ON child.parent_stop_pk = parent.pk

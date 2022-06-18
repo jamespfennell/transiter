@@ -28,7 +28,7 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Stat
 	if err != nil {
 		return err
 	}
-	stopIDToPk, err := updateStops(ctx, updateCtx, data.AllStops())
+	stopIDToPk, err := updateStops(ctx, updateCtx, data.Stops)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []
 	return idToPk, nil
 }
 
-func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []*gtfs.Stop) (map[string]int64, error) {
+func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gtfs.Stop) (map[string]int64, error) {
 	idToPk, err := buildStopIDToPkMap(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err

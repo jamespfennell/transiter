@@ -108,5 +108,5 @@ func (tree *StopTree) Get(stopPk int64) *tdb.Stop {
 }
 
 func IsStation(stop *tdb.Stop) bool {
-	return stop.Type == "STATION" || stop.Type == "GROUPED_STATION" || !stop.ParentStopPk.Valid
+	return stop.Type == "STATION" || !stop.ParentStopPk.Valid
 }

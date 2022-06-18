@@ -112,7 +112,9 @@ message FeedConfig {
     message GtfsRealtimeParser {
         message NoExtension {}
 
-        message NyctTripsExtension {}
+        message NyctTripsExtension {
+            bool filter_stale_unassigned_trips = 1;
+        }
 
         message NyctAlertsExtension {
             enum ElevatorAlertsDeduplicationPolicy {
