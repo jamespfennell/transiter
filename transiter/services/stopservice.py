@@ -182,6 +182,10 @@ class _TripStopTimeFilter:
         return result
 
     def _remove_helper(self, trip_stop_time: models.TripStopTime, direction):
+        # If the trip doesn't have an arrival or departure time, remove.
+        if trip_stop_time.get_time() is None:
+            return True
+
         trip_time = trip_stop_time.get_time().timestamp()
         # If the trip is before the inclusion interval, remove.
         if self._inclusion_interval_start is not None and (

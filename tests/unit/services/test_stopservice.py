@@ -123,6 +123,13 @@ def test_old_trips__exclude(time_dot_time):
     assert stop_time_filter.remove(stop_time, DIRECTION) is True
 
 
+def test_trips_with_no_time__exclude():
+    stop_time = models.TripStopTime(arrival_time=None)
+    stop_time_filter = stopservice._TripStopTimeFilter("0", "10", "0")
+
+    assert stop_time_filter.remove(stop_time, DIRECTION) is True
+
+
 def test_old_trips__include_when_no_lower_bound(time_dot_time):
     stop_time = models.TripStopTime(arrival_time=TIME_1)
     time_dot_time.return_value = TIME_4.timestamp()
