@@ -8,7 +8,7 @@ RUN pip install --quiet -r requirements.txt
 COPY docs ./
 RUN mkdocs build
 
-FROM python:3.8
+FROM python:3.9
 
 WORKDIR /transiter/source
 

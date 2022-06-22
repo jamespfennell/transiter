@@ -168,7 +168,7 @@ class Registry:
                 time.sleep(1)
                 continue
             except Exception as e:
-                logger.exception("Unexpected error", e)
+                logger.exception("Unexpected error")
                 exit(1)
             break
 

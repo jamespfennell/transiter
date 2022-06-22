@@ -24,7 +24,9 @@ setup(
         "flask==1.1.2",
         "gunicorn==20.0.4",
         "inflection==0.4.0",
+        "itsdangerous==2.0.1",
         "Jinja2==2.11.3",
+        "MarkupSafe==0.23",
         "prometheus-client==0.9.0",
         "protobuf==3.15.0",
         "psycopg2-binary==2.8.5",
@@ -33,5 +35,6 @@ setup(
         "requests==2.23.0",
         "sqlalchemy==1.4.5",
         "strictyaml==1.6.1",
+        "werkzeug==2.0.3"
     ],
 )
