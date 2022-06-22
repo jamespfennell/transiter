@@ -129,7 +129,7 @@ jobs:
           CI_WEB_URL: https://github.com/jamespfennell/transiter/actions/runs/${{ github.run_id }}
 
           DOCKER_USERNAME: jamespfennell
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
           TWINE_USERNAME: jamespfennell
           TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
         run: python ci.py after
