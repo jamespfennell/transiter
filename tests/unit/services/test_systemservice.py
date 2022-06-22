@@ -306,7 +306,9 @@ def test_mark_update_completed(
     monkeypatch.setattr(time, "time", lambda: CURRENT_TIMESTAMP + 99)
 
     system = models.System(
-        auto_update_enabled=False, status=initial_system_status, id=SYSTEM_ID,
+        auto_update_enabled=False,
+        status=initial_system_status,
+        id=SYSTEM_ID,
     )
     mock_systemdam.create(system)
     update = models.SystemUpdate(

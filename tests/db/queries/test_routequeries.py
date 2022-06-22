@@ -47,7 +47,9 @@ def test_calculate_periodicity(route_1_1, trip_1, trip_2, trip_3):
     assert 3600 == routequeries.calculate_periodicity(route_1_1.pk)
 
 
-def test_calculate_periodicity__no_trips(route_1_1,):
+def test_calculate_periodicity__no_trips(
+    route_1_1,
+):
     assert None is routequeries.calculate_periodicity(route_1_1.pk)
 
 

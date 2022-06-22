@@ -52,7 +52,8 @@ def setup_test(
                 alert=gtfs.Alert(
                     active_period=[
                         gtfs.TimeRange(
-                            start=int(TIME_1.timestamp()), end=int(TIME_2.timestamp()),
+                            start=int(TIME_1.timestamp()),
+                            end=int(TIME_2.timestamp()),
                         )
                     ],
                     header_text=gtfs.TranslatedString(

@@ -90,7 +90,11 @@ def create_and_execute_feed_flush(system_id, feed_id, execute_async=False):
 
 
 def _create_and_execute_feed_update_helper(
-    system_id, feed_id, update_manager_function, content=None, execute_async=False,
+    system_id,
+    feed_id,
+    update_manager_function,
+    content=None,
+    execute_async=False,
 ):
     """
     Create a feed update for a feed in a system.

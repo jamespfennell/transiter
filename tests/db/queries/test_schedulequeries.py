@@ -47,7 +47,10 @@ def scheduled_service_2(add_model, system_2):
 
 @pytest.fixture
 def scheduled_trip_2_1(
-    add_model, scheduled_service_2, route_2_1, stop_2_1,
+    add_model,
+    scheduled_service_2,
+    route_2_1,
+    stop_2_1,
 ):
     stop_times = [
         models.ScheduledTripStopTime(

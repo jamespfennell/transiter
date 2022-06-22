@@ -23,7 +23,10 @@ def test_get_id_to_pk_map_by_feed_pk(
 
 
 def test_get_id_to_pk_map_by_feed_pk__no_matches(
-    db_session, add_model, feed_1_1, feed_1_2,
+    db_session,
+    add_model,
+    feed_1_1,
+    feed_1_2,
 ):
     update_1 = add_model(models.FeedUpdate(feed=feed_1_1))
     update_2 = add_model(models.FeedUpdate(feed=feed_1_2))

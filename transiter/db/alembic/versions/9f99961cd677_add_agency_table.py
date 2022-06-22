@@ -29,8 +29,14 @@ def upgrade():
         sa.Column("phone", sa.String(), nullable=True),
         sa.Column("fare_url", sa.String(), nullable=True),
         sa.Column("email", sa.String(), nullable=True),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("system_pk", "id"),
     )
@@ -39,8 +45,14 @@ def upgrade():
         "alert_agency",
         sa.Column("alert_pk", sa.Integer(), nullable=True),
         sa.Column("agency_pk", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["agency_pk"], ["agency.pk"],),
-        sa.ForeignKeyConstraint(["alert_pk"], ["alert.pk"],),
+        sa.ForeignKeyConstraint(
+            ["agency_pk"],
+            ["agency.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["alert_pk"],
+            ["alert.pk"],
+        ),
     )
     op.create_index(
         op.f("ix_alert_agency_agency_pk"), "alert_agency", ["agency_pk"], unique=False

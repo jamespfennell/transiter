@@ -58,7 +58,10 @@ def upgrade():
         sa.Column("headers", sa.String(), nullable=True),
         sa.Column("auto_update_on", sa.Boolean(), nullable=True),
         sa.Column("auto_update_period", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("system_pk", "id"),
     )
@@ -76,7 +79,10 @@ def upgrade():
         sa.Column("threshold", sa.Float(), nullable=False),
         sa.Column("use_for_routes_at_stop", sa.Boolean(), nullable=False),
         sa.Column("use_for_stops_in_route", sa.Boolean(), nullable=False),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_table(
@@ -127,7 +133,10 @@ def upgrade():
             nullable=True,
         ),
         sa.Column("feed_time", sa.TIMESTAMP(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["feed_pk"], ["feed.pk"],),
+        sa.ForeignKeyConstraint(
+            ["feed_pk"],
+            ["feed.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(
@@ -192,8 +201,14 @@ def upgrade():
         sa.Column("end_time", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("creation_time", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("system_pk", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(op.f("ix_alert_source_pk"), "alert", ["source_pk"], unique=False)
@@ -227,8 +242,14 @@ def upgrade():
             nullable=True,
         ),
         sa.Column("sort_order", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("system_pk", "id"),
     )
@@ -246,8 +267,14 @@ def upgrade():
         sa.Column("friday", sa.Boolean(), nullable=True),
         sa.Column("saturday", sa.Boolean(), nullable=True),
         sa.Column("sunday", sa.Boolean(), nullable=True),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(
@@ -274,9 +301,18 @@ def upgrade():
         sa.Column("latitude", sa.Numeric(precision=9, scale=6), nullable=True),
         sa.Column("url", sa.String(), nullable=True),
         sa.Column("is_station", sa.Boolean(), nullable=True),
-        sa.ForeignKeyConstraint(["parent_stop_pk"], ["stop.pk"],),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
+        sa.ForeignKeyConstraint(
+            ["parent_stop_pk"],
+            ["stop.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("system_pk", "id"),
     )
@@ -288,8 +324,14 @@ def upgrade():
         "alert_route",
         sa.Column("alert_pk", sa.Integer(), nullable=True),
         sa.Column("route_pk", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["alert_pk"], ["alert.pk"],),
-        sa.ForeignKeyConstraint(["route_pk"], ["route.pk"],),
+        sa.ForeignKeyConstraint(
+            ["alert_pk"],
+            ["alert.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["route_pk"],
+            ["route.pk"],
+        ),
     )
     op.create_index(
         op.f("ix_alert_route_route_pk"), "alert_route", ["route_pk"], unique=False
@@ -304,8 +346,14 @@ def upgrade():
         sa.Column("direction_id", sa.Boolean(), nullable=True),
         sa.Column("track", sa.String(), nullable=True),
         sa.Column("name", sa.String(), nullable=True),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
-        sa.ForeignKeyConstraint(["stop_pk"], ["stop.pk"],),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["stop_pk"],
+            ["stop.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(
@@ -327,8 +375,14 @@ def upgrade():
         sa.Column("route_pk", sa.Integer(), nullable=False),
         sa.Column("service_pk", sa.Integer(), nullable=False),
         sa.Column("direction_id", sa.Boolean(), nullable=True),
-        sa.ForeignKeyConstraint(["route_pk"], ["route.pk"],),
-        sa.ForeignKeyConstraint(["service_pk"], ["scheduled_service.pk"],),
+        sa.ForeignKeyConstraint(
+            ["route_pk"],
+            ["route.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["service_pk"],
+            ["scheduled_service.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_table(
@@ -336,8 +390,14 @@ def upgrade():
         sa.Column("pk", sa.Integer(), nullable=False),
         sa.Column("route_pk", sa.Integer(), nullable=False),
         sa.Column("group_pk", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(["group_pk"], ["service_map_group.pk"],),
-        sa.ForeignKeyConstraint(["route_pk"], ["route.pk"],),
+        sa.ForeignKeyConstraint(
+            ["group_pk"],
+            ["service_map_group.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["route_pk"],
+            ["route.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("route_pk", "group_pk"),
     )
@@ -367,8 +427,14 @@ def upgrade():
             nullable=True,
         ),
         sa.Column("current_stop_sequence", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["route_pk"], ["route.pk"],),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
+        sa.ForeignKeyConstraint(
+            ["route_pk"],
+            ["route.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("route_pk", "id"),
     )
@@ -381,8 +447,14 @@ def upgrade():
         sa.Column("arrival_time", sa.Time(), nullable=True),
         sa.Column("departure_time", sa.Time(), nullable=True),
         sa.Column("stop_sequence", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(["stop_pk"], ["stop.pk"],),
-        sa.ForeignKeyConstraint(["trip_pk"], ["scheduled_trip.pk"],),
+        sa.ForeignKeyConstraint(
+            ["stop_pk"],
+            ["stop.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["trip_pk"],
+            ["scheduled_trip.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("trip_pk", "stop_sequence"),
     )
@@ -398,8 +470,14 @@ def upgrade():
         sa.Column("stop_pk", sa.Integer(), nullable=True),
         sa.Column("map_pk", sa.Integer(), nullable=True),
         sa.Column("position", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["map_pk"], ["service_map.pk"],),
-        sa.ForeignKeyConstraint(["stop_pk"], ["stop.pk"],),
+        sa.ForeignKeyConstraint(
+            ["map_pk"],
+            ["service_map.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["stop_pk"],
+            ["stop.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(
@@ -422,8 +500,14 @@ def upgrade():
         sa.Column("departure_uncertainty", sa.Integer(), nullable=True),
         sa.Column("stop_sequence", sa.Integer(), nullable=False),
         sa.Column("track", sa.String(), nullable=True),
-        sa.ForeignKeyConstraint(["stop_pk"], ["stop.pk"],),
-        sa.ForeignKeyConstraint(["trip_pk"], ["trip.pk"],),
+        sa.ForeignKeyConstraint(
+            ["stop_pk"],
+            ["stop.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["trip_pk"],
+            ["trip.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("trip_pk", "stop_sequence"),
     )

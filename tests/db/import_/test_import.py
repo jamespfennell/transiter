@@ -409,7 +409,9 @@ def test_schedule(db_session, stop_1_1, route_1_1, previous_update, current_upda
 
 
 def test_direction_rules__skip_unknown_stop(
-    db_session, system_1, current_update,
+    db_session,
+    system_1,
+    current_update,
 ):
     current = [
         parse.DirectionRule(name="Rule", id="blah", track="new track", stop_id="104401")
@@ -438,7 +440,12 @@ def test_flush(db_session, add_model, system_1, previous_update, current_update)
             type=models.Stop.Type.STATION,
         )
     )
-    add_model(models.Route(system=system_1, source_pk=previous_update.pk,))
+    add_model(
+        models.Route(
+            system=system_1,
+            source_pk=previous_update.pk,
+        )
+    )
 
     importdriver.run_import(current_update.pk, ParserForTesting([]))
 
@@ -519,7 +526,9 @@ class TripStopTimeWithFuture(parse.TripStopTime):
 def trip_stop_time(stop_sequence, stop_id, arrival_time, future=None):
     if future is None:
         return parse.TripStopTime(
-            stop_sequence=stop_sequence, stop_id=stop_id, arrival_time=arrival_time,
+            stop_sequence=stop_sequence,
+            stop_id=stop_id,
+            arrival_time=arrival_time,
         )
     return TripStopTimeWithFuture(
         stop_sequence=stop_sequence,
@@ -858,7 +867,11 @@ def test_vehicle__set_stop_simple_case(
 
 @pytest.mark.parametrize("vehicle_id", [None, "vehicle_id"])
 def test_vehicle__no_vehicle_id(
-    db_session, current_update, trip_for_vehicle, stop_1_3, vehicle_id,
+    db_session,
+    current_update,
+    trip_for_vehicle,
+    stop_1_3,
+    vehicle_id,
 ):
     vehicle = parse.Vehicle(id=vehicle_id, trip_id="trip_id")
 
@@ -873,7 +886,10 @@ def test_vehicle__no_vehicle_id(
 
 
 def test_vehicle__duplicate_trip_ids(
-    db_session, current_update, trip_for_vehicle, stop_1_3,
+    db_session,
+    current_update,
+    trip_for_vehicle,
+    stop_1_3,
 ):
     vehicle = parse.Vehicle(id=None, trip_id="trip_id")
 
@@ -885,7 +901,11 @@ def test_vehicle__duplicate_trip_ids(
 
 
 def test_vehicle__merged_vehicle_edge_case(
-    db_session, previous_update, current_update, trip_for_vehicle, stop_1_3,
+    db_session,
+    previous_update,
+    current_update,
+    trip_for_vehicle,
+    stop_1_3,
 ):
     vehicle_1 = parse.Vehicle(id=None, trip_id="trip_id")
     vehicle_2 = parse.Vehicle(id="vehicle_id", trip_id=None)

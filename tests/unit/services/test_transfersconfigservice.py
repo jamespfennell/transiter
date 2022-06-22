@@ -89,7 +89,9 @@ def list_all_in_system_factory(stops):
 )
 def test_build_transfers(monkeypatch, stops, distance, expected_tuples):
     monkeypatch.setattr(
-        stopqueries, "list_all_in_system", list_all_in_system_factory(stops),
+        stopqueries,
+        "list_all_in_system",
+        list_all_in_system_factory(stops),
     )
 
     actual_pairs_list = [
@@ -157,7 +159,10 @@ def test_list_all(monkeypatch, system_1_model, system_1_view):
         "list_all",
         lambda: [
             models.TransfersConfig(
-                pk=CONFIG_PK, distance=DISTANCE, systems=[system_1_model], transfers=[],
+                pk=CONFIG_PK,
+                distance=DISTANCE,
+                systems=[system_1_model],
+                transfers=[],
             )
         ],
     )

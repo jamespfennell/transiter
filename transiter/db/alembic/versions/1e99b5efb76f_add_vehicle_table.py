@@ -56,8 +56,14 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("updated_at", sa.TIMESTAMP(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
         sa.UniqueConstraint("system_pk", "id"),
     )

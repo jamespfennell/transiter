@@ -21,7 +21,9 @@ def list_all_in_system(
         route_response = views.Route.from_model(route)
         response.append(route_response)
     helpers.add_alerts_to_views(
-        response, routes, alerts_detail or views.AlertsDetail.CAUSE_AND_EFFECT,
+        response,
+        routes,
+        alerts_detail or views.AlertsDetail.CAUSE_AND_EFFECT,
     )
     return response
 
@@ -43,7 +45,9 @@ def get_in_system_by_id(
     if route.agency is not None:
         result.agency = views.Agency.from_model(route.agency)
     helpers.add_alerts_to_views(
-        [result], [route], alerts_detail or views.AlertsDetail.MESSAGES,
+        [result],
+        [route],
+        alerts_detail or views.AlertsDetail.MESSAGES,
     )
     result.service_maps = servicemapmanager.build_route_service_maps_response(route.pk)
     return result

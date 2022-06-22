@@ -22,7 +22,10 @@ def upgrade():
         sa.Column("alert_pk", sa.Integer(), nullable=False),
         sa.Column("starts_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("ends_at", sa.TIMESTAMP(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["alert_pk"], ["alert.pk"],),
+        sa.ForeignKeyConstraint(
+            ["alert_pk"],
+            ["alert.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(
@@ -39,7 +42,10 @@ def upgrade():
         sa.Column("description", sa.String(), nullable=False),
         sa.Column("url", sa.String(), nullable=True),
         sa.Column("language", sa.String(), nullable=True),
-        sa.ForeignKeyConstraint(["alert_pk"], ["alert.pk"],),
+        sa.ForeignKeyConstraint(
+            ["alert_pk"],
+            ["alert.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(
@@ -49,8 +55,14 @@ def upgrade():
         "alert_stop",
         sa.Column("alert_pk", sa.Integer(), nullable=True),
         sa.Column("stop_pk", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["alert_pk"], ["alert.pk"],),
-        sa.ForeignKeyConstraint(["stop_pk"], ["stop.pk"],),
+        sa.ForeignKeyConstraint(
+            ["alert_pk"],
+            ["alert.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["stop_pk"],
+            ["stop.pk"],
+        ),
     )
     op.create_index(
         op.f("ix_alert_stop_alert_pk"), "alert_stop", ["alert_pk"], unique=False
@@ -62,8 +74,14 @@ def upgrade():
         "alert_trip",
         sa.Column("alert_pk", sa.Integer(), nullable=True),
         sa.Column("trip_pk", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["alert_pk"], ["alert.pk"],),
-        sa.ForeignKeyConstraint(["trip_pk"], ["trip.pk"],),
+        sa.ForeignKeyConstraint(
+            ["alert_pk"],
+            ["alert.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["trip_pk"],
+            ["trip.pk"],
+        ),
     )
     op.create_index(
         op.f("ix_alert_trip_alert_pk"), "alert_trip", ["alert_pk"], unique=False

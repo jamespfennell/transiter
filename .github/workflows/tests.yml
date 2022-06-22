@@ -76,7 +76,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install Black and PyCodeStyle
-        run: pip install --quiet black==19.10b pycodestyle==2.5.0
+        run: pip install --quiet black==22.3.0 pycodestyle==2.5.0
       - name: Run formatting checks
         run: |
           black transiter tests *py

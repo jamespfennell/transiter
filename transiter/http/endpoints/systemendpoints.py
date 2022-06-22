@@ -68,7 +68,9 @@ def list_all_transfers_in_system(system_id):
 
 
 @http_endpoint(
-    system_endpoints, "/<system_id>", method=HttpMethod.PUT,
+    system_endpoints,
+    "/<system_id>",
+    method=HttpMethod.PUT,
 )
 @requires_permissions(PermissionsLevel.ALL)
 def install(system_id):
@@ -211,7 +213,9 @@ def delete_by_id(system_id):
 
 
 @http_endpoint(
-    system_endpoints, "/<system_id>/auto-update", method=HttpMethod.PUT,
+    system_endpoints,
+    "/<system_id>/auto-update",
+    method=HttpMethod.PUT,
 )
 @requires_permissions(PermissionsLevel.ALL)
 def set_auto_update_enabled(system_id):

@@ -121,7 +121,8 @@ def test_list_updates_in_feed__no_such_feed(monkeypatch, feed_1_model):
 
 
 @pytest.mark.parametrize(
-    "feed_pks", [pytest.param([]), pytest.param([1]), pytest.param([1, 2])],
+    "feed_pks",
+    [pytest.param([]), pytest.param([1]), pytest.param([1, 2])],
 )
 def test_trip_feed_updates(monkeypatch, datetime_now, feed_pks):
 

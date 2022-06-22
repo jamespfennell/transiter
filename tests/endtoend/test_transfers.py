@@ -125,7 +125,8 @@ class TestTransfers:
 
         # Verify visible in the get endpoint
         assert expected_tuples == calculate_transfer_tuples_from_config(
-            transiter_host, config_id,
+            transiter_host,
+            config_id,
         )
 
         # Verify transfers were actually created.

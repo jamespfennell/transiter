@@ -16,7 +16,9 @@ class AlertActivePeriod(Base):
     pk = Column(Integer, primary_key=True)
     alert_pk = Column(Integer, ForeignKey("alert.pk"), index=True, nullable=False)
 
-    starts_at = Column(TIMESTAMP(timezone=True),)
+    starts_at = Column(
+        TIMESTAMP(timezone=True),
+    )
     ends_at = Column(TIMESTAMP(timezone=True))
 
     alert = relationship("Alert", back_populates="active_periods", cascade="none")

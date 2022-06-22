@@ -50,16 +50,28 @@ class Alert(Base):
     system = relationship("System", back_populates="alerts", cascade="none")
     source = relationship("FeedUpdate", cascade="none")
     agencies = relationship(
-        "Agency", secondary="alert_agency", back_populates="alerts", cascade="none",
+        "Agency",
+        secondary="alert_agency",
+        back_populates="alerts",
+        cascade="none",
     )
     routes = relationship(
-        "Route", secondary="alert_route", back_populates="alerts", cascade="none",
+        "Route",
+        secondary="alert_route",
+        back_populates="alerts",
+        cascade="none",
     )
     stops = relationship(
-        "Stop", secondary="alert_stop", back_populates="alerts", cascade="none",
+        "Stop",
+        secondary="alert_stop",
+        back_populates="alerts",
+        cascade="none",
     )
     trips = relationship(
-        "Trip", secondary="alert_trip", back_populates="alerts", cascade="none",
+        "Trip",
+        secondary="alert_trip",
+        back_populates="alerts",
+        cascade="none",
     )
 
     __table_args__ = (UniqueConstraint("system_pk", "id"),)

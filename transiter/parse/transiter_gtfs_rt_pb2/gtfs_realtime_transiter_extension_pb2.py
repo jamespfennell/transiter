@@ -27,7 +27,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     serialized_pb=_b(
         '\n\'gtfs-realtime-transiter-extension.proto\x12"gtfs_realtime_transiter_vendorized\x1a(gtfs-realtime-transiter-vendorized.proto"\xc9\x01\n\x1cStopTimeUpdateAdditionalData\x12\r\n\x05track\x18\x01 \x01(\t2\x99\x01\n\x0f\x61\x64\x64itional_data\x12=.gtfs_realtime_transiter_vendorized.TripUpdate.StopTimeUpdate\x18\xc1\r \x01(\x0b\x32@.gtfs_realtime_transiter_vendorized.StopTimeUpdateAdditionalData"\xcf\x01\n\x13\x41lertAdditionalData\x12\x12\n\ncreated_at\x18\x01 \x01(\x04\x12\x12\n\nupdated_at\x18\x02 \x01(\x04\x12\x12\n\nsort_order\x18\x03 \x01(\x04\x32|\n\x0f\x61\x64\x64itional_data\x12).gtfs_realtime_transiter_vendorized.Alert\x18\xc1\r \x01(\x0b\x32\x37.gtfs_realtime_transiter_vendorized.AlertAdditionalData'
     ),
-    dependencies=[gtfs__realtime__transiter__vendorized__pb2.DESCRIPTOR,],
+    dependencies=[
+        gtfs__realtime__transiter__vendorized__pb2.DESCRIPTOR,
+    ],
 )
 
 

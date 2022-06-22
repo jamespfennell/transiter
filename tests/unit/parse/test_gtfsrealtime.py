@@ -399,7 +399,9 @@ def build_test_parse_vehicle_params(gtfs):
             parse.Vehicle(id=VEHICLE_ID, trip_id=TRIP_ID, current_stop_sequence=6),
         ],
         [  # Basic case 2
-            gtfs.TripUpdate(trip=gtfs.TripDescriptor(trip_id=TRIP_ID),),
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+            ),
             gtfs.VehiclePosition(
                 trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
                 vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
@@ -428,7 +430,9 @@ def build_test_parse_vehicle_params(gtfs):
             parse.Vehicle(id=VEHICLE_ID, trip_id=TRIP_ID, current_stop_sequence=6),
         ],
         [  # Basic case 5
-            gtfs.TripUpdate(trip=gtfs.TripDescriptor(trip_id=TRIP_ID),),
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+            ),
             gtfs.VehiclePosition(
                 trip=gtfs.TripDescriptor(trip_id=TRIP_ID), current_stop_sequence=6
             ),
@@ -451,7 +455,9 @@ def build_test_parse_vehicle_params(gtfs):
             parse.Vehicle(trip_id=TRIP_ID, label=VEHICLE_ID),
         ],
         [  # No vehicle descriptor and no vehicle position
-            gtfs.TripUpdate(trip=gtfs.TripDescriptor(trip_id=TRIP_ID),),
+            gtfs.TripUpdate(
+                trip=gtfs.TripDescriptor(trip_id=TRIP_ID),
+            ),
             None,
             None,
         ],
@@ -521,7 +527,11 @@ def build_test_parse_vehicle_params(gtfs):
             gtfs.VehiclePosition(
                 vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
                 position=gtfs.Position(
-                    latitude=1.0, longitude=2.0, bearing=3.0, odometer=4.0, speed=5.0,
+                    latitude=1.0,
+                    longitude=2.0,
+                    bearing=3.0,
+                    odometer=4.0,
+                    speed=5.0,
                 ),
                 current_stop_sequence=6,
                 stop_id="7",
@@ -547,7 +557,10 @@ def build_test_parse_vehicle_params(gtfs):
             None,
             gtfs.VehiclePosition(
                 vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID),
-                position=gtfs.Position(latitude=1.0, longitude=2.0,),
+                position=gtfs.Position(
+                    latitude=1.0,
+                    longitude=2.0,
+                ),
                 current_stop_sequence=6,
                 stop_id="7",
                 occupancy_status=OCCUPANCY_STATUS.value,

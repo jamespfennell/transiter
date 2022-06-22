@@ -9,7 +9,9 @@ from transiter.db import dbconnection, models
 
 
 def get_route_pk_to_active_alerts(
-    route_pks, current_time=None, load_messages=False,
+    route_pks,
+    current_time=None,
+    load_messages=False,
 ) -> typing.Dict[
     int, typing.List[typing.Tuple[models.AlertActivePeriod, models.Alert]]
 ]:
@@ -19,7 +21,9 @@ def get_route_pk_to_active_alerts(
 
 
 def get_stop_pk_to_active_alerts(
-    stop_pks, current_time=None, load_messages=False,
+    stop_pks,
+    current_time=None,
+    load_messages=False,
 ) -> typing.Dict[
     int, typing.List[typing.Tuple[models.AlertActivePeriod, models.Alert]]
 ]:
@@ -29,7 +33,9 @@ def get_stop_pk_to_active_alerts(
 
 
 def get_agency_pk_to_active_alerts(
-    agency_pks, current_time=None, load_messages=False,
+    agency_pks,
+    current_time=None,
+    load_messages=False,
 ) -> typing.Dict[
     int, typing.List[typing.Tuple[models.AlertActivePeriod, models.Alert]]
 ]:
@@ -39,7 +45,9 @@ def get_agency_pk_to_active_alerts(
 
 
 def get_trip_pk_to_active_alerts(
-    trip_pks, current_time=None, load_messages=False,
+    trip_pks,
+    current_time=None,
+    load_messages=False,
 ) -> typing.Dict[
     int, typing.List[typing.Tuple[models.AlertActivePeriod, models.Alert]]
 ]:

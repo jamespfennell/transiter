@@ -39,10 +39,22 @@ def upgrade():
             nullable=False,
         ),
         sa.Column("min_transfer_time", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["from_stop_pk"], ["stop.pk"],),
-        sa.ForeignKeyConstraint(["system_pk"], ["system.pk"],),
-        sa.ForeignKeyConstraint(["source_pk"], ["feed_update.pk"],),
-        sa.ForeignKeyConstraint(["to_stop_pk"], ["stop.pk"],),
+        sa.ForeignKeyConstraint(
+            ["from_stop_pk"],
+            ["stop.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["system_pk"],
+            ["system.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["source_pk"],
+            ["feed_update.pk"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["to_stop_pk"],
+            ["stop.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(

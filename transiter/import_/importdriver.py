@@ -539,8 +539,10 @@ class TripSyncer(syncer(models.Trip)):
         trip_id_to_db_trip = self._build_trip_id_to_db_trip_map(
             trip.id for trip in trips
         )
-        trip_pk_to_db_stop_time_data_list = tripqueries.get_trip_pk_to_stop_time_data_list(
-            db_trip.pk for db_trip in trip_id_to_db_trip.values()
+        trip_pk_to_db_stop_time_data_list = (
+            tripqueries.get_trip_pk_to_stop_time_data_list(
+                db_trip.pk for db_trip in trip_id_to_db_trip.values()
+            )
         )
         for trip in trips:
             db_trip = trip_id_to_db_trip.get(trip.id, None)

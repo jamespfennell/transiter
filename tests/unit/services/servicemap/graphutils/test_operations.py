@@ -97,7 +97,9 @@ def test_transitive_reduction(reduction_edges: set, redundant_edges: set):
     assert expected_reduction == actual_reduction
 
 
-def test_transitive_reduction__singleton_graph(singleton_graph: datastructures.Graph,):
+def test_transitive_reduction__singleton_graph(
+    singleton_graph: datastructures.Graph,
+):
     graph = datastructures.MutableGraph(singleton_graph)
     graph.create_edge_using_labels("a", "a")
 

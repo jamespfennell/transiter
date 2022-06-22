@@ -28,14 +28,20 @@ def list_all_in_system(system_id, alerts_detail=None) -> typing.List[views.Stop]
     stops = stopqueries.list_all_in_system(system_id)
     response = list(map(views.Stop.from_model, stops))
     helpers.add_alerts_to_views(
-        response, stops, alerts_detail or views.AlertsDetail.NONE,
+        response,
+        stops,
+        alerts_detail or views.AlertsDetail.NONE,
     )
     return response
 
 
 @dbconnection.unit_of_work
 def geographical_search(
-    system_id, latitude, longitude, distance, return_service_maps=True,
+    system_id,
+    latitude,
+    longitude,
+    distance,
+    return_service_maps=True,
 ) -> typing.List[views.Stop]:
     lower_lat, upper_lat = geography.latitude_bounds(latitude, longitude, distance)
     lower_lon, upper_lon = geography.longitude_bounds(latitude, longitude, distance)
@@ -44,7 +50,10 @@ def geographical_search(
     )
     stop_pk_to_distance = {
         stop.pk: geography.distance(
-            float(stop.latitude), float(stop.longitude), latitude, longitude,
+            float(stop.latitude),
+            float(stop.longitude),
+            latitude,
+            longitude,
         )
         for stop in all_stops
     }
@@ -53,8 +62,10 @@ def geographical_search(
     )
     all_stops.sort(key=lambda stop_: stop_pk_to_distance[stop_.pk])
     if return_service_maps:
-        stop_pk_to_service_maps = servicemapmanager.build_stop_pk_to_service_maps_response(
-            list(stop.pk for stop in all_stops)
+        stop_pk_to_service_maps = (
+            servicemapmanager.build_stop_pk_to_service_maps_response(
+                list(stop.pk for stop in all_stops)
+            )
         )
     else:
         stop_pk_to_service_maps = {}
@@ -118,7 +129,9 @@ def get_in_system_by_id(
         stopqueries.list_direction_rules_for_stops(descendant_stop_pks)
     )
     trip_stop_times = stopqueries.list_stop_time_updates_at_stops(
-        descendant_stop_pks, earliest_time=earliest_time, latest_time=latest_time,
+        descendant_stop_pks,
+        earliest_time=earliest_time,
+        latest_time=latest_time,
     )
     trip_pk_to_last_stop = tripqueries.get_trip_pk_to_last_stop_map(
         trip_stop_time.trip.pk for trip_stop_time in trip_stop_times
@@ -126,8 +139,10 @@ def get_in_system_by_id(
 
     # On the other hand, the stop tree graph that is returned consists of all
     # stations in the stop's tree
-    stop_pk_to_service_maps_response = servicemapmanager.build_stop_pk_to_service_maps_response(
-        all_station_pks.union(transfer.to_stop_pk for transfer in transfers)
+    stop_pk_to_service_maps_response = (
+        servicemapmanager.build_stop_pk_to_service_maps_response(
+            all_station_pks.union(transfer.to_stop_pk for transfer in transfers)
+        )
     )
 
     # Using the data retrieved, we then build the response
@@ -158,7 +173,9 @@ def get_in_system_by_id(
             )
         )
     helpers.add_alerts_to_views(
-        [response], [stop], alerts_detail or views.AlertsDetail.CAUSE_AND_EFFECT,
+        [response],
+        [stop],
+        alerts_detail or views.AlertsDetail.CAUSE_AND_EFFECT,
     )
     return response
 
@@ -194,10 +211,10 @@ class _TripStopTimeFilter:
         ):
             return False
         # If an extra trip is needed for this direction, include.
-        if self._min_trips_per_direction is not None and self._direction_to_num_trips_so_far.get(
-            direction, 0
-        ) < int(
-            self._min_trips_per_direction
+        if (
+            self._min_trips_per_direction is not None
+            and self._direction_to_num_trips_so_far.get(direction, 0)
+            < int(self._min_trips_per_direction)
         ):
             return False
         return True

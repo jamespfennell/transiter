@@ -111,7 +111,11 @@ def four_node_cycle():
 
 @pytest.fixture(params=range(4))
 def non_trivial_tree(
-    request, tree_1, tree_2, tree_3, tree_4,
+    request,
+    tree_1,
+    tree_2,
+    tree_3,
+    tree_4,
 ):
     trees = [
         tree_1,
@@ -191,7 +195,10 @@ def non_sortable_graph(
 
 @pytest.fixture(params=range(3))
 def cycle(
-    request, one_node_cycle, two_node_cycle, four_node_cycle,
+    request,
+    one_node_cycle,
+    two_node_cycle,
+    four_node_cycle,
 ):
     non_sortable_graphs = [
         one_node_cycle,

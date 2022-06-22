@@ -32,8 +32,8 @@ def build_stop_pk_to_service_maps_response(
     Build the service maps response used in the stop service.
     """
     stop_pks = list(stop_pks)
-    stop_pk_to_service_map_group_id_to_routes = build_stop_pk_to_group_id_to_inherited_routes_map(
-        stop_pks
+    stop_pk_to_service_map_group_id_to_routes = (
+        build_stop_pk_to_group_id_to_inherited_routes_map(stop_pks)
     )
     stop_pk_to_service_maps_response = {}
     for stop_pk in stop_pks:
@@ -55,8 +55,8 @@ def build_stop_pk_to_group_id_to_inherited_routes_map(stop_pks):
     all_stop_pks = set()
     for descendent_pks in stop_pk_to_descendent_pks.values():
         all_stop_pks.update(descendent_pks)
-    stop_pk_to_group_id_to_routes = servicemapqueries.get_stop_pk_to_group_id_to_routes_map(
-        all_stop_pks
+    stop_pk_to_group_id_to_routes = (
+        servicemapqueries.get_stop_pk_to_group_id_to_routes_map(all_stop_pks)
     )
     result = {stop_pk: collections.defaultdict(list) for stop_pk in stop_pks}
     for stop_pk in stop_pks:

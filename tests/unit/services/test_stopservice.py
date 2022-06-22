@@ -217,13 +217,17 @@ def test_get_in_system_by_id__stop_not_found(monkeypatch):
 
 def test_get_in_system_by_id(monkeypatch):
     stop_one = models.Stop(
-        pk=STOP_ONE_PK, id=STOP_ONE_ID, system=models.System(id=SYSTEM_ID),
+        pk=STOP_ONE_PK,
+        id=STOP_ONE_ID,
+        system=models.System(id=SYSTEM_ID),
     )
     stop_time_one = models.TripStopTime(
-        pk=TRIP_STOP_TIME_ONE_PK, arrival_time=datetime.datetime(2000, 1, 1, 0, 0, 0),
+        pk=TRIP_STOP_TIME_ONE_PK,
+        arrival_time=datetime.datetime(2000, 1, 1, 0, 0, 0),
     )
     stop_time_two = models.TripStopTime(
-        pk=TRIP_STOP_TIME_TWO_PK, arrival_time=datetime.datetime(2137, 1, 1, 0, 0, 0),
+        pk=TRIP_STOP_TIME_TWO_PK,
+        arrival_time=datetime.datetime(2137, 1, 1, 0, 0, 0),
     )
 
     child_stops = mock.MagicMock()

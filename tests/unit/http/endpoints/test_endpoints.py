@@ -291,7 +291,8 @@ def test_geographic_search(monkeypatch, endpoint_function, endpoint_kwargs, syst
 
 
 @pytest.mark.parametrize(
-    "internal_documentation_enabled", [pytest.param(True), pytest.param(False)],
+    "internal_documentation_enabled",
+    [pytest.param(True), pytest.param(False)],
 )
 def test_flask_app_root(
     monkeypatch, flask_request, flask_url, internal_documentation_enabled

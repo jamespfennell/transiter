@@ -56,7 +56,8 @@ def convert_enum_to_non_native(table_name, column_name, default=None):
 
     # Create new column with old columns name
     op.add_column(
-        table_name, sa.Column(column_name, sa.String(), nullable=True),
+        table_name,
+        sa.Column(column_name, sa.String(), nullable=True),
     )
 
     # If there is a default set, populate all fields with the default

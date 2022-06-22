@@ -184,7 +184,8 @@ def _execute_system_update(system_update_pk):
         for feed_id in feed_ids_to_delete:
             _delete_feed(context.system_id, feed_id)
         _mark_update_completed(
-            context, models.SystemUpdate.Status.SUCCESS,
+            context,
+            models.SystemUpdate.Status.SUCCESS,
         )
     except Exception:
         _mark_update_completed(
@@ -222,7 +223,9 @@ def _mark_update_started(system_update_pk) -> _SystemUpdateContext:
 
 @dbconnection.unit_of_work
 def _mark_update_completed(
-    context: _SystemUpdateContext, final_status, final_status_message=None,
+    context: _SystemUpdateContext,
+    final_status,
+    final_status_message=None,
 ):
     """
     Set the status of a transit system, if that system exists in the DB.

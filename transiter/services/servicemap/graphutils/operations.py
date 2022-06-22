@@ -149,9 +149,7 @@ def calculate_tgt_decomposition(
 
 def _extract_leading_tree(
     graph: datastructures.MutableGraph,
-) -> Tuple[
-    Optional[datastructures.Tree], Optional[datastructures.MutableGraph],
-]:
+) -> Tuple[Optional[datastructures.Tree], Optional[datastructures.MutableGraph]]:
     # An entry is when a node is encountered in the following traversal algorithm
     node_to_num_entries = collections.defaultdict(lambda: 0)
     sources = set(graph.sources())

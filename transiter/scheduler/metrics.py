@@ -91,7 +91,10 @@ class MetricsPopulator:
             result=result.name,
         ).inc()
         self._last_update.labels(
-            system_id=system_id, feed_id=feed_id, status=status.name, result=result,
+            system_id=system_id,
+            feed_id=feed_id,
+            status=status.name,
+            result=result,
         ).set_to_current_time()
         self._report_latency(feed_pk, result, system_id, feed_id)
         for entity_type, count in blob.get("entity_type_to_count", {}).items():
@@ -101,7 +104,11 @@ class MetricsPopulator:
             ).set(int(count))
 
         logger.debug(
-            "Reporting %s/%s result=%s status=%s", system_id, feed_id, result, status,
+            "Reporting %s/%s result=%s status=%s",
+            system_id,
+            feed_id,
+            result,
+            status,
         )
         return None
 
@@ -130,6 +137,7 @@ class MetricsPopulator:
             new_time,
             new_latency,
         )
-        self._update_latency.labels(system_id=system_id, feed_id=feed_id,).set(
-            new_latency
-        )
+        self._update_latency.labels(
+            system_id=system_id,
+            feed_id=feed_id,
+        ).set(new_latency)

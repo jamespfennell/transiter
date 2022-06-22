@@ -29,7 +29,8 @@ OLD_FEED_CONTENT = "BlahBah2"
     ],
 )
 @pytest.mark.parametrize(
-    "feed_exists,expected_result", [[False, None], [True, FEED_UPDATE_PK]],
+    "feed_exists,expected_result",
+    [[False, None], [True, FEED_UPDATE_PK]],
 )
 def test_create_feed_update(
     monkeypatch,

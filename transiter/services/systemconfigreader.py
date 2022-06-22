@@ -95,7 +95,7 @@ class PyEnum(ScalarValidator):
         return data.name
 
     def __repr__(self):
-        return u"PyEnum({0})".format(repr(self._enum))
+        return "PyEnum({0})".format(repr(self._enum))
 
 
 class ServiceMapConditions(Map):

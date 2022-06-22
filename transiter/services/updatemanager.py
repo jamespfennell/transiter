@@ -244,7 +244,9 @@ def _calculate_content_hash(context: _UpdateContext):
 # perspective, the feed parser is foreign code.
 # noinspection PyBroadException
 @_possible_exception(
-    Exception, models.FeedUpdate.Status.FAILURE, models.FeedUpdate.Result.PARSE_ERROR,
+    Exception,
+    models.FeedUpdate.Status.FAILURE,
+    models.FeedUpdate.Result.PARSE_ERROR,
 )
 def _load_options_into_parser(context: _UpdateContext):
     raw_options = context.feed_update.feed.parser_options
@@ -258,14 +260,18 @@ def _load_options_into_parser(context: _UpdateContext):
 # perspective, the feed parser is foreign code.
 # noinspection PyBroadException
 @_possible_exception(
-    Exception, models.FeedUpdate.Status.FAILURE, models.FeedUpdate.Result.PARSE_ERROR,
+    Exception,
+    models.FeedUpdate.Status.FAILURE,
+    models.FeedUpdate.Result.PARSE_ERROR,
 )
 def _load_content_into_parser(context: _UpdateContext):
     context.parser.load_content(context.content)
 
 
 @_possible_exception(
-    Exception, models.FeedUpdate.Status.FAILURE, models.FeedUpdate.Result.IMPORT_ERROR,
+    Exception,
+    models.FeedUpdate.Status.FAILURE,
+    models.FeedUpdate.Result.IMPORT_ERROR,
 )
 def _import(context: _UpdateContext):
     feed_update = context.feed_update

@@ -10,7 +10,9 @@ class DfsTraversalOrder(enum.Enum):
 
 
 def pre_order_dfs_traversal(
-    starting_node: AbstractNode, ignore_directionality=False, sorting_key=None,
+    starting_node: AbstractNode,
+    ignore_directionality=False,
+    sorting_key=None,
 ) -> Iterator[AbstractNode]:
 
     yield from dfs_traversal(
@@ -19,7 +21,9 @@ def pre_order_dfs_traversal(
 
 
 def post_order_dfs_traversal(
-    starting_node: AbstractNode, ignore_directionality=False, sorting_key=None,
+    starting_node: AbstractNode,
+    ignore_directionality=False,
+    sorting_key=None,
 ) -> Iterator[AbstractNode]:
     yield from dfs_traversal(
         DfsTraversalOrder.POST_ORDER, starting_node, ignore_directionality, sorting_key

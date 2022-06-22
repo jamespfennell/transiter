@@ -21,7 +21,10 @@ def upgrade():
         sa.Column("pk", sa.Integer(), nullable=False),
         sa.Column("service_pk", sa.Integer(), nullable=True),
         sa.Column("date", sa.Date(), nullable=False),
-        sa.ForeignKeyConstraint(["service_pk"], ["scheduled_service.pk"],),
+        sa.ForeignKeyConstraint(
+            ["service_pk"],
+            ["scheduled_service.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(
@@ -35,7 +38,10 @@ def upgrade():
         sa.Column("pk", sa.Integer(), nullable=False),
         sa.Column("service_pk", sa.Integer(), nullable=True),
         sa.Column("date", sa.Date(), nullable=False),
-        sa.ForeignKeyConstraint(["service_pk"], ["scheduled_service.pk"],),
+        sa.ForeignKeyConstraint(
+            ["service_pk"],
+            ["scheduled_service.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
     op.create_index(
@@ -57,7 +63,10 @@ def upgrade():
         sa.Column("end_time", sa.Time(timezone=True), nullable=False),
         sa.Column("headway", sa.Integer(), nullable=False),
         sa.Column("frequency_based", sa.Boolean(), nullable=False),
-        sa.ForeignKeyConstraint(["trip_pk"], ["scheduled_trip.pk"],),
+        sa.ForeignKeyConstraint(
+            ["trip_pk"],
+            ["scheduled_trip.pk"],
+        ),
         sa.PrimaryKeyConstraint("pk"),
     )
 

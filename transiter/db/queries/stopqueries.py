@@ -9,7 +9,11 @@ from transiter.db.queries import genericqueries
 
 
 def list_all_in_geographical_bounds(
-    lower_lat, upper_lat, lower_lon, upper_lon, system_id,
+    lower_lat,
+    upper_lat,
+    lower_lon,
+    upper_lon,
+    system_id,
 ):
     query = (
         dbconnection.get_session()
