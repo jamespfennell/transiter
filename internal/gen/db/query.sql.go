@@ -19,6 +19,7 @@ WITH route_stop_pks AS (
   WHERE trip.route_pk = $1
     AND NOT trip_stop_time.past
     AND trip_stop_time.arrival_time IS NOT NULL
+    AND trip_stop_time.arrival_time >= $2
 ), diffs AS (
   SELECT EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) diff, COUNT(*) n
   FROM trip_stop_time
@@ -26,14 +27,19 @@ WITH route_stop_pks AS (
   GROUP BY trip_stop_time.stop_pk
   HAVING COUNT(*) > 1
 )
-SELECT coalesce(AVG(diff / (n-1)), -1) FROM diffs
+SELECT COALESCE(ROUND(AVG(diff / (n-1)))::integer, -1)::integer FROM diffs
 `
 
-func (q *Queries) CalculatePeriodicityForRoute(ctx context.Context, routePk int64) (interface{}, error) {
-	row := q.db.QueryRow(ctx, calculatePeriodicityForRoute, routePk)
-	var coalesce interface{}
-	err := row.Scan(&coalesce)
-	return coalesce, err
+type CalculatePeriodicityForRouteParams struct {
+	RoutePk     int64
+	PresentTime sql.NullTime
+}
+
+func (q *Queries) CalculatePeriodicityForRoute(ctx context.Context, arg CalculatePeriodicityForRouteParams) (int32, error) {
+	row := q.db.QueryRow(ctx, calculatePeriodicityForRoute, arg.RoutePk, arg.PresentTime)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const countAgenciesInSystem = `-- name: CountAgenciesInSystem :one

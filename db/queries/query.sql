@@ -222,6 +222,7 @@ WITH route_stop_pks AS (
   WHERE trip.route_pk = sqlc.arg(route_pk)
     AND NOT trip_stop_time.past
     AND trip_stop_time.arrival_time IS NOT NULL
+    AND trip_stop_time.arrival_time >= sqlc.arg(present_time)
 ), diffs AS (
   SELECT EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) diff, COUNT(*) n
   FROM trip_stop_time
@@ -229,8 +230,7 @@ WITH route_stop_pks AS (
   GROUP BY trip_stop_time.stop_pk
   HAVING COUNT(*) > 1
 )
-SELECT coalesce(AVG(diff / (n-1)), -1) FROM diffs;
-
+SELECT COALESCE(ROUND(AVG(diff / (n-1)))::integer, -1)::integer FROM diffs;
 
 -- name: ListUpdatesInFeed :many
 SELECT * FROM feed_update 

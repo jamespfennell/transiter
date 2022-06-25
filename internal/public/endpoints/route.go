@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"math"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -95,14 +94,19 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 	for _, serviceMap := range configIDToServiceMap {
 		serviceMapsReply = append(serviceMapsReply, serviceMap)
 	}
-	periodicityI, err := r.Querier.CalculatePeriodicityForRoute(ctx, route.Pk)
+	nullablePeriodicity, err := r.Querier.CalculatePeriodicityForRoute(ctx, db.CalculatePeriodicityForRouteParams{
+		RoutePk: route.Pk,
+		PresentTime: sql.NullTime{
+			Valid: true,
+			Time:  time.Now(),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
-	var periodicity *float64
-	if convert, ok := periodicityI.(float64); ok && convert > 0 {
-		convert := math.Floor(convert/6) / 10
-		periodicity = &convert
+	var periodicity *int32
+	if nullablePeriodicity >= 0 {
+		periodicity = &nullablePeriodicity
 	}
 
 	alerts, err := r.Querier.ListActiveAlertsForRoutes(

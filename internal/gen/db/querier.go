@@ -10,7 +10,7 @@ import (
 )
 
 type Querier interface {
-	CalculatePeriodicityForRoute(ctx context.Context, routePk int64) (interface{}, error)
+	CalculatePeriodicityForRoute(ctx context.Context, arg CalculatePeriodicityForRouteParams) (int32, error)
 	CountAgenciesInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountFeedsInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountRoutesInSystem(ctx context.Context, systemPk int64) (int64, error)
