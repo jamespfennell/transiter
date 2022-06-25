@@ -216,21 +216,20 @@ ORDER BY alert.id ASC;
 
 
 -- name: CalculatePeriodicityForRoute :one
-WITH route_stop_pks AS (
-  SELECT DISTINCT trip_stop_time.stop_pk stop_pk FROM trip_stop_time
+WITH per_stop_data AS (
+  SELECT
+    EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) total_diff,
+    COUNT(*)-1 num_diffs
+  FROM trip_stop_time
     INNER JOIN trip ON trip.pk = trip_stop_time.trip_pk
   WHERE trip.route_pk = sqlc.arg(route_pk)
     AND NOT trip_stop_time.past
     AND trip_stop_time.arrival_time IS NOT NULL
     AND trip_stop_time.arrival_time >= sqlc.arg(present_time)
-), diffs AS (
-  SELECT EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) diff, COUNT(*) n
-  FROM trip_stop_time
-    INNER JOIN route_stop_pks ON route_stop_pks.stop_pk = trip_stop_time.stop_pk
   GROUP BY trip_stop_time.stop_pk
-  HAVING COUNT(*) > 1
+    HAVING COUNT(*) > 1
 )
-SELECT COALESCE(ROUND(AVG(diff / (n-1)))::integer, -1)::integer FROM diffs;
+SELECT COALESCE(ROUND(SUM(total_diff) / (SUM(num_diffs)))::integer, -1)::integer FROM per_stop_data;
 
 -- name: ListUpdatesInFeed :many
 SELECT * FROM feed_update 
