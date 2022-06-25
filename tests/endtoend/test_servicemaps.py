@@ -117,6 +117,21 @@ def test_service_maps(system_id, install_system_1, transiter_host, source_server
         ["trip_1"],
     )
 
+    # (5) No more trips, service map is deleted.
+    feed_1 = gtfsrealtimegenerator.GtfsRealtimeFeed(
+        0,
+        [],
+    )
+    _perform_service_map_test(
+        system_id,
+        transiter_host,
+        source_server,
+        realtime_feed_url,
+        feed_1,
+        [],
+        [],
+    )
+
 
 def _perform_service_map_test(
     system_id,

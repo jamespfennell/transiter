@@ -156,6 +156,7 @@ func buildMaps(routePkToEdges map[int64]map[graph.Edge]bool) map[int64][]int64 {
 		if err != nil {
 			continue
 		}
+		routePkToStopPks[routePk] = []int64{}
 		for _, node := range orderedNodes {
 			routePkToStopPks[routePk] = append(routePkToStopPks[routePk], node.GetLabel())
 		}
