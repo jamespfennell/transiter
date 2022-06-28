@@ -61,10 +61,10 @@ func GetSystem(ctx context.Context, r *Context, req *api.GetSystemRequest) (*api
 		Id:        system.ID,
 		Name:      system.Name,
 		Status:    api.System_Status(api.System_Status_value[strings.ToUpper(system.Status)]),
-		Agencies:  &api.CountAndHref{Count: numAgencies, Href: r.Href.AgenciesInSystem(req.SystemId)},
-		Feeds:     &api.CountAndHref{Count: numFeeds, Href: r.Href.FeedsInSystem(req.SystemId)},
-		Routes:    &api.CountAndHref{Count: numRoutes, Href: r.Href.RoutesInSystem(req.SystemId)},
-		Stops:     &api.CountAndHref{Count: numStops, Href: r.Href.StopsInSystem(req.SystemId)},
-		Transfers: &api.CountAndHref{Count: numTransfers, Href: r.Href.TransfersInSystem(req.SystemId)},
+		Agencies:  &api.System_ChildEntities{Count: numAgencies, Href: r.Href.AgenciesInSystem(req.SystemId)},
+		Feeds:     &api.System_ChildEntities{Count: numFeeds, Href: r.Href.FeedsInSystem(req.SystemId)},
+		Routes:    &api.System_ChildEntities{Count: numRoutes, Href: r.Href.RoutesInSystem(req.SystemId)},
+		Stops:     &api.System_ChildEntities{Count: numStops, Href: r.Href.StopsInSystem(req.SystemId)},
+		Transfers: &api.System_ChildEntities{Count: numTransfers, Href: r.Href.TransfersInSystem(req.SystemId)},
 	}, nil
 }

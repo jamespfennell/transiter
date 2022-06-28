@@ -5,9 +5,6 @@ WHERE id = $1 LIMIT 1;
 -- name: ListSystems :many
 SELECT * FROM system ORDER BY id, name;
 
--- name: CountSystems :one
-SELECT COUNT(*) FROM system;
-
 -- name: CountAgenciesInSystem :one
 SELECT COUNT(*) FROM agency WHERE system_pk = $1;
 
@@ -22,16 +19,6 @@ SELECT COUNT(*) FROM stop WHERE system_pk = $1;
 
 -- name: CountTransfersInSystem :one
 SELECT COUNT(*) FROM transfer WHERE system_pk = $1;
-
--- name: ListAgenciesInSystem :many
-SELECT * FROM agency WHERE system_pk = $1 ORDER BY id;
-
--- name: GetAgencyInSystem :one
-SELECT agency.* FROM agency
-    INNER JOIN system ON agency.system_pk = system.pk
-WHERE system.id = sqlc.arg(system_id)
-    AND agency.id = sqlc.arg(agency_id);
-
 
 -- name: ListRoutesInAgency :many
 SELECT route.id, route.color FROM route

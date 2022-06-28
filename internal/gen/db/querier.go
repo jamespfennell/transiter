@@ -15,7 +15,6 @@ type Querier interface {
 	CountFeedsInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountRoutesInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountStopsInSystem(ctx context.Context, systemPk int64) (int64, error)
-	CountSystems(ctx context.Context) (int64, error)
 	CountTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) (int64, error)
 	DeleteAlerts(ctx context.Context, alertPks []int64) error
 	DeleteFeed(ctx context.Context, pk int64) error
@@ -79,6 +78,7 @@ type Querier interface {
 	ListStopsInStopTree(ctx context.Context, pk int64) ([]Stop, error)
 	ListStopsInSystem(ctx context.Context, systemPk int64) ([]Stop, error)
 	ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]ListStopsTimesForTripRow, error)
+	ListSystemIDs(ctx context.Context) ([]string, error)
 	ListSystems(ctx context.Context) ([]System, error)
 	ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]ListTransfersFromStopsRow, error)
 	ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) ([]ListTransfersInSystemRow, error)

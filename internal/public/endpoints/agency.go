@@ -13,75 +13,91 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func ListAgenciesInSystem(ctx context.Context, r *Context, req *api.ListAgenciesInSystemRequest) (*api.ListAgenciesInSystemReply, error) {
-	system, err := r.Querier.GetSystem(ctx, req.SystemId)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
-		}
-		return nil, err
-	}
-	agencies, err := r.Querier.ListAgenciesInSystem(ctx, system.Pk)
+func ListAgencies(ctx context.Context, r *Context, req *api.ListAgenciesRequest) (*api.ListAgenciesReply, error) {
+	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
 		return nil, err
 	}
-	reply := &api.ListAgenciesInSystemReply{}
-	for _, agency := range agencies {
-		// TODO: should probably batch these
-		alerts, err := getAlertsForAgencies(ctx, r.Querier, []int64{agency.Pk})
-		if err != nil {
-			return nil, err
-		}
-		apiAgency := &api.AgencyPreviewWithAlerts{
-			Id:     agency.ID,
-			Name:   agency.Name,
-			Alerts: alerts,
-			Href:   r.Href.Agency(req.SystemId, agency.ID),
-		}
-		reply.Agencies = append(reply.Agencies, apiAgency)
+	dbAgencies, err := r.Querier.ListAgenciesInSystem(ctx, system.Pk)
+	if err != nil {
+		return nil, err
 	}
-	return reply, nil
+	agencies, err := buildApiAgencies(ctx, r, req.SystemId, dbAgencies)
+	if err != nil {
+		return nil, err
+	}
+	return &api.ListAgenciesReply{Agencies: agencies}, nil
 }
 
-func GetAgencyInSystem(ctx context.Context, r *Context, req *api.GetAgencyInSystemRequest) (*api.Agency, error) {
-	agency, err := r.Querier.GetAgencyInSystem(ctx, db.GetAgencyInSystemParams{SystemID: req.SystemId, AgencyID: req.AgencyId})
+func GetAgency(ctx context.Context, r *Context, req *api.GetAgencyRequest) (*api.Agency, error) {
+	system, err := getSystem(ctx, r.Querier, req.SystemId)
+	if err != nil {
+		return nil, err
+	}
+	dbAgency, err := r.Querier.GetAgencyInSystem(ctx, db.GetAgencyInSystemParams{
+		SystemPk: system.Pk,
+		AgencyID: req.AgencyId,
+	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			err = errors.NewNotFoundError(fmt.Sprintf("agency %q in system %q not found", req.AgencyId, req.SystemId))
 		}
 		return nil, err
 	}
-	routes, err := r.Querier.ListRoutesInAgency(ctx, agency.Pk)
+	agencies, err := buildApiAgencies(ctx, r, req.SystemId, []db.Agency{dbAgency})
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := getAlertsForAgencies(ctx, r.Querier, []int64{agency.Pk})
-	if err != nil {
-		return nil, err
-	}
-	reply := &api.Agency{
-		Id:       agency.ID,
-		Name:     agency.Name,
-		Url:      agency.Url,
-		Timezone: agency.Timezone,
-		Language: convert.SQLNullString(agency.Language),
-		Phone:    convert.SQLNullString(agency.Phone),
-		FareUrl:  convert.SQLNullString(agency.FareUrl),
-		Email:    convert.SQLNullString(agency.Email),
-		Alerts:   alerts,
-	}
-	for _, route := range routes {
-		reply.Routes = append(reply.Routes, &api.RoutePreview{
-			Id:    route.ID,
-			Color: route.Color,
-			Href:  r.Href.Route(req.SystemId, route.ID),
-		})
-	}
-
-	return reply, nil
+	return agencies[0], nil
 }
 
-func getAlertsForAgencies(ctx context.Context, querier db.Querier, agencyPks []int64) ([]*api.AlertPreview, error) {
+func buildApiAgencies(ctx context.Context, r *Context, systemID string, dbAgencies []db.Agency) ([]*api.Agency, error) {
+	var apiAgencies []*api.Agency
+	for _, dbAgency := range dbAgencies {
+		// TODO: should probably batch these?
+		routes, err := r.Querier.ListRoutesInAgency(ctx, dbAgency.Pk)
+		if err != nil {
+			return nil, err
+		}
+		alerts, err := getAlertsForAgencies(ctx, r.Querier, []int64{dbAgency.Pk})
+		if err != nil {
+			return nil, err
+		}
+		apiAgency := &api.Agency{
+			Id:       dbAgency.ID,
+			Name:     dbAgency.Name,
+			Url:      dbAgency.Url,
+			Timezone: dbAgency.Timezone,
+			Language: convert.SQLNullString(dbAgency.Language),
+			Phone:    convert.SQLNullString(dbAgency.Phone),
+			FareUrl:  convert.SQLNullString(dbAgency.FareUrl),
+			Email:    convert.SQLNullString(dbAgency.Email),
+			Alerts:   alerts,
+		}
+		for _, route := range routes {
+			apiAgency.Routes = append(apiAgency.Routes, &api.Route_Preview{
+				Id:    route.ID,
+				Color: route.Color,
+				Href:  r.Href.Route(systemID, route.ID),
+			})
+		}
+		apiAgencies = append(apiAgencies, apiAgency)
+	}
+	return apiAgencies, nil
+}
+
+func getSystem(ctx context.Context, querier db.Querier, id string) (db.System, error) {
+	system, err := querier.GetSystem(ctx, id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", id))
+		}
+		return db.System{}, err
+	}
+	return system, nil
+}
+
+func getAlertsForAgencies(ctx context.Context, querier db.Querier, agencyPks []int64) ([]*api.Alert_Preview, error) {
 	dbAlerts, err := querier.ListActiveAlertsForAgencies(ctx, db.ListActiveAlertsForAgenciesParams{
 		AgencyPks:   agencyPks,
 		PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
@@ -89,13 +105,9 @@ func getAlertsForAgencies(ctx context.Context, querier db.Querier, agencyPks []i
 	if err != nil {
 		return nil, err
 	}
-	var alerts []*api.AlertPreview
+	var alerts []*api.Alert_Preview
 	for _, alert := range dbAlerts {
-		alerts = append(alerts, &api.AlertPreview{
-			Id:     alert.ID,
-			Cause:  alert.Cause,
-			Effect: alert.Effect,
-		})
+		alerts = append(alerts, convert.AlertPreview(alert.ID, alert.Cause, alert.Effect))
 	}
 	return alerts, nil
 }

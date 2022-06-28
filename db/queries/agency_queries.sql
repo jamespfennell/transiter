@@ -30,3 +30,11 @@ WHERE
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
     AND feed_update.pk != sqlc.arg(update_pk)
 RETURNING agency.id;
+
+-- name: ListAgenciesInSystem :many
+SELECT agency.* FROM agency WHERE system_pk = $1 ORDER BY id;
+
+-- name: GetAgencyInSystem :one
+SELECT agency.* FROM agency
+WHERE agency.system_pk = sqlc.arg(system_pk)
+    AND agency.id = sqlc.arg(agency_id);

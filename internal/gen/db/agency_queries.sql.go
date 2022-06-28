@@ -45,6 +45,36 @@ func (q *Queries) DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenci
 	return items, nil
 }
 
+const getAgencyInSystem = `-- name: GetAgencyInSystem :one
+SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency
+WHERE agency.system_pk = $1
+    AND agency.id = $2
+`
+
+type GetAgencyInSystemParams struct {
+	SystemPk int64
+	AgencyID string
+}
+
+func (q *Queries) GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error) {
+	row := q.db.QueryRow(ctx, getAgencyInSystem, arg.SystemPk, arg.AgencyID)
+	var i Agency
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.SourcePk,
+		&i.Name,
+		&i.Url,
+		&i.Timezone,
+		&i.Language,
+		&i.Phone,
+		&i.FareUrl,
+		&i.Email,
+	)
+	return i, err
+}
+
 const insertAgency = `-- name: InsertAgency :one
 INSERT INTO agency
     (id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email)
@@ -83,6 +113,42 @@ func (q *Queries) InsertAgency(ctx context.Context, arg InsertAgencyParams) (int
 	var pk int64
 	err := row.Scan(&pk)
 	return pk, err
+}
+
+const listAgenciesInSystem = `-- name: ListAgenciesInSystem :many
+SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency WHERE system_pk = $1 ORDER BY id
+`
+
+func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]Agency, error) {
+	rows, err := q.db.Query(ctx, listAgenciesInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Agency
+	for rows.Next() {
+		var i Agency
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.Name,
+			&i.Url,
+			&i.Timezone,
+			&i.Language,
+			&i.Phone,
+			&i.FareUrl,
+			&i.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const mapAgencyPkToIdInSystem = `-- name: MapAgencyPkToIdInSystem :many

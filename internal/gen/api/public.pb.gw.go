@@ -119,8 +119,8 @@ func local_request_Public_GetSystem_0(ctx context.Context, marshaler runtime.Mar
 
 }
 
-func request_Public_ListAgenciesInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListAgenciesInSystemRequest
+func request_Public_ListAgencies_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListAgenciesRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -140,13 +140,13 @@ func request_Public_ListAgenciesInSystem_0(ctx context.Context, marshaler runtim
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := client.ListAgenciesInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListAgencies(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_Public_ListAgenciesInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListAgenciesInSystemRequest
+func local_request_Public_ListAgencies_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListAgenciesRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -166,13 +166,13 @@ func local_request_Public_ListAgenciesInSystem_0(ctx context.Context, marshaler 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := server.ListAgenciesInSystem(ctx, &protoReq)
+	msg, err := server.ListAgencies(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_Public_GetAgencyInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetAgencyInSystemRequest
+func request_Public_GetAgency_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetAgencyRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -202,13 +202,13 @@ func request_Public_GetAgencyInSystem_0(ctx context.Context, marshaler runtime.M
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "agency_id", err)
 	}
 
-	msg, err := client.GetAgencyInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetAgency(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_Public_GetAgencyInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetAgencyInSystemRequest
+func local_request_Public_GetAgency_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetAgencyRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -238,13 +238,13 @@ func local_request_Public_GetAgencyInSystem_0(ctx context.Context, marshaler run
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "agency_id", err)
 	}
 
-	msg, err := server.GetAgencyInSystem(ctx, &protoReq)
+	msg, err := server.GetAgency(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_Public_ListStopsInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListStopsInSystemRequest
+func request_Public_ListStops_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListStopsRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -264,13 +264,13 @@ func request_Public_ListStopsInSystem_0(ctx context.Context, marshaler runtime.M
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := client.ListStopsInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListStops(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_Public_ListStopsInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListStopsInSystemRequest
+func local_request_Public_ListStops_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListStopsRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -290,49 +290,13 @@ func local_request_Public_ListStopsInSystem_0(ctx context.Context, marshaler run
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := server.ListStopsInSystem(ctx, &protoReq)
+	msg, err := server.ListStops(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_Public_GetStopInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetStopInSystemRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["system_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "system_id")
-	}
-
-	protoReq.SystemId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
-	}
-
-	val, ok = pathParams["stop_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stop_id")
-	}
-
-	protoReq.StopId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stop_id", err)
-	}
-
-	msg, err := client.GetStopInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_Public_GetStopInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetStopInSystemRequest
+func request_Public_GetStop_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetStopRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -362,13 +326,13 @@ func local_request_Public_GetStopInSystem_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stop_id", err)
 	}
 
-	msg, err := server.GetStopInSystem(ctx, &protoReq)
+	msg, err := client.GetStop(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_Public_ListRoutesInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListRoutesInSystemRequest
+func local_request_Public_GetStop_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetStopRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -388,13 +352,23 @@ func request_Public_ListRoutesInSystem_0(ctx context.Context, marshaler runtime.
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := client.ListRoutesInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	val, ok = pathParams["stop_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stop_id")
+	}
+
+	protoReq.StopId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stop_id", err)
+	}
+
+	msg, err := server.GetStop(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func local_request_Public_ListRoutesInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListRoutesInSystemRequest
+func request_Public_ListRoutes_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListRoutesRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -414,13 +388,13 @@ func local_request_Public_ListRoutesInSystem_0(ctx context.Context, marshaler ru
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := server.ListRoutesInSystem(ctx, &protoReq)
+	msg, err := client.ListRoutes(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_Public_GetRouteInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetRouteInSystemRequest
+func local_request_Public_ListRoutes_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListRoutesRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -440,59 +414,13 @@ func request_Public_GetRouteInSystem_0(ctx context.Context, marshaler runtime.Ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	val, ok = pathParams["route_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "route_id")
-	}
-
-	protoReq.RouteId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "route_id", err)
-	}
-
-	msg, err := client.GetRouteInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := server.ListRoutes(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func local_request_Public_GetRouteInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetRouteInSystemRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["system_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "system_id")
-	}
-
-	protoReq.SystemId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
-	}
-
-	val, ok = pathParams["route_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "route_id")
-	}
-
-	protoReq.RouteId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "route_id", err)
-	}
-
-	msg, err := server.GetRouteInSystem(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_Public_ListTripsInRoute_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTripsInRouteRequest
+func request_Public_GetRoute_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetRouteRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -522,13 +450,13 @@ func request_Public_ListTripsInRoute_0(ctx context.Context, marshaler runtime.Ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "route_id", err)
 	}
 
-	msg, err := client.ListTripsInRoute(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetRoute(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_Public_ListTripsInRoute_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTripsInRouteRequest
+func local_request_Public_GetRoute_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetRouteRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -558,7 +486,79 @@ func local_request_Public_ListTripsInRoute_0(ctx context.Context, marshaler runt
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "route_id", err)
 	}
 
-	msg, err := server.ListTripsInRoute(ctx, &protoReq)
+	msg, err := server.GetRoute(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_Public_ListTrips_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListTripsRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["system_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "system_id")
+	}
+
+	protoReq.SystemId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
+	}
+
+	val, ok = pathParams["route_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "route_id")
+	}
+
+	protoReq.RouteId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "route_id", err)
+	}
+
+	msg, err := client.ListTrips(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_Public_ListTrips_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListTripsRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["system_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "system_id")
+	}
+
+	protoReq.SystemId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
+	}
+
+	val, ok = pathParams["route_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "route_id")
+	}
+
+	protoReq.RouteId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "route_id", err)
+	}
+
+	msg, err := server.ListTrips(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -655,8 +655,8 @@ func local_request_Public_GetTrip_0(ctx context.Context, marshaler runtime.Marsh
 
 }
 
-func request_Public_ListFeedsInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListFeedsInSystemRequest
+func request_Public_ListFeeds_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListFeedsRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -676,13 +676,13 @@ func request_Public_ListFeedsInSystem_0(ctx context.Context, marshaler runtime.M
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := client.ListFeedsInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListFeeds(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_Public_ListFeedsInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListFeedsInSystemRequest
+func local_request_Public_ListFeeds_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListFeedsRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -702,13 +702,13 @@ func local_request_Public_ListFeedsInSystem_0(ctx context.Context, marshaler run
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := server.ListFeedsInSystem(ctx, &protoReq)
+	msg, err := server.ListFeeds(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_Public_GetFeedInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetFeedInSystemRequest
+func request_Public_GetFeed_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetFeedRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -738,13 +738,13 @@ func request_Public_GetFeedInSystem_0(ctx context.Context, marshaler runtime.Mar
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "feed_id", err)
 	}
 
-	msg, err := client.GetFeedInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetFeed(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_Public_GetFeedInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetFeedInSystemRequest
+func local_request_Public_GetFeed_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetFeedRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -774,7 +774,7 @@ func local_request_Public_GetFeedInSystem_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "feed_id", err)
 	}
 
-	msg, err := server.GetFeedInSystem(ctx, &protoReq)
+	msg, err := server.GetFeed(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -851,8 +851,8 @@ func local_request_Public_ListFeedUpdates_0(ctx context.Context, marshaler runti
 
 }
 
-func request_Public_ListTransfersInSystem_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTransfersInSystemRequest
+func request_Public_ListTransfers_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListTransfersRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -872,13 +872,13 @@ func request_Public_ListTransfersInSystem_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := client.ListTransfersInSystem(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListTransfers(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_Public_ListTransfersInSystem_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTransfersInSystemRequest
+func local_request_Public_ListTransfers_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListTransfersRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -898,7 +898,7 @@ func local_request_Public_ListTransfersInSystem_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
 	}
 
-	msg, err := server.ListTransfersInSystem(ctx, &protoReq)
+	msg, err := server.ListTransfers(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -978,18 +978,18 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListAgenciesInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListAgencies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListAgenciesInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/agencies"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListAgencies", runtime.WithHTTPPathPattern("/systems/{system_id}/agencies"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_ListAgenciesInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_ListAgencies_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -997,22 +997,22 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_ListAgenciesInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListAgencies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_GetAgencyInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_GetAgency_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/GetAgencyInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/agencies/{agency_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/GetAgency", runtime.WithHTTPPathPattern("/systems/{system_id}/agencies/{agency_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_GetAgencyInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_GetAgency_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1020,22 +1020,22 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_GetAgencyInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_GetAgency_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListStopsInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListStops_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListStopsInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/stops"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListStops", runtime.WithHTTPPathPattern("/systems/{system_id}/stops"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_ListStopsInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_ListStops_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1043,22 +1043,22 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_ListStopsInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListStops_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_GetStopInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_GetStop_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/GetStopInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/stops/{stop_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/GetStop", runtime.WithHTTPPathPattern("/systems/{system_id}/stops/{stop_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_GetStopInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_GetStop_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1066,22 +1066,22 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_GetStopInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_GetStop_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListRoutesInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListRoutes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListRoutesInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/routes"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListRoutes", runtime.WithHTTPPathPattern("/systems/{system_id}/routes"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_ListRoutesInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_ListRoutes_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1089,22 +1089,22 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_ListRoutesInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListRoutes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_GetRouteInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_GetRoute_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/GetRouteInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/routes/{route_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/GetRoute", runtime.WithHTTPPathPattern("/systems/{system_id}/routes/{route_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_GetRouteInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_GetRoute_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1112,22 +1112,22 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_GetRouteInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_GetRoute_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListTripsInRoute_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListTrips_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListTripsInRoute", runtime.WithHTTPPathPattern("/systems/{system_id}/routes/{route_id}/trips"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListTrips", runtime.WithHTTPPathPattern("/systems/{system_id}/routes/{route_id}/trips"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_ListTripsInRoute_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_ListTrips_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1135,7 +1135,7 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_ListTripsInRoute_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListTrips_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1162,18 +1162,18 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListFeedsInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListFeeds_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListFeedsInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListFeeds", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_ListFeedsInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_ListFeeds_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1181,22 +1181,22 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_ListFeedsInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListFeeds_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_GetFeedInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_GetFeed_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/GetFeedInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds/{feed_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/GetFeed", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds/{feed_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_GetFeedInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_GetFeed_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1204,7 +1204,7 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_GetFeedInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_GetFeed_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1231,18 +1231,18 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListTransfersInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListTransfers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListTransfersInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/transfers"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListTransfers", runtime.WithHTTPPathPattern("/systems/{system_id}/transfers"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Public_ListTransfersInSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Public_ListTransfers_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -1250,7 +1250,7 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 			return
 		}
 
-		forward_Public_ListTransfersInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListTransfers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1355,143 +1355,143 @@ func RegisterPublicHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListAgenciesInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListAgencies_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListAgenciesInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/agencies"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListAgencies", runtime.WithHTTPPathPattern("/systems/{system_id}/agencies"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_ListAgenciesInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_ListAgencies_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_ListAgenciesInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListAgencies_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_GetAgencyInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_GetAgency_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/GetAgencyInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/agencies/{agency_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/GetAgency", runtime.WithHTTPPathPattern("/systems/{system_id}/agencies/{agency_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_GetAgencyInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_GetAgency_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_GetAgencyInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_GetAgency_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListStopsInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListStops_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListStopsInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/stops"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListStops", runtime.WithHTTPPathPattern("/systems/{system_id}/stops"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_ListStopsInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_ListStops_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_ListStopsInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListStops_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_GetStopInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_GetStop_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/GetStopInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/stops/{stop_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/GetStop", runtime.WithHTTPPathPattern("/systems/{system_id}/stops/{stop_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_GetStopInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_GetStop_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_GetStopInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_GetStop_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListRoutesInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListRoutes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListRoutesInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/routes"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListRoutes", runtime.WithHTTPPathPattern("/systems/{system_id}/routes"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_ListRoutesInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_ListRoutes_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_ListRoutesInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListRoutes_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_GetRouteInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_GetRoute_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/GetRouteInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/routes/{route_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/GetRoute", runtime.WithHTTPPathPattern("/systems/{system_id}/routes/{route_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_GetRouteInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_GetRoute_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_GetRouteInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_GetRoute_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListTripsInRoute_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListTrips_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListTripsInRoute", runtime.WithHTTPPathPattern("/systems/{system_id}/routes/{route_id}/trips"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListTrips", runtime.WithHTTPPathPattern("/systems/{system_id}/routes/{route_id}/trips"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_ListTripsInRoute_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_ListTrips_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_ListTripsInRoute_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListTrips_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1515,43 +1515,43 @@ func RegisterPublicHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListFeedsInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListFeeds_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListFeedsInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListFeeds", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_ListFeedsInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_ListFeeds_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_ListFeedsInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListFeeds_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Public_GetFeedInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_GetFeed_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/GetFeedInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds/{feed_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/GetFeed", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds/{feed_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_GetFeedInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_GetFeed_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_GetFeedInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_GetFeed_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1575,23 +1575,23 @@ func RegisterPublicHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListTransfersInSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Public_ListTransfers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListTransfersInSystem", runtime.WithHTTPPathPattern("/systems/{system_id}/transfers"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListTransfers", runtime.WithHTTPPathPattern("/systems/{system_id}/transfers"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Public_ListTransfersInSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Public_ListTransfers_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Public_ListTransfersInSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Public_ListTransfers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1605,29 +1605,29 @@ var (
 
 	pattern_Public_GetSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"systems", "system_id"}, ""))
 
-	pattern_Public_ListAgenciesInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "agencies"}, ""))
+	pattern_Public_ListAgencies_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "agencies"}, ""))
 
-	pattern_Public_GetAgencyInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "agencies", "agency_id"}, ""))
+	pattern_Public_GetAgency_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "agencies", "agency_id"}, ""))
 
-	pattern_Public_ListStopsInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "stops"}, ""))
+	pattern_Public_ListStops_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "stops"}, ""))
 
-	pattern_Public_GetStopInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "stops", "stop_id"}, ""))
+	pattern_Public_GetStop_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "stops", "stop_id"}, ""))
 
-	pattern_Public_ListRoutesInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "routes"}, ""))
+	pattern_Public_ListRoutes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "routes"}, ""))
 
-	pattern_Public_GetRouteInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "routes", "route_id"}, ""))
+	pattern_Public_GetRoute_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "routes", "route_id"}, ""))
 
-	pattern_Public_ListTripsInRoute_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"systems", "system_id", "routes", "route_id", "trips"}, ""))
+	pattern_Public_ListTrips_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"systems", "system_id", "routes", "route_id", "trips"}, ""))
 
 	pattern_Public_GetTrip_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"systems", "system_id", "routes", "route_id", "trips", "trip_id"}, ""))
 
-	pattern_Public_ListFeedsInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "feeds"}, ""))
+	pattern_Public_ListFeeds_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "feeds"}, ""))
 
-	pattern_Public_GetFeedInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "feeds", "feed_id"}, ""))
+	pattern_Public_GetFeed_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "feeds", "feed_id"}, ""))
 
 	pattern_Public_ListFeedUpdates_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"systems", "system_id", "feeds", "feed_id", "updates"}, ""))
 
-	pattern_Public_ListTransfersInSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "transfers"}, ""))
+	pattern_Public_ListTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "transfers"}, ""))
 )
 
 var (
@@ -1637,27 +1637,27 @@ var (
 
 	forward_Public_GetSystem_0 = runtime.ForwardResponseMessage
 
-	forward_Public_ListAgenciesInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_ListAgencies_0 = runtime.ForwardResponseMessage
 
-	forward_Public_GetAgencyInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_GetAgency_0 = runtime.ForwardResponseMessage
 
-	forward_Public_ListStopsInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_ListStops_0 = runtime.ForwardResponseMessage
 
-	forward_Public_GetStopInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_GetStop_0 = runtime.ForwardResponseMessage
 
-	forward_Public_ListRoutesInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_ListRoutes_0 = runtime.ForwardResponseMessage
 
-	forward_Public_GetRouteInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_GetRoute_0 = runtime.ForwardResponseMessage
 
-	forward_Public_ListTripsInRoute_0 = runtime.ForwardResponseMessage
+	forward_Public_ListTrips_0 = runtime.ForwardResponseMessage
 
 	forward_Public_GetTrip_0 = runtime.ForwardResponseMessage
 
-	forward_Public_ListFeedsInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_ListFeeds_0 = runtime.ForwardResponseMessage
 
-	forward_Public_GetFeedInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_GetFeed_0 = runtime.ForwardResponseMessage
 
 	forward_Public_ListFeedUpdates_0 = runtime.ForwardResponseMessage
 
-	forward_Public_ListTransfersInSystem_0 = runtime.ForwardResponseMessage
+	forward_Public_ListTransfers_0 = runtime.ForwardResponseMessage
 )

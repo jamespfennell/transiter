@@ -12,7 +12,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func ListFeedsInSystem(ctx context.Context, r *Context, req *api.ListFeedsInSystemRequest) (*api.ListFeedsInSystemReply, error) {
+func ListFeeds(ctx context.Context, r *Context, req *api.ListFeedsRequest) (*api.ListFeedsReply, error) {
 	system, err := r.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -24,10 +24,10 @@ func ListFeedsInSystem(ctx context.Context, r *Context, req *api.ListFeedsInSyst
 	if err != nil {
 		return nil, err
 	}
-	result := &api.ListFeedsInSystemReply{}
+	result := &api.ListFeedsReply{}
 	for _, feed := range feeds {
 		feed := feed
-		apiFeed := &api.FeedPreview{
+		apiFeed := &api.Feed_Preview{
 			Id:                    feed.ID,
 			PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
 			PeriodicUpdatePeriod:  periodicUpdatePeriod(&feed),
@@ -38,7 +38,7 @@ func ListFeedsInSystem(ctx context.Context, r *Context, req *api.ListFeedsInSyst
 	return result, nil
 }
 
-func GetFeedInSystem(ctx context.Context, r *Context, req *api.GetFeedInSystemRequest) (*api.Feed, error) {
+func GetFeed(ctx context.Context, r *Context, req *api.GetFeedRequest) (*api.Feed, error) {
 	feed, err := r.Querier.GetFeedInSystem(ctx, db.GetFeedInSystemParams{SystemID: req.SystemId, FeedID: req.FeedId})
 	if err != nil {
 		if err == pgx.ErrNoRows {

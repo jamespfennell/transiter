@@ -3,6 +3,69 @@ option go_package = "github.com/jamespfennell/transiter/api";
 
 import "google/api/annotations.proto";
 
+/**
+*
+* 
+* ## Resource model
+
+The Transiter public API is based around hierarchal resources, like many REST APIs.
+This is the resource hierarchy:
+
+```
+System
+  |- Agency
+  |- Alert
+  |- Feed
+  |   |- Feed update
+  |- Route
+  |   |- Trip
+  |       |- Vehicle with no ID
+  |- Stop
+  |- Transfer
+  |- Vehicle with ID
+```
+
+For each of resource there is a proto message type, a list endpoint, and a get endpoints.
+For stops, the message is [Stop], the list endpoint is [ListStops], and the get endpoint is [GetStop].
+
+In the HTTP API, the hierarchy is represented in the URL; thus:
+
+- List all systems has URL `/systems`,
+- Get system with ID `<system_id>`` has URL `/systems/<system_id>`,
+- List all routes in the system has URL `/systems/<system_id>/routes`,
+- Get route has URL `/systems/<system_id>/routes/<route_id>`,
+
+and so on.
+
+Many resources refer to other resources across the hierarchy.
+For example, each route has an agency it is attached to.
+Each stop has a list of service maps, each of which contains a set of routes.
+In these situations the resource message contains a _preview_ of the other resource.
+The [Route] message contains an agency preview, in the form of an [Agency.Preview]
+  message.
+These preview messages contain at least enough information to uniquely identify the resource.
+However they also contain additional information that is considered generally useful;
+  thus, the [Stop.Preview] message contains the stop's name.
+What counts as "considered generally" is obviously very subjective and open to change.
+
+The following table summarizes all of the resources and their types.
+The right-most column describes the source_of the resource.
+The public API is a read-only API so all of the resources come from somewhere else.
+
+| Resource    | Parent resource | Proto type | Proto preview type | Source
++-------------+-----------------+-----------
+| Agency      | System          | [Agency]   | [Agency.Preview] | GTFS static    
+| Alert       | System          | [Alert]    | [Alert.Preview] | GTFS realtime 
+| System      | None            |         | system config
+| Feed        | System          |       | system config  
+| Feed update | Feed            | | Transiter update process             
+| Route       | System          |        | GTFS static
+| Trip        | Route           |   | GTFS realtime      
+| Stop        | System          |       | GTFS static   
+| Transfer    | System          |        | GTFS static       
+| Vehicle     | System or trip  |        | GTFS realtime     
++--------
+*/
 service Public {
   rpc Entrypoint (EntrypointRequest) returns (EntrypointReply) {
     option (google.api.http) = {
@@ -22,43 +85,43 @@ service Public {
         };
   }
 
-  rpc ListAgenciesInSystem (ListAgenciesInSystemRequest) returns (ListAgenciesInSystemReply) {
+  rpc ListAgencies (ListAgenciesRequest) returns (ListAgenciesReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/agencies"
         };
   }
 
-  rpc GetAgencyInSystem (GetAgencyInSystemRequest) returns (Agency) {
+  rpc GetAgency (GetAgencyRequest) returns (Agency) {
     option (google.api.http) = {
             get: "/systems/{system_id}/agencies/{agency_id}"
         };
   }
 
-  rpc ListStopsInSystem (ListStopsInSystemRequest) returns (ListStopsInSystemReply) {
+  rpc ListStops (ListStopsRequest) returns (ListStopsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/stops"
         };
   }
 
-  rpc GetStopInSystem (GetStopInSystemRequest) returns (Stop) {
+  rpc GetStop (GetStopRequest) returns (Stop) {
     option (google.api.http) = {
             get: "/systems/{system_id}/stops/{stop_id}"
         };
   }
 
-  rpc ListRoutesInSystem (ListRoutesInSystemRequest) returns (ListRoutesInSystemReply) {
+  rpc ListRoutes (ListRoutesRequest) returns (ListRoutesReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/routes"
         };
   }
 
-  rpc GetRouteInSystem (GetRouteInSystemRequest) returns (Route) {
+  rpc GetRoute (GetRouteRequest) returns (Route) {
     option (google.api.http) = {
             get: "/systems/{system_id}/routes/{route_id}"
         };
   }
 
-  rpc ListTripsInRoute (ListTripsInRouteRequest) returns (ListTripsInRouteReply) {
+  rpc ListTrips (ListTripsRequest) returns (ListTripsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/routes/{route_id}/trips"
         };
@@ -70,13 +133,13 @@ service Public {
         };
   }
 
-  rpc ListFeedsInSystem (ListFeedsInSystemRequest) returns (ListFeedsInSystemReply) {
+  rpc ListFeeds (ListFeedsRequest) returns (ListFeedsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/feeds"
         };
   }
 
-  rpc GetFeedInSystem (GetFeedInSystemRequest) returns (Feed) {
+  rpc GetFeed (GetFeedRequest) returns (Feed) {
     option (google.api.http) = {
             get: "/systems/{system_id}/feeds/{feed_id}"
         };
@@ -88,13 +151,14 @@ service Public {
         };
   }
 
-  rpc ListTransfersInSystem (ListTransfersInSystemRequest) returns (ListTransfersInSystemReply) {
+  rpc ListTransfers (ListTransfersRequest) returns (ListTransfersReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/transfers"
         };
   }
 
-  // TODO: ListAlertsInSystem
+  // TODO: ListAlerts, GetAlert, ListAlertsForRoutes (?), ListAlertsForRoute (?)
+  // or add a general endpoint with search criteria? Can just filter on alert IDs
 }
 
 message EntrypointRequest {}
@@ -116,7 +180,7 @@ message EntrypointReply {
   }
   TransiterDetails transiter = 1;
   
-  CountAndHref systems = 2;
+  repeated System.Preview systems = 2;
 }
 
 message ListSystemsRequest {}
@@ -129,52 +193,55 @@ message GetSystemRequest {
   string system_id = 1;
 }
 
-message ListAgenciesInSystemRequest {
+message ListAgenciesRequest {
   string system_id = 1;
 }
 
-message ListAgenciesInSystemReply {
-  repeated AgencyPreviewWithAlerts agencies = 1;
+message ListAgenciesReply {
+  repeated Agency agencies = 1;
 }
 
-message GetAgencyInSystemRequest {
+message GetAgencyRequest {
   string system_id = 1;
   string agency_id = 2;
 }
 
-message ListStopsInSystemRequest {
+message ListStopsRequest {
   string system_id = 1;
 }
 
-message ListStopsInSystemReply {
-  repeated StopPreview stops = 1;
+message ListStopsReply {
+  // TODO: full Stop instead of preview
+  repeated Stop.Preview stops = 1;
 }
 
-message GetStopInSystemRequest {
+message GetStopRequest {
   string system_id = 1;
   string stop_id = 2;
 }
 
-message ListRoutesInSystemRequest {
+message ListRoutesRequest {
   string system_id = 1;
 }
 
-message ListRoutesInSystemReply {
+message ListRoutesReply {
+  // TODO: full Route instead of preview
   repeated RoutePreviewWithAlerts routes = 1;
 }
 
-message GetRouteInSystemRequest {
+message GetRouteRequest {
   string system_id = 1;
   string route_id = 2;
 }
 
-message ListTripsInRouteRequest {
+message ListTripsRequest {
   string system_id = 1;
   string route_id = 2;
 }
 
-message ListTripsInRouteReply {
-  repeated TripPreviewWithAlerts trips = 1;
+message ListTripsReply {
+  // TODO: full Trip instead of preview
+  repeated Trip.Preview trips = 1;
 }
 
 message GetTripRequest {
@@ -183,12 +250,13 @@ message GetTripRequest {
   string trip_id = 3;
 }
 
-message ListFeedsInSystemRequest {
+message ListFeedsRequest {
   string system_id = 1;
 }
 
-message ListFeedsInSystemReply {
-  repeated FeedPreview feeds = 1;
+message ListFeedsReply {
+  // TODO: full Feed instead of preview
+  repeated Feed.Preview feeds = 1;
 }
 
 message ListFeedUpdatesRequest {
@@ -200,16 +268,16 @@ message ListFeedUpdatesReply {
   repeated FeedUpdate updates = 1;
 }
 
-message GetFeedInSystemRequest {
+message GetFeedRequest {
   string system_id = 1;
   string feed_id = 2;
 }
 
-message ListTransfersInSystemRequest {
+message ListTransfersRequest {
   string system_id = 1;
 }
 
-message ListTransfersInSystemReply {
+message ListTransfersReply {
   repeated Transfer transfers = 1;
 }
 
@@ -228,13 +296,23 @@ message System {
   }
   Status status = 3;
 
-  optional CountAndHref agencies = 4;
-  optional CountAndHref feeds = 5;
-  optional CountAndHref routes = 6;
-  optional CountAndHref stops = 7;
-  optional CountAndHref transfers = 8;
+  message ChildEntities {
+    int64 count = 1;
+    optional string href = 2;
+  }
+  optional ChildEntities agencies = 4;
+  optional ChildEntities feeds = 5;
+  optional ChildEntities routes = 6;
+  optional ChildEntities stops = 7;
+  optional ChildEntities transfers = 8;
   
   optional string href = 9;
+
+  // Preview contains preview information about the system.
+  message Preview {
+    string id = 2;
+    optional string href = 1;
+  }
 }
 
 message Stop {
@@ -248,10 +326,16 @@ message Stop {
 
   repeated string stop_headsigns = 7;
 
-  optional RelatedStop parent_stop = 13;
-  repeated RelatedStop child_stops = 14;
-  repeated ServiceMapForStop service_maps = 8;
-  repeated AlertPreview alerts = 15;
+  optional Stop.Preview parent_stop = 13;
+  repeated Stop.Preview child_stops = 14;
+
+  message ServiceMap {
+    string config_id = 1;
+    repeated Route.Preview routes = 2;
+  }
+  repeated ServiceMap service_maps = 8;
+
+  repeated Alert.Preview alerts = 15;
 
   message StopTime {
     EstimatedTime arrival = 1;
@@ -260,67 +344,28 @@ message Stop {
     int32 stop_sequence = 5;
     optional string headsign = 6;
     optional string track = 3;
-    TripPreview trip = 7;
+    Trip.Preview trip = 7;
   }
   repeated StopTime stop_times = 6;
 
-  repeated TransferAtStop transfers = 16;
-}
+  repeated Transfer transfers = 16;
 
-message RelatedStop {
-  string id = 1;
-  string name = 2;
-  optional RelatedStop parent_stop = 3;
-  repeated RelatedStop child_stops = 4;
-  repeated ServiceMapForStop service_maps = 5;
-  optional string href = 9;
-}
-
-message TransferAtStop {
-  StopPreview from_stop = 1;
-  RelatedStop to_stop = 2;
-  // TODO: make this an enum
-  string type = 3;
-  optional int32 min_transfer_time = 4;
-  optional int32 distance = 5;
-}
-
-
-message StopPreview {
-  string id = 1;
-  string name = 2;
-  optional string href = 7;
-}
-
-message TripPreview {
-  string id = 1;
-  RoutePreview route = 2;
-  StopPreview last_stop = 3;
-  optional int64 started_at = 10;
-  optional VehiclePreview vehicle = 6;
-  bool direction_id = 4;
-  optional string href = 5;
-}
-
-// TODO(APIv2): remove and just return TripPreview
-message TripPreviewWithAlerts {
-  string id = 1;
-  RoutePreview route = 2;
-  StopPreview last_stop = 3;
-  optional int64 started_at = 10;
-  optional VehiclePreview vehicle = 6;
-  bool direction_id = 4;
-  optional string href = 5;
-  repeated AlertPreview alerts = 20;
+  // Preview contains preview information about the stop.
+  message Preview {
+    string id = 1;
+    string name = 2;
+    // TODO: transfers and service maps
+    optional string href = 7;
+  }
 }
 
 message Trip {
   string id = 1;
-  // TODO(APIv2): remove route
-  RoutePreview route = 2;
-  StopPreview last_stop = 3;
+  // TODO(APIv2): remove route?
+  Route.Preview route = 2;
+  Stop.Preview last_stop = 3;
   optional int64 started_at = 4;
-  optional VehiclePreview vehicle = 6;
+  optional Vehicle.Preview vehicle = 6;
   bool direction_id = 7;
 
   message StopTime {
@@ -330,30 +375,36 @@ message Trip {
     int32 stop_sequence = 5;
     optional string headsign = 6;
     optional string track = 3;
-    StopPreview stop = 7;
+    Stop.Preview stop = 7;
   }
   repeated StopTime stop_times = 9;
   optional string href = 10;
+
+  // Preview contains preview information about the trip.
+  message Preview {
+    string id = 1;
+    Route.Preview route = 2;
+    Stop.Preview last_stop = 3;
+    optional int64 started_at = 10;
+    optional Vehicle.Preview vehicle = 6;
+    bool direction_id = 4;
+    optional string href = 5;
+  }
 }
 
-message VehiclePreview {
-  string id = 1;
+message Vehicle {
+  // Preview contains preview information about the vehice.
+  message Preview {
+    string id = 1;
+  }
 }
 
-message RoutePreview {
-  string id = 1;
-  // TODO(APIv2): remove?
-  string color = 2;
-  // Will be populated only if the system is not obvious
-  optional System system = 8;
-  optional string href = 3;
-}
-
+// TODO remove and add a routes/alerts endpoint
 message RoutePreviewWithAlerts {
   string id = 1;
   // TODO(APIv2): remove?
   string color = 2;
-  repeated AlertPreview alerts = 3;
+  repeated Alert.Preview alerts = 3;
   optional string href = 4;
 }
 
@@ -376,12 +427,26 @@ message Route {
   // An estimate of the period between consecutive train, in seconds.
   optional int32 periodicity = 9;
 
-  AgencyPreview agency = 10;
+  Agency.Preview agency = 10;
 
-  repeated ServiceMapForRoute service_maps = 11;
+  message ServiceMap {
+    string config_id = 1;
+    repeated Stop.Preview stops = 2;
+  }
+  repeated ServiceMap service_maps = 11;
 
   // TODO(APIv2): alert preview
   repeated Alert alerts = 12;
+
+  // Preview contains preview information about the route.
+  message Preview {
+    string id = 1;
+    // TODO(APIv2): remove? or add text_color?
+    string color = 2;
+    // Will be populated only if the system is not obvious
+    optional System system = 8;
+    optional string href = 3;
+  }
 }
 
 message Feed {
@@ -393,13 +458,14 @@ message Feed {
     optional string href = 1;
   }
   optional Updates updates = 4;
-}
 
-message FeedPreview {
-  string id = 1;
-  bool periodic_update_enabled = 2;
-  optional string periodic_update_period = 3;
-  optional string href = 4;
+  // Preview contains preview information about the feed.
+  message Preview {
+    string id = 1;
+    bool periodic_update_enabled = 2;
+    optional string periodic_update_period = 3;
+    optional string href = 4;
+  }
 }
 
 message Agency {
@@ -412,40 +478,56 @@ message Agency {
   optional string fare_url = 7;
   optional string email = 8;
 
-  repeated RoutePreview routes = 9;
-  repeated AlertPreview alerts = 10;
+  repeated Route.Preview routes = 9;
+  repeated Alert.Preview alerts = 10;
+  optional string href = 11;
+
+  // Preview contains preview information about the agency.
+  message Preview {
+    string id = 1;
+    string name = 2;
+    optional string href = 3;
+  }
 }
 
-// TODO(APIv2): delete this message and replace with AgencyPreview?
-message AgencyPreviewWithAlerts {
-  string id = 1;
-  string name = 2;
-  repeated AlertPreview alerts = 4;
-  optional string href = 3;
-}
-
-message AgencyPreview {
-  string id = 1;
-  string name = 2;
-  optional string href = 3;
-}
-
-message AlertPreview {
-  string id = 1;
-  // TODO: make this an enum
-  string cause = 2;
-  // TODO: make this an enum
-  string effect = 3;
-  // TODO(APIv2): add this field and create API endpoints
-  // optional string href = 3;
-}
-
+// TODO; alphabetize the messages
 message Alert {
   string id = 1;
-  // TODO: make this an enum
-  string cause = 2;
-  // TODO: make this an enum
-  string effect = 3;
+
+  // Cause is the same as the alert cause in the GTFS realtime spec, except UNKNOWN_CAUSE has
+  // value 0 to satisfy proto3 requirements.
+  enum Cause {
+    UNKNOWN_CAUSE = 0;
+    OTHER_CAUSE = 2;
+    TECHNICAL_PROBLEM = 3;
+    STRIKE = 4;
+    DEMONSTRATION = 5; 
+    ACCIDENT = 6;
+    HOLIDAY = 7;
+    WEATHER = 8;
+    MAINTENANCE = 9;
+    CONSTRUCTION = 10;
+    POLICE_ACTIVITY = 11;
+    MEDICAL_EMERGENCY = 12;
+  }
+  Cause cause = 2;
+
+  // Effect is the same as the alert effect in the GTFS realtime spec, except UNKNOWN_EFFECT has
+  // value 0 to satisfy proto3 requirements.
+  enum Effect {
+    UNKNOWN_EFFECT = 0;
+    NO_SERVICE = 1;
+    REDUCED_SERVICE = 2;
+    SIGNIFICANT_DELAYS = 3;
+    DETOUR = 4;
+    ADDITIONAL_SERVICE = 5;
+    MODIFIED_SERVICE = 6;
+    OTHER_EFFECT = 7;
+    STOP_MOVED = 9;
+    NO_EFFECT = 10;
+    ACCESSIBILITY_ISSUE = 11;
+  }
+  Effect effect = 3;
 
   message ActivePeriod {
     optional int64 starts_at = 1;
@@ -453,16 +535,23 @@ message Alert {
   }
   ActivePeriod active_period = 4;
 
-  repeated AlertText header = 5;
-  repeated AlertText description = 6;
-  repeated AlertText url = 7;
+  message Text {
+    string text = 1;
+    string language = 2;
+  }
+  repeated Text header = 5;
+  repeated Text description = 6;
+  repeated Text url = 7;
 
   // TODO: informed entites
-}
 
-message AlertText {
-  string text = 1;
-  string language = 2;
+  message Preview {
+    string id = 1;
+    Cause cause = 2;
+    Effect effect = 3;
+    // TODO(APIv2): add this field and create API endpoints
+    // optional string href = 3;
+  }
 }
 
 message EstimatedTime {
@@ -471,27 +560,19 @@ message EstimatedTime {
   optional int32 uncertainty = 3;
 }
 
-message ServiceMapForStop {
-  string config_id = 1;
-  repeated RoutePreview routes = 2;
-}
-
-message ServiceMapForRoute {
-  string config_id = 1;
-  repeated StopPreview stops = 2;
-}
-
-message CountAndHref {
-  int64 count = 1;
-  optional string href = 2;
-}
-
 message Transfer {
-  StopPreview from_stop = 1;
-  StopPreview to_stop = 2;
-  // TODO: make this an enum
-  string type = 3;
-  int32 min_transfer_time = 4;
+  Stop.Preview from_stop = 1;
+  Stop.Preview to_stop = 2;
+
+  enum Type {
+    RECOMMENDED = 0;
+	  TIMED = 1;
+	  REQUIRES_TIME = 2;
+	  NO_POSSIBLE = 3;
+  }
+  Type type = 3;
+
+  optional int32 min_transfer_time = 4;
   optional int32 distance = 5;
 }
 

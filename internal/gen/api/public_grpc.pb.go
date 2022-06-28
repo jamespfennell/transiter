@@ -21,18 +21,18 @@ type PublicClient interface {
 	Entrypoint(ctx context.Context, in *EntrypointRequest, opts ...grpc.CallOption) (*EntrypointReply, error)
 	ListSystems(ctx context.Context, in *ListSystemsRequest, opts ...grpc.CallOption) (*ListSystemsReply, error)
 	GetSystem(ctx context.Context, in *GetSystemRequest, opts ...grpc.CallOption) (*System, error)
-	ListAgenciesInSystem(ctx context.Context, in *ListAgenciesInSystemRequest, opts ...grpc.CallOption) (*ListAgenciesInSystemReply, error)
-	GetAgencyInSystem(ctx context.Context, in *GetAgencyInSystemRequest, opts ...grpc.CallOption) (*Agency, error)
-	ListStopsInSystem(ctx context.Context, in *ListStopsInSystemRequest, opts ...grpc.CallOption) (*ListStopsInSystemReply, error)
-	GetStopInSystem(ctx context.Context, in *GetStopInSystemRequest, opts ...grpc.CallOption) (*Stop, error)
-	ListRoutesInSystem(ctx context.Context, in *ListRoutesInSystemRequest, opts ...grpc.CallOption) (*ListRoutesInSystemReply, error)
-	GetRouteInSystem(ctx context.Context, in *GetRouteInSystemRequest, opts ...grpc.CallOption) (*Route, error)
-	ListTripsInRoute(ctx context.Context, in *ListTripsInRouteRequest, opts ...grpc.CallOption) (*ListTripsInRouteReply, error)
+	ListAgencies(ctx context.Context, in *ListAgenciesRequest, opts ...grpc.CallOption) (*ListAgenciesReply, error)
+	GetAgency(ctx context.Context, in *GetAgencyRequest, opts ...grpc.CallOption) (*Agency, error)
+	ListStops(ctx context.Context, in *ListStopsRequest, opts ...grpc.CallOption) (*ListStopsReply, error)
+	GetStop(ctx context.Context, in *GetStopRequest, opts ...grpc.CallOption) (*Stop, error)
+	ListRoutes(ctx context.Context, in *ListRoutesRequest, opts ...grpc.CallOption) (*ListRoutesReply, error)
+	GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*Route, error)
+	ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsReply, error)
 	GetTrip(ctx context.Context, in *GetTripRequest, opts ...grpc.CallOption) (*Trip, error)
-	ListFeedsInSystem(ctx context.Context, in *ListFeedsInSystemRequest, opts ...grpc.CallOption) (*ListFeedsInSystemReply, error)
-	GetFeedInSystem(ctx context.Context, in *GetFeedInSystemRequest, opts ...grpc.CallOption) (*Feed, error)
+	ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error)
+	GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*Feed, error)
 	ListFeedUpdates(ctx context.Context, in *ListFeedUpdatesRequest, opts ...grpc.CallOption) (*ListFeedUpdatesReply, error)
-	ListTransfersInSystem(ctx context.Context, in *ListTransfersInSystemRequest, opts ...grpc.CallOption) (*ListTransfersInSystemReply, error)
+	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersReply, error)
 }
 
 type publicClient struct {
@@ -70,63 +70,63 @@ func (c *publicClient) GetSystem(ctx context.Context, in *GetSystemRequest, opts
 	return out, nil
 }
 
-func (c *publicClient) ListAgenciesInSystem(ctx context.Context, in *ListAgenciesInSystemRequest, opts ...grpc.CallOption) (*ListAgenciesInSystemReply, error) {
-	out := new(ListAgenciesInSystemReply)
-	err := c.cc.Invoke(ctx, "/Public/ListAgenciesInSystem", in, out, opts...)
+func (c *publicClient) ListAgencies(ctx context.Context, in *ListAgenciesRequest, opts ...grpc.CallOption) (*ListAgenciesReply, error) {
+	out := new(ListAgenciesReply)
+	err := c.cc.Invoke(ctx, "/Public/ListAgencies", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *publicClient) GetAgencyInSystem(ctx context.Context, in *GetAgencyInSystemRequest, opts ...grpc.CallOption) (*Agency, error) {
+func (c *publicClient) GetAgency(ctx context.Context, in *GetAgencyRequest, opts ...grpc.CallOption) (*Agency, error) {
 	out := new(Agency)
-	err := c.cc.Invoke(ctx, "/Public/GetAgencyInSystem", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Public/GetAgency", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *publicClient) ListStopsInSystem(ctx context.Context, in *ListStopsInSystemRequest, opts ...grpc.CallOption) (*ListStopsInSystemReply, error) {
-	out := new(ListStopsInSystemReply)
-	err := c.cc.Invoke(ctx, "/Public/ListStopsInSystem", in, out, opts...)
+func (c *publicClient) ListStops(ctx context.Context, in *ListStopsRequest, opts ...grpc.CallOption) (*ListStopsReply, error) {
+	out := new(ListStopsReply)
+	err := c.cc.Invoke(ctx, "/Public/ListStops", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *publicClient) GetStopInSystem(ctx context.Context, in *GetStopInSystemRequest, opts ...grpc.CallOption) (*Stop, error) {
+func (c *publicClient) GetStop(ctx context.Context, in *GetStopRequest, opts ...grpc.CallOption) (*Stop, error) {
 	out := new(Stop)
-	err := c.cc.Invoke(ctx, "/Public/GetStopInSystem", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Public/GetStop", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *publicClient) ListRoutesInSystem(ctx context.Context, in *ListRoutesInSystemRequest, opts ...grpc.CallOption) (*ListRoutesInSystemReply, error) {
-	out := new(ListRoutesInSystemReply)
-	err := c.cc.Invoke(ctx, "/Public/ListRoutesInSystem", in, out, opts...)
+func (c *publicClient) ListRoutes(ctx context.Context, in *ListRoutesRequest, opts ...grpc.CallOption) (*ListRoutesReply, error) {
+	out := new(ListRoutesReply)
+	err := c.cc.Invoke(ctx, "/Public/ListRoutes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *publicClient) GetRouteInSystem(ctx context.Context, in *GetRouteInSystemRequest, opts ...grpc.CallOption) (*Route, error) {
+func (c *publicClient) GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*Route, error) {
 	out := new(Route)
-	err := c.cc.Invoke(ctx, "/Public/GetRouteInSystem", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Public/GetRoute", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *publicClient) ListTripsInRoute(ctx context.Context, in *ListTripsInRouteRequest, opts ...grpc.CallOption) (*ListTripsInRouteReply, error) {
-	out := new(ListTripsInRouteReply)
-	err := c.cc.Invoke(ctx, "/Public/ListTripsInRoute", in, out, opts...)
+func (c *publicClient) ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsReply, error) {
+	out := new(ListTripsReply)
+	err := c.cc.Invoke(ctx, "/Public/ListTrips", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -142,18 +142,18 @@ func (c *publicClient) GetTrip(ctx context.Context, in *GetTripRequest, opts ...
 	return out, nil
 }
 
-func (c *publicClient) ListFeedsInSystem(ctx context.Context, in *ListFeedsInSystemRequest, opts ...grpc.CallOption) (*ListFeedsInSystemReply, error) {
-	out := new(ListFeedsInSystemReply)
-	err := c.cc.Invoke(ctx, "/Public/ListFeedsInSystem", in, out, opts...)
+func (c *publicClient) ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error) {
+	out := new(ListFeedsReply)
+	err := c.cc.Invoke(ctx, "/Public/ListFeeds", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *publicClient) GetFeedInSystem(ctx context.Context, in *GetFeedInSystemRequest, opts ...grpc.CallOption) (*Feed, error) {
+func (c *publicClient) GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*Feed, error) {
 	out := new(Feed)
-	err := c.cc.Invoke(ctx, "/Public/GetFeedInSystem", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Public/GetFeed", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -169,9 +169,9 @@ func (c *publicClient) ListFeedUpdates(ctx context.Context, in *ListFeedUpdatesR
 	return out, nil
 }
 
-func (c *publicClient) ListTransfersInSystem(ctx context.Context, in *ListTransfersInSystemRequest, opts ...grpc.CallOption) (*ListTransfersInSystemReply, error) {
-	out := new(ListTransfersInSystemReply)
-	err := c.cc.Invoke(ctx, "/Public/ListTransfersInSystem", in, out, opts...)
+func (c *publicClient) ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersReply, error) {
+	out := new(ListTransfersReply)
+	err := c.cc.Invoke(ctx, "/Public/ListTransfers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -185,18 +185,18 @@ type PublicServer interface {
 	Entrypoint(context.Context, *EntrypointRequest) (*EntrypointReply, error)
 	ListSystems(context.Context, *ListSystemsRequest) (*ListSystemsReply, error)
 	GetSystem(context.Context, *GetSystemRequest) (*System, error)
-	ListAgenciesInSystem(context.Context, *ListAgenciesInSystemRequest) (*ListAgenciesInSystemReply, error)
-	GetAgencyInSystem(context.Context, *GetAgencyInSystemRequest) (*Agency, error)
-	ListStopsInSystem(context.Context, *ListStopsInSystemRequest) (*ListStopsInSystemReply, error)
-	GetStopInSystem(context.Context, *GetStopInSystemRequest) (*Stop, error)
-	ListRoutesInSystem(context.Context, *ListRoutesInSystemRequest) (*ListRoutesInSystemReply, error)
-	GetRouteInSystem(context.Context, *GetRouteInSystemRequest) (*Route, error)
-	ListTripsInRoute(context.Context, *ListTripsInRouteRequest) (*ListTripsInRouteReply, error)
+	ListAgencies(context.Context, *ListAgenciesRequest) (*ListAgenciesReply, error)
+	GetAgency(context.Context, *GetAgencyRequest) (*Agency, error)
+	ListStops(context.Context, *ListStopsRequest) (*ListStopsReply, error)
+	GetStop(context.Context, *GetStopRequest) (*Stop, error)
+	ListRoutes(context.Context, *ListRoutesRequest) (*ListRoutesReply, error)
+	GetRoute(context.Context, *GetRouteRequest) (*Route, error)
+	ListTrips(context.Context, *ListTripsRequest) (*ListTripsReply, error)
 	GetTrip(context.Context, *GetTripRequest) (*Trip, error)
-	ListFeedsInSystem(context.Context, *ListFeedsInSystemRequest) (*ListFeedsInSystemReply, error)
-	GetFeedInSystem(context.Context, *GetFeedInSystemRequest) (*Feed, error)
+	ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error)
+	GetFeed(context.Context, *GetFeedRequest) (*Feed, error)
 	ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error)
-	ListTransfersInSystem(context.Context, *ListTransfersInSystemRequest) (*ListTransfersInSystemReply, error)
+	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersReply, error)
 }
 
 // UnimplementedPublicServer should be embedded to have forward compatible implementations.
@@ -212,41 +212,41 @@ func (UnimplementedPublicServer) ListSystems(context.Context, *ListSystemsReques
 func (UnimplementedPublicServer) GetSystem(context.Context, *GetSystemRequest) (*System, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSystem not implemented")
 }
-func (UnimplementedPublicServer) ListAgenciesInSystem(context.Context, *ListAgenciesInSystemRequest) (*ListAgenciesInSystemReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListAgenciesInSystem not implemented")
+func (UnimplementedPublicServer) ListAgencies(context.Context, *ListAgenciesRequest) (*ListAgenciesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAgencies not implemented")
 }
-func (UnimplementedPublicServer) GetAgencyInSystem(context.Context, *GetAgencyInSystemRequest) (*Agency, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAgencyInSystem not implemented")
+func (UnimplementedPublicServer) GetAgency(context.Context, *GetAgencyRequest) (*Agency, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAgency not implemented")
 }
-func (UnimplementedPublicServer) ListStopsInSystem(context.Context, *ListStopsInSystemRequest) (*ListStopsInSystemReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListStopsInSystem not implemented")
+func (UnimplementedPublicServer) ListStops(context.Context, *ListStopsRequest) (*ListStopsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListStops not implemented")
 }
-func (UnimplementedPublicServer) GetStopInSystem(context.Context, *GetStopInSystemRequest) (*Stop, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetStopInSystem not implemented")
+func (UnimplementedPublicServer) GetStop(context.Context, *GetStopRequest) (*Stop, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStop not implemented")
 }
-func (UnimplementedPublicServer) ListRoutesInSystem(context.Context, *ListRoutesInSystemRequest) (*ListRoutesInSystemReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListRoutesInSystem not implemented")
+func (UnimplementedPublicServer) ListRoutes(context.Context, *ListRoutesRequest) (*ListRoutesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRoutes not implemented")
 }
-func (UnimplementedPublicServer) GetRouteInSystem(context.Context, *GetRouteInSystemRequest) (*Route, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRouteInSystem not implemented")
+func (UnimplementedPublicServer) GetRoute(context.Context, *GetRouteRequest) (*Route, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRoute not implemented")
 }
-func (UnimplementedPublicServer) ListTripsInRoute(context.Context, *ListTripsInRouteRequest) (*ListTripsInRouteReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListTripsInRoute not implemented")
+func (UnimplementedPublicServer) ListTrips(context.Context, *ListTripsRequest) (*ListTripsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTrips not implemented")
 }
 func (UnimplementedPublicServer) GetTrip(context.Context, *GetTripRequest) (*Trip, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTrip not implemented")
 }
-func (UnimplementedPublicServer) ListFeedsInSystem(context.Context, *ListFeedsInSystemRequest) (*ListFeedsInSystemReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListFeedsInSystem not implemented")
+func (UnimplementedPublicServer) ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFeeds not implemented")
 }
-func (UnimplementedPublicServer) GetFeedInSystem(context.Context, *GetFeedInSystemRequest) (*Feed, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFeedInSystem not implemented")
+func (UnimplementedPublicServer) GetFeed(context.Context, *GetFeedRequest) (*Feed, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeed not implemented")
 }
 func (UnimplementedPublicServer) ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFeedUpdates not implemented")
 }
-func (UnimplementedPublicServer) ListTransfersInSystem(context.Context, *ListTransfersInSystemRequest) (*ListTransfersInSystemReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListTransfersInSystem not implemented")
+func (UnimplementedPublicServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTransfers not implemented")
 }
 
 // UnsafePublicServer may be embedded to opt out of forward compatibility for this service.
@@ -314,128 +314,128 @@ func _Public_GetSystem_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_ListAgenciesInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListAgenciesInSystemRequest)
+func _Public_ListAgencies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAgenciesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).ListAgenciesInSystem(ctx, in)
+		return srv.(PublicServer).ListAgencies(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/ListAgenciesInSystem",
+		FullMethod: "/Public/ListAgencies",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).ListAgenciesInSystem(ctx, req.(*ListAgenciesInSystemRequest))
+		return srv.(PublicServer).ListAgencies(ctx, req.(*ListAgenciesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_GetAgencyInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAgencyInSystemRequest)
+func _Public_GetAgency_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAgencyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).GetAgencyInSystem(ctx, in)
+		return srv.(PublicServer).GetAgency(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/GetAgencyInSystem",
+		FullMethod: "/Public/GetAgency",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).GetAgencyInSystem(ctx, req.(*GetAgencyInSystemRequest))
+		return srv.(PublicServer).GetAgency(ctx, req.(*GetAgencyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_ListStopsInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListStopsInSystemRequest)
+func _Public_ListStops_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStopsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).ListStopsInSystem(ctx, in)
+		return srv.(PublicServer).ListStops(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/ListStopsInSystem",
+		FullMethod: "/Public/ListStops",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).ListStopsInSystem(ctx, req.(*ListStopsInSystemRequest))
+		return srv.(PublicServer).ListStops(ctx, req.(*ListStopsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_GetStopInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetStopInSystemRequest)
+func _Public_GetStop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStopRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).GetStopInSystem(ctx, in)
+		return srv.(PublicServer).GetStop(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/GetStopInSystem",
+		FullMethod: "/Public/GetStop",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).GetStopInSystem(ctx, req.(*GetStopInSystemRequest))
+		return srv.(PublicServer).GetStop(ctx, req.(*GetStopRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_ListRoutesInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListRoutesInSystemRequest)
+func _Public_ListRoutes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRoutesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).ListRoutesInSystem(ctx, in)
+		return srv.(PublicServer).ListRoutes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/ListRoutesInSystem",
+		FullMethod: "/Public/ListRoutes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).ListRoutesInSystem(ctx, req.(*ListRoutesInSystemRequest))
+		return srv.(PublicServer).ListRoutes(ctx, req.(*ListRoutesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_GetRouteInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRouteInSystemRequest)
+func _Public_GetRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRouteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).GetRouteInSystem(ctx, in)
+		return srv.(PublicServer).GetRoute(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/GetRouteInSystem",
+		FullMethod: "/Public/GetRoute",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).GetRouteInSystem(ctx, req.(*GetRouteInSystemRequest))
+		return srv.(PublicServer).GetRoute(ctx, req.(*GetRouteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_ListTripsInRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTripsInRouteRequest)
+func _Public_ListTrips_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTripsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).ListTripsInRoute(ctx, in)
+		return srv.(PublicServer).ListTrips(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/ListTripsInRoute",
+		FullMethod: "/Public/ListTrips",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).ListTripsInRoute(ctx, req.(*ListTripsInRouteRequest))
+		return srv.(PublicServer).ListTrips(ctx, req.(*ListTripsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -458,38 +458,38 @@ func _Public_GetTrip_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_ListFeedsInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListFeedsInSystemRequest)
+func _Public_ListFeeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFeedsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).ListFeedsInSystem(ctx, in)
+		return srv.(PublicServer).ListFeeds(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/ListFeedsInSystem",
+		FullMethod: "/Public/ListFeeds",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).ListFeedsInSystem(ctx, req.(*ListFeedsInSystemRequest))
+		return srv.(PublicServer).ListFeeds(ctx, req.(*ListFeedsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_GetFeedInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetFeedInSystemRequest)
+func _Public_GetFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).GetFeedInSystem(ctx, in)
+		return srv.(PublicServer).GetFeed(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/GetFeedInSystem",
+		FullMethod: "/Public/GetFeed",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).GetFeedInSystem(ctx, req.(*GetFeedInSystemRequest))
+		return srv.(PublicServer).GetFeed(ctx, req.(*GetFeedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -512,20 +512,20 @@ func _Public_ListFeedUpdates_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_ListTransfersInSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTransfersInSystemRequest)
+func _Public_ListTransfers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTransfersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PublicServer).ListTransfersInSystem(ctx, in)
+		return srv.(PublicServer).ListTransfers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Public/ListTransfersInSystem",
+		FullMethod: "/Public/ListTransfers",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).ListTransfersInSystem(ctx, req.(*ListTransfersInSystemRequest))
+		return srv.(PublicServer).ListTransfers(ctx, req.(*ListTransfersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -550,52 +550,52 @@ var Public_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Public_GetSystem_Handler,
 		},
 		{
-			MethodName: "ListAgenciesInSystem",
-			Handler:    _Public_ListAgenciesInSystem_Handler,
+			MethodName: "ListAgencies",
+			Handler:    _Public_ListAgencies_Handler,
 		},
 		{
-			MethodName: "GetAgencyInSystem",
-			Handler:    _Public_GetAgencyInSystem_Handler,
+			MethodName: "GetAgency",
+			Handler:    _Public_GetAgency_Handler,
 		},
 		{
-			MethodName: "ListStopsInSystem",
-			Handler:    _Public_ListStopsInSystem_Handler,
+			MethodName: "ListStops",
+			Handler:    _Public_ListStops_Handler,
 		},
 		{
-			MethodName: "GetStopInSystem",
-			Handler:    _Public_GetStopInSystem_Handler,
+			MethodName: "GetStop",
+			Handler:    _Public_GetStop_Handler,
 		},
 		{
-			MethodName: "ListRoutesInSystem",
-			Handler:    _Public_ListRoutesInSystem_Handler,
+			MethodName: "ListRoutes",
+			Handler:    _Public_ListRoutes_Handler,
 		},
 		{
-			MethodName: "GetRouteInSystem",
-			Handler:    _Public_GetRouteInSystem_Handler,
+			MethodName: "GetRoute",
+			Handler:    _Public_GetRoute_Handler,
 		},
 		{
-			MethodName: "ListTripsInRoute",
-			Handler:    _Public_ListTripsInRoute_Handler,
+			MethodName: "ListTrips",
+			Handler:    _Public_ListTrips_Handler,
 		},
 		{
 			MethodName: "GetTrip",
 			Handler:    _Public_GetTrip_Handler,
 		},
 		{
-			MethodName: "ListFeedsInSystem",
-			Handler:    _Public_ListFeedsInSystem_Handler,
+			MethodName: "ListFeeds",
+			Handler:    _Public_ListFeeds_Handler,
 		},
 		{
-			MethodName: "GetFeedInSystem",
-			Handler:    _Public_GetFeedInSystem_Handler,
+			MethodName: "GetFeed",
+			Handler:    _Public_GetFeed_Handler,
 		},
 		{
 			MethodName: "ListFeedUpdates",
 			Handler:    _Public_ListFeedUpdates_Handler,
 		},
 		{
-			MethodName: "ListTransfersInSystem",
-			Handler:    _Public_ListTransfersInSystem_Handler,
+			MethodName: "ListTransfers",
+			Handler:    _Public_ListTransfers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

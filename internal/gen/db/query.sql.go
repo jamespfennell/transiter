@@ -85,17 +85,6 @@ func (q *Queries) CountStopsInSystem(ctx context.Context, systemPk int64) (int64
 	return count, err
 }
 
-const countSystems = `-- name: CountSystems :one
-SELECT COUNT(*) FROM system
-`
-
-func (q *Queries) CountSystems(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countSystems)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const countTransfersInSystem = `-- name: CountTransfersInSystem :one
 SELECT COUNT(*) FROM transfer WHERE system_pk = $1
 `
@@ -105,37 +94,6 @@ func (q *Queries) CountTransfersInSystem(ctx context.Context, systemPk sql.NullI
 	var count int64
 	err := row.Scan(&count)
 	return count, err
-}
-
-const getAgencyInSystem = `-- name: GetAgencyInSystem :one
-SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency
-    INNER JOIN system ON agency.system_pk = system.pk
-WHERE system.id = $1
-    AND agency.id = $2
-`
-
-type GetAgencyInSystemParams struct {
-	SystemID string
-	AgencyID string
-}
-
-func (q *Queries) GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error) {
-	row := q.db.QueryRow(ctx, getAgencyInSystem, arg.SystemID, arg.AgencyID)
-	var i Agency
-	err := row.Scan(
-		&i.Pk,
-		&i.ID,
-		&i.SystemPk,
-		&i.SourcePk,
-		&i.Name,
-		&i.Url,
-		&i.Timezone,
-		&i.Language,
-		&i.Phone,
-		&i.FareUrl,
-		&i.Email,
-	)
-	return i, err
 }
 
 const getLastStopsForTrips = `-- name: GetLastStopsForTrips :many
@@ -489,42 +447,6 @@ func (q *Queries) ListActiveAlertsForStops(ctx context.Context, arg ListActiveAl
 			&i.Effect,
 			&i.StartsAt,
 			&i.EndsAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listAgenciesInSystem = `-- name: ListAgenciesInSystem :many
-SELECT pk, id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email FROM agency WHERE system_pk = $1 ORDER BY id
-`
-
-func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]Agency, error) {
-	rows, err := q.db.Query(ctx, listAgenciesInSystem, systemPk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Agency
-	for rows.Next() {
-		var i Agency
-		if err := rows.Scan(
-			&i.Pk,
-			&i.ID,
-			&i.SystemPk,
-			&i.SourcePk,
-			&i.Name,
-			&i.Url,
-			&i.Timezone,
-			&i.Language,
-			&i.Phone,
-			&i.FareUrl,
-			&i.Email,
 		); err != nil {
 			return nil, err
 		}

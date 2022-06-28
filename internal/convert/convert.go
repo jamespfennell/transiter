@@ -99,15 +99,35 @@ func NullDuration(d *time.Duration) sql.NullInt32 {
 	}
 }
 
-func AlertText(s string) []*api.AlertText {
+func AlertText(s string) []*api.Alert_Text {
 	var in []gtfs.AlertText
 	json.Unmarshal([]byte(s), &in)
-	var out []*api.AlertText
+	var out []*api.Alert_Text
 	for _, text := range in {
-		out = append(out, &api.AlertText{
+		out = append(out, &api.Alert_Text{
 			Text:     text.Text,
 			Language: text.Language,
 		})
 	}
 	return out
+}
+
+func AlertCause(cause string) api.Alert_Cause {
+	return api.Alert_Cause(api.Alert_Cause_value[cause])
+}
+
+func AlertEffect(effect string) api.Alert_Effect {
+	return api.Alert_Effect(api.Alert_Effect_value[effect])
+}
+
+func AlertPreview(id, cause, effect string) *api.Alert_Preview {
+	return &api.Alert_Preview{
+		Id:     id,
+		Cause:  AlertCause(cause),
+		Effect: AlertEffect(effect),
+	}
+}
+
+func TransferType(t string) api.Transfer_Type {
+	return api.Transfer_Type(api.Transfer_Type_value[t])
 }

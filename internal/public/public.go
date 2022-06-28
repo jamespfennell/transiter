@@ -34,48 +34,48 @@ func (s *Server) GetSystem(ctx context.Context, req *api.GetSystemRequest) (*api
 	return run(ctx, s, endpoints.GetSystem, req)
 }
 
-func (s *Server) ListAgenciesInSystem(ctx context.Context, req *api.ListAgenciesInSystemRequest) (*api.ListAgenciesInSystemReply, error) {
-	return run(ctx, s, endpoints.ListAgenciesInSystem, req)
+func (s *Server) ListAgencies(ctx context.Context, req *api.ListAgenciesRequest) (*api.ListAgenciesReply, error) {
+	return run(ctx, s, endpoints.ListAgencies, req)
 }
 
-func (s *Server) GetAgencyInSystem(ctx context.Context, req *api.GetAgencyInSystemRequest) (*api.Agency, error) {
-	return run(ctx, s, endpoints.GetAgencyInSystem, req)
+func (s *Server) GetAgency(ctx context.Context, req *api.GetAgencyRequest) (*api.Agency, error) {
+	return run(ctx, s, endpoints.GetAgency, req)
 }
 
-func (s *Server) ListStopsInSystem(ctx context.Context, req *api.ListStopsInSystemRequest) (*api.ListStopsInSystemReply, error) {
-	return run(ctx, s, endpoints.ListStopsInSystem, req)
+func (s *Server) ListStops(ctx context.Context, req *api.ListStopsRequest) (*api.ListStopsReply, error) {
+	return run(ctx, s, endpoints.ListStops, req)
 }
 
-func (s *Server) ListTransfersInSystem(ctx context.Context, req *api.ListTransfersInSystemRequest) (*api.ListTransfersInSystemReply, error) {
-	return run(ctx, s, endpoints.ListTransfersInSystem, req)
+func (s *Server) ListTransfers(ctx context.Context, req *api.ListTransfersRequest) (*api.ListTransfersReply, error) {
+	return run(ctx, s, endpoints.ListTransfers, req)
 }
 
-func (s *Server) GetStopInSystem(ctx context.Context, req *api.GetStopInSystemRequest) (*api.Stop, error) {
-	return run(ctx, s, endpoints.GetStopInSystem, req)
+func (s *Server) GetStop(ctx context.Context, req *api.GetStopRequest) (*api.Stop, error) {
+	return run(ctx, s, endpoints.GetStop, req)
 }
 
-func (s *Server) ListRoutesInSystem(ctx context.Context, req *api.ListRoutesInSystemRequest) (*api.ListRoutesInSystemReply, error) {
-	return run(ctx, s, endpoints.ListRoutesInSystem, req)
+func (s *Server) ListRoutes(ctx context.Context, req *api.ListRoutesRequest) (*api.ListRoutesReply, error) {
+	return run(ctx, s, endpoints.ListRoutes, req)
 }
 
-func (s *Server) GetRouteInSystem(ctx context.Context, req *api.GetRouteInSystemRequest) (*api.Route, error) {
-	return run(ctx, s, endpoints.GetRouteInSystem, req)
+func (s *Server) GetRoute(ctx context.Context, req *api.GetRouteRequest) (*api.Route, error) {
+	return run(ctx, s, endpoints.GetRoute, req)
 }
 
-func (s *Server) ListFeedsInSystem(ctx context.Context, req *api.ListFeedsInSystemRequest) (*api.ListFeedsInSystemReply, error) {
-	return run(ctx, s, endpoints.ListFeedsInSystem, req)
+func (s *Server) ListFeeds(ctx context.Context, req *api.ListFeedsRequest) (*api.ListFeedsReply, error) {
+	return run(ctx, s, endpoints.ListFeeds, req)
 }
 
-func (s *Server) GetFeedInSystem(ctx context.Context, req *api.GetFeedInSystemRequest) (*api.Feed, error) {
-	return run(ctx, s, endpoints.GetFeedInSystem, req)
+func (s *Server) GetFeed(ctx context.Context, req *api.GetFeedRequest) (*api.Feed, error) {
+	return run(ctx, s, endpoints.GetFeed, req)
 }
 
 func (s *Server) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesRequest) (*api.ListFeedUpdatesReply, error) {
 	return run(ctx, s, endpoints.ListFeedUpdates, req)
 }
 
-func (s *Server) ListTripsInRoute(ctx context.Context, req *api.ListTripsInRouteRequest) (*api.ListTripsInRouteReply, error) {
-	return run(ctx, s, endpoints.ListTripsInRoute, req)
+func (s *Server) ListTrips(ctx context.Context, req *api.ListTripsRequest) (*api.ListTripsReply, error) {
+	return run(ctx, s, endpoints.ListTrips, req)
 }
 
 func (s *Server) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Trip, error) {

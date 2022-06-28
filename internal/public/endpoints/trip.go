@@ -11,7 +11,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func ListTripsInRoute(ctx context.Context, r *Context, req *api.ListTripsInRouteRequest) (*api.ListTripsInRouteReply, error) {
+func ListTrips(ctx context.Context, r *Context, req *api.ListTripsRequest) (*api.ListTripsReply, error) {
 	route, err := r.Querier.GetRouteInSystem(ctx,
 		db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
 	if err != nil {
@@ -39,15 +39,15 @@ func ListTripsInRoute(ctx context.Context, r *Context, req *api.ListTripsInRoute
 		tripPkToLastStop[row.TripPk] = &row
 	}
 
-	reply := &api.ListTripsInRouteReply{}
+	reply := &api.ListTripsReply{}
 	for _, trip := range trips {
 		trip := trip
 		lastStop := tripPkToLastStop[trip.Pk]
-		apiTrip := &api.TripPreviewWithAlerts{
+		apiTrip := &api.Trip_Preview{
 			Id:          trip.ID,
 			DirectionId: trip.DirectionID.Bool,
 			StartedAt:   convert.SQLNullTime(trip.StartedAt),
-			LastStop: &api.StopPreview{
+			LastStop: &api.Stop_Preview{
 				Id:   lastStop.ID,
 				Name: lastStop.Name.String,
 				Href: r.Href.Stop(req.SystemId, lastStop.ID),
@@ -55,7 +55,7 @@ func ListTripsInRoute(ctx context.Context, r *Context, req *api.ListTripsInRoute
 			Href: r.Href.Trip(req.SystemId, route.ID, trip.ID),
 		}
 		if trip.VehicleID.Valid {
-			apiTrip.Vehicle = &api.VehiclePreview{
+			apiTrip.Vehicle = &api.Vehicle_Preview{
 				Id: trip.VehicleID.String,
 			}
 		}
@@ -82,7 +82,7 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 		Id:          trip.ID,
 		DirectionId: trip.DirectionID.Bool,
 		StartedAt:   convert.SQLNullTime(trip.StartedAt),
-		Route: &api.RoutePreview{
+		Route: &api.Route_Preview{
 			Id:    trip.RouteID,
 			Color: trip.RouteColor,
 			Href:  r.Href.Route(req.SystemId, req.RouteId),
@@ -90,7 +90,7 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 		Href: r.Href.Trip(req.SystemId, req.RouteId, req.TripId),
 	}
 	if trip.VehicleID.Valid {
-		reply.Vehicle = &api.VehiclePreview{
+		reply.Vehicle = &api.Vehicle_Preview{
 			Id: trip.VehicleID.String,
 		}
 	}
@@ -101,7 +101,7 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 			Future:       !stopTime.Past,
 			Arrival:      buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
 			Departure:    buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
-			Stop: &api.StopPreview{
+			Stop: &api.Stop_Preview{
 				Id:   stopTime.StopID,
 				Name: stopTime.StopName.String,
 				Href: r.Href.Stop(req.SystemId, stopTime.StopID),

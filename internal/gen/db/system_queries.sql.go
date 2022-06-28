@@ -37,6 +37,30 @@ func (q *Queries) InsertSystem(ctx context.Context, arg InsertSystemParams) (int
 	return pk, err
 }
 
+const listSystemIDs = `-- name: ListSystemIDs :many
+SELECT id FROM system
+`
+
+func (q *Queries) ListSystemIDs(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, listSystemIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateSystem = `-- name: UpdateSystem :exec
 UPDATE system 
 SET

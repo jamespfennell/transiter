@@ -17,3 +17,6 @@ WHERE pk = sqlc.arg(pk);
 
 -- name: DeleteSystem :exec
 DELETE FROM system WHERE pk = sqlc.arg(pk);
+
+-- name: ListSystemIDs :many
+SELECT id FROM system;

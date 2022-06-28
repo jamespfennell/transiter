@@ -14,7 +14,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
-func ListRoutesInSystem(ctx context.Context, r *Context, req *api.ListRoutesInSystemRequest) (*api.ListRoutesInSystemReply, error) {
+func ListRoutes(ctx context.Context, r *Context, req *api.ListRoutesRequest) (*api.ListRoutesReply, error) {
 	system, err := r.Querier.GetSystem(ctx, req.SystemId)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -38,15 +38,14 @@ func ListRoutesInSystem(ctx context.Context, r *Context, req *api.ListRoutesInSy
 	if err != nil {
 		return nil, err
 	}
-	routePkToAlertRows := map[int64][]*api.AlertPreview{}
+	routePkToAlertRows := map[int64][]*api.Alert_Preview{}
 	for _, alert := range alerts {
-		routePkToAlertRows[alert.RoutePk] = append(routePkToAlertRows[alert.RoutePk], &api.AlertPreview{
-			Id:     alert.ID,
-			Cause:  alert.Cause,
-			Effect: alert.Effect,
-		})
+		routePkToAlertRows[alert.RoutePk] = append(
+			routePkToAlertRows[alert.RoutePk],
+			convert.AlertPreview(alert.ID, alert.Cause, alert.Effect),
+		)
 	}
-	reply := &api.ListRoutesInSystemReply{}
+	reply := &api.ListRoutesReply{}
 	for _, route := range routes {
 		reply.Routes = append(reply.Routes, &api.RoutePreviewWithAlerts{
 			Id:     route.ID,
@@ -58,7 +57,7 @@ func ListRoutesInSystem(ctx context.Context, r *Context, req *api.ListRoutesInSy
 	return reply, nil
 }
 
-func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystemRequest) (*api.Route, error) {
+func GetRoute(ctx context.Context, r *Context, req *api.GetRouteRequest) (*api.Route, error) {
 	startTime := time.Now()
 	route, err := r.Querier.GetRouteInSystem(ctx, db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
 	if err != nil {
@@ -71,10 +70,10 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 	if err != nil {
 		return nil, err
 	}
-	configIDToServiceMap := map[string]*api.ServiceMapForRoute{}
+	configIDToServiceMap := map[string]*api.Route_ServiceMap{}
 	for _, row := range serviceMapRows {
 		if _, ok := configIDToServiceMap[row.ConfigID]; !ok {
-			configIDToServiceMap[row.ConfigID] = &api.ServiceMapForRoute{
+			configIDToServiceMap[row.ConfigID] = &api.Route_ServiceMap{
 				ConfigId: row.ConfigID,
 			}
 		}
@@ -83,14 +82,14 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 		}
 		configIDToServiceMap[row.ConfigID].Stops = append(
 			configIDToServiceMap[row.ConfigID].Stops,
-			&api.StopPreview{
+			&api.Stop_Preview{
 				Id:   row.StopID.String,
 				Name: row.StopName.String,
 				Href: r.Href.Stop(req.SystemId, row.StopID.String),
 			},
 		)
 	}
-	serviceMapsReply := []*api.ServiceMapForRoute{}
+	serviceMapsReply := []*api.Route_ServiceMap{}
 	for _, serviceMap := range configIDToServiceMap {
 		serviceMapsReply = append(serviceMapsReply, serviceMap)
 	}
@@ -121,8 +120,8 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 	for _, alert := range alerts {
 		alertsReply = append(alertsReply, &api.Alert{
 			Id:     alert.ID,
-			Cause:  alert.Cause,
-			Effect: alert.Effect,
+			Cause:  convert.AlertCause(alert.Cause),
+			Effect: convert.AlertEffect(alert.Effect),
 			ActivePeriod: &api.Alert_ActivePeriod{
 				StartsAt: convert.SQLNullTime(alert.StartsAt),
 				EndsAt:   convert.SQLNullTime(alert.EndsAt),
@@ -146,7 +145,7 @@ func GetRouteInSystem(ctx context.Context, r *Context, req *api.GetRouteInSystem
 		ContinuousDropOff: route.ContinuousDropOff,
 		Type:              route.Type,
 		Periodicity:       periodicity,
-		Agency: &api.AgencyPreview{
+		Agency: &api.Agency_Preview{
 			Id:   route.AgencyID,
 			Name: route.AgencyName,
 			Href: r.Href.Agency(req.SystemId, route.AgencyID),
