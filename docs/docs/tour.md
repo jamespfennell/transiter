@@ -164,7 +164,7 @@ The start of response will look like this,
   "description": "",
   "url": "http://www.bart.gov/schedules/bylineresults?route=3",
   "type": "SUBWAY",
-  "periodicity": 7.5,
+  "estimated_headway": 300,
   "agency": null,
   "alerts": [],
   "service_maps": // public map definitions in here
@@ -175,9 +175,9 @@ Most of the basic data here, such as [the color FF9933](https://www.color-hex.co
 is taken from the GTFS Static feed.
 The *alerts* are taken from the GTFS Realtime feed.
 Depending on the current state of the system when you take the tour, this may be empty.
-The *periodicity* is calculated by Transiter.
+The *estiamted headway* is calculated by Transiter.
 It is the current average time between realtime trips on this route.
-If there is insufficient data to calculate the periodicity, it will be `null`.
+If there is insufficient data to estimate the headway, it will be `null`.
 
 Arguably the most useful data here, though, are the *service maps*.
 

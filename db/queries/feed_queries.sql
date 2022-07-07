@@ -59,3 +59,6 @@ SET status = sqlc.arg(status),
     content_hash = sqlc.arg(content_hash),
     error_message = sqlc.arg(error_message)
 WHERE pk = sqlc.arg(update_pk);
+
+-- name: GetFeedUpdate :one
+SELECT * FROM feed_update WHERE pk = sqlc.arg(pk);

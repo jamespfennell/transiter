@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jackc/pgtype"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbtesting"
@@ -56,27 +55,20 @@ func TestMapStopIDToStationPk(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			q := dbtesting.NewQuerier(t)
-			systemPk := q.System1().Pk
-			updatePk := q.Update1Pk()
+			system := q.NewSystem("system1")
 			insertStop := func(id string, t gtfs.StopType, parentPk *int64) int64 {
-				pk, err := q.InsertStop(context.Background(), db.InsertStopParams{
-					ID:        id,
-					SystemPk:  systemPk,
-					SourcePk:  updatePk,
-					Type:      t.String(),
-					Longitude: pgtype.Numeric{Status: pgtype.Null},
-					Latitude:  pgtype.Numeric{Status: pgtype.Null},
+				stop := system.NewStop(id, db.InsertStopParams{
+					Type: t.String(),
 				})
-				q.AssertNilErr(err, fmt.Sprintf("insert stop %q", id))
-				err = q.UpdateStopParent(context.Background(), db.UpdateStopParentParams{
-					Pk:           pk,
+				err := q.UpdateStopParent(context.Background(), db.UpdateStopParentParams{
+					Pk:           stop.Pk,
 					ParentStopPk: convert.NullInt64(parentPk),
 				})
 				q.AssertNilErr(err, fmt.Sprintf("update parent of stop %q", id))
-				return pk
+				return stop.Pk
 			}
 			want := tc.wantFunc(insertStop)
-			got, err := dbwrappers.MapStopIDToStationPk(context.Background(), q, systemPk)
+			got, err := dbwrappers.MapStopIDToStationPk(context.Background(), q, system.Data.Pk)
 			if err != nil {
 				t.Fatalf("MapStopIDToStationPk() err = %+v, want err = nil", err)
 			}

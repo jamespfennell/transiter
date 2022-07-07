@@ -93,19 +93,13 @@ func GetRoute(ctx context.Context, r *Context, req *api.GetRouteRequest) (*api.R
 	for _, serviceMap := range configIDToServiceMap {
 		serviceMapsReply = append(serviceMapsReply, serviceMap)
 	}
-	nullablePeriodicity, err := r.Querier.CalculatePeriodicityForRoute(ctx, db.CalculatePeriodicityForRouteParams{
-		RoutePk: route.Pk,
-		PresentTime: sql.NullTime{
-			Valid: true,
-			Time:  time.Now(),
-		},
-	})
+	estimatedHeadways, err := estimateHeadwaysForRoutes(ctx, r.Querier, []int64{route.Pk})
 	if err != nil {
 		return nil, err
 	}
-	var periodicity *int32
-	if nullablePeriodicity >= 0 {
-		periodicity = &nullablePeriodicity
+	var estimatedHeadway *int32
+	if p, ok := estimatedHeadways[route.Pk]; ok {
+		estimatedHeadway = &p
 	}
 
 	alerts, err := r.Querier.ListActiveAlertsForRoutes(
@@ -144,7 +138,7 @@ func GetRoute(ctx context.Context, r *Context, req *api.GetRouteRequest) (*api.R
 		ContinuousPickup:  route.ContinuousPickup,
 		ContinuousDropOff: route.ContinuousDropOff,
 		Type:              route.Type,
-		Periodicity:       periodicity,
+		EstimatedHeadway:  estimatedHeadway,
 		Agency: &api.Agency_Preview{
 			Id:   route.AgencyID,
 			Name: route.AgencyName,
@@ -155,4 +149,22 @@ func GetRoute(ctx context.Context, r *Context, req *api.GetRouteRequest) (*api.R
 	}
 	log.Println("GetRouteInSystem took", time.Since(startTime))
 	return reply, nil
+}
+
+func estimateHeadwaysForRoutes(ctx context.Context, querier db.Querier, routePks []int64) (map[int64]int32, error) {
+	rows, err := querier.EstimateHeadwaysForRoutes(ctx, db.EstimateHeadwaysForRoutesParams{
+		RoutePks: routePks,
+		PresentTime: sql.NullTime{
+			Valid: true,
+			Time:  time.Now(),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	m := map[int64]int32{}
+	for _, row := range rows {
+		m[row.RoutePk] = row.EstimatedHeadway
+	}
+	return m, nil
 }

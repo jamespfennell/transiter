@@ -100,6 +100,27 @@ func (q *Queries) GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams
 	return i, err
 }
 
+const getFeedUpdate = `-- name: GetFeedUpdate :one
+SELECT pk, feed_pk, status, started_at, ended_at, result, content_length, content_hash, error_message FROM feed_update WHERE pk = $1
+`
+
+func (q *Queries) GetFeedUpdate(ctx context.Context, pk int64) (FeedUpdate, error) {
+	row := q.db.QueryRow(ctx, getFeedUpdate, pk)
+	var i FeedUpdate
+	err := row.Scan(
+		&i.Pk,
+		&i.FeedPk,
+		&i.Status,
+		&i.StartedAt,
+		&i.EndedAt,
+		&i.Result,
+		&i.ContentLength,
+		&i.ContentHash,
+		&i.ErrorMessage,
+	)
+	return i, err
+}
+
 const getLastFeedUpdateContentHash = `-- name: GetLastFeedUpdateContentHash :one
 SELECT content_hash
 FROM feed_update

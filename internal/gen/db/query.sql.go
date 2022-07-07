@@ -8,38 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
-
-	"github.com/jackc/pgtype"
 )
-
-const calculatePeriodicityForRoute = `-- name: CalculatePeriodicityForRoute :one
-WITH per_stop_data AS (
-  SELECT
-    EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) total_diff,
-    COUNT(*)-1 num_diffs
-  FROM trip_stop_time
-    INNER JOIN trip ON trip.pk = trip_stop_time.trip_pk
-  WHERE trip.route_pk = $1
-    AND NOT trip_stop_time.past
-    AND trip_stop_time.arrival_time IS NOT NULL
-    AND trip_stop_time.arrival_time >= $2
-  GROUP BY trip_stop_time.stop_pk
-    HAVING COUNT(*) > 1
-)
-SELECT COALESCE(ROUND(SUM(total_diff) / (SUM(num_diffs)))::integer, -1)::integer FROM per_stop_data
-`
-
-type CalculatePeriodicityForRouteParams struct {
-	RoutePk     int64
-	PresentTime sql.NullTime
-}
-
-func (q *Queries) CalculatePeriodicityForRoute(ctx context.Context, arg CalculatePeriodicityForRouteParams) (int32, error) {
-	row := q.db.QueryRow(ctx, calculatePeriodicityForRoute, arg.RoutePk, arg.PresentTime)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
-}
 
 const countAgenciesInSystem = `-- name: CountAgenciesInSystem :one
 SELECT COUNT(*) FROM agency WHERE system_pk = $1
@@ -197,7 +166,7 @@ func (q *Queries) GetRouteInSystem(ctx context.Context, arg GetRouteInSystemPara
 }
 
 const getStopInSystem = `-- name: GetStopInSystem :one
-SELECT stop.pk, stop.id, system_pk, source_pk, parent_stop_pk, stop.name, longitude, latitude, url, code, description, platform_code, stop.timezone, type, wheelchair_boarding, zone_id, system.pk, system.id, system.name, system.timezone, status FROM stop
+SELECT stop.pk, stop.id, stop.system_pk, stop.source_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id FROM stop
     INNER JOIN system ON stop.system_pk = system.pk
     WHERE system.id = $1
     AND stop.id = $2
@@ -208,33 +177,9 @@ type GetStopInSystemParams struct {
 	StopID   string
 }
 
-type GetStopInSystemRow struct {
-	Pk                 int64
-	ID                 string
-	SystemPk           int64
-	SourcePk           int64
-	ParentStopPk       sql.NullInt64
-	Name               sql.NullString
-	Longitude          pgtype.Numeric
-	Latitude           pgtype.Numeric
-	Url                sql.NullString
-	Code               sql.NullString
-	Description        sql.NullString
-	PlatformCode       sql.NullString
-	Timezone           sql.NullString
-	Type               string
-	WheelchairBoarding string
-	ZoneID             sql.NullString
-	Pk_2               int64
-	ID_2               string
-	Name_2             string
-	Timezone_2         sql.NullString
-	Status             string
-}
-
-func (q *Queries) GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (GetStopInSystemRow, error) {
+func (q *Queries) GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (Stop, error) {
 	row := q.db.QueryRow(ctx, getStopInSystem, arg.SystemID, arg.StopID)
-	var i GetStopInSystemRow
+	var i Stop
 	err := row.Scan(
 		&i.Pk,
 		&i.ID,
@@ -252,11 +197,6 @@ func (q *Queries) GetStopInSystem(ctx context.Context, arg GetStopInSystemParams
 		&i.Type,
 		&i.WheelchairBoarding,
 		&i.ZoneID,
-		&i.Pk_2,
-		&i.ID_2,
-		&i.Name_2,
-		&i.Timezone_2,
-		&i.Status,
 	)
 	return i, err
 }
@@ -320,6 +260,24 @@ func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, e
 		&i.VehicleID,
 		&i.RouteID,
 		&i.RouteColor,
+	)
+	return i, err
+}
+
+const getTripByPk = `-- name: GetTripByPk :one
+SELECT pk, id, route_pk, source_pk, direction_id, started_at FROM trip WHERE pk = $1
+`
+
+func (q *Queries) GetTripByPk(ctx context.Context, pk int64) (Trip, error) {
+	row := q.db.QueryRow(ctx, getTripByPk, pk)
+	var i Trip
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.RoutePk,
+		&i.SourcePk,
+		&i.DirectionID,
+		&i.StartedAt,
 	)
 	return i, err
 }

@@ -424,8 +424,8 @@ message Route {
   // TODO: make this an enum
   string type = 8;
 
-  // An estimate of the period between consecutive train, in seconds.
-  optional int32 periodicity = 9;
+  // An estimate of the interval of time between consecutive trains, in seconds.
+  optional int32 estimated_headway = 9;
 
   Agency.Preview agency = 10;
 

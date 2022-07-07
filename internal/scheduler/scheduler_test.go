@@ -34,7 +34,7 @@ func TestScheduler(t *testing.T) {
 		expectedUpdates map[systemAndFeed]int
 	}{
 		{
-			description: "just change periodicity of one feed",
+			description: "just change period of one feed",
 			update: []SystemConfig{
 				{
 					ID: systemID1,

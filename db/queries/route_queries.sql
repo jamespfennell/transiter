@@ -12,6 +12,9 @@ VALUES
      sqlc.arg(type), sqlc.arg(continuous_pickup),sqlc.arg(continuous_drop_off), sqlc.arg(agency_pk))
 RETURNING pk;
 
+-- name: GetRoute :one
+SELECT * FROM route WHERE pk = sqlc.arg(pk);
+
 -- name: UpdateRoute :exec
 UPDATE route SET
     source_pk = sqlc.arg(source_pk),
@@ -38,9 +41,29 @@ WHERE
     AND feed_update.pk != sqlc.arg(update_pk)
 RETURNING route.id;
 
-
 -- name: MapRoutesInSystem :many
 SELECT pk, id from route
 WHERE
     system_pk = sqlc.arg(system_pk)
     AND id = ANY(sqlc.arg(route_ids)::text[]);
+
+-- name: EstimateHeadwaysForRoutes :many
+WITH per_stop_data AS (
+    SELECT
+        trip.route_pk route_pk,
+        EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) total_diff,
+        COUNT(*)-1 num_diffs
+    FROM trip_stop_time
+        INNER JOIN trip ON trip.pk = trip_stop_time.trip_pk
+    WHERE trip.route_pk = ANY(sqlc.arg(route_pks)::bigint[])
+        AND NOT trip_stop_time.past
+        AND trip_stop_time.arrival_time IS NOT NULL
+        AND trip_stop_time.arrival_time >= sqlc.arg(present_time)
+    GROUP BY trip_stop_time.stop_pk, trip.route_pk
+        HAVING COUNT(*) > 1
+)
+SELECT 
+    route_pk,
+    COALESCE(ROUND(SUM(total_diff) / (SUM(num_diffs)))::integer, -1)::integer estimated_headway
+FROM per_stop_data
+GROUP BY route_pk;

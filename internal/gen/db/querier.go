@@ -10,7 +10,6 @@ import (
 )
 
 type Querier interface {
-	CalculatePeriodicityForRoute(ctx context.Context, arg CalculatePeriodicityForRouteParams) (int32, error)
 	CountAgenciesInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountFeedsInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountRoutesInSystem(ctx context.Context, systemPk int64) (int64, error)
@@ -31,16 +30,20 @@ type Querier interface {
 	DeleteStopHeadsignRules(ctx context.Context, sourcePk int64) error
 	DeleteSystem(ctx context.Context, pk int64) error
 	DeleteTripStopTimes(ctx context.Context, pks []int64) error
+	EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHeadwaysForRoutesParams) ([]EstimateHeadwaysForRoutesRow, error)
 	FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdateParams) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
 	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
 	GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error)
+	GetFeedUpdate(ctx context.Context, pk int64) (FeedUpdate, error)
 	GetLastFeedUpdateContentHash(ctx context.Context, feedPk int64) (sql.NullString, error)
 	GetLastStopsForTrips(ctx context.Context, tripPks []int64) ([]GetLastStopsForTripsRow, error)
+	GetRoute(ctx context.Context, pk int64) (Route, error)
 	GetRouteInSystem(ctx context.Context, arg GetRouteInSystemParams) (GetRouteInSystemRow, error)
-	GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (GetStopInSystemRow, error)
+	GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (Stop, error)
 	GetSystem(ctx context.Context, id string) (System, error)
 	GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error)
+	GetTripByPk(ctx context.Context, pk int64) (Trip, error)
 	InsertAgency(ctx context.Context, arg InsertAgencyParams) (int64, error)
 	InsertAlert(ctx context.Context, arg InsertAlertParams) (int64, error)
 	InsertAlertActivePeriod(ctx context.Context, arg InsertAlertActivePeriodParams) error

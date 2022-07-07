@@ -45,6 +45,85 @@ func (q *Queries) DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesPa
 	return items, nil
 }
 
+const estimateHeadwaysForRoutes = `-- name: EstimateHeadwaysForRoutes :many
+WITH per_stop_data AS (
+    SELECT
+        trip.route_pk route_pk,
+        EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) total_diff,
+        COUNT(*)-1 num_diffs
+    FROM trip_stop_time
+        INNER JOIN trip ON trip.pk = trip_stop_time.trip_pk
+    WHERE trip.route_pk = ANY($1::bigint[])
+        AND NOT trip_stop_time.past
+        AND trip_stop_time.arrival_time IS NOT NULL
+        AND trip_stop_time.arrival_time >= $2
+    GROUP BY trip_stop_time.stop_pk, trip.route_pk
+        HAVING COUNT(*) > 1
+)
+SELECT 
+    route_pk,
+    COALESCE(ROUND(SUM(total_diff) / (SUM(num_diffs)))::integer, -1)::integer estimated_headway
+FROM per_stop_data
+GROUP BY route_pk
+`
+
+type EstimateHeadwaysForRoutesParams struct {
+	RoutePks    []int64
+	PresentTime sql.NullTime
+}
+
+type EstimateHeadwaysForRoutesRow struct {
+	RoutePk          int64
+	EstimatedHeadway int32
+}
+
+func (q *Queries) EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHeadwaysForRoutesParams) ([]EstimateHeadwaysForRoutesRow, error) {
+	rows, err := q.db.Query(ctx, estimateHeadwaysForRoutes, arg.RoutePks, arg.PresentTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []EstimateHeadwaysForRoutesRow
+	for rows.Next() {
+		var i EstimateHeadwaysForRoutesRow
+		if err := rows.Scan(&i.RoutePk, &i.EstimatedHeadway); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRoute = `-- name: GetRoute :one
+SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE pk = $1
+`
+
+func (q *Queries) GetRoute(ctx context.Context, pk int64) (Route, error) {
+	row := q.db.QueryRow(ctx, getRoute, pk)
+	var i Route
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.SourcePk,
+		&i.Color,
+		&i.TextColor,
+		&i.ShortName,
+		&i.LongName,
+		&i.Description,
+		&i.Url,
+		&i.SortOrder,
+		&i.Type,
+		&i.AgencyPk,
+		&i.ContinuousDropOff,
+		&i.ContinuousPickup,
+	)
+	return i, err
+}
+
 const insertRoute = `-- name: InsertRoute :one
 INSERT INTO route
     (id, system_pk, source_pk, color, text_color,

@@ -29,7 +29,7 @@ SELECT * FROM stop WHERE system_pk = $1
     ORDER BY id;
 
 -- name: GetStopInSystem :one
-SELECT * FROM stop
+SELECT stop.* FROM stop
     INNER JOIN system ON stop.system_pk = system.pk
     WHERE system.id = sqlc.arg(system_id)
     AND stop.id = sqlc.arg(stop_id);
@@ -202,22 +202,6 @@ ORDER BY alert.id ASC;
 
 
 
--- name: CalculatePeriodicityForRoute :one
-WITH per_stop_data AS (
-  SELECT
-    EXTRACT(epoch FROM MAX(trip_stop_time.arrival_time) - MIN(trip_stop_time.arrival_time)) total_diff,
-    COUNT(*)-1 num_diffs
-  FROM trip_stop_time
-    INNER JOIN trip ON trip.pk = trip_stop_time.trip_pk
-  WHERE trip.route_pk = sqlc.arg(route_pk)
-    AND NOT trip_stop_time.past
-    AND trip_stop_time.arrival_time IS NOT NULL
-    AND trip_stop_time.arrival_time >= sqlc.arg(present_time)
-  GROUP BY trip_stop_time.stop_pk
-    HAVING COUNT(*) > 1
-)
-SELECT COALESCE(ROUND(SUM(total_diff) / (SUM(num_diffs)))::integer, -1)::integer FROM per_stop_data;
-
 -- name: ListUpdatesInFeed :many
 SELECT * FROM feed_update 
 WHERE feed_pk = sqlc.arg(feed_pk)
@@ -238,6 +222,9 @@ SELECT trip.*, vehicle.id AS vehicle_id, route.id route_id, route.color route_co
 WHERE trip.id = sqlc.arg(trip_id)
     AND route.id = sqlc.arg(route_id)
     AND system.id = sqlc.arg(system_id);
+
+-- name: GetTripByPk :one
+SELECT * FROM trip WHERE pk = sqlc.arg(pk);
 
 -- name: ListStopsTimesForTrip :many
 SELECT trip_stop_time.*, stop.id stop_id, stop.name stop_name
