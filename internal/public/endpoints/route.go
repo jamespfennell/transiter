@@ -15,11 +15,8 @@ import (
 )
 
 func ListRoutes(ctx context.Context, r *Context, req *api.ListRoutesRequest) (*api.ListRoutesReply, error) {
-	system, err := r.Querier.GetSystem(ctx, req.SystemId)
+	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
-		}
 		return nil, err
 	}
 	routes, err := r.Querier.ListRoutesInSystem(ctx, system.Pk)
@@ -110,19 +107,12 @@ func GetRoute(ctx context.Context, r *Context, req *api.GetRouteRequest) (*api.R
 	if err != nil {
 		return nil, err
 	}
-	var alertsReply []*api.Alert
+	var alertsReply []*api.Alert_Preview
 	for _, alert := range alerts {
-		alertsReply = append(alertsReply, &api.Alert{
+		alertsReply = append(alertsReply, &api.Alert_Preview{
 			Id:     alert.ID,
 			Cause:  convert.AlertCause(alert.Cause),
 			Effect: convert.AlertEffect(alert.Effect),
-			ActivePeriod: &api.Alert_ActivePeriod{
-				StartsAt: convert.SQLNullTime(alert.StartsAt),
-				EndsAt:   convert.SQLNullTime(alert.EndsAt),
-			},
-			Header:      convert.AlertText(alert.Header),
-			Description: convert.AlertText(alert.Description),
-			Url:         convert.AlertText(alert.Url),
 		})
 	}
 

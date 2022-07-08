@@ -33,6 +33,7 @@ type Querier interface {
 	EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHeadwaysForRoutesParams) ([]EstimateHeadwaysForRoutesRow, error)
 	FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdateParams) error
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
+	GetAlertInSystem(ctx context.Context, arg GetAlertInSystemParams) (Alert, error)
 	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
 	GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error)
 	GetFeedUpdate(ctx context.Context, pk int64) (FeedUpdate, error)
@@ -63,10 +64,13 @@ type Querier interface {
 	InsertTrip(ctx context.Context, arg InsertTripParams) (int64, error)
 	InsertTripStopTime(ctx context.Context, arg InsertTripStopTimeParams) error
 	ListActiveAlertsForAgencies(ctx context.Context, arg ListActiveAlertsForAgenciesParams) ([]ListActiveAlertsForAgenciesRow, error)
+	// ListActiveAlertsForRoutes returns preview information about active alerts for the provided routes.
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)
 	ListActiveAlertsForStops(ctx context.Context, arg ListActiveAlertsForStopsParams) ([]ListActiveAlertsForStopsRow, error)
+	ListActivePeriodsForAlerts(ctx context.Context, pks []int64) ([]ListActivePeriodsForAlertsRow, error)
 	ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]Agency, error)
 	ListAlertPksAndHashes(ctx context.Context, arg ListAlertPksAndHashesParams) ([]ListAlertPksAndHashesRow, error)
+	ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Alert, error)
 	ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error)
 	ListFeedsInSystem(ctx context.Context, systemPk int64) ([]Feed, error)
 	ListRoutesByPk(ctx context.Context, routePks []int64) ([]Route, error)

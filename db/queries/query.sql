@@ -165,8 +165,9 @@ FROM transfer
 WHERE transfer.system_pk = $1 
 ORDER BY transfer.pk;
 
+-- ListActiveAlertsForRoutes returns preview information about active alerts for the provided routes.
 -- name: ListActiveAlertsForRoutes :many
-SELECT route.pk route_pk, alert.*, alert_active_period.starts_at, alert_active_period.ends_at
+SELECT route.pk route_pk, alert.id, alert.cause, alert.effect
 FROM route
     INNER JOIN alert_route ON route.pk = alert_route.route_pk
     INNER JOIN alert ON alert_route.alert_pk = alert.pk

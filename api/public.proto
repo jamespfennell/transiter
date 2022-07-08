@@ -133,6 +133,18 @@ service Public {
         };
   }
 
+  rpc ListAlerts (ListAlertsRequest) returns (ListAlertsReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/alerts"
+        };
+  }
+
+  rpc GetAlert (GetAlertRequest) returns (Alert) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/alerts/{alert_id}"
+        };
+  }
+
   rpc ListFeeds (ListFeedsRequest) returns (ListFeedsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/feeds"
@@ -242,6 +254,19 @@ message ListTripsRequest {
 message ListTripsReply {
   // TODO: full Trip instead of preview
   repeated Trip.Preview trips = 1;
+}
+
+message ListAlertsRequest {
+  string system_id = 1;
+}
+
+message ListAlertsReply {
+  repeated Alert alerts = 1;
+}
+
+message GetAlertRequest {
+  string system_id = 1;
+  string alert_id = 2;
 }
 
 message GetTripRequest {
@@ -435,8 +460,7 @@ message Route {
   }
   repeated ServiceMap service_maps = 11;
 
-  // TODO(APIv2): alert preview
-  repeated Alert alerts = 12;
+  repeated Alert.Preview alerts = 12;
 
   // Preview contains preview information about the route.
   message Preview {
@@ -533,7 +557,8 @@ message Alert {
     optional int64 starts_at = 1;
     optional int64 ends_at = 2;
   }
-  ActivePeriod active_period = 4;
+  optional ActivePeriod current_active_period = 4;
+  repeated ActivePeriod all_active_periods = 8;
 
   message Text {
     string text = 1;

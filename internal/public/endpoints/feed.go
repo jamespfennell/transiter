@@ -13,11 +13,8 @@ import (
 )
 
 func ListFeeds(ctx context.Context, r *Context, req *api.ListFeedsRequest) (*api.ListFeedsReply, error) {
-	system, err := r.Querier.GetSystem(ctx, req.SystemId)
+	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
-		}
 		return nil, err
 	}
 	feeds, err := r.Querier.ListFeedsInSystem(ctx, system.Pk)

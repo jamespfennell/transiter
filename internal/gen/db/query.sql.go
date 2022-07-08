@@ -283,7 +283,7 @@ func (q *Queries) GetTripByPk(ctx context.Context, pk int64) (Trip, error) {
 }
 
 const listActiveAlertsForRoutes = `-- name: ListActiveAlertsForRoutes :many
-SELECT route.pk route_pk, alert.pk, alert.id, alert.source_pk, alert.system_pk, alert.cause, alert.effect, alert.header, alert.description, alert.url, alert.hash, alert_active_period.starts_at, alert_active_period.ends_at
+SELECT route.pk route_pk, alert.id, alert.cause, alert.effect
 FROM route
     INNER JOIN alert_route ON route.pk = alert_route.route_pk
     INNER JOIN alert ON alert_route.alert_pk = alert.pk
@@ -306,21 +306,13 @@ type ListActiveAlertsForRoutesParams struct {
 }
 
 type ListActiveAlertsForRoutesRow struct {
-	RoutePk     int64
-	Pk          int64
-	ID          string
-	SourcePk    int64
-	SystemPk    int64
-	Cause       string
-	Effect      string
-	Header      string
-	Description string
-	Url         string
-	Hash        string
-	StartsAt    sql.NullTime
-	EndsAt      sql.NullTime
+	RoutePk int64
+	ID      string
+	Cause   string
+	Effect  string
 }
 
+// ListActiveAlertsForRoutes returns preview information about active alerts for the provided routes.
 func (q *Queries) ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error) {
 	rows, err := q.db.Query(ctx, listActiveAlertsForRoutes, arg.RoutePks, arg.PresentTime)
 	if err != nil {
@@ -332,18 +324,9 @@ func (q *Queries) ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveA
 		var i ListActiveAlertsForRoutesRow
 		if err := rows.Scan(
 			&i.RoutePk,
-			&i.Pk,
 			&i.ID,
-			&i.SourcePk,
-			&i.SystemPk,
 			&i.Cause,
 			&i.Effect,
-			&i.Header,
-			&i.Description,
-			&i.Url,
-			&i.Hash,
-			&i.StartsAt,
-			&i.EndsAt,
 		); err != nil {
 			return nil, err
 		}

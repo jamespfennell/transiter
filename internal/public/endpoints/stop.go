@@ -19,11 +19,8 @@ import (
 )
 
 func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api.ListStopsReply, error) {
-	system, err := r.Querier.GetSystem(ctx, req.SystemId)
+	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
-		}
 		return nil, err
 	}
 	stops, err := r.Querier.ListStopsInSystem(ctx, system.Pk)

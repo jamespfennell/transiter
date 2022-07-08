@@ -39,6 +39,33 @@ func (q *Queries) DeleteStaleAlerts(ctx context.Context, arg DeleteStaleAlertsPa
 	return err
 }
 
+const getAlertInSystem = `-- name: GetAlertInSystem :one
+SELECT alert.pk, alert.id, alert.source_pk, alert.system_pk, alert.cause, alert.effect, alert.header, alert.description, alert.url, alert.hash FROM alert WHERE alert.system_pk = $1 AND alert.id = $2
+`
+
+type GetAlertInSystemParams struct {
+	SystemPk int64
+	AlertID  string
+}
+
+func (q *Queries) GetAlertInSystem(ctx context.Context, arg GetAlertInSystemParams) (Alert, error) {
+	row := q.db.QueryRow(ctx, getAlertInSystem, arg.SystemPk, arg.AlertID)
+	var i Alert
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SourcePk,
+		&i.SystemPk,
+		&i.Cause,
+		&i.Effect,
+		&i.Header,
+		&i.Description,
+		&i.Url,
+		&i.Hash,
+	)
+	return i, err
+}
+
 const insertAlert = `-- name: InsertAlert :one
 INSERT INTO alert
     (id, system_pk, source_pk, cause, effect, header, description, url, hash)
@@ -187,6 +214,39 @@ func (q *Queries) ListActiveAlertsForAgencies(ctx context.Context, arg ListActiv
 	return items, nil
 }
 
+const listActivePeriodsForAlerts = `-- name: ListActivePeriodsForAlerts :many
+SELECT alert.pk, alert_active_period.starts_at, alert_active_period.ends_at
+FROM alert
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE alert.pk = ANY($1::bigint[])
+`
+
+type ListActivePeriodsForAlertsRow struct {
+	Pk       int64
+	StartsAt sql.NullTime
+	EndsAt   sql.NullTime
+}
+
+func (q *Queries) ListActivePeriodsForAlerts(ctx context.Context, pks []int64) ([]ListActivePeriodsForAlertsRow, error) {
+	rows, err := q.db.Query(ctx, listActivePeriodsForAlerts, pks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActivePeriodsForAlertsRow
+	for rows.Next() {
+		var i ListActivePeriodsForAlertsRow
+		if err := rows.Scan(&i.Pk, &i.StartsAt, &i.EndsAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAlertPksAndHashes = `-- name: ListAlertPksAndHashes :many
 SELECT id, pk, hash FROM alert 
 WHERE id = ANY($1::text[]) 
@@ -214,6 +274,41 @@ func (q *Queries) ListAlertPksAndHashes(ctx context.Context, arg ListAlertPksAnd
 	for rows.Next() {
 		var i ListAlertPksAndHashesRow
 		if err := rows.Scan(&i.ID, &i.Pk, &i.Hash); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertsInSystem = `-- name: ListAlertsInSystem :many
+SELECT alert.pk, alert.id, alert.source_pk, alert.system_pk, alert.cause, alert.effect, alert.header, alert.description, alert.url, alert.hash FROM alert WHERE alert.system_pk = $1 ORDER BY alert.id ASC
+`
+
+func (q *Queries) ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Alert, error) {
+	rows, err := q.db.Query(ctx, listAlertsInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Alert
+	for rows.Next() {
+		var i Alert
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SourcePk,
+			&i.SystemPk,
+			&i.Cause,
+			&i.Effect,
+			&i.Header,
+			&i.Description,
+			&i.Url,
+			&i.Hash,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

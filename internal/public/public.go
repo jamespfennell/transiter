@@ -82,6 +82,14 @@ func (s *Server) GetTrip(ctx context.Context, req *api.GetTripRequest) (*api.Tri
 	return run(ctx, s, endpoints.GetTrip, req)
 }
 
+func (s *Server) ListAlerts(ctx context.Context, req *api.ListAlertsRequest) (*api.ListAlertsReply, error) {
+	return run(ctx, s, endpoints.ListAlerts, req)
+}
+
+func (s *Server) GetAlert(ctx context.Context, req *api.GetAlertRequest) (*api.Alert, error) {
+	return run(ctx, s, endpoints.GetAlert, req)
+}
+
 func run[S, T any](ctx context.Context, s *Server, f func(context.Context, *endpoints.Context, S) (T, error), req S) (T, error) {
 	var t T
 	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {

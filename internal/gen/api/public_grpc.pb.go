@@ -29,6 +29,8 @@ type PublicClient interface {
 	GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*Route, error)
 	ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsReply, error)
 	GetTrip(ctx context.Context, in *GetTripRequest, opts ...grpc.CallOption) (*Trip, error)
+	ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsReply, error)
+	GetAlert(ctx context.Context, in *GetAlertRequest, opts ...grpc.CallOption) (*Alert, error)
 	ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error)
 	GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*Feed, error)
 	ListFeedUpdates(ctx context.Context, in *ListFeedUpdatesRequest, opts ...grpc.CallOption) (*ListFeedUpdatesReply, error)
@@ -142,6 +144,24 @@ func (c *publicClient) GetTrip(ctx context.Context, in *GetTripRequest, opts ...
 	return out, nil
 }
 
+func (c *publicClient) ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsReply, error) {
+	out := new(ListAlertsReply)
+	err := c.cc.Invoke(ctx, "/Public/ListAlerts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *publicClient) GetAlert(ctx context.Context, in *GetAlertRequest, opts ...grpc.CallOption) (*Alert, error) {
+	out := new(Alert)
+	err := c.cc.Invoke(ctx, "/Public/GetAlert", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *publicClient) ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error) {
 	out := new(ListFeedsReply)
 	err := c.cc.Invoke(ctx, "/Public/ListFeeds", in, out, opts...)
@@ -193,6 +213,8 @@ type PublicServer interface {
 	GetRoute(context.Context, *GetRouteRequest) (*Route, error)
 	ListTrips(context.Context, *ListTripsRequest) (*ListTripsReply, error)
 	GetTrip(context.Context, *GetTripRequest) (*Trip, error)
+	ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsReply, error)
+	GetAlert(context.Context, *GetAlertRequest) (*Alert, error)
 	ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error)
 	GetFeed(context.Context, *GetFeedRequest) (*Feed, error)
 	ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error)
@@ -235,6 +257,12 @@ func (UnimplementedPublicServer) ListTrips(context.Context, *ListTripsRequest) (
 }
 func (UnimplementedPublicServer) GetTrip(context.Context, *GetTripRequest) (*Trip, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTrip not implemented")
+}
+func (UnimplementedPublicServer) ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAlerts not implemented")
+}
+func (UnimplementedPublicServer) GetAlert(context.Context, *GetAlertRequest) (*Alert, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAlert not implemented")
 }
 func (UnimplementedPublicServer) ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFeeds not implemented")
@@ -458,6 +486,42 @@ func _Public_GetTrip_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Public_ListAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAlertsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PublicServer).ListAlerts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Public/ListAlerts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PublicServer).ListAlerts(ctx, req.(*ListAlertsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Public_GetAlert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAlertRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PublicServer).GetAlert(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Public/GetAlert",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PublicServer).GetAlert(ctx, req.(*GetAlertRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Public_ListFeeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListFeedsRequest)
 	if err := dec(in); err != nil {
@@ -580,6 +644,14 @@ var Public_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTrip",
 			Handler:    _Public_GetTrip_Handler,
+		},
+		{
+			MethodName: "ListAlerts",
+			Handler:    _Public_ListAlerts_Handler,
+		},
+		{
+			MethodName: "GetAlert",
+			Handler:    _Public_GetAlert_Handler,
 		},
 		{
 			MethodName: "ListFeeds",

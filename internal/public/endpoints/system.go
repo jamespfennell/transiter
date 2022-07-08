@@ -3,12 +3,9 @@ package endpoints
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strings"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/internal/gen/api"
-	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
 func ListSystems(ctx context.Context, r *Context, req *api.ListSystemsRequest) (*api.ListSystemsReply, error) {
@@ -29,11 +26,8 @@ func ListSystems(ctx context.Context, r *Context, req *api.ListSystemsRequest) (
 }
 
 func GetSystem(ctx context.Context, r *Context, req *api.GetSystemRequest) (*api.System, error) {
-	system, err := r.Querier.GetSystem(ctx, req.SystemId)
+	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
-		}
 		return nil, err
 	}
 	numAgencies, err := r.Querier.CountAgenciesInSystem(ctx, system.Pk)

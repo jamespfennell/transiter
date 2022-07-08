@@ -61,3 +61,15 @@ WHERE alert_agency.agency_pk = ANY(sqlc.arg(agency_pks)::bigint[])
             OR alert_active_period.ends_at IS NULL
         )
     );
+
+-- name: ListAlertsInSystem :many
+SELECT alert.* FROM alert WHERE alert.system_pk = sqlc.arg(system_pk) ORDER BY alert.id ASC;
+
+-- name: GetAlertInSystem :one
+SELECT alert.* FROM alert WHERE alert.system_pk = sqlc.arg(system_pk) AND alert.id = sqlc.arg(alert_id);
+
+-- name: ListActivePeriodsForAlerts :many
+SELECT alert.pk, alert_active_period.starts_at, alert_active_period.ends_at
+FROM alert
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE alert.pk = ANY(sqlc.arg(pks)::bigint[]);

@@ -86,17 +86,6 @@ func buildApiAgencies(ctx context.Context, r *Context, systemID string, dbAgenci
 	return apiAgencies, nil
 }
 
-func getSystem(ctx context.Context, querier db.Querier, id string) (db.System, error) {
-	system, err := querier.GetSystem(ctx, id)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", id))
-		}
-		return db.System{}, err
-	}
-	return system, nil
-}
-
 func getAlertsForAgencies(ctx context.Context, querier db.Querier, agencyPks []int64) ([]*api.Alert_Preview, error) {
 	dbAlerts, err := querier.ListActiveAlertsForAgencies(ctx, db.ListActiveAlertsForAgenciesParams{
 		AgencyPks:   agencyPks,

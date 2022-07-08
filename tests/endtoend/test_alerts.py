@@ -15,25 +15,39 @@ ALERT_LARGE_JSON = [
     dict(
         **ALERT_SMALL_JSON[0],
         **{
-            "activePeriod": {
+            "currentActivePeriod": {
                 "startsAt": str(int(TIME_1.timestamp())),
                 "endsAt": str(int(TIME_2.timestamp())),
             },
+            "allActivePeriods": [{
+                "startsAt": str(int(TIME_1.timestamp())),
+                "endsAt": str(int(TIME_2.timestamp())),
+            }],
             "header": [
                 {
                     "text": "Advertencia",
                     "language": "es",
                 }
+            ], 
+            "description": [
+                {
+                    "text": "Description",
+                    "language": "en",
+                }
             ],
-            "description": [],
-            "url": [],
+            "url": [
+                {
+                    "text": "URL",
+                    "language": "en",
+                }
+            ],
         }
     )
 ]
 
 
 def setup_test(
-    system_id, informed_entity, install_system_1, transiter_host, source_server
+    system_id, install_system_1, transiter_host, source_server
 ):
 
     __, realtime_feed_url = install_system_1(system_id)
@@ -62,7 +76,26 @@ def setup_test(
                             )
                         ],
                     ),
-                    informed_entity=[informed_entity],
+                    description_text=gtfs.TranslatedString(
+                        translation=[
+                            gtfs.TranslatedString.Translation(
+                                text="Description", language="en"
+                            )
+                        ],
+                    ),
+                    url=gtfs.TranslatedString(
+                        translation=[
+                            gtfs.TranslatedString.Translation(
+                                text="URL", language="en"
+                            )
+                        ],
+                    ),
+                    informed_entity=[
+                        gtfs.EntitySelector(agency_id="AgencyId"),
+                        gtfs.EntitySelector(route_id="A"),
+                        gtfs.EntitySelector(stop_id="1A"),
+                        gtfs.EntitySelector(trip=gtfs.TripDescriptor(trip_id="trip_id")),
+                    ],
                     cause=gtfs.Alert.Cause.STRIKE,
                     effect=gtfs.Alert.Effect.MODIFIED_SERVICE,
                 ),
@@ -77,55 +110,112 @@ def setup_test(
         )
     ).raise_for_status()
 
-
 @pytest.mark.parametrize(
-    "path,entity_id,entity_selector,expected_json",
+    "path,entity_id,expected_json",
     [
-        ["routes", "A", gtfs.EntitySelector(route_id="A"), ALERT_SMALL_JSON],
-        ["routes/A", None, gtfs.EntitySelector(route_id="A"), ALERT_LARGE_JSON],
-        ["stops", "1A", gtfs.EntitySelector(stop_id="1A"), None],
-        ["stops/1A", None, gtfs.EntitySelector(stop_id="1A"), ALERT_SMALL_JSON],
+        ["routes", "A", ALERT_SMALL_JSON],
+        ["stops", "1A", None],
         # TODO: renable
         # [
         #     "routes/A/trips",
         #     "trip_id",
-        #     gtfs.EntitySelector(trip=gtfs.TripDescriptor(trip_id="trip_id")),
+        #     ,
         #     ALERT_SMALL_JSON,
         # ],
-        # [
-        #     "routes/A/trips/trip_id",
-        #     None,
-        #     gtfs.EntitySelector(trip=gtfs.TripDescriptor(trip_id="trip_id")),
-        #     ALERT_LARGE_JSON,
-        # ],
-        ["stops/1A", None, gtfs.EntitySelector(stop_id="1A"), ALERT_SMALL_JSON],
         [
             "agencies",
             "AgencyId",
-            gtfs.EntitySelector(agency_id="AgencyId"),
-            ALERT_SMALL_JSON,
-        ],
-        [
-            "agencies/AgencyId",
-            None,
-            gtfs.EntitySelector(agency_id="AgencyId"),
             ALERT_SMALL_JSON,
         ],
     ],
 )
-def test_alerts_list_entities(
+def test_alerts_list_informed_entities(
     install_system_1,
     transiter_host,
     source_server,
     path,
     entity_id,
-    entity_selector,
     expected_json,
 ):
-    system_id = "test_alerts__get_entity_" + str(hash(path))
+    system_id = "test_alerts__list_informed_entities_" + str(hash(path))
     setup_test(
         system_id=system_id,
-        informed_entity=entity_selector,
+        install_system_1=install_system_1,
+        transiter_host=transiter_host,
+        source_server=source_server,
+    )
+
+    url = "{}/systems/{}/{}".format(transiter_host, system_id, path)
+
+    actual_data = requests.get(url).json()
+    actual_data = actual_data[path]
+    actual_data = {response["id"]: response for response in actual_data}[entity_id]
+
+    if expected_json is None:
+        assert "alerts" not in actual_data
+    else:
+        assert expected_json == actual_data["alerts"]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "routes/A",
+        "stops/1A",
+        # TODO: renable
+        # [
+        #     "routes/A/trips/trip_id",
+        #     None,
+        # ],
+        "stops/1A",
+        "agencies/AgencyId",
+    ],
+)
+def test_alerts_get_informed_entity(
+    install_system_1,
+    transiter_host,
+    source_server,
+    path,
+):
+    system_id = "test_alerts__get_informed_entity_" + str(hash(path))
+    setup_test(
+        system_id=system_id,
+        install_system_1=install_system_1,
+        transiter_host=transiter_host,
+        source_server=source_server,
+    )
+
+    url = "{}/systems/{}/{}".format(transiter_host, system_id, path)
+
+    actual_data = requests.get(url).json()
+
+    expected_json = ALERT_SMALL_JSON
+    assert expected_json == actual_data["alerts"]
+
+
+@pytest.mark.parametrize(
+    "path,entity_id",
+    [
+        [
+            "alerts",
+            "alert_id",
+        ],
+        [
+            "alerts/alert_id",
+            None,
+        ],
+    ],
+)
+def test_alerts_get_or_list_alert(
+    install_system_1,
+    transiter_host,
+    source_server,
+    path,
+    entity_id,
+):
+    system_id = "test_alerts__get_or_list_alert_" + str(hash(path))
+    setup_test(
+        system_id=system_id,
         install_system_1=install_system_1,
         transiter_host=transiter_host,
         source_server=source_server,
@@ -139,8 +229,5 @@ def test_alerts_list_entities(
         actual_data = actual_data[path]
         actual_data = {response["id"]: response for response in actual_data}[entity_id]
 
-    print(actual_data)
-    if expected_json is None:
-        assert "alerts" not in actual_data
-    else:
-        assert expected_json == actual_data["alerts"]
+    expected_json = ALERT_LARGE_JSON[0]
+    assert expected_json == actual_data
