@@ -20,6 +20,15 @@ func getSystem(ctx context.Context, querier db.Querier, id string) (db.System, e
 	return system, noRowsToNotFound(err, fmt.Sprintf("system %q", id))
 }
 
+func getRoute(ctx context.Context, querier db.Querier, systemID, routeID string) (db.System, db.Route, error) {
+	system, err := getSystem(ctx, querier, systemID)
+	if err != nil {
+		return system, db.Route{}, err
+	}
+	route, err := querier.GetRouteInSystem(ctx, db.GetRouteInSystemParams{SystemPk: system.Pk, RouteID: routeID})
+	return system, route, noRowsToNotFound(err, fmt.Sprintf("route %q in system %q", routeID, system.ID))
+}
+
 func noRowsToNotFound(err error, notFoundText string) error {
 	if err == pgx.ErrNoRows {
 		err = errors.NewNotFoundError(notFoundText + " does not exist")

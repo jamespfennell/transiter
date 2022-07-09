@@ -108,41 +108,20 @@ func (q *Queries) GetLastStopsForTrips(ctx context.Context, tripPks []int64) ([]
 }
 
 const getRouteInSystem = `-- name: GetRouteInSystem :one
-SELECT route.pk, route.id, route.system_pk, route.source_pk, route.color, route.text_color, route.short_name, route.long_name, route.description, route.url, route.sort_order, route.type, route.agency_pk, route.continuous_drop_off, route.continuous_pickup, agency.id agency_id, agency.name agency_name FROM route
+SELECT route.pk, route.id, route.system_pk, route.source_pk, route.color, route.text_color, route.short_name, route.long_name, route.description, route.url, route.sort_order, route.type, route.agency_pk, route.continuous_drop_off, route.continuous_pickup FROM route
     INNER JOIN system ON route.system_pk = system.pk
-    INNER JOIN agency ON route.agency_pk = agency.pk
-    WHERE system.id = $1
+    WHERE system.pk = $1
     AND route.id = $2
 `
 
 type GetRouteInSystemParams struct {
-	SystemID string
+	SystemPk int64
 	RouteID  string
 }
 
-type GetRouteInSystemRow struct {
-	Pk                int64
-	ID                string
-	SystemPk          int64
-	SourcePk          int64
-	Color             string
-	TextColor         string
-	ShortName         sql.NullString
-	LongName          sql.NullString
-	Description       sql.NullString
-	Url               sql.NullString
-	SortOrder         sql.NullInt32
-	Type              string
-	AgencyPk          int64
-	ContinuousDropOff string
-	ContinuousPickup  string
-	AgencyID          string
-	AgencyName        string
-}
-
-func (q *Queries) GetRouteInSystem(ctx context.Context, arg GetRouteInSystemParams) (GetRouteInSystemRow, error) {
-	row := q.db.QueryRow(ctx, getRouteInSystem, arg.SystemID, arg.RouteID)
-	var i GetRouteInSystemRow
+func (q *Queries) GetRouteInSystem(ctx context.Context, arg GetRouteInSystemParams) (Route, error) {
+	row := q.db.QueryRow(ctx, getRouteInSystem, arg.SystemPk, arg.RouteID)
+	var i Route
 	err := row.Scan(
 		&i.Pk,
 		&i.ID,
@@ -159,8 +138,6 @@ func (q *Queries) GetRouteInSystem(ctx context.Context, arg GetRouteInSystemPara
 		&i.AgencyPk,
 		&i.ContinuousDropOff,
 		&i.ContinuousPickup,
-		&i.AgencyID,
-		&i.AgencyName,
 	)
 	return i, err
 }
@@ -542,35 +519,38 @@ func (q *Queries) ListServiceMapsConfigIDsForStops(ctx context.Context, stopPks 
 	return items, nil
 }
 
-const listServiceMapsForRoute = `-- name: ListServiceMapsForRoute :many
-SELECT DISTINCT service_map_config.id config_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
+const listServiceMapsForRoutes = `-- name: ListServiceMapsForRoutes :many
+SELECT DISTINCT route.pk route_pk, service_map_config.id config_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
 FROM service_map_config
   INNER JOIN system ON service_map_config.system_pk = system.pk
   INNER JOIN route ON route.system_pk = system.pk
-  LEFT JOIN service_map ON service_map.config_pk = service_map_config.pk AND service_map.route_pk = $1
+  LEFT JOIN service_map ON service_map.config_pk = service_map_config.pk AND service_map.route_pk = route.pk
   LEFT JOIN service_map_vertex ON service_map_vertex.map_pk = service_map.pk
   LEFT JOIN stop ON stop.pk = service_map_vertex.stop_pk
-WHERE service_map_config.default_for_stops_in_route AND route.pk = $1
+WHERE service_map_config.default_for_stops_in_route AND route.pk = ANY($1::bigint[])
 ORDER BY service_map_config.id, service_map_vertex.position
 `
 
-type ListServiceMapsForRouteRow struct {
+type ListServiceMapsForRoutesRow struct {
+	RoutePk  int64
 	ConfigID string
 	Position sql.NullInt32
 	StopID   sql.NullString
 	StopName sql.NullString
 }
 
-func (q *Queries) ListServiceMapsForRoute(ctx context.Context, routePk int64) ([]ListServiceMapsForRouteRow, error) {
-	rows, err := q.db.Query(ctx, listServiceMapsForRoute, routePk)
+// TODO: make this better?
+func (q *Queries) ListServiceMapsForRoutes(ctx context.Context, routePks []int64) ([]ListServiceMapsForRoutesRow, error) {
+	rows, err := q.db.Query(ctx, listServiceMapsForRoutes, routePks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListServiceMapsForRouteRow
+	var items []ListServiceMapsForRoutesRow
 	for rows.Next() {
-		var i ListServiceMapsForRouteRow
+		var i ListServiceMapsForRoutesRow
 		if err := rows.Scan(
+			&i.RoutePk,
 			&i.ConfigID,
 			&i.Position,
 			&i.StopID,

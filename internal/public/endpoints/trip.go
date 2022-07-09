@@ -12,12 +12,8 @@ import (
 )
 
 func ListTrips(ctx context.Context, r *Context, req *api.ListTripsRequest) (*api.ListTripsReply, error) {
-	route, err := r.Querier.GetRouteInSystem(ctx,
-		db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
+	_, route, err := getRoute(ctx, r.Querier, req.SystemId, req.RouteId)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("route %q in system %q not found", req.RouteId, req.SystemId))
-		}
 		return nil, err
 	}
 	trips, err := r.Querier.ListTripsInRoute(ctx, route.Pk)

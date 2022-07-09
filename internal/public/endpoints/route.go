@@ -3,15 +3,12 @@ package endpoints
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"time"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
 func ListRoutes(ctx context.Context, r *Context, req *api.ListRoutesRequest) (*api.ListRoutesReply, error) {
@@ -23,125 +20,92 @@ func ListRoutes(ctx context.Context, r *Context, req *api.ListRoutesRequest) (*a
 	if err != nil {
 		return nil, err
 	}
-	var routePks []int64
-	for _, route := range routes {
-		routePks = append(routePks, route.Pk)
-	}
-	alerts, err := r.Querier.ListActiveAlertsForRoutes(
-		ctx, db.ListActiveAlertsForRoutesParams{
-			RoutePks:    routePks,
-			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
-		})
+	apiRoutes, err := buildApiRoutes(ctx, r, req, routes)
 	if err != nil {
 		return nil, err
 	}
-	routePkToAlertRows := map[int64][]*api.Alert_Preview{}
-	for _, alert := range alerts {
-		routePkToAlertRows[alert.RoutePk] = append(
-			routePkToAlertRows[alert.RoutePk],
-			convert.AlertPreview(alert.ID, alert.Cause, alert.Effect),
-		)
-	}
-	reply := &api.ListRoutesReply{}
-	for _, route := range routes {
-		reply.Routes = append(reply.Routes, &api.RoutePreviewWithAlerts{
-			Id:     route.ID,
-			Color:  route.Color,
-			Alerts: routePkToAlertRows[route.Pk],
-			Href:   r.Href.Route(system.ID, route.ID),
-		})
-	}
-	return reply, nil
+	return &api.ListRoutesReply{
+		Routes: apiRoutes,
+	}, nil
 }
 
 func GetRoute(ctx context.Context, r *Context, req *api.GetRouteRequest) (*api.Route, error) {
-	startTime := time.Now()
-	route, err := r.Querier.GetRouteInSystem(ctx, db.GetRouteInSystemParams{SystemID: req.SystemId, RouteID: req.RouteId})
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("route %q in system %q not found", req.RouteId, req.SystemId))
-		}
-		return nil, err
-	}
-	serviceMapRows, err := r.Querier.ListServiceMapsForRoute(ctx, route.Pk)
+	_, route, err := getRoute(ctx, r.Querier, req.SystemId, req.RouteId)
 	if err != nil {
 		return nil, err
 	}
-	configIDToServiceMap := map[string]*api.Route_ServiceMap{}
-	for _, row := range serviceMapRows {
-		if _, ok := configIDToServiceMap[row.ConfigID]; !ok {
-			configIDToServiceMap[row.ConfigID] = &api.Route_ServiceMap{
-				ConfigId: row.ConfigID,
-			}
-		}
-		if !row.StopID.Valid {
-			continue
-		}
-		configIDToServiceMap[row.ConfigID].Stops = append(
-			configIDToServiceMap[row.ConfigID].Stops,
-			&api.Stop_Preview{
-				Id:   row.StopID.String,
-				Name: row.StopName.String,
-				Href: r.Href.Stop(req.SystemId, row.StopID.String),
-			},
-		)
-	}
-	serviceMapsReply := []*api.Route_ServiceMap{}
-	for _, serviceMap := range configIDToServiceMap {
-		serviceMapsReply = append(serviceMapsReply, serviceMap)
-	}
-	estimatedHeadways, err := estimateHeadwaysForRoutes(ctx, r.Querier, []int64{route.Pk})
+	apiRoutes, err := buildApiRoutes(ctx, r, req, []db.Route{route})
 	if err != nil {
 		return nil, err
 	}
-	var estimatedHeadway *int32
-	if p, ok := estimatedHeadways[route.Pk]; ok {
-		estimatedHeadway = &p
-	}
-
-	alerts, err := r.Querier.ListActiveAlertsForRoutes(
-		ctx, db.ListActiveAlertsForRoutesParams{
-			RoutePks:    []int64{route.Pk},
-			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
-		})
-	if err != nil {
-		return nil, err
-	}
-	var alertsReply []*api.Alert_Preview
-	for _, alert := range alerts {
-		alertsReply = append(alertsReply, &api.Alert_Preview{
-			Id:     alert.ID,
-			Cause:  convert.AlertCause(alert.Cause),
-			Effect: convert.AlertEffect(alert.Effect),
-		})
-	}
-
-	reply := &api.Route{
-		Id:                route.ID,
-		ShortName:         convert.SQLNullString(route.ShortName),
-		LongName:          convert.SQLNullString(route.LongName),
-		Color:             route.Color,
-		TextColor:         route.TextColor,
-		Description:       convert.SQLNullString(route.Description),
-		Url:               convert.SQLNullString(route.Url),
-		SortOrder:         convert.SQLNullInt32(route.SortOrder),
-		ContinuousPickup:  route.ContinuousPickup,
-		ContinuousDropOff: route.ContinuousDropOff,
-		Type:              route.Type,
-		EstimatedHeadway:  estimatedHeadway,
-		Agency: &api.Agency_Preview{
-			Id:   route.AgencyID,
-			Name: route.AgencyName,
-			Href: r.Href.Agency(req.SystemId, route.AgencyID),
-		},
-		ServiceMaps: serviceMapsReply,
-		Alerts:      alertsReply,
-	}
-	log.Println("GetRouteInSystem took", time.Since(startTime))
-	return reply, nil
+	return apiRoutes[0], nil
 }
 
-func estimateHeadwaysForRoutes(ctx context.Context, querier db.Querier, routePks []int64) (map[int64]int32, error) {
+type routeRequest interface {
+	GetSystemId() string
+	GetSkipEstimatedHeadways() bool
+	GetSkipServiceMaps() bool
+	GetSkipAlerts() bool
+}
+
+func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []db.Route) ([]*api.Route, error) {
+	startTime := time.Now()
+	var routePks []int64
+	for i := range routes {
+		routePks = append(routePks, routes[i].Pk)
+	}
+	var err error
+	serviceMaps := map[int64][]*api.Route_ServiceMap{}
+	if !req.GetSkipServiceMaps() {
+		serviceMaps, err = buildServiceMaps(ctx, r, req.GetSystemId(), routePks)
+		if err != nil {
+			return nil, err
+		}
+	}
+	estimatedHeadways := map[int64]*int32{}
+	if !req.GetSkipEstimatedHeadways() {
+		estimatedHeadways, err = buildEstimateHeadwaysForRoutes(ctx, r.Querier, routePks)
+		if err != nil {
+			return nil, err
+		}
+	}
+	alerts := map[int64][]*api.Alert_Preview{}
+	if !req.GetSkipAlerts() {
+		alerts, err = buildAlertPreviews(ctx, r.Querier, routePks)
+		if err != nil {
+			return nil, err
+		}
+	}
+	agencies, err := buildAgencies(ctx, r, req.GetSystemId(), routes)
+	if err != nil {
+		return nil, err
+	}
+	var apiRoutes []*api.Route
+	for i := range routes {
+		route := &routes[i]
+		apiRoutes = append(apiRoutes, &api.Route{
+			Id:                route.ID,
+			ShortName:         convert.SQLNullString(route.ShortName),
+			LongName:          convert.SQLNullString(route.LongName),
+			Color:             route.Color,
+			TextColor:         route.TextColor,
+			Description:       convert.SQLNullString(route.Description),
+			Url:               convert.SQLNullString(route.Url),
+			SortOrder:         convert.SQLNullInt32(route.SortOrder),
+			ContinuousPickup:  route.ContinuousPickup,
+			ContinuousDropOff: route.ContinuousDropOff,
+			Type:              route.Type,
+			EstimatedHeadway:  estimatedHeadways[route.Pk],
+			Agency:            agencies[route.AgencyPk],
+			ServiceMaps:       serviceMaps[route.Pk],
+			Alerts:            alerts[route.Pk],
+		})
+	}
+	log.Printf("buildRouteResource(%v) took %s\n", routePks, time.Since(startTime))
+	return apiRoutes, nil
+}
+
+func buildEstimateHeadwaysForRoutes(ctx context.Context, querier db.Querier, routePks []int64) (map[int64]*int32, error) {
 	rows, err := querier.EstimateHeadwaysForRoutes(ctx, db.EstimateHeadwaysForRoutesParams{
 		RoutePks: routePks,
 		PresentTime: sql.NullTime{
@@ -152,9 +116,83 @@ func estimateHeadwaysForRoutes(ctx context.Context, querier db.Querier, routePks
 	if err != nil {
 		return nil, err
 	}
-	m := map[int64]int32{}
+	m := map[int64]*int32{}
 	for _, row := range rows {
-		m[row.RoutePk] = row.EstimatedHeadway
+		m[row.RoutePk] = &row.EstimatedHeadway
 	}
 	return m, nil
+}
+
+func buildAlertPreviews(ctx context.Context, querier db.Querier, routePks []int64) (map[int64][]*api.Alert_Preview, error) {
+	alerts, err := querier.ListActiveAlertsForRoutes(
+		ctx, db.ListActiveAlertsForRoutesParams{
+			RoutePks:    routePks,
+			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
+		})
+	if err != nil {
+		return nil, err
+	}
+	m := map[int64][]*api.Alert_Preview{}
+	for _, alert := range alerts {
+		m[alert.RoutePk] = append(
+			m[alert.RoutePk],
+			convert.AlertPreview(alert.ID, alert.Cause, alert.Effect),
+		)
+	}
+	return m, nil
+}
+
+func buildServiceMaps(ctx context.Context, r *Context, systemID string, routePks []int64) (map[int64][]*api.Route_ServiceMap, error) {
+	serviceMapRows, err := r.Querier.ListServiceMapsForRoutes(ctx, routePks)
+	if err != nil {
+		return nil, err
+	}
+	routePkToConfigIDToMap := map[int64]map[string]*api.Route_ServiceMap{}
+	for _, routePk := range routePks {
+		routePkToConfigIDToMap[routePk] = map[string]*api.Route_ServiceMap{}
+	}
+	for _, row := range serviceMapRows {
+		if _, ok := routePkToConfigIDToMap[row.RoutePk][row.ConfigID]; !ok {
+			routePkToConfigIDToMap[row.RoutePk][row.ConfigID] = &api.Route_ServiceMap{
+				ConfigId: row.ConfigID,
+			}
+		}
+		// TODO: having this here covers the case when the service map is empty. Can it be more explicit?
+		if !row.StopID.Valid {
+			continue
+		}
+		serviceMap := routePkToConfigIDToMap[row.RoutePk][row.ConfigID]
+		serviceMap.Stops = append(serviceMap.Stops, &api.Stop_Preview{
+			Id:   row.StopID.String,
+			Name: row.StopName.String,
+			Href: r.Href.Stop(systemID, row.StopID.String),
+		})
+	}
+	m := map[int64][]*api.Route_ServiceMap{}
+	for routePk, configIDToMap := range routePkToConfigIDToMap {
+		for _, serviceMap := range configIDToMap {
+			m[routePk] = append(m[routePk], serviceMap)
+		}
+	}
+	return m, nil
+}
+
+func buildAgencies(ctx context.Context, r *Context, systemID string, routes []db.Route) (map[int64]*api.Agency_Preview, error) {
+	var agencyPks []int64
+	for i := range routes {
+		agencyPks = append(agencyPks, routes[i].AgencyPk)
+	}
+	rows, err := r.Querier.ListAgenciesByPk(ctx, agencyPks)
+	if err != nil {
+		return nil, err
+	}
+	m := map[int64]*api.Agency_Preview{}
+	for _, row := range rows {
+		m[row.Pk] = &api.Agency_Preview{
+			Id:   row.ID,
+			Name: row.Name,
+			Href: r.Href.Agency(systemID, row.ID),
+		}
+	}
+	return m, err
 }

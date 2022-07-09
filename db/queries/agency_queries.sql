@@ -34,6 +34,9 @@ RETURNING agency.id;
 -- name: ListAgenciesInSystem :many
 SELECT agency.* FROM agency WHERE system_pk = $1 ORDER BY id;
 
+-- name: ListAgenciesByPk :many
+SELECT agency.* FROM agency WHERE pk = ANY(sqlc.arg(pk)::bigint[]);
+
 -- name: GetAgencyInSystem :one
 SELECT agency.* FROM agency
 WHERE agency.system_pk = sqlc.arg(system_pk)

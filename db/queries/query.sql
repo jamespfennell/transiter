@@ -134,21 +134,21 @@ ORDER BY priority ASC;
 SELECT * FROM route WHERE system_pk = $1 ORDER BY id;
 
 -- name: GetRouteInSystem :one
-SELECT route.*, agency.id agency_id, agency.name agency_name FROM route
+SELECT route.* FROM route
     INNER JOIN system ON route.system_pk = system.pk
-    INNER JOIN agency ON route.agency_pk = agency.pk
-    WHERE system.id = sqlc.arg(system_id)
+    WHERE system.pk = sqlc.arg(system_pk)
     AND route.id = sqlc.arg(route_id);
 
--- name: ListServiceMapsForRoute :many
-SELECT DISTINCT service_map_config.id config_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
+-- TODO: make this better?
+-- name: ListServiceMapsForRoutes :many
+SELECT DISTINCT route.pk route_pk, service_map_config.id config_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
 FROM service_map_config
   INNER JOIN system ON service_map_config.system_pk = system.pk
   INNER JOIN route ON route.system_pk = system.pk
-  LEFT JOIN service_map ON service_map.config_pk = service_map_config.pk AND service_map.route_pk = sqlc.arg(route_pk)
+  LEFT JOIN service_map ON service_map.config_pk = service_map_config.pk AND service_map.route_pk = route.pk
   LEFT JOIN service_map_vertex ON service_map_vertex.map_pk = service_map.pk
   LEFT JOIN stop ON stop.pk = service_map_vertex.stop_pk
-WHERE service_map_config.default_for_stops_in_route AND route.pk = sqlc.arg(route_pk)
+WHERE service_map_config.default_for_stops_in_route AND route.pk = ANY(sqlc.arg(route_pks)::bigint[])
 ORDER BY service_map_config.id, service_map_vertex.position;
 
 

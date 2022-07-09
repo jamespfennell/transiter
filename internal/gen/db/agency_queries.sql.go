@@ -115,6 +115,42 @@ func (q *Queries) InsertAgency(ctx context.Context, arg InsertAgencyParams) (int
 	return pk, err
 }
 
+const listAgenciesByPk = `-- name: ListAgenciesByPk :many
+SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency WHERE pk = ANY($1::bigint[])
+`
+
+func (q *Queries) ListAgenciesByPk(ctx context.Context, pk []int64) ([]Agency, error) {
+	rows, err := q.db.Query(ctx, listAgenciesByPk, pk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Agency
+	for rows.Next() {
+		var i Agency
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.Name,
+			&i.Url,
+			&i.Timezone,
+			&i.Language,
+			&i.Phone,
+			&i.FareUrl,
+			&i.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAgenciesInSystem = `-- name: ListAgenciesInSystem :many
 SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency WHERE system_pk = $1 ORDER BY id
 `

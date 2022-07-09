@@ -133,6 +133,7 @@ service Public {
         };
   }
 
+  // TODO: support filtering on Alert IDs
   rpc ListAlerts (ListAlertsRequest) returns (ListAlertsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/alerts"
@@ -168,9 +169,6 @@ service Public {
             get: "/systems/{system_id}/transfers"
         };
   }
-
-  // TODO: ListAlerts, GetAlert, ListAlertsForRoutes (?), ListAlertsForRoute (?)
-  // or add a general endpoint with search criteria? Can just filter on alert IDs
 }
 
 message EntrypointRequest {}
@@ -234,16 +232,29 @@ message GetStopRequest {
 
 message ListRoutesRequest {
   string system_id = 1;
+
+  // If true, the estimate headway field will not be populated.
+  bool skip_estimated_headways = 2;
+  // If true, the service maps field will not be populated.
+  bool skip_service_maps = 3;
+  // If true, the alerts field will not be populated.
+  bool skip_alerts = 4;
 }
 
 message ListRoutesReply {
-  // TODO: full Route instead of preview
-  repeated RoutePreviewWithAlerts routes = 1;
+  repeated Route routes = 1;
 }
 
 message GetRouteRequest {
   string system_id = 1;
   string route_id = 2;
+
+  // If true, the estimate headway field will not be populated.
+  bool skip_estimated_headways = 3;
+  // If true, the service maps field will not be populated.
+  bool skip_service_maps = 4;
+  // If true, the alerts field will not be populated.
+  bool skip_alerts = 5;
 }
 
 message ListTripsRequest {
@@ -422,15 +433,6 @@ message Vehicle {
   message Preview {
     string id = 1;
   }
-}
-
-// TODO remove and add a routes/alerts endpoint
-message RoutePreviewWithAlerts {
-  string id = 1;
-  // TODO(APIv2): remove?
-  string color = 2;
-  repeated Alert.Preview alerts = 3;
-  optional string href = 4;
 }
 
 message Route {
