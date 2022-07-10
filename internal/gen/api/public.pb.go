@@ -1123,7 +1123,10 @@ type ListAlertsRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	SystemId string `protobuf:"bytes,1,opt,name=system_id,json=systemId,proto3" json:"system_id,omitempty"`
-	// IDs of the alerts to return. If no IDs are provided, all alerts in the system will be returned.
+	// If non-empty, only alerts with the provided IDs are returned.
+	// This is interpreted as a filtering condition, so it is not an error to provide non-existent IDs.
+	//
+	// If empty, all alerts in the system are returned.
 	AlertId []string `protobuf:"bytes,2,rep,name=alert_id,json=alertId,proto3" json:"alert_id,omitempty"`
 }
 

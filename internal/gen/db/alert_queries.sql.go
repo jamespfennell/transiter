@@ -320,8 +320,8 @@ func (q *Queries) ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Ale
 }
 
 const listAlertsInSystemAndByIDs = `-- name: ListAlertsInSystemAndByIDs :many
-SELECT pk, id, source_pk, system_pk, cause, effect, header, description, url, hash FROM alert 
-    WHERE system_pk = $1 
+SELECT pk, id, source_pk, system_pk, cause, effect, header, description, url, hash FROM alert
+    WHERE system_pk = $1
     AND id = ANY($2::text[])
 ORDER BY id ASC
 `
