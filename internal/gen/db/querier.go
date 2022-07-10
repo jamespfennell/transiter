@@ -72,6 +72,7 @@ type Querier interface {
 	ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]Agency, error)
 	ListAlertPksAndHashes(ctx context.Context, arg ListAlertPksAndHashesParams) ([]ListAlertPksAndHashesRow, error)
 	ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Alert, error)
+	ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlertsInSystemAndByIDsParams) ([]Alert, error)
 	ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error)
 	ListFeedsInSystem(ctx context.Context, systemPk int64) ([]Feed, error)
 	ListRoutesByPk(ctx context.Context, routePks []int64) ([]Route, error)

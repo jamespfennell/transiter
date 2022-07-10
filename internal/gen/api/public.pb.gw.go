@@ -691,6 +691,10 @@ func local_request_Public_GetTrip_0(ctx context.Context, marshaler runtime.Marsh
 
 }
 
+var (
+	filter_Public_ListAlerts_0 = &utilities.DoubleArray{Encoding: map[string]int{"system_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+)
+
 func request_Public_ListAlerts_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListAlertsRequest
 	var metadata runtime.ServerMetadata
@@ -710,6 +714,13 @@ func request_Public_ListAlerts_0(ctx context.Context, marshaler runtime.Marshale
 	protoReq.SystemId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Public_ListAlerts_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.ListAlerts(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -736,6 +747,13 @@ func local_request_Public_ListAlerts_0(ctx context.Context, marshaler runtime.Ma
 	protoReq.SystemId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Public_ListAlerts_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.ListAlerts(ctx, &protoReq)

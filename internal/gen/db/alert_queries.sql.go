@@ -285,11 +285,54 @@ func (q *Queries) ListAlertPksAndHashes(ctx context.Context, arg ListAlertPksAnd
 }
 
 const listAlertsInSystem = `-- name: ListAlertsInSystem :many
-SELECT alert.pk, alert.id, alert.source_pk, alert.system_pk, alert.cause, alert.effect, alert.header, alert.description, alert.url, alert.hash FROM alert WHERE alert.system_pk = $1 ORDER BY alert.id ASC
+SELECT pk, id, source_pk, system_pk, cause, effect, header, description, url, hash FROM alert WHERE system_pk = $1 ORDER BY id ASC
 `
 
 func (q *Queries) ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Alert, error) {
 	rows, err := q.db.Query(ctx, listAlertsInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Alert
+	for rows.Next() {
+		var i Alert
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SourcePk,
+			&i.SystemPk,
+			&i.Cause,
+			&i.Effect,
+			&i.Header,
+			&i.Description,
+			&i.Url,
+			&i.Hash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertsInSystemAndByIDs = `-- name: ListAlertsInSystemAndByIDs :many
+SELECT pk, id, source_pk, system_pk, cause, effect, header, description, url, hash FROM alert 
+    WHERE system_pk = $1 
+    AND id = ANY($2::text[])
+ORDER BY id ASC
+`
+
+type ListAlertsInSystemAndByIDsParams struct {
+	SystemPk int64
+	Ids      []string
+}
+
+func (q *Queries) ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlertsInSystemAndByIDsParams) ([]Alert, error) {
+	rows, err := q.db.Query(ctx, listAlertsInSystemAndByIDs, arg.SystemPk, arg.Ids)
 	if err != nil {
 		return nil, err
 	}

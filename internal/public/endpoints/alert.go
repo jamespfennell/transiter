@@ -15,7 +15,15 @@ func ListAlerts(ctx context.Context, r *Context, req *api.ListAlertsRequest) (*a
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := r.Querier.ListAlertsInSystem(ctx, system.Pk)
+	var alerts []db.Alert
+	if len(req.AlertId) == 0 {
+		alerts, err = r.Querier.ListAlertsInSystem(ctx, system.Pk)
+	} else {
+		alerts, err = r.Querier.ListAlertsInSystemAndByIDs(ctx, db.ListAlertsInSystemAndByIDsParams{
+			SystemPk: system.Pk,
+			Ids:      req.AlertId,
+		})
+	}
 	if err != nil {
 		return nil, err
 	}

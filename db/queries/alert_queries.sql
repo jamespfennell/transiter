@@ -63,7 +63,13 @@ WHERE alert_agency.agency_pk = ANY(sqlc.arg(agency_pks)::bigint[])
     );
 
 -- name: ListAlertsInSystem :many
-SELECT alert.* FROM alert WHERE alert.system_pk = sqlc.arg(system_pk) ORDER BY alert.id ASC;
+SELECT * FROM alert WHERE system_pk = sqlc.arg(system_pk) ORDER BY id ASC;
+
+-- name: ListAlertsInSystemAndByIDs :many
+SELECT * FROM alert
+    WHERE system_pk = sqlc.arg(system_pk)
+    AND id = ANY(sqlc.arg(ids)::text[])
+ORDER BY id ASC;
 
 -- name: GetAlertInSystem :one
 SELECT alert.* FROM alert WHERE alert.system_pk = sqlc.arg(system_pk) AND alert.id = sqlc.arg(alert_id);
