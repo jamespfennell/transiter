@@ -1,4 +1,4 @@
-FROM golang:1.18 AS builder
+FROM golang:1.18 AS api-docs-builder
 
 WORKDIR /transiter
 
@@ -25,27 +25,31 @@ COPY buf.yaml .
 COPY api api
 RUN buf generate
 
-# Generate the DB files
-COPY sqlc.yaml .
-COPY db db
-RUN sqlc generate
+# At this point the Dockerfile diverges from the main Dockerfile
 
-# Move the newly generated files so that they don't get clobbered when we copy the source code in
-RUN mv internal/gen internal/genNew
+COPY docs/docs/api/api_docs_gen.go docs/docs/api/api_docs_gen.go
+RUN go run docs/docs/api/api_docs_gen.go
 
-COPY . ./
+
+FROM python:3.9 AS docs-builder
+WORKDIR /transiter
+
+COPY docs/requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY docs/mkdocs.yml .
+COPY docs/docs docs
 
 # Diff the newly generated files with the ones in source control.
 # If there are differences, this will fail
-RUN diff --brief --recursive internal/gen internal/genNew
-RUN rm -r internal/genNew
+COPY --from=api-docs-builder /transiter/docs/docs/api/*md /tmp/apiGenFresh/
+RUN rm docs/api/api_docs_gen*
+RUN diff --recursive /tmp/apiGenFresh docs/api
 
-RUN go build .
+RUN ls -lah
+RUN mkdocs build --strict -f mkdocs.yml -d gen
 
-# Only build the image if the tests pass
-RUN SKIP_DATABASE_TESTS=true go test ./...
-
-# We use this buildpack image because it already has SSL certificates installed
-FROM buildpack-deps:buster-curl
-COPY --from=builder /transiter/transiter /usr/bin
-ENTRYPOINT ["transiter"]
+FROM caddy:2
+WORKDIR /transiter
+COPY --from=docs-builder /transiter/gen .
+ENTRYPOINT ["caddy", "file-server", "--listen", ":8888"]

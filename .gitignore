@@ -1,3 +1,7 @@
 transiter
 .idea
 __pycache__
+.pyenv
+env
+.pytest_cache
+transiter2

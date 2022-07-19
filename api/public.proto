@@ -1,37 +1,30 @@
-syntax = "proto3";
-option go_package = "github.com/jamespfennell/transiter/api";
-
-import "google/api/annotations.proto";
-
 /**
-*
-* 
-* ## Resource model
+Public API
 
 The Transiter public API is based around hierarchal resources, like many REST APIs.
 This is the resource hierarchy:
 
 ```
 System
-  |- Agency
-  |- Alert
-  |- Feed
-  |   |- Feed update
-  |- Route
-  |   |- Trip
-  |       |- Vehicle with no ID
-  |- Stop
-  |- Transfer
-  |- Vehicle with ID
+ |- Agency
+ |- Alert
+ |- Feed
+ |   |- Feed update
+ |- Route
+ |   |- Trip
+ |       |- Vehicle with no ID
+ |- Stop
+ |- Transfer
+ |- Vehicle with ID
 ```
 
-For each of resource there is a proto message type, a list endpoint, and a get endpoints.
-For stops, the message is [Stop], the list endpoint is [ListStops], and the get endpoint is [GetStop].
+For each resource there is a proto message type, a list endpoint, and a get endpoints.
+For stops, the message is [Stop](#stoppreview), the list endpoint is [ListStops], and the get endpoint is [GetStop].
 
-In the HTTP API, the hierarchy is represented in the URL; thus:
+The URLs in the HTTP API are determined by the hierarchy; thus:
 
 - List all systems has URL `/systems`,
-- Get system with ID `<system_id>`` has URL `/systems/<system_id>`,
+- Get system with ID `<system_id>` has URL `/systems/<system_id>`,
 - List all routes in the system has URL `/systems/<system_id>/routes`,
 - Get route has URL `/systems/<system_id>/routes/<route_id>`,
 
@@ -41,302 +34,564 @@ Many resources refer to other resources across the hierarchy.
 For example, each route has an agency it is attached to.
 Each stop has a list of service maps, each of which contains a set of routes.
 In these situations the resource message contains a _preview_ of the other resource.
-The [Route] message contains an agency preview, in the form of an [Agency.Preview]
+The [Route](#route) message contains an agency preview, in the form of an [Agency.Preview](#agencypreview)
   message.
 These preview messages contain at least enough information to uniquely identify the resource.
 However they also contain additional information that is considered generally useful;
-  thus, the [Stop.Preview] message contains the stop's name.
+  thus, the [Stop.Preview](#stoppreview) message contains the stop's name.
 What counts as "considered generally" is obviously very subjective and open to change.
 
 The following table summarizes all of the resources and their types.
 The right-most column describes the source_of the resource.
 The public API is a read-only API so all of the resources come from somewhere else.
 
-| Resource    | Parent resource | Proto type | Proto preview type | Source
-+-------------+-----------------+-----------
-| Agency      | System          | [Agency]   | [Agency.Preview] | GTFS static    
-| Alert       | System          | [Alert]    | [Alert.Preview] | GTFS realtime 
-| System      | None            |         | system config
-| Feed        | System          |       | system config  
-| Feed update | Feed            | | Transiter update process             
-| Route       | System          |        | GTFS static
-| Trip        | Route           |   | GTFS realtime      
-| Stop        | System          |       | GTFS static   
-| Transfer    | System          |        | GTFS static       
-| Vehicle     | System or trip  |        | GTFS realtime     
-+--------
+| Resource    | Preview type | List endpoint | Get endpoint | Source |
+| ----------- | --------------- | ---------- | ------------------ | -------|
+| [Agency](#agency)   | [Agency.Preview](#agencypreview) | [GetAgency] | [ListAgency]  | GTFS static    
+| Alert       | System          | [Alert]    | [Alert.Preview]    | GTFS realtime 
+| Feed        | System          |            |                    | system config  
+| Feed update | Feed            |            |                    | Transiter update process
+| Route       | System          |            |                    | GTFS static
+| Trip        | Route           |            |                    | GTFS realtime      
+| Stop        | System          |            |                    | GTFS static   
+| System      | None            |            |                    | system config
+| Transfer    | System          |            |                    | GTFS static       
+| Vehicle     | System or trip  |            |                    | GTFS realtime     
+
 */
+syntax = "proto3";
+option go_package = "github.com/jamespfennell/transiter/api";
+
+import "google/api/annotations.proto";
+
 service Public {
+
+  // API entrypoint
+  //
+  // `GET /`
+  //
+  // Provides basic information about this Transiter instance and the Transit systems it contains.
   rpc Entrypoint (EntrypointRequest) returns (EntrypointReply) {
     option (google.api.http) = {
             get: "/"
         };
   }
 
+  // TODO: change the comment format
+  /**
+  * List systems 
+  *
+  * `GET /systems`
+  *
+  * List all transit systems that are installed in this Transiter instance.
+  */
   rpc ListSystems (ListSystemsRequest) returns (ListSystemsReply) {
     option (google.api.http) = {
             get: "/systems"
         };
   }
   
+  /**
+  * Get system
+  *
+  * `GET /systems/<system_id>`
+  *
+  * Get a system by its ID.
+  */
   rpc GetSystem (GetSystemRequest) returns (System) {
     option (google.api.http) = {
             get: "/systems/{system_id}"
         };
   }
 
+  /**
+  * List agencies
+  *
+  * `GET /systems/<system_id>/agencies`
+  *
+  * List all agencies in a system.
+  */
   rpc ListAgencies (ListAgenciesRequest) returns (ListAgenciesReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/agencies"
         };
   }
 
+  /**
+  * Get agency
+  *
+  * `GET /systems/<system_id>/agencies/<agency_id>`
+  *
+  * Get an agency in a system by its ID.
+  */
   rpc GetAgency (GetAgencyRequest) returns (Agency) {
     option (google.api.http) = {
             get: "/systems/{system_id}/agencies/{agency_id}"
         };
   }
 
+  /**
+  * List stops
+  *
+  * `GET /systems/<system_id>/stops/<stop_id>`
+  *
+  * List all stops in a system.
+  */
   rpc ListStops (ListStopsRequest) returns (ListStopsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/stops"
         };
   }
 
+  /**
+  * Get stop
+  *
+  * `GET /systems/<system_id>/stops/<stop_id>`
+  *
+  * Get a stop in a system by its ID.
+  */
   rpc GetStop (GetStopRequest) returns (Stop) {
     option (google.api.http) = {
             get: "/systems/{system_id}/stops/{stop_id}"
         };
   }
 
+  /**
+  * List routes
+  *
+  * `GET /systems/<system_id>/routes`
+  *
+  * List all routes in a system.
+  */
   rpc ListRoutes (ListRoutesRequest) returns (ListRoutesReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/routes"
         };
   }
 
+  /**
+  * Get route
+  *
+  * `GET /systems/<system_id>/routes/<route_id>`
+  *
+  * Get a route in a system by its ID.
+  */
   rpc GetRoute (GetRouteRequest) returns (Route) {
     option (google.api.http) = {
             get: "/systems/{system_id}/routes/{route_id}"
         };
   }
 
+  /**
+  * List trips
+  *
+  * `GET /systems/<system_id>/routes/<route_id>/trips`
+  *
+  * List all trips in a route.
+  */
   rpc ListTrips (ListTripsRequest) returns (ListTripsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/routes/{route_id}/trips"
         };
   }
 
+  /**
+  * Get trip
+  *
+  * `GET /systems/<system_id>/routes/<route_id>/trips/<trip_id>`
+  *
+  * Get a trip by its ID.
+  */
   rpc GetTrip (GetTripRequest) returns (Trip) {
     option (google.api.http) = {
             get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"
         };
   }
 
+  /**
+  * List alerts
+  *
+  * `GET /systems/<system_id>/alerts`
+  *
+  * List all alerts in a system.
+  * By default this endpoint returns both active alerts
+  *   (alerts which have an active period containing the current time) and non-active alerts.
+  */
   rpc ListAlerts (ListAlertsRequest) returns (ListAlertsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/alerts"
         };
   }
 
+  /**
+  * Get alert
+  *
+  * `GET /systems/<system_id>/alerts/<alert_id>`
+  *
+  * Get an alert by its ID.
+  */
   rpc GetAlert (GetAlertRequest) returns (Alert) {
     option (google.api.http) = {
             get: "/systems/{system_id}/alerts/{alert_id}"
         };
   }
 
+  /**
+  * List transfers
+  *
+  * `GET /systems/<system_id>/transfers`
+  *
+  * List all transfers in a system.
+  */
+  rpc ListTransfers (ListTransfersRequest) returns (ListTransfersReply) {
+    option (google.api.http) = {
+            get: "/systems/{system_id}/transfers"
+        };
+  }
+
+  /**
+  * List feeds
+  *
+  * `GET /systems/<system_id>/feeds`
+  *
+  * List all feeds for a system.
+  */
   rpc ListFeeds (ListFeedsRequest) returns (ListFeedsReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/feeds"
         };
   }
 
+  /**
+  * Get feed
+  *
+  * `GET /systems/<system_id>/feeds/<feed_id>`
+  *
+  * Get a feed in a system by its ID.
+  */
   rpc GetFeed (GetFeedRequest) returns (Feed) {
     option (google.api.http) = {
             get: "/systems/{system_id}/feeds/{feed_id}"
         };
   }
 
+  /**
+  * List feed updates
+  *
+  * `GET /systems/<system_id>/feeds/<feed_id>/updates`
+  *
+  * List feeds updates for a feed.
+  */
   rpc ListFeedUpdates (ListFeedUpdatesRequest) returns (ListFeedUpdatesReply) {
     option (google.api.http) = {
             get: "/systems/{system_id}/feeds/{feed_id}/updates"
         };
   }
-
-  rpc ListTransfers (ListTransfersRequest) returns (ListTransfersReply) {
-    option (google.api.http) = {
-            get: "/systems/{system_id}/transfers"
-        };
-  }
 }
 
+// Request payload for the entrypoint endpoint.
 message EntrypointRequest {}
 
+// Response payload for the entrypoint endpoint.
 message EntrypointReply {
-
+  
+  // Message containing version information about a Transiter binary.
   message TransiterDetails {
+    // The version of the Transiter binary this instance is running.
     string version = 1;
+    // URL of the Transiter GitHub respository.
     string href = 2;
-    
+  
+    // Message containing information about a specific Transiter CI build.
     message Build {
+      // The GitHub build number.
       string number = 3;
+      // Time the binary was built, in the form of a human readable string.
       string built_at = 4;
+      // Time the binary was built, in the form of a Unix timestamp.
       string built_at_timestamp = 5;
+      // Hash of the Git commit that the binary was built at.
       string git_commit_hash = 6;
+      // URL of the GitHub actions CI run.
       string href = 7;
     }
+    // Information about the CI build invocation that built this Transiter binary.
     optional Build build = 3;
   }
+  // Version and other information about this Transiter binary.
   TransiterDetails transiter = 1;
   
+  // List of systems that are installed in this Transiter instance.
   repeated System.Preview systems = 2;
 }
 
+// Request payload for the list systems endpoint.
 message ListSystemsRequest {}
 
+// Response payload for the list systems endpoint.
 message ListSystemsReply {
+  // List of systems.
   repeated System systems = 1;
 }
 
+// Request payload for the get system endpoint.
 message GetSystemRequest {
+  // ID of the system to get.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
 }
 
+// Request payload for the list agencies endpoint.
 message ListAgenciesRequest {
+  // ID of the system for which to list agencies.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
 }
 
+// Response payload for the list agencies endpoint.
 message ListAgenciesReply {
+  // List of agencies.
   repeated Agency agencies = 1;
 }
 
+// Request payload for the get agency endpoint.
 message GetAgencyRequest {
+  // ID of the system the agency is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
+  // ID of the agency.
+  //
+  // This is a URL parameter in the HTTP API.
   string agency_id = 2;
 }
 
+// Request payload for the list stops endpoint.
 message ListStopsRequest {
+  // ID of the system for which to list stops.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
 }
 
+// Response payload for the list stops endpoint.
 message ListStopsReply {
+  // List of stops.
   // TODO: full Stop instead of preview
   repeated Stop.Preview stops = 1;
 }
 
+// Reqeust payload for the get stop endpoint.
 message GetStopRequest {
+  // ID of the system the stop is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
+  // ID of the stop.
+  //
+  // This is a URL parameter in the HTTP API.
   string stop_id = 2;
 }
 
+// Request payload for the list routes endpoint.
 message ListRoutesRequest {
+  // ID of the system for which to list routes.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
 
-  // If true, the estimate headway field will not be populated.
+  // If true, the estimated headway fields will not be populated.
+  // This will generally make the response faster to generate.
   bool skip_estimated_headways = 2;
   // If true, the service maps field will not be populated.
+  // This will generally make the response faster to generate.
   bool skip_service_maps = 3;
   // If true, the alerts field will not be populated.
+  // This will generally make the response faster to generate.
   bool skip_alerts = 4;
 }
 
+// Response payload for the list routes endpoint.
 message ListRoutesReply {
+  // List of routes.
   repeated Route routes = 1;
 }
 
+// Request payload for the get route endpoint.
 message GetRouteRequest {
+  // ID of the system the route is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
+  // ID of the route.
+  //
+  // This is a URL parameter in the HTTP API.
   string route_id = 2;
 
-  // If true, the estimate headway field will not be populated.
+  // If true, the estimated headway field will not be populated.
+  // This will generally make the response faster to generate.
   bool skip_estimated_headways = 3;
   // If true, the service maps field will not be populated.
+  // This will generally make the response faster to generate.
   bool skip_service_maps = 4;
   // If true, the alerts field will not be populated.
+  // This will generally make the response faster to generate.
   bool skip_alerts = 5;
 }
 
+// Request payload for the list trips endpoint.
 message ListTripsRequest {
+  // ID of the system the route is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
+  // ID of the route for which to list trips
+  //
+  // This is a URL parameter in the HTTP API.
   string route_id = 2;
 }
 
+// Response payload for the list trips endpoint.
 message ListTripsReply {
+  // List of trips.
   // TODO: full Trip instead of preview
   repeated Trip.Preview trips = 1;
 }
 
+// Request payload for the list alerts endpoint.
 message ListAlertsRequest {
+  // ID of the system for which to list alerts.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
 
   // If non-empty, only alerts with the provided IDs are returned.
   // This is interpreted as a filtering condition, so it is not an error to provide non-existent IDs.
   //
   // If empty, all alerts in the system are returned.
+  // TODO: add a boolean filter_on_alert_ids field
   repeated string alert_id = 2;
 }
 
+// Response payload for the list alerts endpoiont.
 message ListAlertsReply {
+  // List of alerts.
   repeated Alert alerts = 1;
 }
 
+// Request payload for the get alert endpoint.
 message GetAlertRequest {
+  // ID of the system the alert is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
+  // ID of the alert.
+  //
+  // This is a URL parameter in the HTTP API.
   string alert_id = 2;
 }
 
+// Request payload for the get trip endpoint.
 message GetTripRequest {
+  // ID of the system the trip is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
+  // ID of the route the trip is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string route_id = 2;
+  // ID of the route.
+  //
+  // This is a URL parameter in the HTTP API.
   string trip_id = 3;
 }
 
+// Request payload for the list feeds endpoint.
 message ListFeedsRequest {
+  // ID of the system for which to list feeds.
   string system_id = 1;
 }
 
+// Response payload for the list feeds endpoint.
 message ListFeedsReply {
+  // List of feeds.
   // TODO: full Feed instead of preview
   repeated Feed.Preview feeds = 1;
 }
 
+// Request payload for the list feed updates endpoint.
 message ListFeedUpdatesRequest {
+  // ID of the system the feed is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
+  // ID of the feed for which to list updates.
+  //
+  // This is a URL parameter in the HTTP API.
   string feed_id = 2;
 }
 
+// Response payload for the list feed updates endpoint.
 message ListFeedUpdatesReply {
+  // List of updates.
   repeated FeedUpdate updates = 1;
 }
 
+// Request payload for the get feed endpoint.
 message GetFeedRequest {
+  // ID of the system the feed is in.
+  //
+  // This is a URL parameter in the HTTP API.
   string system_id = 1;
+  // ID of the feed.
+  //
+  // This is a URL parameter in the HTTP API.
   string feed_id = 2;
 }
 
+// Request payload for the list transfers endpoint.
 message ListTransfersRequest {
+  // ID of the system for which to list transfers.
   string system_id = 1;
 }
 
+// Response payload for the list transfers endpoint.
 message ListTransfersReply {
+  // List of transfers.
   repeated Transfer transfers = 1;
 }
 
+// The System resource.
 message System {
+  // ID of the system as specified in the install request.
   string id = 1;
+  // Name of the system as specified in the system configuration file.
   string name = 2;
 
+  // Enum describing the possible statuses of a system.
   enum Status {
+    // Unknown status, included for protobuf reasons.
     UNKNOWN = 0;
+    // The system is currently being installed through an asychronous install request.
     INSTALLING = 1;
+    // The system was successfully installed and is now active.
     ACTIVE = 2;
+    // The system was added through an asynchronous install request, but the install failed.
     INSTALL_FAILED = 3;
+    // The system is currently being updated through an asynchronous update request.
     UPDATING = 4;
+    // An asynchronous update of the system failed.
     UPDATE_FAILED = 5;
+    // The system is in the process of being deleted through an asynchronous delete request.
     DELETING = 6;
   }
+  // Status of the system.
   Status status = 3;
 
+  // TODO: rename `ChildResources`, move out of here, and reuse
   message ChildEntities {
     int64 count = 1;
     optional string href = 2;
@@ -404,11 +659,13 @@ message Trip {
   string id = 1;
   // TODO(APIv2): remove route?
   Route.Preview route = 2;
+  // TODO: remove?
   Stop.Preview last_stop = 3;
   optional int64 started_at = 4;
   optional Vehicle.Preview vehicle = 6;
   bool direction_id = 7;
 
+  // TODO: merge with the the other stop time
   message StopTime {
     EstimatedTime arrival = 1;
     EstimatedTime departure = 2;
@@ -425,9 +682,12 @@ message Trip {
   message Preview {
     string id = 1;
     Route.Preview route = 2;
+    // TODO: rename destination and move to Stop_StopTime
     Stop.Preview last_stop = 3;
+    // TODO: remove
     optional int64 started_at = 10;
     optional Vehicle.Preview vehicle = 6;
+    // TODO: remove
     bool direction_id = 4;
     optional string href = 5;
   }
@@ -440,34 +700,77 @@ message Vehicle {
   }
 }
 
+// The Route resource.
+//
+// This resource corresponds to the [route type in the GTFS static
+// specification](https://developers.google.com/transit/gtfs/reference#routestxt).
+// Most of the fields in the resource come directly from the `routes.txt` table.
+// Transiter adds some additional related fields (agency, alerts)
+//   and computed fields (estimated headway, service maps).
 message Route {
+  // ID of the route. This is the `route_id` column in `routes.txt`.
   string id = 1;
+  // Short name of the route. This is the `route_short_name` column in `routes.txt`.
   optional string short_name = 2;
+  // Long name of the route. This is the `route_long_name` column in `routes.txt`.
   optional string long_name = 3;
+  // Color of the route. This is the `route_color` column in `routes.txt`.
   string color = 4;
+  // Text color of the route. This is the `route_text_color` column in `routes.txt`.
   string text_color = 5;
+  // Description of the route. This is the `route_desc` column in `routes.txt`.
   optional string description = 6;
+  // URL of a web page about the route. This is the `route_url` column in `routes.txt`.
   optional string url = 7;
+  // Sort order of the route. This is the `route_sort_order` column in `routes.txt`.
   optional int32 sort_order = 13;
-  // TODO: make these enums
+  // TODO: make these 3 fields enums
+  // Continuous pickup policy. This is the `continuous_pickup` column in `routes.txt`.
   string continuous_pickup = 14;
+  // Continuous dropoff policy. This is the `continuous_dropoff` column in `routes.txt`.
   string continuous_drop_off = 15;
-
-  // TODO: make this an enum
+  // Type of the route. This is the `route_type` column in `routes.txt`.
   string type = 8;
 
-  // An estimate of the interval of time between consecutive trains, in seconds.
-  optional int32 estimated_headway = 9;
-
+  // Agency this route is associated to.
+  //
+  // This is determined using the `agency_id` column in `routes.txt`.
   Agency.Preview agency = 10;
 
+  // Active alerts for this route.
+  //
+  // These are determined using the `informed_entity` field in
+  // the [GTFS realtime alerts 
+  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+  repeated Alert.Preview alerts = 12;
+
+  // An estimate of the interval of time between consecutive realtime trips, in seconds.
+  //
+  // If there is insufficient data to compute an estimate, the field will be empty.
+  //
+  // The estimate is computed as follows.
+  // For each stop that has realtime trips for the route,
+  //  the list of arrival times for those trips is examined.
+  // The difference between consecutive arrival times is calculated.
+  // If there are `N` trips, there will be `N-1` such arrival time diffs.
+  // The estimated headway is the average of these diffs across
+  /// all stops.
+  optional int32 estimated_headway = 9;
+
+  // Message describing the service maps view in routes.
+  //
+  // See the service maps documentation for more information on this
+  // message and the associated field.
   message ServiceMap {
+    // Config ID of the service map, as specified in the system configuration file.
     string config_id = 1;
+    // Ordered list of stop at which this route calls.
+    //
+    // This list may be empty, in which case the route has no service in the service map.
     repeated Stop.Preview stops = 2;
   }
+  // List of service maps for this route.
   repeated ServiceMap service_maps = 11;
-
-  repeated Alert.Preview alerts = 12;
 
   // Preview contains preview information about the route.
   message Preview {
@@ -475,16 +778,31 @@ message Route {
     // TODO(APIv2): remove? or add text_color?
     string color = 2;
     // Will be populated only if the system is not obvious
+    // TODO: maybe we should just include it always so that each preview/reference
+    // uniquely identifies a resource
     optional System system = 8;
     optional string href = 3;
   }
 }
 
+// The feed resource.
+//
+// Each feed is defined in the system configuration file.
+// Feeds are included in the public API because there are non-admin use-cases for this resource.
+// For example, an app might publish the staleness of realtime data 
+//   by checking for the last succesful feed update.
+//
+// More detailed information on a feed -- its full configuration, and the
+//   current status of its periodic updates -- can be retrieved through the admin API.
 message Feed {
+  // ID of the feed, as specified in the system configuration file.
   string id = 1;
+  // Whether periodic update is enabled for this feed.
   bool periodic_update_enabled = 2;
+  // If periodic update is enabled, the period each update is triggered.
   optional string periodic_update_period = 3;
 
+  // TODO: have a ChildResources message and use that instead
   message Updates {
     optional string href = 1;
   }
@@ -493,24 +811,49 @@ message Feed {
   // Preview contains preview information about the feed.
   message Preview {
     string id = 1;
+    // TODO: remove
     bool periodic_update_enabled = 2;
+    // TODO: remove
     optional string periodic_update_period = 3;
     optional string href = 4;
   }
 }
 
+// The Agency resource.
+//
+// This resource corresponds to the [agency type in the GTFS static
+// specification](https://developers.google.com/transit/gtfs/reference#agencytxt).
+// Most of the fields in the resource come directly from the `agency.txt` table.
+// Transiter adds some additional related fields (alerts).
 message Agency {
+  // ID of the agency. This is the `agency_id` column in `agency.txt`.
   string id = 1;
+  // Name of the agency. This is the `agency_name` column in `agency.txt`.
   string name = 2;
+  // URL of the agency. This is the `agency_url` column in `agency.txt`.
   string url = 3;
+  // Timezone of the agency. This is the `agency_timezone` column in `agency.txt`.
   string timezone = 4;
+  // Language of the agency. This is the `agency_lang` column in `agency.txt`.
   optional string language = 5;
+  // Phone number of the agency. This is the `agency_phone` column in `agency.txt`.
   optional string phone = 6;
+  // URL where tickets for the agency's services ban be bought.
+  // This is the `agency_fare_url` column in `agency.txt`.
   optional string fare_url = 7;
+  // Email address of the agency. This is the `agency_email` column in `agency.txt`.
   optional string email = 8;
 
+  // TODO: this should be its own endpoint I think
   repeated Route.Preview routes = 9;
+
+  // List of active alerts for the agency.
+  //
+  // These are determined using the `informed_entity` field in
+  // the [GTFS realtime alerts 
+  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
   repeated Alert.Preview alerts = 10;
+
   optional string href = 11;
 
   // Preview contains preview information about the agency.
@@ -521,12 +864,22 @@ message Agency {
   }
 }
 
+// The Alert resource.
+//
+// This resource corresponds to the [alert type in the GTFS realtime
+// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+//
+// TODO: informed entites
 // TODO; alphabetize the messages
 message Alert {
+  // ID of the alert. This corresponds to the [ID field in the feed entity
+  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-feedentity)
+  // corresponding to the alert.
   string id = 1;
 
-  // Cause is the same as the alert cause in the GTFS realtime spec, except UNKNOWN_CAUSE has
-  // value 0 to satisfy proto3 requirements.
+  // Cause is the same as the [cause enum in the GTFS realtime 
+  // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-cause),
+  // except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Cause {
     UNKNOWN_CAUSE = 0;
     OTHER_CAUSE = 2;
@@ -541,10 +894,12 @@ message Alert {
     POLICE_ACTIVITY = 11;
     MEDICAL_EMERGENCY = 12;
   }
+  // Cause of the alert. This corresponds to the `cause` field in the realtime alert message.
   Cause cause = 2;
 
-  // Effect is the same as the alert effect in the GTFS realtime spec, except UNKNOWN_EFFECT has
-  // value 0 to satisfy proto3 requirements.
+  // Effect is the same as the [effect enum in the GTFS realtime 
+  // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-effect),
+  // except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Effect {
     UNKNOWN_EFFECT = 0;
     NO_SERVICE = 1;
@@ -558,25 +913,48 @@ message Alert {
     NO_EFFECT = 10;
     ACCESSIBILITY_ISSUE = 11;
   }
+  // Effect of the alert. This corresponds to the `effect` field in the realtime alert message.
   Effect effect = 3;
 
+  // The active period message describes a period when an alert is active.
+  // It corresponds the the [time range message in the GTFS realtime
+  // specification](https://developers.google.com/transit/gtfs-realtime/reference#message-timerange).
   message ActivePeriod {
+    // Unix timestamp of the start time of the active period.
+    // If not set, the alert be interpreted
+    // as being always active up to the end time.
     optional int64 starts_at = 1;
+    // Unix timestamp of the end time of the active period.
+    // If not set, the alert be interpreted as being indefinitely active.
     optional int64 ends_at = 2;
   }
+  // The current active period, if the alert is currently active.
+  // If the alert is not active this is empty.
   optional ActivePeriod current_active_period = 4;
+  // All active periods for this alert.
+  // Transiter guarantees that these active periods have no overlap.
   repeated ActivePeriod all_active_periods = 8;
 
+  // The text message describes an alert header/description/URL in a specified language.
+  // It corresponds the the [translation message in the GTFS realtime
+  // specification](https://developers.google.com/transit/gtfs-realtime/reference#message-translation).
   message Text {
+    // Content of the text.
     string text = 1;
+    // Language of this text.
     string language = 2;
   }
+  // Header of the alert, in zero or more languages.
+  // This corresponds to the `header_text` field in the realtime alert message.
   repeated Text header = 5;
+  // Description of the alert, in zero or more languages.
+  // This corresponds to the `description_text` field in the realtime alert message.
   repeated Text description = 6;
+  // URL for additional information about the alert, in zero or more languages.
+  // This corresponds to the `url` field in the realtime alert message.
   repeated Text url = 7;
 
-  // TODO: informed entites
-
+  // TODO: rename Preview to Reference?
   message Preview {
     string id = 1;
     Cause cause = 2;
@@ -608,14 +986,32 @@ message Transfer {
   optional int32 distance = 5;
 }
 
+// The feed update resource.
+//
+// Each feed update event 
+//   -- triggered manually though the admin API, or automatically by the scheduler --
+// generates a feed update resource.
+// This resource is updated as the feed update progresses.
+// A background task in Transiter periodically garbage collects old updates.
 message FeedUpdate {
+    // ID of the feed update. This is the primary key of the associated Postgres
+    // database row so it's actually globally unique.
     string id = 1;
     // TODO: make these enums
+    // Type of the feed update.
     string type = 2;
+    // Status of the feed update.
     string status = 3;
+    // TODO what is this?
     optional string result = 4;
+    // TODO: delete?
     optional string stack_trace = 5;
-    optional string content_hash = 6;
+    // Number of bytes in the downloaded feed data.
     optional int32 content_length = 7;
+    // Hash of the downloaded feed data. This is used to skip updates
+    // if the feed data hasn't changed.
+    optional string content_hash = 6;
+    // Unix timestamp of the approximate time the update completed.
+    // TODO: started_at? scheduled_at?
     optional int64 completed_at = 8;
 }

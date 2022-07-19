@@ -508,8 +508,6 @@ Navigating to the Milbrae BART station endpoint (`http://localhost:8000/systems/
 Because the Caltrain transfer is an inter-system transfer,
     its system is included in the response.
     
-Full documentation for the inter-system transfers feature can be found in the
-    [relevant API page](api/inter-system-transfers-management.md).
     
    
 ## Where to go next?

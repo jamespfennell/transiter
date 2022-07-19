@@ -23,21 +23,11 @@ markdown_extensions:
 nav:
   - Home: index.md
   - tour.md
-  - HTTP API Reference:
-      - api/index.md
-      - api/entry-point-and-docs.md
-      - api/systems.md
-      - api/stations-and-stops.md
-      - api/routes.md
-      - api/realtime-trips.md
-      - api/agencies.md
-      - api/feeds.md
-      - api/inter-system-transfers-management.md
-      - api/admin.md
-  - Configuring transit systems: systems.md
-  - Custom feed parsers:
-    - feedparsers.md
-    - parser-output-types.md
+  - API Reference:
+      - Public API (resources): api/public_resources.md
+      - Public API (endpoints): api/public_endpoints.md
+      - Admin API: api/admin.md
+  - systems.md
   - Running and deployment:
     - Running Transiter: deployment/running-transiter.md
     - Building and serving the docs: deployment/documentation.md

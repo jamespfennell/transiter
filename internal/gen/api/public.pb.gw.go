@@ -833,6 +833,58 @@ func local_request_Public_GetAlert_0(ctx context.Context, marshaler runtime.Mars
 
 }
 
+func request_Public_ListTransfers_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListTransfersRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["system_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "system_id")
+	}
+
+	protoReq.SystemId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
+	}
+
+	msg, err := client.ListTransfers(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_Public_ListTransfers_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListTransfersRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["system_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "system_id")
+	}
+
+	protoReq.SystemId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
+	}
+
+	msg, err := server.ListTransfers(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 func request_Public_ListFeeds_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListFeedsRequest
 	var metadata runtime.ServerMetadata
@@ -1025,58 +1077,6 @@ func local_request_Public_ListFeedUpdates_0(ctx context.Context, marshaler runti
 	}
 
 	msg, err := server.ListFeedUpdates(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_Public_ListTransfers_0(ctx context.Context, marshaler runtime.Marshaler, client PublicClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTransfersRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["system_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "system_id")
-	}
-
-	protoReq.SystemId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
-	}
-
-	msg, err := client.ListTransfers(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_Public_ListTransfers_0(ctx context.Context, marshaler runtime.Marshaler, server PublicServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTransfersRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["system_id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "system_id")
-	}
-
-	protoReq.SystemId, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "system_id", err)
-	}
-
-	msg, err := server.ListTransfers(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -1386,6 +1386,29 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 
 	})
 
+	mux.Handle("GET", pattern_Public_ListTransfers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListTransfers", runtime.WithHTTPPathPattern("/systems/{system_id}/transfers"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_Public_ListTransfers_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_Public_ListTransfers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_Public_ListFeeds_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1452,29 +1475,6 @@ func RegisterPublicHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		}
 
 		forward_Public_ListFeedUpdates_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_Public_ListTransfers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Public/ListTransfers", runtime.WithHTTPPathPattern("/systems/{system_id}/transfers"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_Public_ListTransfers_0(rctx, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_Public_ListTransfers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1779,6 +1779,26 @@ func RegisterPublicHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 
 	})
 
+	mux.Handle("GET", pattern_Public_ListTransfers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListTransfers", runtime.WithHTTPPathPattern("/systems/{system_id}/transfers"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_Public_ListTransfers_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_Public_ListTransfers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_Public_ListFeeds_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1839,26 +1859,6 @@ func RegisterPublicHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 
 	})
 
-	mux.Handle("GET", pattern_Public_ListTransfers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Public/ListTransfers", runtime.WithHTTPPathPattern("/systems/{system_id}/transfers"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_Public_ListTransfers_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_Public_ListTransfers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
 	return nil
 }
 
@@ -1889,13 +1889,13 @@ var (
 
 	pattern_Public_GetAlert_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "alerts", "alert_id"}, ""))
 
+	pattern_Public_ListTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "transfers"}, ""))
+
 	pattern_Public_ListFeeds_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "feeds"}, ""))
 
 	pattern_Public_GetFeed_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "feeds", "feed_id"}, ""))
 
 	pattern_Public_ListFeedUpdates_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"systems", "system_id", "feeds", "feed_id", "updates"}, ""))
-
-	pattern_Public_ListTransfers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "transfers"}, ""))
 )
 
 var (
@@ -1925,11 +1925,11 @@ var (
 
 	forward_Public_GetAlert_0 = runtime.ForwardResponseMessage
 
+	forward_Public_ListTransfers_0 = runtime.ForwardResponseMessage
+
 	forward_Public_ListFeeds_0 = runtime.ForwardResponseMessage
 
 	forward_Public_GetFeed_0 = runtime.ForwardResponseMessage
 
 	forward_Public_ListFeedUpdates_0 = runtime.ForwardResponseMessage
-
-	forward_Public_ListTransfers_0 = runtime.ForwardResponseMessage
 )

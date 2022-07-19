@@ -31,7 +31,7 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
-func request_TransiterAdmin_GetSystemConfig_0(ctx context.Context, marshaler runtime.Marshaler, client TransiterAdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Admin_GetSystemConfig_0(ctx context.Context, marshaler runtime.Marshaler, client AdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetSystemConfigRequest
 	var metadata runtime.ServerMetadata
 
@@ -57,7 +57,7 @@ func request_TransiterAdmin_GetSystemConfig_0(ctx context.Context, marshaler run
 
 }
 
-func local_request_TransiterAdmin_GetSystemConfig_0(ctx context.Context, marshaler runtime.Marshaler, server TransiterAdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Admin_GetSystemConfig_0(ctx context.Context, marshaler runtime.Marshaler, server AdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetSystemConfigRequest
 	var metadata runtime.ServerMetadata
 
@@ -83,7 +83,7 @@ func local_request_TransiterAdmin_GetSystemConfig_0(ctx context.Context, marshal
 
 }
 
-func request_TransiterAdmin_InstallOrUpdateSystem_0(ctx context.Context, marshaler runtime.Marshaler, client TransiterAdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Admin_InstallOrUpdateSystem_0(ctx context.Context, marshaler runtime.Marshaler, client AdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq InstallOrUpdateSystemRequest
 	var metadata runtime.ServerMetadata
 
@@ -117,7 +117,7 @@ func request_TransiterAdmin_InstallOrUpdateSystem_0(ctx context.Context, marshal
 
 }
 
-func local_request_TransiterAdmin_InstallOrUpdateSystem_0(ctx context.Context, marshaler runtime.Marshaler, server TransiterAdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Admin_InstallOrUpdateSystem_0(ctx context.Context, marshaler runtime.Marshaler, server AdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq InstallOrUpdateSystemRequest
 	var metadata runtime.ServerMetadata
 
@@ -151,7 +151,7 @@ func local_request_TransiterAdmin_InstallOrUpdateSystem_0(ctx context.Context, m
 
 }
 
-func request_TransiterAdmin_DeleteSystem_0(ctx context.Context, marshaler runtime.Marshaler, client TransiterAdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Admin_DeleteSystem_0(ctx context.Context, marshaler runtime.Marshaler, client AdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DeleteSystemRequest
 	var metadata runtime.ServerMetadata
 
@@ -177,7 +177,7 @@ func request_TransiterAdmin_DeleteSystem_0(ctx context.Context, marshaler runtim
 
 }
 
-func local_request_TransiterAdmin_DeleteSystem_0(ctx context.Context, marshaler runtime.Marshaler, server TransiterAdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Admin_DeleteSystem_0(ctx context.Context, marshaler runtime.Marshaler, server AdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq DeleteSystemRequest
 	var metadata runtime.ServerMetadata
 
@@ -203,7 +203,7 @@ func local_request_TransiterAdmin_DeleteSystem_0(ctx context.Context, marshaler 
 
 }
 
-func request_TransiterAdmin_UpdateFeed_0(ctx context.Context, marshaler runtime.Marshaler, client TransiterAdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Admin_UpdateFeed_0(ctx context.Context, marshaler runtime.Marshaler, client AdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UpdateFeedRequest
 	var metadata runtime.ServerMetadata
 
@@ -239,7 +239,7 @@ func request_TransiterAdmin_UpdateFeed_0(ctx context.Context, marshaler runtime.
 
 }
 
-func local_request_TransiterAdmin_UpdateFeed_0(ctx context.Context, marshaler runtime.Marshaler, server TransiterAdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Admin_UpdateFeed_0(ctx context.Context, marshaler runtime.Marshaler, server AdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UpdateFeedRequest
 	var metadata runtime.ServerMetadata
 
@@ -275,7 +275,7 @@ func local_request_TransiterAdmin_UpdateFeed_0(ctx context.Context, marshaler ru
 
 }
 
-func request_TransiterAdmin_GetSchedulerStatus_0(ctx context.Context, marshaler runtime.Marshaler, client TransiterAdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Admin_GetSchedulerStatus_0(ctx context.Context, marshaler runtime.Marshaler, client AdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetSchedulerStatusRequest
 	var metadata runtime.ServerMetadata
 
@@ -284,7 +284,7 @@ func request_TransiterAdmin_GetSchedulerStatus_0(ctx context.Context, marshaler 
 
 }
 
-func local_request_TransiterAdmin_GetSchedulerStatus_0(ctx context.Context, marshaler runtime.Marshaler, server TransiterAdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Admin_GetSchedulerStatus_0(ctx context.Context, marshaler runtime.Marshaler, server AdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetSchedulerStatusRequest
 	var metadata runtime.ServerMetadata
 
@@ -293,7 +293,7 @@ func local_request_TransiterAdmin_GetSchedulerStatus_0(ctx context.Context, mars
 
 }
 
-func request_TransiterAdmin_ResetScheduler_0(ctx context.Context, marshaler runtime.Marshaler, client TransiterAdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Admin_ResetScheduler_0(ctx context.Context, marshaler runtime.Marshaler, client AdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ResetSchedulerRequest
 	var metadata runtime.ServerMetadata
 
@@ -302,7 +302,7 @@ func request_TransiterAdmin_ResetScheduler_0(ctx context.Context, marshaler runt
 
 }
 
-func local_request_TransiterAdmin_ResetScheduler_0(ctx context.Context, marshaler runtime.Marshaler, server TransiterAdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Admin_ResetScheduler_0(ctx context.Context, marshaler runtime.Marshaler, server AdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ResetSchedulerRequest
 	var metadata runtime.ServerMetadata
 
@@ -311,24 +311,24 @@ func local_request_TransiterAdmin_ResetScheduler_0(ctx context.Context, marshale
 
 }
 
-// RegisterTransiterAdminHandlerServer registers the http handlers for service TransiterAdmin to "mux".
-// UnaryRPC     :call TransiterAdminServer directly.
+// RegisterAdminHandlerServer registers the http handlers for service Admin to "mux".
+// UnaryRPC     :call AdminServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterTransiterAdminHandlerFromEndpoint instead.
-func RegisterTransiterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, server TransiterAdminServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterAdminHandlerFromEndpoint instead.
+func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, server AdminServer) error {
 
-	mux.Handle("GET", pattern_TransiterAdmin_GetSystemConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Admin_GetSystemConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.TransiterAdmin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TransiterAdmin_GetSystemConfig_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Admin_GetSystemConfig_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -336,22 +336,22 @@ func RegisterTransiterAdminHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_TransiterAdmin_GetSystemConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_GetSystemConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PUT", pattern_TransiterAdmin_InstallOrUpdateSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_Admin_InstallOrUpdateSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.TransiterAdmin/InstallOrUpdateSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/InstallOrUpdateSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TransiterAdmin_InstallOrUpdateSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Admin_InstallOrUpdateSystem_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -359,22 +359,22 @@ func RegisterTransiterAdminHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_TransiterAdmin_InstallOrUpdateSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_InstallOrUpdateSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_TransiterAdmin_DeleteSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_Admin_DeleteSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.TransiterAdmin/DeleteSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/DeleteSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TransiterAdmin_DeleteSystem_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Admin_DeleteSystem_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -382,22 +382,22 @@ func RegisterTransiterAdminHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_TransiterAdmin_DeleteSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_DeleteSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TransiterAdmin_UpdateFeed_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_Admin_UpdateFeed_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.TransiterAdmin/UpdateFeed", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/feeds/{feed_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/UpdateFeed", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/feeds/{feed_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TransiterAdmin_UpdateFeed_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Admin_UpdateFeed_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -405,22 +405,22 @@ func RegisterTransiterAdminHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_TransiterAdmin_UpdateFeed_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_UpdateFeed_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TransiterAdmin_GetSchedulerStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Admin_GetSchedulerStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.TransiterAdmin/GetSchedulerStatus", runtime.WithHTTPPathPattern("/admin/scheduler"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GetSchedulerStatus", runtime.WithHTTPPathPattern("/admin/scheduler"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TransiterAdmin_GetSchedulerStatus_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Admin_GetSchedulerStatus_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -428,22 +428,22 @@ func RegisterTransiterAdminHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_TransiterAdmin_GetSchedulerStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_GetSchedulerStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TransiterAdmin_ResetScheduler_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_Admin_ResetScheduler_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.TransiterAdmin/ResetScheduler", runtime.WithHTTPPathPattern("/admin/scheduler"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/ResetScheduler", runtime.WithHTTPPathPattern("/admin/scheduler"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TransiterAdmin_ResetScheduler_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Admin_ResetScheduler_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -451,16 +451,16 @@ func RegisterTransiterAdminHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_TransiterAdmin_ResetScheduler_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_ResetScheduler_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	return nil
 }
 
-// RegisterTransiterAdminHandlerFromEndpoint is same as RegisterTransiterAdminHandler but
+// RegisterAdminHandlerFromEndpoint is same as RegisterAdminHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterTransiterAdminHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterAdminHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -480,139 +480,139 @@ func RegisterTransiterAdminHandlerFromEndpoint(ctx context.Context, mux *runtime
 		}()
 	}()
 
-	return RegisterTransiterAdminHandler(ctx, mux, conn)
+	return RegisterAdminHandler(ctx, mux, conn)
 }
 
-// RegisterTransiterAdminHandler registers the http handlers for service TransiterAdmin to "mux".
+// RegisterAdminHandler registers the http handlers for service Admin to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterTransiterAdminHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterTransiterAdminHandlerClient(ctx, mux, NewTransiterAdminClient(conn))
+func RegisterAdminHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterAdminHandlerClient(ctx, mux, NewAdminClient(conn))
 }
 
-// RegisterTransiterAdminHandlerClient registers the http handlers for service TransiterAdmin
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "TransiterAdminClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "TransiterAdminClient"
+// RegisterAdminHandlerClient registers the http handlers for service Admin
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "AdminClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "AdminClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "TransiterAdminClient" to call the correct interceptors.
-func RegisterTransiterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, client TransiterAdminClient) error {
+// "AdminClient" to call the correct interceptors.
+func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, client AdminClient) error {
 
-	mux.Handle("GET", pattern_TransiterAdmin_GetSystemConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Admin_GetSystemConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.TransiterAdmin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TransiterAdmin_GetSystemConfig_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Admin_GetSystemConfig_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TransiterAdmin_GetSystemConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_GetSystemConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PUT", pattern_TransiterAdmin_InstallOrUpdateSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_Admin_InstallOrUpdateSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.TransiterAdmin/InstallOrUpdateSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/InstallOrUpdateSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TransiterAdmin_InstallOrUpdateSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Admin_InstallOrUpdateSystem_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TransiterAdmin_InstallOrUpdateSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_InstallOrUpdateSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_TransiterAdmin_DeleteSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_Admin_DeleteSystem_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.TransiterAdmin/DeleteSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/DeleteSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TransiterAdmin_DeleteSystem_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Admin_DeleteSystem_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TransiterAdmin_DeleteSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_DeleteSystem_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TransiterAdmin_UpdateFeed_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_Admin_UpdateFeed_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.TransiterAdmin/UpdateFeed", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/feeds/{feed_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/UpdateFeed", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/feeds/{feed_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TransiterAdmin_UpdateFeed_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Admin_UpdateFeed_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TransiterAdmin_UpdateFeed_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_UpdateFeed_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TransiterAdmin_GetSchedulerStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Admin_GetSchedulerStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.TransiterAdmin/GetSchedulerStatus", runtime.WithHTTPPathPattern("/admin/scheduler"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GetSchedulerStatus", runtime.WithHTTPPathPattern("/admin/scheduler"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TransiterAdmin_GetSchedulerStatus_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Admin_GetSchedulerStatus_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TransiterAdmin_GetSchedulerStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_GetSchedulerStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TransiterAdmin_ResetScheduler_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_Admin_ResetScheduler_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.TransiterAdmin/ResetScheduler", runtime.WithHTTPPathPattern("/admin/scheduler"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/ResetScheduler", runtime.WithHTTPPathPattern("/admin/scheduler"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TransiterAdmin_ResetScheduler_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Admin_ResetScheduler_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TransiterAdmin_ResetScheduler_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Admin_ResetScheduler_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -620,29 +620,29 @@ func RegisterTransiterAdminHandlerClient(ctx context.Context, mux *runtime.Serve
 }
 
 var (
-	pattern_TransiterAdmin_GetSystemConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
+	pattern_Admin_GetSystemConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
 
-	pattern_TransiterAdmin_InstallOrUpdateSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
+	pattern_Admin_InstallOrUpdateSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
 
-	pattern_TransiterAdmin_DeleteSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
+	pattern_Admin_DeleteSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
 
-	pattern_TransiterAdmin_UpdateFeed_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"admin", "systems", "system_id", "feeds", "feed_id"}, ""))
+	pattern_Admin_UpdateFeed_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"admin", "systems", "system_id", "feeds", "feed_id"}, ""))
 
-	pattern_TransiterAdmin_GetSchedulerStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "scheduler"}, ""))
+	pattern_Admin_GetSchedulerStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "scheduler"}, ""))
 
-	pattern_TransiterAdmin_ResetScheduler_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "scheduler"}, ""))
+	pattern_Admin_ResetScheduler_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "scheduler"}, ""))
 )
 
 var (
-	forward_TransiterAdmin_GetSystemConfig_0 = runtime.ForwardResponseMessage
+	forward_Admin_GetSystemConfig_0 = runtime.ForwardResponseMessage
 
-	forward_TransiterAdmin_InstallOrUpdateSystem_0 = runtime.ForwardResponseMessage
+	forward_Admin_InstallOrUpdateSystem_0 = runtime.ForwardResponseMessage
 
-	forward_TransiterAdmin_DeleteSystem_0 = runtime.ForwardResponseMessage
+	forward_Admin_DeleteSystem_0 = runtime.ForwardResponseMessage
 
-	forward_TransiterAdmin_UpdateFeed_0 = runtime.ForwardResponseMessage
+	forward_Admin_UpdateFeed_0 = runtime.ForwardResponseMessage
 
-	forward_TransiterAdmin_GetSchedulerStatus_0 = runtime.ForwardResponseMessage
+	forward_Admin_GetSchedulerStatus_0 = runtime.ForwardResponseMessage
 
-	forward_TransiterAdmin_ResetScheduler_0 = runtime.ForwardResponseMessage
+	forward_Admin_ResetScheduler_0 = runtime.ForwardResponseMessage
 )

@@ -132,7 +132,7 @@ func Run(args RunArgs) error {
 			defer wg.Done()
 			mux := newServeMux()
 			api.RegisterPublicHandlerServer(ctx, mux, publicService)
-			api.RegisterTransiterAdminHandlerServer(ctx, mux, adminService)
+			api.RegisterAdminHandlerServer(ctx, mux, adminService)
 			log.Printf("Admin HTTP API listening on %s\n", args.AdminHTTPAddr)
 			_ = http.ListenAndServe(args.AdminHTTPAddr, mux)
 		}()
@@ -145,7 +145,7 @@ func Run(args RunArgs) error {
 			defer wg.Done()
 			grpcServer := grpc.NewServer()
 			api.RegisterPublicServer(grpcServer, publicService)
-			api.RegisterTransiterAdminServer(grpcServer, adminService)
+			api.RegisterAdminServer(grpcServer, adminService)
 			lis, err := net.Listen("tcp", args.AdminGrpcAddr)
 			if err != nil {
 				return

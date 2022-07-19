@@ -3,13 +3,26 @@ option go_package = "github.com/jamespfennell/transiter/api";
 
 import "google/api/annotations.proto";
 
-service TransiterAdmin {
+/**
+Admin API
+*/
+service Admin {
+    // Get the config for a system
+    //
+    // `GET /systems/<system_id>/config`
     rpc GetSystemConfig (GetSystemConfigRequest) returns (SystemConfig) {
         option (google.api.http) = {
                 get: "/admin/systems/{system_id}"
             };
       }
 
+      // Install or update a system
+      //
+      // `PUT /systems/<system_id>`
+      //
+      // Installs or updates the system based on the configuration provided in the
+      // request payload.
+      // If the system does not exist an install is performed; otherwise an update.
       rpc InstallOrUpdateSystem (InstallOrUpdateSystemRequest) returns (InstallOrUpdateSystemReply) {
         option (google.api.http) = {
                 put: "/admin/systems/{system_id}"
@@ -17,29 +30,57 @@ service TransiterAdmin {
             };
       }
 
+      // Delete a system
+      //
+      // `DELETE /systems/<system_id>`
+      //
+      // Deletes the specified system.
       rpc DeleteSystem (DeleteSystemRequest) returns (DeleteSystemReply) {
         option (google.api.http) = {
                 delete: "/admin/systems/{system_id}"
             };
       }
 
+      // Update a feed
+      //
+      // `POST /systems/<system_id>/feeds/<feed_id>`
+      //
+      // Triggers a feed update for the specified feed.
       rpc UpdateFeed(UpdateFeedRequest) returns (UpdateFeedReply) {
         option (google.api.http) = {
                 post: "/admin/systems/{system_id}/feeds/{feed_id}"
             };
       }
 
+      // Get scheduler status
+      //
+      // `GET /scheduler`
+      //
+      // Gets the status of the scheduler.
       rpc GetSchedulerStatus(GetSchedulerStatusRequest) returns (GetSchedulerStatusReply) {
         option (google.api.http) = {
                 get: "/admin/scheduler"
             };
       }
 
+      // Reset scheduler
+      //
+      // `POST /scheduler`
+      //
+      // Performs a full restart of the scheduler, with all scheduler
+      //   configurations retrieved fresh from the database.
+      // In general this endpoint should never be needed;
+      //   Transiter automatically restarts the scheduler when needed.
+      //  The main usecase is when the Postgres configuration is manually
+      //   updated and the scheduler needs to see the update.
       rpc ResetScheduler(ResetSchedulerRequest) returns (ResetSchedulerReply) {
         option (google.api.http) = {
                 post: "/admin/scheduler"
             };
       }
+
+      // TODO: GarbageCollectFeedUpdates
+      // TODO: GetFeedConfig
 }
 
 message GetSystemConfigRequest {
@@ -47,6 +88,7 @@ message GetSystemConfigRequest {
 }
 
 message InstallOrUpdateSystemRequest {
+    // ID of the system to install or update.
     string system_id = 1;
 
     oneof config {
@@ -54,15 +96,17 @@ message InstallOrUpdateSystemRequest {
         YamlConfig yaml_config = 3;
     }
 
-    // If true, do nothing if the system already exist.
+    // If true, do not perform an update if the system already exists.
     bool install_only = 4;
 
     // If false (the default), the system configuration is validated before the request finishes
     // but databse updates are performed asynchronously. The status of the operation can 
     // be polled using GetSystem and inspecting the status field.
     //
-    // If true, the operation is perfomed synchronously in the request and in a single database transaction.
-    // In this case, if the install or update fails there will no database artifacts. The catch
+    // If true, the install/update operation is perfomed synchronously in the 
+    //   request and in a single database transaction.
+    // In this case, if the operation fails there will no database artifacts. 
+    // The problem
     // is that installs can take a long time and the request may be cancelled before it completes
     // e.g. by an intermediate proxy.
     bool synchronous = 5;
@@ -70,10 +114,23 @@ message InstallOrUpdateSystemRequest {
 
 message YamlConfig {
     oneof source {
+        // A URL where the config can be retrieved from using a simple GET request.
+        // If the URL requires a more complex interaction (authentication, a different
+        // verb), the config should be retrieved outside of Transiter and provided
+        // using the content field.
         string url = 1;
+        // The text content of the yaml config.
         string content = 2;
     }
+    // Whether the config is a template. If true the config will first be processed
+    // using Go's template library.
     bool is_template = 3;
+
+    // Arguments to pass to Go's template library if the config is a template.
+    //
+    // In general all information should be in the config itself.
+    // The template args are intended for things like API keys which are secret
+    // and/or different for each installer of the system.
     map<string, string> template_args = 4;
 }
 

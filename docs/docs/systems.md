@@ -12,7 +12,7 @@ It contains information such as:
 - Definitions of "service maps" for the system.
 
 The transit system is installed by sending the YAML
-configuration file to the [system install endpoint](api/index.md#install-a-system).
+configuration file to the [system install endpoint](api/admin.md#InstallOrUpdateSystem).
 
 
 ## Basic configuration
@@ -115,23 +115,6 @@ The two built-in parsers are:
 - `GTFS_STATIC`
 - `GTFS_REALTIME`
 
-The second feed in this example uses a custom feed parser; i.e., a parser
-provided by you, the administrator.
-There is a [dedicated documentation page](feedparsers.md) on how to write custom feed parsers.
-The syntax for a custom feed parser is:
-```yaml
-    parser:
-      custom: "module:function"  
-```
-
-Here the custom feed parser is `function` defined in a given `module`.
-Typically, the module will be defined using a package that is installed
-in the Python environments Transiter is executing in; for example
-`transiter_nycsubway.servicestatusxmlparser`.
-
-Note that if the package and/or module is not available,
-any feed updates will fail with reason `INVALID_PARSER`.
-
 ### Auto-update
 
 Next, you can configure the feed to be auto-updating, meaning Transiter
@@ -184,7 +167,7 @@ That way configurations can be safely shared without also sharing private keys.
 To support these situations, Transiter interprets every configuration
 file as a Jinja template and processes the template before parsing the YAML.
 Variables can be provided to the template using URL parameters in the
-[system install endpoint](api/index.md#install-a-system).
+[system install endpoint](api/admin.md#InstallOrUpdateSystem).
 
 The following is a simple example of providing an API key using Jinja:
 ```yaml
@@ -290,6 +273,6 @@ corresponding to trips that:
 
 Finally, `use_for_routes_at_stop` being set to true 
 indicates that the service map should be returned by the 
-[stop endpoint](api/index.md#get-a-stop-in-a-system).
+[stop endpoint](api/public_endpoints.md#GetStop).
 The parameter `use_for_stops_in_route` 
-does the same for the [route endpoint](api/index.md#get-a-route-in-a-system).
+does the same for the [route endpoint](api/public_endpoints.md#GetRoute).

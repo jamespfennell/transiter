@@ -13,24 +13,26 @@ import (
 	"github.com/jamespfennell/transiter/internal/client/table"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Client struct {
 	conn         *grpc.ClientConn
 	publicClient api.PublicClient
-	adminClient  api.TransiterAdminClient
+	adminClient  api.AdminClient
 }
 
 func New(addr string) (*Client, error) {
 	var err error
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	// TODO: credentials?
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
 	return &Client{
 		conn:         conn,
 		publicClient: api.NewPublicClient(conn),
-		adminClient:  api.NewTransiterAdminClient(conn),
+		adminClient:  api.NewAdminClient(conn),
 	}, nil
 }
 

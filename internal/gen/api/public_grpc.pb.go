@@ -18,23 +18,126 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PublicClient interface {
+	// API entrypoint
+	//
+	// `GET /`
+	//
+	// Provides basic information about this Transiter instance and the Transit systems it contains.
 	Entrypoint(ctx context.Context, in *EntrypointRequest, opts ...grpc.CallOption) (*EntrypointReply, error)
+	//
+	// List systems
+	//
+	// `GET /systems`
+	//
+	// List all transit systems that are installed in this Transiter instance.
 	ListSystems(ctx context.Context, in *ListSystemsRequest, opts ...grpc.CallOption) (*ListSystemsReply, error)
+	//
+	// Get system
+	//
+	// `GET /systems/<system_id>`
+	//
+	// Get a system by its ID.
 	GetSystem(ctx context.Context, in *GetSystemRequest, opts ...grpc.CallOption) (*System, error)
+	//
+	// List agencies
+	//
+	// `GET /systems/<system_id>/agencies`
+	//
+	// List all agencies in a system.
 	ListAgencies(ctx context.Context, in *ListAgenciesRequest, opts ...grpc.CallOption) (*ListAgenciesReply, error)
+	//
+	// Get agency
+	//
+	// `GET /systems/<system_id>/agencies/<agency_id>`
+	//
+	// Get an agency in a system by its ID.
 	GetAgency(ctx context.Context, in *GetAgencyRequest, opts ...grpc.CallOption) (*Agency, error)
+	//
+	// List stops
+	//
+	// `GET /systems/<system_id>/stops/<stop_id>`
+	//
+	// List all stops in a system.
 	ListStops(ctx context.Context, in *ListStopsRequest, opts ...grpc.CallOption) (*ListStopsReply, error)
+	//
+	// Get stop
+	//
+	// `GET /systems/<system_id>/stops/<stop_id>`
+	//
+	// Get a stop in a system by its ID.
 	GetStop(ctx context.Context, in *GetStopRequest, opts ...grpc.CallOption) (*Stop, error)
+	//
+	// List routes
+	//
+	// `GET /systems/<system_id>/routes`
+	//
+	// List all routes in a system.
 	ListRoutes(ctx context.Context, in *ListRoutesRequest, opts ...grpc.CallOption) (*ListRoutesReply, error)
+	//
+	// Get route
+	//
+	// `GET /systems/<system_id>/routes/<route_id>`
+	//
+	// Get a route in a system by its ID.
 	GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*Route, error)
+	//
+	// List trips
+	//
+	// `GET /systems/<system_id>/routes/<route_id>/trips`
+	//
+	// List all trips in a route.
 	ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsReply, error)
+	//
+	// Get trip
+	//
+	// `GET /systems/<system_id>/routes/<route_id>/trips/<trip_id>`
+	//
+	// Get a trip by its ID.
 	GetTrip(ctx context.Context, in *GetTripRequest, opts ...grpc.CallOption) (*Trip, error)
+	//
+	// List alerts
+	//
+	// `GET /systems/<system_id>/alerts`
+	//
+	// List all alerts in a system.
+	// By default this endpoint returns both active alerts
+	//   (alerts which have an active period containing the current time) and non-active alerts.
 	ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsReply, error)
+	//
+	// Get alert
+	//
+	// `GET /systems/<system_id>/alerts/<alert_id>`
+	//
+	// Get an alert by its ID.
 	GetAlert(ctx context.Context, in *GetAlertRequest, opts ...grpc.CallOption) (*Alert, error)
-	ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error)
-	GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*Feed, error)
-	ListFeedUpdates(ctx context.Context, in *ListFeedUpdatesRequest, opts ...grpc.CallOption) (*ListFeedUpdatesReply, error)
+	//
+	// List transfers
+	//
+	// `GET /systems/<system_id>/transfers`
+	//
+	// List all transfers in a system.
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersReply, error)
+	//
+	// List feeds
+	//
+	// `GET /systems/<system_id>/feeds`
+	//
+	// List all feeds for a system.
+	ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error)
+	//
+	// Get feed
+	//
+	// `GET /systems/<system_id>/feeds/<feed_id>`
+	//
+	// Get a feed in a system by its ID.
+	GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*Feed, error)
+	//
+	// List feed updates
+	//
+	// `GET /systems/<system_id>/feeds/<feed_id>/updates`
+	//
+	// List feeds updates for a feed.
+	ListFeedUpdates(ctx context.Context, in *ListFeedUpdatesRequest, opts ...grpc.CallOption) (*ListFeedUpdatesReply, error)
 }
 
 type publicClient struct {
@@ -162,6 +265,15 @@ func (c *publicClient) GetAlert(ctx context.Context, in *GetAlertRequest, opts .
 	return out, nil
 }
 
+func (c *publicClient) ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersReply, error) {
+	out := new(ListTransfersReply)
+	err := c.cc.Invoke(ctx, "/Public/ListTransfers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *publicClient) ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error) {
 	out := new(ListFeedsReply)
 	err := c.cc.Invoke(ctx, "/Public/ListFeeds", in, out, opts...)
@@ -189,36 +301,130 @@ func (c *publicClient) ListFeedUpdates(ctx context.Context, in *ListFeedUpdatesR
 	return out, nil
 }
 
-func (c *publicClient) ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersReply, error) {
-	out := new(ListTransfersReply)
-	err := c.cc.Invoke(ctx, "/Public/ListTransfers", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // PublicServer is the server API for Public service.
 // All implementations should embed UnimplementedPublicServer
 // for forward compatibility
 type PublicServer interface {
+	// API entrypoint
+	//
+	// `GET /`
+	//
+	// Provides basic information about this Transiter instance and the Transit systems it contains.
 	Entrypoint(context.Context, *EntrypointRequest) (*EntrypointReply, error)
+	//
+	// List systems
+	//
+	// `GET /systems`
+	//
+	// List all transit systems that are installed in this Transiter instance.
 	ListSystems(context.Context, *ListSystemsRequest) (*ListSystemsReply, error)
+	//
+	// Get system
+	//
+	// `GET /systems/<system_id>`
+	//
+	// Get a system by its ID.
 	GetSystem(context.Context, *GetSystemRequest) (*System, error)
+	//
+	// List agencies
+	//
+	// `GET /systems/<system_id>/agencies`
+	//
+	// List all agencies in a system.
 	ListAgencies(context.Context, *ListAgenciesRequest) (*ListAgenciesReply, error)
+	//
+	// Get agency
+	//
+	// `GET /systems/<system_id>/agencies/<agency_id>`
+	//
+	// Get an agency in a system by its ID.
 	GetAgency(context.Context, *GetAgencyRequest) (*Agency, error)
+	//
+	// List stops
+	//
+	// `GET /systems/<system_id>/stops/<stop_id>`
+	//
+	// List all stops in a system.
 	ListStops(context.Context, *ListStopsRequest) (*ListStopsReply, error)
+	//
+	// Get stop
+	//
+	// `GET /systems/<system_id>/stops/<stop_id>`
+	//
+	// Get a stop in a system by its ID.
 	GetStop(context.Context, *GetStopRequest) (*Stop, error)
+	//
+	// List routes
+	//
+	// `GET /systems/<system_id>/routes`
+	//
+	// List all routes in a system.
 	ListRoutes(context.Context, *ListRoutesRequest) (*ListRoutesReply, error)
+	//
+	// Get route
+	//
+	// `GET /systems/<system_id>/routes/<route_id>`
+	//
+	// Get a route in a system by its ID.
 	GetRoute(context.Context, *GetRouteRequest) (*Route, error)
+	//
+	// List trips
+	//
+	// `GET /systems/<system_id>/routes/<route_id>/trips`
+	//
+	// List all trips in a route.
 	ListTrips(context.Context, *ListTripsRequest) (*ListTripsReply, error)
+	//
+	// Get trip
+	//
+	// `GET /systems/<system_id>/routes/<route_id>/trips/<trip_id>`
+	//
+	// Get a trip by its ID.
 	GetTrip(context.Context, *GetTripRequest) (*Trip, error)
+	//
+	// List alerts
+	//
+	// `GET /systems/<system_id>/alerts`
+	//
+	// List all alerts in a system.
+	// By default this endpoint returns both active alerts
+	//   (alerts which have an active period containing the current time) and non-active alerts.
 	ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsReply, error)
+	//
+	// Get alert
+	//
+	// `GET /systems/<system_id>/alerts/<alert_id>`
+	//
+	// Get an alert by its ID.
 	GetAlert(context.Context, *GetAlertRequest) (*Alert, error)
-	ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error)
-	GetFeed(context.Context, *GetFeedRequest) (*Feed, error)
-	ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error)
+	//
+	// List transfers
+	//
+	// `GET /systems/<system_id>/transfers`
+	//
+	// List all transfers in a system.
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersReply, error)
+	//
+	// List feeds
+	//
+	// `GET /systems/<system_id>/feeds`
+	//
+	// List all feeds for a system.
+	ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error)
+	//
+	// Get feed
+	//
+	// `GET /systems/<system_id>/feeds/<feed_id>`
+	//
+	// Get a feed in a system by its ID.
+	GetFeed(context.Context, *GetFeedRequest) (*Feed, error)
+	//
+	// List feed updates
+	//
+	// `GET /systems/<system_id>/feeds/<feed_id>/updates`
+	//
+	// List feeds updates for a feed.
+	ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error)
 }
 
 // UnimplementedPublicServer should be embedded to have forward compatible implementations.
@@ -264,6 +470,9 @@ func (UnimplementedPublicServer) ListAlerts(context.Context, *ListAlertsRequest)
 func (UnimplementedPublicServer) GetAlert(context.Context, *GetAlertRequest) (*Alert, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAlert not implemented")
 }
+func (UnimplementedPublicServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTransfers not implemented")
+}
 func (UnimplementedPublicServer) ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFeeds not implemented")
 }
@@ -272,9 +481,6 @@ func (UnimplementedPublicServer) GetFeed(context.Context, *GetFeedRequest) (*Fee
 }
 func (UnimplementedPublicServer) ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFeedUpdates not implemented")
-}
-func (UnimplementedPublicServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListTransfers not implemented")
 }
 
 // UnsafePublicServer may be embedded to opt out of forward compatibility for this service.
@@ -522,6 +728,24 @@ func _Public_GetAlert_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Public_ListTransfers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTransfersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PublicServer).ListTransfers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Public/ListTransfers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PublicServer).ListTransfers(ctx, req.(*ListTransfersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Public_ListFeeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListFeedsRequest)
 	if err := dec(in); err != nil {
@@ -572,24 +796,6 @@ func _Public_ListFeedUpdates_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PublicServer).ListFeedUpdates(ctx, req.(*ListFeedUpdatesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Public_ListTransfers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTransfersRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PublicServer).ListTransfers(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/Public/ListTransfers",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).ListTransfers(ctx, req.(*ListTransfersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -654,6 +860,10 @@ var Public_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Public_GetAlert_Handler,
 		},
 		{
+			MethodName: "ListTransfers",
+			Handler:    _Public_ListTransfers_Handler,
+		},
+		{
 			MethodName: "ListFeeds",
 			Handler:    _Public_ListFeeds_Handler,
 		},
@@ -664,10 +874,6 @@ var Public_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListFeedUpdates",
 			Handler:    _Public_ListFeedUpdates_Handler,
-		},
-		{
-			MethodName: "ListTransfers",
-			Handler:    _Public_ListTransfers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

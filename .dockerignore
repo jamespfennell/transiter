@@ -11,6 +11,10 @@
 !db/*
 !api/*proto
 
+!docs/mkdocs.yml
+!docs/requirements.txt
+!docs/docs
+
 !transiter.go
 !parse/*
 !config/*

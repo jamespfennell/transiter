@@ -14,264 +14,334 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// TransiterAdminClient is the client API for TransiterAdmin service.
+// AdminClient is the client API for Admin service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type TransiterAdminClient interface {
+type AdminClient interface {
+	// Get the config for a system
+	//
+	// `GET /systems/<system_id>/config`
 	GetSystemConfig(ctx context.Context, in *GetSystemConfigRequest, opts ...grpc.CallOption) (*SystemConfig, error)
+	// Install or update a system
+	//
+	// `PUT /systems/<system_id>`
+	//
+	// Installs or updates the system based on the configuration provided in the
+	// request payload.
+	// If the system does not exist an install is performed; otherwise an update.
 	InstallOrUpdateSystem(ctx context.Context, in *InstallOrUpdateSystemRequest, opts ...grpc.CallOption) (*InstallOrUpdateSystemReply, error)
+	// Delete a system
+	//
+	// `DELETE /systems/<system_id>`
+	//
+	// Deletes the specified system.
 	DeleteSystem(ctx context.Context, in *DeleteSystemRequest, opts ...grpc.CallOption) (*DeleteSystemReply, error)
+	// Update a feed
+	//
+	// `POST /systems/<system_id>/feeds/<feed_id>`
+	//
+	// Triggers a feed update for the specified feed.
 	UpdateFeed(ctx context.Context, in *UpdateFeedRequest, opts ...grpc.CallOption) (*UpdateFeedReply, error)
+	// Get scheduler status
+	//
+	// `GET /scheduler`
+	//
+	// Gets the status of the scheduler.
 	GetSchedulerStatus(ctx context.Context, in *GetSchedulerStatusRequest, opts ...grpc.CallOption) (*GetSchedulerStatusReply, error)
+	// Reset scheduler
+	//
+	// `POST /scheduler`
+	//
+	// Performs a full restart of the scheduler, with all scheduler
+	//   configurations retrieved fresh from the database.
+	// In general this endpoint should never be needed;
+	//   Transiter automatically restarts the scheduler when needed.
+	//  The main usecase is when the Postgres configuration is manually
+	//   updated and the scheduler needs to see the update.
 	ResetScheduler(ctx context.Context, in *ResetSchedulerRequest, opts ...grpc.CallOption) (*ResetSchedulerReply, error)
 }
 
-type transiterAdminClient struct {
+type adminClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewTransiterAdminClient(cc grpc.ClientConnInterface) TransiterAdminClient {
-	return &transiterAdminClient{cc}
+func NewAdminClient(cc grpc.ClientConnInterface) AdminClient {
+	return &adminClient{cc}
 }
 
-func (c *transiterAdminClient) GetSystemConfig(ctx context.Context, in *GetSystemConfigRequest, opts ...grpc.CallOption) (*SystemConfig, error) {
+func (c *adminClient) GetSystemConfig(ctx context.Context, in *GetSystemConfigRequest, opts ...grpc.CallOption) (*SystemConfig, error) {
 	out := new(SystemConfig)
-	err := c.cc.Invoke(ctx, "/TransiterAdmin/GetSystemConfig", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Admin/GetSystemConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *transiterAdminClient) InstallOrUpdateSystem(ctx context.Context, in *InstallOrUpdateSystemRequest, opts ...grpc.CallOption) (*InstallOrUpdateSystemReply, error) {
+func (c *adminClient) InstallOrUpdateSystem(ctx context.Context, in *InstallOrUpdateSystemRequest, opts ...grpc.CallOption) (*InstallOrUpdateSystemReply, error) {
 	out := new(InstallOrUpdateSystemReply)
-	err := c.cc.Invoke(ctx, "/TransiterAdmin/InstallOrUpdateSystem", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Admin/InstallOrUpdateSystem", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *transiterAdminClient) DeleteSystem(ctx context.Context, in *DeleteSystemRequest, opts ...grpc.CallOption) (*DeleteSystemReply, error) {
+func (c *adminClient) DeleteSystem(ctx context.Context, in *DeleteSystemRequest, opts ...grpc.CallOption) (*DeleteSystemReply, error) {
 	out := new(DeleteSystemReply)
-	err := c.cc.Invoke(ctx, "/TransiterAdmin/DeleteSystem", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Admin/DeleteSystem", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *transiterAdminClient) UpdateFeed(ctx context.Context, in *UpdateFeedRequest, opts ...grpc.CallOption) (*UpdateFeedReply, error) {
+func (c *adminClient) UpdateFeed(ctx context.Context, in *UpdateFeedRequest, opts ...grpc.CallOption) (*UpdateFeedReply, error) {
 	out := new(UpdateFeedReply)
-	err := c.cc.Invoke(ctx, "/TransiterAdmin/UpdateFeed", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Admin/UpdateFeed", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *transiterAdminClient) GetSchedulerStatus(ctx context.Context, in *GetSchedulerStatusRequest, opts ...grpc.CallOption) (*GetSchedulerStatusReply, error) {
+func (c *adminClient) GetSchedulerStatus(ctx context.Context, in *GetSchedulerStatusRequest, opts ...grpc.CallOption) (*GetSchedulerStatusReply, error) {
 	out := new(GetSchedulerStatusReply)
-	err := c.cc.Invoke(ctx, "/TransiterAdmin/GetSchedulerStatus", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Admin/GetSchedulerStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *transiterAdminClient) ResetScheduler(ctx context.Context, in *ResetSchedulerRequest, opts ...grpc.CallOption) (*ResetSchedulerReply, error) {
+func (c *adminClient) ResetScheduler(ctx context.Context, in *ResetSchedulerRequest, opts ...grpc.CallOption) (*ResetSchedulerReply, error) {
 	out := new(ResetSchedulerReply)
-	err := c.cc.Invoke(ctx, "/TransiterAdmin/ResetScheduler", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Admin/ResetScheduler", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// TransiterAdminServer is the server API for TransiterAdmin service.
-// All implementations should embed UnimplementedTransiterAdminServer
+// AdminServer is the server API for Admin service.
+// All implementations should embed UnimplementedAdminServer
 // for forward compatibility
-type TransiterAdminServer interface {
+type AdminServer interface {
+	// Get the config for a system
+	//
+	// `GET /systems/<system_id>/config`
 	GetSystemConfig(context.Context, *GetSystemConfigRequest) (*SystemConfig, error)
+	// Install or update a system
+	//
+	// `PUT /systems/<system_id>`
+	//
+	// Installs or updates the system based on the configuration provided in the
+	// request payload.
+	// If the system does not exist an install is performed; otherwise an update.
 	InstallOrUpdateSystem(context.Context, *InstallOrUpdateSystemRequest) (*InstallOrUpdateSystemReply, error)
+	// Delete a system
+	//
+	// `DELETE /systems/<system_id>`
+	//
+	// Deletes the specified system.
 	DeleteSystem(context.Context, *DeleteSystemRequest) (*DeleteSystemReply, error)
+	// Update a feed
+	//
+	// `POST /systems/<system_id>/feeds/<feed_id>`
+	//
+	// Triggers a feed update for the specified feed.
 	UpdateFeed(context.Context, *UpdateFeedRequest) (*UpdateFeedReply, error)
+	// Get scheduler status
+	//
+	// `GET /scheduler`
+	//
+	// Gets the status of the scheduler.
 	GetSchedulerStatus(context.Context, *GetSchedulerStatusRequest) (*GetSchedulerStatusReply, error)
+	// Reset scheduler
+	//
+	// `POST /scheduler`
+	//
+	// Performs a full restart of the scheduler, with all scheduler
+	//   configurations retrieved fresh from the database.
+	// In general this endpoint should never be needed;
+	//   Transiter automatically restarts the scheduler when needed.
+	//  The main usecase is when the Postgres configuration is manually
+	//   updated and the scheduler needs to see the update.
 	ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error)
 }
 
-// UnimplementedTransiterAdminServer should be embedded to have forward compatible implementations.
-type UnimplementedTransiterAdminServer struct {
+// UnimplementedAdminServer should be embedded to have forward compatible implementations.
+type UnimplementedAdminServer struct {
 }
 
-func (UnimplementedTransiterAdminServer) GetSystemConfig(context.Context, *GetSystemConfigRequest) (*SystemConfig, error) {
+func (UnimplementedAdminServer) GetSystemConfig(context.Context, *GetSystemConfigRequest) (*SystemConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSystemConfig not implemented")
 }
-func (UnimplementedTransiterAdminServer) InstallOrUpdateSystem(context.Context, *InstallOrUpdateSystemRequest) (*InstallOrUpdateSystemReply, error) {
+func (UnimplementedAdminServer) InstallOrUpdateSystem(context.Context, *InstallOrUpdateSystemRequest) (*InstallOrUpdateSystemReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InstallOrUpdateSystem not implemented")
 }
-func (UnimplementedTransiterAdminServer) DeleteSystem(context.Context, *DeleteSystemRequest) (*DeleteSystemReply, error) {
+func (UnimplementedAdminServer) DeleteSystem(context.Context, *DeleteSystemRequest) (*DeleteSystemReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteSystem not implemented")
 }
-func (UnimplementedTransiterAdminServer) UpdateFeed(context.Context, *UpdateFeedRequest) (*UpdateFeedReply, error) {
+func (UnimplementedAdminServer) UpdateFeed(context.Context, *UpdateFeedRequest) (*UpdateFeedReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateFeed not implemented")
 }
-func (UnimplementedTransiterAdminServer) GetSchedulerStatus(context.Context, *GetSchedulerStatusRequest) (*GetSchedulerStatusReply, error) {
+func (UnimplementedAdminServer) GetSchedulerStatus(context.Context, *GetSchedulerStatusRequest) (*GetSchedulerStatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSchedulerStatus not implemented")
 }
-func (UnimplementedTransiterAdminServer) ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error) {
+func (UnimplementedAdminServer) ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetScheduler not implemented")
 }
 
-// UnsafeTransiterAdminServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to TransiterAdminServer will
+// UnsafeAdminServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AdminServer will
 // result in compilation errors.
-type UnsafeTransiterAdminServer interface {
-	mustEmbedUnimplementedTransiterAdminServer()
+type UnsafeAdminServer interface {
+	mustEmbedUnimplementedAdminServer()
 }
 
-func RegisterTransiterAdminServer(s grpc.ServiceRegistrar, srv TransiterAdminServer) {
-	s.RegisterService(&TransiterAdmin_ServiceDesc, srv)
+func RegisterAdminServer(s grpc.ServiceRegistrar, srv AdminServer) {
+	s.RegisterService(&Admin_ServiceDesc, srv)
 }
 
-func _TransiterAdmin_GetSystemConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_GetSystemConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSystemConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TransiterAdminServer).GetSystemConfig(ctx, in)
+		return srv.(AdminServer).GetSystemConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TransiterAdmin/GetSystemConfig",
+		FullMethod: "/Admin/GetSystemConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransiterAdminServer).GetSystemConfig(ctx, req.(*GetSystemConfigRequest))
+		return srv.(AdminServer).GetSystemConfig(ctx, req.(*GetSystemConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TransiterAdmin_InstallOrUpdateSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_InstallOrUpdateSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InstallOrUpdateSystemRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TransiterAdminServer).InstallOrUpdateSystem(ctx, in)
+		return srv.(AdminServer).InstallOrUpdateSystem(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TransiterAdmin/InstallOrUpdateSystem",
+		FullMethod: "/Admin/InstallOrUpdateSystem",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransiterAdminServer).InstallOrUpdateSystem(ctx, req.(*InstallOrUpdateSystemRequest))
+		return srv.(AdminServer).InstallOrUpdateSystem(ctx, req.(*InstallOrUpdateSystemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TransiterAdmin_DeleteSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_DeleteSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteSystemRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TransiterAdminServer).DeleteSystem(ctx, in)
+		return srv.(AdminServer).DeleteSystem(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TransiterAdmin/DeleteSystem",
+		FullMethod: "/Admin/DeleteSystem",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransiterAdminServer).DeleteSystem(ctx, req.(*DeleteSystemRequest))
+		return srv.(AdminServer).DeleteSystem(ctx, req.(*DeleteSystemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TransiterAdmin_UpdateFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_UpdateFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateFeedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TransiterAdminServer).UpdateFeed(ctx, in)
+		return srv.(AdminServer).UpdateFeed(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TransiterAdmin/UpdateFeed",
+		FullMethod: "/Admin/UpdateFeed",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransiterAdminServer).UpdateFeed(ctx, req.(*UpdateFeedRequest))
+		return srv.(AdminServer).UpdateFeed(ctx, req.(*UpdateFeedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TransiterAdmin_GetSchedulerStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_GetSchedulerStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSchedulerStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TransiterAdminServer).GetSchedulerStatus(ctx, in)
+		return srv.(AdminServer).GetSchedulerStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TransiterAdmin/GetSchedulerStatus",
+		FullMethod: "/Admin/GetSchedulerStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransiterAdminServer).GetSchedulerStatus(ctx, req.(*GetSchedulerStatusRequest))
+		return srv.(AdminServer).GetSchedulerStatus(ctx, req.(*GetSchedulerStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TransiterAdmin_ResetScheduler_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_ResetScheduler_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResetSchedulerRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TransiterAdminServer).ResetScheduler(ctx, in)
+		return srv.(AdminServer).ResetScheduler(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/TransiterAdmin/ResetScheduler",
+		FullMethod: "/Admin/ResetScheduler",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransiterAdminServer).ResetScheduler(ctx, req.(*ResetSchedulerRequest))
+		return srv.(AdminServer).ResetScheduler(ctx, req.(*ResetSchedulerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// TransiterAdmin_ServiceDesc is the grpc.ServiceDesc for TransiterAdmin service.
+// Admin_ServiceDesc is the grpc.ServiceDesc for Admin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var TransiterAdmin_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "TransiterAdmin",
-	HandlerType: (*TransiterAdminServer)(nil),
+var Admin_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "Admin",
+	HandlerType: (*AdminServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetSystemConfig",
-			Handler:    _TransiterAdmin_GetSystemConfig_Handler,
+			Handler:    _Admin_GetSystemConfig_Handler,
 		},
 		{
 			MethodName: "InstallOrUpdateSystem",
-			Handler:    _TransiterAdmin_InstallOrUpdateSystem_Handler,
+			Handler:    _Admin_InstallOrUpdateSystem_Handler,
 		},
 		{
 			MethodName: "DeleteSystem",
-			Handler:    _TransiterAdmin_DeleteSystem_Handler,
+			Handler:    _Admin_DeleteSystem_Handler,
 		},
 		{
 			MethodName: "UpdateFeed",
-			Handler:    _TransiterAdmin_UpdateFeed_Handler,
+			Handler:    _Admin_UpdateFeed_Handler,
 		},
 		{
 			MethodName: "GetSchedulerStatus",
-			Handler:    _TransiterAdmin_GetSchedulerStatus_Handler,
+			Handler:    _Admin_GetSchedulerStatus_Handler,
 		},
 		{
 			MethodName: "ResetScheduler",
-			Handler:    _TransiterAdmin_ResetScheduler_Handler,
+			Handler:    _Admin_ResetScheduler_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
