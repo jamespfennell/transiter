@@ -14,6 +14,6 @@ plugins:
     opt:
       - paths=source_relative
   - name: doc
-    out: docs/docs/api
+    out: docs/src/api
     opt:
       - json,api_docs_gen_input.json

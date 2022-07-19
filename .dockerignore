@@ -13,7 +13,7 @@
 
 !docs/mkdocs.yml
 !docs/requirements.txt
-!docs/docs
+!docs/src
 
 !transiter.go
 !parse/*

@@ -27,8 +27,8 @@ RUN buf generate
 
 # At this point the Dockerfile diverges from the main Dockerfile
 
-COPY docs/docs/api/api_docs_gen.go docs/docs/api/api_docs_gen.go
-RUN go run docs/docs/api/api_docs_gen.go
+COPY docs/src/api/api_docs_gen.go docs/src/api/api_docs_gen.go
+RUN go run docs/src/api/api_docs_gen.go
 
 
 FROM python:3.9 AS docs-builder
@@ -38,13 +38,13 @@ COPY docs/requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY docs/mkdocs.yml .
-COPY docs/docs docs
+COPY docs/src src
 
 # Diff the newly generated files with the ones in source control.
 # If there are differences, this will fail
-COPY --from=api-docs-builder /transiter/docs/docs/api/*md /tmp/apiGenFresh/
-RUN rm docs/api/api_docs_gen*
-RUN diff --recursive /tmp/apiGenFresh docs/api
+COPY --from=api-docs-builder /transiter/docs/src/api/*md /tmp/apiGenFresh/
+RUN rm src/api/api_docs_gen*
+RUN diff --recursive /tmp/apiGenFresh src/api
 
 RUN ls -lah
 RUN mkdocs build --strict -f mkdocs.yml -d gen

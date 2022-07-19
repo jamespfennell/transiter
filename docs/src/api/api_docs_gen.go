@@ -18,7 +18,7 @@ const (
 	publicResourcesFile = "public_resources.md"
 	adminFile           = "admin.md"
 	inputFile           = "api_docs_gen_input.json"
-	scriptDir           = "docs/docs/api"
+	scriptDir           = "docs/src/api"
 )
 
 func main() {
