@@ -72,15 +72,39 @@ const (
 )
 
 type ServiceMapConfig struct {
-	ID        string
-	Source    ServiceMapSource
-	Threshold float64
+	// Unique identifier for this config.
+	ID string
+	// Source of the service map: either static data or realtime data.
+	Source ServiceMapSource
 
-	Days              []string
+	// The threshold setting is used to exclude one-off trip schedules from service maps.
+	// When calculating a service map, all trips are bucketed based on their schedule.
+	// If the threshold is 0.2, trips are only included if the corresponding bucket contains
+	// at least 20% of the trips. In particular, a one-off trip whose bucket only contains
+	// itself will be excluded if there are many other trips.
+	//
+	// Note that a trip's schedule is reversed if needed based on the direction ID.
+	Threshold float64
+	// If specified, only include trips which run on at least one of the provided days.
+	// If left empty, no trip filtering is provided.
+	// This field is only used for static maps.
+	Days []string
+	// If specified, only include trips that start earlier than this time.
+	// The time is specified as a duration after midnight; i.e., 2am is '2h'.
+	// This field is only used for static maps.
 	StartsEarlierThan *time.Duration `yaml:"startsEarlierThan"`
-	StartsLaterThan   *time.Duration `yaml:"startsLaterThan"`
-	EndsEarlierThan   *time.Duration `yaml:"endsEarlierThan"`
-	EndsLaterThan     *time.Duration `yaml:"endsLaterThan"`
+	// If specified, only include trips that start later than this time.
+	// The time is specified as a duration after midnight; i.e., 2am is '2h'.
+	// This field is only used for static maps.
+	StartsLaterThan *time.Duration `yaml:"startsLaterThan"`
+	// If specified, only include trips that end earlier than this time.
+	// The time is specified as a duration after midnight; i.e., 2am is '2h'.
+	// This field is only used for static maps.
+	EndsEarlierThan *time.Duration `yaml:"endsEarlierThan"`
+	// If specified, only include trips that end later than this time.
+	// The time is specified as a duration after midnight; i.e., 2am is '2h'.
+	// This field is only used for static maps.
+	EndsLaterThan *time.Duration `yaml:"endsLaterThan"`
 
 	DefaultForRoutesAtStop bool `yaml:"defaultForRoutesAtStop"`
 	DefaultForStopsInRoute bool `yaml:"defaultForStopsInRoute"`

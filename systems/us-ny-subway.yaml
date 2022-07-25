@@ -149,13 +149,27 @@ serviceMaps:
   - id: alltimes
     source: STATIC
     threshold: 0.05
-    defaultForStopsInRoute: true
     defaultForRoutesAtStop: true
 
   - id: realtime
     source: REALTIME
     defaultForStopsInRoute: true
     defaultForRoutesAtStop: true
+
+  - id: weekday
+    source: STATIC
+    threshold: 0.1
+    days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    startsLaterThan: 7h
+    endsEarlierThan: 19h
+    defaultForStopsInRoute: true
+
+  - id: weeknight
+    source: STATIC
+    threshold: 0.1
+    days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    startsEarlierThan: 5h
+    defaultForStopsInRoute: true
 
   - id: weekend
     source: STATIC

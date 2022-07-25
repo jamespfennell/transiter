@@ -5,7 +5,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/config"
@@ -115,33 +117,161 @@ func persistMaps(ctx context.Context, querier db.Querier, smc *Config, routePkTo
 }
 
 func buildStaticMaps(smc *config.ServiceMapConfig, routeIDToPk map[string]int64, stopIDToStationPk map[string]int64, trips []gtfs.ScheduledTrip) map[int64][]int64 {
-	routePkToEdges := map[int64]map[graph.Edge]bool{}
+	includedServiceIDs := buildIncludedServiceIDs(smc, trips)
+
+	routePkToKeyToCount := map[int64]map[string]int{}
 	for _, routePk := range routeIDToPk {
-		routePkToEdges[routePk] = map[graph.Edge]bool{}
+		routePkToKeyToCount[routePk] = map[string]int{}
 	}
+	keyToEdges := map[string][]graph.Edge{}
 	for _, trip := range trips {
 		routePk, ok := routeIDToPk[trip.Route.Id]
 		if !ok {
 			continue
 		}
-		if trip.DirectionId == nil {
+		if !isIncludedTrip(smc, &trip, includedServiceIDs) {
 			continue
 		}
-		// TODO: filter the trip based on the service map config
+		key := calculateTripKey(&trip, stopIDToStationPk)
+		routePkToKeyToCount[routePk][key] = routePkToKeyToCount[routePk][key] + 1
+		var edges []graph.Edge
 		directionID := *trip.DirectionId
 		for j := 1; j < len(trip.StopTimes); j++ {
 			from, to := j-1, j
 			if !directionID {
 				from, to = j, j-1
 			}
-			// TODO: what if the stop IDs don't exist?
-			routePkToEdges[routePk][graph.Edge{
-				FromLabel: stopIDToStationPk[trip.StopTimes[from].Stop.Id],
-				ToLabel:   stopIDToStationPk[trip.StopTimes[to].Stop.Id],
-			}] = true
+			fromLabel, ok := stopIDToStationPk[trip.StopTimes[from].Stop.Id]
+			if !ok {
+				continue
+			}
+			toLabel, ok := stopIDToStationPk[trip.StopTimes[to].Stop.Id]
+			if !ok {
+				continue
+			}
+			edges = append(edges, graph.Edge{
+				FromLabel: fromLabel,
+				ToLabel:   toLabel,
+			})
+		}
+		keyToEdges[key] = edges
+	}
+	routePkToEdges := map[int64]map[graph.Edge]bool{}
+	for _, routePk := range routeIDToPk {
+		routePkToEdges[routePk] = map[graph.Edge]bool{}
+	}
+	for routePk, keyToCount := range routePkToKeyToCount {
+		totalCount := 0
+		for _, count := range keyToCount {
+			totalCount += count
+		}
+		countThreshhold := float64(totalCount) * smc.Threshold
+		for key, count := range keyToCount {
+			if float64(count) < countThreshhold {
+				continue
+			}
+			for _, edge := range keyToEdges[key] {
+				routePkToEdges[routePk][edge] = true
+			}
 		}
 	}
+
 	return buildMaps(routePkToEdges)
+}
+
+func calculateTripKey(trip *gtfs.ScheduledTrip, stopIDToStationPk map[string]int64) string {
+	var stationPks []int64
+	for _, stopTime := range trip.StopTimes {
+		stationPk, ok := stopIDToStationPk[stopTime.Stop.Id]
+		if !ok {
+			continue
+		}
+		stationPks = append(stationPks, stationPk)
+	}
+	if *trip.DirectionId {
+		for i, j := 0, len(stationPks)-1; i < j; i, j = i+1, j-1 {
+			stationPks[i], stationPks[j] = stationPks[j], stationPks[i]
+		}
+	}
+	var b strings.Builder
+	for _, stationPk := range stationPks {
+		b.WriteString(fmt.Sprintf("%d-", stationPk))
+	}
+	return b.String()
+}
+
+// isIncludedTrip returns whether the trip should be included in the service map.
+func isIncludedTrip(smc *config.ServiceMapConfig, trip *gtfs.ScheduledTrip, includedServiceIDs map[string]bool) bool {
+	if trip.DirectionId == nil {
+		return false
+	}
+	if !includedServiceIDs[trip.Service.Id] {
+		return false
+	}
+	if len(trip.StopTimes) == 0 {
+		return false
+	}
+	startTime := trip.StopTimes[0].ArrivalTime
+	endTime := trip.StopTimes[len(trip.StopTimes)-1].ArrivalTime
+	if smc.StartsEarlierThan != nil && *smc.StartsEarlierThan < startTime {
+		return false
+	}
+	if smc.StartsLaterThan != nil && *smc.StartsLaterThan > startTime {
+		return false
+	}
+	if smc.EndsEarlierThan != nil && *smc.EndsEarlierThan < endTime {
+		return false
+	}
+	if smc.EndsLaterThan != nil && *smc.EndsLaterThan > endTime {
+		return false
+	}
+	return true
+}
+
+// buildIncludedServiceIDs builds a set of all service IDs which are to be used for this service map.
+// A trip can be included in this map only if its service is in the set.
+//
+// The calculation is based on the days field in the service map config and the days fields in the service.
+// In general a service must run on at least one day specified in the configuration. However if there are no days specified
+// in the configuration then all services are allowed.
+func buildIncludedServiceIDs(smc *config.ServiceMapConfig, trips []gtfs.ScheduledTrip) map[string]bool {
+	allowedDays := map[string]bool{}
+	for _, day := range smc.Days {
+		allowedDays[strings.ToLower(day)] = true
+	}
+	excludedServiceIDs := map[string]bool{}
+	includedServiceIDs := map[string]bool{}
+	for i := range trips {
+		service := trips[i].Service
+		if excludedServiceIDs[service.Id] || includedServiceIDs[service.Id] {
+			continue
+		}
+		if len(smc.Days) == 0 {
+			includedServiceIDs[service.Id] = true
+			continue
+		}
+		for _, c := range []struct {
+			day            string
+			serviceRunning bool
+		}{
+			{"monday", service.Monday},
+			{"tuesday", service.Tuesday},
+			{"wednesday", service.Wednesday},
+			{"thursday", service.Thursday},
+			{"friday", service.Friday},
+			{"saturday", service.Saturday},
+			{"sunday", service.Sunday},
+		} {
+			if c.serviceRunning && allowedDays[c.day] {
+				includedServiceIDs[service.Id] = true
+				break
+			}
+		}
+		if !includedServiceIDs[service.Id] {
+			excludedServiceIDs[service.Id] = true
+		}
+	}
+	return includedServiceIDs
 }
 
 func buildMaps(routePkToEdges map[int64]map[graph.Edge]bool) map[int64][]int64 {
