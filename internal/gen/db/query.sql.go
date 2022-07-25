@@ -660,7 +660,7 @@ func (q *Queries) ListStopHeadsignRulesForStops(ctx context.Context, stopPks []i
 }
 
 const listStopTimesAtStops = `-- name: ListStopTimesAtStops :many
-SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, vehicle.id vehicle_id FROM trip_stop_time
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, vehicle.id vehicle_id FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
@@ -680,6 +680,7 @@ type ListStopTimesAtStopsRow struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
+	Headsign             sql.NullString
 	Past                 bool
 	Pk_2                 int64
 	ID                   string
@@ -711,6 +712,7 @@ func (q *Queries) ListStopTimesAtStops(ctx context.Context, stopPks []int64) ([]
 			&i.DepartureUncertainty,
 			&i.StopSequence,
 			&i.Track,
+			&i.Headsign,
 			&i.Past,
 			&i.Pk_2,
 			&i.ID,
@@ -833,7 +835,7 @@ func (q *Queries) ListStopsInSystem(ctx context.Context, systemPk int64) ([]Stop
 }
 
 const listStopsTimesForTrip = `-- name: ListStopsTimesForTrip :many
-SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.past, stop.id stop_id, stop.name stop_name
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, stop.id stop_id, stop.name stop_name
 FROM trip_stop_time
     INNER JOIN stop ON trip_stop_time.stop_pk = stop.pk
 WHERE trip_stop_time.trip_pk = $1
@@ -852,6 +854,7 @@ type ListStopsTimesForTripRow struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
+	Headsign             sql.NullString
 	Past                 bool
 	StopID               string
 	StopName             sql.NullString
@@ -878,6 +881,7 @@ func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]Li
 			&i.DepartureUncertainty,
 			&i.StopSequence,
 			&i.Track,
+			&i.Headsign,
 			&i.Past,
 			&i.StopID,
 			&i.StopName,

@@ -29,6 +29,15 @@ func getRoute(ctx context.Context, querier db.Querier, systemID, routeID string)
 	return system, route, noRowsToNotFound(err, fmt.Sprintf("route %q in system %q", routeID, system.ID))
 }
 
+func getStop(ctx context.Context, querier db.Querier, systemID, stopID string) (db.System, db.Stop, error) {
+	system, err := getSystem(ctx, querier, systemID)
+	if err != nil {
+		return system, db.Stop{}, err
+	}
+	route, err := querier.GetStopInSystem(ctx, db.GetStopInSystemParams{SystemID: system.ID, StopID: stopID})
+	return system, route, noRowsToNotFound(err, fmt.Sprintf("stop %q in system %q", stopID, system.ID))
+}
+
 func noRowsToNotFound(err error, notFoundText string) error {
 	if err == pgx.ErrNoRows {
 		err = errors.NewNotFoundError(notFoundText + " does not exist")

@@ -88,11 +88,11 @@ func (q *Queries) InsertTrip(ctx context.Context, arg InsertTripParams) (int64, 
 const insertTripStopTime = `-- name: InsertTripStopTime :exec
 INSERT INTO trip_stop_time
     (stop_pk, trip_pk, arrival_time, arrival_delay, arrival_uncertainty,
-     departure_time, departure_delay, departure_uncertainty, stop_sequence, track, past)
+     departure_time, departure_delay, departure_uncertainty, stop_sequence, track, headsign, past)
 VALUES
     ($1, $2, $3, $4,
      $5, $6, $7,
-     $8, $9, $10, FALSE)
+     $8, $9, $10, $11, FALSE)
 `
 
 type InsertTripStopTimeParams struct {
@@ -106,6 +106,7 @@ type InsertTripStopTimeParams struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
+	Headsign             sql.NullString
 }
 
 func (q *Queries) InsertTripStopTime(ctx context.Context, arg InsertTripStopTimeParams) error {
@@ -120,6 +121,7 @@ func (q *Queries) InsertTripStopTime(ctx context.Context, arg InsertTripStopTime
 		arg.DepartureUncertainty,
 		arg.StopSequence,
 		arg.Track,
+		arg.Headsign,
 	)
 	return err
 }
@@ -258,10 +260,11 @@ SET
     departure_delay = $6,
     departure_uncertainty = $7,
     stop_sequence = $8,
-    track = $9, 
+    track = $9,
+    headsign = $10,
     past = FALSE
 WHERE
-    pk = $10
+    pk = $11
 `
 
 type UpdateTripStopTimeParams struct {
@@ -274,6 +277,7 @@ type UpdateTripStopTimeParams struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
+	Headsign             sql.NullString
 	Pk                   int64
 }
 
@@ -288,6 +292,7 @@ func (q *Queries) UpdateTripStopTime(ctx context.Context, arg UpdateTripStopTime
 		arg.DepartureUncertainty,
 		arg.StopSequence,
 		arg.Track,
+		arg.Headsign,
 		arg.Pk,
 	)
 	return err

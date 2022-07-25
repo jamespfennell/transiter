@@ -286,6 +286,7 @@ type TripStopTime struct {
 	DepartureUncertainty sql.NullInt32
 	StopSequence         int32
 	Track                sql.NullString
+	Headsign             sql.NullString
 	Past                 bool
 }
 

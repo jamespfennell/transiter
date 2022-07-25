@@ -26,11 +26,11 @@ ORDER BY trip_pk, stop_sequence;
 -- name: InsertTripStopTime :exec
 INSERT INTO trip_stop_time
     (stop_pk, trip_pk, arrival_time, arrival_delay, arrival_uncertainty,
-     departure_time, departure_delay, departure_uncertainty, stop_sequence, track, past)
+     departure_time, departure_delay, departure_uncertainty, stop_sequence, track, headsign, past)
 VALUES
     (sqlc.arg(stop_pk), sqlc.arg(trip_pk), sqlc.arg(arrival_time), sqlc.arg(arrival_delay),
      sqlc.arg(arrival_uncertainty), sqlc.arg(departure_time), sqlc.arg(departure_delay),
-     sqlc.arg(departure_uncertainty), sqlc.arg(stop_sequence), sqlc.arg(track), FALSE);
+     sqlc.arg(departure_uncertainty), sqlc.arg(stop_sequence), sqlc.arg(track), sqlc.arg(headsign), FALSE);
 
 -- name: UpdateTripStopTime :exec
 UPDATE trip_stop_time
@@ -43,7 +43,8 @@ SET
     departure_delay = sqlc.arg(departure_delay),
     departure_uncertainty = sqlc.arg(departure_uncertainty),
     stop_sequence = sqlc.arg(stop_sequence),
-    track = sqlc.arg(track), 
+    track = sqlc.arg(track),
+    headsign = sqlc.arg(headsign),
     past = FALSE
 WHERE
     pk = sqlc.arg(pk);

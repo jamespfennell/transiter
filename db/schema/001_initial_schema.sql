@@ -322,6 +322,7 @@ CREATE TABLE trip_stop_time (
     departure_uncertainty integer,
     stop_sequence integer NOT NULL,
     track character varying,
+    headsign character varying,
     past boolean NOT NULL,
 
     UNIQUE(trip_pk, stop_sequence)

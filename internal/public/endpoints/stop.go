@@ -3,19 +3,16 @@ package endpoints
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"sort"
 	"time"
 
 	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/internal/public/stoptree"
 
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
-	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
 func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api.ListStopsReply, error) {
@@ -39,11 +36,8 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 }
 
 func ListTransfers(ctx context.Context, r *Context, req *api.ListTransfersRequest) (*api.ListTransfersReply, error) {
-	system, err := r.Querier.GetSystem(ctx, req.SystemId)
+	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("system %q not found", req.SystemId))
-		}
 		return nil, err
 	}
 	transfers, err := r.Querier.ListTransfersInSystem(ctx, sql.NullInt64{Valid: true, Int64: system.Pk})
@@ -73,12 +67,8 @@ func ListTransfers(ctx context.Context, r *Context, req *api.ListTransfersReques
 
 func GetStop(ctx context.Context, r *Context, req *api.GetStopRequest) (*api.Stop, error) {
 	startTime := time.Now()
-	// TODO: we can probably remove this call? And just check that the stops tree is non-empty
-	stop, err := r.Querier.GetStopInSystem(ctx, db.GetStopInSystemParams{SystemID: req.SystemId, StopID: req.StopId})
+	_, stop, err := getStop(ctx, r.Querier, req.SystemId, req.StopId)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			err = errors.NewNotFoundError(fmt.Sprintf("stop %q in system %q not found", req.StopId, req.SystemId))
-		}
 		return nil, err
 	}
 	stopTree, err := stoptree.NewStopTree(ctx, r.Querier, stop.Pk)
@@ -205,7 +195,7 @@ func GetStop(ctx context.Context, r *Context, req *api.GetStopRequest) (*api.Sto
 			StopSequence: stopTime.StopSequence,
 			Track:        convert.SQLNullString(stopTime.Track),
 			Future:       !stopTime.Past,
-			Headsign:     stopHeadsignMatcher.Match(&stopTime),
+			Headsign:     convert.SQLNullString(stopTime.Headsign),
 			Arrival:      buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
 			Departure:    buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
 			Trip: &api.Trip_Preview{
@@ -316,21 +306,6 @@ func NewStopHeadsignMatcher(ctx context.Context, querier db.Querier, stopPks []i
 		return nil, err
 	}
 	return &StopHeadsignMatcher{rules: rules}, nil
-}
-
-func (m *StopHeadsignMatcher) Match(stopTime *db.ListStopTimesAtStopsRow) *string {
-	for _, rule := range m.rules {
-		if stopTime.StopPk != rule.StopPk {
-			continue
-		}
-		if stopTime.Track.Valid &&
-			rule.Track.Valid &&
-			stopTime.Track.String != rule.Track.String {
-			continue
-		}
-		return &rule.Headsign
-	}
-	return nil
 }
 
 func (m *StopHeadsignMatcher) AllHeadsigns() []string {

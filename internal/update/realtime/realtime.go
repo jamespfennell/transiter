@@ -77,6 +77,11 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	var serviceMapTrips []servicemaps.Trip
 	processedIds := map[dbwrappers.TripUID]bool{}
 
+	stopHeadsignMatcher, err := NewStopHeadsignMatcher(ctx, updateCtx.Querier, stopIDToPk, trips)
+	if err != nil {
+		return err
+	}
+
 	for _, trip := range trips {
 		routePk, ok := routeIDToPk[trip.ID.RouteID]
 		if !ok {
@@ -138,6 +143,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 			if stopTime.StopSequence == nil {
 				continue
 			}
+			headsign := stopHeadsignMatcher.Match(stopPk, stopTime.NyctTrack)
 			serviceMapTrip.StopPks = append(serviceMapTrip.StopPks, stopPk)
 			pk, ok := stopSequenceToStopTimePk[int32(*stopTime.StopSequence)]
 			if ok {
@@ -152,6 +158,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 					DepartureUncertainty: convert.NullInt32(stopTime.GetDeparture().Uncertainty),
 					StopSequence:         int32(*stopTime.StopSequence),
 					Track:                convert.NullString(stopTime.NyctTrack),
+					Headsign:             convert.NullString(headsign),
 				}); err != nil {
 					return err
 				}
@@ -168,6 +175,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 					DepartureUncertainty: convert.NullInt32(stopTime.GetDeparture().Uncertainty),
 					StopSequence:         int32(*stopTime.StopSequence),
 					Track:                convert.NullString(stopTime.NyctTrack),
+					Headsign:             convert.NullString(headsign),
 				}); err != nil {
 					return err
 				}
@@ -310,6 +318,52 @@ func populateStopSequences(trip *gtfs.Trip, current *dbwrappers.TripForUpdate, s
 		newSequence := uint32(currentSeq)
 		trip.StopTimeUpdates[i].StopSequence = &newSequence
 	}
+}
+
+type StopHeadsignMatcher struct {
+	rules map[int64][]db.StopHeadsignRule
+}
+
+func NewStopHeadsignMatcher(ctx context.Context, querier db.Querier, stopIDToPk map[string]int64, trips []gtfs.Trip) (*StopHeadsignMatcher, error) {
+	stopPksSet := map[int64]bool{}
+	for i := range trips {
+		for j := range trips[i].StopTimeUpdates {
+			stopID := trips[i].StopTimeUpdates[j].StopID
+			if stopID == nil {
+				continue
+			}
+			stopPk, ok := stopIDToPk[*stopID]
+			if !ok {
+				continue
+			}
+			stopPksSet[stopPk] = true
+		}
+	}
+	var stopPks []int64
+	for stopPk := range stopPksSet {
+		stopPks = append(stopPks, stopPk)
+	}
+	rows, err := querier.ListStopHeadsignRulesForStops(ctx, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	rules := map[int64][]db.StopHeadsignRule{}
+	for _, row := range rows {
+		rules[row.StopPk] = append(rules[row.StopPk], row)
+	}
+	return &StopHeadsignMatcher{rules: rules}, nil
+}
+
+func (m *StopHeadsignMatcher) Match(stopPk int64, track *string) *string {
+	for _, rule := range m.rules[stopPk] {
+		if track != nil &&
+			rule.Track.Valid &&
+			*track != rule.Track.String {
+			continue
+		}
+		return &rule.Headsign
+	}
+	return nil
 }
 
 func updateAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []gtfs.Alert) error {
