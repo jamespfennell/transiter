@@ -91,7 +91,7 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 		}
 	}
 	for _, stopTime := range stopTimes {
-		reply.StopTimes = append(reply.StopTimes, &api.Trip_StopTime{
+		reply.StopTimes = append(reply.StopTimes, &api.StopTime{
 			StopSequence: stopTime.StopSequence,
 			Track:        convert.SQLNullString(stopTime.Track),
 			Future:       !stopTime.Past,

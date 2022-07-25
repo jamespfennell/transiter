@@ -633,15 +633,6 @@ message Stop {
 
   repeated Alert.Preview alerts = 15;
 
-  message StopTime {
-    EstimatedTime arrival = 1;
-    EstimatedTime departure = 2;
-    bool future = 4;
-    int32 stop_sequence = 5;
-    optional string headsign = 6;
-    optional string track = 3;
-    Trip.Preview trip = 7;
-  }
   repeated StopTime stop_times = 6;
 
   repeated Transfer transfers = 16;
@@ -650,9 +641,25 @@ message Stop {
   message Preview {
     string id = 1;
     string name = 2;
-    // TODO: transfers and service maps
-    optional string href = 7;
+    optional string href = 3;
   }
+}
+
+message StopTime {
+  Stop.Preview stop = 1;
+  Trip.Preview trip = 2;
+
+  message EstimatedTime {
+    optional int64 time = 1;
+    optional int32 delay = 2;
+    optional int32 uncertainty = 3;
+  }
+  EstimatedTime arrival = 3;
+  EstimatedTime departure = 4;
+  bool future = 5;
+  int32 stop_sequence = 6;
+  optional string headsign = 7;
+  optional string track = 8;
 }
 
 message Trip {
@@ -665,16 +672,6 @@ message Trip {
   optional Vehicle.Preview vehicle = 6;
   bool direction_id = 7;
 
-  // TODO: merge with the the other stop time
-  message StopTime {
-    EstimatedTime arrival = 1;
-    EstimatedTime departure = 2;
-    bool future = 4;
-    int32 stop_sequence = 5;
-    optional string headsign = 6;
-    optional string track = 3;
-    Stop.Preview stop = 7;
-  }
   repeated StopTime stop_times = 9;
   optional string href = 10;
 
@@ -962,12 +959,6 @@ message Alert {
     // TODO(APIv2): add this field and create API endpoints
     // optional string href = 3;
   }
-}
-
-message EstimatedTime {
-  optional int64 time = 1;
-  optional int32 delay = 2;
-  optional int32 uncertainty = 3;
 }
 
 message Transfer {

@@ -201,7 +201,7 @@ func GetStop(ctx context.Context, r *Context, req *api.GetStopRequest) (*api.Sto
 		stopTime := stopTime
 		route := routePkToRoute[stopTime.RoutePk]
 		lastStop := tripPkToLastStop[stopTime.TripPk]
-		apiStopTime := &api.Stop_StopTime{
+		apiStopTime := &api.StopTime{
 			StopSequence: stopTime.StopSequence,
 			Track:        convert.SQLNullString(stopTime.Track),
 			Future:       !stopTime.Past,
@@ -346,8 +346,8 @@ func (m *StopHeadsignMatcher) AllHeadsigns() []string {
 	return result
 }
 
-func buildEstimatedTime(time sql.NullTime, delay sql.NullInt32, uncertainty sql.NullInt32) *api.EstimatedTime {
-	return &api.EstimatedTime{
+func buildEstimatedTime(time sql.NullTime, delay sql.NullInt32, uncertainty sql.NullInt32) *api.StopTime_EstimatedTime {
+	return &api.StopTime_EstimatedTime{
 		Time:        convert.SQLNullTime(time),
 		Delay:       convert.SQLNullInt32(delay),
 		Uncertainty: convert.SQLNullInt32(uncertainty),
