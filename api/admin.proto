@@ -1,235 +1,233 @@
 syntax = "proto3";
-option go_package = "github.com/jamespfennell/transiter/api";
 
 import "google/api/annotations.proto";
+
+option go_package = "github.com/jamespfennell/transiter/api";
 
 /**
 Admin API
 */
 service Admin {
-    // Get the config for a system
-    //
-    // `GET /systems/<system_id>/config`
-    rpc GetSystemConfig (GetSystemConfigRequest) returns (SystemConfig) {
-        option (google.api.http) = {
-                get: "/admin/systems/{system_id}"
-            };
-      }
+  // Get the config for a system
+  //
+  // `GET /systems/<system_id>/config`
+  rpc GetSystemConfig(GetSystemConfigRequest) returns (SystemConfig) {
+    option (google.api.http) = {
+      get: "/admin/systems/{system_id}"
+    };
+  }
 
-      // Install or update a system
-      //
-      // `PUT /systems/<system_id>`
-      //
-      // Installs or updates the system based on the configuration provided in the
-      // request payload.
-      // If the system does not exist an install is performed; otherwise an update.
-      rpc InstallOrUpdateSystem (InstallOrUpdateSystemRequest) returns (InstallOrUpdateSystemReply) {
-        option (google.api.http) = {
-                put: "/admin/systems/{system_id}"
-                body: "*"
-            };
-      }
+  // Install or update a system
+  //
+  // `PUT /systems/<system_id>`
+  //
+  // Installs or updates the system based on the configuration provided in the
+  // request payload.
+  // If the system does not exist an install is performed; otherwise an update.
+  rpc InstallOrUpdateSystem(InstallOrUpdateSystemRequest) returns (InstallOrUpdateSystemReply) {
+    option (google.api.http) = {
+      put: "/admin/systems/{system_id}"
+      body: "*"
+    };
+  }
 
-      // Delete a system
-      //
-      // `DELETE /systems/<system_id>`
-      //
-      // Deletes the specified system.
-      rpc DeleteSystem (DeleteSystemRequest) returns (DeleteSystemReply) {
-        option (google.api.http) = {
-                delete: "/admin/systems/{system_id}"
-            };
-      }
+  // Delete a system
+  //
+  // `DELETE /systems/<system_id>`
+  //
+  // Deletes the specified system.
+  rpc DeleteSystem(DeleteSystemRequest) returns (DeleteSystemReply) {
+    option (google.api.http) = {
+      delete: "/admin/systems/{system_id}"
+    };
+  }
 
-      // Update a feed
-      //
-      // `POST /systems/<system_id>/feeds/<feed_id>`
-      //
-      // Triggers a feed update for the specified feed.
-      rpc UpdateFeed(UpdateFeedRequest) returns (UpdateFeedReply) {
-        option (google.api.http) = {
-                post: "/admin/systems/{system_id}/feeds/{feed_id}"
-            };
-      }
+  // Update a feed
+  //
+  // `POST /systems/<system_id>/feeds/<feed_id>`
+  //
+  // Triggers a feed update for the specified feed.
+  rpc UpdateFeed(UpdateFeedRequest) returns (UpdateFeedReply) {
+    option (google.api.http) = {
+      post: "/admin/systems/{system_id}/feeds/{feed_id}"
+    };
+  }
 
-      // Get scheduler status
-      //
-      // `GET /scheduler`
-      //
-      // Gets the status of the scheduler.
-      rpc GetSchedulerStatus(GetSchedulerStatusRequest) returns (GetSchedulerStatusReply) {
-        option (google.api.http) = {
-                get: "/admin/scheduler"
-            };
-      }
+  // Get scheduler status
+  //
+  // `GET /scheduler`
+  //
+  // Gets the status of the scheduler.
+  rpc GetSchedulerStatus(GetSchedulerStatusRequest) returns (GetSchedulerStatusReply) {
+    option (google.api.http) = {
+      get: "/admin/scheduler"
+    };
+  }
 
-      // Reset scheduler
-      //
-      // `POST /scheduler`
-      //
-      // Performs a full restart of the scheduler, with all scheduler
-      //   configurations retrieved fresh from the database.
-      // In general this endpoint should never be needed;
-      //   Transiter automatically restarts the scheduler when needed.
-      //  The main usecase is when the Postgres configuration is manually
-      //   updated and the scheduler needs to see the update.
-      rpc ResetScheduler(ResetSchedulerRequest) returns (ResetSchedulerReply) {
-        option (google.api.http) = {
-                post: "/admin/scheduler"
-            };
-      }
+  // Reset scheduler
+  //
+  // `POST /scheduler`
+  //
+  // Performs a full restart of the scheduler, with all scheduler
+  //   configurations retrieved fresh from the database.
+  // In general this endpoint should never be needed;
+  //   Transiter automatically restarts the scheduler when needed.
+  //  The main usecase is when the Postgres configuration is manually
+  //   updated and the scheduler needs to see the update.
+  rpc ResetScheduler(ResetSchedulerRequest) returns (ResetSchedulerReply) {
+    option (google.api.http) = {
+      post: "/admin/scheduler"
+    };
+  }
 
-      // TODO: GarbageCollectFeedUpdates
-      // TODO: GetFeedConfig
+// TODO: GarbageCollectFeedUpdates
+// TODO: GetFeedConfig
 }
 
 message GetSystemConfigRequest {
-    string system_id = 1;
+  string system_id = 1;
 }
 
 message InstallOrUpdateSystemRequest {
-    // ID of the system to install or update.
-    string system_id = 1;
+  // ID of the system to install or update.
+  string system_id = 1;
 
-    oneof config {
-        SystemConfig system_config = 2;
-        YamlConfig yaml_config = 3;
-    }
+  oneof config {
+    SystemConfig system_config = 2;
+    YamlConfig yaml_config = 3;
+  }
 
-    // If true, do not perform an update if the system already exists.
-    bool install_only = 4;
+  // If true, do not perform an update if the system already exists.
+  bool install_only = 4;
 
-    // If false (the default), the system configuration is validated before the request finishes
-    // but databse updates are performed asynchronously. The status of the operation can 
-    // be polled using GetSystem and inspecting the status field.
-    //
-    // If true, the install/update operation is perfomed synchronously in the 
-    //   request and in a single database transaction.
-    // In this case, if the operation fails there will no database artifacts. 
-    // The problem
-    // is that installs can take a long time and the request may be cancelled before it completes
-    // e.g. by an intermediate proxy.
-    bool synchronous = 5;
+  // If false (the default), the system configuration is validated before the request finishes
+  // but databse updates are performed asynchronously. The status of the operation can
+  // be polled using GetSystem and inspecting the status field.
+  //
+  // If true, the install/update operation is perfomed synchronously in the
+  //   request and in a single database transaction.
+  // In this case, if the operation fails there will no database artifacts.
+  // The problem
+  // is that installs can take a long time and the request may be cancelled before it completes
+  // e.g. by an intermediate proxy.
+  bool synchronous = 5;
 }
 
 message YamlConfig {
-    oneof source {
-        // A URL where the config can be retrieved from using a simple GET request.
-        // If the URL requires a more complex interaction (authentication, a different
-        // verb), the config should be retrieved outside of Transiter and provided
-        // using the content field.
-        string url = 1;
-        // The text content of the yaml config.
-        string content = 2;
-    }
-    // Whether the config is a template. If true the config will first be processed
-    // using Go's template library.
-    bool is_template = 3;
+  oneof source {
+    // A URL where the config can be retrieved from using a simple GET request.
+    // If the URL requires a more complex interaction (authentication, a different
+    // verb), the config should be retrieved outside of Transiter and provided
+    // using the content field.
+    string url = 1;
+    // The text content of the yaml config.
+    string content = 2;
+  }
+  // Whether the config is a template. If true the config will first be processed
+  // using Go's template library.
+  bool is_template = 3;
 
-    // Arguments to pass to Go's template library if the config is a template.
-    //
-    // In general all information should be in the config itself.
-    // The template args are intended for things like API keys which are secret
-    // and/or different for each installer of the system.
-    map<string, string> template_args = 4;
+  // Arguments to pass to Go's template library if the config is a template.
+  //
+  // In general all information should be in the config itself.
+  // The template args are intended for things like API keys which are secret
+  // and/or different for each installer of the system.
+  map<string, string> template_args = 4;
 }
 
 message InstallOrUpdateSystemReply {
-    string system_id = 1;
-    SystemConfig system_config = 2;
+  string system_id = 1;
+  SystemConfig system_config = 2;
 }
 
 message DeleteSystemRequest {
-    string system_id = 1;
+  string system_id = 1;
 }
 
-message DeleteSystemReply {
-}
+message DeleteSystemReply {}
 
 message SystemConfig {
-    string name = 1;
-    repeated FeedConfig feeds = 2;
-    repeated ServiceMapConfig service_maps = 3;
+  string name = 1;
+  repeated FeedConfig feeds = 2;
+  repeated ServiceMapConfig service_maps = 3;
 }
 
 message FeedConfig {
-    string id = 1;
+  string id = 1;
 
-    bool required_for_install = 8;
+  bool required_for_install = 8;
 
-    bool periodic_update_enabled = 6;
-    optional int64 periodic_update_period = 7;
-    
-    string url = 2;
-    optional int64 http_timeout = 22;
-    map<string, string> http_headers = 23;
+  bool periodic_update_enabled = 6;
+  optional int64 periodic_update_period = 7;
 
-    message GtfsStaticParser{}
+  string url = 2;
+  optional int64 http_timeout = 22;
+  map<string, string> http_headers = 23;
 
-    message GtfsRealtimeParser {
-        message NoExtension {}
+  message GtfsStaticParser {}
 
-        message NyctTripsExtension {
-            bool filter_stale_unassigned_trips = 1;
-        }
+  message GtfsRealtimeParser {
+    message NoExtension {}
 
-        message NyctAlertsExtension {
-            enum ElevatorAlertsDeduplicationPolicy {
-                NO_DEDUPLICATION = 0;
-                DEDUPLICATE_IN_STATION = 1;
-                DEDUPLICATE_IN_COMPLEX = 2;
-            }
-            ElevatorAlertsDeduplicationPolicy elevator_alerts_deduplication_policy = 1;
-            bool elevator_alerts_inform_using_station_ids = 2;
-            bool skip_timetabled_no_service_alerts = 3;
-            bool add_nyct_metadata = 4;
-        }
-
-        oneof extension {
-            NoExtension no_extension = 1;
-            NyctTripsExtension nyct_trips_extension = 2;
-            NyctAlertsExtension nyct_alerts_extension = 3;
-        }
+    message NyctTripsExtension {
+      bool filter_stale_unassigned_trips = 1;
     }
 
-    message NyctSubwayCsvParser{}
-
-    oneof parser {
-        GtfsStaticParser gtfs_static_parser = 3;
-        GtfsRealtimeParser gtfs_realtime_parser = 4;
-        NyctSubwayCsvParser nyct_subway_csv_parser = 5;
+    message NyctAlertsExtension {
+      enum ElevatorAlertsDeduplicationPolicy {
+        NO_DEDUPLICATION = 0;
+        DEDUPLICATE_IN_STATION = 1;
+        DEDUPLICATE_IN_COMPLEX = 2;
+      }
+      ElevatorAlertsDeduplicationPolicy elevator_alerts_deduplication_policy = 1;
+      bool elevator_alerts_inform_using_station_ids = 2;
+      bool skip_timetabled_no_service_alerts = 3;
+      bool add_nyct_metadata = 4;
     }
 
+    oneof extension {
+      NoExtension no_extension = 1;
+      NyctTripsExtension nyct_trips_extension = 2;
+      NyctAlertsExtension nyct_alerts_extension = 3;
+    }
+  }
+
+  message NyctSubwayCsvParser {}
+
+  oneof parser {
+    GtfsStaticParser gtfs_static_parser = 3;
+    GtfsRealtimeParser gtfs_realtime_parser = 4;
+    NyctSubwayCsvParser nyct_subway_csv_parser = 5;
+  }
 }
 
 message ServiceMapConfig {
-    string id = 1;
+  string id = 1;
 
-    message Static {
-        optional int64 starts_earlier_than = 1;
-        optional int64 starts_later_than = 2;
-        optional int64 ends_earlier_than = 3;
-        optional int64 ends_later_than = 4;
-        repeated string days = 5;
-    }
+  message Static {
+    optional int64 starts_earlier_than = 1;
+    optional int64 starts_later_than = 2;
+    optional int64 ends_earlier_than = 3;
+    optional int64 ends_later_than = 4;
+    repeated string days = 5;
+  }
 
-    message Realtime {}
+  message Realtime {}
 
-    oneof source {
-        Static static_source = 2;
-        Realtime realtime_source = 3;
-    }
+  oneof source {
+    Static static_source = 2;
+    Realtime realtime_source = 3;
+  }
 
-    double threshold = 4;
+  double threshold = 4;
 
-    bool default_for_routes_at_stop = 5;
-    bool default_for_stops_in_route = 6;
+  bool default_for_routes_at_stop = 5;
+  bool default_for_stops_in_route = 6;
 }
 
-
 message UpdateFeedRequest {
-    string system_id = 1;
-    string feed_id = 2;
+  string system_id = 1;
+  string feed_id = 2;
 }
 
 message UpdateFeedReply {}
@@ -237,15 +235,15 @@ message UpdateFeedReply {}
 message GetSchedulerStatusRequest {}
 
 message GetSchedulerStatusReply {
-    message Feed {
-        string system_id = 1;
-        string feed_id = 2;
-        int64 period = 3;
-        int64 last_successful_update = 4;
-        int64 last_finished_update = 5;
-        bool currently_running = 6;
-    }
-    repeated Feed feeds = 1;
+  message Feed {
+    string system_id = 1;
+    string feed_id = 2;
+    int64 period = 3;
+    int64 last_successful_update = 4;
+    int64 last_finished_update = 5;
+    bool currently_running = 6;
+  }
+  repeated Feed feeds = 1;
 }
 
 message ResetSchedulerRequest {}

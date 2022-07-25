@@ -60,21 +60,21 @@ The public API is a read-only API so all of the resources come from somewhere el
 
 */
 syntax = "proto3";
-option go_package = "github.com/jamespfennell/transiter/api";
 
 import "google/api/annotations.proto";
 
-service Public {
+option go_package = "github.com/jamespfennell/transiter/api";
 
+service Public {
   // API entrypoint
   //
   // `GET /`
   //
   // Provides basic information about this Transiter instance and the Transit systems it contains.
-  rpc Entrypoint (EntrypointRequest) returns (EntrypointReply) {
+  rpc Entrypoint(EntrypointRequest) returns (EntrypointReply) {
     option (google.api.http) = {
-            get: "/"
-        };
+      get: "/"
+    };
   }
 
   // TODO: change the comment format
@@ -85,12 +85,12 @@ service Public {
   *
   * List all transit systems that are installed in this Transiter instance.
   */
-  rpc ListSystems (ListSystemsRequest) returns (ListSystemsReply) {
+  rpc ListSystems(ListSystemsRequest) returns (ListSystemsReply) {
     option (google.api.http) = {
-            get: "/systems"
-        };
+      get: "/systems"
+    };
   }
-  
+
   /**
   * Get system
   *
@@ -98,10 +98,10 @@ service Public {
   *
   * Get a system by its ID.
   */
-  rpc GetSystem (GetSystemRequest) returns (System) {
+  rpc GetSystem(GetSystemRequest) returns (System) {
     option (google.api.http) = {
-            get: "/systems/{system_id}"
-        };
+      get: "/systems/{system_id}"
+    };
   }
 
   /**
@@ -111,10 +111,10 @@ service Public {
   *
   * List all agencies in a system.
   */
-  rpc ListAgencies (ListAgenciesRequest) returns (ListAgenciesReply) {
+  rpc ListAgencies(ListAgenciesRequest) returns (ListAgenciesReply) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/agencies"
-        };
+      get: "/systems/{system_id}/agencies"
+    };
   }
 
   /**
@@ -124,10 +124,10 @@ service Public {
   *
   * Get an agency in a system by its ID.
   */
-  rpc GetAgency (GetAgencyRequest) returns (Agency) {
+  rpc GetAgency(GetAgencyRequest) returns (Agency) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/agencies/{agency_id}"
-        };
+      get: "/systems/{system_id}/agencies/{agency_id}"
+    };
   }
 
   /**
@@ -137,10 +137,10 @@ service Public {
   *
   * List all stops in a system.
   */
-  rpc ListStops (ListStopsRequest) returns (ListStopsReply) {
+  rpc ListStops(ListStopsRequest) returns (ListStopsReply) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/stops"
-        };
+      get: "/systems/{system_id}/stops"
+    };
   }
 
   /**
@@ -150,10 +150,10 @@ service Public {
   *
   * Get a stop in a system by its ID.
   */
-  rpc GetStop (GetStopRequest) returns (Stop) {
+  rpc GetStop(GetStopRequest) returns (Stop) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/stops/{stop_id}"
-        };
+      get: "/systems/{system_id}/stops/{stop_id}"
+    };
   }
 
   /**
@@ -163,10 +163,10 @@ service Public {
   *
   * List all routes in a system.
   */
-  rpc ListRoutes (ListRoutesRequest) returns (ListRoutesReply) {
+  rpc ListRoutes(ListRoutesRequest) returns (ListRoutesReply) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/routes"
-        };
+      get: "/systems/{system_id}/routes"
+    };
   }
 
   /**
@@ -176,10 +176,10 @@ service Public {
   *
   * Get a route in a system by its ID.
   */
-  rpc GetRoute (GetRouteRequest) returns (Route) {
+  rpc GetRoute(GetRouteRequest) returns (Route) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/routes/{route_id}"
-        };
+      get: "/systems/{system_id}/routes/{route_id}"
+    };
   }
 
   /**
@@ -189,10 +189,10 @@ service Public {
   *
   * List all trips in a route.
   */
-  rpc ListTrips (ListTripsRequest) returns (ListTripsReply) {
+  rpc ListTrips(ListTripsRequest) returns (ListTripsReply) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/routes/{route_id}/trips"
-        };
+      get: "/systems/{system_id}/routes/{route_id}/trips"
+    };
   }
 
   /**
@@ -202,10 +202,10 @@ service Public {
   *
   * Get a trip by its ID.
   */
-  rpc GetTrip (GetTripRequest) returns (Trip) {
+  rpc GetTrip(GetTripRequest) returns (Trip) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"
-        };
+      get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"
+    };
   }
 
   /**
@@ -217,10 +217,10 @@ service Public {
   * By default this endpoint returns both active alerts
   *   (alerts which have an active period containing the current time) and non-active alerts.
   */
-  rpc ListAlerts (ListAlertsRequest) returns (ListAlertsReply) {
+  rpc ListAlerts(ListAlertsRequest) returns (ListAlertsReply) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/alerts"
-        };
+      get: "/systems/{system_id}/alerts"
+    };
   }
 
   /**
@@ -230,10 +230,10 @@ service Public {
   *
   * Get an alert by its ID.
   */
-  rpc GetAlert (GetAlertRequest) returns (Alert) {
+  rpc GetAlert(GetAlertRequest) returns (Alert) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/alerts/{alert_id}"
-        };
+      get: "/systems/{system_id}/alerts/{alert_id}"
+    };
   }
 
   /**
@@ -243,10 +243,10 @@ service Public {
   *
   * List all transfers in a system.
   */
-  rpc ListTransfers (ListTransfersRequest) returns (ListTransfersReply) {
+  rpc ListTransfers(ListTransfersRequest) returns (ListTransfersReply) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/transfers"
-        };
+      get: "/systems/{system_id}/transfers"
+    };
   }
 
   /**
@@ -256,10 +256,10 @@ service Public {
   *
   * List all feeds for a system.
   */
-  rpc ListFeeds (ListFeedsRequest) returns (ListFeedsReply) {
+  rpc ListFeeds(ListFeedsRequest) returns (ListFeedsReply) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/feeds"
-        };
+      get: "/systems/{system_id}/feeds"
+    };
   }
 
   /**
@@ -269,10 +269,10 @@ service Public {
   *
   * Get a feed in a system by its ID.
   */
-  rpc GetFeed (GetFeedRequest) returns (Feed) {
+  rpc GetFeed(GetFeedRequest) returns (Feed) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/feeds/{feed_id}"
-        };
+      get: "/systems/{system_id}/feeds/{feed_id}"
+    };
   }
 
   /**
@@ -282,10 +282,10 @@ service Public {
   *
   * List feeds updates for a feed.
   */
-  rpc ListFeedUpdates (ListFeedUpdatesRequest) returns (ListFeedUpdatesReply) {
+  rpc ListFeedUpdates(ListFeedUpdatesRequest) returns (ListFeedUpdatesReply) {
     option (google.api.http) = {
-            get: "/systems/{system_id}/feeds/{feed_id}/updates"
-        };
+      get: "/systems/{system_id}/feeds/{feed_id}/updates"
+    };
   }
 }
 
@@ -294,14 +294,13 @@ message EntrypointRequest {}
 
 // Response payload for the entrypoint endpoint.
 message EntrypointReply {
-  
   // Message containing version information about a Transiter binary.
   message TransiterDetails {
     // The version of the Transiter binary this instance is running.
     string version = 1;
     // URL of the Transiter GitHub respository.
     string href = 2;
-  
+
     // Message containing information about a specific Transiter CI build.
     message Build {
       // The GitHub build number.
@@ -320,7 +319,7 @@ message EntrypointReply {
   }
   // Version and other information about this Transiter binary.
   TransiterDetails transiter = 1;
-  
+
   // List of systems that are installed in this Transiter instance.
   repeated System.Preview systems = 2;
 }
@@ -601,7 +600,7 @@ message System {
   optional ChildEntities routes = 6;
   optional ChildEntities stops = 7;
   optional ChildEntities transfers = 8;
-  
+
   optional string href = 9;
 
   // Preview contains preview information about the system.
@@ -737,7 +736,7 @@ message Route {
   // Active alerts for this route.
   //
   // These are determined using the `informed_entity` field in
-  // the [GTFS realtime alerts 
+  // the [GTFS realtime alerts
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
   repeated Alert.Preview alerts = 12;
 
@@ -786,7 +785,7 @@ message Route {
 //
 // Each feed is defined in the system configuration file.
 // Feeds are included in the public API because there are non-admin use-cases for this resource.
-// For example, an app might publish the staleness of realtime data 
+// For example, an app might publish the staleness of realtime data
 //   by checking for the last succesful feed update.
 //
 // More detailed information on a feed -- its full configuration, and the
@@ -847,7 +846,7 @@ message Agency {
   // List of active alerts for the agency.
   //
   // These are determined using the `informed_entity` field in
-  // the [GTFS realtime alerts 
+  // the [GTFS realtime alerts
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
   repeated Alert.Preview alerts = 10;
 
@@ -874,7 +873,7 @@ message Alert {
   // corresponding to the alert.
   string id = 1;
 
-  // Cause is the same as the [cause enum in the GTFS realtime 
+  // Cause is the same as the [cause enum in the GTFS realtime
   // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-cause),
   // except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Cause {
@@ -882,7 +881,7 @@ message Alert {
     OTHER_CAUSE = 2;
     TECHNICAL_PROBLEM = 3;
     STRIKE = 4;
-    DEMONSTRATION = 5; 
+    DEMONSTRATION = 5;
     ACCIDENT = 6;
     HOLIDAY = 7;
     WEATHER = 8;
@@ -894,7 +893,7 @@ message Alert {
   // Cause of the alert. This corresponds to the `cause` field in the realtime alert message.
   Cause cause = 2;
 
-  // Effect is the same as the [effect enum in the GTFS realtime 
+  // Effect is the same as the [effect enum in the GTFS realtime
   // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-effect),
   // except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Effect {
@@ -967,9 +966,9 @@ message Transfer {
 
   enum Type {
     RECOMMENDED = 0;
-	  TIMED = 1;
-	  REQUIRES_TIME = 2;
-	  NO_POSSIBLE = 3;
+    TIMED = 1;
+    REQUIRES_TIME = 2;
+    NO_POSSIBLE = 3;
   }
   Type type = 3;
 
@@ -979,30 +978,30 @@ message Transfer {
 
 // The feed update resource.
 //
-// Each feed update event 
+// Each feed update event
 //   -- triggered manually though the admin API, or automatically by the scheduler --
 // generates a feed update resource.
 // This resource is updated as the feed update progresses.
 // A background task in Transiter periodically garbage collects old updates.
 message FeedUpdate {
-    // ID of the feed update. This is the primary key of the associated Postgres
-    // database row so it's actually globally unique.
-    string id = 1;
-    // TODO: make these enums
-    // Type of the feed update.
-    string type = 2;
-    // Status of the feed update.
-    string status = 3;
-    // TODO what is this?
-    optional string result = 4;
-    // TODO: delete?
-    optional string stack_trace = 5;
-    // Number of bytes in the downloaded feed data.
-    optional int32 content_length = 7;
-    // Hash of the downloaded feed data. This is used to skip updates
-    // if the feed data hasn't changed.
-    optional string content_hash = 6;
-    // Unix timestamp of the approximate time the update completed.
-    // TODO: started_at? scheduled_at?
-    optional int64 completed_at = 8;
+  // ID of the feed update. This is the primary key of the associated Postgres
+  // database row so it's actually globally unique.
+  string id = 1;
+  // TODO: make these enums
+  // Type of the feed update.
+  string type = 2;
+  // Status of the feed update.
+  string status = 3;
+  // TODO what is this?
+  optional string result = 4;
+  // TODO: delete?
+  optional string stack_trace = 5;
+  // Number of bytes in the downloaded feed data.
+  optional int32 content_length = 7;
+  // Hash of the downloaded feed data. This is used to skip updates
+  // if the feed data hasn't changed.
+  optional string content_hash = 6;
+  // Unix timestamp of the approximate time the update completed.
+  // TODO: started_at? scheduled_at?
+  optional int64 completed_at = 8;
 }
