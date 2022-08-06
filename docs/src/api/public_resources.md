@@ -161,7 +161,7 @@ specification](https://developers.google.com/transit/gtfs-realtime/reference#mes
 
 #### Alert.Cause
 
-Cause is the same as the [cause enum in the GTFS realtime 
+Cause is the same as the [cause enum in the GTFS realtime
 specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-cause),
 except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy proto3 requirements.
 	
@@ -187,7 +187,7 @@ except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy proto3 requirements.
 
 #### Alert.Effect
 
-Effect is the same as the [effect enum in the GTFS realtime 
+Effect is the same as the [effect enum in the GTFS realtime
 specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-effect),
 except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
 	
@@ -248,33 +248,13 @@ specification](https://developers.google.com/transit/gtfs-realtime/reference#mes
 
 
 
-## EstimatedTime
-
-
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| time | int64 | 
-| delay | int32 | 
-| uncertainty | int32 | 
-
-
-
-
-
-
-
-
-
 ## Feed
 
 The feed resource.
 
 Each feed is defined in the system configuration file.
 Feeds are included in the public API because there are non-admin use-cases for this resource.
-For example, an app might publish the staleness of realtime data 
+For example, an app might publish the staleness of realtime data
   by checking for the last succesful feed update.
 
 More detailed information on a feed -- its full configuration, and the
@@ -334,7 +314,7 @@ TODO: have a ChildResources message and use that instead
 
 The feed update resource.
 
-Each feed update event 
+Each feed update event
   -- triggered manually though the admin API, or automatically by the scheduler --
 generates a feed update resource.
 This resource is updated as the feed update progresses.
@@ -454,7 +434,7 @@ message and the associated field.
 | child_stops | [Stop.Preview](public_resources.md#Stop.Preview) | 
 | service_maps | [Stop.ServiceMap](public_resources.md#Stop.ServiceMap) | 
 | alerts | [Alert.Preview](public_resources.md#Alert.Preview) | 
-| stop_times | [Stop.StopTime](public_resources.md#Stop.StopTime) | 
+| stop_times | [StopTime](public_resources.md#StopTime) | 
 | transfers | [Transfer](public_resources.md#Transfer) | 
 
 
@@ -472,7 +452,7 @@ Preview contains preview information about the stop.
 | ----- | ---- | ----------- |
 | id | string | 
 | name | string | 
-| href | string | TODO: transfers and service maps
+| href | string | 
 
 
 
@@ -495,7 +475,10 @@ Preview contains preview information about the stop.
 
 
 
-#### Stop.StopTime
+
+
+
+## StopTime
 
 
 	
@@ -503,13 +486,31 @@ Preview contains preview information about the stop.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| arrival | [EstimatedTime](public_resources.md#EstimatedTime) | 
-| departure | [EstimatedTime](public_resources.md#EstimatedTime) | 
+| stop | [Stop.Preview](public_resources.md#Stop.Preview) | 
+| trip | [Trip.Preview](public_resources.md#Trip.Preview) | 
+| arrival | [StopTime.EstimatedTime](public_resources.md#StopTime.EstimatedTime) | 
+| departure | [StopTime.EstimatedTime](public_resources.md#StopTime.EstimatedTime) | 
 | future | bool | 
 | stop_sequence | int32 | 
 | headsign | string | 
 | track | string | 
-| trip | [Trip.Preview](public_resources.md#Trip.Preview) | 
+
+
+
+
+
+
+#### StopTime.EstimatedTime
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| time | int64 | 
+| delay | int32 | 
+| uncertainty | int32 | 
 
 
 
@@ -648,7 +649,7 @@ Enum describing the possible statuses of a system.
 | started_at | int64 | 
 | vehicle | [Vehicle.Preview](public_resources.md#Vehicle.Preview) | 
 | direction_id | bool | 
-| stop_times | [Trip.StopTime](public_resources.md#Trip.StopTime) | 
+| stop_times | [StopTime](public_resources.md#StopTime) | 
 | href | string | 
 
 
@@ -671,27 +672,6 @@ Preview contains preview information about the trip.
 | vehicle | [Vehicle.Preview](public_resources.md#Vehicle.Preview) | 
 | direction_id | bool | TODO: remove
 | href | string | 
-
-
-
-
-
-
-#### Trip.StopTime
-
-TODO: merge with the the other stop time
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| arrival | [EstimatedTime](public_resources.md#EstimatedTime) | 
-| departure | [EstimatedTime](public_resources.md#EstimatedTime) | 
-| future | bool | 
-| stop_sequence | int32 | 
-| headsign | string | 
-| track | string | 
-| stop | [Stop.Preview](public_resources.md#Stop.Preview) | 
 
 
 
