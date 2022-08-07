@@ -407,8 +407,6 @@ No fields.
 | static_source | [ServiceMapConfig.Static](admin.md#ServiceMapConfig.Static) | 
 | realtime_source | [ServiceMapConfig.Realtime](admin.md#ServiceMapConfig.Realtime) | 
 | threshold | double | 
-| default_for_routes_at_stop | bool | 
-| default_for_stops_in_route | bool | 
 
 
 

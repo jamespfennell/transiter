@@ -29,21 +29,17 @@ func UpdateConfig(ctx context.Context, querier db.Querier, systemPk int64, confi
 	for _, newConfig := range configs {
 		if pk, ok := configIDToPk[newConfig.ID]; ok {
 			if err := querier.UpdateServiceMapConfig(ctx, db.UpdateServiceMapConfigParams{
-				Pk:                     pk,
-				Config:                 newConfig.MarshalToJSON(),
-				DefaultForRoutesAtStop: newConfig.DefaultForRoutesAtStop,
-				DefaultForStopsInRoute: newConfig.DefaultForStopsInRoute,
+				Pk:     pk,
+				Config: newConfig.MarshalToJSON(),
 			}); err != nil {
 				return err
 			}
 			delete(configIDToPk, newConfig.ID)
 		} else {
 			if err := querier.InsertServiceMapConfig(ctx, db.InsertServiceMapConfigParams{
-				ID:                     newConfig.ID,
-				SystemPk:               systemPk,
-				Config:                 newConfig.MarshalToJSON(),
-				DefaultForRoutesAtStop: newConfig.DefaultForRoutesAtStop,
-				DefaultForStopsInRoute: newConfig.DefaultForStopsInRoute,
+				ID:       newConfig.ID,
+				SystemPk: systemPk,
+				Config:   newConfig.MarshalToJSON(),
 			}); err != nil {
 				return err
 			}

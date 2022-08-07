@@ -177,12 +177,10 @@ type ServiceMap struct {
 }
 
 type ServiceMapConfig struct {
-	Pk                     int64
-	ID                     string
-	SystemPk               int64
-	Config                 []byte
-	DefaultForRoutesAtStop bool
-	DefaultForStopsInRoute bool
+	Pk       int64
+	ID       string
+	SystemPk int64
+	Config   []byte
 }
 
 type ServiceMapVertex struct {

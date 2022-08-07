@@ -205,8 +205,6 @@ CREATE TABLE service_map_config (
     id character varying NOT NULL,
     system_pk BIGINT NOT NULL,
     config bytea,
-    default_for_routes_at_stop boolean NOT NULL,
-    default_for_stops_in_route boolean NOT NULL,
 
     UNIQUE(system_pk, id)
 );

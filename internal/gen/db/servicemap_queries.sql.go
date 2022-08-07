@@ -54,28 +54,19 @@ func (q *Queries) InsertServiceMap(ctx context.Context, arg InsertServiceMapPara
 
 const insertServiceMapConfig = `-- name: InsertServiceMapConfig :exec
 INSERT INTO service_map_config
-    (id, system_pk, config, default_for_routes_at_stop, default_for_stops_in_route)
+    (id, system_pk, config)
 VALUES
-    ($1, $2, $3,
-     $4, $5)
+    ($1, $2, $3)
 `
 
 type InsertServiceMapConfigParams struct {
-	ID                     string
-	SystemPk               int64
-	Config                 []byte
-	DefaultForRoutesAtStop bool
-	DefaultForStopsInRoute bool
+	ID       string
+	SystemPk int64
+	Config   []byte
 }
 
 func (q *Queries) InsertServiceMapConfig(ctx context.Context, arg InsertServiceMapConfigParams) error {
-	_, err := q.db.Exec(ctx, insertServiceMapConfig,
-		arg.ID,
-		arg.SystemPk,
-		arg.Config,
-		arg.DefaultForRoutesAtStop,
-		arg.DefaultForStopsInRoute,
-	)
+	_, err := q.db.Exec(ctx, insertServiceMapConfig, arg.ID, arg.SystemPk, arg.Config)
 	return err
 }
 
@@ -98,7 +89,7 @@ func (q *Queries) InsertServiceMapStop(ctx context.Context, arg InsertServiceMap
 }
 
 const listServiceMapConfigsInSystem = `-- name: ListServiceMapConfigsInSystem :many
-SELECT pk, id, system_pk, config, default_for_routes_at_stop, default_for_stops_in_route FROM service_map_config WHERE system_pk = $1 ORDER BY id
+SELECT pk, id, system_pk, config FROM service_map_config WHERE system_pk = $1 ORDER BY id
 `
 
 func (q *Queries) ListServiceMapConfigsInSystem(ctx context.Context, systemPk int64) ([]ServiceMapConfig, error) {
@@ -115,8 +106,6 @@ func (q *Queries) ListServiceMapConfigsInSystem(ctx context.Context, systemPk in
 			&i.ID,
 			&i.SystemPk,
 			&i.Config,
-			&i.DefaultForRoutesAtStop,
-			&i.DefaultForStopsInRoute,
 		); err != nil {
 			return nil, err
 		}
@@ -130,25 +119,16 @@ func (q *Queries) ListServiceMapConfigsInSystem(ctx context.Context, systemPk in
 
 const updateServiceMapConfig = `-- name: UpdateServiceMapConfig :exec
 UPDATE service_map_config
-SET config = $1, 
-    default_for_routes_at_stop = $2, 
-    default_for_stops_in_route = $3
-WHERE pk = $4
+SET config = $1
+WHERE pk = $2
 `
 
 type UpdateServiceMapConfigParams struct {
-	Config                 []byte
-	DefaultForRoutesAtStop bool
-	DefaultForStopsInRoute bool
-	Pk                     int64
+	Config []byte
+	Pk     int64
 }
 
 func (q *Queries) UpdateServiceMapConfig(ctx context.Context, arg UpdateServiceMapConfigParams) error {
-	_, err := q.db.Exec(ctx, updateServiceMapConfig,
-		arg.Config,
-		arg.DefaultForRoutesAtStop,
-		arg.DefaultForStopsInRoute,
-		arg.Pk,
-	)
+	_, err := q.db.Exec(ctx, updateServiceMapConfig, arg.Config, arg.Pk)
 	return err
 }

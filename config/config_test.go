@@ -169,16 +169,12 @@ func TestConvertServiceMapsConfig(t *testing.T) {
 	}{
 		{
 			apiConfig: &api.ServiceMapConfig{
-				Id:                     ServiceMapID,
-				Source:                 &api.ServiceMapConfig_RealtimeSource{},
-				DefaultForRoutesAtStop: true,
-				DefaultForStopsInRoute: false,
+				Id:     ServiceMapID,
+				Source: &api.ServiceMapConfig_RealtimeSource{},
 			},
 			internalConfig: &ServiceMapConfig{
-				ID:                     ServiceMapID,
-				Source:                 ServiceMapSourceRealtime,
-				DefaultForRoutesAtStop: true,
-				DefaultForStopsInRoute: false,
+				ID:     ServiceMapID,
+				Source: ServiceMapSourceRealtime,
 			},
 		},
 		{
@@ -191,17 +187,13 @@ func TestConvertServiceMapsConfig(t *testing.T) {
 						Days:              []string{"Monday", "Tuesday"},
 					},
 				},
-				DefaultForRoutesAtStop: false,
-				DefaultForStopsInRoute: true,
 			},
 			internalConfig: &ServiceMapConfig{
-				ID:                     ServiceMapID,
-				Source:                 ServiceMapSourceStatic,
-				StartsEarlierThan:      &t1Duration,
-				EndsEarlierThan:        &t2Duration,
-				Days:                   []string{"Monday", "Tuesday"},
-				DefaultForRoutesAtStop: false,
-				DefaultForStopsInRoute: true,
+				ID:                ServiceMapID,
+				Source:            ServiceMapSourceStatic,
+				StartsEarlierThan: &t1Duration,
+				EndsEarlierThan:   &t2Duration,
+				Days:              []string{"Monday", "Tuesday"},
 			},
 		},
 	}

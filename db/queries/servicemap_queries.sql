@@ -3,16 +3,13 @@ SELECT * FROM service_map_config WHERE system_pk = $1 ORDER BY id;
 
 -- name: InsertServiceMapConfig :exec
 INSERT INTO service_map_config
-    (id, system_pk, config, default_for_routes_at_stop, default_for_stops_in_route)
+    (id, system_pk, config)
 VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(config),
-     sqlc.arg(default_for_routes_at_stop), sqlc.arg(default_for_stops_in_route));
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(config));
 
 -- name: UpdateServiceMapConfig :exec
 UPDATE service_map_config
-SET config = sqlc.arg(config), 
-    default_for_routes_at_stop = sqlc.arg(default_for_routes_at_stop), 
-    default_for_stops_in_route = sqlc.arg(default_for_stops_in_route)
+SET config = sqlc.arg(config)
 WHERE pk = sqlc.arg(pk);
 
 -- name: DeleteServiceMapConfig :exec

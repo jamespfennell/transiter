@@ -232,7 +232,6 @@ service_maps:
   any_time:
     source: SCHEDULE
     threshold: 0.05
-    use_for_stops_in_route: true
 
   weekday_day:
     source: SCHEDULE
@@ -241,12 +240,9 @@ service_maps:
       starts_later_than: 7
       ends_earlier_than: 19
     threshold: 0.1
-    use_for_routes_at_stop: true
 
   realtime:
     source: REALTIME
-    use_for_stops_in_route: true
-    use_for_routes_at_stop: true
 ```
 
 Let's step through the options for each one.
@@ -270,9 +266,3 @@ corresponding to trips that:
 - Run during the weekday (`weekday: true`).
 - Start after 7am in the morning (`starts_later_than: 7`).
 - End before 7pm in the evening (`ends_earlier_than: 19`).
-
-Finally, `use_for_routes_at_stop` being set to true 
-indicates that the service map should be returned by the 
-[stop endpoint](api/public_endpoints.md#GetStop).
-The parameter `use_for_stops_in_route` 
-does the same for the [route endpoint](api/public_endpoints.md#GetRoute).

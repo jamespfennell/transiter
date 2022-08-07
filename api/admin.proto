@@ -220,9 +220,6 @@ message ServiceMapConfig {
   }
 
   double threshold = 4;
-
-  bool default_for_routes_at_stop = 5;
-  bool default_for_stops_in_route = 6;
 }
 
 message UpdateFeedRequest {

@@ -105,9 +105,6 @@ type ServiceMapConfig struct {
 	// The time is specified as a duration after midnight; i.e., 2am is '2h'.
 	// This field is only used for static maps.
 	EndsLaterThan *time.Duration `yaml:"endsLaterThan"`
-
-	DefaultForRoutesAtStop bool `yaml:"defaultForRoutesAtStop"`
-	DefaultForStopsInRoute bool `yaml:"defaultForStopsInRoute"`
 }
 
 func ConvertAPISystemConfig(sc *api.SystemConfig) *SystemConfig {
@@ -167,10 +164,8 @@ func ConvertAPIFeedConfig(fc *api.FeedConfig) *FeedConfig {
 
 func ConvertAPIServiceMapConfig(in *api.ServiceMapConfig) *ServiceMapConfig {
 	out := &ServiceMapConfig{
-		ID:                     in.Id,
-		Threshold:              in.Threshold,
-		DefaultForRoutesAtStop: in.DefaultForRoutesAtStop,
-		DefaultForStopsInRoute: in.DefaultForStopsInRoute,
+		ID:        in.Id,
+		Threshold: in.Threshold,
 	}
 	switch source := in.Source.(type) {
 	case *api.ServiceMapConfig_RealtimeSource:
@@ -263,10 +258,8 @@ func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 
 func ConvertServiceMapConfig(in *ServiceMapConfig) *api.ServiceMapConfig {
 	out := &api.ServiceMapConfig{
-		Id:                     in.ID,
-		Threshold:              in.Threshold,
-		DefaultForRoutesAtStop: in.DefaultForRoutesAtStop,
-		DefaultForStopsInRoute: in.DefaultForStopsInRoute,
+		Id:        in.ID,
+		Threshold: in.Threshold,
 	}
 	switch in.Source {
 	case ServiceMapSourceRealtime:
@@ -321,27 +314,21 @@ func UnmarshalFromYaml(b []byte) (*SystemConfig, error) {
 		sevenPm := 19 * time.Hour
 		config.ServiceMaps = []ServiceMapConfig{
 			{
-				ID:                     "alltimes",
-				Source:                 ServiceMapSourceStatic,
-				Threshold:              0.1,
-				DefaultForRoutesAtStop: false,
-				DefaultForStopsInRoute: true,
+				ID:        "alltimes",
+				Source:    ServiceMapSourceStatic,
+				Threshold: 0.1,
 			},
 			{
-				ID:                     "weekday",
-				Source:                 ServiceMapSourceStatic,
-				Threshold:              0.1,
-				StartsLaterThan:        &sevenAm,
-				EndsEarlierThan:        &sevenPm,
-				Days:                   []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"},
-				DefaultForRoutesAtStop: true,
-				DefaultForStopsInRoute: false,
+				ID:              "weekday",
+				Source:          ServiceMapSourceStatic,
+				Threshold:       0.1,
+				StartsLaterThan: &sevenAm,
+				EndsEarlierThan: &sevenPm,
+				Days:            []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"},
 			},
 			{
-				ID:                     "realtime",
-				Source:                 ServiceMapSourceRealtime,
-				DefaultForRoutesAtStop: true,
-				DefaultForStopsInRoute: true,
+				ID:     "realtime",
+				Source: ServiceMapSourceRealtime,
 			},
 		}
 	}

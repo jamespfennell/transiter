@@ -527,7 +527,7 @@ FROM service_map_config
   LEFT JOIN service_map ON service_map.config_pk = service_map_config.pk AND service_map.route_pk = route.pk
   LEFT JOIN service_map_vertex ON service_map_vertex.map_pk = service_map.pk
   LEFT JOIN stop ON stop.pk = service_map_vertex.stop_pk
-WHERE service_map_config.default_for_stops_in_route AND route.pk = ANY($1::bigint[])
+WHERE route.pk = ANY($1::bigint[])
 ORDER BY service_map_config.id, service_map_vertex.position
 `
 
