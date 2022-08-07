@@ -58,6 +58,10 @@ type PublicClient interface {
 	// `GET /systems/<system_id>/stops/<stop_id>`
 	//
 	// List all stops in a system.
+	//
+	// This endpoint is paginated.
+	// If there are more results, the `next_id` field of the response will be populated.
+	// To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
 	ListStops(ctx context.Context, in *ListStopsRequest, opts ...grpc.CallOption) (*ListStopsReply, error)
 	//
 	// Get stop
@@ -345,6 +349,10 @@ type PublicServer interface {
 	// `GET /systems/<system_id>/stops/<stop_id>`
 	//
 	// List all stops in a system.
+	//
+	// This endpoint is paginated.
+	// If there are more results, the `next_id` field of the response will be populated.
+	// To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
 	ListStops(context.Context, *ListStopsRequest) (*ListStopsReply, error)
 	//
 	// Get stop

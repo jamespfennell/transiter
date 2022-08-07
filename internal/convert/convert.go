@@ -60,6 +60,20 @@ func NullString(t *string) sql.NullString {
 	return sql.NullString{Valid: true, String: *t}
 }
 
+func NullBool(t *bool) sql.NullBool {
+	if t == nil {
+		return sql.NullBool{}
+	}
+	return sql.NullBool{Valid: true, Bool: *t}
+}
+
+func SQLNullBool(t sql.NullBool) *bool {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Bool
+}
+
 func DirectionID(d gtfs.DirectionID) sql.NullBool {
 	switch d {
 	case gtfs.DirectionIDFalse:
@@ -130,4 +144,8 @@ func AlertPreview(id, cause, effect string) *api.Alert_Preview {
 
 func TransferType(t string) api.Transfer_Type {
 	return api.Transfer_Type(api.Transfer_Type_value[t])
+}
+
+func StopType(t string) api.Stop_Type {
+	return api.Stop_Type(api.Stop_Type_value[t])
 }

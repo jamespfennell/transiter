@@ -235,7 +235,7 @@ CREATE TABLE stop (
     platform_code character varying,
     timezone character varying,
     type character varying(16) NOT NULL,
-    wheelchair_boarding character varying(14) NOT NULL,
+    wheelchair_boarding boolean,
     zone_id character varying,
 
     UNIQUE(system_pk, id)

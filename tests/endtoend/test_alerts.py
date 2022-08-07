@@ -111,10 +111,10 @@ def setup_test(
     ).raise_for_status()
 
 @pytest.mark.parametrize(
-    "path,entity_id,expected_json",
+    "path,entity_id",
     [
-        ["routes", "A", ALERT_SMALL_JSON],
-        ["stops", "1A", None],
+        ["routes", "A"],
+        ["stops", "1A"],
         # TODO: renable
         # [
         #     "routes/A/trips",
@@ -125,7 +125,6 @@ def setup_test(
         [
             "agencies",
             "AgencyId",
-            ALERT_SMALL_JSON,
         ],
     ],
 )
@@ -135,7 +134,6 @@ def test_alerts_list_informed_entities(
     source_server,
     path,
     entity_id,
-    expected_json,
 ):
     system_id = "test_alerts__list_informed_entities_" + str(hash(path))
     setup_test(
@@ -151,10 +149,7 @@ def test_alerts_list_informed_entities(
     actual_data = actual_data[path]
     actual_data = {response["id"]: response for response in actual_data}[entity_id]
 
-    if expected_json is None:
-        assert "alerts" not in actual_data
-    else:
-        assert expected_json == actual_data["alerts"]
+    assert ALERT_SMALL_JSON == actual_data["alerts"]
 
 
 @pytest.mark.parametrize(

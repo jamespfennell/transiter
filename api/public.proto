@@ -136,6 +136,10 @@ service Public {
   * `GET /systems/<system_id>/stops/<stop_id>`
   *
   * List all stops in a system.
+  *
+  * This endpoint is paginated.
+  * If there are more results, the `next_id` field of the response will be populated.
+  * To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
   */
   rpc ListStops(ListStopsRequest) returns (ListStopsReply) {
     option (google.api.http) = {
@@ -373,13 +377,34 @@ message ListStopsRequest {
   //
   // This is a URL parameter in the HTTP API.
   string system_id = 1;
+
+  // ID of the first stop to return. If not set, the stop with the smallest ID will be first.
+  optional string first_id = 2;
+
+  // Maximum number of stops to return.
+  optional int32 limit = 3;
+
+  // If true, the stop times field will not be populated.
+  // This will generally make the response faster to generate.
+  bool skip_stop_times = 4;
+  // If true, the service maps field will not be populated.
+  // This will generally make the response faster to generate.
+  bool skip_service_maps = 5;
+  // If true, the alerts field will not be populated.
+  // This will generally make the response faster to generate.
+  bool skip_alerts = 6;
+  // If true, the transfers field will not be populated.
+  // This will generally make the response faster to generate.
+  bool skip_transfers = 7;
 }
 
 // Response payload for the list stops endpoint.
 message ListStopsReply {
   // List of stops.
-  // TODO: full Stop instead of preview
-  repeated Stop.Preview stops = 1;
+  repeated Stop stops = 1;
+
+  // ID of the next stop to return, if there are more results.
+  optional string next_id = 2;
 }
 
 // Reqeust payload for the get stop endpoint.
@@ -392,6 +417,19 @@ message GetStopRequest {
   //
   // This is a URL parameter in the HTTP API.
   string stop_id = 2;
+
+  // If true, the stop times field will not be populated.
+  // This will generally make the response faster to generate.
+  bool skip_stop_times = 4;
+  // If true, the service maps field will not be populated.
+  // This will generally make the response faster to generate.
+  bool skip_service_maps = 5;
+  // If true, the alerts field will not be populated.
+  // This will generally make the response faster to generate.
+  bool skip_alerts = 6;
+  // If true, the transfers field will not be populated.
+  // This will generally make the response faster to generate.
+  bool skip_transfers = 7;
 }
 
 // Request payload for the list routes endpoint.
@@ -610,54 +648,143 @@ message System {
   }
 }
 
+// The Stop resource.
+//
+// This resource corresponds to the [stop type in the GTFS static
+// specification](https://developers.google.com/transit/gtfs/reference#stopstxt).
+// Most of the static fields in the resource come directly from the `stops.txt` table.
+// Transiter adds some additional related fields (transfers, alerts, stop times)
+//   and computed fields (service maps).
 message Stop {
+  // ID of the stop. This is the `stop_id` column in `stops.txt`.
   string id = 1;
+  // Code of the stop. This is the `stop_code` column in `stops.txt`.
+  optional string code = 2;
+  // Name of the stop. This is the `stop_name` column in `stops.txt`.
+  optional string name = 3;
+  // Description of the stop. This is the `stop_desc` column in `stops.txt`.
+  optional string description = 4;
+  // Zone ID of the stop. This is the `zone_id` column in `stops.txt`.
+  optional string zone_id = 5;
+  // Latitude of the stop. This is the `stop_lat` column in `stops.txt`.
+  optional double latitude = 6;
+  // Longitude of the stop. This is the `stop_lon` column in `stops.txt`.
+  optional double longitude = 7;
+  // URL of a webpage about the stop. This is the `stop_url` column in `stops.txt`.
+  optional string url = 8;
 
-  optional string name = 2;
+  // Enum describing the possible stop types
+  enum Type {
+    STOP = 0;
+    STATION = 1;
+    ENTRANCE_OR_EXIT = 2;
+    GENERIC_NODE = 3;
+    BOARDING_AREA = 4;
+  }
+  // Type of the stop. This is the `platform_type` column in `stops.txt`.
+  Type type = 9;
 
-  optional double longitude = 3;
-  optional double latitude = 4;
-  optional string url = 5;
+  // Parent stop. This is determined using the `parent_station` column in `stops.txt`.
+  optional Stop.Preview parent_stop = 10;
+  // Child stops. This are determined using the `parent_station` column in `stops.txt`.
+  repeated Stop.Preview child_stops = 11;
+  // Timezone of the stop. This is the `stop_timezone` column in `stops.txt`.
+  optional string timezone = 12;
+  // If there is wheelchair boarding for this stop. This is the `wheelchair_boarding` column in `stops.txt`.
+  optional bool wheelchair_boarding = 13;
+  // Platform code of the stop. This is the `platform_code` column in `stops.txt`.
+  optional string platform_code = 14;
 
-  repeated string stop_headsigns = 7;
-
-  optional Stop.Preview parent_stop = 13;
-  repeated Stop.Preview child_stops = 14;
-
+  // Message describing the service maps view in stops.
+  //
+  // See the service maps documentation for more information on this
+  // message and the associated field.
   message ServiceMap {
+    // Config ID of the service map, as specified in the system configuration file.
     string config_id = 1;
+    // List of routes which call at this stop.
+    //
+    // This list may be empty, in which case the stop has no service in the service map.
     repeated Route.Preview routes = 2;
   }
-  repeated ServiceMap service_maps = 8;
+  // List of service maps for this stop.
+  repeated ServiceMap service_maps = 15;
 
-  repeated Alert.Preview alerts = 15;
+  // Active alerts for this stop.
+  //
+  // These are determined using the `informed_entity` field in
+  // the [GTFS realtime alerts
+  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+  repeated Alert.Preview alerts = 16;
 
-  repeated StopTime stop_times = 6;
+  // List of realtime stop times for this stop.
+  //
+  // A stop time is an event at which a trip calls at a stop.
+  repeated StopTime stop_times = 17;
 
-  repeated Transfer transfers = 16;
+  // Transfers out of this stop.
+  //
+  // These are determined using the `from_stop_id` field in the GTFS static `transfers.txt` file.
+  repeated Transfer transfers = 18;
+
+  // Message describing a headsign rule.
+  message HeadsignRule { 
+    // Stop the rule is for.
+    Stop.Preview stop = 1;
+    // Priority of the rule (lower is higher priority).
+    int32 priority = 2;
+    // NYCT track.
+    optional string track = 3;
+    // Headsign.
+    string headsign = 4;
+  }
+  // List of headsign rules for this stop.
+  repeated HeadsignRule headsign_rules = 19;
 
   // Preview contains preview information about the stop.
   message Preview {
     string id = 1;
+    // TODO: make optional
     string name = 2;
     optional string href = 3;
   }
 }
 
+// Message describing a realtime stop time.
+//
+// A stop time is an event in which a trip calls at a stop.
+// This message corresponds to the [GTFS realtime `StopTimeUpdate`
+// message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeupdate)
 message StopTime {
+  // The stop.
   Stop.Preview stop = 1;
+  // The trip.
   Trip.Preview trip = 2;
 
+  // Message describing the arrival or departure time of a stop time.
+  // This corresponds to the [GTFS realtime `StopTimeEvent`
+  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeevent).
   message EstimatedTime {
     optional int64 time = 1;
     optional int32 delay = 2;
     optional int32 uncertainty = 3;
   }
+  // Arrival time.
   EstimatedTime arrival = 3;
+  // Departure time.
   EstimatedTime departure = 4;
+  // If this stop time is in the future.
+  // This field is *not* based on the arrival or departure time.
+  // Instead, a stop time is considered in the future if it appeared in the most recent
+  // GTFS realtime feed for its trip.
+  // When this stop time disappears from the trip, Transiter marks it as past and freezes
+  // its data.
   bool future = 5;
+  // Stop sequence.
   int32 stop_sequence = 6;
+  // Headsign.
   optional string headsign = 7;
+  // Track, from the NYCT realtime extension.
   optional string track = 8;
 }
 
@@ -678,13 +805,8 @@ message Trip {
   message Preview {
     string id = 1;
     Route.Preview route = 2;
-    // TODO: rename destination and move to Stop_StopTime
-    Stop.Preview last_stop = 3;
-    // TODO: remove
-    optional int64 started_at = 10;
+    Stop.Preview destination = 3;
     optional Vehicle.Preview vehicle = 6;
-    // TODO: remove
-    bool direction_id = 4;
     optional string href = 5;
   }
 }

@@ -67,3 +67,10 @@ SELECT
     COALESCE(ROUND(SUM(total_diff) / (SUM(num_diffs)))::integer, -1)::integer estimated_headway
 FROM per_stop_data
 GROUP BY route_pk;
+
+
+-- name: ListRoutePreviews :many
+SELECT route.pk, route.id id, route.color, system.id system_id
+FROM route
+    INNER JOIN system on route.system_pk = system.pk
+WHERE route.pk = ANY(sqlc.arg(route_pks)::bigint[]);

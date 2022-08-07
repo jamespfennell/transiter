@@ -175,6 +175,45 @@ func (q *Queries) InsertRoute(ctx context.Context, arg InsertRouteParams) (int64
 	return pk, err
 }
 
+const listRoutePreviews = `-- name: ListRoutePreviews :many
+SELECT route.pk, route.id id, route.color, system.id system_id
+FROM route
+    INNER JOIN system on route.system_pk = system.pk
+WHERE route.pk = ANY($1::bigint[])
+`
+
+type ListRoutePreviewsRow struct {
+	Pk       int64
+	ID       string
+	Color    string
+	SystemID string
+}
+
+func (q *Queries) ListRoutePreviews(ctx context.Context, routePks []int64) ([]ListRoutePreviewsRow, error) {
+	rows, err := q.db.Query(ctx, listRoutePreviews, routePks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListRoutePreviewsRow
+	for rows.Next() {
+		var i ListRoutePreviewsRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.Color,
+			&i.SystemID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const mapRoutePkToIdInSystem = `-- name: MapRoutePkToIdInSystem :many
 SELECT pk, id FROM route WHERE system_pk = $1
 `

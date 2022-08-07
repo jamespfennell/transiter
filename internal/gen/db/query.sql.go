@@ -65,14 +65,14 @@ func (q *Queries) CountTransfersInSystem(ctx context.Context, systemPk sql.NullI
 	return count, err
 }
 
-const getLastStopsForTrips = `-- name: GetLastStopsForTrips :many
+const getDestinationsForTrips = `-- name: GetDestinationsForTrips :many
 WITH last_stop_sequence AS (
   SELECT trip_pk, MAX(stop_sequence) as stop_sequence
     FROM trip_stop_time
     WHERE trip_pk = ANY($1::bigint[])
     GROUP BY trip_pk
 )
-SELECT lss.trip_pk, stop.id, stop.name
+SELECT lss.trip_pk, stop.pk destination_pk
   FROM last_stop_sequence lss
   INNER JOIN trip_stop_time
     ON lss.trip_pk = trip_stop_time.trip_pk 
@@ -81,22 +81,21 @@ SELECT lss.trip_pk, stop.id, stop.name
     ON trip_stop_time.stop_pk = stop.pk
 `
 
-type GetLastStopsForTripsRow struct {
-	TripPk int64
-	ID     string
-	Name   sql.NullString
+type GetDestinationsForTripsRow struct {
+	TripPk        int64
+	DestinationPk int64
 }
 
-func (q *Queries) GetLastStopsForTrips(ctx context.Context, tripPks []int64) ([]GetLastStopsForTripsRow, error) {
-	rows, err := q.db.Query(ctx, getLastStopsForTrips, tripPks)
+func (q *Queries) GetDestinationsForTrips(ctx context.Context, tripPks []int64) ([]GetDestinationsForTripsRow, error) {
+	rows, err := q.db.Query(ctx, getDestinationsForTrips, tripPks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetLastStopsForTripsRow
+	var items []GetDestinationsForTripsRow
 	for rows.Next() {
-		var i GetLastStopsForTripsRow
-		if err := rows.Scan(&i.TripPk, &i.ID, &i.Name); err != nil {
+		var i GetDestinationsForTripsRow
+		if err := rows.Scan(&i.TripPk, &i.DestinationPk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -179,10 +178,12 @@ func (q *Queries) GetStopInSystem(ctx context.Context, arg GetStopInSystemParams
 }
 
 const getSystem = `-- name: GetSystem :one
+
 SELECT pk, id, name, timezone, status FROM system
 WHERE id = $1 LIMIT 1
 `
 
+// TODO: move all queries from this file in the $x_queries.sql files.
 func (q *Queries) GetSystem(ctx context.Context, id string) (System, error) {
 	row := q.db.QueryRow(ctx, getSystem, id)
 	var i System
@@ -490,8 +491,7 @@ const listServiceMapsConfigIDsForStops = `-- name: ListServiceMapsConfigIDsForSt
 SELECT stop.pk, service_map_config.id
 FROM service_map_config
     INNER JOIN stop ON service_map_config.system_pk = stop.system_pk
-WHERE service_map_config.default_for_routes_at_stop
-    AND stop.pk = ANY($1::bigint[])
+WHERE stop.pk = ANY($1::bigint[])
 `
 
 type ListServiceMapsConfigIDsForStopsRow struct {
@@ -567,37 +567,18 @@ func (q *Queries) ListServiceMapsForRoutes(ctx context.Context, routePks []int64
 }
 
 const listServiceMapsForStops = `-- name: ListServiceMapsForStops :many
-WITH RECURSIVE descendent AS (
-	SELECT initial.pk, initial.parent_stop_pk, initial.pk AS descendent_pk
-	  FROM stop initial
-    WHERE initial.pk = ANY($1::bigint[])
-	UNION (
-    SELECT parent.pk, parent.parent_stop_pk, descendent.pk AS descendent_pk
-      FROM stop parent
-      INNER JOIN descendent ON (
-        descendent.parent_stop_pk = parent.pk OR
-        descendent.pk = parent.pk
-      )
-  )
-)
-SELECT descendent.pk stop_pk, service_map_config.id service_map_config_id,
-  route.id route_id, route.color route_color, system.id system_id
-FROM descendent
-  LEFT JOIN service_map_vertex smv ON smv.stop_pk = descendent.descendent_pk
-  INNER JOIN service_map ON service_map.pk = smv.map_pk
+SELECT stop.pk stop_pk, service_map_config.id config_id, service_map.route_pk route_pk
+FROM stop
+  INNER JOIN service_map_vertex vertex ON vertex.stop_pk = stop.pk
+  INNER JOIN service_map ON service_map.pk = vertex.map_pk
   INNER JOIN service_map_config ON service_map_config.pk = service_map.config_pk
-  LEFT JOIN route ON service_map.route_pk = route.pk
-  INNER JOIN system ON system.pk = route.system_pk
-WHERE service_map_config.default_for_routes_at_stop
-ORDER BY system_id, route_id
+WHERE stop.pk = ANY($1::bigint[])
 `
 
 type ListServiceMapsForStopsRow struct {
-	StopPk             int64
-	ServiceMapConfigID string
-	RouteID            string
-	RouteColor         string
-	SystemID           string
+	StopPk   int64
+	ConfigID string
+	RoutePk  int64
 }
 
 func (q *Queries) ListServiceMapsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsForStopsRow, error) {
@@ -609,13 +590,7 @@ func (q *Queries) ListServiceMapsForStops(ctx context.Context, stopPks []int64) 
 	var items []ListServiceMapsForStopsRow
 	for rows.Next() {
 		var i ListServiceMapsForStopsRow
-		if err := rows.Scan(
-			&i.StopPk,
-			&i.ServiceMapConfigID,
-			&i.RouteID,
-			&i.RouteColor,
-			&i.SystemID,
-		); err != nil {
+		if err := rows.Scan(&i.StopPk, &i.ConfigID, &i.RoutePk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -793,12 +768,21 @@ func (q *Queries) ListStopsInStopTree(ctx context.Context, pk int64) ([]Stop, er
 }
 
 const listStopsInSystem = `-- name: ListStopsInSystem :many
-SELECT pk, id, system_pk, source_pk, parent_stop_pk, name, longitude, latitude, url, code, description, platform_code, timezone, type, wheelchair_boarding, zone_id FROM stop WHERE system_pk = $1 
-    ORDER BY id
+SELECT pk, id, system_pk, source_pk, parent_stop_pk, name, longitude, latitude, url, code, description, platform_code, timezone, type, wheelchair_boarding, zone_id FROM stop 
+WHERE system_pk = $1
+  AND id >= $2
+ORDER BY id
+LIMIT $3
 `
 
-func (q *Queries) ListStopsInSystem(ctx context.Context, systemPk int64) ([]Stop, error) {
-	rows, err := q.db.Query(ctx, listStopsInSystem, systemPk)
+type ListStopsInSystemParams struct {
+	SystemPk    int64
+	FirstStopID string
+	NumStops    int32
+}
+
+func (q *Queries) ListStopsInSystem(ctx context.Context, arg ListStopsInSystemParams) ([]Stop, error) {
+	rows, err := q.db.Query(ctx, listStopsInSystem, arg.SystemPk, arg.FirstStopID, arg.NumStops)
 	if err != nil {
 		return nil, err
 	}
@@ -927,39 +911,27 @@ func (q *Queries) ListSystems(ctx context.Context) ([]System, error) {
 }
 
 const listTransfersFromStops = `-- name: ListTransfersFromStops :many
-  SELECT transfer.from_stop_pk,
-      transfer.to_stop_pk, stop.id to_id, stop.name to_name, 
-      transfer.type, transfer.min_transfer_time, transfer.distance
+  SELECT transfer.pk, transfer.source_pk, transfer.config_source_pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.distance
   FROM transfer
-  INNER JOIN stop
-    ON stop.pk = transfer.to_stop_pk
   WHERE transfer.from_stop_pk = ANY($1::bigint[])
 `
 
-type ListTransfersFromStopsRow struct {
-	FromStopPk      int64
-	ToStopPk        int64
-	ToID            string
-	ToName          sql.NullString
-	Type            string
-	MinTransferTime sql.NullInt32
-	Distance        sql.NullInt32
-}
-
-func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]ListTransfersFromStopsRow, error) {
+func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]Transfer, error) {
 	rows, err := q.db.Query(ctx, listTransfersFromStops, fromStopPks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListTransfersFromStopsRow
+	var items []Transfer
 	for rows.Next() {
-		var i ListTransfersFromStopsRow
+		var i Transfer
 		if err := rows.Scan(
+			&i.Pk,
+			&i.SourcePk,
+			&i.ConfigSourcePk,
+			&i.SystemPk,
 			&i.FromStopPk,
 			&i.ToStopPk,
-			&i.ToID,
-			&i.ToName,
 			&i.Type,
 			&i.MinTransferTime,
 			&i.Distance,

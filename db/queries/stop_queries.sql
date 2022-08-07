@@ -99,7 +99,22 @@ SELECT stop_pk, station_pk
   OR is_station;
 
 
-
+-- name: MapStopPkToDescendentPks :many
+WITH RECURSIVE descendent AS (
+	SELECT
+    stop.pk root_stop_pk,
+    stop.pk descendent_stop_pk
+    FROM stop
+        WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
+	UNION
+	SELECT
+    descendent.root_stop_pk root_stop_pk,
+    child.pk descendent_stop_pk
+		FROM stop child
+		INNER JOIN descendent
+    ON child.parent_stop_pk = descendent.descendent_stop_pk
+)
+SELECT root_stop_pk, descendent_stop_pk FROM descendent;
 
 
 -- name: MapStopsInSystem :many
@@ -107,3 +122,15 @@ SELECT pk, id from stop
 WHERE
     system_pk = sqlc.arg(system_pk)
     AND id = ANY(sqlc.arg(stop_ids)::text[]);
+
+
+-- name: ListStopPreviews :many
+SELECT stop.pk, stop.id stop_id, stop.name, system.id system_id
+FROM stop
+    INNER JOIN system on stop.system_pk = system.pk
+WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]);
+
+-- name: ListChildrenForStops :many
+SELECT parent_stop_pk parent_pk, pk child_pk
+FROM stop
+WHERE stop.parent_stop_pk = ANY(sqlc.arg(stop_pks)::bigint[]);

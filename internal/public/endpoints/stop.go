@@ -4,11 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"sort"
 	"time"
 
 	"github.com/jackc/pgtype"
-	"github.com/jamespfennell/transiter/internal/public/stoptree"
+	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -16,23 +15,41 @@ import (
 )
 
 func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api.ListStopsReply, error) {
+	startTime := time.Now()
 	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
 		return nil, err
 	}
-	stops, err := r.Querier.ListStopsInSystem(ctx, system.Pk)
+	numStops := int32(100)
+	if req.Limit != nil && *req.Limit < numStops {
+		numStops = *req.Limit
+	}
+	var firstID string
+	if req.FirstId != nil {
+		firstID = *req.FirstId
+	}
+	stops, err := r.Querier.ListStopsInSystem(ctx, db.ListStopsInSystemParams{
+		SystemPk:    system.Pk,
+		FirstStopID: firstID,
+		NumStops:    numStops + 1,
+	})
 	if err != nil {
 		return nil, err
 	}
-	result := &api.ListStopsReply{}
-	for _, stop := range stops {
-		result.Stops = append(result.Stops, &api.Stop_Preview{
-			Id:   stop.ID,
-			Name: stop.Name.String,
-			Href: r.Href.Stop(system.ID, stop.ID),
-		})
+	var nextID *string
+	if len(stops) == int(numStops+1) {
+		nextID = &stops[len(stops)-1].ID
+		stops = stops[:len(stops)-1]
 	}
-	return result, nil
+	apiStops, err := buildStopsResponse(ctx, r, stops, req)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("ListStops(%s, %d stops) took %s\n", req.SystemId, len(stops), time.Since(startTime))
+	return &api.ListStopsReply{
+		Stops:  apiStops,
+		NextId: nextID,
+	}, nil
 }
 
 func ListTransfers(ctx context.Context, r *Context, req *api.ListTransfersRequest) (*api.ListTransfersReply, error) {
@@ -71,126 +88,271 @@ func GetStop(ctx context.Context, r *Context, req *api.GetStopRequest) (*api.Sto
 	if err != nil {
 		return nil, err
 	}
-	stopTree, err := stoptree.NewStopTree(ctx, r.Querier, stop.Pk)
+	apiStops, err := buildStopsResponse(ctx, r, []db.Stop{stop}, req)
+	if err != nil {
+		return nil, err
+	}
+	log.Println("GetStop() took", time.Since(startTime))
+	return apiStops[0], nil
+}
+
+type stopRequest interface {
+	GetSkipStopTimes() bool
+	GetSkipServiceMaps() bool
+	GetSkipAlerts() bool
+	GetSkipTransfers() bool
+}
+
+func buildStopsResponse(ctx context.Context, r *Context, stops []db.Stop, req stopRequest) ([]*api.Stop, error) {
+	data, err := getRawStopData(ctx, r, stops, req)
 	if err != nil {
 		return nil, err
 	}
 
-	var transfers []db.ListTransfersFromStopsRow
-	stopPkToServiceMaps := map[int64][]*api.Stop_ServiceMap{}
-	stationPks := stopTree.StationPks()
-	transfers, err = r.Querier.ListTransfersFromStops(ctx, stationPks)
-	if err != nil {
-		return nil, err
+	stopPkToApiPreview := map[int64]*api.Stop_Preview{}
+	for i := range data.allStops {
+		stop := &data.allStops[i]
+		stopPkToApiPreview[stop.Pk] = &api.Stop_Preview{
+			Id:   stop.StopID,
+			Name: stop.Name.String,
+			Href: r.Href.Stop(stop.SystemID, stop.StopID),
+		}
 	}
-	for _, transfer := range transfers {
-		stationPks = append(stationPks, transfer.ToStopPk)
+	routePkToApiPreview := map[int64]*api.Route_Preview{}
+	for i := range data.allRoutes {
+		route := &data.allRoutes[i]
+		routePkToApiPreview[route.Pk] = &api.Route_Preview{
+			Id:    route.ID,
+			Color: route.Color,
+			Href:  r.Href.Route(route.SystemID, route.ID),
+		}
+	}
+	stopPkToApiTransfers := buildStopPkToApiTransfers(data, stopPkToApiPreview)
+	stopPkToApiServiceMaps := buildStopPkToApiServiceMaps(data, routePkToApiPreview)
+	stopPkToApiAlerts := buildStopPkToApiAlerts(data)
+	stopPkToApiStopTimes := buildStopPkToApiStopsTimes(data, routePkToApiPreview, stopPkToApiPreview)
+	stopPkToApiHeadsignRules := buildStopPkToApiHeadsignRules(data, stopPkToApiPreview)
+	stopPkToChildren := map[int64][]*api.Stop_Preview{}
+	for _, row := range data.children {
+		stopPkToChildren[row.ParentPk.Int64] = append(
+			stopPkToChildren[row.ParentPk.Int64],
+			stopPkToApiPreview[row.ChildPk],
+		)
 	}
 
-	configIDRows, err := r.Querier.ListServiceMapsConfigIDsForStops(ctx, stationPks)
-	if err != nil {
-		return nil, err
+	var result []*api.Stop
+	for _, stop := range stops {
+		var parent *api.Stop_Preview
+		if stop.ParentStopPk.Valid {
+			parent = stopPkToApiPreview[stop.ParentStopPk.Int64]
+		}
+		stop := &api.Stop{
+			Id:                 stop.ID,
+			Code:               convert.SQLNullString(stop.Code),
+			Name:               convert.SQLNullString(stop.Name),
+			Description:        convert.SQLNullString(stop.Description),
+			ZoneId:             convert.SQLNullString(stop.ZoneID),
+			Longitude:          convertGpsData(stop.Longitude),
+			Latitude:           convertGpsData(stop.Latitude),
+			Url:                convert.SQLNullString(stop.Url),
+			Type:               convert.StopType(stop.Type),
+			Timezone:           convert.SQLNullString(stop.Timezone),
+			PlatformCode:       convert.SQLNullString(stop.PlatformCode),
+			WheelchairBoarding: convert.SQLNullBool(stop.WheelchairBoarding),
+			ParentStop:         parent,
+			ChildStops:         stopPkToChildren[stop.Pk],
+			Transfers:          stopPkToApiTransfers[stop.Pk],
+			ServiceMaps:        stopPkToApiServiceMaps[stop.Pk],
+			Alerts:             stopPkToApiAlerts[stop.Pk],
+			StopTimes:          stopPkToApiStopTimes[stop.Pk],
+			HeadsignRules:      stopPkToApiHeadsignRules[stop.Pk],
+		}
+		result = append(result, stop)
 	}
-	serviceMaps, err := r.Querier.ListServiceMapsForStops(ctx, stationPks)
-	if err != nil {
-		return nil, err
-	}
-	pkToConfigIDToRoutes := map[int64]map[string][]*api.Route_Preview{}
+	return result, nil
+}
 
-	for _, configIDRow := range configIDRows {
-		if _, present := pkToConfigIDToRoutes[configIDRow.Pk]; !present {
-			pkToConfigIDToRoutes[configIDRow.Pk] = map[string][]*api.Route_Preview{}
-		}
-		pkToConfigIDToRoutes[configIDRow.Pk][configIDRow.ID] = []*api.Route_Preview{}
-	}
-	for _, serviceMap := range serviceMaps {
-		if _, present := pkToConfigIDToRoutes[serviceMap.StopPk]; !present {
-			pkToConfigIDToRoutes[serviceMap.StopPk] = map[string][]*api.Route_Preview{}
-		}
-		route := &api.Route_Preview{
-			Id:    serviceMap.RouteID,
-			Color: serviceMap.RouteColor,
-			Href:  r.Href.Route(req.SystemId, serviceMap.RouteID),
-		}
-		if serviceMap.SystemID != req.SystemId {
-			route.System = &api.System{
-				Id: serviceMap.SystemID,
-			}
-		}
-		pkToConfigIDToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID] = append(
-			pkToConfigIDToRoutes[serviceMap.StopPk][serviceMap.ServiceMapConfigID], route)
-	}
-	for pk, configIDToRoutes := range pkToConfigIDToRoutes {
-		for configID, routes := range configIDToRoutes {
-			stopPkToServiceMaps[pk] = append(stopPkToServiceMaps[pk],
-				&api.Stop_ServiceMap{
-					ConfigId: configID,
-					Routes:   routes,
-				})
+type rawStopData struct {
+	stopPkToDescendentPks map[int64]map[int64]bool
+	transfers             []db.Transfer
+	alerts                []db.ListActiveAlertsForStopsRow
+	stopTimes             []db.ListStopTimesAtStopsRow
+	tripDestinations      []db.GetDestinationsForTripsRow
+	serviceMaps           []db.ListServiceMapsForStopsRow
+	serviceMapConfigIDs   []db.ListServiceMapsConfigIDsForStopsRow
+	headsignRules         []db.StopHeadsignRule
+	allStops              []db.ListStopPreviewsRow
+	allRoutes             []db.ListRoutePreviewsRow
+	children              []db.ListChildrenForStopsRow
+}
+
+func getRawStopData(ctx context.Context, r *Context, stops []db.Stop, req stopRequest) (rawStopData, error) {
+	var d rawStopData
+	var err error
+
+	var stopPks []int64
+	var rootPks []int64
+	for i := range stops {
+		stopPks = append(stopPks, stops[i].Pk)
+		if !stops[i].ParentStopPk.Valid {
+			rootPks = append(rootPks, stops[i].Pk)
 		}
 	}
 
-	stopHeadsignMatcher, err := NewStopHeadsignMatcher(ctx, r.Querier, stopTree.DescendentPks())
+	d.children, err = r.Querier.ListChildrenForStops(ctx, stopPks)
 	if err != nil {
-		return nil, err
+		return d, err
 	}
+	d.stopPkToDescendentPks, err = dbwrappers.MapStopPkToDescendentPks(ctx, r.Querier, stopPks)
+	if err != nil {
+		return d, err
+	}
+	allDescendentPksMap := map[int64]bool{}
+	for _, descendentPks := range d.stopPkToDescendentPks {
+		for descendentPk := range descendentPks {
+			allDescendentPksMap[descendentPk] = true
+		}
+	}
+	allDescendentPks := mapToSlice(allDescendentPksMap)
 
-	alerts, err := r.Querier.ListActiveAlertsForStops(
-		ctx, db.ListActiveAlertsForStopsParams{
-			StopPks:     []int64{stop.Pk},
+	if !req.GetSkipTransfers() {
+		d.transfers, err = r.Querier.ListTransfersFromStops(ctx, allDescendentPks)
+		if err != nil {
+			return d, err
+		}
+	}
+	if !req.GetSkipAlerts() {
+		d.alerts, err = r.Querier.ListActiveAlertsForStops(ctx, db.ListActiveAlertsForStopsParams{
+			StopPks:     allDescendentPks,
 			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
 		})
+		if err != nil {
+			return d, err
+		}
+	}
+	if !req.GetSkipStopTimes() {
+		d.stopTimes, err = r.Querier.ListStopTimesAtStops(ctx, allDescendentPks)
+		if err != nil {
+			return d, err
+		}
+		tripPks := map[int64]bool{}
+		for i := range d.stopTimes {
+			tripPks[d.stopTimes[i].TripPk] = true
+		}
+		d.tripDestinations, err = r.Querier.GetDestinationsForTrips(ctx, mapToSlice(tripPks))
+		if err != nil {
+			return d, err
+		}
+	}
+	if !req.GetSkipServiceMaps() {
+		d.serviceMaps, err = r.Querier.ListServiceMapsForStops(ctx, rootPks)
+		if err != nil {
+			return d, err
+		}
+		d.serviceMapConfigIDs, err = r.Querier.ListServiceMapsConfigIDsForStops(ctx, rootPks)
+		if err != nil {
+			return d, err
+		}
+	}
+	d.headsignRules, err = r.Querier.ListStopHeadsignRulesForStops(ctx, allDescendentPks)
 	if err != nil {
-		return nil, err
-	}
-	// TODO: alerts
-
-	var stopTimes []db.ListStopTimesAtStopsRow
-	routePkToRoute := map[int64]*db.Route{}
-	tripPkToLastStop := map[int64]*db.GetLastStopsForTripsRow{}
-	stopTimes, err = r.Querier.ListStopTimesAtStops(ctx, stopTree.DescendentPks())
-	if err != nil {
-		return nil, err
-	}
-	var routePks []int64
-	var tripPks []int64
-	for _, stopTime := range stopTimes {
-		routePks = append(routePks, stopTime.RoutePk)
-		tripPks = append(tripPks, stopTime.TripPk)
-	}
-	routes, err := r.Querier.ListRoutesByPk(ctx, routePks)
-	if err != nil {
-		return nil, err
-	}
-	for _, route := range routes {
-		route := route
-		routePkToRoute[route.Pk] = &route
-	}
-	rows, err := r.Querier.GetLastStopsForTrips(ctx, tripPks)
-	if err != nil {
-		return nil, err
-	}
-	for _, row := range rows {
-		row := row
-		tripPkToLastStop[row.TripPk] = &row
+		return d, err
 	}
 
-	stopTreeResponse := buildStopTreeResponse(r, req.SystemId, stop.Pk, stopTree, stopPkToServiceMaps)
-	result := &api.Stop{
-		Id:            stop.ID,
-		Name:          convert.SQLNullString(stop.Name),
-		Longitude:     convertGpsData(stop.Longitude),
-		Latitude:      convertGpsData(stop.Latitude),
-		Url:           convert.SQLNullString(stop.Url),
-		StopHeadsigns: stopHeadsignMatcher.AllHeadsigns(),
-		ParentStop:    stopTreeResponse.ParentStop,
-		ChildStops:    stopTreeResponse.ChildStops,
-		ServiceMaps:   stopTreeResponse.ServiceMaps,
+	allStopPksMap := allDescendentPksMap
+	for i := range d.transfers {
+		allStopPksMap[d.transfers[i].ToStopPk] = true
 	}
-	for _, stopTime := range stopTimes {
-		stopTime := stopTime
-		route := routePkToRoute[stopTime.RoutePk]
-		lastStop := tripPkToLastStop[stopTime.TripPk]
+	for i := range stops {
+		parentPk := stops[i].ParentStopPk
+		if parentPk.Valid {
+			allStopPksMap[parentPk.Int64] = true
+		}
+	}
+	for i := range d.tripDestinations {
+		allStopPksMap[d.tripDestinations[i].DestinationPk] = true
+	}
+	d.allStops, err = r.Querier.ListStopPreviews(ctx, mapToSlice(allStopPksMap))
+	if err != nil {
+		return d, err
+	}
+
+	allRoutePksMap := map[int64]bool{}
+	for i := range d.serviceMaps {
+		allRoutePksMap[d.serviceMaps[i].RoutePk] = true
+	}
+	for i := range d.stopTimes {
+		allRoutePksMap[d.stopTimes[i].RoutePk] = true
+	}
+	d.allRoutes, err = r.Querier.ListRoutePreviews(ctx, mapToSlice(allRoutePksMap))
+	if err != nil {
+		return d, err
+	}
+
+	return d, nil
+}
+
+func buildStopPkToApiTransfers(data rawStopData, stopPkToApiPreview map[int64]*api.Stop_Preview) map[int64][]*api.Transfer {
+	m := map[int64][]*api.Transfer{}
+	for _, transfer := range data.transfers {
+		m[transfer.FromStopPk] = append(m[transfer.FromStopPk], &api.Transfer{
+			FromStop:        stopPkToApiPreview[transfer.FromStopPk],
+			ToStop:          stopPkToApiPreview[transfer.ToStopPk],
+			Type:            convert.TransferType(transfer.Type),
+			MinTransferTime: convert.SQLNullInt32(transfer.MinTransferTime),
+			Distance:        convert.SQLNullInt32(transfer.Distance),
+		})
+	}
+	return liftToAncestors(data, m)
+}
+
+func buildStopPkToApiServiceMaps(data rawStopData, routePkToApiPreview map[int64]*api.Route_Preview) map[int64][]*api.Stop_ServiceMap {
+	m := map[int64]map[string][]int64{}
+	for _, row := range data.serviceMapConfigIDs {
+		if _, ok := m[row.Pk]; !ok {
+			m[row.Pk] = map[string][]int64{}
+		}
+		m[row.Pk][row.ID] = []int64{}
+	}
+	for _, serviceMap := range data.serviceMaps {
+		inner := m[serviceMap.StopPk]
+		inner[serviceMap.ConfigID] = append(inner[serviceMap.ConfigID], serviceMap.RoutePk)
+	}
+	n := map[int64][]*api.Stop_ServiceMap{}
+	for stopPk, configToRoutePks := range m {
+		for configID, routePks := range configToRoutePks {
+			apiMap := &api.Stop_ServiceMap{
+				ConfigId: configID,
+			}
+			for _, routePk := range routePks {
+				apiMap.Routes = append(apiMap.Routes, routePkToApiPreview[routePk])
+			}
+			n[stopPk] = append(n[stopPk], apiMap)
+		}
+	}
+	return n
+}
+
+func buildStopPkToApiAlerts(data rawStopData) map[int64][]*api.Alert_Preview {
+	m := map[int64][]*api.Alert_Preview{}
+	for i := range data.alerts {
+		alert := &data.alerts[i]
+		m[alert.StopPk] = append(
+			m[alert.StopPk],
+			convert.AlertPreview(alert.ID, alert.Cause, alert.Effect),
+		)
+	}
+	return liftToAncestors(data, m)
+}
+
+func buildStopPkToApiStopsTimes(data rawStopData, routePkToApiPreview map[int64]*api.Route_Preview, stopPkToApiPreview map[int64]*api.Stop_Preview) map[int64][]*api.StopTime {
+	m := map[int64][]*api.StopTime{}
+	tripPkToDestination := map[int64]*api.Stop_Preview{}
+	for _, row := range data.tripDestinations {
+		tripPkToDestination[row.TripPk] = stopPkToApiPreview[row.DestinationPk]
+	}
+	for i := range data.stopTimes {
+		stopTime := &data.stopTimes[i]
 		apiStopTime := &api.StopTime{
 			StopSequence: stopTime.StopSequence,
 			Track:        convert.SQLNullString(stopTime.Track),
@@ -200,125 +362,47 @@ func GetStop(ctx context.Context, r *Context, req *api.GetStopRequest) (*api.Sto
 			Departure:    buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
 			Trip: &api.Trip_Preview{
 				Id:          stopTime.ID,
-				DirectionId: stopTime.DirectionID.Bool,
-				StartedAt:   convert.SQLNullTime(stopTime.StartedAt),
-				Route: &api.Route_Preview{
-					Id:    route.ID,
-					Color: route.Color,
-					Href:  r.Href.Route(req.SystemId, route.ID),
-				},
-				LastStop: &api.Stop_Preview{
-					Id:   lastStop.ID,
-					Name: lastStop.Name.String,
-					Href: r.Href.Stop(req.SystemId, lastStop.ID),
-				},
-				Href: r.Href.Trip(req.SystemId, route.ID, stopTime.ID),
+				Route:       routePkToApiPreview[stopTime.RoutePk],
+				Destination: tripPkToDestination[stopTime.TripPk],
+				// Href: r.Href.Trip(req.SystemId, route.ID, stopTime.ID),
 			},
+			Stop: stopPkToApiPreview[stopTime.StopPk],
 		}
 		if stopTime.VehicleID.Valid {
 			apiStopTime.Trip.Vehicle = &api.Vehicle_Preview{
 				Id: stopTime.VehicleID.String,
 			}
 		}
-		result.StopTimes = append(result.StopTimes, apiStopTime)
+		m[stopTime.StopPk] = append(m[stopTime.StopPk], apiStopTime)
 	}
-	for _, alert := range alerts {
-		result.Alerts = append(result.Alerts, convert.AlertPreview(alert.ID, alert.Cause, alert.Effect))
-	}
-	for _, transfer := range transfers {
-		fromStop := stopTree.Get(transfer.FromStopPk)
-		result.Transfers = append(result.Transfers, &api.Transfer{
-			FromStop: &api.Stop_Preview{
-				Id:   fromStop.ID,
-				Name: fromStop.Name.String,
-				Href: r.Href.Stop(req.SystemId, fromStop.ID),
+	return liftToAncestors(data, m)
+}
+
+func buildStopPkToApiHeadsignRules(data rawStopData, stopPkToApiPreview map[int64]*api.Stop_Preview) map[int64][]*api.Stop_HeadsignRule {
+	m := map[int64][]*api.Stop_HeadsignRule{}
+	for i := range data.headsignRules {
+		rule := &data.headsignRules[i]
+		m[rule.StopPk] = append(
+			m[rule.StopPk],
+			&api.Stop_HeadsignRule{
+				Stop:     stopPkToApiPreview[rule.StopPk],
+				Priority: rule.Priority,
+				Track:    convert.SQLNullString(rule.Track),
+				Headsign: rule.Headsign,
 			},
-			ToStop: &api.Stop_Preview{
-				Id:   transfer.ToID,
-				Name: transfer.ToName.String,
-				// TODO ServiceMaps: stopPkToServiceMaps[transfer.ToStopPk],
-				Href: r.Href.Stop(req.SystemId, transfer.ToID),
-			},
-			Type:            convert.TransferType(transfer.Type),
-			MinTransferTime: convert.SQLNullInt32(transfer.MinTransferTime),
-			Distance:        convert.SQLNullInt32(transfer.Distance),
-		})
+		)
 	}
-	log.Println("GetStopInSystem took", time.Since(startTime))
-	return result, nil
+	return liftToAncestors(data, m)
 }
 
-// TODO: destroy this garbage
-type tempType struct {
-	ParentStop  *api.Stop_Preview
-	ChildStops  []*api.Stop_Preview
-	ServiceMaps []*api.Stop_ServiceMap
-
-	ID   string
-	Name string
-	Href *string
-}
-
-// TODO: no need for this nonsense in general
-func buildStopTreeResponse(r *Context, systemID string,
-	basePk int64, stopTree *stoptree.StopTree, serviceMaps map[int64][]*api.Stop_ServiceMap) tempType {
-	stopPkToResponse := map[int64]tempType{}
-	stopTree.VisitDFS(func(node *stoptree.StopTreeNode) {
-		if !stoptree.IsStation(node.Stop) && basePk != node.Stop.Pk {
-			return
+func liftToAncestors[T any](data rawStopData, in map[int64][]T) map[int64][]T {
+	out := map[int64][]T{}
+	for stopPk, descendentPks := range data.stopPkToDescendentPks {
+		for descendentPk := range descendentPks {
+			out[stopPk] = append(out[stopPk], in[descendentPk]...)
 		}
-		thisResponse := tempType{
-			ID:          node.Stop.ID,
-			Name:        node.Stop.Name.String,
-			ServiceMaps: serviceMaps[node.Stop.Pk],
-			Href:        r.Href.Stop(systemID, node.Stop.ID),
-		}
-		if node.Parent != nil {
-			if parentResponse, ok := stopPkToResponse[node.Parent.Stop.Pk]; ok {
-				thisResponse.ParentStop = &api.Stop_Preview{
-					Id:   parentResponse.ID,
-					Name: parentResponse.Name,
-					Href: parentResponse.Href,
-				}
-			}
-		}
-		for _, child := range node.Children {
-			if childResponse, ok := stopPkToResponse[child.Stop.Pk]; ok {
-				thisResponse.ChildStops = append(thisResponse.ChildStops, &api.Stop_Preview{
-					Id:   childResponse.ID,
-					Name: childResponse.Name,
-					Href: childResponse.Href,
-				})
-			}
-		}
-		stopPkToResponse[node.Stop.Pk] = thisResponse
-	})
-	return stopPkToResponse[basePk]
-}
-
-type StopHeadsignMatcher struct {
-	rules []db.StopHeadsignRule
-}
-
-func NewStopHeadsignMatcher(ctx context.Context, querier db.Querier, stopPks []int64) (*StopHeadsignMatcher, error) {
-	rules, err := querier.ListStopHeadsignRulesForStops(ctx, stopPks)
-	if err != nil {
-		return nil, err
 	}
-	return &StopHeadsignMatcher{rules: rules}, nil
-}
-
-func (m *StopHeadsignMatcher) AllHeadsigns() []string {
-	names := map[string]bool{}
-	for _, rule := range m.rules {
-		names[rule.Headsign] = true
-	}
-	var result []string
-	for name := range names {
-		result = append(result, name)
-	}
-	sort.Strings(result)
-	return result
+	return out
 }
 
 func buildEstimatedTime(time sql.NullTime, delay sql.NullInt32, uncertainty sql.NullInt32) *api.StopTime_EstimatedTime {
@@ -336,4 +420,12 @@ func convertGpsData(n pgtype.Numeric) *float64 {
 	var r float64
 	n.AssignTo(&r)
 	return &r
+}
+
+func mapToSlice(m map[int64]bool) []int64 {
+	var s []int64
+	for elem := range m {
+		s = append(s, elem)
+	}
+	return s
 }

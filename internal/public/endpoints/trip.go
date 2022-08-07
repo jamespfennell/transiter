@@ -20,34 +20,13 @@ func ListTrips(ctx context.Context, r *Context, req *api.ListTripsRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	var tripPks []int64
-	for _, trip := range trips {
-		tripPks = append(tripPks, trip.Pk)
-	}
 	// TODO: deduplicate this between the GetStop endpoint
-	rows, err := r.Querier.GetLastStopsForTrips(ctx, tripPks)
-	if err != nil {
-		return nil, err
-	}
-	tripPkToLastStop := map[int64]*db.GetLastStopsForTripsRow{}
-	for _, row := range rows {
-		row := row
-		tripPkToLastStop[row.TripPk] = &row
-	}
 
 	reply := &api.ListTripsReply{}
 	for _, trip := range trips {
 		trip := trip
-		lastStop := tripPkToLastStop[trip.Pk]
 		apiTrip := &api.Trip_Preview{
-			Id:          trip.ID,
-			DirectionId: trip.DirectionID.Bool,
-			StartedAt:   convert.SQLNullTime(trip.StartedAt),
-			LastStop: &api.Stop_Preview{
-				Id:   lastStop.ID,
-				Name: lastStop.Name.String,
-				Href: r.Href.Stop(req.SystemId, lastStop.ID),
-			},
+			Id:   trip.ID,
 			Href: r.Href.Trip(req.SystemId, route.ID, trip.ID),
 		}
 		if trip.VehicleID.Valid {

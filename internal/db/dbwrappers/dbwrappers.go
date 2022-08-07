@@ -11,6 +11,21 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
 
+func MapStopPkToDescendentPks(ctx context.Context, querier db.Querier, stopPks []int64) (map[int64]map[int64]bool, error) {
+	rows, err := querier.MapStopPkToDescendentPks(ctx, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	result := map[int64]map[int64]bool{}
+	for _, row := range rows {
+		if _, ok := result[row.RootStopPk]; !ok {
+			result[row.RootStopPk] = map[int64]bool{}
+		}
+		result[row.RootStopPk][row.DescendentStopPk] = true
+	}
+	return result, nil
+}
+
 func MapStopIDToStationPk(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
 	rows, err := querier.MapStopIDToStationPk(ctx, systemPk)
 	if err != nil {

@@ -1,3 +1,5 @@
+-- TODO: move all queries from this file in the $x_queries.sql files.
+
 -- name: GetSystem :one
 SELECT * FROM system
 WHERE id = $1 LIMIT 1;
@@ -25,8 +27,11 @@ SELECT route.id, route.color FROM route
 WHERE route.agency_pk = sqlc.arg(agency_pk);
 
 -- name: ListStopsInSystem :many
-SELECT * FROM stop WHERE system_pk = $1 
-    ORDER BY id;
+SELECT * FROM stop 
+WHERE system_pk = sqlc.arg(system_pk)
+  AND id >= sqlc.arg(first_stop_id)
+ORDER BY id
+LIMIT sqlc.arg(num_stops);
 
 -- name: GetStopInSystem :one
 SELECT stop.* FROM stop
@@ -68,14 +73,14 @@ SELECT stop.* FROM stop
 -- name: ListRoutesByPk :many
 SELECT * FROM route WHERE route.pk = ANY(sqlc.arg(route_pks)::bigint[]);
 
--- name: GetLastStopsForTrips :many
+-- name: GetDestinationsForTrips :many
 WITH last_stop_sequence AS (
   SELECT trip_pk, MAX(stop_sequence) as stop_sequence
     FROM trip_stop_time
     WHERE trip_pk = ANY(sqlc.arg(trip_pks)::bigint[])
     GROUP BY trip_pk
 )
-SELECT lss.trip_pk, stop.id, stop.name
+SELECT lss.trip_pk, stop.pk destination_pk
   FROM last_stop_sequence lss
   INNER JOIN trip_stop_time
     ON lss.trip_pk = trip_stop_time.trip_pk 
@@ -84,12 +89,8 @@ SELECT lss.trip_pk, stop.id, stop.name
     ON trip_stop_time.stop_pk = stop.pk;
 
 -- name: ListTransfersFromStops :many
-  SELECT transfer.from_stop_pk,
-      transfer.to_stop_pk, stop.id to_id, stop.name to_name, 
-      transfer.type, transfer.min_transfer_time, transfer.distance
+  SELECT transfer.*
   FROM transfer
-  INNER JOIN stop
-    ON stop.pk = transfer.to_stop_pk
   WHERE transfer.from_stop_pk = ANY(sqlc.arg(from_stop_pks)::bigint[]);
 
 
@@ -97,33 +98,15 @@ SELECT lss.trip_pk, stop.id, stop.name
 SELECT stop.pk, service_map_config.id
 FROM service_map_config
     INNER JOIN stop ON service_map_config.system_pk = stop.system_pk
-WHERE service_map_config.default_for_routes_at_stop
-    AND stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]); 
+WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]); 
 
 -- name: ListServiceMapsForStops :many
-WITH RECURSIVE descendent AS (
-	SELECT initial.pk, initial.parent_stop_pk, initial.pk AS descendent_pk
-	  FROM stop initial
-    WHERE initial.pk = ANY(sqlc.arg(stop_pks)::bigint[])
-	UNION (
-    SELECT parent.pk, parent.parent_stop_pk, descendent.pk AS descendent_pk
-      FROM stop parent
-      INNER JOIN descendent ON (
-        descendent.parent_stop_pk = parent.pk OR
-        descendent.pk = parent.pk
-      )
-  )
-)
-SELECT descendent.pk stop_pk, service_map_config.id service_map_config_id,
-  route.id route_id, route.color route_color, system.id system_id
-FROM descendent
-  LEFT JOIN service_map_vertex smv ON smv.stop_pk = descendent.descendent_pk
-  INNER JOIN service_map ON service_map.pk = smv.map_pk
+SELECT stop.pk stop_pk, service_map_config.id config_id, service_map.route_pk route_pk
+FROM stop
+  INNER JOIN service_map_vertex vertex ON vertex.stop_pk = stop.pk
+  INNER JOIN service_map ON service_map.pk = vertex.map_pk
   INNER JOIN service_map_config ON service_map_config.pk = service_map.config_pk
-  LEFT JOIN route ON service_map.route_pk = route.pk
-  INNER JOIN system ON system.pk = route.system_pk
-WHERE service_map_config.default_for_routes_at_stop
-ORDER BY system_id, route_id; 
+WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]);
 
 -- name: ListStopHeadsignRulesForStops :many
 SELECT * FROM stop_headsign_rule

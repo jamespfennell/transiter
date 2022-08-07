@@ -167,6 +167,15 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 		return nil, err
 	}
 	for _, stop := range stops {
+		var wheelchairBoarding *bool
+		switch stop.WheelchairBoarding {
+		case gtfs.Possible:
+			t := true
+			wheelchairBoarding = &t
+		case gtfs.NotPossible:
+			f := false
+			wheelchairBoarding = &f
+		}
 		pk, ok := idToPk[stop.Id]
 		if ok {
 			err = updateCtx.Querier.UpdateStop(ctx, db.UpdateStopParams{
@@ -181,7 +190,7 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 				Description:        convert.NullString(stop.Description),
 				PlatformCode:       convert.NullString(stop.PlatformCode),
 				Timezone:           convert.NullString(stop.Timezone),
-				WheelchairBoarding: stop.WheelchairBoarding.String(),
+				WheelchairBoarding: convert.NullBool(wheelchairBoarding),
 				ZoneID:             convert.NullString(stop.ZoneId),
 			})
 		} else {
@@ -198,7 +207,7 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 				Description:        convert.NullString(stop.Description),
 				PlatformCode:       convert.NullString(stop.PlatformCode),
 				Timezone:           convert.NullString(stop.Timezone),
-				WheelchairBoarding: stop.WheelchairBoarding.String(),
+				WheelchairBoarding: convert.NullBool(wheelchairBoarding),
 				ZoneID:             convert.NullString(stop.ZoneId),
 			})
 			idToPk[stop.Id] = pk

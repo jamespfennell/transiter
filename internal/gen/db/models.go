@@ -207,7 +207,7 @@ type Stop struct {
 	PlatformCode       sql.NullString
 	Timezone           sql.NullString
 	Type               string
-	WheelchairBoarding string
+	WheelchairBoarding sql.NullBool
 	ZoneID             sql.NullString
 }
 

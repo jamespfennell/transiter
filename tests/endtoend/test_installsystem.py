@@ -70,9 +70,17 @@ def test_install_system__stops(system_id, install_system_1, transiter_host, sync
         transiter_host + "/systems/" + system_id + "/stops/StopID"
     ).json()
     assert "StopID" == stop_response["id"]
+    assert "StopCode" == stop_response["code"]
+    assert "StopName" == stop_response["name"]
+    assert "StopDesc" == stop_response["description"]
+    assert "ZoneId" == stop_response["zoneId"]
     assert 10.5 == stop_response["latitude"]
     assert 20.5 == stop_response["longitude"]
     assert "StopUrl" == stop_response["url"]
+    assert "STOP" == stop_response["type"]
+    assert "StopTimezone" == stop_response["timezone"]
+    assert True == stop_response["wheelchairBoarding"]
+    assert "PlatformCode" == stop_response["platformCode"]
     assert "ParentStopID" == stop_response["parentStop"]["id"]
 
     parent_stop_response = requests.get(
@@ -80,6 +88,7 @@ def test_install_system__stops(system_id, install_system_1, transiter_host, sync
     ).json()
     assert 1 == len(parent_stop_response["childStops"])
     assert "StopID" == parent_stop_response["childStops"][0]["id"]
+    assert "STATION" == parent_stop_response["type"]
 
 
 @pytest.mark.parametrize("sync", [True, False])

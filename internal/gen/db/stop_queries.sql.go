@@ -72,7 +72,7 @@ type InsertStopParams struct {
 	PlatformCode       sql.NullString
 	Timezone           sql.NullString
 	Type               string
-	WheelchairBoarding string
+	WheelchairBoarding sql.NullBool
 	ZoneID             sql.NullString
 }
 
@@ -96,6 +96,76 @@ func (q *Queries) InsertStop(ctx context.Context, arg InsertStopParams) (int64, 
 	var pk int64
 	err := row.Scan(&pk)
 	return pk, err
+}
+
+const listChildrenForStops = `-- name: ListChildrenForStops :many
+SELECT parent_stop_pk parent_pk, pk child_pk
+FROM stop
+WHERE stop.parent_stop_pk = ANY($1::bigint[])
+`
+
+type ListChildrenForStopsRow struct {
+	ParentPk sql.NullInt64
+	ChildPk  int64
+}
+
+func (q *Queries) ListChildrenForStops(ctx context.Context, stopPks []int64) ([]ListChildrenForStopsRow, error) {
+	rows, err := q.db.Query(ctx, listChildrenForStops, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListChildrenForStopsRow
+	for rows.Next() {
+		var i ListChildrenForStopsRow
+		if err := rows.Scan(&i.ParentPk, &i.ChildPk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStopPreviews = `-- name: ListStopPreviews :many
+SELECT stop.pk, stop.id stop_id, stop.name, system.id system_id
+FROM stop
+    INNER JOIN system on stop.system_pk = system.pk
+WHERE stop.pk = ANY($1::bigint[])
+`
+
+type ListStopPreviewsRow struct {
+	Pk       int64
+	StopID   string
+	Name     sql.NullString
+	SystemID string
+}
+
+func (q *Queries) ListStopPreviews(ctx context.Context, stopPks []int64) ([]ListStopPreviewsRow, error) {
+	rows, err := q.db.Query(ctx, listStopPreviews, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStopPreviewsRow
+	for rows.Next() {
+		var i ListStopPreviewsRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.StopID,
+			&i.Name,
+			&i.SystemID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const mapStopIDToStationPk = `-- name: MapStopIDToStationPk :many
@@ -140,6 +210,49 @@ func (q *Queries) MapStopIDToStationPk(ctx context.Context, systemPk int64) ([]M
 	for rows.Next() {
 		var i MapStopIDToStationPkRow
 		if err := rows.Scan(&i.StopID, &i.StationPk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mapStopPkToDescendentPks = `-- name: MapStopPkToDescendentPks :many
+WITH RECURSIVE descendent AS (
+	SELECT
+    stop.pk root_stop_pk,
+    stop.pk descendent_stop_pk
+    FROM stop
+        WHERE stop.pk = ANY($1::bigint[])
+	UNION
+	SELECT
+    descendent.root_stop_pk root_stop_pk,
+    child.pk descendent_stop_pk
+		FROM stop child
+		INNER JOIN descendent
+    ON child.parent_stop_pk = descendent.descendent_stop_pk
+)
+SELECT root_stop_pk, descendent_stop_pk FROM descendent
+`
+
+type MapStopPkToDescendentPksRow struct {
+	RootStopPk       int64
+	DescendentStopPk int64
+}
+
+func (q *Queries) MapStopPkToDescendentPks(ctx context.Context, stopPks []int64) ([]MapStopPkToDescendentPksRow, error) {
+	rows, err := q.db.Query(ctx, mapStopPkToDescendentPks, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapStopPkToDescendentPksRow
+	for rows.Next() {
+		var i MapStopPkToDescendentPksRow
+		if err := rows.Scan(&i.RootStopPk, &i.DescendentStopPk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -298,7 +411,7 @@ type UpdateStopParams struct {
 	PlatformCode       sql.NullString
 	Timezone           sql.NullString
 	Type               string
-	WheelchairBoarding string
+	WheelchairBoarding sql.NullBool
 	ZoneID             sql.NullString
 	Pk                 int64
 }

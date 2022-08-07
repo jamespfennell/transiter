@@ -418,24 +418,55 @@ message and the associated field.
 
 ## Stop
 
+The Stop resource.
 
+This resource corresponds to the [stop type in the GTFS static
+specification](https://developers.google.com/transit/gtfs/reference#stopstxt).
+Most of the static fields in the resource come directly from the `stops.txt` table.
+Transiter adds some additional related fields (transfers, alerts, stop times)
+  and computed fields (service maps).
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| id | string | 
-| name | string | 
-| longitude | double | 
-| latitude | double | 
-| url | string | 
-| stop_headsigns | string | 
-| parent_stop | [Stop.Preview](public_resources.md#Stop.Preview) | 
-| child_stops | [Stop.Preview](public_resources.md#Stop.Preview) | 
-| service_maps | [Stop.ServiceMap](public_resources.md#Stop.ServiceMap) | 
-| alerts | [Alert.Preview](public_resources.md#Alert.Preview) | 
-| stop_times | [StopTime](public_resources.md#StopTime) | 
-| transfers | [Transfer](public_resources.md#Transfer) | 
+| id | string | ID of the stop. This is the `stop_id` column in `stops.txt`.
+| code | string | Code of the stop. This is the `stop_code` column in `stops.txt`.
+| name | string | Name of the stop. This is the `stop_name` column in `stops.txt`.
+| description | string | Description of the stop. This is the `stop_desc` column in `stops.txt`.
+| zone_id | string | Zone ID of the stop. This is the `zone_id` column in `stops.txt`.
+| latitude | double | Latitude of the stop. This is the `stop_lat` column in `stops.txt`.
+| longitude | double | Longitude of the stop. This is the `stop_lon` column in `stops.txt`.
+| url | string | URL of a webpage about the stop. This is the `stop_url` column in `stops.txt`.
+| type | [Stop.Type](public_resources.md#Stop.Type) | Type of the stop. This is the `platform_type` column in `stops.txt`.
+| parent_stop | [Stop.Preview](public_resources.md#Stop.Preview) | Parent stop. This is determined using the `parent_station` column in `stops.txt`.
+| child_stops | [Stop.Preview](public_resources.md#Stop.Preview) | Child stops. This are determined using the `parent_station` column in `stops.txt`.
+| timezone | string | Timezone of the stop. This is the `stop_timezone` column in `stops.txt`.
+| wheelchair_boarding | bool | If there is wheelchair boarding for this stop. This is the `wheelchair_boarding` column in `stops.txt`.
+| platform_code | string | Platform code of the stop. This is the `platform_code` column in `stops.txt`.
+| service_maps | [Stop.ServiceMap](public_resources.md#Stop.ServiceMap) | List of service maps for this stop.
+| alerts | [Alert.Preview](public_resources.md#Alert.Preview) | Active alerts for this stop.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+| stop_times | [StopTime](public_resources.md#StopTime) | List of realtime stop times for this stop.<br /><br />A stop time is an event at which a trip calls at a stop.
+| transfers | [Transfer](public_resources.md#Transfer) | Transfers out of this stop.<br /><br />These are determined using the `from_stop_id` field in the GTFS static `transfers.txt` file.
+| headsign_rules | [Stop.HeadsignRule](public_resources.md#Stop.HeadsignRule) | List of headsign rules for this stop.
+
+
+
+
+
+
+#### Stop.HeadsignRule
+
+Message describing a headsign rule.
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| stop | [Stop.Preview](public_resources.md#Stop.Preview) | Stop the rule is for.
+| priority | int32 | Priority of the rule (lower is higher priority).
+| track | string | NYCT track.
+| headsign | string | Headsign.
 
 
 
@@ -451,7 +482,7 @@ Preview contains preview information about the stop.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
-| name | string | 
+| name | string | TODO: make optional
 | href | string | 
 
 
@@ -461,17 +492,37 @@ Preview contains preview information about the stop.
 
 #### Stop.ServiceMap
 
+Message describing the service maps view in stops.
 
+See the service maps documentation for more information on this
+message and the associated field.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| config_id | string | 
-| routes | [Route.Preview](public_resources.md#Route.Preview) | 
+| config_id | string | Config ID of the service map, as specified in the system configuration file.
+| routes | [Route.Preview](public_resources.md#Route.Preview) | List of routes which call at this stop.<br /><br />This list may be empty, in which case the stop has no service in the service map.
 
 
 
+
+
+
+#### Stop.Type
+
+Enum describing the possible stop types
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STOP | 0 |  |
+| STATION | 1 |  |
+| ENTRANCE_OR_EXIT | 2 |  |
+| GENERIC_NODE | 3 |  |
+| BOARDING_AREA | 4 |  |
 
 
 
@@ -480,20 +531,24 @@ Preview contains preview information about the stop.
 
 ## StopTime
 
+Message describing a realtime stop time.
 
+A stop time is an event in which a trip calls at a stop.
+This message corresponds to the [GTFS realtime `StopTimeUpdate`
+message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeupdate)
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| stop | [Stop.Preview](public_resources.md#Stop.Preview) | 
-| trip | [Trip.Preview](public_resources.md#Trip.Preview) | 
-| arrival | [StopTime.EstimatedTime](public_resources.md#StopTime.EstimatedTime) | 
-| departure | [StopTime.EstimatedTime](public_resources.md#StopTime.EstimatedTime) | 
-| future | bool | 
-| stop_sequence | int32 | 
-| headsign | string | 
-| track | string | 
+| stop | [Stop.Preview](public_resources.md#Stop.Preview) | The stop.
+| trip | [Trip.Preview](public_resources.md#Trip.Preview) | The trip.
+| arrival | [StopTime.EstimatedTime](public_resources.md#StopTime.EstimatedTime) | Arrival time.
+| departure | [StopTime.EstimatedTime](public_resources.md#StopTime.EstimatedTime) | Departure time.
+| future | bool | If this stop time is in the future. This field is *not* based on the arrival or departure time. Instead, a stop time is considered in the future if it appeared in the most recent GTFS realtime feed for its trip. When this stop time disappears from the trip, Transiter marks it as past and freezes its data.
+| stop_sequence | int32 | Stop sequence.
+| headsign | string | Headsign.
+| track | string | Track, from the NYCT realtime extension.
 
 
 
@@ -502,7 +557,9 @@ Preview contains preview information about the stop.
 
 #### StopTime.EstimatedTime
 
-
+Message describing the arrival or departure time of a stop time.
+This corresponds to the [GTFS realtime `StopTimeEvent`
+message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeevent).
 	
 
 
@@ -667,10 +724,8 @@ Preview contains preview information about the trip.
 | ----- | ---- | ----------- |
 | id | string | 
 | route | [Route.Preview](public_resources.md#Route.Preview) | 
-| last_stop | [Stop.Preview](public_resources.md#Stop.Preview) | TODO: rename destination and move to Stop_StopTime
-| started_at | int64 | TODO: remove
+| destination | [Stop.Preview](public_resources.md#Stop.Preview) | 
 | vehicle | [Vehicle.Preview](public_resources.md#Vehicle.Preview) | 
-| direction_id | bool | TODO: remove
 | href | string | 
 
 

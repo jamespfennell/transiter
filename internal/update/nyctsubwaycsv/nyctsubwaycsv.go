@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/update/common"
@@ -43,6 +44,7 @@ func ParseAndUpdate(ctx context.Context, updateCtx common.UpdateContext, content
 			SourcePk: updateCtx.UpdatePk,
 			Priority: int32(i),
 			StopPk:   stopPk,
+			Track:    convert.NullString(rule.track),
 			Headsign: rule.headsign,
 		}); err != nil {
 			return err

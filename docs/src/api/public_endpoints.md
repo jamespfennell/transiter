@@ -213,6 +213,10 @@ Request payload for the get agency endpoint.
 
 List all stops in a system.
 
+This endpoint is paginated.
+If there are more results, the `next_id` field of the response will be populated.
+To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
+
 ### Request type: ListStopsRequest
 
 Request payload for the list stops endpoint.
@@ -222,6 +226,12 @@ Request payload for the list stops endpoint.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system for which to list stops.<br /><br />This is a URL parameter in the HTTP API.
+| first_id | string | ID of the first stop to return. If not set, the stop with the smallest ID will be first.
+| limit | int32 | Maximum number of stops to return.
+| skip_stop_times | bool | If true, the stop times field will not be populated. This will generally make the response faster to generate.
+| skip_service_maps | bool | If true, the service maps field will not be populated. This will generally make the response faster to generate.
+| skip_alerts | bool | If true, the alerts field will not be populated. This will generally make the response faster to generate.
+| skip_transfers | bool | If true, the transfers field will not be populated. This will generally make the response faster to generate.
 
 
 
@@ -238,7 +248,8 @@ Response payload for the list stops endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| stops | [Stop.Preview](public_resources.md#Stop.Preview) | List of stops. TODO: full Stop instead of preview
+| stops | [Stop](public_resources.md#Stop) | List of stops.
+| next_id | string | ID of the next stop to return, if there are more results.
 
 
 
@@ -263,6 +274,10 @@ Reqeust payload for the get stop endpoint.
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system the stop is in.<br /><br />This is a URL parameter in the HTTP API.
 | stop_id | string | ID of the stop.<br /><br />This is a URL parameter in the HTTP API.
+| skip_stop_times | bool | If true, the stop times field will not be populated. This will generally make the response faster to generate.
+| skip_service_maps | bool | If true, the service maps field will not be populated. This will generally make the response faster to generate.
+| skip_alerts | bool | If true, the alerts field will not be populated. This will generally make the response faster to generate.
+| skip_transfers | bool | If true, the transfers field will not be populated. This will generally make the response faster to generate.
 
 
 

@@ -78,3 +78,39 @@ func TestMapStopIDToStationPk(t *testing.T) {
 		})
 	}
 }
+
+func TestMapStopPkToDescendentPks(t *testing.T) {
+	q := dbtesting.NewQuerier(t)
+	system := q.NewSystem("system1")
+	insertStop := func(id string, t gtfs.StopType, parentPk *int64) int64 {
+		stop := system.NewStop(id, db.InsertStopParams{
+			Type: t.String(),
+		})
+		err := q.UpdateStopParent(context.Background(), db.UpdateStopParentParams{
+			Pk:           stop.Pk,
+			ParentStopPk: convert.NullInt64(parentPk),
+		})
+		q.AssertNilErr(err, fmt.Sprintf("update parent of stop %q", id))
+		return stop.Pk
+	}
+
+	gen1 := insertStop("gen1", gtfs.Station, nil)
+	_ = insertStop("gen2A", gtfs.Platform, &gen1)
+	gen2B := insertStop("gen2B", gtfs.Platform, &gen1)
+	gen3A := insertStop("gen3A", gtfs.Platform, &gen2B)
+	gen3B := insertStop("gen3B", gtfs.Platform, &gen2B)
+	gen4 := insertStop("gen4", gtfs.Platform, &gen3B)
+
+	want := map[int64]map[int64]bool{
+		gen2B: {gen2B: true, gen3A: true, gen3B: true, gen4: true},
+		gen3B: {gen3B: true, gen4: true},
+	}
+
+	got, err := dbwrappers.MapStopPkToDescendentPks(context.Background(), q, []int64{gen2B, gen3B})
+	if err != nil {
+		t.Fatalf("MapStopPkToDescendentPks() err = %+v, want err = nil", err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("MapStopPkToDescendentPks()\n got = %+v\nwant = %+v", got, want)
+	}
+}
