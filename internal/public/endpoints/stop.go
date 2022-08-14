@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
+	"github.com/jamespfennell/transiter/internal/public/errors"
 
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -16,6 +17,9 @@ import (
 
 func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api.ListStopsReply, error) {
 	startTime := time.Now()
+	if !req.OnlyReturnSpecifiedIds && len(req.Id) > 0 {
+		return nil, errors.NewInvalidArgumentError("only_return_specified_ids is false but IDs were provided")
+	}
 	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
 		return nil, err
@@ -29,9 +33,11 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 		firstID = *req.FirstId
 	}
 	stops, err := r.Querier.ListStopsInSystem(ctx, db.ListStopsInSystemParams{
-		SystemPk:    system.Pk,
-		FirstStopID: firstID,
-		NumStops:    numStops + 1,
+		SystemPk:               system.Pk,
+		FirstStopID:            firstID,
+		NumStops:               numStops + 1,
+		OnlyReturnSpecifiedIds: req.OnlyReturnSpecifiedIds,
+		StopIds:                req.Id,
 	})
 	if err != nil {
 		return nil, err

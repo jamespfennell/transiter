@@ -53,11 +53,14 @@ type AdminClient interface {
 	// `POST /scheduler`
 	//
 	// Performs a full restart of the scheduler, with all scheduler
-	//   configurations retrieved fresh from the database.
+	//
+	//	configurations retrieved fresh from the database.
+	//
 	// In general this endpoint should never be needed;
-	//   Transiter automatically restarts the scheduler when needed.
-	//  The main usecase is when the Postgres configuration is manually
-	//   updated and the scheduler needs to see the update.
+	//
+	//	 Transiter automatically restarts the scheduler when needed.
+	//	The main usecase is when the Postgres configuration is manually
+	//	 updated and the scheduler needs to see the update.
 	ResetScheduler(ctx context.Context, in *ResetSchedulerRequest, opts ...grpc.CallOption) (*ResetSchedulerReply, error)
 }
 
@@ -162,11 +165,14 @@ type AdminServer interface {
 	// `POST /scheduler`
 	//
 	// Performs a full restart of the scheduler, with all scheduler
-	//   configurations retrieved fresh from the database.
+	//
+	//	configurations retrieved fresh from the database.
+	//
 	// In general this endpoint should never be needed;
-	//   Transiter automatically restarts the scheduler when needed.
-	//  The main usecase is when the Postgres configuration is manually
-	//   updated and the scheduler needs to see the update.
+	//
+	//	 Transiter automatically restarts the scheduler when needed.
+	//	The main usecase is when the Postgres configuration is manually
+	//	 updated and the scheduler needs to see the update.
 	ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error)
 }
 

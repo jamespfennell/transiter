@@ -226,6 +226,8 @@ Request payload for the list stops endpoint.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system for which to list stops.<br /><br />This is a URL parameter in the HTTP API.
+| only_return_specified_ids | bool | If true, only return stops whose IDs are specified in the repeated `id` field.
+| id | string | IDs to return if `only_return_specified_ids` is set to true. It is an error to populate this field if `only_return_specified_ids` is false.
 | first_id | string | ID of the first stop to return. If not set, the stop with the smallest ID will be first.
 | limit | int32 | Maximum number of stops to return.
 | skip_stop_times | bool | If true, the stop times field will not be populated. This will generally make the response faster to generate.

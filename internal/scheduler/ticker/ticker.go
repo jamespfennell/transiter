@@ -3,7 +3,9 @@
 // This ticker ticks at a given period like the standard library's ticker, has an additional features:
 //
 // (1) Before sending the first tick it waits a random duration (at most the period). This means that
-//     ticks are smoothed out across different tickers started at the same time.
+//
+//	ticks are smoothed out across different tickers started at the same time.
+//
 // (2) It has support for pausing the ticks.
 package ticker
 

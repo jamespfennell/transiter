@@ -1,4 +1,4 @@
-FROM golang:1.18 AS api-docs-builder
+FROM golang:1.19 AS api-docs-builder
 
 WORKDIR /transiter
 

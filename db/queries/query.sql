@@ -30,6 +30,10 @@ WHERE route.agency_pk = sqlc.arg(agency_pk);
 SELECT * FROM stop 
 WHERE system_pk = sqlc.arg(system_pk)
   AND id >= sqlc.arg(first_stop_id)
+  AND (
+    NOT sqlc.arg(only_return_specified_ids)::bool OR
+    id = ANY(sqlc.arg(stop_ids)::text[])
+  )
 ORDER BY id
 LIMIT sqlc.arg(num_stops);
 

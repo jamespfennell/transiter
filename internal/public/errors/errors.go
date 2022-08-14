@@ -23,12 +23,21 @@ func (e publicErr) GRPCStatus() *status.Status {
 	return e.Status
 }
 
-// NewNotFoundError returns a not found error type.
+// NewNotFoundError returns a not found error.
 //
 // This will be mapped to a 404 error in the API.
 func NewNotFoundError(msg string) error {
 	return publicErr{
 		Status: status.New(codes.NotFound, msg),
+	}
+}
+
+// NewInvalidArgumentError returns an invalid argument error.
+//
+// This will be mapped to a 400 error in the API.
+func NewInvalidArgumentError(msg string) error {
+	return publicErr{
+		Status: status.New(codes.InvalidArgument, msg),
 	}
 }
 

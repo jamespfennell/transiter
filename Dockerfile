@@ -1,4 +1,4 @@
-FROM golang:1.18 AS builder
+FROM golang:1.19 AS builder
 
 WORKDIR /transiter
 
@@ -37,7 +37,7 @@ COPY . ./
 
 # Diff the newly generated files with the ones in source control.
 # If there are differences, this will fail
-RUN diff --brief --recursive internal/gen internal/genNew
+RUN diff --recursive internal/gen internal/genNew
 RUN rm -r internal/genNew
 
 RUN go build .

@@ -378,9 +378,14 @@ message ListStopsRequest {
   // This is a URL parameter in the HTTP API.
   string system_id = 1;
 
+  // If true, only return stops whose IDs are specified in the repeated `id` field. 
+  bool only_return_specified_ids = 8;
+  // IDs to return if `only_return_specified_ids` is set to true. It is an error to
+  // populate this field if `only_return_specified_ids` is false.
+  repeated string id = 9;
+
   // ID of the first stop to return. If not set, the stop with the smallest ID will be first.
   optional string first_id = 2;
-
   // Maximum number of stops to return.
   optional int32 limit = 3;
 

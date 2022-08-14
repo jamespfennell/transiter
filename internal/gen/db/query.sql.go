@@ -771,18 +771,30 @@ const listStopsInSystem = `-- name: ListStopsInSystem :many
 SELECT pk, id, system_pk, source_pk, parent_stop_pk, name, longitude, latitude, url, code, description, platform_code, timezone, type, wheelchair_boarding, zone_id FROM stop 
 WHERE system_pk = $1
   AND id >= $2
+  AND (
+    NOT $3::bool OR
+    id = ANY($4::text[])
+  )
 ORDER BY id
-LIMIT $3
+LIMIT $5
 `
 
 type ListStopsInSystemParams struct {
-	SystemPk    int64
-	FirstStopID string
-	NumStops    int32
+	SystemPk               int64
+	FirstStopID            string
+	OnlyReturnSpecifiedIds bool
+	StopIds                []string
+	NumStops               int32
 }
 
 func (q *Queries) ListStopsInSystem(ctx context.Context, arg ListStopsInSystemParams) ([]Stop, error) {
-	rows, err := q.db.Query(ctx, listStopsInSystem, arg.SystemPk, arg.FirstStopID, arg.NumStops)
+	rows, err := q.db.Query(ctx, listStopsInSystem,
+		arg.SystemPk,
+		arg.FirstStopID,
+		arg.OnlyReturnSpecifiedIds,
+		arg.StopIds,
+		arg.NumStops,
+	)
 	if err != nil {
 		return nil, err
 	}

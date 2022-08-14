@@ -24,35 +24,30 @@ type PublicClient interface {
 	//
 	// Provides basic information about this Transiter instance and the Transit systems it contains.
 	Entrypoint(ctx context.Context, in *EntrypointRequest, opts ...grpc.CallOption) (*EntrypointReply, error)
-	//
 	// List systems
 	//
 	// `GET /systems`
 	//
 	// List all transit systems that are installed in this Transiter instance.
 	ListSystems(ctx context.Context, in *ListSystemsRequest, opts ...grpc.CallOption) (*ListSystemsReply, error)
-	//
 	// Get system
 	//
 	// `GET /systems/<system_id>`
 	//
 	// Get a system by its ID.
 	GetSystem(ctx context.Context, in *GetSystemRequest, opts ...grpc.CallOption) (*System, error)
-	//
 	// List agencies
 	//
 	// `GET /systems/<system_id>/agencies`
 	//
 	// List all agencies in a system.
 	ListAgencies(ctx context.Context, in *ListAgenciesRequest, opts ...grpc.CallOption) (*ListAgenciesReply, error)
-	//
 	// Get agency
 	//
 	// `GET /systems/<system_id>/agencies/<agency_id>`
 	//
 	// Get an agency in a system by its ID.
 	GetAgency(ctx context.Context, in *GetAgencyRequest, opts ...grpc.CallOption) (*Agency, error)
-	//
 	// List stops
 	//
 	// `GET /systems/<system_id>/stops/<stop_id>`
@@ -63,79 +58,69 @@ type PublicClient interface {
 	// If there are more results, the `next_id` field of the response will be populated.
 	// To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
 	ListStops(ctx context.Context, in *ListStopsRequest, opts ...grpc.CallOption) (*ListStopsReply, error)
-	//
 	// Get stop
 	//
 	// `GET /systems/<system_id>/stops/<stop_id>`
 	//
 	// Get a stop in a system by its ID.
 	GetStop(ctx context.Context, in *GetStopRequest, opts ...grpc.CallOption) (*Stop, error)
-	//
 	// List routes
 	//
 	// `GET /systems/<system_id>/routes`
 	//
 	// List all routes in a system.
 	ListRoutes(ctx context.Context, in *ListRoutesRequest, opts ...grpc.CallOption) (*ListRoutesReply, error)
-	//
 	// Get route
 	//
 	// `GET /systems/<system_id>/routes/<route_id>`
 	//
 	// Get a route in a system by its ID.
 	GetRoute(ctx context.Context, in *GetRouteRequest, opts ...grpc.CallOption) (*Route, error)
-	//
 	// List trips
 	//
 	// `GET /systems/<system_id>/routes/<route_id>/trips`
 	//
 	// List all trips in a route.
 	ListTrips(ctx context.Context, in *ListTripsRequest, opts ...grpc.CallOption) (*ListTripsReply, error)
-	//
 	// Get trip
 	//
 	// `GET /systems/<system_id>/routes/<route_id>/trips/<trip_id>`
 	//
 	// Get a trip by its ID.
 	GetTrip(ctx context.Context, in *GetTripRequest, opts ...grpc.CallOption) (*Trip, error)
-	//
 	// List alerts
 	//
 	// `GET /systems/<system_id>/alerts`
 	//
 	// List all alerts in a system.
 	// By default this endpoint returns both active alerts
-	//   (alerts which have an active period containing the current time) and non-active alerts.
-	ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsReply, error)
 	//
+	//	(alerts which have an active period containing the current time) and non-active alerts.
+	ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsReply, error)
 	// Get alert
 	//
 	// `GET /systems/<system_id>/alerts/<alert_id>`
 	//
 	// Get an alert by its ID.
 	GetAlert(ctx context.Context, in *GetAlertRequest, opts ...grpc.CallOption) (*Alert, error)
-	//
 	// List transfers
 	//
 	// `GET /systems/<system_id>/transfers`
 	//
 	// List all transfers in a system.
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersReply, error)
-	//
 	// List feeds
 	//
 	// `GET /systems/<system_id>/feeds`
 	//
 	// List all feeds for a system.
 	ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error)
-	//
 	// Get feed
 	//
 	// `GET /systems/<system_id>/feeds/<feed_id>`
 	//
 	// Get a feed in a system by its ID.
 	GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*Feed, error)
-	//
 	// List feed updates
 	//
 	// `GET /systems/<system_id>/feeds/<feed_id>/updates`
@@ -315,35 +300,30 @@ type PublicServer interface {
 	//
 	// Provides basic information about this Transiter instance and the Transit systems it contains.
 	Entrypoint(context.Context, *EntrypointRequest) (*EntrypointReply, error)
-	//
 	// List systems
 	//
 	// `GET /systems`
 	//
 	// List all transit systems that are installed in this Transiter instance.
 	ListSystems(context.Context, *ListSystemsRequest) (*ListSystemsReply, error)
-	//
 	// Get system
 	//
 	// `GET /systems/<system_id>`
 	//
 	// Get a system by its ID.
 	GetSystem(context.Context, *GetSystemRequest) (*System, error)
-	//
 	// List agencies
 	//
 	// `GET /systems/<system_id>/agencies`
 	//
 	// List all agencies in a system.
 	ListAgencies(context.Context, *ListAgenciesRequest) (*ListAgenciesReply, error)
-	//
 	// Get agency
 	//
 	// `GET /systems/<system_id>/agencies/<agency_id>`
 	//
 	// Get an agency in a system by its ID.
 	GetAgency(context.Context, *GetAgencyRequest) (*Agency, error)
-	//
 	// List stops
 	//
 	// `GET /systems/<system_id>/stops/<stop_id>`
@@ -354,79 +334,69 @@ type PublicServer interface {
 	// If there are more results, the `next_id` field of the response will be populated.
 	// To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
 	ListStops(context.Context, *ListStopsRequest) (*ListStopsReply, error)
-	//
 	// Get stop
 	//
 	// `GET /systems/<system_id>/stops/<stop_id>`
 	//
 	// Get a stop in a system by its ID.
 	GetStop(context.Context, *GetStopRequest) (*Stop, error)
-	//
 	// List routes
 	//
 	// `GET /systems/<system_id>/routes`
 	//
 	// List all routes in a system.
 	ListRoutes(context.Context, *ListRoutesRequest) (*ListRoutesReply, error)
-	//
 	// Get route
 	//
 	// `GET /systems/<system_id>/routes/<route_id>`
 	//
 	// Get a route in a system by its ID.
 	GetRoute(context.Context, *GetRouteRequest) (*Route, error)
-	//
 	// List trips
 	//
 	// `GET /systems/<system_id>/routes/<route_id>/trips`
 	//
 	// List all trips in a route.
 	ListTrips(context.Context, *ListTripsRequest) (*ListTripsReply, error)
-	//
 	// Get trip
 	//
 	// `GET /systems/<system_id>/routes/<route_id>/trips/<trip_id>`
 	//
 	// Get a trip by its ID.
 	GetTrip(context.Context, *GetTripRequest) (*Trip, error)
-	//
 	// List alerts
 	//
 	// `GET /systems/<system_id>/alerts`
 	//
 	// List all alerts in a system.
 	// By default this endpoint returns both active alerts
-	//   (alerts which have an active period containing the current time) and non-active alerts.
-	ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsReply, error)
 	//
+	//	(alerts which have an active period containing the current time) and non-active alerts.
+	ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsReply, error)
 	// Get alert
 	//
 	// `GET /systems/<system_id>/alerts/<alert_id>`
 	//
 	// Get an alert by its ID.
 	GetAlert(context.Context, *GetAlertRequest) (*Alert, error)
-	//
 	// List transfers
 	//
 	// `GET /systems/<system_id>/transfers`
 	//
 	// List all transfers in a system.
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersReply, error)
-	//
 	// List feeds
 	//
 	// `GET /systems/<system_id>/feeds`
 	//
 	// List all feeds for a system.
 	ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error)
-	//
 	// Get feed
 	//
 	// `GET /systems/<system_id>/feeds/<feed_id>`
 	//
 	// Get a feed in a system by its ID.
 	GetFeed(context.Context, *GetFeedRequest) (*Feed, error)
-	//
 	// List feed updates
 	//
 	// `GET /systems/<system_id>/feeds/<feed_id>/updates`
