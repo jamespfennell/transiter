@@ -1,15 +1,10 @@
-
-- Parse direction rules
-- Parse vehicle
-- implement the gtfs static parser and import logic
+- Resolve all TODOs in the API, because once we merge we have an API compatability guarantee.
+- Import and display vehicle
 - Async install (and delete?)
 - change serial to bigserial everywhere
-
 - move sqlc and buf config files into subdirectores
 - Right now the GPS lat/long are parsed to and from strings - would be good to avoid conversions
-- service -> server
-- required_for_install -> also have required_for_update?
-- Can we configure the /admin prefix non-statically? Yeah, we just have to add HTTP middleware
+- Remove the /admin prefix (or have an option to it)
 - Transit topological sort (Split into components -> transitive reduction -> tree-graph-tree decomposition -> 3 x sort)
 - Add new index on service map vertex
-- Support GPS sort
+- Support GPS search

@@ -34,7 +34,7 @@ Response payload for the entrypoint endpoint.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | transiter | [EntrypointReply.TransiterDetails](public_endpoints.md#EntrypointReply.TransiterDetails) | Version and other information about this Transiter binary.
-| systems | [System.Preview](public_resources.md#System.Preview) | List of systems that are installed in this Transiter instance.
+| systems | [System.Reference](public_resources.md#System.Reference) | List of systems that are installed in this Transiter instance.
 
 
 
@@ -394,7 +394,7 @@ Response payload for the list trips endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| trips | [Trip.Preview](public_resources.md#Trip.Preview) | List of trips. TODO: full Trip instead of preview
+| trips | [Trip](public_resources.md#Trip) | List of trips.
 
 
 
@@ -570,7 +570,7 @@ Response payload for the list feeds endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| feeds | [Feed.Preview](public_resources.md#Feed.Preview) | List of feeds. TODO: full Feed instead of preview
+| feeds | [Feed.Reference](public_resources.md#Feed.Reference) | List of feeds. TODO: full Feed instead of preview
 
 
 

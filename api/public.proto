@@ -19,7 +19,7 @@ System
 ```
 
 For each resource there is a proto message type, a list endpoint, and a get endpoints.
-For stops, the message is [Stop](#stoppreview), the list endpoint is [ListStops], and the get endpoint is [GetStop].
+For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
 
 The URLs in the HTTP API are determined by the hierarchy; thus:
 
@@ -33,22 +33,22 @@ and so on.
 Many resources refer to other resources across the hierarchy.
 For example, each route has an agency it is attached to.
 Each stop has a list of service maps, each of which contains a set of routes.
-In these situations the resource message contains a _preview_ of the other resource.
-The [Route](#route) message contains an agency preview, in the form of an [Agency.Preview](#agencypreview)
+In these situations the resource message contains a _reference_ to the other resource.
+The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
   message.
-These preview messages contain at least enough information to uniquely identify the resource.
+These reference messages contain at least enough information to uniquely identify the resource.
 However they also contain additional information that is considered generally useful;
-  thus, the [Stop.Preview](#stoppreview) message contains the stop's name.
+  thus, the [Stop.Reference](#stopreference) message contains the stop's name.
 What counts as "considered generally" is obviously very subjective and open to change.
 
 The following table summarizes all of the resources and their types.
 The right-most column describes the source_of the resource.
 The public API is a read-only API so all of the resources come from somewhere else.
 
-| Resource    | Preview type | List endpoint | Get endpoint | Source |
+| Resource    | Reference type | List endpoint | Get endpoint | Source |
 | ----------- | --------------- | ---------- | ------------------ | -------|
-| [Agency](#agency)   | [Agency.Preview](#agencypreview) | [GetAgency] | [ListAgency]  | GTFS static    
-| Alert       | System          | [Alert]    | [Alert.Preview]    | GTFS realtime 
+| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static    
+| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime 
 | Feed        | System          |            |                    | system config  
 | Feed update | Feed            |            |                    | Transiter update process
 | Route       | System          |            |                    | GTFS static
@@ -325,7 +325,7 @@ message EntrypointReply {
   TransiterDetails transiter = 1;
 
   // List of systems that are installed in this Transiter instance.
-  repeated System.Preview systems = 2;
+  repeated System.Reference systems = 2;
 }
 
 // Request payload for the list systems endpoint.
@@ -378,7 +378,7 @@ message ListStopsRequest {
   // This is a URL parameter in the HTTP API.
   string system_id = 1;
 
-  // If true, only return stops whose IDs are specified in the repeated `id` field. 
+  // If true, only return stops whose IDs are specified in the repeated `id` field.
   bool only_return_specified_ids = 8;
   // IDs to return if `only_return_specified_ids` is set to true. It is an error to
   // populate this field if `only_return_specified_ids` is false.
@@ -498,8 +498,7 @@ message ListTripsRequest {
 // Response payload for the list trips endpoint.
 message ListTripsReply {
   // List of trips.
-  // TODO: full Trip instead of preview
-  repeated Trip.Preview trips = 1;
+  repeated Trip trips = 1;
 }
 
 // Request payload for the list alerts endpoint.
@@ -561,7 +560,7 @@ message ListFeedsRequest {
 message ListFeedsReply {
   // List of feeds.
   // TODO: full Feed instead of preview
-  repeated Feed.Preview feeds = 1;
+  repeated Feed.Reference feeds = 1;
 }
 
 // Request payload for the list feed updates endpoint.
@@ -646,8 +645,8 @@ message System {
 
   optional string href = 9;
 
-  // Preview contains preview information about the system.
-  message Preview {
+  // Reference is the reference type for the system resource.
+  message Reference {
     string id = 2;
     optional string href = 1;
   }
@@ -663,20 +662,22 @@ message System {
 message Stop {
   // ID of the stop. This is the `stop_id` column in `stops.txt`.
   string id = 1;
+  // System corresponding to this stop.
+  System.Reference system = 2;
   // Code of the stop. This is the `stop_code` column in `stops.txt`.
-  optional string code = 2;
+  optional string code = 3;
   // Name of the stop. This is the `stop_name` column in `stops.txt`.
-  optional string name = 3;
+  optional string name = 4;
   // Description of the stop. This is the `stop_desc` column in `stops.txt`.
-  optional string description = 4;
+  optional string description = 5;
   // Zone ID of the stop. This is the `zone_id` column in `stops.txt`.
-  optional string zone_id = 5;
+  optional string zone_id = 6;
   // Latitude of the stop. This is the `stop_lat` column in `stops.txt`.
-  optional double latitude = 6;
+  optional double latitude = 7;
   // Longitude of the stop. This is the `stop_lon` column in `stops.txt`.
-  optional double longitude = 7;
+  optional double longitude = 8;
   // URL of a webpage about the stop. This is the `stop_url` column in `stops.txt`.
-  optional string url = 8;
+  optional string url = 9;
 
   // Enum describing the possible stop types
   enum Type {
@@ -687,18 +688,18 @@ message Stop {
     BOARDING_AREA = 4;
   }
   // Type of the stop. This is the `platform_type` column in `stops.txt`.
-  Type type = 9;
+  Type type = 10;
 
   // Parent stop. This is determined using the `parent_station` column in `stops.txt`.
-  optional Stop.Preview parent_stop = 10;
+  optional Stop.Reference parent_stop = 11;
   // Child stops. This are determined using the `parent_station` column in `stops.txt`.
-  repeated Stop.Preview child_stops = 11;
+  repeated Stop.Reference child_stops = 12;
   // Timezone of the stop. This is the `stop_timezone` column in `stops.txt`.
-  optional string timezone = 12;
+  optional string timezone = 13;
   // If there is wheelchair boarding for this stop. This is the `wheelchair_boarding` column in `stops.txt`.
-  optional bool wheelchair_boarding = 13;
+  optional bool wheelchair_boarding = 14;
   // Platform code of the stop. This is the `platform_code` column in `stops.txt`.
-  optional string platform_code = 14;
+  optional string platform_code = 15;
 
   // Message describing the service maps view in stops.
   //
@@ -710,32 +711,32 @@ message Stop {
     // List of routes which call at this stop.
     //
     // This list may be empty, in which case the stop has no service in the service map.
-    repeated Route.Preview routes = 2;
+    repeated Route.Reference routes = 2;
   }
   // List of service maps for this stop.
-  repeated ServiceMap service_maps = 15;
+  repeated ServiceMap service_maps = 16;
 
   // Active alerts for this stop.
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
-  repeated Alert.Preview alerts = 16;
+  repeated Alert.Reference alerts = 17;
 
   // List of realtime stop times for this stop.
   //
   // A stop time is an event at which a trip calls at a stop.
-  repeated StopTime stop_times = 17;
+  repeated StopTime stop_times = 18;
 
   // Transfers out of this stop.
   //
   // These are determined using the `from_stop_id` field in the GTFS static `transfers.txt` file.
-  repeated Transfer transfers = 18;
+  repeated Transfer transfers = 19;
 
   // Message describing a headsign rule.
-  message HeadsignRule { 
+  message HeadsignRule {
     // Stop the rule is for.
-    Stop.Preview stop = 1;
+    Stop.Reference stop = 1;
     // Priority of the rule (lower is higher priority).
     int32 priority = 2;
     // NYCT track.
@@ -744,14 +745,15 @@ message Stop {
     string headsign = 4;
   }
   // List of headsign rules for this stop.
-  repeated HeadsignRule headsign_rules = 19;
+  repeated HeadsignRule headsign_rules = 20;
 
-  // Preview contains preview information about the stop.
-  message Preview {
+  // Reference is the reference type for the stop resource.
+  message Reference {
     string id = 1;
+    System.Reference system = 2;
     // TODO: make optional
-    string name = 2;
-    optional string href = 3;
+    string name = 3;
+    optional string href = 4;
   }
 }
 
@@ -762,9 +764,9 @@ message Stop {
 // message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeupdate)
 message StopTime {
   // The stop.
-  Stop.Preview stop = 1;
+  Stop.Reference stop = 1;
   // The trip.
-  Trip.Preview trip = 2;
+  Trip.Reference trip = 2;
 
   // Message describing the arrival or departure time of a stop time.
   // This corresponds to the [GTFS realtime `StopTimeEvent`
@@ -795,30 +797,29 @@ message StopTime {
 
 message Trip {
   string id = 1;
-  // TODO(APIv2): remove route?
-  Route.Preview route = 2;
-  // TODO: remove?
-  Stop.Preview last_stop = 3;
+  // Route corresponding to this trip.
+  // This is the parent resource in Transiter's resource hierarchy.
+  Route.Reference route = 2;
+  optional string href = 3;
   optional int64 started_at = 4;
-  optional Vehicle.Preview vehicle = 6;
-  bool direction_id = 7;
+  optional Vehicle.Reference vehicle = 5;
+  bool direction_id = 6;
 
-  repeated StopTime stop_times = 9;
-  optional string href = 10;
+  repeated StopTime stop_times = 7;
 
-  // Preview contains preview information about the trip.
-  message Preview {
+  // Reference is the reference type for the trip resource.
+  message Reference {
     string id = 1;
-    Route.Preview route = 2;
-    Stop.Preview destination = 3;
-    optional Vehicle.Preview vehicle = 6;
+    Route.Reference route = 2;
+    Stop.Reference destination = 3;
+    optional Vehicle.Reference vehicle = 4;
     optional string href = 5;
   }
 }
 
 message Vehicle {
-  // Preview contains preview information about the vehice.
-  message Preview {
+  // Reference is the reference type for the vehicle resource.
+  message Reference {
     string id = 1;
   }
 }
@@ -833,39 +834,41 @@ message Vehicle {
 message Route {
   // ID of the route. This is the `route_id` column in `routes.txt`.
   string id = 1;
+  // System corresponding to this route.
+  System.Reference system = 2;
   // Short name of the route. This is the `route_short_name` column in `routes.txt`.
-  optional string short_name = 2;
+  optional string short_name = 3;
   // Long name of the route. This is the `route_long_name` column in `routes.txt`.
-  optional string long_name = 3;
+  optional string long_name = 4;
   // Color of the route. This is the `route_color` column in `routes.txt`.
-  string color = 4;
+  string color = 5;
   // Text color of the route. This is the `route_text_color` column in `routes.txt`.
-  string text_color = 5;
+  string text_color = 6;
   // Description of the route. This is the `route_desc` column in `routes.txt`.
-  optional string description = 6;
+  optional string description = 7;
   // URL of a web page about the route. This is the `route_url` column in `routes.txt`.
-  optional string url = 7;
+  optional string url = 8;
   // Sort order of the route. This is the `route_sort_order` column in `routes.txt`.
-  optional int32 sort_order = 13;
+  optional int32 sort_order = 9;
   // TODO: make these 3 fields enums
   // Continuous pickup policy. This is the `continuous_pickup` column in `routes.txt`.
-  string continuous_pickup = 14;
+  string continuous_pickup = 10;
   // Continuous dropoff policy. This is the `continuous_dropoff` column in `routes.txt`.
-  string continuous_drop_off = 15;
+  string continuous_drop_off = 11;
   // Type of the route. This is the `route_type` column in `routes.txt`.
-  string type = 8;
+  string type = 12;
 
   // Agency this route is associated to.
   //
   // This is determined using the `agency_id` column in `routes.txt`.
-  Agency.Preview agency = 10;
+  Agency.Reference agency = 13;
 
   // Active alerts for this route.
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
-  repeated Alert.Preview alerts = 12;
+  repeated Alert.Reference alerts = 14;
 
   // An estimate of the interval of time between consecutive realtime trips, in seconds.
   //
@@ -878,7 +881,7 @@ message Route {
   // If there are `N` trips, there will be `N-1` such arrival time diffs.
   // The estimated headway is the average of these diffs across
   /// all stops.
-  optional int32 estimated_headway = 9;
+  optional int32 estimated_headway = 15;
 
   // Message describing the service maps view in routes.
   //
@@ -890,21 +893,18 @@ message Route {
     // Ordered list of stop at which this route calls.
     //
     // This list may be empty, in which case the route has no service in the service map.
-    repeated Stop.Preview stops = 2;
+    repeated Stop.Reference stops = 2;
   }
   // List of service maps for this route.
-  repeated ServiceMap service_maps = 11;
+  repeated ServiceMap service_maps = 16;
 
-  // Preview contains preview information about the route.
-  message Preview {
+  // Reference is the reference type for the route resource.
+  message Reference {
     string id = 1;
+    System.Reference system = 2;
     // TODO(APIv2): remove? or add text_color?
-    string color = 2;
-    // Will be populated only if the system is not obvious
-    // TODO: maybe we should just include it always so that each preview/reference
-    // uniquely identifies a resource
-    optional System system = 8;
-    optional string href = 3;
+    string color = 3;
+    optional string href = 4;
   }
 }
 
@@ -920,25 +920,24 @@ message Route {
 message Feed {
   // ID of the feed, as specified in the system configuration file.
   string id = 1;
+  // System corresponding to this feed.
+  System.Reference system = 2;
   // Whether periodic update is enabled for this feed.
-  bool periodic_update_enabled = 2;
+  bool periodic_update_enabled = 3;
   // If periodic update is enabled, the period each update is triggered.
-  optional string periodic_update_period = 3;
+  optional string periodic_update_period = 4;
 
   // TODO: have a ChildResources message and use that instead
   message Updates {
     optional string href = 1;
   }
-  optional Updates updates = 4;
+  optional Updates updates = 5;
 
-  // Preview contains preview information about the feed.
-  message Preview {
+  // Reference is the reference type for the feed resource.
+  message Reference {
     string id = 1;
-    // TODO: remove
-    bool periodic_update_enabled = 2;
-    // TODO: remove
-    optional string periodic_update_period = 3;
-    optional string href = 4;
+    System.Reference system = 2;
+    optional string href = 3;
   }
 }
 
@@ -951,39 +950,39 @@ message Feed {
 message Agency {
   // ID of the agency. This is the `agency_id` column in `agency.txt`.
   string id = 1;
+  // System corresponding to this agency.
+  System.Reference system = 2;
   // Name of the agency. This is the `agency_name` column in `agency.txt`.
-  string name = 2;
+  string name = 3;
   // URL of the agency. This is the `agency_url` column in `agency.txt`.
-  string url = 3;
+  string url = 4;
   // Timezone of the agency. This is the `agency_timezone` column in `agency.txt`.
-  string timezone = 4;
+  string timezone = 5;
   // Language of the agency. This is the `agency_lang` column in `agency.txt`.
-  optional string language = 5;
+  optional string language = 6;
   // Phone number of the agency. This is the `agency_phone` column in `agency.txt`.
-  optional string phone = 6;
+  optional string phone = 7;
   // URL where tickets for the agency's services ban be bought.
   // This is the `agency_fare_url` column in `agency.txt`.
-  optional string fare_url = 7;
+  optional string fare_url = 8;
   // Email address of the agency. This is the `agency_email` column in `agency.txt`.
-  optional string email = 8;
+  optional string email = 9;
 
-  // TODO: this should be its own endpoint I think
-  repeated Route.Preview routes = 9;
+  repeated Route.Reference routes = 10;
 
   // List of active alerts for the agency.
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
-  repeated Alert.Preview alerts = 10;
+  repeated Alert.Reference alerts = 11;
 
-  optional string href = 11;
-
-  // Preview contains preview information about the agency.
-  message Preview {
+  // Reference is the reference type for the agency resource.
+  message Reference {
     string id = 1;
-    string name = 2;
-    optional string href = 3;
+    System.Reference system = 2;
+    string name = 3;
+    optional string href = 4;
   }
 }
 
@@ -999,6 +998,9 @@ message Alert {
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-feedentity)
   // corresponding to the alert.
   string id = 1;
+
+  // System corresponding to this alert.
+  System.Reference system = 2;
 
   // Cause is the same as the [cause enum in the GTFS realtime
   // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-cause),
@@ -1018,7 +1020,7 @@ message Alert {
     MEDICAL_EMERGENCY = 12;
   }
   // Cause of the alert. This corresponds to the `cause` field in the realtime alert message.
-  Cause cause = 2;
+  Cause cause = 3;
 
   // Effect is the same as the [effect enum in the GTFS realtime
   // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-effect),
@@ -1037,7 +1039,7 @@ message Alert {
     ACCESSIBILITY_ISSUE = 11;
   }
   // Effect of the alert. This corresponds to the `effect` field in the realtime alert message.
-  Effect effect = 3;
+  Effect effect = 4;
 
   // The active period message describes a period when an alert is active.
   // It corresponds the the [time range message in the GTFS realtime
@@ -1053,10 +1055,10 @@ message Alert {
   }
   // The current active period, if the alert is currently active.
   // If the alert is not active this is empty.
-  optional ActivePeriod current_active_period = 4;
+  optional ActivePeriod current_active_period = 5;
   // All active periods for this alert.
   // Transiter guarantees that these active periods have no overlap.
-  repeated ActivePeriod all_active_periods = 8;
+  repeated ActivePeriod all_active_periods = 6;
 
   // The text message describes an alert header/description/URL in a specified language.
   // It corresponds the the [translation message in the GTFS realtime
@@ -1069,27 +1071,27 @@ message Alert {
   }
   // Header of the alert, in zero or more languages.
   // This corresponds to the `header_text` field in the realtime alert message.
-  repeated Text header = 5;
+  repeated Text header = 7;
   // Description of the alert, in zero or more languages.
   // This corresponds to the `description_text` field in the realtime alert message.
-  repeated Text description = 6;
+  repeated Text description = 8;
   // URL for additional information about the alert, in zero or more languages.
   // This corresponds to the `url` field in the realtime alert message.
-  repeated Text url = 7;
+  repeated Text url = 9;
 
-  // TODO: rename Preview to Reference?
-  message Preview {
+  // Reference is the reference type for the agency resource.
+  message Reference {
     string id = 1;
-    Cause cause = 2;
-    Effect effect = 3;
-    // TODO(APIv2): add this field and create API endpoints
-    // optional string href = 3;
+    System.Reference system = 2;
+    Cause cause = 3;
+    Effect effect = 4;
+    optional string href = 5;
   }
 }
 
 message Transfer {
-  Stop.Preview from_stop = 1;
-  Stop.Preview to_stop = 2;
+  Stop.Reference from_stop = 1;
+  Stop.Reference to_stop = 2;
 
   enum Type {
     RECOMMENDED = 0;

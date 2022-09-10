@@ -12,17 +12,15 @@ func Entrypoint(ctx context.Context, r *Context, req *api.EntrypointRequest) (*a
 	if err != nil {
 		return nil, err
 	}
-	var systems []*api.System_Preview
+	var systems []*api.System_Reference
 	for _, id := range systemIDs {
-		systems = append(systems, &api.System_Preview{
-			Id:   id,
-			Href: r.Href.System(id),
-		})
+		systems = append(systems, r.Reference.System(id))
 	}
 	return &api.EntrypointReply{
 		Transiter: &api.EntrypointReply_TransiterDetails{
 			Version: "1.0.0alpha",
 			Href:    "https://github.com/jamespfennell/transiter",
+			// TODO: build information
 		},
 		Systems: systems,
 	}, nil

@@ -136,9 +136,7 @@ type InstallOrUpdateSystemRequest struct {
 	// be polled using GetSystem and inspecting the status field.
 	//
 	// If true, the install/update operation is perfomed synchronously in the
-	//
-	//	request and in a single database transaction.
-	//
+	// request and in a single database transaction.
 	// In this case, if the operation fails there will no database artifacts.
 	// The problem
 	// is that installs can take a long time and the request may be cancelled before it completes

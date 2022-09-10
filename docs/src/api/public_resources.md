@@ -22,7 +22,7 @@ System
 ```
 
 For each resource there is a proto message type, a list endpoint, and a get endpoints.
-For stops, the message is [Stop](#stoppreview), the list endpoint is [ListStops], and the get endpoint is [GetStop].
+For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
 
 The URLs in the HTTP API are determined by the hierarchy; thus:
 
@@ -36,22 +36,22 @@ and so on.
 Many resources refer to other resources across the hierarchy.
 For example, each route has an agency it is attached to.
 Each stop has a list of service maps, each of which contains a set of routes.
-In these situations the resource message contains a _preview_ of the other resource.
-The [Route](#route) message contains an agency preview, in the form of an [Agency.Preview](#agencypreview)
+In these situations the resource message contains a _reference_ to the other resource.
+The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
 message.
-These preview messages contain at least enough information to uniquely identify the resource.
+These reference messages contain at least enough information to uniquely identify the resource.
 However they also contain additional information that is considered generally useful;
-thus, the [Stop.Preview](#stoppreview) message contains the stop's name.
+thus, the [Stop.Reference](#stopreference) message contains the stop's name.
 What counts as "considered generally" is obviously very subjective and open to change.
 
 The following table summarizes all of the resources and their types.
 The right-most column describes the source_of the resource.
 The public API is a read-only API so all of the resources come from somewhere else.
 
-| Resource    | Preview type | List endpoint | Get endpoint | Source |
+| Resource    | Reference type | List endpoint | Get endpoint | Source |
 | ----------- | --------------- | ---------- | ------------------ | -------|
-| [Agency](#agency)   | [Agency.Preview](#agencypreview) | [GetAgency] | [ListAgency]  | GTFS static    
-| Alert       | System          | [Alert]    | [Alert.Preview]    | GTFS realtime 
+| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static    
+| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime 
 | Feed        | System          |            |                    | system config  
 | Feed update | Feed            |            |                    | Transiter update process
 | Route       | System          |            |                    | GTFS static
@@ -77,6 +77,7 @@ Transiter adds some additional related fields (alerts).
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the agency. This is the `agency_id` column in `agency.txt`.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this agency.
 | name | string | Name of the agency. This is the `agency_name` column in `agency.txt`.
 | url | string | URL of the agency. This is the `agency_url` column in `agency.txt`.
 | timezone | string | Timezone of the agency. This is the `agency_timezone` column in `agency.txt`.
@@ -84,24 +85,24 @@ Transiter adds some additional related fields (alerts).
 | phone | string | Phone number of the agency. This is the `agency_phone` column in `agency.txt`.
 | fare_url | string | URL where tickets for the agency's services ban be bought. This is the `agency_fare_url` column in `agency.txt`.
 | email | string | Email address of the agency. This is the `agency_email` column in `agency.txt`.
-| routes | [Route.Preview](public_resources.md#Route.Preview) | TODO: this should be its own endpoint I think
-| alerts | [Alert.Preview](public_resources.md#Alert.Preview) | List of active alerts for the agency.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
-| href | string | 
+| routes | [Route.Reference](public_resources.md#Route.Reference) | 
+| alerts | [Alert.Reference](public_resources.md#Alert.Reference) | List of active alerts for the agency.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
 
 
 
 
 
 
-#### Agency.Preview
+#### Agency.Reference
 
-Preview contains preview information about the agency.
+Reference is the reference type for the agency resource.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| system | [System.Reference](public_resources.md#System.Reference) | 
 | name | string | 
 | href | string | 
 
@@ -128,6 +129,7 @@ TODO; alphabetize the messages
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the alert. This corresponds to the [ID field in the feed entity message](https://developers.google.com/transit/gtfs-realtime/reference#message-feedentity) corresponding to the alert.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this alert.
 | cause | [Alert.Cause](public_resources.md#Alert.Cause) | Cause of the alert. This corresponds to the `cause` field in the realtime alert message.
 | effect | [Alert.Effect](public_resources.md#Alert.Effect) | Effect of the alert. This corresponds to the `effect` field in the realtime alert message.
 | current_active_period | [Alert.ActivePeriod](public_resources.md#Alert.ActivePeriod) | The current active period, if the alert is currently active. If the alert is not active this is empty.
@@ -210,17 +212,19 @@ except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
 
 
 
-#### Alert.Preview
+#### Alert.Reference
 
-TODO: rename Preview to Reference?
+Reference is the reference type for the agency resource.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| system | [System.Reference](public_resources.md#System.Reference) | 
 | cause | [Alert.Cause](public_resources.md#Alert.Cause) | 
-| effect | [Alert.Effect](public_resources.md#Alert.Effect) | TODO(APIv2): add this field and create API endpoints optional string href = 3;
+| effect | [Alert.Effect](public_resources.md#Alert.Effect) | 
+| href | string | 
 
 
 
@@ -265,6 +269,7 @@ More detailed information on a feed -- its full configuration, and the
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the feed, as specified in the system configuration file.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this feed.
 | periodic_update_enabled | bool | Whether periodic update is enabled for this feed.
 | periodic_update_period | string | If periodic update is enabled, the period each update is triggered.
 | updates | [Feed.Updates](public_resources.md#Feed.Updates) | 
@@ -274,17 +279,16 @@ More detailed information on a feed -- its full configuration, and the
 
 
 
-#### Feed.Preview
+#### Feed.Reference
 
-Preview contains preview information about the feed.
+Reference is the reference type for the feed resource.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
-| periodic_update_enabled | bool | TODO: remove
-| periodic_update_period | string | TODO: remove
+| system | [System.Reference](public_resources.md#System.Reference) | 
 | href | string | 
 
 
@@ -356,6 +360,7 @@ Transiter adds some additional related fields (agency, alerts)
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the route. This is the `route_id` column in `routes.txt`.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this route.
 | short_name | string | Short name of the route. This is the `route_short_name` column in `routes.txt`.
 | long_name | string | Long name of the route. This is the `route_long_name` column in `routes.txt`.
 | color | string | Color of the route. This is the `route_color` column in `routes.txt`.
@@ -366,8 +371,8 @@ Transiter adds some additional related fields (agency, alerts)
 | continuous_pickup | string | TODO: make these 3 fields enums Continuous pickup policy. This is the `continuous_pickup` column in `routes.txt`.
 | continuous_drop_off | string | Continuous dropoff policy. This is the `continuous_dropoff` column in `routes.txt`.
 | type | string | Type of the route. This is the `route_type` column in `routes.txt`.
-| agency | [Agency.Preview](public_resources.md#Agency.Preview) | Agency this route is associated to.<br /><br />This is determined using the `agency_id` column in `routes.txt`.
-| alerts | [Alert.Preview](public_resources.md#Alert.Preview) | Active alerts for this route.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+| agency | [Agency.Reference](public_resources.md#Agency.Reference) | Agency this route is associated to.<br /><br />This is determined using the `agency_id` column in `routes.txt`.
+| alerts | [Alert.Reference](public_resources.md#Alert.Reference) | Active alerts for this route.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
 | estimated_headway | int32 | An estimate of the interval of time between consecutive realtime trips, in seconds.<br /><br />If there is insufficient data to compute an estimate, the field will be empty.<br /><br />The estimate is computed as follows. For each stop that has realtime trips for the route, the list of arrival times for those trips is examined. The difference between consecutive arrival times is calculated. If there are `N` trips, there will be `N-1` such arrival time diffs. The estimated headway is the average of these diffs across / all stops.
 | service_maps | [Route.ServiceMap](public_resources.md#Route.ServiceMap) | List of service maps for this route.
 
@@ -376,17 +381,17 @@ Transiter adds some additional related fields (agency, alerts)
 
 
 
-#### Route.Preview
+#### Route.Reference
 
-Preview contains preview information about the route.
+Reference is the reference type for the route resource.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| system | [System.Reference](public_resources.md#System.Reference) | 
 | color | string | TODO(APIv2): remove? or add text_color?
-| system | [System](public_resources.md#System) | Will be populated only if the system is not obvious TODO: maybe we should just include it always so that each preview/reference uniquely identifies a resource
 | href | string | 
 
 
@@ -406,7 +411,7 @@ message and the associated field.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | config_id | string | Config ID of the service map, as specified in the system configuration file.
-| stops | [Stop.Preview](public_resources.md#Stop.Preview) | Ordered list of stop at which this route calls.<br /><br />This list may be empty, in which case the route has no service in the service map.
+| stops | [Stop.Reference](public_resources.md#Stop.Reference) | Ordered list of stop at which this route calls.<br /><br />This list may be empty, in which case the route has no service in the service map.
 
 
 
@@ -431,6 +436,7 @@ Transiter adds some additional related fields (transfers, alerts, stop times)
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the stop. This is the `stop_id` column in `stops.txt`.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this stop.
 | code | string | Code of the stop. This is the `stop_code` column in `stops.txt`.
 | name | string | Name of the stop. This is the `stop_name` column in `stops.txt`.
 | description | string | Description of the stop. This is the `stop_desc` column in `stops.txt`.
@@ -439,13 +445,13 @@ Transiter adds some additional related fields (transfers, alerts, stop times)
 | longitude | double | Longitude of the stop. This is the `stop_lon` column in `stops.txt`.
 | url | string | URL of a webpage about the stop. This is the `stop_url` column in `stops.txt`.
 | type | [Stop.Type](public_resources.md#Stop.Type) | Type of the stop. This is the `platform_type` column in `stops.txt`.
-| parent_stop | [Stop.Preview](public_resources.md#Stop.Preview) | Parent stop. This is determined using the `parent_station` column in `stops.txt`.
-| child_stops | [Stop.Preview](public_resources.md#Stop.Preview) | Child stops. This are determined using the `parent_station` column in `stops.txt`.
+| parent_stop | [Stop.Reference](public_resources.md#Stop.Reference) | Parent stop. This is determined using the `parent_station` column in `stops.txt`.
+| child_stops | [Stop.Reference](public_resources.md#Stop.Reference) | Child stops. This are determined using the `parent_station` column in `stops.txt`.
 | timezone | string | Timezone of the stop. This is the `stop_timezone` column in `stops.txt`.
 | wheelchair_boarding | bool | If there is wheelchair boarding for this stop. This is the `wheelchair_boarding` column in `stops.txt`.
 | platform_code | string | Platform code of the stop. This is the `platform_code` column in `stops.txt`.
 | service_maps | [Stop.ServiceMap](public_resources.md#Stop.ServiceMap) | List of service maps for this stop.
-| alerts | [Alert.Preview](public_resources.md#Alert.Preview) | Active alerts for this stop.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+| alerts | [Alert.Reference](public_resources.md#Alert.Reference) | Active alerts for this stop.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
 | stop_times | [StopTime](public_resources.md#StopTime) | List of realtime stop times for this stop.<br /><br />A stop time is an event at which a trip calls at a stop.
 | transfers | [Transfer](public_resources.md#Transfer) | Transfers out of this stop.<br /><br />These are determined using the `from_stop_id` field in the GTFS static `transfers.txt` file.
 | headsign_rules | [Stop.HeadsignRule](public_resources.md#Stop.HeadsignRule) | List of headsign rules for this stop.
@@ -463,7 +469,7 @@ Message describing a headsign rule.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| stop | [Stop.Preview](public_resources.md#Stop.Preview) | Stop the rule is for.
+| stop | [Stop.Reference](public_resources.md#Stop.Reference) | Stop the rule is for.
 | priority | int32 | Priority of the rule (lower is higher priority).
 | track | string | NYCT track.
 | headsign | string | Headsign.
@@ -473,15 +479,16 @@ Message describing a headsign rule.
 
 
 
-#### Stop.Preview
+#### Stop.Reference
 
-Preview contains preview information about the stop.
+Reference is the reference type for the stop resource.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| system | [System.Reference](public_resources.md#System.Reference) | 
 | name | string | TODO: make optional
 | href | string | 
 
@@ -502,7 +509,7 @@ message and the associated field.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | config_id | string | Config ID of the service map, as specified in the system configuration file.
-| routes | [Route.Preview](public_resources.md#Route.Preview) | List of routes which call at this stop.<br /><br />This list may be empty, in which case the stop has no service in the service map.
+| routes | [Route.Reference](public_resources.md#Route.Reference) | List of routes which call at this stop.<br /><br />This list may be empty, in which case the stop has no service in the service map.
 
 
 
@@ -541,8 +548,8 @@ message](https://developers.google.com/transit/gtfs-realtime/reference#message-s
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| stop | [Stop.Preview](public_resources.md#Stop.Preview) | The stop.
-| trip | [Trip.Preview](public_resources.md#Trip.Preview) | The trip.
+| stop | [Stop.Reference](public_resources.md#Stop.Reference) | The stop.
+| trip | [Trip.Reference](public_resources.md#Trip.Reference) | The trip.
 | arrival | [StopTime.EstimatedTime](public_resources.md#StopTime.EstimatedTime) | Arrival time.
 | departure | [StopTime.EstimatedTime](public_resources.md#StopTime.EstimatedTime) | Departure time.
 | future | bool | If this stop time is in the future. This field is *not* based on the arrival or departure time. Instead, a stop time is considered in the future if it appeared in the most recent GTFS realtime feed for its trip. When this stop time disappears from the trip, Transiter marks it as past and freezes its data.
@@ -616,9 +623,9 @@ TODO: rename `ChildResources`, move out of here, and reuse
 
 
 
-#### System.Preview
+#### System.Reference
 
-Preview contains preview information about the system.
+Reference is the reference type for the system resource.
 	
 
 
@@ -662,8 +669,8 @@ Enum describing the possible statuses of a system.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| from_stop | [Stop.Preview](public_resources.md#Stop.Preview) | 
-| to_stop | [Stop.Preview](public_resources.md#Stop.Preview) | 
+| from_stop | [Stop.Reference](public_resources.md#Stop.Reference) | 
+| to_stop | [Stop.Reference](public_resources.md#Stop.Reference) | 
 | type | [Transfer.Type](public_resources.md#Transfer.Type) | 
 | min_transfer_time | int32 | 
 | distance | int32 | 
@@ -701,31 +708,30 @@ Enum describing the possible statuses of a system.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
-| route | [Route.Preview](public_resources.md#Route.Preview) | TODO(APIv2): remove route?
-| last_stop | [Stop.Preview](public_resources.md#Stop.Preview) | TODO: remove?
+| route | [Route.Reference](public_resources.md#Route.Reference) | Route corresponding to this trip. This is the parent resource in Transiter's resource hierarchy.
+| href | string | 
 | started_at | int64 | 
-| vehicle | [Vehicle.Preview](public_resources.md#Vehicle.Preview) | 
+| vehicle | [Vehicle.Reference](public_resources.md#Vehicle.Reference) | 
 | direction_id | bool | 
 | stop_times | [StopTime](public_resources.md#StopTime) | 
-| href | string | 
 
 
 
 
 
 
-#### Trip.Preview
+#### Trip.Reference
 
-Preview contains preview information about the trip.
+Reference is the reference type for the trip resource.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
-| route | [Route.Preview](public_resources.md#Route.Preview) | 
-| destination | [Stop.Preview](public_resources.md#Stop.Preview) | 
-| vehicle | [Vehicle.Preview](public_resources.md#Vehicle.Preview) | 
+| route | [Route.Reference](public_resources.md#Route.Reference) | 
+| destination | [Stop.Reference](public_resources.md#Stop.Reference) | 
+| vehicle | [Vehicle.Reference](public_resources.md#Vehicle.Reference) | 
 | href | string | 
 
 
@@ -748,9 +754,9 @@ No fields.
 
 
 
-#### Vehicle.Preview
+#### Vehicle.Reference
 
-Preview contains preview information about the vehice.
+Reference is the reference type for the vehicle resource.
 	
 
 

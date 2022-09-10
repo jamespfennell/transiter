@@ -24,12 +24,7 @@ func ListFeeds(ctx context.Context, r *Context, req *api.ListFeedsRequest) (*api
 	result := &api.ListFeedsReply{}
 	for _, feed := range feeds {
 		feed := feed
-		apiFeed := &api.Feed_Preview{
-			Id:                    feed.ID,
-			PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
-			PeriodicUpdatePeriod:  periodicUpdatePeriod(&feed),
-			Href:                  r.Href.Feed(system.ID, feed.ID),
-		}
+		apiFeed := r.Reference.Feed(feed.ID, req.SystemId)
 		result.Feeds = append(result.Feeds, apiFeed)
 	}
 	return result, nil
@@ -48,7 +43,7 @@ func GetFeed(ctx context.Context, r *Context, req *api.GetFeedRequest) (*api.Fee
 		PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
 		PeriodicUpdatePeriod:  periodicUpdatePeriod(&feed),
 		Updates: &api.Feed_Updates{
-			Href: r.Href.FeedUpdates(req.SystemId, req.FeedId),
+			Href: r.Reference.FeedUpdatesHref(req.SystemId, req.FeedId),
 		},
 	}
 	return reply, nil

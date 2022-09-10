@@ -44,7 +44,7 @@ type Querier interface {
 	GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (Stop, error)
 	// TODO: move all queries from this file in the $x_queries.sql files.
 	GetSystem(ctx context.Context, id string) (System, error)
-	GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error)
+	GetTrip(ctx context.Context, arg GetTripParams) (Trip, error)
 	GetTripByPk(ctx context.Context, pk int64) (Trip, error)
 	InsertAgency(ctx context.Context, arg InsertAgencyParams) (int64, error)
 	InsertAlert(ctx context.Context, arg InsertAlertParams) (int64, error)
@@ -97,8 +97,8 @@ type Querier interface {
 	ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]Transfer, error)
 	ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) ([]ListTransfersInSystemRow, error)
 	ListTripStopTimesForUpdate(ctx context.Context, tripPks []int64) ([]ListTripStopTimesForUpdateRow, error)
+	ListTrips(ctx context.Context, routePk int64) ([]Trip, error)
 	ListTripsForUpdate(ctx context.Context, routePks []int64) ([]ListTripsForUpdateRow, error)
-	ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTripsInRouteRow, error)
 	ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUpdate, error)
 	MapAgencyPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdInSystemRow, error)
 	MapRoutePkToIdInSystem(ctx context.Context, systemPk int64) ([]MapRoutePkToIdInSystemRow, error)

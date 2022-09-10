@@ -9,46 +9,44 @@ ONE_DAY_IN_SECONDS = 60 * 60 * 24
 TIME_1 = datetime.datetime.utcfromtimestamp(time.time() - ONE_DAY_IN_SECONDS)
 TIME_2 = datetime.datetime.utcfromtimestamp(time.time() + ONE_DAY_IN_SECONDS)
 
-ALERT_SMALL_JSON = [{"id": "alert_id", "cause": "STRIKE", "effect": "MODIFIED_SERVICE"}]
+ALERT_SMALL_JSON = {"id": "alert_id", "cause": "STRIKE", "effect": "MODIFIED_SERVICE"}
 
-ALERT_LARGE_JSON = [
-    dict(
-        **ALERT_SMALL_JSON[0],
-        **{
-            "currentActivePeriod": {
-                "startsAt": str(int(TIME_1.timestamp())),
-                "endsAt": str(int(TIME_2.timestamp())),
-            },
-            "allActivePeriods": [{
-                "startsAt": str(int(TIME_1.timestamp())),
-                "endsAt": str(int(TIME_2.timestamp())),
-            }],
-            "header": [
-                {
-                    "text": "Advertencia",
-                    "language": "es",
-                }
-            ], 
-            "description": [
-                {
-                    "text": "Description",
-                    "language": "en",
-                }
-            ],
-            "url": [
-                {
-                    "text": "URL",
-                    "language": "en",
-                }
-            ],
+ALERT_LARGE_JSON = {
+    "id": "alert_id",
+    "cause": "STRIKE",
+    "effect": "MODIFIED_SERVICE",
+    "currentActivePeriod": {
+        "startsAt": str(int(TIME_1.timestamp())),
+        "endsAt": str(int(TIME_2.timestamp())),
+    },
+    "allActivePeriods": [
+        {
+            "startsAt": str(int(TIME_1.timestamp())),
+            "endsAt": str(int(TIME_2.timestamp())),
         }
-    )
-]
+    ],
+    "header": [
+        {
+            "text": "Advertencia",
+            "language": "es",
+        }
+    ],
+    "description": [
+        {
+            "text": "Description",
+            "language": "en",
+        }
+    ],
+    "url": [
+        {
+            "text": "URL",
+            "language": "en",
+        }
+    ],
+}
 
 
-def setup_test(
-    system_id, install_system_1, transiter_host, source_server
-):
+def setup_test(system_id, install_system_1, transiter_host, source_server):
 
     __, realtime_feed_url = install_system_1(system_id)
 
@@ -66,7 +64,8 @@ def setup_test(
                 alert=gtfs.Alert(
                     active_period=[
                         gtfs.TimeRange(
-                            start=int(TIME_1.timestamp()), end=int(TIME_2.timestamp()),
+                            start=int(TIME_1.timestamp()),
+                            end=int(TIME_2.timestamp()),
                         )
                     ],
                     header_text=gtfs.TranslatedString(
@@ -85,16 +84,16 @@ def setup_test(
                     ),
                     url=gtfs.TranslatedString(
                         translation=[
-                            gtfs.TranslatedString.Translation(
-                                text="URL", language="en"
-                            )
+                            gtfs.TranslatedString.Translation(text="URL", language="en")
                         ],
                     ),
                     informed_entity=[
                         gtfs.EntitySelector(agency_id="AgencyId"),
                         gtfs.EntitySelector(route_id="A"),
                         gtfs.EntitySelector(stop_id="1A"),
-                        gtfs.EntitySelector(trip=gtfs.TripDescriptor(trip_id="trip_id")),
+                        gtfs.EntitySelector(
+                            trip=gtfs.TripDescriptor(trip_id="trip_id")
+                        ),
                     ],
                     cause=gtfs.Alert.Cause.STRIKE,
                     effect=gtfs.Alert.Effect.MODIFIED_SERVICE,
@@ -110,11 +109,13 @@ def setup_test(
         )
     ).raise_for_status()
 
+
 @pytest.mark.parametrize(
     "path,entity_id",
     [
         ["routes", "A"],
         ["stops", "1A"],
+        ["agencies", "AgencyId"],
         # TODO: renable
         # [
         #     "routes/A/trips",
@@ -122,10 +123,6 @@ def setup_test(
         #     ,
         #     ALERT_SMALL_JSON,
         # ],
-        [
-            "agencies",
-            "AgencyId",
-        ],
     ],
 )
 def test_alerts_list_informed_entities(
@@ -143,13 +140,15 @@ def test_alerts_list_informed_entities(
         source_server=source_server,
     )
 
-    url = "{}/systems/{}/{}".format(transiter_host, system_id, path)
+    url = "{}/systems/{}/{}/{}".format(transiter_host, system_id, path, entity_id)
 
     actual_data = requests.get(url).json()
-    actual_data = actual_data[path]
-    actual_data = {response["id"]: response for response in actual_data}[entity_id]
+    print(actual_data)
+    actual_data = actual_data["alerts"][0]
+    del actual_data["system"]
+    # actual_data = {response["id"]: response for response in actual_data}[entity_id]
 
-    assert ALERT_SMALL_JSON == actual_data["alerts"]
+    assert ALERT_SMALL_JSON == actual_data
 
 
 @pytest.mark.parametrize(
@@ -185,30 +184,17 @@ def test_alerts_get_informed_entity(
     actual_data = requests.get(url).json()
 
     expected_json = ALERT_SMALL_JSON
-    assert expected_json == actual_data["alerts"]
+    actual_json = actual_data["alerts"][0]
+    del actual_json["system"]
+    assert expected_json == actual_json
 
 
-@pytest.mark.parametrize(
-    "path,entity_id",
-    [
-        [
-            "alerts",
-            "alert_id",
-        ],
-        [
-            "alerts/alert_id",
-            None,
-        ],
-    ],
-)
-def test_alerts_get_or_list_alert(
+def test_alerts_list_alerts(
     install_system_1,
     transiter_host,
     source_server,
-    path,
-    entity_id,
 ):
-    system_id = "test_alerts__get_or_list_alert_" + str(hash(path))
+    system_id = "test_alerts__list_alerts_"
     setup_test(
         system_id=system_id,
         install_system_1=install_system_1,
@@ -216,13 +202,32 @@ def test_alerts_get_or_list_alert(
         source_server=source_server,
     )
 
-    url = "{}/systems/{}/{}".format(transiter_host, system_id, path)
+    url = "{}/systems/{}/alerts".format(transiter_host, system_id)
+
+    actual_data = requests.get(url).json()["alerts"][0]
+    del actual_data["system"]
+
+    expected_json = ALERT_LARGE_JSON
+    assert expected_json == actual_data
+
+
+def test_alerts_get(
+    install_system_1,
+    transiter_host,
+    source_server,
+):
+    system_id = "test_alerts__get_or_list_alert_"
+    setup_test(
+        system_id=system_id,
+        install_system_1=install_system_1,
+        transiter_host=transiter_host,
+        source_server=source_server,
+    )
+
+    url = "{}/systems/{}/alerts/alert_id".format(transiter_host, system_id)
 
     actual_data = requests.get(url).json()
+    del actual_data["system"]
 
-    if entity_id is not None:
-        actual_data = actual_data[path]
-        actual_data = {response["id"]: response for response in actual_data}[entity_id]
-
-    expected_json = ALERT_LARGE_JSON[0]
+    expected_json = ALERT_LARGE_JSON
     assert expected_json == actual_data

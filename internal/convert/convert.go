@@ -134,14 +134,6 @@ func AlertEffect(effect string) api.Alert_Effect {
 	return api.Alert_Effect(api.Alert_Effect_value[effect])
 }
 
-func AlertPreview(id, cause, effect string) *api.Alert_Preview {
-	return &api.Alert_Preview{
-		Id:     id,
-		Cause:  AlertCause(cause),
-		Effect: AlertEffect(effect),
-	}
-}
-
 func TransferType(t string) api.Transfer_Type {
 	return api.Transfer_Type(api.Transfer_Type_value[t])
 }

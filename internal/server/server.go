@@ -19,7 +19,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/monitoring"
 	"github.com/jamespfennell/transiter/internal/public"
 	"github.com/jamespfennell/transiter/internal/public/errors"
-	"github.com/jamespfennell/transiter/internal/public/href"
+	"github.com/jamespfennell/transiter/internal/public/reference"
 	"github.com/jamespfennell/transiter/internal/scheduler"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -172,7 +172,7 @@ func newServeMux() *runtime.ServeMux {
 		runtime.WithIncomingHeaderMatcher(
 			func(key string) (string, bool) {
 				switch key {
-				case href.XTransiterHost:
+				case reference.XTransiterHost:
 					return key, true
 				default:
 					return runtime.DefaultHeaderMatcher(key)

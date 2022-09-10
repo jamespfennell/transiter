@@ -69,9 +69,9 @@ func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []
 			return nil, err
 		}
 	}
-	alerts := map[int64][]*api.Alert_Preview{}
+	alerts := map[int64][]*api.Alert_Reference{}
 	if !req.GetSkipAlerts() {
-		alerts, err = buildAlertPreviews(ctx, r.Querier, routePks)
+		alerts, err = buildAlertPreviews(ctx, r, req.GetSystemId(), routePks)
 		if err != nil {
 			return nil, err
 		}
@@ -123,8 +123,8 @@ func buildEstimateHeadwaysForRoutes(ctx context.Context, querier db.Querier, rou
 	return m, nil
 }
 
-func buildAlertPreviews(ctx context.Context, querier db.Querier, routePks []int64) (map[int64][]*api.Alert_Preview, error) {
-	alerts, err := querier.ListActiveAlertsForRoutes(
+func buildAlertPreviews(ctx context.Context, r *Context, systemID string, routePks []int64) (map[int64][]*api.Alert_Reference, error) {
+	alerts, err := r.Querier.ListActiveAlertsForRoutes(
 		ctx, db.ListActiveAlertsForRoutesParams{
 			RoutePks:    routePks,
 			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
@@ -132,11 +132,11 @@ func buildAlertPreviews(ctx context.Context, querier db.Querier, routePks []int6
 	if err != nil {
 		return nil, err
 	}
-	m := map[int64][]*api.Alert_Preview{}
+	m := map[int64][]*api.Alert_Reference{}
 	for _, alert := range alerts {
 		m[alert.RoutePk] = append(
 			m[alert.RoutePk],
-			convert.AlertPreview(alert.ID, alert.Cause, alert.Effect),
+			r.Reference.Alert(alert.ID, systemID, alert.Cause, alert.Effect),
 		)
 	}
 	return m, nil
@@ -162,11 +162,7 @@ func buildServiceMaps(ctx context.Context, r *Context, systemID string, routePks
 			continue
 		}
 		serviceMap := routePkToConfigIDToMap[row.RoutePk][row.ConfigID]
-		serviceMap.Stops = append(serviceMap.Stops, &api.Stop_Preview{
-			Id:   row.StopID.String,
-			Name: row.StopName.String,
-			Href: r.Href.Stop(systemID, row.StopID.String),
-		})
+		serviceMap.Stops = append(serviceMap.Stops, r.Reference.Stop(row.StopID.String, systemID, row.StopName.String))
 	}
 	m := map[int64][]*api.Route_ServiceMap{}
 	for routePk, configIDToMap := range routePkToConfigIDToMap {
@@ -177,7 +173,7 @@ func buildServiceMaps(ctx context.Context, r *Context, systemID string, routePks
 	return m, nil
 }
 
-func buildAgencies(ctx context.Context, r *Context, systemID string, routes []db.Route) (map[int64]*api.Agency_Preview, error) {
+func buildAgencies(ctx context.Context, r *Context, systemID string, routes []db.Route) (map[int64]*api.Agency_Reference, error) {
 	var agencyPks []int64
 	for i := range routes {
 		agencyPks = append(agencyPks, routes[i].AgencyPk)
@@ -186,13 +182,9 @@ func buildAgencies(ctx context.Context, r *Context, systemID string, routes []db
 	if err != nil {
 		return nil, err
 	}
-	m := map[int64]*api.Agency_Preview{}
+	m := map[int64]*api.Agency_Reference{}
 	for _, row := range rows {
-		m[row.Pk] = &api.Agency_Preview{
-			Id:   row.ID,
-			Name: row.Name,
-			Href: r.Href.Agency(systemID, row.ID),
-		}
+		m[row.Pk] = r.Reference.Agency(row.ID, systemID, row.Name)
 	}
 	return m, err
 }

@@ -7,12 +7,12 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
-	"github.com/jamespfennell/transiter/internal/public/href"
+	"github.com/jamespfennell/transiter/internal/public/reference"
 )
 
 type Context struct {
-	Querier db.Querier
-	Href    href.Generator
+	Querier   db.Querier
+	Reference reference.Generator
 }
 
 func getSystem(ctx context.Context, querier db.Querier, id string) (db.System, error) {

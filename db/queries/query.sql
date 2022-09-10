@@ -196,20 +196,15 @@ WHERE feed_pk = sqlc.arg(feed_pk)
 ORDER BY pk DESC
 LIMIT 100;
 
--- name: ListTripsInRoute :many
-SELECT trip.*, vehicle.id vehicle_id FROM trip 
-    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+-- name: ListTrips :many
+SELECT * FROM trip 
 WHERE trip.route_pk = sqlc.arg(route_pk)
 ORDER BY trip.id;
 
 -- name: GetTrip :one
-SELECT trip.*, vehicle.id AS vehicle_id, route.id route_id, route.color route_color FROM trip
-    INNER JOIN route ON route.pk = trip.route_pk
-    INNER JOIN system ON system.pk = route.system_pk
-    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+SELECT * FROM trip
 WHERE trip.id = sqlc.arg(trip_id)
-    AND route.id = sqlc.arg(route_id)
-    AND system.id = sqlc.arg(system_id);
+    AND trip.route_pk = sqlc.arg(route_pk);
 
 -- name: GetTripByPk :one
 SELECT * FROM trip WHERE pk = sqlc.arg(pk);
@@ -220,4 +215,3 @@ FROM trip_stop_time
     INNER JOIN stop ON trip_stop_time.stop_pk = stop.pk
 WHERE trip_stop_time.trip_pk = sqlc.arg(trip_pk)
 ORDER BY trip_stop_time.stop_sequence ASC;
-

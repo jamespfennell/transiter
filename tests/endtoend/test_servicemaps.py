@@ -38,7 +38,7 @@ def test_service_maps(system_id, install_system_1, transiter_host, source_server
         ["1A", "1B", "1C", "1D", "1E", "1F"],
         ["trip_1", "trip_2"],
     )
-    
+
     # (2) Old trips + new trips give an invalid map, but the update still happens
     # because old trips shouldn't count.
     trip_3_stops = {
@@ -144,7 +144,10 @@ def _perform_service_map_test(
 ):
     source_server.put(realtime_feed_url, feed.build_feed())
     requests.post(
-        transiter_host + "/admin/systems/" + system_id + "/feeds/GtfsRealtimeFeed?sync=true"
+        transiter_host
+        + "/admin/systems/"
+        + system_id
+        + "/feeds/GtfsRealtimeFeed?sync=true"
     ).json()
 
     route_data = requests.get(

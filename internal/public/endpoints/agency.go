@@ -54,12 +54,11 @@ func GetAgency(ctx context.Context, r *Context, req *api.GetAgencyRequest) (*api
 func buildApiAgencies(ctx context.Context, r *Context, systemID string, dbAgencies []db.Agency) ([]*api.Agency, error) {
 	var apiAgencies []*api.Agency
 	for _, dbAgency := range dbAgencies {
-		// TODO: should probably batch these?
 		routes, err := r.Querier.ListRoutesInAgency(ctx, dbAgency.Pk)
 		if err != nil {
 			return nil, err
 		}
-		alerts, err := getAlertsForAgencies(ctx, r.Querier, []int64{dbAgency.Pk})
+		alerts, err := getAlertsForAgencies(ctx, r, systemID, []int64{dbAgency.Pk})
 		if err != nil {
 			return nil, err
 		}
@@ -75,28 +74,24 @@ func buildApiAgencies(ctx context.Context, r *Context, systemID string, dbAgenci
 			Alerts:   alerts,
 		}
 		for _, route := range routes {
-			apiAgency.Routes = append(apiAgency.Routes, &api.Route_Preview{
-				Id:    route.ID,
-				Color: route.Color,
-				Href:  r.Href.Route(systemID, route.ID),
-			})
+			apiAgency.Routes = append(apiAgency.Routes, r.Reference.Route(route.ID, systemID, route.Color))
 		}
 		apiAgencies = append(apiAgencies, apiAgency)
 	}
 	return apiAgencies, nil
 }
 
-func getAlertsForAgencies(ctx context.Context, querier db.Querier, agencyPks []int64) ([]*api.Alert_Preview, error) {
-	dbAlerts, err := querier.ListActiveAlertsForAgencies(ctx, db.ListActiveAlertsForAgenciesParams{
+func getAlertsForAgencies(ctx context.Context, r *Context, systemID string, agencyPks []int64) ([]*api.Alert_Reference, error) {
+	dbAlerts, err := r.Querier.ListActiveAlertsForAgencies(ctx, db.ListActiveAlertsForAgenciesParams{
 		AgencyPks:   agencyPks,
 		PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
 	})
 	if err != nil {
 		return nil, err
 	}
-	var alerts []*api.Alert_Preview
+	var alerts []*api.Alert_Reference
 	for _, alert := range dbAlerts {
-		alerts = append(alerts, convert.AlertPreview(alert.ID, alert.Cause, alert.Effect))
+		alerts = append(alerts, r.Reference.Alert(alert.ID, systemID, alert.Cause, alert.Effect))
 	}
 	return alerts, nil
 }

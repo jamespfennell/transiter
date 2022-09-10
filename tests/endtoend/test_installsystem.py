@@ -137,7 +137,7 @@ def test_install_system__routes(system_id, install_system_1, transiter_host, syn
     actual_route_ids = set([route["id"] for route in routes_response["routes"]])
     assert ROUTE_IDS == actual_route_ids
 
-    route_response =   requests.get(
+    route_response = requests.get(
         transiter_host + "/systems/" + system_id + "/routes/RouteID"
     ).json()
     assert "RouteID" == route_response["id"]
@@ -182,9 +182,7 @@ def test_install_system__success__service_map_stop(
         for service_map in stop_response["serviceMaps"]:
             if service_map["configId"] != "weekday":
                 continue
-            actual = [
-                route["id"] for route in service_map["routes"]
-            ]
+            actual = [route["id"] for route in service_map["routes"]]
         assert usual_route == actual
 
 
@@ -253,7 +251,7 @@ feeds:
 
 """
 
-  
+
 @pytest.mark.parametrize("sync", [True, False])
 def _test_install_system__bad_update(system_id, install_system, transiter_host, sync):
     install_system(

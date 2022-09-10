@@ -9,7 +9,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/endpoints"
-	"github.com/jamespfennell/transiter/internal/public/href"
+	"github.com/jamespfennell/transiter/internal/public/reference"
 )
 
 // Server implements the Transiter public API.
@@ -94,7 +94,7 @@ func run[S, T any](ctx context.Context, s *Server, f func(context.Context, *endp
 	var t T
 	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
 		var err error
-		t, err = f(ctx, &endpoints.Context{Querier: db.New(tx), Href: href.NewGenerator(ctx)}, req)
+		t, err = f(ctx, &endpoints.Context{Querier: db.New(tx), Reference: reference.NewGenerator(ctx)}, req)
 		return err
 	}); err != nil {
 		var t T

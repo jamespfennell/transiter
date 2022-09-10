@@ -88,7 +88,9 @@ def install_system(
 ):
     def install(system_id, system_config, sync=True, expected_status="ACTIVE"):
         def delete():
-            requests.delete(transiter_host + "/admin/systems/" + system_id + "?sync=true")
+            requests.delete(
+                transiter_host + "/admin/systems/" + system_id + "?sync=true"
+            )
 
         system_config_url = source_server.create(
             "", "/" + system_id + "/system-config.yaml.jinja"

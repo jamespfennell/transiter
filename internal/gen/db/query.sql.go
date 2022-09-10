@@ -198,36 +198,19 @@ func (q *Queries) GetSystem(ctx context.Context, id string) (System, error) {
 }
 
 const getTrip = `-- name: GetTrip :one
-SELECT trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, vehicle.id AS vehicle_id, route.id route_id, route.color route_color FROM trip
-    INNER JOIN route ON route.pk = trip.route_pk
-    INNER JOIN system ON system.pk = route.system_pk
-    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+SELECT pk, id, route_pk, source_pk, direction_id, started_at FROM trip
 WHERE trip.id = $1
-    AND route.id = $2
-    AND system.id = $3
+    AND trip.route_pk = $2
 `
 
 type GetTripParams struct {
-	TripID   string
-	RouteID  string
-	SystemID string
+	TripID  string
+	RoutePk int64
 }
 
-type GetTripRow struct {
-	Pk          int64
-	ID          string
-	RoutePk     int64
-	SourcePk    int64
-	DirectionID sql.NullBool
-	StartedAt   sql.NullTime
-	VehicleID   sql.NullString
-	RouteID     string
-	RouteColor  string
-}
-
-func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error) {
-	row := q.db.QueryRow(ctx, getTrip, arg.TripID, arg.RouteID, arg.SystemID)
-	var i GetTripRow
+func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (Trip, error) {
+	row := q.db.QueryRow(ctx, getTrip, arg.TripID, arg.RoutePk)
+	var i Trip
 	err := row.Scan(
 		&i.Pk,
 		&i.ID,
@@ -235,9 +218,6 @@ func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, e
 		&i.SourcePk,
 		&i.DirectionID,
 		&i.StartedAt,
-		&i.VehicleID,
-		&i.RouteID,
-		&i.RouteColor,
 	)
 	return i, err
 }
@@ -1026,32 +1006,21 @@ func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk sql.NullIn
 	return items, nil
 }
 
-const listTripsInRoute = `-- name: ListTripsInRoute :many
-SELECT trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, vehicle.id vehicle_id FROM trip 
-    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+const listTrips = `-- name: ListTrips :many
+SELECT pk, id, route_pk, source_pk, direction_id, started_at FROM trip 
 WHERE trip.route_pk = $1
 ORDER BY trip.id
 `
 
-type ListTripsInRouteRow struct {
-	Pk          int64
-	ID          string
-	RoutePk     int64
-	SourcePk    int64
-	DirectionID sql.NullBool
-	StartedAt   sql.NullTime
-	VehicleID   sql.NullString
-}
-
-func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTripsInRouteRow, error) {
-	rows, err := q.db.Query(ctx, listTripsInRoute, routePk)
+func (q *Queries) ListTrips(ctx context.Context, routePk int64) ([]Trip, error) {
+	rows, err := q.db.Query(ctx, listTrips, routePk)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListTripsInRouteRow
+	var items []Trip
 	for rows.Next() {
-		var i ListTripsInRouteRow
+		var i Trip
 		if err := rows.Scan(
 			&i.Pk,
 			&i.ID,
@@ -1059,7 +1028,6 @@ func (q *Queries) ListTripsInRoute(ctx context.Context, routePk int64) ([]ListTr
 			&i.SourcePk,
 			&i.DirectionID,
 			&i.StartedAt,
-			&i.VehicleID,
 		); err != nil {
 			return nil, err
 		}
