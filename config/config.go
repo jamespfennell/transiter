@@ -119,11 +119,12 @@ func ConvertAPISystemConfig(sc *api.SystemConfig) *SystemConfig {
 
 func ConvertAPIFeedConfig(fc *api.FeedConfig) *FeedConfig {
 	result := &FeedConfig{
+		ID:                    fc.Id,
 		RequiredForInstall:    fc.RequiredForInstall,
 		PeriodicUpdateEnabled: fc.PeriodicUpdateEnabled,
-		PeriodicUpdatePeriod:  convertMilliseconds(fc.PeriodicUpdatePeriod),
+		PeriodicUpdatePeriod:  convertMilliseconds(fc.PeriodicUpdatePeriodMs),
 		URL:                   fc.Url,
-		HTTPTimeout:           convertMilliseconds(fc.HttpTimeout),
+		HTTPTimeout:           convertMilliseconds(fc.HttpTimeoutMs),
 		HTTPHeaders:           fc.HttpHeaders,
 	}
 
@@ -201,12 +202,13 @@ func ConvertSystemConfig(sc *SystemConfig) *api.SystemConfig {
 
 func ConvertFeedConfig(fc *FeedConfig) *api.FeedConfig {
 	result := &api.FeedConfig{
-		RequiredForInstall:    fc.RequiredForInstall,
-		PeriodicUpdateEnabled: fc.PeriodicUpdateEnabled,
-		PeriodicUpdatePeriod:  convertDuration(fc.PeriodicUpdatePeriod),
-		Url:                   fc.URL,
-		HttpTimeout:           convertDuration(fc.HTTPTimeout),
-		HttpHeaders:           fc.HTTPHeaders,
+		Id:                     fc.ID,
+		RequiredForInstall:     fc.RequiredForInstall,
+		PeriodicUpdateEnabled:  fc.PeriodicUpdateEnabled,
+		PeriodicUpdatePeriodMs: convertDuration(fc.PeriodicUpdatePeriod),
+		Url:                    fc.URL,
+		HttpTimeoutMs:          convertDuration(fc.HTTPTimeout),
+		HttpHeaders:            fc.HTTPHeaders,
 	}
 	switch fc.Parser {
 	case GtfsStatic:

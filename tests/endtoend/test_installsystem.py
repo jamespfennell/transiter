@@ -314,7 +314,7 @@ def test_update_system(system_id, install_system, transiter_host):
     feed_data = requests.get(
         transiter_host + "/systems/" + system_id + "/feeds/feed_1"
     ).json()
-    assert "5s" == feed_data["periodicUpdatePeriod"]
+    assert "5000" == feed_data["periodicUpdatePeriodMs"]
 
     install_system(system_id, config.format("name2", 15))
 
@@ -323,4 +323,4 @@ def test_update_system(system_id, install_system, transiter_host):
     feed_data = requests.get(
         transiter_host + "/systems/" + system_id + "/feeds/feed_1"
     ).json()
-    assert "15s" == feed_data["periodicUpdatePeriod"]
+    assert "15000" == feed_data["periodicUpdatePeriodMs"]

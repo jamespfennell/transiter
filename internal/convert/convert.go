@@ -33,6 +33,13 @@ func SQLNullFloat64(t sql.NullFloat64) *float64 {
 	return &t.Float64
 }
 
+func SQLNullInt64(t sql.NullInt64) *int64 {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Int64
+}
+
 func SQLNullInt32(t sql.NullInt32) *int32 {
 	if !t.Valid {
 		return nil

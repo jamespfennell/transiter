@@ -323,7 +323,7 @@ func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -500,7 +500,7 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -620,7 +620,7 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Admin_GetSystemConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
+	pattern_Admin_GetSystemConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"admin", "systems", "system_id", "config"}, ""))
 
 	pattern_Admin_InstallOrUpdateSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
 

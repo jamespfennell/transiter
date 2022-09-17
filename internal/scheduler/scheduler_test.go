@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/jamespfennell/transiter/internal/gen/api"
 )
 
 const systemID1 = "systemID1"
@@ -17,19 +18,19 @@ const systemID2 = "systemID2"
 const feedID3 = "feedID3"
 
 func TestScheduler(t *testing.T) {
-	resetSystem1 := func(s *RealScheduler) error {
-		return s.Reset(context.Background(), systemID1)
+	resetSystem1 := func(s *DefaultScheduler) error {
+		return s.ResetSystem(context.Background(), systemID1)
 	}
-	resetSystem2 := func(s *RealScheduler) error {
-		return s.Reset(context.Background(), systemID2)
+	resetSystem2 := func(s *DefaultScheduler) error {
+		return s.ResetSystem(context.Background(), systemID2)
 	}
-	resetAll := func(s *RealScheduler) error {
-		return s.ResetAll(context.Background())
+	resetAll := func(s *DefaultScheduler) error {
+		return s.Reset(context.Background())
 	}
 	testCases := []struct {
 		description     string
 		update          []SystemConfig
-		resetF          func(*RealScheduler) error
+		resetF          func(*DefaultScheduler) error
 		runningPeriod   time.Duration
 		expectedUpdates map[systemAndFeed]int
 	}{
@@ -158,8 +159,8 @@ func TestScheduler(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			ctx, cancelFunc := context.WithCancel(context.Background())
 			defer cancelFunc()
-
-			ops := testOps{
+			updateChan := make(chan systemAndFeed, 20)
+			server := testServer{
 				currentConfig: []SystemConfig{
 					{
 						ID: systemID1,
@@ -171,31 +172,31 @@ func TestScheduler(t *testing.T) {
 						},
 					},
 				},
-				updateChan: make(chan systemAndFeed, 20),
+				updateChan: updateChan,
 			}
 			clock := clock.NewMock()
 
-			scheduler := New()
+			scheduler := NewDefaultScheduler()
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
-				scheduler.RunWithClockAndOps(ctx, clock, &ops)
+				scheduler.runWithClock(ctx, &server, &server, clock)
 				wg.Done()
 			}()
-			if err := scheduler.ResetAll(ctx); err != nil {
+			if err := scheduler.Reset(ctx); err != nil {
 				t.Fatalf("failed to create scheduler: %s", err)
 			}
 
 			clock.Add(2000 * time.Millisecond)
 
-			updates := ops.getUpdates(4)
+			updates := getUpdates(updateChan, 4)
 			expected := map[systemAndFeed]int{
 				{systemID: systemID1, feedID: feedID1}: 4,
 			}
 			if !reflect.DeepEqual(expected, updates) {
 				t.Errorf("Updates got = %+v, want = %+v", updates, expected)
 			}
-			ops.currentConfig = tc.update
+			server.currentConfig = tc.update
 
 			if err := tc.resetF(scheduler); err != nil {
 				t.Errorf("Unexpected error when reseting: %s", err)
@@ -207,45 +208,66 @@ func TestScheduler(t *testing.T) {
 			for _, val := range tc.expectedUpdates {
 				numExpectedUpdates += val
 			}
-			updates = ops.getUpdates(numExpectedUpdates)
+			updates = getUpdates(updateChan, numExpectedUpdates)
 			if !reflect.DeepEqual(tc.expectedUpdates, updates) {
 				t.Errorf("Updates got = %+v, want = %+v", updates, tc.expectedUpdates)
 			}
 
 			cancelFunc()
 			wg.Wait()
-			close(ops.updateChan)
-			for update := range ops.updateChan {
+			close(updateChan)
+			for update := range updateChan {
 				t.Errorf("Unexpected update after scheduler stopped: %s", update)
 			}
 		})
 	}
 }
 
-type testOps struct {
+type testServer struct {
+	api.UnimplementedPublicServer
+	api.UnimplementedAdminServer
 	currentConfig []SystemConfig
 	updateChan    chan systemAndFeed
 }
 
-func (ops *testOps) ListSystemConfigs(ctx context.Context) ([]SystemConfig, error) {
-	return ops.currentConfig, nil
+func (t testServer) ListSystems(context.Context, *api.ListSystemsRequest) (*api.ListSystemsReply, error) {
+	systems := map[string]bool{}
+	for _, c := range t.currentConfig {
+		systems[c.ID] = true
+	}
+	resp := &api.ListSystemsReply{}
+	for systemID := range systems {
+		resp.Systems = append(resp.Systems, &api.System{
+			Id: systemID,
+		})
+	}
+	return resp, nil
 }
 
-func (ops *testOps) GetSystemConfig(ctx context.Context, systemID string) (SystemConfig, error) {
-	for _, config := range ops.currentConfig {
-		if config.ID == systemID {
-			return config, nil
+func (t testServer) ListFeeds(ctx context.Context, req *api.ListFeedsRequest) (*api.ListFeedsReply, error) {
+	resp := &api.ListFeedsReply{}
+	for _, c := range t.currentConfig {
+		if c.ID != req.SystemId {
+			continue
+		}
+		for _, a := range c.FeedConfigs {
+			ms := a.Period.Milliseconds()
+			resp.Feeds = append(resp.Feeds, &api.Feed{
+				Id:                     a.ID,
+				PeriodicUpdateEnabled:  true,
+				PeriodicUpdatePeriodMs: &ms,
+			})
 		}
 	}
-	return SystemConfig{ID: systemID}, nil
+	return resp, nil
 }
 
-func (ops *testOps) UpdateFeed(ctx context.Context, systemID, feedID string) error {
-	ops.updateChan <- systemAndFeed{systemID: systemID, feedID: feedID}
-	return nil
+func (t testServer) UpdateFeed(ctx context.Context, req *api.UpdateFeedRequest) (*api.UpdateFeedReply, error) {
+	t.updateChan <- systemAndFeed{systemID: req.SystemId, feedID: req.FeedId}
+	return &api.UpdateFeedReply{}, nil
 }
 
-func (ops *testOps) getUpdates(num int) map[systemAndFeed]int {
+func getUpdates(updateChan chan systemAndFeed, num int) map[systemAndFeed]int {
 	if num == 0 {
 		return map[systemAndFeed]int{}
 	}
@@ -254,7 +276,7 @@ func (ops *testOps) getUpdates(num int) map[systemAndFeed]int {
 	seen := 0
 	for {
 		select {
-		case key := <-ops.updateChan:
+		case key := <-updateChan:
 			m[key] = m[key] + 1
 			seen += 1
 			if seen == num {
@@ -268,4 +290,14 @@ func (ops *testOps) getUpdates(num int) map[systemAndFeed]int {
 
 type systemAndFeed struct {
 	systemID, feedID string
+}
+
+type SystemConfig struct {
+	ID          string
+	FeedConfigs []FeedConfig
+}
+
+type FeedConfig struct {
+	ID     string
+	Period time.Duration
 }

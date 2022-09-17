@@ -74,7 +74,7 @@ CREATE TABLE feed (
     id character varying NOT NULL,
     system_pk BIGINT NOT NULL,
     periodic_update_enabled boolean NOT NULL,
-    periodic_update_period integer,
+    periodic_update_period BIGINT,
     config character varying NOT NULL,
 
     UNIQUE(system_pk, id)

@@ -70,7 +70,7 @@ type Feed struct {
 	ID                    string
 	SystemPk              int64
 	PeriodicUpdateEnabled bool
-	PeriodicUpdatePeriod  sql.NullInt32
+	PeriodicUpdatePeriod  sql.NullInt64
 	Config                string
 }
 

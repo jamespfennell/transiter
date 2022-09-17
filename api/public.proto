@@ -921,7 +921,7 @@ message Feed {
   // Whether periodic update is enabled for this feed.
   bool periodic_update_enabled = 3;
   // If periodic update is enabled, the period each update is triggered.
-  optional string periodic_update_period = 4;
+  optional int64 periodic_update_period_ms = 4;
 
   // Updates for this feed.
   ChildResources updates = 5;

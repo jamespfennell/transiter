@@ -116,7 +116,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 			return nil, err
 		}
 		log.Printf("Installed system %q\n", req.SystemId)
-		s.scheduler.Reset(ctx, req.SystemId)
+		s.scheduler.ResetSystem(ctx, req.SystemId)
 	} else {
 		var keepGoing bool
 		if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
@@ -141,7 +141,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 					return
 				}
 				log.Printf("Installed system %q\n", req.SystemId)
-				s.scheduler.Reset(ctx, req.SystemId)
+				s.scheduler.ResetSystem(ctx, req.SystemId)
 			}()
 		}
 	}
@@ -275,7 +275,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 		return nil, err
 	}
 	log.Printf("Deleted system %q", req.SystemId)
-	s.scheduler.Reset(ctx, req.SystemId)
+	s.scheduler.ResetSystem(ctx, req.SystemId)
 	return &api.DeleteSystemReply{}, nil
 }
 
@@ -313,12 +313,12 @@ func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[
 }
 
 // TODO: move to convert/converters
-func convertNullDuration(d *time.Duration) sql.NullInt32 {
+func convertNullDuration(d *time.Duration) sql.NullInt64 {
 	if d == nil {
-		return sql.NullInt32{}
+		return sql.NullInt64{}
 	}
-	return sql.NullInt32{
+	return sql.NullInt64{
 		Valid: true,
-		Int32: int32(d.Milliseconds()),
+		Int64: d.Milliseconds(),
 	}
 }

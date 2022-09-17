@@ -13,7 +13,7 @@ service Admin {
   // `GET /systems/<system_id>/config`
   rpc GetSystemConfig(GetSystemConfigRequest) returns (SystemConfig) {
     option (google.api.http) = {
-      get: "/admin/systems/{system_id}"
+      get: "/admin/systems/{system_id}/config"
     };
   }
 
@@ -158,10 +158,10 @@ message FeedConfig {
   bool required_for_install = 8;
 
   bool periodic_update_enabled = 6;
-  optional int64 periodic_update_period = 7;
+  optional int64 periodic_update_period_ms = 7;
 
   string url = 2;
-  optional int64 http_timeout = 22;
+  optional int64 http_timeout_ms = 22;
   map<string, string> http_headers = 23;
 
   message GtfsStaticParser {}

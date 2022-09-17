@@ -17,6 +17,7 @@ var migrations embed.FS
 // Migrate applies all migrations to the databse.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	conn, err := pool.Acquire(ctx)
+	defer conn.Release()
 	if err != nil {
 		return err
 	}

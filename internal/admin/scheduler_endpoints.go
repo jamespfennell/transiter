@@ -24,7 +24,7 @@ func (s *Service) GetSchedulerStatus(ctx context.Context, req *api.GetSchedulerS
 }
 
 func (s *Service) ResetScheduler(ctx context.Context, req *api.ResetSchedulerRequest) (*api.ResetSchedulerReply, error) {
-	if err := s.scheduler.ResetAll(ctx); err != nil {
+	if err := s.scheduler.Reset(ctx); err != nil {
 		return nil, err
 	}
 	return &api.ResetSchedulerReply{}, nil

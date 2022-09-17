@@ -157,7 +157,7 @@ type InsertFeedParams struct {
 	ID                    string
 	SystemPk              int64
 	PeriodicUpdateEnabled bool
-	PeriodicUpdatePeriod  sql.NullInt32
+	PeriodicUpdatePeriod  sql.NullInt64
 	Config                string
 }
 
@@ -202,7 +202,7 @@ WHERE feed.periodic_update_enabled
 
 type ListAutoUpdateFeedsForSystemRow struct {
 	ID                   string
-	PeriodicUpdatePeriod sql.NullInt32
+	PeriodicUpdatePeriod sql.NullInt64
 }
 
 func (q *Queries) ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error) {
@@ -266,7 +266,7 @@ WHERE pk = $4
 
 type UpdateFeedParams struct {
 	PeriodicUpdateEnabled bool
-	PeriodicUpdatePeriod  sql.NullInt32
+	PeriodicUpdatePeriod  sql.NullInt64
 	Config                string
 	FeedPk                int64
 }

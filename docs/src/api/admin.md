@@ -264,9 +264,9 @@ No fields.
 | id | string | 
 | required_for_install | bool | 
 | periodic_update_enabled | bool | 
-| periodic_update_period | int64 | 
+| periodic_update_period_ms | int64 | 
 | url | string | 
-| http_timeout | int64 | 
+| http_timeout_ms | int64 | 
 | http_headers | [FeedConfig.HttpHeadersEntry](admin.md#FeedConfig.HttpHeadersEntry) | 
 | gtfs_static_parser | [FeedConfig.GtfsStaticParser](admin.md#FeedConfig.GtfsStaticParser) | 
 | gtfs_realtime_parser | [FeedConfig.GtfsRealtimeParser](admin.md#FeedConfig.GtfsRealtimeParser) | 

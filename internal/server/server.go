@@ -37,9 +37,8 @@ type RunArgs struct {
 	ReadOnly         bool
 }
 
-func Run(args RunArgs) error {
+func Run(ctx context.Context, args RunArgs) error {
 	log.Println("Starting Transiter v0.6alpha server")
-	ctx := context.Background()
 	ctx, cancelFunc := context.WithCancel(ctx)
 	defer cancelFunc()
 
@@ -51,9 +50,13 @@ func Run(args RunArgs) error {
 	config.MaxConns = args.MaxConnections
 	pool, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
-		return fmt.Errorf("could not connect to DB: %w", err)
+		return fmt.Errorf("could not connect to database: %w", err)
 	}
-	defer pool.Close()
+	defer func() {
+		log.Printf("Database pool: closing")
+		pool.Close()
+		log.Printf("Database pool: closed")
+	}()
 
 	if err := dbwrappers.Ping(ctx, pool, 20, 500*time.Millisecond); err != nil {
 		return fmt.Errorf("failed to connect to the database: %w", err)
@@ -71,24 +74,32 @@ func Run(args RunArgs) error {
 
 	var wg sync.WaitGroup
 
+	var realScheduler *scheduler.DefaultScheduler
 	var s scheduler.Scheduler
+
 	if args.DisableScheduler || args.ReadOnly {
 		s = scheduler.NoOpScheduler()
 	} else {
-		scheduler := scheduler.New()
-		wg.Add(1)
-		go func() {
-			scheduler.Run(ctx, pool)
-			wg.Done()
-		}()
-		if err := scheduler.ResetAll(ctx); err != nil {
-			return fmt.Errorf("failed to intialize the scheduler: %w", err)
-		}
-		log.Println("Feed update scheduler running")
-		s = scheduler
+		realScheduler = scheduler.NewDefaultScheduler()
+		s = realScheduler
 	}
 
 	publicService := public.New(pool)
+	adminService := admin.New(pool, s)
+
+	if realScheduler != nil {
+		wg.Add(1)
+		go func() {
+			defer cancelFunc()
+			defer wg.Done()
+			realScheduler.Run(ctx, publicService, adminService)
+			log.Printf("Scheduler stopped")
+		}()
+		if err := realScheduler.Reset(ctx); err != nil {
+			return fmt.Errorf("failed to intialize the scheduler: %w", err)
+		}
+		log.Println("Scheduler running")
+	}
 
 	if args.PublicHTTPAddr != "-" {
 		wg.Add(1)
@@ -104,6 +115,7 @@ func Run(args RunArgs) error {
 			}
 			log.Printf("Public HTTP API listening on %s\n", args.PublicHTTPAddr)
 			_ = http.ListenAndServe(args.PublicHTTPAddr, h)
+			log.Printf("Public HTTP API stopped")
 		}()
 	}
 
@@ -116,14 +128,14 @@ func Run(args RunArgs) error {
 			api.RegisterPublicServer(grpcServer, publicService)
 			lis, err := net.Listen("tcp", args.PublicGrpcAddr)
 			if err != nil {
+				log.Printf("Failed to launch public gRPC API: %s", err)
 				return
 			}
 			log.Printf("Public gRPC API listening on %s\n", args.PublicGrpcAddr)
 			_ = grpcServer.Serve(lis)
+			log.Printf("Public gRPC API stopped")
 		}()
 	}
-
-	adminService := admin.New(pool, s)
 
 	if args.AdminHTTPAddr != "-" && !args.ReadOnly {
 		wg.Add(1)
@@ -133,8 +145,9 @@ func Run(args RunArgs) error {
 			mux := newServeMux()
 			api.RegisterPublicHandlerServer(ctx, mux, publicService)
 			api.RegisterAdminHandlerServer(ctx, mux, adminService)
-			log.Printf("Admin HTTP API listening on %s\n", args.AdminHTTPAddr)
-			_ = http.ListenAndServe(args.AdminHTTPAddr, mux)
+			log.Printf("Admin HTTP API listening on %s", args.AdminHTTPAddr)
+			http.ListenAndServe(args.AdminHTTPAddr, mux)
+			log.Printf("Admin HTTP API stopped")
 		}()
 	}
 
@@ -148,15 +161,18 @@ func Run(args RunArgs) error {
 			api.RegisterAdminServer(grpcServer, adminService)
 			lis, err := net.Listen("tcp", args.AdminGrpcAddr)
 			if err != nil {
+				log.Printf("Failed to launch admin gRPC API: %s", err)
 				return
 			}
 			log.Printf("Admin gRPC API listening on %s\n", args.AdminGrpcAddr)
 			_ = grpcServer.Serve(lis)
+			log.Printf("Admin gRPC API stopped")
 		}()
 	}
 
 	wg.Wait()
-	return nil
+	log.Printf("Shutting down server")
+	return ctx.Err()
 }
 
 func newServeMux() *runtime.ServeMux {

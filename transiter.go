@@ -172,7 +172,7 @@ func main() {
 						NoPublicMetrics:  c.Bool("no-public-metrics"),
 						ReadOnly:         c.Bool("read-only"),
 					}
-					return server.Run(args)
+					return server.Run(c.Context, args)
 				},
 			},
 			{

@@ -3,7 +3,6 @@ package endpoints
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -49,9 +48,9 @@ func buildApiFeeds(ctx context.Context, r *Context, system *db.System, feeds []d
 			return nil, err
 		}
 		apiFeeds = append(apiFeeds, &api.Feed{
-			Id:                    feed.ID,
-			PeriodicUpdateEnabled: feed.PeriodicUpdateEnabled,
-			PeriodicUpdatePeriod:  periodicUpdatePeriod(feed),
+			Id:                     feed.ID,
+			PeriodicUpdateEnabled:  feed.PeriodicUpdateEnabled,
+			PeriodicUpdatePeriodMs: convert.SQLNullInt64(feed.PeriodicUpdatePeriod),
 			Updates: &api.ChildResources{
 				Count: numUpdates,
 				Href:  r.Reference.FeedUpdatesHref(system.ID, feed.ID),
@@ -84,12 +83,4 @@ func ListFeedUpdates(ctx context.Context, r *Context, req *api.ListFeedUpdatesRe
 		})
 	}
 	return reply, nil
-}
-
-func periodicUpdatePeriod(feed *db.Feed) *string {
-	if feed.PeriodicUpdatePeriod.Valid && feed.PeriodicUpdatePeriod.Int32 > 0 {
-		d := (time.Millisecond * time.Duration(feed.PeriodicUpdatePeriod.Int32)).String()
-		return &d
-	}
-	return nil
 }

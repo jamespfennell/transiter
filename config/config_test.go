@@ -19,6 +19,7 @@ const (
 	StopID1      = "stopID1"
 	StopID2      = "stopID2"
 	ServiceMapID = "serviceMapId"
+	FeedID       = "feedID"
 )
 
 func TestConvertFeedConfig(t *testing.T) {
@@ -31,11 +32,13 @@ func TestConvertFeedConfig(t *testing.T) {
 	}{
 		{
 			apiConfig: &api.FeedConfig{
-				RequiredForInstall:    true,
-				PeriodicUpdateEnabled: true,
-				PeriodicUpdatePeriod:  &timeoutMs,
+				Id:                     FeedID,
+				RequiredForInstall:     true,
+				PeriodicUpdateEnabled:  true,
+				PeriodicUpdatePeriodMs: &timeoutMs,
 			},
 			internalConfig: &FeedConfig{
+				ID:                    FeedID,
 				RequiredForInstall:    true,
 				PeriodicUpdateEnabled: true,
 				PeriodicUpdatePeriod:  &timeoutDuration,
@@ -43,8 +46,8 @@ func TestConvertFeedConfig(t *testing.T) {
 		},
 		{
 			apiConfig: &api.FeedConfig{
-				Url:         URL,
-				HttpTimeout: &timeoutMs,
+				Url:           URL,
+				HttpTimeoutMs: &timeoutMs,
 				HttpHeaders: map[string]string{
 					HeaderKey: HeaderValue,
 				},
