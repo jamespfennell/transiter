@@ -50,7 +50,7 @@ func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigR
 			return err
 		}
 		reply.Name = system.Name
-		feeds, err := querier.ListFeedsInSystem(ctx, system.Pk)
+		feeds, err := querier.ListFeeds(ctx, system.Pk)
 		if err != nil {
 			return err
 		}
@@ -193,7 +193,7 @@ func performSystemInstall(ctx context.Context, querier db.Querier, systemID stri
 		return err
 	}
 
-	feeds, err := querier.ListFeedsInSystem(ctx, system.Pk)
+	feeds, err := querier.ListFeeds(ctx, system.Pk)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func performSystemInstall(ctx context.Context, querier db.Querier, systemID stri
 			})
 		}
 		if newFeed.RequiredForInstall {
-			if err := update.CreateAndRunInExistingTx(ctx, querier, systemID, newFeed.ID); err != nil {
+			if err := update.DoInExistingTx(ctx, querier, systemID, newFeed.ID); err != nil {
 				return err
 			}
 		}

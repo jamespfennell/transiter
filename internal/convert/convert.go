@@ -4,6 +4,7 @@ package convert
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/jamespfennell/gtfs"
@@ -140,4 +141,29 @@ func TransferType(t string) api.Transfer_Type {
 
 func StopType(t string) api.Stop_Type {
 	return api.Stop_Type(api.Stop_Type_value[t])
+}
+
+func FeedUpdateResult(result sql.NullString) *api.FeedUpdate_Result {
+	if !result.Valid {
+		return nil
+	}
+	if i, ok := api.FeedUpdate_Result_value[result.String]; ok {
+		return api.FeedUpdate_Result(i).Enum()
+	}
+	log.Printf("Unknown feed update result %s\n", result.String)
+	return api.FeedUpdate_INTERNAL_ERROR.Enum()
+}
+
+func ContinuousPolicy(p string) api.Route_ContinuousPolicy {
+	if i, ok := api.Route_ContinuousPolicy_value[p]; ok {
+		return api.Route_ContinuousPolicy(i)
+	}
+	return api.Route_NOT_ALLOWED
+}
+
+func RouteType(t string) api.Route_Type {
+	if i, ok := api.Route_Type_value[t]; ok {
+		return api.Route_Type(i)
+	}
+	return api.Route_UNKNOWN
 }

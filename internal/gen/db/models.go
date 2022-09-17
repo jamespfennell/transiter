@@ -77,9 +77,9 @@ type Feed struct {
 type FeedUpdate struct {
 	Pk            int64
 	FeedPk        int64
-	Status        string
 	StartedAt     time.Time
-	EndedAt       sql.NullTime
+	Finished      bool
+	FinishedAt    sql.NullTime
 	Result        sql.NullString
 	ContentLength sql.NullInt32
 	ContentHash   sql.NullString

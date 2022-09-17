@@ -1,9 +1,9 @@
--- name: ListFeedsInSystem :many
+-- name: ListFeeds :many
 SELECT * FROM feed WHERE system_pk = $1 ORDER BY id;
 
--- name: GetFeedInSystem :one
+-- name: GetFeed :one
 SELECT feed.* FROM feed
-    INNER JOIN system ON feed.system_pk = system.pk
+    INNER JOIN system on system.pk = feed.system_pk
     WHERE system.id = sqlc.arg(system_id)
     AND feed.id = sqlc.arg(feed_id);
 
@@ -38,23 +38,23 @@ WHERE feed.periodic_update_enabled
 
 -- name: InsertFeedUpdate :one
 INSERT INTO feed_update
-    (feed_pk, status, started_at)
+    (feed_pk, started_at, finished)
 VALUES
-    (sqlc.arg(feed_pk), sqlc.arg(status), sqlc.arg(started_at))
+    (sqlc.arg(feed_pk), sqlc.arg(started_at), false)
 RETURNING pk;
 
 -- name: GetLastFeedUpdateContentHash :one
 SELECT content_hash
 FROM feed_update
-WHERE feed_pk = sqlc.arg(feed_pk) AND status = 'SUCCESS'
-ORDER BY ended_at DESC
+WHERE feed_pk = sqlc.arg(feed_pk) AND result = 'UPDATED'
+ORDER BY finished_at DESC
 LIMIT 1;
 
 -- name: FinishFeedUpdate :exec
 UPDATE feed_update
-SET status = sqlc.arg(status),
+SET finished = true, 
     result = sqlc.arg(result),
-    ended_at = sqlc.arg(ended_at),
+    finished_at = sqlc.arg(finished_at),
     content_length = sqlc.arg(content_length),
     content_hash = sqlc.arg(content_hash),
     error_message = sqlc.arg(error_message)
@@ -62,3 +62,6 @@ WHERE pk = sqlc.arg(update_pk);
 
 -- name: GetFeedUpdate :one
 SELECT * FROM feed_update WHERE pk = sqlc.arg(pk);
+
+-- name: CountUpdatesInFeed :one
+SELECT COUNT(*) FROM feed_update WHERE feed_pk = sqlc.arg(feed_pk);

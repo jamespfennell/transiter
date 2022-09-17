@@ -34,7 +34,7 @@ Response payload for the entrypoint endpoint.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | transiter | [EntrypointReply.TransiterDetails](public_endpoints.md#EntrypointReply.TransiterDetails) | Version and other information about this Transiter binary.
-| systems | [System.Reference](public_resources.md#System.Reference) | List of systems that are installed in this Transiter instance.
+| systems | [ChildResources](public_resources.md#ChildResources) | Systems that are installed in this Transiter instance.
 
 
 
@@ -79,7 +79,7 @@ Message containing information about a specific Transiter CI build.
 
 
 
-## List systems 
+## List systems
 
 `GET /systems`
 
@@ -570,7 +570,7 @@ Response payload for the list feeds endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| feeds | [Feed.Reference](public_resources.md#Feed.Reference) | List of feeds. TODO: full Feed instead of preview
+| feeds | [Feed](public_resources.md#Feed) | List of feeds.
 
 
 

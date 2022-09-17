@@ -154,7 +154,7 @@ func (s *System) NewFeed(id string) Feed {
 			})
 		},
 		func() (db.Feed, error) {
-			return s.q.GetFeedInSystem(context.Background(), db.GetFeedInSystemParams{
+			return s.q.GetFeed(context.Background(), db.GetFeedParams{
 				SystemID: s.Data.ID,
 				FeedID:   id,
 			})
@@ -174,7 +174,6 @@ func (f *Feed) NewUpdate() db.FeedUpdate {
 			var err error
 			pk, err = f.s.q.InsertFeedUpdate(context.Background(), db.InsertFeedUpdateParams{
 				FeedPk: f.Data.Pk,
-				Status: "SUCCESS",
 			})
 			return err
 		},

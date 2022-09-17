@@ -77,7 +77,7 @@ func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db
 				Future:       !stopTime.Past,
 				Arrival:      buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
 				Departure:    buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
-				Stop:         r.Reference.Stop(stopTime.StopID, system.ID, stopTime.StopName.String),
+				Stop:         r.Reference.Stop(stopTime.StopID, system.ID, stopTime.StopName),
 			})
 		}
 		apiTrips = append(apiTrips, reply)

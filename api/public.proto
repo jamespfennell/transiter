@@ -65,6 +65,7 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/jamespfennell/transiter/api";
 
+// TODO: every resource needs to have a HREF and a message containing the parent resource
 service Public {
   // API entrypoint
   //
@@ -77,215 +78,182 @@ service Public {
     };
   }
 
-  // TODO: change the comment format
-  /**
-  * List systems 
-  *
-  * `GET /systems`
-  *
-  * List all transit systems that are installed in this Transiter instance.
-  */
+  // List systems
+  //
+  // `GET /systems`
+  //
+  // List all transit systems that are installed in this Transiter instance.
   rpc ListSystems(ListSystemsRequest) returns (ListSystemsReply) {
     option (google.api.http) = {
       get: "/systems"
     };
   }
 
-  /**
-  * Get system
-  *
-  * `GET /systems/<system_id>`
-  *
-  * Get a system by its ID.
-  */
+  // Get system
+  //
+  // `GET /systems/<system_id>`
+  //
+  // Get a system by its ID.
   rpc GetSystem(GetSystemRequest) returns (System) {
     option (google.api.http) = {
       get: "/systems/{system_id}"
     };
   }
 
-  /**
-  * List agencies
-  *
-  * `GET /systems/<system_id>/agencies`
-  *
-  * List all agencies in a system.
-  */
+  // List agencies
+  //
+  // `GET /systems/<system_id>/agencies`
+  //
+  // List all agencies in a system.
   rpc ListAgencies(ListAgenciesRequest) returns (ListAgenciesReply) {
     option (google.api.http) = {
       get: "/systems/{system_id}/agencies"
     };
   }
 
-  /**
-  * Get agency
-  *
-  * `GET /systems/<system_id>/agencies/<agency_id>`
-  *
-  * Get an agency in a system by its ID.
-  */
+  // Get agency
+  //
+  // `GET /systems/<system_id>/agencies/<agency_id>`
+  //
+  // Get an agency in a system by its ID.
   rpc GetAgency(GetAgencyRequest) returns (Agency) {
     option (google.api.http) = {
       get: "/systems/{system_id}/agencies/{agency_id}"
     };
   }
 
-  /**
-  * List stops
-  *
-  * `GET /systems/<system_id>/stops/<stop_id>`
-  *
-  * List all stops in a system.
-  *
-  * This endpoint is paginated.
-  * If there are more results, the `next_id` field of the response will be populated.
-  * To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
-  */
+  // List stops
+  //
+  // `GET /systems/<system_id>/stops/<stop_id>`
+  //
+  // List all stops in a system.
+  //
+  // This endpoint is paginated.
+  // If there are more results, the `next_id` field of the response will be populated.
+  // To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
   rpc ListStops(ListStopsRequest) returns (ListStopsReply) {
     option (google.api.http) = {
       get: "/systems/{system_id}/stops"
     };
   }
 
-  /**
-  * Get stop
-  *
-  * `GET /systems/<system_id>/stops/<stop_id>`
-  *
-  * Get a stop in a system by its ID.
-  */
+  // Get stop
+  //
+  // `GET /systems/<system_id>/stops/<stop_id>`
+  //
+  // Get a stop in a system by its ID.
   rpc GetStop(GetStopRequest) returns (Stop) {
     option (google.api.http) = {
       get: "/systems/{system_id}/stops/{stop_id}"
     };
   }
 
-  /**
-  * List routes
-  *
-  * `GET /systems/<system_id>/routes`
-  *
-  * List all routes in a system.
-  */
+  // List routes
+  //
+  // `GET /systems/<system_id>/routes`
+  //
+  // List all routes in a system.
   rpc ListRoutes(ListRoutesRequest) returns (ListRoutesReply) {
     option (google.api.http) = {
       get: "/systems/{system_id}/routes"
     };
   }
 
-  /**
-  * Get route
-  *
-  * `GET /systems/<system_id>/routes/<route_id>`
-  *
-  * Get a route in a system by its ID.
-  */
+  // Get route
+  //
+  // `GET /systems/<system_id>/routes/<route_id>`
+  //
+  // Get a route in a system by its ID.
   rpc GetRoute(GetRouteRequest) returns (Route) {
     option (google.api.http) = {
       get: "/systems/{system_id}/routes/{route_id}"
     };
   }
 
-  /**
-  * List trips
-  *
-  * `GET /systems/<system_id>/routes/<route_id>/trips`
-  *
-  * List all trips in a route.
-  */
+  // List trips
+  //
+  // `GET /systems/<system_id>/routes/<route_id>/trips`
+  //
+  // List all trips in a route.
   rpc ListTrips(ListTripsRequest) returns (ListTripsReply) {
     option (google.api.http) = {
       get: "/systems/{system_id}/routes/{route_id}/trips"
     };
   }
 
-  /**
-  * Get trip
-  *
-  * `GET /systems/<system_id>/routes/<route_id>/trips/<trip_id>`
-  *
-  * Get a trip by its ID.
-  */
+  // Get trip
+  //
+  // `GET /systems/<system_id>/routes/<route_id>/trips/<trip_id>`
+  //
+  // Get a trip by its ID.
   rpc GetTrip(GetTripRequest) returns (Trip) {
     option (google.api.http) = {
       get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"
     };
   }
 
-  /**
-  * List alerts
-  *
-  * `GET /systems/<system_id>/alerts`
-  *
-  * List all alerts in a system.
-  * By default this endpoint returns both active alerts
-  *   (alerts which have an active period containing the current time) and non-active alerts.
-  */
+  // List alerts
+  //
+  // `GET /systems/<system_id>/alerts`
+  //
+  // List all alerts in a system.
+  // By default this endpoint returns both active alerts
+  //   (alerts which have an active period containing the current time) and non-active alerts.
   rpc ListAlerts(ListAlertsRequest) returns (ListAlertsReply) {
     option (google.api.http) = {
       get: "/systems/{system_id}/alerts"
     };
   }
 
-  /**
-  * Get alert
-  *
-  * `GET /systems/<system_id>/alerts/<alert_id>`
-  *
-  * Get an alert by its ID.
-  */
+  // Get alert
+  //
+  // `GET /systems/<system_id>/alerts/<alert_id>`
+  //
+  // Get an alert by its ID.
   rpc GetAlert(GetAlertRequest) returns (Alert) {
     option (google.api.http) = {
       get: "/systems/{system_id}/alerts/{alert_id}"
     };
   }
 
-  /**
-  * List transfers
-  *
-  * `GET /systems/<system_id>/transfers`
-  *
-  * List all transfers in a system.
-  */
+  // List transfers
+  //
+  // `GET /systems/<system_id>/transfers`
+  //
+  // List all transfers in a system.
   rpc ListTransfers(ListTransfersRequest) returns (ListTransfersReply) {
     option (google.api.http) = {
       get: "/systems/{system_id}/transfers"
     };
   }
 
-  /**
-  * List feeds
-  *
-  * `GET /systems/<system_id>/feeds`
-  *
-  * List all feeds for a system.
-  */
+  // List feeds
+  //
+  // `GET /systems/<system_id>/feeds`
+  //
+  // List all feeds for a system.
   rpc ListFeeds(ListFeedsRequest) returns (ListFeedsReply) {
     option (google.api.http) = {
       get: "/systems/{system_id}/feeds"
     };
   }
 
-  /**
-  * Get feed
-  *
-  * `GET /systems/<system_id>/feeds/<feed_id>`
-  *
-  * Get a feed in a system by its ID.
-  */
+  // Get feed
+  //
+  // `GET /systems/<system_id>/feeds/<feed_id>`
+  //
+  // Get a feed in a system by its ID.
   rpc GetFeed(GetFeedRequest) returns (Feed) {
     option (google.api.http) = {
       get: "/systems/{system_id}/feeds/{feed_id}"
     };
   }
 
-  /**
-  * List feed updates
-  *
-  * `GET /systems/<system_id>/feeds/<feed_id>/updates`
-  *
-  * List feeds updates for a feed.
-  */
+  // List feed updates
+  //
+  // `GET /systems/<system_id>/feeds/<feed_id>/updates`
+  //
+  // List feeds updates for a feed.
   rpc ListFeedUpdates(ListFeedUpdatesRequest) returns (ListFeedUpdatesReply) {
     option (google.api.http) = {
       get: "/systems/{system_id}/feeds/{feed_id}/updates"
@@ -324,8 +292,8 @@ message EntrypointReply {
   // Version and other information about this Transiter binary.
   TransiterDetails transiter = 1;
 
-  // List of systems that are installed in this Transiter instance.
-  repeated System.Reference systems = 2;
+  // Systems that are installed in this Transiter instance.
+  ChildResources systems = 2;
 }
 
 // Request payload for the list systems endpoint.
@@ -559,8 +527,7 @@ message ListFeedsRequest {
 // Response payload for the list feeds endpoint.
 message ListFeedsReply {
   // List of feeds.
-  // TODO: full Feed instead of preview
-  repeated Feed.Reference feeds = 1;
+  repeated Feed feeds = 1;
 }
 
 // Request payload for the list feed updates endpoint.
@@ -632,16 +599,11 @@ message System {
   // Status of the system.
   Status status = 3;
 
-  // TODO: rename `ChildResources`, move out of here, and reuse
-  message ChildEntities {
-    int64 count = 1;
-    optional string href = 2;
-  }
-  optional ChildEntities agencies = 4;
-  optional ChildEntities feeds = 5;
-  optional ChildEntities routes = 6;
-  optional ChildEntities stops = 7;
-  optional ChildEntities transfers = 8;
+  ChildResources agencies = 4;
+  ChildResources feeds = 5;
+  ChildResources routes = 6;
+  ChildResources stops = 7;
+  ChildResources transfers = 8;
 
   optional string href = 9;
 
@@ -650,6 +612,15 @@ message System {
     string id = 2;
     optional string href = 1;
   }
+}
+
+// Description of a collection of child resources for a resource.
+// This message and fields using this message exist to support API discoverability.
+message ChildResources {
+  // Number of child resources.
+  int64 count = 1;
+  // URL of the endpoint to list child resources.
+  optional string href = 2;
 }
 
 // The Stop resource.
@@ -751,8 +722,7 @@ message Stop {
   message Reference {
     string id = 1;
     System.Reference system = 2;
-    // TODO: make optional
-    string name = 3;
+    optional string name = 3;
     optional string href = 4;
   }
 }
@@ -850,13 +820,40 @@ message Route {
   optional string url = 8;
   // Sort order of the route. This is the `route_sort_order` column in `routes.txt`.
   optional int32 sort_order = 9;
-  // TODO: make these 3 fields enums
+
+  // Enum describing possible policies for continuous pickup or drop-off.
+  enum ContinuousPolicy {
+    // Continuous pickup or drop-off allowed.
+    ALLOWED = 0;
+    // Continuous pickup or drop-off not allowed.
+    NOT_ALLOWED = 1;
+    // Must phone the agency to arrange continuous pickup or drop-off.
+    PHONE_AGENCY = 2;
+    // Must coordinate with driver to arrange continuous pickup or drop-off.
+    COORDINATE_WITH_DRIVER = 3;
+  }
   // Continuous pickup policy. This is the `continuous_pickup` column in `routes.txt`.
-  string continuous_pickup = 10;
+  ContinuousPolicy continuous_pickup = 10;
   // Continuous dropoff policy. This is the `continuous_dropoff` column in `routes.txt`.
-  string continuous_drop_off = 11;
+  ContinuousPolicy continuous_drop_off = 11;
+
+  // Enum describing possible route types.
+  // This corresponds to possible values of the `route_type` column in `routes.txt`.
+  enum Type {
+    LIGHT_RAIL = 0;
+    SUBWAY = 1;
+    RAIL = 2;
+    BUS = 3;
+    FERRY = 4;
+    CABLE_TRAM = 5;
+    AERIAL_LIFT = 6;
+    FUNICULAR = 7;
+    TROLLEY_BUS = 11;
+    MONORAIL = 12;
+    UNKNOWN = 100;
+  }
   // Type of the route. This is the `route_type` column in `routes.txt`.
-  string type = 12;
+  Type type = 12;
 
   // Agency this route is associated to.
   //
@@ -880,7 +877,7 @@ message Route {
   // The difference between consecutive arrival times is calculated.
   // If there are `N` trips, there will be `N-1` such arrival time diffs.
   // The estimated headway is the average of these diffs across
-  /// all stops.
+  // all stops.
   optional int32 estimated_headway = 15;
 
   // Message describing the service maps view in routes.
@@ -902,9 +899,8 @@ message Route {
   message Reference {
     string id = 1;
     System.Reference system = 2;
-    // TODO(APIv2): remove? or add text_color?
-    string color = 3;
-    optional string href = 4;
+    optional string href = 3;
+    string color = 4;
   }
 }
 
@@ -927,11 +923,8 @@ message Feed {
   // If periodic update is enabled, the period each update is triggered.
   optional string periodic_update_period = 4;
 
-  // TODO: have a ChildResources message and use that instead
-  message Updates {
-    optional string href = 1;
-  }
-  optional Updates updates = 5;
+  // Updates for this feed.
+  ChildResources updates = 5;
 
   // Reference is the reference type for the feed resource.
   message Reference {
@@ -991,7 +984,6 @@ message Agency {
 // This resource corresponds to the [alert type in the GTFS realtime
 // specification](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
 //
-// TODO: informed entites
 // TODO; alphabetize the messages
 message Alert {
   // ID of the alert. This corresponds to the [ID field in the feed entity
@@ -1079,6 +1071,8 @@ message Alert {
   // This corresponds to the `url` field in the realtime alert message.
   repeated Text url = 9;
 
+  // TODO: add informed entites for the alert.
+
   // Reference is the reference type for the agency resource.
   message Reference {
     string id = 1;
@@ -1116,21 +1110,54 @@ message FeedUpdate {
   // ID of the feed update. This is the primary key of the associated Postgres
   // database row so it's actually globally unique.
   string id = 1;
-  // TODO: make these enums
-  // Type of the feed update.
-  string type = 2;
-  // Status of the feed update.
-  string status = 3;
-  // TODO what is this?
-  optional string result = 4;
-  // TODO: delete?
-  optional string stack_trace = 5;
+  // Feed corresponding to this update.
+  // This is the parent resource in Transiter's resource hierarchy.
+  Feed.Reference feed = 2;
+  // URL of this update resource.
+  optional string href = 3;
+
+  // Unix timestamp of when the update started.
+  int64 started_at = 4;
+  // Whether the update has finished. If false, the update is still in progress.
+  bool finished = 5;
+  // Unix timestamp of when the update finished.
+  // Only populated if the update is finished.
+  optional int64 finished_at = 6;
+
+  enum Result {
+    // Finished succesfully.
+    UPDATED = 0;
+    // The update was skipped because the downloaded data was identical to the data for the last succesful update.
+    NOT_NEEDED = 1;
+    // Failed to download feed data.
+    DOWNLOAD_ERROR = 2;
+    // Feed data was empty.
+    EMPTY_FEED = 3;
+    // The feed configuration is invalid. This typically indicates a bug in Transiter because
+    // the feed configuration is validated when the system is being installed.
+    INVALID_FEED_CONFIG = 4;
+    // The parser specified in the feed configuration is invalid.
+    INVALID_PARSER = 5;
+    // Failed to parse the feed data.
+    // This means the feed data was corrupted or otherwise invalid.
+    PARSE_ERROR = 6;
+    // Failed to update the database using the new feed data.
+    // This typically indicates a bug in Transiter or a transient error connecting to the database.
+    UPDATE_ERROR = 7;
+    // An internal unspecified error occured.
+    INTERNAL_ERROR = 8;
+  }
+  // Result of the update.
+  // Only populated if the update is finished.
+  optional Result result = 7;
   // Number of bytes in the downloaded feed data.
-  optional int32 content_length = 7;
+  // Only populated if the update succesfully downloaded the data.
+  optional int32 content_length = 8;
   // Hash of the downloaded feed data. This is used to skip updates
   // if the feed data hasn't changed.
-  optional string content_hash = 6;
-  // Unix timestamp of the approximate time the update completed.
-  // TODO: started_at? scheduled_at?
-  optional int64 completed_at = 8;
+  // Only populated if the update succesfully downloaded the data.
+  optional string content_hash = 9;
+  // Error message of the update.
+  // Only populated if the update finished in an error
+  optional string error_message = 10;
 }

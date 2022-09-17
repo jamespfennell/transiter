@@ -11,6 +11,17 @@ import (
 	"time"
 )
 
+const countUpdatesInFeed = `-- name: CountUpdatesInFeed :one
+SELECT COUNT(*) FROM feed_update WHERE feed_pk = $1
+`
+
+func (q *Queries) CountUpdatesInFeed(ctx context.Context, feedPk int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countUpdatesInFeed, feedPk)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteFeed = `-- name: DeleteFeed :exec
 DELETE FROM feed WHERE pk = $1
 `
@@ -22,19 +33,18 @@ func (q *Queries) DeleteFeed(ctx context.Context, pk int64) error {
 
 const finishFeedUpdate = `-- name: FinishFeedUpdate :exec
 UPDATE feed_update
-SET status = $1,
-    result = $2,
-    ended_at = $3,
-    content_length = $4,
-    content_hash = $5,
-    error_message = $6
-WHERE pk = $7
+SET finished = true, 
+    result = $1,
+    finished_at = $2,
+    content_length = $3,
+    content_hash = $4,
+    error_message = $5
+WHERE pk = $6
 `
 
 type FinishFeedUpdateParams struct {
-	Status        string
 	Result        sql.NullString
-	EndedAt       sql.NullTime
+	FinishedAt    sql.NullTime
 	ContentLength sql.NullInt32
 	ContentHash   sql.NullString
 	ErrorMessage  sql.NullString
@@ -43,15 +53,40 @@ type FinishFeedUpdateParams struct {
 
 func (q *Queries) FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdateParams) error {
 	_, err := q.db.Exec(ctx, finishFeedUpdate,
-		arg.Status,
 		arg.Result,
-		arg.EndedAt,
+		arg.FinishedAt,
 		arg.ContentLength,
 		arg.ContentHash,
 		arg.ErrorMessage,
 		arg.UpdatePk,
 	)
 	return err
+}
+
+const getFeed = `-- name: GetFeed :one
+SELECT feed.pk, feed.id, feed.system_pk, feed.periodic_update_enabled, feed.periodic_update_period, feed.config FROM feed
+    INNER JOIN system on system.pk = feed.system_pk
+    WHERE system.id = $1
+    AND feed.id = $2
+`
+
+type GetFeedParams struct {
+	SystemID string
+	FeedID   string
+}
+
+func (q *Queries) GetFeed(ctx context.Context, arg GetFeedParams) (Feed, error) {
+	row := q.db.QueryRow(ctx, getFeed, arg.SystemID, arg.FeedID)
+	var i Feed
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.PeriodicUpdateEnabled,
+		&i.PeriodicUpdatePeriod,
+		&i.Config,
+	)
+	return i, err
 }
 
 const getFeedForUpdate = `-- name: GetFeedForUpdate :one
@@ -74,34 +109,8 @@ func (q *Queries) GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, e
 	return i, err
 }
 
-const getFeedInSystem = `-- name: GetFeedInSystem :one
-SELECT feed.pk, feed.id, feed.system_pk, feed.periodic_update_enabled, feed.periodic_update_period, feed.config FROM feed
-    INNER JOIN system ON feed.system_pk = system.pk
-    WHERE system.id = $1
-    AND feed.id = $2
-`
-
-type GetFeedInSystemParams struct {
-	SystemID string
-	FeedID   string
-}
-
-func (q *Queries) GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error) {
-	row := q.db.QueryRow(ctx, getFeedInSystem, arg.SystemID, arg.FeedID)
-	var i Feed
-	err := row.Scan(
-		&i.Pk,
-		&i.ID,
-		&i.SystemPk,
-		&i.PeriodicUpdateEnabled,
-		&i.PeriodicUpdatePeriod,
-		&i.Config,
-	)
-	return i, err
-}
-
 const getFeedUpdate = `-- name: GetFeedUpdate :one
-SELECT pk, feed_pk, status, started_at, ended_at, result, content_length, content_hash, error_message FROM feed_update WHERE pk = $1
+SELECT pk, feed_pk, started_at, finished, finished_at, result, content_length, content_hash, error_message FROM feed_update WHERE pk = $1
 `
 
 func (q *Queries) GetFeedUpdate(ctx context.Context, pk int64) (FeedUpdate, error) {
@@ -110,9 +119,9 @@ func (q *Queries) GetFeedUpdate(ctx context.Context, pk int64) (FeedUpdate, erro
 	err := row.Scan(
 		&i.Pk,
 		&i.FeedPk,
-		&i.Status,
 		&i.StartedAt,
-		&i.EndedAt,
+		&i.Finished,
+		&i.FinishedAt,
 		&i.Result,
 		&i.ContentLength,
 		&i.ContentHash,
@@ -124,8 +133,8 @@ func (q *Queries) GetFeedUpdate(ctx context.Context, pk int64) (FeedUpdate, erro
 const getLastFeedUpdateContentHash = `-- name: GetLastFeedUpdateContentHash :one
 SELECT content_hash
 FROM feed_update
-WHERE feed_pk = $1 AND status = 'SUCCESS'
-ORDER BY ended_at DESC
+WHERE feed_pk = $1 AND result = 'UPDATED'
+ORDER BY finished_at DESC
 LIMIT 1
 `
 
@@ -165,20 +174,19 @@ func (q *Queries) InsertFeed(ctx context.Context, arg InsertFeedParams) error {
 
 const insertFeedUpdate = `-- name: InsertFeedUpdate :one
 INSERT INTO feed_update
-    (feed_pk, status, started_at)
+    (feed_pk, started_at, finished)
 VALUES
-    ($1, $2, $3)
+    ($1, $2, false)
 RETURNING pk
 `
 
 type InsertFeedUpdateParams struct {
 	FeedPk    int64
-	Status    string
 	StartedAt time.Time
 }
 
 func (q *Queries) InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdateParams) (int64, error) {
-	row := q.db.QueryRow(ctx, insertFeedUpdate, arg.FeedPk, arg.Status, arg.StartedAt)
+	row := q.db.QueryRow(ctx, insertFeedUpdate, arg.FeedPk, arg.StartedAt)
 	var pk int64
 	err := row.Scan(&pk)
 	return pk, err
@@ -217,12 +225,12 @@ func (q *Queries) ListAutoUpdateFeedsForSystem(ctx context.Context, systemID str
 	return items, nil
 }
 
-const listFeedsInSystem = `-- name: ListFeedsInSystem :many
+const listFeeds = `-- name: ListFeeds :many
 SELECT pk, id, system_pk, periodic_update_enabled, periodic_update_period, config FROM feed WHERE system_pk = $1 ORDER BY id
 `
 
-func (q *Queries) ListFeedsInSystem(ctx context.Context, systemPk int64) ([]Feed, error) {
-	rows, err := q.db.Query(ctx, listFeedsInSystem, systemPk)
+func (q *Queries) ListFeeds(ctx context.Context, systemPk int64) ([]Feed, error) {
+	rows, err := q.db.Query(ctx, listFeeds, systemPk)
 	if err != nil {
 		return nil, err
 	}

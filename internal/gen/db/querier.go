@@ -15,6 +15,7 @@ type Querier interface {
 	CountRoutesInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountStopsInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) (int64, error)
+	CountUpdatesInFeed(ctx context.Context, feedPk int64) (int64, error)
 	DeleteAlerts(ctx context.Context, alertPks []int64) error
 	DeleteFeed(ctx context.Context, pk int64) error
 	DeleteServiceMap(ctx context.Context, arg DeleteServiceMapParams) error
@@ -35,8 +36,8 @@ type Querier interface {
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
 	GetAlertInSystem(ctx context.Context, arg GetAlertInSystemParams) (Alert, error)
 	GetDestinationsForTrips(ctx context.Context, tripPks []int64) ([]GetDestinationsForTripsRow, error)
+	GetFeed(ctx context.Context, arg GetFeedParams) (Feed, error)
 	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
-	GetFeedInSystem(ctx context.Context, arg GetFeedInSystemParams) (Feed, error)
 	GetFeedUpdate(ctx context.Context, pk int64) (FeedUpdate, error)
 	GetLastFeedUpdateContentHash(ctx context.Context, feedPk int64) (sql.NullString, error)
 	GetRoute(ctx context.Context, pk int64) (Route, error)
@@ -76,7 +77,7 @@ type Querier interface {
 	ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlertsInSystemAndByIDsParams) ([]Alert, error)
 	ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error)
 	ListChildrenForStops(ctx context.Context, stopPks []int64) ([]ListChildrenForStopsRow, error)
-	ListFeedsInSystem(ctx context.Context, systemPk int64) ([]Feed, error)
+	ListFeeds(ctx context.Context, systemPk int64) ([]Feed, error)
 	ListRoutePreviews(ctx context.Context, routePks []int64) ([]ListRoutePreviewsRow, error)
 	ListRoutesByPk(ctx context.Context, routePks []int64) ([]Route, error)
 	ListRoutesInAgency(ctx context.Context, agencyPk int64) ([]ListRoutesInAgencyRow, error)

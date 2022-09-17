@@ -1,7 +1,7 @@
 # Transiter
 
 Transiter is a backend web service that makes it easy to use transit data in web apps, 
-    train arrival time boards and similar technologies.
+    arrival time boards and similar technologies.
 
 Transiter subscribes to GTFS static and realtime feeds
     and provides integrated views of the data through a REST API.

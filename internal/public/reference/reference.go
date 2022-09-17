@@ -3,6 +3,7 @@ package reference
 
 import (
 	"context"
+	"database/sql"
 	"path"
 	"strings"
 
@@ -116,11 +117,11 @@ func (h Generator) StopsHref(systemID string) *string {
 	return h.generateHref("systems", systemID, "stops")
 }
 
-func (h Generator) Stop(id string, systemID string, name string) *api.Stop_Reference {
+func (h Generator) Stop(id string, systemID string, name sql.NullString) *api.Stop_Reference {
 	return &api.Stop_Reference{
 		Id:     id,
 		System: h.System(systemID),
-		Name:   name,
+		Name:   convert.SQLNullString(name),
 		Href:   h.generateHref("systems", systemID, "stops", id),
 	}
 }

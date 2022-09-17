@@ -71,8 +71,8 @@ func ListTransfers(ctx context.Context, r *Context, req *api.ListTransfersReques
 	for _, transfer := range transfers {
 		transfer := transfer
 		reply.Transfers = append(reply.Transfers, &api.Transfer{
-			FromStop:        r.Reference.Stop(transfer.FromStopID, system.ID, transfer.FromStopName.String),
-			ToStop:          r.Reference.Stop(transfer.ToStopID, system.ID, transfer.ToStopName.String),
+			FromStop:        r.Reference.Stop(transfer.FromStopID, system.ID, transfer.FromStopName),
+			ToStop:          r.Reference.Stop(transfer.ToStopID, system.ID, transfer.ToStopName),
 			Type:            convert.TransferType(transfer.Type),
 			MinTransferTime: convert.SQLNullInt32(transfer.MinTransferTime),
 		})
@@ -110,7 +110,7 @@ func buildStopsResponse(ctx context.Context, r *Context, systemID string, stops 
 	stopPkToApiPreview := map[int64]*api.Stop_Reference{}
 	for i := range data.allStops {
 		stop := &data.allStops[i]
-		stopPkToApiPreview[stop.Pk] = r.Reference.Stop(stop.StopID, systemID, stop.Name.String)
+		stopPkToApiPreview[stop.Pk] = r.Reference.Stop(stop.StopID, systemID, stop.Name)
 	}
 	routePkToApiPreview := map[int64]*api.Route_Reference{}
 	for i := range data.allRoutes {

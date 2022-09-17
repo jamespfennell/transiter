@@ -121,7 +121,6 @@ The Alert resource.
 This resource corresponds to the [alert type in the GTFS realtime
 specification](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
 
-TODO: informed entites
 TODO; alphabetize the messages
 	
 
@@ -252,6 +251,26 @@ specification](https://developers.google.com/transit/gtfs-realtime/reference#mes
 
 
 
+## ChildResources
+
+Description of a collection of child resources for a resource.
+This message and fields using this message exist to support API discoverability.
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| count | int64 | Number of child resources.
+| href | string | URL of the endpoint to list child resources.
+
+
+
+
+
+
+
+
+
 ## Feed
 
 The feed resource.
@@ -272,7 +291,7 @@ More detailed information on a feed -- its full configuration, and the
 | system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this feed.
 | periodic_update_enabled | bool | Whether periodic update is enabled for this feed.
 | periodic_update_period | string | If periodic update is enabled, the period each update is triggered.
-| updates | [Feed.Updates](public_resources.md#Feed.Updates) | 
+| updates | [ChildResources](public_resources.md#ChildResources) | Updates for this feed.
 
 
 
@@ -289,21 +308,6 @@ Reference is the reference type for the feed resource.
 | ----- | ---- | ----------- |
 | id | string | 
 | system | [System.Reference](public_resources.md#System.Reference) | 
-| href | string | 
-
-
-
-
-
-
-#### Feed.Updates
-
-TODO: have a ChildResources message and use that instead
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
 | href | string | 
 
 
@@ -329,16 +333,42 @@ A background task in Transiter periodically garbage collects old updates.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the feed update. This is the primary key of the associated Postgres database row so it's actually globally unique.
-| type | string | TODO: make these enums Type of the feed update.
-| status | string | Status of the feed update.
-| result | string | TODO what is this?
-| stack_trace | string | TODO: delete?
-| content_length | int32 | Number of bytes in the downloaded feed data.
-| content_hash | string | Hash of the downloaded feed data. This is used to skip updates if the feed data hasn't changed.
-| completed_at | int64 | Unix timestamp of the approximate time the update completed. TODO: started_at? scheduled_at?
+| feed | [Feed.Reference](public_resources.md#Feed.Reference) | Feed corresponding to this update. This is the parent resource in Transiter's resource hierarchy.
+| href | string | URL of this update resource.
+| started_at | int64 | Unix timestamp of when the update started.
+| finished | bool | Whether the update has finished. If false, the update is still in progress.
+| finished_at | int64 | Unix timestamp of when the update finished. Only populated if the update is finished.
+| result | [FeedUpdate.Result](public_resources.md#FeedUpdate.Result) | Result of the update. Only populated if the update is finished.
+| content_length | int32 | Number of bytes in the downloaded feed data. Only populated if the update succesfully downloaded the data.
+| content_hash | string | Hash of the downloaded feed data. This is used to skip updates if the feed data hasn't changed. Only populated if the update succesfully downloaded the data.
+| error_message | string | Error message of the update. Only populated if the update finished in an error
 
 
 
+
+
+
+#### FeedUpdate.Result
+
+
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UPDATED | 0 | Finished succesfully. |
+| NOT_NEEDED | 1 | The update was skipped because the downloaded data was identical to the data for the last succesful update. |
+| DOWNLOAD_ERROR | 2 | Failed to download feed data. |
+| EMPTY_FEED | 3 | Feed data was empty. |
+| INVALID_FEED_CONFIG | 4 | The feed configuration is invalid. This typically indicates a bug in Transiter because
+the feed configuration is validated when the system is being installed. |
+| INVALID_PARSER | 5 | The parser specified in the feed configuration is invalid. |
+| PARSE_ERROR | 6 | Failed to parse the feed data.
+This means the feed data was corrupted or otherwise invalid. |
+| UPDATE_ERROR | 7 | Failed to update the database using the new feed data.
+This typically indicates a bug in Transiter or a transient error connecting to the database. |
+| INTERNAL_ERROR | 8 | An internal unspecified error occured. |
 
 
 
@@ -368,16 +398,32 @@ Transiter adds some additional related fields (agency, alerts)
 | description | string | Description of the route. This is the `route_desc` column in `routes.txt`.
 | url | string | URL of a web page about the route. This is the `route_url` column in `routes.txt`.
 | sort_order | int32 | Sort order of the route. This is the `route_sort_order` column in `routes.txt`.
-| continuous_pickup | string | TODO: make these 3 fields enums Continuous pickup policy. This is the `continuous_pickup` column in `routes.txt`.
-| continuous_drop_off | string | Continuous dropoff policy. This is the `continuous_dropoff` column in `routes.txt`.
-| type | string | Type of the route. This is the `route_type` column in `routes.txt`.
+| continuous_pickup | [Route.ContinuousPolicy](public_resources.md#Route.ContinuousPolicy) | Continuous pickup policy. This is the `continuous_pickup` column in `routes.txt`.
+| continuous_drop_off | [Route.ContinuousPolicy](public_resources.md#Route.ContinuousPolicy) | Continuous dropoff policy. This is the `continuous_dropoff` column in `routes.txt`.
+| type | [Route.Type](public_resources.md#Route.Type) | Type of the route. This is the `route_type` column in `routes.txt`.
 | agency | [Agency.Reference](public_resources.md#Agency.Reference) | Agency this route is associated to.<br /><br />This is determined using the `agency_id` column in `routes.txt`.
 | alerts | [Alert.Reference](public_resources.md#Alert.Reference) | Active alerts for this route.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
-| estimated_headway | int32 | An estimate of the interval of time between consecutive realtime trips, in seconds.<br /><br />If there is insufficient data to compute an estimate, the field will be empty.<br /><br />The estimate is computed as follows. For each stop that has realtime trips for the route, the list of arrival times for those trips is examined. The difference between consecutive arrival times is calculated. If there are `N` trips, there will be `N-1` such arrival time diffs. The estimated headway is the average of these diffs across / all stops.
+| estimated_headway | int32 | An estimate of the interval of time between consecutive realtime trips, in seconds.<br /><br />If there is insufficient data to compute an estimate, the field will be empty.<br /><br />The estimate is computed as follows. For each stop that has realtime trips for the route, the list of arrival times for those trips is examined. The difference between consecutive arrival times is calculated. If there are `N` trips, there will be `N-1` such arrival time diffs. The estimated headway is the average of these diffs across all stops.
 | service_maps | [Route.ServiceMap](public_resources.md#Route.ServiceMap) | List of service maps for this route.
 
 
 
+
+
+
+#### Route.ContinuousPolicy
+
+Enum describing possible policies for continuous pickup or drop-off.
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ALLOWED | 0 | Continuous pickup or drop-off allowed. |
+| NOT_ALLOWED | 1 | Continuous pickup or drop-off not allowed. |
+| PHONE_AGENCY | 2 | Must phone the agency to arrange continuous pickup or drop-off. |
+| COORDINATE_WITH_DRIVER | 3 | Must coordinate with driver to arrange continuous pickup or drop-off. |
 
 
 
@@ -391,8 +437,8 @@ Reference is the reference type for the route resource.
 | ----- | ---- | ----------- |
 | id | string | 
 | system | [System.Reference](public_resources.md#System.Reference) | 
-| color | string | TODO(APIv2): remove? or add text_color?
 | href | string | 
+| color | string | 
 
 
 
@@ -415,6 +461,30 @@ message and the associated field.
 
 
 
+
+
+
+#### Route.Type
+
+Enum describing possible route types.
+This corresponds to possible values of the `route_type` column in `routes.txt`.
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| LIGHT_RAIL | 0 |  |
+| SUBWAY | 1 |  |
+| RAIL | 2 |  |
+| BUS | 3 |  |
+| FERRY | 4 |  |
+| CABLE_TRAM | 5 |  |
+| AERIAL_LIFT | 6 |  |
+| FUNICULAR | 7 |  |
+| TROLLEY_BUS | 11 |  |
+| MONORAIL | 12 |  |
+| UNKNOWN | 100 |  |
 
 
 
@@ -489,7 +559,7 @@ Reference is the reference type for the stop resource.
 | ----- | ---- | ----------- |
 | id | string | 
 | system | [System.Reference](public_resources.md#System.Reference) | 
-| name | string | TODO: make optional
+| name | string | 
 | href | string | 
 
 
@@ -595,27 +665,11 @@ The System resource.
 | id | string | ID of the system as specified in the install request.
 | name | string | Name of the system as specified in the system configuration file.
 | status | [System.Status](public_resources.md#System.Status) | Status of the system.
-| agencies | [System.ChildEntities](public_resources.md#System.ChildEntities) | 
-| feeds | [System.ChildEntities](public_resources.md#System.ChildEntities) | 
-| routes | [System.ChildEntities](public_resources.md#System.ChildEntities) | 
-| stops | [System.ChildEntities](public_resources.md#System.ChildEntities) | 
-| transfers | [System.ChildEntities](public_resources.md#System.ChildEntities) | 
-| href | string | 
-
-
-
-
-
-
-#### System.ChildEntities
-
-TODO: rename `ChildResources`, move out of here, and reuse
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| count | int64 | 
+| agencies | [ChildResources](public_resources.md#ChildResources) | 
+| feeds | [ChildResources](public_resources.md#ChildResources) | 
+| routes | [ChildResources](public_resources.md#ChildResources) | 
+| stops | [ChildResources](public_resources.md#ChildResources) | 
+| transfers | [ChildResources](public_resources.md#ChildResources) | 
 | href | string | 
 
 

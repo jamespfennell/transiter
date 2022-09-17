@@ -25,7 +25,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/update/static"
 )
 
-func CreateAndRun(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error {
+func Do(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error {
 	var updatePk int64
 	if err := pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		var err error
@@ -48,7 +48,7 @@ func CreateAndRun(ctx context.Context, pool *pgxpool.Pool, systemID, feedID stri
 	return updateErr
 }
 
-func CreateAndRunInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string) error {
+func DoInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string) error {
 	updatePk, err := createInExistingTx(ctx, querier, systemID, feedID)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func CreateAndRunInExistingTx(ctx context.Context, querier db.Querier, systemID,
 
 func createInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string) (int64, error) {
 	log.Printf("Creating update for %s/%s\n", systemID, feedID)
-	feed, err := querier.GetFeedInSystem(ctx, db.GetFeedInSystemParams{
+	feed, err := querier.GetFeed(ctx, db.GetFeedParams{
 		SystemID: systemID,
 		FeedID:   feedID,
 	})
@@ -67,7 +67,6 @@ func createInExistingTx(ctx context.Context, querier db.Querier, systemID, feedI
 	}
 	return querier.InsertFeedUpdate(ctx, db.InsertFeedUpdateParams{
 		FeedPk:    feed.Pk,
-		Status:    constants.StatusRunning,
 		StartedAt: time.Now(),
 	})
 }
@@ -85,19 +84,19 @@ func runInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID s
 	}
 	errorMessage := sql.NullString{}
 	if r.Err != nil {
+		log.Printf("Error during feed update: %s\n", r.Err)
 		errorMessage = sql.NullString{Valid: true, String: r.Err.Error()}
 	}
 	if err := querier.FinishFeedUpdate(ctx, db.FinishFeedUpdateParams{
 		UpdatePk:      updatePk,
-		Status:        r.Status,
 		Result:        sql.NullString{Valid: true, String: r.Result},
-		EndedAt:       sql.NullTime{Valid: true, Time: time.Now()},
+		FinishedAt:    sql.NullTime{Valid: true, Time: time.Now()},
 		ContentLength: contentLength,
 		ContentHash:   contentHash,
 		ErrorMessage:  errorMessage,
 	}); err != nil {
 		// TODO: we should rollback the transaction if this happens?
-		log.Printf("Error while finsishing feed update for pk=%d: %s\n", updatePk, r.Err)
+		log.Printf("Error while finishing feed update for pk=%d: %s\n", updatePk, r.Err)
 		return err
 	}
 

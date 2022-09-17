@@ -83,11 +83,11 @@ CREATE TABLE feed (
 CREATE TABLE feed_update (
     pk BIGSERIAL PRIMARY KEY,
     feed_pk BIGINT NOT NULL,
-    status character varying(16) NOT NULL,
     started_at timestamp with time zone NOT NULL,
+    finished boolean NOT NULL,
 
     -- the following fields are only populated when the update completes
-    ended_at timestamp with time zone,
+    finished_at timestamp with time zone,
     result character varying(30),
     content_length integer,
     content_hash character varying,
@@ -95,8 +95,9 @@ CREATE TABLE feed_update (
 );
 
 CREATE INDEX ix_feed_update_feed_feed_update ON feed_update USING btree (feed_pk, pk);
-CREATE INDEX ix_feed_update_status_result_ended_at ON feed_update USING btree (feed_pk, status, result, ended_at);
-CREATE INDEX ix_feed_update_success_pk_ended_at ON feed_update USING btree (feed_pk, ended_at) WHERE ((status)::text = 'SUCCESS'::text);
+-- this index is to retrieve the last successful update hash
+CREATE INDEX ix_feed_update_success_pk_ended_at ON feed_update USING btree (feed_pk, finished_at) 
+    WHERE ((result)::text = 'UPDATED'::text);
 
 CREATE TABLE route (
     pk BIGSERIAL PRIMARY KEY,

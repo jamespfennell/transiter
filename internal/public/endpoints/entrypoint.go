@@ -22,6 +22,9 @@ func Entrypoint(ctx context.Context, r *Context, req *api.EntrypointRequest) (*a
 			Href:    "https://github.com/jamespfennell/transiter",
 			// TODO: build information
 		},
-		Systems: systems,
+		Systems: &api.ChildResources{
+			Count: int64(len(systems)),
+			Href:  r.Reference.SystemsHref(),
+		},
 	}, nil
 }

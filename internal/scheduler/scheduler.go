@@ -266,7 +266,7 @@ func (ops *defaultSchedulerOps) GetSystemConfig(ctx context.Context, systemID st
 }
 
 func (ops *defaultSchedulerOps) UpdateFeed(ctx context.Context, systemID, feedID string) error {
-	return update.CreateAndRun(ctx, ops.pool, systemID, feedID)
+	return update.Do(ctx, ops.pool, systemID, feedID)
 }
 
 func buildSystemConfig(ctx context.Context, querier db.Querier, systemID string) (SystemConfig, error) {

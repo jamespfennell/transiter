@@ -20,6 +20,15 @@ func getSystem(ctx context.Context, querier db.Querier, id string) (db.System, e
 	return system, noRowsToNotFound(err, fmt.Sprintf("system %q", id))
 }
 
+func getFeed(ctx context.Context, querier db.Querier, systemID, feedID string) (db.System, db.Feed, error) {
+	system, err := getSystem(ctx, querier, systemID)
+	if err != nil {
+		return system, db.Feed{}, err
+	}
+	feed, err := querier.GetFeed(ctx, db.GetFeedParams{SystemID: system.ID, FeedID: feedID})
+	return system, feed, noRowsToNotFound(err, fmt.Sprintf("route %q in system %q", feedID, system.ID))
+}
+
 func getRoute(ctx context.Context, querier db.Querier, systemID, routeID string) (db.System, db.Route, error) {
 	system, err := getSystem(ctx, querier, systemID)
 	if err != nil {

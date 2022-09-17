@@ -92,9 +92,9 @@ func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []
 			Description:       convert.SQLNullString(route.Description),
 			Url:               convert.SQLNullString(route.Url),
 			SortOrder:         convert.SQLNullInt32(route.SortOrder),
-			ContinuousPickup:  route.ContinuousPickup,
-			ContinuousDropOff: route.ContinuousDropOff,
-			Type:              route.Type,
+			ContinuousPickup:  convert.ContinuousPolicy(route.ContinuousPickup),
+			ContinuousDropOff: convert.ContinuousPolicy(route.ContinuousDropOff),
+			Type:              convert.RouteType(route.Type),
 			EstimatedHeadway:  estimatedHeadways[route.Pk],
 			Agency:            agencies[route.AgencyPk],
 			ServiceMaps:       serviceMaps[route.Pk],
@@ -162,7 +162,7 @@ func buildServiceMaps(ctx context.Context, r *Context, systemID string, routePks
 			continue
 		}
 		serviceMap := routePkToConfigIDToMap[row.RoutePk][row.ConfigID]
-		serviceMap.Stops = append(serviceMap.Stops, r.Reference.Stop(row.StopID.String, systemID, row.StopName.String))
+		serviceMap.Stops = append(serviceMap.Stops, r.Reference.Stop(row.StopID.String, systemID, row.StopName))
 	}
 	m := map[int64][]*api.Route_ServiceMap{}
 	for routePk, configIDToMap := range routePkToConfigIDToMap {
