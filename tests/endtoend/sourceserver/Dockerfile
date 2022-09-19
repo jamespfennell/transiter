@@ -1,9 +1,7 @@
-FROM python:3.9
+FROM golang:1.19
 
 WORKDIR /sourceserver
 
-RUN pip install flask==2.0.2 gunicorn==20.1.0
+COPY sourceserver.go .
 
-COPY sourceserver.py .
-
-ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:8090", "-w", "1", "sourceserver:app"]
+ENTRYPOINT ["go", "run", "sourceserver.go"]

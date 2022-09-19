@@ -49,7 +49,7 @@ The defaults for these are:
 
 Run Transiter using `go run . server`.
 
-Run the source server using `python tests/endtoend/sourceserver/sourceserver.py`.
+Run the source server using `go run tests/endtoend/sourceserver/sourceserver.go`.
 
 Run the tests using `pytest path/to/test.py`.
 

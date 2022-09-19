@@ -15,11 +15,9 @@ class SourceServerClient:
         self._add_finalizer = add_finalizer
 
     def create(self, prefix="", suffix=""):
-        response = requests.post(
-            self._base_url, params={"prefix": prefix, "suffix": suffix}
-        )
+        response = requests.post(self._base_url)
         response.raise_for_status()
-        created_url = response.text
+        created_url = response.text + suffix
         self._add_finalizer(self._delete_factory(created_url))
         self._created_urls.append(created_url)
         return created_url
