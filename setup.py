@@ -28,7 +28,7 @@ setup(
         "Jinja2==2.11.3",
         "MarkupSafe==0.23",
         "prometheus-client==0.9.0",
-        "protobuf==3.15.0",
+        "protobuf==3.18.3",
         "psycopg2-binary==2.8.5",
         "pytimeparse==1.1.8",
         "pytz==2021.3",
