@@ -918,10 +918,6 @@ message Feed {
   string id = 1;
   // System corresponding to this feed.
   System.Reference system = 2;
-  // Whether periodic update is enabled for this feed.
-  bool periodic_update_enabled = 3;
-  // If periodic update is enabled, the period each update is triggered.
-  optional int64 periodic_update_period_ms = 4;
 
   // Updates for this feed.
   ChildResources updates = 5;

@@ -4,20 +4,47 @@ package servicemaps
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/jamespfennell/gtfs"
-	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
+	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/graph"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // UpdateConfig updates the service map configuration for the provided system.
-func UpdateConfig(ctx context.Context, querier db.Querier, systemPk int64, configs []config.ServiceMapConfig) error {
+func UpdateConfig(ctx context.Context, querier db.Querier, systemPk int64, configs []*api.ServiceMapConfig) error {
+	// TODO: SkipDefaultServiceMaps {
+	if len(configs) == 0 {
+		sevenAm := float64(7)
+		sevenPm := float64(19)
+		configs = []*api.ServiceMapConfig{
+			{
+				Id:        "alltimes",
+				Source:    api.ServiceMapConfig_STATIC,
+				Threshold: 0.1,
+			},
+			{
+				Id:        "weekday",
+				Source:    api.ServiceMapConfig_STATIC,
+				Threshold: 0.1,
+				StaticOptions: &api.ServiceMapConfig_StaticOptions{
+					StartsLaterThan: &sevenAm,
+					EndsEarlierThan: &sevenPm,
+					Days:            []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"},
+				},
+			},
+			{
+				Id:     "realtime",
+				Source: api.ServiceMapConfig_REALTIME,
+			},
+		}
+	}
 	config, err := querier.ListServiceMapConfigsInSystem(ctx, systemPk)
 	if err != nil {
 		return nil
@@ -27,19 +54,23 @@ func UpdateConfig(ctx context.Context, querier db.Querier, systemPk int64, confi
 		configIDToPk[config.ID] = config.Pk
 	}
 	for _, newConfig := range configs {
-		if pk, ok := configIDToPk[newConfig.ID]; ok {
+		j, err := protojson.Marshal(newConfig)
+		if err != nil {
+			return err
+		}
+		if pk, ok := configIDToPk[newConfig.Id]; ok {
 			if err := querier.UpdateServiceMapConfig(ctx, db.UpdateServiceMapConfigParams{
 				Pk:     pk,
-				Config: newConfig.MarshalToJSON(),
+				Config: j,
 			}); err != nil {
 				return err
 			}
-			delete(configIDToPk, newConfig.ID)
+			delete(configIDToPk, newConfig.Id)
 		} else {
 			if err := querier.InsertServiceMapConfig(ctx, db.InsertServiceMapConfigParams{
-				ID:       newConfig.ID,
+				ID:       newConfig.Id,
 				SystemPk: systemPk,
-				Config:   newConfig.MarshalToJSON(),
+				Config:   j,
 			}); err != nil {
 				return err
 			}
@@ -72,10 +103,10 @@ func UpdateStaticMaps(ctx context.Context, querier db.Querier, args UpdateStatic
 	}
 
 	for _, smc := range configs {
-		if smc.Config.Source != config.ServiceMapSourceStatic {
+		if smc.Config.Source != api.ServiceMapConfig_STATIC {
 			continue
 		}
-		routePkToStopPks := buildStaticMaps(&smc.Config, args.RouteIDToPk, stopIDToStationPk, args.Trips)
+		routePkToStopPks := buildStaticMaps(smc.Config, args.RouteIDToPk, stopIDToStationPk, args.Trips)
 		if err := persistMaps(ctx, querier, &smc, routePkToStopPks); err != nil {
 			return err
 		}
@@ -112,7 +143,7 @@ func persistMaps(ctx context.Context, querier db.Querier, smc *Config, routePkTo
 	return nil
 }
 
-func buildStaticMaps(smc *config.ServiceMapConfig, routeIDToPk map[string]int64, stopIDToStationPk map[string]int64, trips []gtfs.ScheduledTrip) map[int64][]int64 {
+func buildStaticMaps(smc *api.ServiceMapConfig, routeIDToPk map[string]int64, stopIDToStationPk map[string]int64, trips []gtfs.ScheduledTrip) map[int64][]int64 {
 	includedServiceIDs := buildIncludedServiceIDs(smc, trips)
 
 	routePkToKeyToCount := map[int64]map[string]int{}
@@ -197,7 +228,7 @@ func calculateTripKey(trip *gtfs.ScheduledTrip, stopIDToStationPk map[string]int
 }
 
 // isIncludedTrip returns whether the trip should be included in the service map.
-func isIncludedTrip(smc *config.ServiceMapConfig, trip *gtfs.ScheduledTrip, includedServiceIDs map[string]bool) bool {
+func isIncludedTrip(smc *api.ServiceMapConfig, trip *gtfs.ScheduledTrip, includedServiceIDs map[string]bool) bool {
 	if trip.DirectionId == nil {
 		return false
 	}
@@ -209,16 +240,23 @@ func isIncludedTrip(smc *config.ServiceMapConfig, trip *gtfs.ScheduledTrip, incl
 	}
 	startTime := trip.StopTimes[0].ArrivalTime
 	endTime := trip.StopTimes[len(trip.StopTimes)-1].ArrivalTime
-	if smc.StartsEarlierThan != nil && *smc.StartsEarlierThan < startTime {
+	staticOpts := smc.GetStaticOptions()
+	if staticOpts == nil {
+		staticOpts = &api.ServiceMapConfig_StaticOptions{}
+	}
+	c := func(in float64) time.Duration {
+		return time.Duration(in * float64(time.Hour))
+	}
+	if staticOpts.StartsEarlierThan != nil && c(*staticOpts.StartsEarlierThan) < startTime {
 		return false
 	}
-	if smc.StartsLaterThan != nil && *smc.StartsLaterThan > startTime {
+	if staticOpts.StartsLaterThan != nil && c(*staticOpts.StartsLaterThan) > startTime {
 		return false
 	}
-	if smc.EndsEarlierThan != nil && *smc.EndsEarlierThan < endTime {
+	if staticOpts.EndsEarlierThan != nil && c(*staticOpts.EndsEarlierThan) < endTime {
 		return false
 	}
-	if smc.EndsLaterThan != nil && *smc.EndsLaterThan > endTime {
+	if staticOpts.EndsLaterThan != nil && c(*staticOpts.EndsLaterThan) > endTime {
 		return false
 	}
 	return true
@@ -230,9 +268,9 @@ func isIncludedTrip(smc *config.ServiceMapConfig, trip *gtfs.ScheduledTrip, incl
 // The calculation is based on the days field in the service map config and the days fields in the service.
 // In general a service must run on at least one day specified in the configuration. However if there are no days specified
 // in the configuration then all services are allowed.
-func buildIncludedServiceIDs(smc *config.ServiceMapConfig, trips []gtfs.ScheduledTrip) map[string]bool {
+func buildIncludedServiceIDs(smc *api.ServiceMapConfig, trips []gtfs.ScheduledTrip) map[string]bool {
 	allowedDays := map[string]bool{}
-	for _, day := range smc.Days {
+	for _, day := range smc.GetStaticOptions().GetDays() {
 		allowedDays[strings.ToLower(day)] = true
 	}
 	excludedServiceIDs := map[string]bool{}
@@ -242,7 +280,7 @@ func buildIncludedServiceIDs(smc *config.ServiceMapConfig, trips []gtfs.Schedule
 		if excludedServiceIDs[service.Id] || includedServiceIDs[service.Id] {
 			continue
 		}
-		if len(smc.Days) == 0 {
+		if len(allowedDays) == 0 {
 			includedServiceIDs[service.Id] = true
 			continue
 		}
@@ -341,7 +379,7 @@ func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, args UpdateReal
 		return err
 	}
 	for _, smc := range configs {
-		if smc.Config.Source != config.ServiceMapSourceRealtime {
+		if smc.Config.Source != api.ServiceMapConfig_REALTIME {
 			continue
 		}
 		if err := persistMaps(ctx, querier, &smc, routePkToStopPks); err != nil {
@@ -382,7 +420,7 @@ func buildRealtimeMapEdges(trips []Trip, stopPkToStationPk map[int64]int64) map[
 
 type Config struct {
 	Pk     int64
-	Config config.ServiceMapConfig
+	Config *api.ServiceMapConfig
 }
 
 // ListConfigsInSystem lists all of the service map configs in the provided system
@@ -394,9 +432,10 @@ func ListConfigsInSystem(ctx context.Context, querier db.Querier, systemPk int64
 	var configs []Config
 	for _, rawConfig := range rawConfigs {
 		smc := Config{
-			Pk: rawConfig.Pk,
+			Pk:     rawConfig.Pk,
+			Config: &api.ServiceMapConfig{},
 		}
-		if err := json.Unmarshal(rawConfig.Config, &smc.Config); err != nil {
+		if err := protojson.Unmarshal(rawConfig.Config, smc.Config); err != nil {
 			log.Printf("Invalid service map config, skipping: %+v", err)
 			continue
 		}

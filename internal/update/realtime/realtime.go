@@ -11,35 +11,21 @@ import (
 	"time"
 
 	"github.com/jamespfennell/gtfs"
-	"github.com/jamespfennell/gtfs/extensions"
-	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
-	"github.com/jamespfennell/gtfs/extensions/nycttrips"
-	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
+	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/servicemaps"
 	"github.com/jamespfennell/transiter/internal/update/common"
 )
 
-func Parse(content []byte, opts config.GtfsRealtimeOptions) (*gtfs.Realtime, error) {
-	var extension extensions.Extension
-	switch opts.Extension {
-	case config.NyctTrips:
-		var extensionOpts nycttrips.ExtensionOpts
-		if opts.NyctTripsOptions != nil {
-			extensionOpts = *opts.NyctTripsOptions
-		}
-		extension = nycttrips.Extension(extensionOpts)
-	case config.NyctAlerts:
-		var extensionOpts nyctalerts.ExtensionOpts
-		if opts.NyctAlertsOptions != nil {
-			extensionOpts = *opts.NyctAlertsOptions
-		}
-		extension = nyctalerts.Extension(extensionOpts)
+func Parse(content []byte, opts *api.GtfsRealtimeOptions) (*gtfs.Realtime, error) {
+	ext, err := convert.GtfsRealtimeExtension(opts)
+	if err != nil {
+		return nil, err
 	}
 	return gtfs.ParseRealtime(content, &gtfs.ParseRealtimeOptions{
-		Extension: extension,
+		Extension: ext,
 	})
 }
 

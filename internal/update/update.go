@@ -14,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jamespfennell/gtfs"
-	"github.com/jamespfennell/transiter/config"
 	"github.com/jamespfennell/transiter/internal/db/constants"
+	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/monitoring"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -23,6 +23,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/update/nyctsubwaycsv"
 	"github.com/jamespfennell/transiter/internal/update/realtime"
 	"github.com/jamespfennell/transiter/internal/update/static"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func Do(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error {
@@ -130,12 +131,12 @@ func run(ctx context.Context, querier db.Querier, systemID string, updatePk int6
 		r.markErr(constants.ResultInternalError, err)
 		return r
 	}
-	feedConfig, err := config.UnmarshalFromJSON([]byte(feed.Config))
-	if err != nil {
+	var feedConfig api.FeedConfig
+	if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
 		r.markErr(constants.ResultInvalidFeedConfig, fmt.Errorf("failed to parse feed config: %w", err))
 		return r
 	}
-	content, err := getFeedContent(ctx, systemID, feedConfig)
+	content, err := getFeedContent(ctx, systemID, &feedConfig)
 	if err != nil {
 		r.markErr(constants.ResultDownloadError, err)
 		return r
@@ -165,21 +166,21 @@ func run(ctx context.Context, querier db.Querier, systemID string, updatePk int6
 	var parseErr error
 	var updateErr error
 	switch feedConfig.Parser {
-	case config.GtfsStatic:
+	case "GTFS_STATIC":
 		var data *gtfs.Static
 		data, parseErr = static.Parse(content)
 		if parseErr != nil {
 			break
 		}
 		updateErr = static.Update(ctx, updateCtx, data)
-	case config.GtfsRealtime:
+	case "GTFS_REALTIME":
 		var data *gtfs.Realtime
 		data, parseErr = realtime.Parse(content, feedConfig.GtfsRealtimeOptions)
 		if parseErr != nil {
 			break
 		}
 		updateErr = realtime.Update(ctx, updateCtx, data)
-	case config.NyctSubwayCsv:
+	case "NYCT_SUBWAY_CSV":
 		// TODO: parse error
 		updateErr = nyctsubwaycsv.ParseAndUpdate(ctx, updateCtx, content)
 	default:
@@ -199,18 +200,18 @@ func run(ctx context.Context, querier db.Querier, systemID string, updatePk int6
 	return r
 }
 
-func getFeedContent(ctx context.Context, systemID string, feedConfig *config.FeedConfig) ([]byte, error) {
+func getFeedContent(ctx context.Context, systemID string, feedConfig *api.FeedConfig) ([]byte, error) {
 	client := http.Client{
 		Timeout: 5 * time.Second,
 	}
-	if feedConfig.HTTPTimeout != nil {
-		client.Timeout = *feedConfig.HTTPTimeout
+	if feedConfig.RequestTimeoutMs != nil {
+		client.Timeout = time.Duration(*feedConfig.RequestTimeoutMs) * time.Millisecond
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", feedConfig.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", feedConfig.Url, nil)
 	if err != nil {
 		return nil, err
 	}
-	for key, value := range feedConfig.HTTPHeaders {
+	for key, value := range feedConfig.HttpHeaders {
 		req.Header.Add(key, value)
 	}
 	resp, err := client.Do(req)
@@ -219,7 +220,7 @@ func getFeedContent(ctx context.Context, systemID string, feedConfig *config.Fee
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP request for %s/%s returned non-ok status %s", systemID, feedConfig.ID, resp.Status)
+		return nil, fmt.Errorf("HTTP request for %s/%s returned non-ok status %s", systemID, feedConfig.Id, resp.Status)
 	}
 	return io.ReadAll(resp.Body)
 }

@@ -289,8 +289,6 @@ More detailed information on a feed -- its full configuration, and the
 | ----- | ---- | ----------- |
 | id | string | ID of the feed, as specified in the system configuration file.
 | system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this feed.
-| periodic_update_enabled | bool | Whether periodic update is enabled for this feed.
-| periodic_update_period_ms | int64 | If periodic update is enabled, the period each update is triggered.
 | updates | [ChildResources](public_resources.md#ChildResources) | Updates for this feed.
 
 

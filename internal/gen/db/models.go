@@ -66,12 +66,12 @@ type AlertTrip struct {
 }
 
 type Feed struct {
-	Pk                    int64
-	ID                    string
-	SystemPk              int64
-	PeriodicUpdateEnabled bool
-	PeriodicUpdatePeriod  sql.NullInt64
-	Config                string
+	Pk             int64
+	ID             string
+	SystemPk       int64
+	UpdateStrategy string
+	UpdatePeriod   sql.NullFloat64
+	Config         string
 }
 
 type FeedUpdate struct {

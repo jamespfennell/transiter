@@ -48,9 +48,7 @@ func buildApiFeeds(ctx context.Context, r *Context, system *db.System, feeds []d
 			return nil, err
 		}
 		apiFeeds = append(apiFeeds, &api.Feed{
-			Id:                     feed.ID,
-			PeriodicUpdateEnabled:  feed.PeriodicUpdateEnabled,
-			PeriodicUpdatePeriodMs: convert.SQLNullInt64(feed.PeriodicUpdatePeriod),
+			Id: feed.ID,
 			Updates: &api.ChildResources{
 				Count: numUpdates,
 				Href:  r.Reference.FeedUpdatesHref(system.ID, feed.ID),

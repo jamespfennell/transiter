@@ -3,8 +3,6 @@ name: New York City Subway
 feeds:
   - id: gtfsstatic
     requiredForInstall: true
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 24h
 
     url: 'http://web.mta.info/developers/data/nyct/subway/google_transit.zip'
 
@@ -16,8 +14,8 @@ feeds:
     parser: NYCT_SUBWAY_CSV
 
   - id: "alerts"
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
     httpHeaders:
@@ -28,13 +26,13 @@ feeds:
       extension: NYCT_ALERTS
       nyctAlertsOptions:
         elevatorAlertsDeduplicationPolicy: DEDUPLICATE_IN_COMPLEX
-        elevatorAlertsInformUsingStationIDs: true
+        elevatorAlertsInformUsingStationIds: true
         skipTimetabledNoServiceAlerts: true
         addNyctMetadata: true
 
   - id: "1234567"
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs"
     httpHeaders:
@@ -47,8 +45,8 @@ feeds:
         filterStaleUnassignedTrips: true
 
   - id: ACE
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace"
     httpHeaders:
@@ -61,8 +59,8 @@ feeds:
         filterStaleUnassignedTrips: true
 
   - id: BDFM
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm"
     httpHeaders:
@@ -76,8 +74,8 @@ feeds:
 
 
   - id: G
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g"
     httpHeaders:
@@ -90,8 +88,8 @@ feeds:
         filterStaleUnassignedTrips: true
 
   - id: JZ
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-jz"
     httpHeaders:
@@ -104,8 +102,8 @@ feeds:
         filterStaleUnassignedTrips: true
 
   - id: L
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l"
     httpHeaders:
@@ -118,8 +116,8 @@ feeds:
         filterStaleUnassignedTrips: true
 
   - id: NQRW
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw"
     httpHeaders:
@@ -132,8 +130,8 @@ feeds:
         filterStaleUnassignedTrips: true
 
   - id: SIR
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: 5s
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-si"
     httpHeaders:
@@ -156,19 +154,22 @@ serviceMaps:
   - id: weekday
     source: STATIC
     threshold: 0.1
-    days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-    startsLaterThan: 7h
-    endsEarlierThan: 19h
+    staticOptions:
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+      startsLaterThan: 7
+      endsEarlierThan: 19
 
   - id: weeknight
     source: STATIC
     threshold: 0.1
-    days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-    startsEarlierThan: 5h
+    staticOptions:
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+      startsEarlierThan: 5
 
   - id: weekend
     source: STATIC
     threshold: 0.1
-    days: ["Saturday", "Sunday"]
-    startsLaterThan: 7h
-    endsEarlierThan: 19h
+    staticOptions:
+      days: ["Saturday", "Sunday"]
+      startsLaterThan: 7
+      endsEarlierThan: 19

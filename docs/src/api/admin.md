@@ -47,8 +47,8 @@ If the system does not exist an install is performed; otherwise an update.
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system to install or update.
 | system_config | [SystemConfig](admin.md#SystemConfig) | 
-| yaml_config | [YamlConfig](admin.md#YamlConfig) | 
-| install_only | bool | If true, do not perform an update if the system already exists.
+| yaml_config | [TextConfig](admin.md#TextConfig) | TODO: TextConfig json_config = 4;
+| install_only | bool | If true, do not perform an update if the system already exists. TODO: rename skip_update = 4; ?
 | synchronous | bool | If false (the default), the system configuration is validated before the request finishes but databse updates are performed asynchronously. The status of the operation can be polled using GetSystem and inspecting the status field.<br /><br />If true, the install/update operation is perfomed synchronously in the request and in a single database transaction. In this case, if the operation fails there will no database artifacts. The problem is that installs can take a long time and the request may be cancelled before it completes e.g. by an intermediate proxy.
 
 
@@ -261,106 +261,16 @@ No fields.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| id | string | 
-| required_for_install | bool | 
-| periodic_update_enabled | bool | 
-| periodic_update_period_ms | int64 | 
-| url | string | 
-| http_timeout_ms | int64 | 
-| http_headers | [FeedConfig.HttpHeadersEntry](admin.md#FeedConfig.HttpHeadersEntry) | 
-| gtfs_static_parser | [FeedConfig.GtfsStaticParser](admin.md#FeedConfig.GtfsStaticParser) | 
-| gtfs_realtime_parser | [FeedConfig.GtfsRealtimeParser](admin.md#FeedConfig.GtfsRealtimeParser) | 
-| nyct_subway_csv_parser | [FeedConfig.NyctSubwayCsvParser](admin.md#FeedConfig.NyctSubwayCsvParser) | 
+| id | string | Identifier of this feed config. This must be unique within the system.
+| required_for_install | bool | If true, an update of this feed will be performed during the system installation, and if the update fails the system installation will fail.
+| update_strategy | [FeedConfig.UpdateStrategy](admin.md#FeedConfig.UpdateStrategy) | 
+| update_period_s | double | 
+| url | string | URL at which the feed can be downloaded using a HTTP GET request. Transiter does not currently support non-GET requests.
+| request_timeout_ms | int64 | Timeout to enforce for the request to the feed URL. If not specified, defaults to 5 seconds.
+| http_headers | [FeedConfig.HttpHeadersEntry](admin.md#FeedConfig.HttpHeadersEntry) | HTTP headers to send in the request.
+| parser | string | The parser to parse the feed with. Current options are "GTFS_STATIC", "GTFS_REALTIME" and "NYCT_SUBWAY_CSV".<br /><br />The are future plans to support plugging in additional custom parsers at build time. This is why the field is a string and not an enum.
+| gtfs_realtime_options | [GtfsRealtimeOptions](admin.md#GtfsRealtimeOptions) | Additional options for the GTFS realtime parser, if that is the parser in use.
 
-
-
-
-
-
-#### FeedConfig.GtfsRealtimeParser
-
-
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| no_extension | [FeedConfig.GtfsRealtimeParser.NoExtension](admin.md#FeedConfig.GtfsRealtimeParser.NoExtension) | 
-| nyct_trips_extension | [FeedConfig.GtfsRealtimeParser.NyctTripsExtension](admin.md#FeedConfig.GtfsRealtimeParser.NyctTripsExtension) | 
-| nyct_alerts_extension | [FeedConfig.GtfsRealtimeParser.NyctAlertsExtension](admin.md#FeedConfig.GtfsRealtimeParser.NyctAlertsExtension) | 
-
-
-
-
-
-
-#### FeedConfig.GtfsRealtimeParser.NoExtension
-
-
-	
-
-
-No fields.
-
-
-
-
-
-#### FeedConfig.GtfsRealtimeParser.NyctAlertsExtension
-
-
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| elevator_alerts_deduplication_policy | [FeedConfig.GtfsRealtimeParser.NyctAlertsExtension.ElevatorAlertsDeduplicationPolicy](admin.md#FeedConfig.GtfsRealtimeParser.NyctAlertsExtension.ElevatorAlertsDeduplicationPolicy) | 
-| elevator_alerts_inform_using_station_ids | bool | 
-| skip_timetabled_no_service_alerts | bool | 
-| add_nyct_metadata | bool | 
-
-
-
-
-
-
-#### FeedConfig.GtfsRealtimeParser.NyctAlertsExtension.ElevatorAlertsDeduplicationPolicy
-
-
-	
-
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| NO_DEDUPLICATION | 0 |  |
-| DEDUPLICATE_IN_STATION | 1 |  |
-| DEDUPLICATE_IN_COMPLEX | 2 |  |
-
-
-
-#### FeedConfig.GtfsRealtimeParser.NyctTripsExtension
-
-
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| filter_stale_unassigned_trips | bool | 
-
-
-
-
-
-
-#### FeedConfig.GtfsStaticParser
-
-
-	
-
-
-No fields.
 
 
 
@@ -382,13 +292,96 @@ No fields.
 
 
 
-#### FeedConfig.NyctSubwayCsvParser
+#### FeedConfig.UpdateStrategy
 
 
 	
 
 
-No fields.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NONE | 0 |  |
+| PERIODIC | 1 |  |
+
+
+
+
+### GtfsRealtimeOptions
+
+Message describing options for the GTFS realtime parser.
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| extension | [GtfsRealtimeOptions.Extension](admin.md#GtfsRealtimeOptions.Extension) | 
+| nyct_trips_options | [GtfsRealtimeOptions.NyctTripsOptions](admin.md#GtfsRealtimeOptions.NyctTripsOptions) | 
+| nyct_alerts_options | [GtfsRealtimeOptions.NyctAlertsOptions](admin.md#GtfsRealtimeOptions.NyctAlertsOptions) | 
+
+
+
+
+
+
+#### GtfsRealtimeOptions.Extension
+
+
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NO_EXTENSION | 0 |  |
+| NYCT_TRIPS | 1 |  |
+| NYCT_ALERTS | 2 |  |
+
+
+
+#### GtfsRealtimeOptions.NyctAlertsOptions
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| elevator_alerts_deduplication_policy | [GtfsRealtimeOptions.NyctAlertsOptions.ElevatorAlertsDeduplicationPolicy](admin.md#GtfsRealtimeOptions.NyctAlertsOptions.ElevatorAlertsDeduplicationPolicy) | 
+| elevator_alerts_inform_using_station_ids | bool | 
+| skip_timetabled_no_service_alerts | bool | 
+| add_nyct_metadata | bool | 
+
+
+
+
+
+
+#### GtfsRealtimeOptions.NyctAlertsOptions.ElevatorAlertsDeduplicationPolicy
+
+
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| NO_DEDUPLICATION | 0 |  |
+| DEDUPLICATE_IN_STATION | 1 |  |
+| DEDUPLICATE_IN_COMPLEX | 2 |  |
+
+
+
+#### GtfsRealtimeOptions.NyctTripsOptions
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| filter_stale_unassigned_trips | bool | 
+
 
 
 
@@ -397,47 +390,49 @@ No fields.
 
 ### ServiceMapConfig
 
-
+Description of the configuration for a collection of service maps.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| id | string | 
-| static_source | [ServiceMapConfig.Static](admin.md#ServiceMapConfig.Static) | 
-| realtime_source | [ServiceMapConfig.Realtime](admin.md#ServiceMapConfig.Realtime) | 
-| threshold | double | 
+| id | string | Identifier of this service maps config. This must be unique within the system.
+| source | [ServiceMapConfig.Source](admin.md#ServiceMapConfig.Source) | Source of the service maps built using this config.
+| threshold | double | The threshold setting is used to exclude one-off trip schedules from service maps. When calculating a service map, all trips are bucketed based on their schedule. If the threshold is 0.2, trips are only included if the corresponding bucket contains at least 20% of the trips. In particular, a one-off trip whose bucket only contains itself will be excluded if there are many other trips.<br /><br />Note that a trip's schedule is reversed if needed based on the direction ID.
+| static_options | [ServiceMapConfig.StaticOptions](admin.md#ServiceMapConfig.StaticOptions) | Additional options relevent for static service maps only.
 
 
 
 
 
 
-#### ServiceMapConfig.Realtime
+#### ServiceMapConfig.Source
 
-
+Source describes the possible sources for service maps.
 	
 
 
-No fields.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STATIC | 0 | Build the service maps using the GTFS static data. |
+| REALTIME | 1 | Build the service maps using the GTFS realtime data. |
 
 
 
+#### ServiceMapConfig.StaticOptions
 
-
-#### ServiceMapConfig.Static
-
-
+Description of options relevent for static service maps only.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| starts_earlier_than | int64 | 
-| starts_later_than | int64 | 
-| ends_earlier_than | int64 | 
-| ends_later_than | int64 | 
-| days | string | 
+| starts_earlier_than | double | If specified, only include trips that start earlier than this time. The time is specified as a number of hours after midnight; i.e., 2:30am is '2.5'.
+| starts_later_than | double | If specified, only include trips that start later than this time.
+| ends_earlier_than | double | If specified, only include trips that end earlier than this time.
+| ends_later_than | double | If specified, only include trips that end later than this time.
+| days | string | If specified, only include trips which run on at least one of the provided days. If left empty, no trip filtering is provided.
 
 
 
@@ -447,15 +442,15 @@ No fields.
 
 ### SystemConfig
 
-
+Configuration for a system.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| name | string | 
-| feeds | [FeedConfig](admin.md#FeedConfig) | 
-| service_maps | [ServiceMapConfig](admin.md#ServiceMapConfig) | 
+| name | string | Name of the system.
+| feeds | [FeedConfig](admin.md#FeedConfig) | Configuration for the system's feeds.
+| service_maps | [ServiceMapConfig](admin.md#ServiceMapConfig) | Configuration for the system's service maps.
 
 
 
@@ -463,25 +458,26 @@ No fields.
 
 
 
-### YamlConfig
+### TextConfig
 
-
+TextConfig contains a Transiter system configuration in non-proto format
+(e.g. YAML or JSON).
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| url | string | A URL where the config can be retrieved from using a simple GET request. If the URL requires a more complex interaction (authentication, a different verb), the config should be retrieved outside of Transiter and provided using the content field.
-| content | string | The text content of the yaml config.
+| url | string | A URL where the config can be retrieved from using a simple GET request. If the URL requires a more complex interaction (authentication, a different HTTP verb), the config should be retrieved outside of Transiter and provided in the content field.
+| content | string | The text content of the config.
 | is_template | bool | Whether the config is a template. If true the config will first be processed using Go's template library.
-| template_args | [YamlConfig.TemplateArgsEntry](admin.md#YamlConfig.TemplateArgsEntry) | Arguments to pass to Go's template library if the config is a template.<br /><br />In general all information should be in the config itself. The template args are intended for things like API keys which are secret and/or different for each installer of the system.
+| template_args | [TextConfig.TemplateArgsEntry](admin.md#TextConfig.TemplateArgsEntry) | Arguments to pass to Go's template library if the config is a template.<br /><br />In general as much information as possible should be in the config itself. The template args are intended for things like API keys which are secret and/or different for each person that installs the system.
 
 
 
 
 
 
-#### YamlConfig.TemplateArgsEntry
+#### TextConfig.TemplateArgsEntry
 
 
 	

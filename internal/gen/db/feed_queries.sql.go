@@ -64,7 +64,7 @@ func (q *Queries) FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdatePara
 }
 
 const getFeed = `-- name: GetFeed :one
-SELECT feed.pk, feed.id, feed.system_pk, feed.periodic_update_enabled, feed.periodic_update_period, feed.config FROM feed
+SELECT feed.pk, feed.id, feed.system_pk, feed.update_strategy, feed.update_period, feed.config FROM feed
     INNER JOIN system on system.pk = feed.system_pk
     WHERE system.id = $1
     AND feed.id = $2
@@ -82,15 +82,15 @@ func (q *Queries) GetFeed(ctx context.Context, arg GetFeedParams) (Feed, error) 
 		&i.Pk,
 		&i.ID,
 		&i.SystemPk,
-		&i.PeriodicUpdateEnabled,
-		&i.PeriodicUpdatePeriod,
+		&i.UpdateStrategy,
+		&i.UpdatePeriod,
 		&i.Config,
 	)
 	return i, err
 }
 
 const getFeedForUpdate = `-- name: GetFeedForUpdate :one
-SELECT feed.pk, feed.id, feed.system_pk, feed.periodic_update_enabled, feed.periodic_update_period, feed.config FROM feed
+SELECT feed.pk, feed.id, feed.system_pk, feed.update_strategy, feed.update_period, feed.config FROM feed
     INNER JOIN feed_update ON feed_update.feed_pk = feed.pk
     WHERE feed_update.pk = $1
 `
@@ -102,8 +102,8 @@ func (q *Queries) GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, e
 		&i.Pk,
 		&i.ID,
 		&i.SystemPk,
-		&i.PeriodicUpdateEnabled,
-		&i.PeriodicUpdatePeriod,
+		&i.UpdateStrategy,
+		&i.UpdatePeriod,
 		&i.Config,
 	)
 	return i, err
@@ -147,26 +147,26 @@ func (q *Queries) GetLastFeedUpdateContentHash(ctx context.Context, feedPk int64
 
 const insertFeed = `-- name: InsertFeed :exec
 INSERT INTO feed
-    (id, system_pk, periodic_update_enabled, periodic_update_period, config)
+    (id, system_pk, update_strategy, update_period, config)
 VALUES
     ($1, $2, $3, 
      $4, $5)
 `
 
 type InsertFeedParams struct {
-	ID                    string
-	SystemPk              int64
-	PeriodicUpdateEnabled bool
-	PeriodicUpdatePeriod  sql.NullInt64
-	Config                string
+	ID             string
+	SystemPk       int64
+	UpdateStrategy string
+	UpdatePeriod   sql.NullFloat64
+	Config         string
 }
 
 func (q *Queries) InsertFeed(ctx context.Context, arg InsertFeedParams) error {
 	_, err := q.db.Exec(ctx, insertFeed,
 		arg.ID,
 		arg.SystemPk,
-		arg.PeriodicUpdateEnabled,
-		arg.PeriodicUpdatePeriod,
+		arg.UpdateStrategy,
+		arg.UpdatePeriod,
 		arg.Config,
 	)
 	return err
@@ -193,16 +193,16 @@ func (q *Queries) InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdatePara
 }
 
 const listAutoUpdateFeedsForSystem = `-- name: ListAutoUpdateFeedsForSystem :many
-SELECT feed.id, feed.periodic_update_period
+SELECT feed.id, feed.update_period
 FROM feed
     INNER JOIN system ON system.pk = feed.system_pk
-WHERE feed.periodic_update_enabled
+WHERE feed.update_strategy = 'PERIODIC'
     AND system.id = $1
 `
 
 type ListAutoUpdateFeedsForSystemRow struct {
-	ID                   string
-	PeriodicUpdatePeriod sql.NullInt64
+	ID           string
+	UpdatePeriod sql.NullFloat64
 }
 
 func (q *Queries) ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error) {
@@ -214,7 +214,7 @@ func (q *Queries) ListAutoUpdateFeedsForSystem(ctx context.Context, systemID str
 	var items []ListAutoUpdateFeedsForSystemRow
 	for rows.Next() {
 		var i ListAutoUpdateFeedsForSystemRow
-		if err := rows.Scan(&i.ID, &i.PeriodicUpdatePeriod); err != nil {
+		if err := rows.Scan(&i.ID, &i.UpdatePeriod); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -226,7 +226,7 @@ func (q *Queries) ListAutoUpdateFeedsForSystem(ctx context.Context, systemID str
 }
 
 const listFeeds = `-- name: ListFeeds :many
-SELECT pk, id, system_pk, periodic_update_enabled, periodic_update_period, config FROM feed WHERE system_pk = $1 ORDER BY id
+SELECT pk, id, system_pk, update_strategy, update_period, config FROM feed WHERE system_pk = $1 ORDER BY id
 `
 
 func (q *Queries) ListFeeds(ctx context.Context, systemPk int64) ([]Feed, error) {
@@ -242,8 +242,8 @@ func (q *Queries) ListFeeds(ctx context.Context, systemPk int64) ([]Feed, error)
 			&i.Pk,
 			&i.ID,
 			&i.SystemPk,
-			&i.PeriodicUpdateEnabled,
-			&i.PeriodicUpdatePeriod,
+			&i.UpdateStrategy,
+			&i.UpdatePeriod,
 			&i.Config,
 		); err != nil {
 			return nil, err
@@ -258,23 +258,23 @@ func (q *Queries) ListFeeds(ctx context.Context, systemPk int64) ([]Feed, error)
 
 const updateFeed = `-- name: UpdateFeed :exec
 UPDATE feed
-SET periodic_update_enabled = $1, 
-    periodic_update_period = $2, 
+SET update_strategy = $1,
+    update_period = $2, 
     config = $3
 WHERE pk = $4
 `
 
 type UpdateFeedParams struct {
-	PeriodicUpdateEnabled bool
-	PeriodicUpdatePeriod  sql.NullInt64
-	Config                string
-	FeedPk                int64
+	UpdateStrategy string
+	UpdatePeriod   sql.NullFloat64
+	Config         string
+	FeedPk         int64
 }
 
 func (q *Queries) UpdateFeed(ctx context.Context, arg UpdateFeedParams) error {
 	_, err := q.db.Exec(ctx, updateFeed,
-		arg.PeriodicUpdateEnabled,
-		arg.PeriodicUpdatePeriod,
+		arg.UpdateStrategy,
+		arg.UpdatePeriod,
 		arg.Config,
 		arg.FeedPk,
 	)

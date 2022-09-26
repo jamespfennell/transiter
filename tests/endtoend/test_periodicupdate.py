@@ -7,7 +7,7 @@ from . import gtfsrealtimegenerator
 
 def test_periodic_update(system_id, install_system_1, transiter_host, source_server):
 
-    __, realtime_feed_url = install_system_1(system_id, "0.5s")
+    __, realtime_feed_url = install_system_1(system_id, "0.5")
     source_server.put(realtime_feed_url, "")
 
     # Check that the realtime feed is initially failing

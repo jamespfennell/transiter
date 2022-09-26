@@ -133,13 +133,12 @@ feeds:
     url: "{static_feed_url}"
     parser: GTFS_STATIC
     requiredForInstall: true
-    periodicUpdatePeriod: 3600s
 
   - id: GtfsRealtimeFeed
     url: "{realtime_feed_url}"
     parser: GTFS_REALTIME
-    periodicUpdateEnabled: true
-    periodicUpdatePeriod: "{realtime_periodic_update_period}"
+    updateStrategy: PERIODIC
+    updatePeriodS: {realtime_periodic_update_period}
 
 """
 
@@ -151,7 +150,7 @@ def install_system_1(
     source_server_host_within_transiter,
     install_system,
 ):
-    def install(system_id, realtime_periodic_update_period="3600s", sync=True):
+    def install(system_id, realtime_periodic_update_period="3600000", sync=True):
         static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
         source_server.put(static_feed_url, get_zip("gtfsstatic"))
         realtime_feed_url = source_server.create(

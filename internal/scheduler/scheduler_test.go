@@ -244,18 +244,18 @@ func (t testServer) ListSystems(context.Context, *api.ListSystemsRequest) (*api.
 	return resp, nil
 }
 
-func (t testServer) ListFeeds(ctx context.Context, req *api.ListFeedsRequest) (*api.ListFeedsReply, error) {
-	resp := &api.ListFeedsReply{}
+func (t testServer) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigRequest) (*api.SystemConfig, error) {
+	resp := &api.SystemConfig{}
 	for _, c := range t.currentConfig {
 		if c.ID != req.SystemId {
 			continue
 		}
 		for _, a := range c.FeedConfigs {
-			ms := a.Period.Milliseconds()
-			resp.Feeds = append(resp.Feeds, &api.Feed{
-				Id:                     a.ID,
-				PeriodicUpdateEnabled:  true,
-				PeriodicUpdatePeriodMs: &ms,
+			ms := a.Period.Seconds()
+			resp.Feeds = append(resp.Feeds, &api.FeedConfig{
+				Id:             a.ID,
+				UpdateStrategy: api.FeedConfig_PERIODIC,
+				UpdatePeriodS:  &ms,
 			})
 		}
 	}

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jamespfennell/gtfs"
-	"github.com/jamespfennell/transiter/config"
+	"github.com/jamespfennell/transiter/internal/gen/api"
 )
 
 const (
@@ -118,7 +118,7 @@ func TestBuildStaticMaps(t *testing.T) {
 				tc.trips[i].Service = service1
 				tc.trips[i].Route = &gtfs.Route{Id: "1"}
 			}
-			config := &config.ServiceMapConfig{
+			config := &api.ServiceMapConfig{
 				Threshold: tc.threshold,
 			}
 			routeIDToPk := map[string]int64{"1": 1}
@@ -142,9 +142,8 @@ func TestIsIncludedTrip(t *testing.T) {
 	service1 := &gtfs.Service{
 		Id: serviceID1,
 	}
-	ptr := func(i int) *time.Duration {
-		d := time.Duration(i) * time.Hour
-		return &d
+	ptr := func(i float64) *float64 {
+		return &i
 	}
 	stopTimes := func(times ...int) []gtfs.ScheduledStopTime {
 		var stopTimes []gtfs.ScheduledStopTime
@@ -157,13 +156,13 @@ func TestIsIncludedTrip(t *testing.T) {
 	}
 	for _, tc := range []struct {
 		name   string
-		config *config.ServiceMapConfig
+		config *api.ServiceMapConfig
 		trip   *gtfs.ScheduledTrip
 		want   bool
 	}{
 		{
 			name:   "no config conditions",
-			config: &config.ServiceMapConfig{},
+			config: &api.ServiceMapConfig{},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
 				DirectionId: &directionIDTrue,
@@ -173,7 +172,7 @@ func TestIsIncludedTrip(t *testing.T) {
 		},
 		{
 			name:   "missing direction ID",
-			config: &config.ServiceMapConfig{},
+			config: &api.ServiceMapConfig{},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
 				DirectionId: nil,
@@ -183,7 +182,7 @@ func TestIsIncludedTrip(t *testing.T) {
 		},
 		{
 			name:   "no stop times",
-			config: &config.ServiceMapConfig{},
+			config: &api.ServiceMapConfig{},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
 				DirectionId: &directionIDTrue,
@@ -193,7 +192,7 @@ func TestIsIncludedTrip(t *testing.T) {
 		},
 		{
 			name:   "service not included",
-			config: &config.ServiceMapConfig{},
+			config: &api.ServiceMapConfig{},
 			trip: &gtfs.ScheduledTrip{
 				Service: &gtfs.Service{Id: serviceID2},
 
@@ -204,8 +203,10 @@ func TestIsIncludedTrip(t *testing.T) {
 		},
 		{
 			name: "trip start not early enough",
-			config: &config.ServiceMapConfig{
-				StartsEarlierThan: ptr(9),
+			config: &api.ServiceMapConfig{
+				StaticOptions: &api.ServiceMapConfig_StaticOptions{
+					StartsEarlierThan: ptr(9),
+				},
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
@@ -216,8 +217,10 @@ func TestIsIncludedTrip(t *testing.T) {
 		},
 		{
 			name: "trip start not late enough",
-			config: &config.ServiceMapConfig{
-				StartsLaterThan: ptr(11),
+			config: &api.ServiceMapConfig{
+				StaticOptions: &api.ServiceMapConfig_StaticOptions{
+					StartsLaterThan: ptr(11),
+				},
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
@@ -228,8 +231,10 @@ func TestIsIncludedTrip(t *testing.T) {
 		},
 		{
 			name: "trip end not early enough",
-			config: &config.ServiceMapConfig{
-				EndsEarlierThan: ptr(11),
+			config: &api.ServiceMapConfig{
+				StaticOptions: &api.ServiceMapConfig_StaticOptions{
+					EndsEarlierThan: ptr(11),
+				},
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
@@ -240,8 +245,10 @@ func TestIsIncludedTrip(t *testing.T) {
 		},
 		{
 			name: "trip end not late enough",
-			config: &config.ServiceMapConfig{
-				EndsLaterThan: ptr(13),
+			config: &api.ServiceMapConfig{
+				StaticOptions: &api.ServiceMapConfig_StaticOptions{
+					EndsLaterThan: ptr(13),
+				},
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
@@ -252,11 +259,13 @@ func TestIsIncludedTrip(t *testing.T) {
 		},
 		{
 			name: "trip passes all conditions",
-			config: &config.ServiceMapConfig{
-				StartsEarlierThan: ptr(11),
-				StartsLaterThan:   ptr(9),
-				EndsEarlierThan:   ptr(13),
-				EndsLaterThan:     ptr(11),
+			config: &api.ServiceMapConfig{
+				StaticOptions: &api.ServiceMapConfig_StaticOptions{
+					StartsEarlierThan: ptr(11),
+					StartsLaterThan:   ptr(9),
+					EndsEarlierThan:   ptr(13),
+					EndsLaterThan:     ptr(11),
+				},
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
@@ -324,8 +333,10 @@ func TestBuildIncludedServiceMapsIDs(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			config := &config.ServiceMapConfig{
-				Days: tc.days,
+			config := &api.ServiceMapConfig{
+				StaticOptions: &api.ServiceMapConfig_StaticOptions{
+					Days: tc.days,
+				},
 			}
 			got := buildIncludedServiceIDs(config, trips)
 

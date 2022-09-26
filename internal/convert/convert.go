@@ -4,10 +4,14 @@ package convert
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/jamespfennell/gtfs"
+	"github.com/jamespfennell/gtfs/extensions"
+	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
+	"github.com/jamespfennell/gtfs/extensions/nycttrips"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 )
 
@@ -59,6 +63,13 @@ func NullInt64(t *int64) sql.NullInt64 {
 		return sql.NullInt64{}
 	}
 	return sql.NullInt64{Valid: true, Int64: *t}
+}
+
+func NullFloat64(t *float64) sql.NullFloat64 {
+	if t == nil {
+		return sql.NullFloat64{}
+	}
+	return sql.NullFloat64{Valid: true, Float64: *t}
 }
 
 func NullString(t *string) sql.NullString {
@@ -173,4 +184,40 @@ func RouteType(t string) api.Route_Type {
 		return api.Route_Type(i)
 	}
 	return api.Route_UNKNOWN
+}
+
+func GtfsRealtimeExtension(in *api.GtfsRealtimeOptions) (extensions.Extension, error) {
+	if in == nil {
+		in = &api.GtfsRealtimeOptions{}
+	}
+	switch in.Extension {
+	case api.GtfsRealtimeOptions_NO_EXTENSION:
+		return nil, nil
+	case api.GtfsRealtimeOptions_NYCT_TRIPS:
+		inOpts := in.GetNyctTripsOptions()
+		return nycttrips.Extension(nycttrips.ExtensionOpts{
+			FilterStaleUnassignedTrips: inOpts.GetFilterStaleUnassignedTrips(),
+		}), nil
+	case api.GtfsRealtimeOptions_NYCT_ALERTS:
+		inOpts := in.GetNyctAlertsOptions()
+		var outPolicy nyctalerts.ElevatorAlertsDeduplicationPolicy
+		switch inOpts.GetElevatorAlertsDeduplicationPolicy() {
+		case api.GtfsRealtimeOptions_NyctAlertsOptions_NO_DEDUPLICATION:
+			outPolicy = nyctalerts.NoDeduplication
+		case api.GtfsRealtimeOptions_NyctAlertsOptions_DEDUPLICATE_IN_STATION:
+			outPolicy = nyctalerts.DeduplicateInStation
+		case api.GtfsRealtimeOptions_NyctAlertsOptions_DEDUPLICATE_IN_COMPLEX:
+			outPolicy = nyctalerts.DeduplicateInComplex
+		default:
+			return nil, fmt.Errorf("unknown NYCT alerts elevator deduplication policy %s", inOpts.GetElevatorAlertsDeduplicationPolicy())
+		}
+		return nyctalerts.Extension(nyctalerts.ExtensionOpts{
+			ElevatorAlertsDeduplicationPolicy:   outPolicy,
+			ElevatorAlertsInformUsingStationIDs: inOpts.GetElevatorAlertsInformUsingStationIds(),
+			SkipTimetabledNoServiceAlerts:       inOpts.GetSkipTimetabledNoServiceAlerts(),
+			AddNyctMetadata:                     inOpts.GetAddNyctMetadata(),
+		}), nil
+	default:
+		return nil, fmt.Errorf("unknown extension %s", in.Extension)
+	}
 }

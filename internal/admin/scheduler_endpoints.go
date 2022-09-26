@@ -15,8 +15,8 @@ func (s *Service) GetSchedulerStatus(ctx context.Context, req *api.GetSchedulerS
 			SystemId:             feed.SystemID,
 			FeedId:               feed.FeedID,
 			Period:               feed.Period.Milliseconds(),
-			LastSuccessfulUpdate: convert(feed.LastSuccessfulUpdate),
-			LastFinishedUpdate:   convert(feed.LastFinishedUpdate),
+			LastSuccessfulUpdate: convertTime(feed.LastSuccessfulUpdate),
+			LastFinishedUpdate:   convertTime(feed.LastFinishedUpdate),
 			CurrentlyRunning:     feed.CurrentlyRunning,
 		})
 	}
@@ -30,7 +30,7 @@ func (s *Service) ResetScheduler(ctx context.Context, req *api.ResetSchedulerReq
 	return &api.ResetSchedulerReply{}, nil
 }
 
-func convert(t time.Time) int64 {
+func convertTime(t time.Time) int64 {
 	if t.IsZero() {
 		return 0
 	}

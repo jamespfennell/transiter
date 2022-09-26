@@ -56,7 +56,7 @@ type InstallSystemArgs struct {
 }
 
 func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) error {
-	yamlConfig := &api.YamlConfig{
+	yamlConfig := &api.TextConfig{
 		IsTemplate:   args.IsTemplate,
 		TemplateArgs: args.TemplateArgs,
 	}
@@ -65,11 +65,11 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 		if err != nil {
 			return err
 		}
-		yamlConfig.Source = &api.YamlConfig_Content{
+		yamlConfig.Source = &api.TextConfig_Content{
 			Content: string(yaml),
 		}
 	} else {
-		yamlConfig.Source = &api.YamlConfig_Url{
+		yamlConfig.Source = &api.TextConfig_Url{
 			Url: args.ConfigPath,
 		}
 	}

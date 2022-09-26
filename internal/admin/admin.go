@@ -4,18 +4,16 @@ package admin
 import (
 	"bytes"
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"text/template"
-	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jamespfennell/transiter/config"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -23,6 +21,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/scheduler"
 	"github.com/jamespfennell/transiter/internal/servicemaps"
 	"github.com/jamespfennell/transiter/internal/update"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // Service implements the Transiter admin API.
@@ -56,11 +55,11 @@ func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigR
 		}
 		for _, feed := range feeds {
 			feed := feed
-			var feedConfig config.FeedConfig
-			if err := json.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
+			var feedConfig api.FeedConfig
+			if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
 				return err
 			}
-			reply.Feeds = append(reply.Feeds, config.ConvertFeedConfig(&feedConfig))
+			reply.Feeds = append(reply.Feeds, &feedConfig)
 		}
 		return nil
 	})
@@ -71,19 +70,19 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	log.Printf("Recieved install or update request for system %q", req.SystemId)
 
 	var err error
-	var systemConfig *config.SystemConfig
+	var systemConfig *api.SystemConfig
 	switch c := req.GetConfig().(type) {
 	case *api.InstallOrUpdateSystemRequest_SystemConfig:
-		systemConfig = config.ConvertAPISystemConfig(c.SystemConfig)
+		systemConfig = c.SystemConfig
 	case *api.InstallOrUpdateSystemRequest_YamlConfig:
 		var rawConfig []byte
 		switch s := c.YamlConfig.Source.(type) {
-		case *api.YamlConfig_Url:
+		case *api.TextConfig_Url:
 			rawConfig, err = getRawSystemConfigFromURL(s.Url)
 			if err != nil {
 				return nil, err
 			}
-		case *api.YamlConfig_Content:
+		case *api.TextConfig_Content:
 			rawConfig = []byte(s.Content)
 		default:
 			return nil, fmt.Errorf("no system configuration provided")
@@ -174,7 +173,7 @@ func beginSystemInstall(ctx context.Context, querier db.Querier, systemID string
 	return true, nil
 }
 
-func performSystemInstall(ctx context.Context, querier db.Querier, systemID string, config *config.SystemConfig) error {
+func performSystemInstall(ctx context.Context, querier db.Querier, systemID string, config *api.SystemConfig) error {
 	system, err := querier.GetSystem(ctx, systemID)
 	if err != nil {
 		return err
@@ -203,28 +202,32 @@ func performSystemInstall(ctx context.Context, querier db.Querier, systemID stri
 	}
 
 	for _, newFeed := range config.Feeds {
-		if pk, ok := feedIDToPk[newFeed.ID]; ok {
+		j, err := protojson.Marshal(newFeed)
+		if err != nil {
+			return err
+		}
+		if pk, ok := feedIDToPk[newFeed.Id]; ok {
 			if err := querier.UpdateFeed(ctx, db.UpdateFeedParams{
-				FeedPk:                pk,
-				PeriodicUpdateEnabled: newFeed.PeriodicUpdateEnabled,
-				PeriodicUpdatePeriod:  convertNullDuration(newFeed.PeriodicUpdatePeriod),
-				Config:                string(newFeed.MarshalToJSON()),
+				FeedPk:         pk,
+				UpdateStrategy: newFeed.UpdateStrategy.String(),
+				UpdatePeriod:   convert.NullFloat64(newFeed.UpdatePeriodS),
+				Config:         string(j),
 			}); err != nil {
 				return err
 			}
-			delete(feedIDToPk, newFeed.ID)
+			delete(feedIDToPk, newFeed.Id)
 		} else {
 			// TODO: is there a lint to detect not handling the error here?
 			querier.InsertFeed(ctx, db.InsertFeedParams{
-				ID:                    newFeed.ID,
-				SystemPk:              system.Pk,
-				PeriodicUpdateEnabled: newFeed.PeriodicUpdateEnabled,
-				PeriodicUpdatePeriod:  convertNullDuration(newFeed.PeriodicUpdatePeriod),
-				Config:                string(newFeed.MarshalToJSON()),
+				ID:             newFeed.Id,
+				SystemPk:       system.Pk,
+				UpdateStrategy: newFeed.UpdateStrategy.String(),
+				UpdatePeriod:   convert.NullFloat64(newFeed.UpdatePeriodS),
+				Config:         string(j),
 			})
 		}
 		if newFeed.RequiredForInstall {
-			if err := update.DoInExistingTx(ctx, querier, systemID, newFeed.ID); err != nil {
+			if err := update.DoInExistingTx(ctx, querier, systemID, newFeed.Id); err != nil {
 				return err
 			}
 		}
@@ -292,9 +295,9 @@ func getRawSystemConfigFromURL(url string) ([]byte, error) {
 	return body, nil
 }
 
-func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[string]string) (*config.SystemConfig, error) {
+func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[string]string) (*api.SystemConfig, error) {
 	if !isTemplate {
-		return config.UnmarshalFromYaml(rawContent)
+		return unmarshalFromYaml(rawContent)
 	}
 	type Input struct {
 		Args map[string]string
@@ -309,16 +312,17 @@ func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse input as a Go text template: %w", err)
 	}
-	return config.UnmarshalFromYaml(b.Bytes())
+	return unmarshalFromYaml(b.Bytes())
 }
 
-// TODO: move to convert/converters
-func convertNullDuration(d *time.Duration) sql.NullInt64 {
-	if d == nil {
-		return sql.NullInt64{}
+func unmarshalFromYaml(y []byte) (*api.SystemConfig, error) {
+	j, err := yaml.YAMLToJSON(y)
+	if err != nil {
+		return nil, err
 	}
-	return sql.NullInt64{
-		Valid: true,
-		Int64: d.Milliseconds(),
+	var config api.SystemConfig
+	if err := protojson.Unmarshal(j, &config); err != nil {
+		return nil, err
 	}
+	return &config, nil
 }

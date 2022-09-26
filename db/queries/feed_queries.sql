@@ -14,15 +14,15 @@ SELECT feed.* FROM feed
 
 -- name: InsertFeed :exec
 INSERT INTO feed
-    (id, system_pk, periodic_update_enabled, periodic_update_period, config)
+    (id, system_pk, update_strategy, update_period, config)
 VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(periodic_update_enabled), 
-     sqlc.arg(periodic_update_period), sqlc.arg(config));
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(update_strategy), 
+     sqlc.arg(update_period), sqlc.arg(config));
 
 -- name: UpdateFeed :exec
 UPDATE feed
-SET periodic_update_enabled = sqlc.arg(periodic_update_enabled), 
-    periodic_update_period = sqlc.arg(periodic_update_period), 
+SET update_strategy = sqlc.arg(update_strategy),
+    update_period = sqlc.arg(update_period), 
     config = sqlc.arg(config)
 WHERE pk = sqlc.arg(feed_pk);
 
@@ -30,10 +30,10 @@ WHERE pk = sqlc.arg(feed_pk);
 DELETE FROM feed WHERE pk = sqlc.arg(pk);
 
 -- name: ListAutoUpdateFeedsForSystem :many
-SELECT feed.id, feed.periodic_update_period
+SELECT feed.id, feed.update_period
 FROM feed
     INNER JOIN system ON system.pk = feed.system_pk
-WHERE feed.periodic_update_enabled
+WHERE feed.update_strategy = 'PERIODIC'
     AND system.id = sqlc.arg(system_id);
 
 -- name: InsertFeedUpdate :one

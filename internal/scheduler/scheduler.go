@@ -108,7 +108,7 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 		scheduler  *systemScheduler
 		cancelFunc context.CancelFunc
 	}{}
-	resetScheduler := func(systemID string, feeds []*api.Feed) {
+	resetScheduler := func(systemID string, feeds []*api.FeedConfig) {
 		if ss, ok := systemSchedulers[systemID]; ok {
 			ss.scheduler.reset(feeds)
 			return
@@ -132,17 +132,17 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 		ss.scheduler.wait()
 		delete(systemSchedulers, systemID)
 	}
-	getFeeds := func(systemID string) ([]*api.Feed, error) {
-		resp, err := public.ListFeeds(ctx, &api.ListFeedsRequest{SystemId: systemID})
+	getFeeds := func(systemID string) ([]*api.FeedConfig, error) {
+		resp, err := admin.GetSystemConfig(ctx, &api.GetSystemConfigRequest{SystemId: systemID})
 		if err != nil {
 			if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("failed to get data for system %s during scheduler reset: %w", systemID, err)
 		}
-		var feeds []*api.Feed
+		var feeds []*api.FeedConfig
 		for _, feed := range resp.Feeds {
-			if !feed.PeriodicUpdateEnabled {
+			if feed.UpdateStrategy != api.FeedConfig_PERIODIC {
 				continue
 			}
 			feeds = append(feeds, feed)
@@ -163,9 +163,9 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 				s.resetAllReply <- fmt.Errorf("failed to get systems data during scheduler reset: %w", err)
 				break
 			}
-			systemIDToFeeds := map[string][]*api.Feed{}
+			systemIDToFeeds := map[string][]*api.FeedConfig{}
 			for _, system := range resp.Systems {
-				var feeds []*api.Feed
+				var feeds []*api.FeedConfig
 				feeds, err = getFeeds(system.Id)
 				if err != nil {
 					break
@@ -248,7 +248,7 @@ func (s *DefaultScheduler) Status() []FeedStatus {
 }
 
 type systemScheduler struct {
-	resetRequest chan []*api.Feed
+	resetRequest chan []*api.FeedConfig
 
 	// The status channels are used to get status from the scheduler loop
 	statusRequest chan struct{}
@@ -259,7 +259,7 @@ type systemScheduler struct {
 
 func newSystemScheduler(ctx context.Context, admin api.AdminServer, clock clock.Clock, systemID string) *systemScheduler {
 	ss := &systemScheduler{
-		resetRequest:  make(chan []*api.Feed),
+		resetRequest:  make(chan []*api.FeedConfig),
 		statusRequest: make(chan struct{}),
 		statusReply:   make(chan []FeedStatus),
 		opDone:        make(chan struct{}),
@@ -287,8 +287,8 @@ func (s *systemScheduler) run(ctx context.Context, admin api.AdminServer, clock 
 			for _, feed := range msg {
 				updatedFeedIds[feed.Id] = true
 				period := 500 * time.Millisecond
-				if feed.PeriodicUpdatePeriodMs != nil {
-					period = time.Millisecond * time.Duration(*feed.PeriodicUpdatePeriodMs)
+				if feed.UpdatePeriodS != nil {
+					period = time.Duration(*feed.UpdatePeriodS * float64(time.Second))
 				}
 				if _, ok := feedSchedulers[feed.Id]; !ok {
 					feedCtx, cancelFunc := context.WithCancel(ctx)
@@ -322,7 +322,7 @@ func (s *systemScheduler) run(ctx context.Context, admin api.AdminServer, clock 
 	}
 }
 
-func (s *systemScheduler) reset(msg []*api.Feed) {
+func (s *systemScheduler) reset(msg []*api.FeedConfig) {
 	s.resetRequest <- msg
 	<-s.opDone
 }
