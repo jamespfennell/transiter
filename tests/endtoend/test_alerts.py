@@ -104,7 +104,7 @@ def setup_test(system_id, install_system_1, transiter_host, source_server):
 
     source_server.put(realtime_feed_url, message.SerializeToString())
     requests.post(
-        "{}/admin/systems/{}/feeds/GtfsRealtimeFeed?sync=true".format(
+        "{}/systems/{}/feeds/GtfsRealtimeFeed?sync=true".format(
             transiter_host, system_id
         )
     ).raise_for_status()
@@ -146,6 +146,7 @@ def test_alerts_list_informed_entities(
     print(actual_data)
     actual_data = actual_data["alerts"][0]
     del actual_data["system"]
+    del actual_data["resource"]
     # actual_data = {response["id"]: response for response in actual_data}[entity_id]
 
     assert ALERT_SMALL_JSON == actual_data
@@ -186,6 +187,7 @@ def test_alerts_get_informed_entity(
     expected_json = ALERT_SMALL_JSON
     actual_json = actual_data["alerts"][0]
     del actual_json["system"]
+    del actual_json["resource"]
     assert expected_json == actual_json
 
 
@@ -206,6 +208,7 @@ def test_alerts_list_alerts(
 
     actual_data = requests.get(url).json()["alerts"][0]
     del actual_data["system"]
+    del actual_data["resource"]
 
     expected_json = ALERT_LARGE_JSON
     assert expected_json == actual_data
@@ -228,6 +231,7 @@ def test_alerts_get(
 
     actual_data = requests.get(url).json()
     del actual_data["system"]
+    del actual_data["resource"]
 
     expected_json = ALERT_LARGE_JSON
     assert expected_json == actual_data

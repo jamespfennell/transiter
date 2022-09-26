@@ -44,8 +44,8 @@ func (h Generator) SystemsHref() *string {
 func (h Generator) System(id string) *api.System_Reference {
 	if _, ok := h.systems[id]; !ok {
 		h.systems[id] = &api.System_Reference{
-			Id:   id,
-			Href: h.generateHref("systems", id),
+			Id:       id,
+			Resource: h.generateResource("systems", id),
 		}
 	}
 	return h.systems[id]
@@ -57,20 +57,20 @@ func (h Generator) AgenciesHref(systemID string) *string {
 
 func (h Generator) Agency(id string, systemID string, name string) *api.Agency_Reference {
 	return &api.Agency_Reference{
-		Id:     id,
-		System: h.System(systemID),
-		Name:   name,
-		Href:   h.generateHref("systems", systemID, "agencies", id),
+		Id:       id,
+		System:   h.System(systemID),
+		Name:     name,
+		Resource: h.generateResource("systems", systemID, "agencies", id),
 	}
 }
 
 func (h Generator) Alert(id, systemID, cause, effect string) *api.Alert_Reference {
 	return &api.Alert_Reference{
-		Id:     id,
-		System: h.System(systemID),
-		Cause:  convert.AlertCause(cause),
-		Effect: convert.AlertEffect(effect),
-		Href:   h.generateHref("systems", systemID, "alerts", id),
+		Id:       id,
+		System:   h.System(systemID),
+		Cause:    convert.AlertCause(cause),
+		Effect:   convert.AlertEffect(effect),
+		Resource: h.generateResource("systems", systemID, "alerts", id),
 	}
 }
 
@@ -80,9 +80,9 @@ func (h Generator) FeedsHref(systemID string) *string {
 
 func (h Generator) Feed(id string, systemID string) *api.Feed_Reference {
 	return &api.Feed_Reference{
-		Id:     id,
-		System: h.System(systemID),
-		Href:   h.generateHref("systems", systemID, "feeds", id),
+		Id:       id,
+		System:   h.System(systemID),
+		Resource: h.generateResource("systems", systemID, "feeds", id),
 	}
 }
 
@@ -96,10 +96,10 @@ func (h Generator) RoutesHref(systemID string) *string {
 
 func (h Generator) Route(id string, systemID string, color string) *api.Route_Reference {
 	return &api.Route_Reference{
-		Id:     id,
-		System: h.System(systemID),
-		Color:  color,
-		Href:   h.generateHref("systems", systemID, "routes", id),
+		Id:       id,
+		System:   h.System(systemID),
+		Color:    color,
+		Resource: h.generateResource("systems", systemID, "routes", id),
 	}
 }
 
@@ -109,7 +109,7 @@ func (h Generator) Trip(id string, route *api.Route_Reference, destination *api.
 		Route:       route,
 		Destination: destination,
 		Vehicle:     vehicle,
-		Href:        h.generateHref("systems", route.System.Id, "routes", route.Id, "trips", id),
+		Resource:    h.generateResource("systems", route.System.Id, "routes", route.Id, "trips", id),
 	}
 }
 
@@ -119,10 +119,10 @@ func (h Generator) StopsHref(systemID string) *string {
 
 func (h Generator) Stop(id string, systemID string, name sql.NullString) *api.Stop_Reference {
 	return &api.Stop_Reference{
-		Id:     id,
-		System: h.System(systemID),
-		Name:   convert.SQLNullString(name),
-		Href:   h.generateHref("systems", systemID, "stops", id),
+		Id:       id,
+		System:   h.System(systemID),
+		Name:     convert.SQLNullString(name),
+		Resource: h.generateResource("systems", systemID, "stops", id),
 	}
 }
 
@@ -134,6 +134,13 @@ func (h Generator) Vehicle(id string) *api.Vehicle_Reference {
 	// TODO: vehicle
 	return &api.Vehicle_Reference{
 		Id: id,
+	}
+}
+
+func (h Generator) generateResource(elem ...string) *api.Resource {
+	return &api.Resource{
+		Path: path.Join(elem...),
+		Href: h.generateHref(elem...),
 	}
 }
 

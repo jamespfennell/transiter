@@ -77,7 +77,8 @@ Transiter adds some additional related fields (alerts).
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the agency. This is the `agency_id` column in `agency.txt`.
-| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this agency.
+| resource | [Resource](public_resources.md#Resource) | Generic metadata about the agency resource.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this agency. This is the parent resource in Transiter's resource hierarchy.
 | name | string | Name of the agency. This is the `agency_name` column in `agency.txt`.
 | url | string | URL of the agency. This is the `agency_url` column in `agency.txt`.
 | timezone | string | Timezone of the agency. This is the `agency_timezone` column in `agency.txt`.
@@ -102,9 +103,9 @@ Reference is the reference type for the agency resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| resource | [Resource](public_resources.md#Resource) | 
 | system | [System.Reference](public_resources.md#System.Reference) | 
 | name | string | 
-| href | string | 
 
 
 
@@ -128,7 +129,8 @@ TODO; alphabetize the messages
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the alert. This corresponds to the [ID field in the feed entity message](https://developers.google.com/transit/gtfs-realtime/reference#message-feedentity) corresponding to the alert.
-| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this alert.
+| resource | [Resource](public_resources.md#Resource) | Generic metadata about the alert resource.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this alert. This is the parent resource in Transiter's resource hierarchy.
 | cause | [Alert.Cause](public_resources.md#Alert.Cause) | Cause of the alert. This corresponds to the `cause` field in the realtime alert message.
 | effect | [Alert.Effect](public_resources.md#Alert.Effect) | Effect of the alert. This corresponds to the `effect` field in the realtime alert message.
 | current_active_period | [Alert.ActivePeriod](public_resources.md#Alert.ActivePeriod) | The current active period, if the alert is currently active. If the alert is not active this is empty.
@@ -220,10 +222,10 @@ Reference is the reference type for the agency resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| resource | [Resource](public_resources.md#Resource) | 
 | system | [System.Reference](public_resources.md#System.Reference) | 
 | cause | [Alert.Cause](public_resources.md#Alert.Cause) | 
 | effect | [Alert.Effect](public_resources.md#Alert.Effect) | 
-| href | string | 
 
 
 
@@ -288,7 +290,8 @@ More detailed information on a feed -- its full configuration, and the
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the feed, as specified in the system configuration file.
-| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this feed.
+| resource | [Resource](public_resources.md#Resource) | Generic metadata about the feed resource.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this feed. This is the parent resource in Transiter's resource hierarchy.
 | updates | [ChildResources](public_resources.md#ChildResources) | Updates for this feed.
 
 
@@ -305,8 +308,8 @@ Reference is the reference type for the feed resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| resource | [Resource](public_resources.md#Resource) | 
 | system | [System.Reference](public_resources.md#System.Reference) | 
-| href | string | 
 
 
 
@@ -331,8 +334,8 @@ A background task in Transiter periodically garbage collects old updates.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the feed update. This is the primary key of the associated Postgres database row so it's actually globally unique.
+| resource | [Resource](public_resources.md#Resource) | Generic metadata about the feed update resource.
 | feed | [Feed.Reference](public_resources.md#Feed.Reference) | Feed corresponding to this update. This is the parent resource in Transiter's resource hierarchy.
-| href | string | URL of this update resource.
 | started_at | int64 | Unix timestamp of when the update started.
 | finished | bool | Whether the update has finished. If false, the update is still in progress.
 | finished_at | int64 | Unix timestamp of when the update finished. Only populated if the update is finished.
@@ -373,6 +376,25 @@ This typically indicates a bug in Transiter or a transient error connecting to t
 
 
 
+## Resource
+
+The resource message contains generic metadata that applies to all resources.
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| path | string | 
+| href | string | 
+
+
+
+
+
+
+
+
+
 ## Route
 
 The Route resource.
@@ -388,7 +410,8 @@ Transiter adds some additional related fields (agency, alerts)
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the route. This is the `route_id` column in `routes.txt`.
-| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this route.
+| resource | [Resource](public_resources.md#Resource) | Generic metadata about the route resource.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this route. This is the parent resource in Transiter's resource hierarchy.
 | short_name | string | Short name of the route. This is the `route_short_name` column in `routes.txt`.
 | long_name | string | Long name of the route. This is the `route_long_name` column in `routes.txt`.
 | color | string | Color of the route. This is the `route_color` column in `routes.txt`.
@@ -434,8 +457,8 @@ Reference is the reference type for the route resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| resource | [Resource](public_resources.md#Resource) | 
 | system | [System.Reference](public_resources.md#System.Reference) | 
-| href | string | 
 | color | string | 
 
 
@@ -504,7 +527,8 @@ Transiter adds some additional related fields (transfers, alerts, stop times)
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the stop. This is the `stop_id` column in `stops.txt`.
-| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this stop.
+| resource | [Resource](public_resources.md#Resource) | Generic metadata about the stop resource.
+| system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this stop. This is the parent resource in Transiter's resource hierarchy.
 | code | string | Code of the stop. This is the `stop_code` column in `stops.txt`.
 | name | string | Name of the stop. This is the `stop_name` column in `stops.txt`.
 | description | string | Description of the stop. This is the `stop_desc` column in `stops.txt`.
@@ -556,9 +580,9 @@ Reference is the reference type for the stop resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| resource | [Resource](public_resources.md#Resource) | 
 | system | [System.Reference](public_resources.md#System.Reference) | 
 | name | string | 
-| href | string | 
 
 
 
@@ -661,6 +685,7 @@ The System resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | ID of the system as specified in the install request.
+| resource | [Resource](public_resources.md#Resource) | Generic metadata about the system resource.
 | name | string | Name of the system as specified in the system configuration file.
 | status | [System.Status](public_resources.md#System.Status) | Status of the system.
 | agencies | [ChildResources](public_resources.md#ChildResources) | 
@@ -668,7 +693,6 @@ The System resource.
 | routes | [ChildResources](public_resources.md#ChildResources) | 
 | stops | [ChildResources](public_resources.md#ChildResources) | 
 | transfers | [ChildResources](public_resources.md#ChildResources) | 
-| href | string | 
 
 
 
@@ -684,7 +708,7 @@ Reference is the reference type for the system resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
-| href | string | 
+| resource | [Resource](public_resources.md#Resource) | 
 
 
 
@@ -721,7 +745,7 @@ Enum describing the possible statuses of a system.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| from_stop | [Stop.Reference](public_resources.md#Stop.Reference) | 
+| from_stop | [Stop.Reference](public_resources.md#Stop.Reference) | TODO: id, system, resource Probably will use the pk of the DB row for the ID
 | to_stop | [Stop.Reference](public_resources.md#Stop.Reference) | 
 | type | [Transfer.Type](public_resources.md#Transfer.Type) | 
 | min_transfer_time | int32 | 
@@ -760,8 +784,8 @@ Enum describing the possible statuses of a system.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
-| route | [Route.Reference](public_resources.md#Route.Reference) | Route corresponding to this trip. This is the parent resource in Transiter's resource hierarchy.
-| href | string | 
+| resource | [Resource](public_resources.md#Resource) | Generic metadata about the trip resource.
+| route | [Route.Reference](public_resources.md#Route.Reference) | Route corresponding to this trip. This is the parent resource in Transiter's resource hierarchy. It is determined using the `route_id` field in the GTFS realtime feed.
 | started_at | int64 | 
 | vehicle | [Vehicle.Reference](public_resources.md#Vehicle.Reference) | 
 | direction_id | bool | 
@@ -781,10 +805,10 @@ Reference is the reference type for the trip resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| resource | [Resource](public_resources.md#Resource) | 
 | route | [Route.Reference](public_resources.md#Route.Reference) | 
 | destination | [Stop.Reference](public_resources.md#Stop.Reference) | 
 | vehicle | [Vehicle.Reference](public_resources.md#Vehicle.Reference) | 
-| href | string | 
 
 
 

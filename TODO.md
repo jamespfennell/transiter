@@ -1,9 +1,7 @@
 Blocking the merge to mainline:
 
-- change serial to bigserial everywhere
 - Right now the GPS lat/long are parsed to and from strings - would be good to avoid conversions
-- Remove the /admin prefix (or have an option to it)
-- Figure out the home of the config package.
+- Update the main README
 
 Not blocking the merge to mainline:
 

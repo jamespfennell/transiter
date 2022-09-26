@@ -286,7 +286,7 @@ def test_delete(system_id, install_system_1, transiter_host, sync):
     install_system_1(system_id)
 
     response = requests.delete(
-        transiter_host + "/admin/systems/" + system_id + "?sync=" + str(sync).lower()
+        transiter_host + "/systems/" + system_id + "?sync=" + str(sync).lower()
     )
     response.raise_for_status()
 

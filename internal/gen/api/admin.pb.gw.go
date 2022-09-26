@@ -323,7 +323,7 @@ func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/config"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/systems/{system_id}/config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -346,7 +346,7 @@ func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/InstallOrUpdateSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/InstallOrUpdateSystem", runtime.WithHTTPPathPattern("/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -369,7 +369,7 @@ func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/DeleteSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/DeleteSystem", runtime.WithHTTPPathPattern("/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -392,7 +392,7 @@ func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/UpdateFeed", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/feeds/{feed_id}"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/UpdateFeed", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds/{feed_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -415,7 +415,7 @@ func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GetSchedulerStatus", runtime.WithHTTPPathPattern("/admin/scheduler"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GetSchedulerStatus", runtime.WithHTTPPathPattern("/scheduler"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -438,7 +438,7 @@ func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/ResetScheduler", runtime.WithHTTPPathPattern("/admin/scheduler"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/ResetScheduler", runtime.WithHTTPPathPattern("/scheduler"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -500,7 +500,7 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/config"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GetSystemConfig", runtime.WithHTTPPathPattern("/systems/{system_id}/config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -520,7 +520,7 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/InstallOrUpdateSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/InstallOrUpdateSystem", runtime.WithHTTPPathPattern("/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -540,7 +540,7 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/DeleteSystem", runtime.WithHTTPPathPattern("/admin/systems/{system_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/DeleteSystem", runtime.WithHTTPPathPattern("/systems/{system_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -560,7 +560,7 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/UpdateFeed", runtime.WithHTTPPathPattern("/admin/systems/{system_id}/feeds/{feed_id}"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/UpdateFeed", runtime.WithHTTPPathPattern("/systems/{system_id}/feeds/{feed_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -580,7 +580,7 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GetSchedulerStatus", runtime.WithHTTPPathPattern("/admin/scheduler"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GetSchedulerStatus", runtime.WithHTTPPathPattern("/scheduler"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -600,7 +600,7 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/ResetScheduler", runtime.WithHTTPPathPattern("/admin/scheduler"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/ResetScheduler", runtime.WithHTTPPathPattern("/scheduler"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -620,17 +620,17 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 }
 
 var (
-	pattern_Admin_GetSystemConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"admin", "systems", "system_id", "config"}, ""))
+	pattern_Admin_GetSystemConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"systems", "system_id", "config"}, ""))
 
-	pattern_Admin_InstallOrUpdateSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
+	pattern_Admin_InstallOrUpdateSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"systems", "system_id"}, ""))
 
-	pattern_Admin_DeleteSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "systems", "system_id"}, ""))
+	pattern_Admin_DeleteSystem_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"systems", "system_id"}, ""))
 
-	pattern_Admin_UpdateFeed_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"admin", "systems", "system_id", "feeds", "feed_id"}, ""))
+	pattern_Admin_UpdateFeed_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"systems", "system_id", "feeds", "feed_id"}, ""))
 
-	pattern_Admin_GetSchedulerStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "scheduler"}, ""))
+	pattern_Admin_GetSchedulerStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"scheduler"}, ""))
 
-	pattern_Admin_ResetScheduler_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "scheduler"}, ""))
+	pattern_Admin_ResetScheduler_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"scheduler"}, ""))
 )
 
 var (

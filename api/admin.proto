@@ -13,7 +13,7 @@ service Admin {
   // `GET /systems/<system_id>/config`
   rpc GetSystemConfig(GetSystemConfigRequest) returns (SystemConfig) {
     option (google.api.http) = {
-      get: "/admin/systems/{system_id}/config"
+      get: "/systems/{system_id}/config"
     };
   }
 
@@ -26,7 +26,7 @@ service Admin {
   // If the system does not exist an install is performed; otherwise an update.
   rpc InstallOrUpdateSystem(InstallOrUpdateSystemRequest) returns (InstallOrUpdateSystemReply) {
     option (google.api.http) = {
-      put: "/admin/systems/{system_id}"
+      put: "/systems/{system_id}"
       body: "*"
     };
   }
@@ -38,7 +38,7 @@ service Admin {
   // Deletes the specified system.
   rpc DeleteSystem(DeleteSystemRequest) returns (DeleteSystemReply) {
     option (google.api.http) = {
-      delete: "/admin/systems/{system_id}"
+      delete: "/systems/{system_id}"
     };
   }
 
@@ -49,7 +49,7 @@ service Admin {
   // Triggers a feed update for the specified feed.
   rpc UpdateFeed(UpdateFeedRequest) returns (UpdateFeedReply) {
     option (google.api.http) = {
-      post: "/admin/systems/{system_id}/feeds/{feed_id}"
+      post: "/systems/{system_id}/feeds/{feed_id}"
     };
   }
 
@@ -60,7 +60,7 @@ service Admin {
   // Gets the status of the scheduler.
   rpc GetSchedulerStatus(GetSchedulerStatusRequest) returns (GetSchedulerStatusReply) {
     option (google.api.http) = {
-      get: "/admin/scheduler"
+      get: "/scheduler"
     };
   }
 
@@ -76,7 +76,7 @@ service Admin {
   //   updated and the scheduler needs to see the update.
   rpc ResetScheduler(ResetSchedulerRequest) returns (ResetSchedulerReply) {
     option (google.api.http) = {
-      post: "/admin/scheduler"
+      post: "/scheduler"
     };
   }
 

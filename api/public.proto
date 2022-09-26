@@ -65,7 +65,6 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/jamespfennell/transiter/api";
 
-// TODO: every resource needs to have a HREF and a message containing the parent resource
 service Public {
   // API entrypoint
   //
@@ -576,8 +575,11 @@ message ListTransfersReply {
 message System {
   // ID of the system as specified in the install request.
   string id = 1;
+  // Generic metadata about the system resource.
+  Resource resource = 2;
+
   // Name of the system as specified in the system configuration file.
-  string name = 2;
+  string name = 4;
 
   // Enum describing the possible statuses of a system.
   enum Status {
@@ -597,21 +599,25 @@ message System {
     DELETING = 6;
   }
   // Status of the system.
-  Status status = 3;
+  Status status = 5;
 
-  ChildResources agencies = 4;
-  ChildResources feeds = 5;
-  ChildResources routes = 6;
-  ChildResources stops = 7;
-  ChildResources transfers = 8;
-
-  optional string href = 9;
+  ChildResources agencies = 6;
+  ChildResources feeds = 7;
+  ChildResources routes = 8;
+  ChildResources stops = 9;
+  ChildResources transfers = 10;
 
   // Reference is the reference type for the system resource.
   message Reference {
-    string id = 2;
-    optional string href = 1;
+    string id = 1;
+    Resource resource = 2;
   }
+}
+
+// The resource message contains generic metadata that applies to all resources.
+message Resource {
+  string path = 1;
+  optional string href = 2;
 }
 
 // Description of a collection of child resources for a resource.
@@ -633,22 +639,25 @@ message ChildResources {
 message Stop {
   // ID of the stop. This is the `stop_id` column in `stops.txt`.
   string id = 1;
+  // Generic metadata about the stop resource.
+  Resource resource = 2;
   // System corresponding to this stop.
-  System.Reference system = 2;
+  // This is the parent resource in Transiter's resource hierarchy.
+  System.Reference system = 3;
   // Code of the stop. This is the `stop_code` column in `stops.txt`.
-  optional string code = 3;
+  optional string code = 4;
   // Name of the stop. This is the `stop_name` column in `stops.txt`.
-  optional string name = 4;
+  optional string name = 5;
   // Description of the stop. This is the `stop_desc` column in `stops.txt`.
-  optional string description = 5;
+  optional string description = 6;
   // Zone ID of the stop. This is the `zone_id` column in `stops.txt`.
-  optional string zone_id = 6;
+  optional string zone_id = 7;
   // Latitude of the stop. This is the `stop_lat` column in `stops.txt`.
-  optional double latitude = 7;
+  optional double latitude = 8;
   // Longitude of the stop. This is the `stop_lon` column in `stops.txt`.
-  optional double longitude = 8;
+  optional double longitude = 9;
   // URL of a webpage about the stop. This is the `stop_url` column in `stops.txt`.
-  optional string url = 9;
+  optional string url = 10;
 
   // Enum describing the possible stop types
   enum Type {
@@ -659,18 +668,18 @@ message Stop {
     BOARDING_AREA = 4;
   }
   // Type of the stop. This is the `platform_type` column in `stops.txt`.
-  Type type = 10;
+  Type type = 11;
 
   // Parent stop. This is determined using the `parent_station` column in `stops.txt`.
-  optional Stop.Reference parent_stop = 11;
+  optional Stop.Reference parent_stop = 12;
   // Child stops. This are determined using the `parent_station` column in `stops.txt`.
-  repeated Stop.Reference child_stops = 12;
+  repeated Stop.Reference child_stops = 13;
   // Timezone of the stop. This is the `stop_timezone` column in `stops.txt`.
-  optional string timezone = 13;
+  optional string timezone = 14;
   // If there is wheelchair boarding for this stop. This is the `wheelchair_boarding` column in `stops.txt`.
-  optional bool wheelchair_boarding = 14;
+  optional bool wheelchair_boarding = 15;
   // Platform code of the stop. This is the `platform_code` column in `stops.txt`.
-  optional string platform_code = 15;
+  optional string platform_code = 16;
 
   // Message describing the service maps view in stops.
   //
@@ -685,24 +694,24 @@ message Stop {
     repeated Route.Reference routes = 2;
   }
   // List of service maps for this stop.
-  repeated ServiceMap service_maps = 16;
+  repeated ServiceMap service_maps = 17;
 
   // Active alerts for this stop.
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
-  repeated Alert.Reference alerts = 17;
+  repeated Alert.Reference alerts = 18;
 
   // List of realtime stop times for this stop.
   //
   // A stop time is an event at which a trip calls at a stop.
-  repeated StopTime stop_times = 18;
+  repeated StopTime stop_times = 19;
 
   // Transfers out of this stop.
   //
   // These are determined using the `from_stop_id` field in the GTFS static `transfers.txt` file.
-  repeated Transfer transfers = 19;
+  repeated Transfer transfers = 20;
 
   // Message describing a headsign rule.
   message HeadsignRule {
@@ -716,14 +725,14 @@ message Stop {
     string headsign = 4;
   }
   // List of headsign rules for this stop.
-  repeated HeadsignRule headsign_rules = 20;
+  repeated HeadsignRule headsign_rules = 21;
 
   // Reference is the reference type for the stop resource.
   message Reference {
     string id = 1;
-    System.Reference system = 2;
-    optional string name = 3;
-    optional string href = 4;
+    Resource resource = 2;
+    System.Reference system = 3;
+    optional string name = 4;
   }
 }
 
@@ -767,10 +776,12 @@ message StopTime {
 
 message Trip {
   string id = 1;
+  // Generic metadata about the trip resource.
+  Resource resource = 2;
   // Route corresponding to this trip.
   // This is the parent resource in Transiter's resource hierarchy.
-  Route.Reference route = 2;
-  optional string href = 3;
+  // It is determined using the `route_id` field in the GTFS realtime feed.
+  Route.Reference route = 3;
   optional int64 started_at = 4;
   optional Vehicle.Reference vehicle = 5;
   bool direction_id = 6;
@@ -780,10 +791,10 @@ message Trip {
   // Reference is the reference type for the trip resource.
   message Reference {
     string id = 1;
-    Route.Reference route = 2;
-    Stop.Reference destination = 3;
-    optional Vehicle.Reference vehicle = 4;
-    optional string href = 5;
+    Resource resource = 2;
+    Route.Reference route = 3;
+    Stop.Reference destination = 4;
+    optional Vehicle.Reference vehicle = 5;
   }
 }
 
@@ -804,22 +815,25 @@ message Vehicle {
 message Route {
   // ID of the route. This is the `route_id` column in `routes.txt`.
   string id = 1;
+  // Generic metadata about the route resource.
+  Resource resource = 2;
   // System corresponding to this route.
-  System.Reference system = 2;
+  // This is the parent resource in Transiter's resource hierarchy.
+  System.Reference system = 3;
   // Short name of the route. This is the `route_short_name` column in `routes.txt`.
-  optional string short_name = 3;
+  optional string short_name = 4;
   // Long name of the route. This is the `route_long_name` column in `routes.txt`.
-  optional string long_name = 4;
+  optional string long_name = 5;
   // Color of the route. This is the `route_color` column in `routes.txt`.
-  string color = 5;
+  string color = 6;
   // Text color of the route. This is the `route_text_color` column in `routes.txt`.
-  string text_color = 6;
+  string text_color = 7;
   // Description of the route. This is the `route_desc` column in `routes.txt`.
-  optional string description = 7;
+  optional string description = 8;
   // URL of a web page about the route. This is the `route_url` column in `routes.txt`.
-  optional string url = 8;
+  optional string url = 9;
   // Sort order of the route. This is the `route_sort_order` column in `routes.txt`.
-  optional int32 sort_order = 9;
+  optional int32 sort_order = 10;
 
   // Enum describing possible policies for continuous pickup or drop-off.
   enum ContinuousPolicy {
@@ -833,9 +847,9 @@ message Route {
     COORDINATE_WITH_DRIVER = 3;
   }
   // Continuous pickup policy. This is the `continuous_pickup` column in `routes.txt`.
-  ContinuousPolicy continuous_pickup = 10;
+  ContinuousPolicy continuous_pickup = 11;
   // Continuous dropoff policy. This is the `continuous_dropoff` column in `routes.txt`.
-  ContinuousPolicy continuous_drop_off = 11;
+  ContinuousPolicy continuous_drop_off = 12;
 
   // Enum describing possible route types.
   // This corresponds to possible values of the `route_type` column in `routes.txt`.
@@ -853,19 +867,19 @@ message Route {
     UNKNOWN = 100;
   }
   // Type of the route. This is the `route_type` column in `routes.txt`.
-  Type type = 12;
+  Type type = 13;
 
   // Agency this route is associated to.
   //
   // This is determined using the `agency_id` column in `routes.txt`.
-  Agency.Reference agency = 13;
+  Agency.Reference agency = 14;
 
   // Active alerts for this route.
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
-  repeated Alert.Reference alerts = 14;
+  repeated Alert.Reference alerts = 15;
 
   // An estimate of the interval of time between consecutive realtime trips, in seconds.
   //
@@ -878,7 +892,7 @@ message Route {
   // If there are `N` trips, there will be `N-1` such arrival time diffs.
   // The estimated headway is the average of these diffs across
   // all stops.
-  optional int32 estimated_headway = 15;
+  optional int32 estimated_headway = 16;
 
   // Message describing the service maps view in routes.
   //
@@ -893,13 +907,13 @@ message Route {
     repeated Stop.Reference stops = 2;
   }
   // List of service maps for this route.
-  repeated ServiceMap service_maps = 16;
+  repeated ServiceMap service_maps = 17;
 
   // Reference is the reference type for the route resource.
   message Reference {
     string id = 1;
-    System.Reference system = 2;
-    optional string href = 3;
+    Resource resource = 2;
+    System.Reference system = 3;
     string color = 4;
   }
 }
@@ -916,17 +930,20 @@ message Route {
 message Feed {
   // ID of the feed, as specified in the system configuration file.
   string id = 1;
+  // Generic metadata about the feed resource.
+  Resource resource = 2;
   // System corresponding to this feed.
-  System.Reference system = 2;
+  // This is the parent resource in Transiter's resource hierarchy.
+  System.Reference system = 3;
 
   // Updates for this feed.
-  ChildResources updates = 5;
+  ChildResources updates = 4;
 
   // Reference is the reference type for the feed resource.
   message Reference {
     string id = 1;
-    System.Reference system = 2;
-    optional string href = 3;
+    Resource resource = 2;
+    System.Reference system = 3;
   }
 }
 
@@ -939,39 +956,42 @@ message Feed {
 message Agency {
   // ID of the agency. This is the `agency_id` column in `agency.txt`.
   string id = 1;
+  // Generic metadata about the agency resource.
+  Resource resource = 2;
   // System corresponding to this agency.
-  System.Reference system = 2;
+  // This is the parent resource in Transiter's resource hierarchy.
+  System.Reference system = 3;
   // Name of the agency. This is the `agency_name` column in `agency.txt`.
-  string name = 3;
+  string name = 4;
   // URL of the agency. This is the `agency_url` column in `agency.txt`.
-  string url = 4;
+  string url = 5;
   // Timezone of the agency. This is the `agency_timezone` column in `agency.txt`.
-  string timezone = 5;
+  string timezone = 6;
   // Language of the agency. This is the `agency_lang` column in `agency.txt`.
-  optional string language = 6;
+  optional string language = 7;
   // Phone number of the agency. This is the `agency_phone` column in `agency.txt`.
-  optional string phone = 7;
+  optional string phone = 8;
   // URL where tickets for the agency's services ban be bought.
   // This is the `agency_fare_url` column in `agency.txt`.
-  optional string fare_url = 8;
+  optional string fare_url = 9;
   // Email address of the agency. This is the `agency_email` column in `agency.txt`.
-  optional string email = 9;
+  optional string email = 10;
 
-  repeated Route.Reference routes = 10;
+  repeated Route.Reference routes = 11;
 
   // List of active alerts for the agency.
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
-  repeated Alert.Reference alerts = 11;
+  repeated Alert.Reference alerts = 12;
 
   // Reference is the reference type for the agency resource.
   message Reference {
     string id = 1;
-    System.Reference system = 2;
-    string name = 3;
-    optional string href = 4;
+    Resource resource = 2;
+    System.Reference system = 3;
+    string name = 4;
   }
 }
 
@@ -986,9 +1006,11 @@ message Alert {
   // message](https://developers.google.com/transit/gtfs-realtime/reference#message-feedentity)
   // corresponding to the alert.
   string id = 1;
-
+  // Generic metadata about the alert resource.
+  Resource resource = 2;
   // System corresponding to this alert.
-  System.Reference system = 2;
+  // This is the parent resource in Transiter's resource hierarchy.
+  System.Reference system = 3;
 
   // Cause is the same as the [cause enum in the GTFS realtime
   // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-cause),
@@ -1008,7 +1030,7 @@ message Alert {
     MEDICAL_EMERGENCY = 12;
   }
   // Cause of the alert. This corresponds to the `cause` field in the realtime alert message.
-  Cause cause = 3;
+  Cause cause = 4;
 
   // Effect is the same as the [effect enum in the GTFS realtime
   // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-effect),
@@ -1027,7 +1049,7 @@ message Alert {
     ACCESSIBILITY_ISSUE = 11;
   }
   // Effect of the alert. This corresponds to the `effect` field in the realtime alert message.
-  Effect effect = 4;
+  Effect effect = 5;
 
   // The active period message describes a period when an alert is active.
   // It corresponds the the [time range message in the GTFS realtime
@@ -1043,10 +1065,10 @@ message Alert {
   }
   // The current active period, if the alert is currently active.
   // If the alert is not active this is empty.
-  optional ActivePeriod current_active_period = 5;
+  optional ActivePeriod current_active_period = 6;
   // All active periods for this alert.
   // Transiter guarantees that these active periods have no overlap.
-  repeated ActivePeriod all_active_periods = 6;
+  repeated ActivePeriod all_active_periods = 7;
 
   // The text message describes an alert header/description/URL in a specified language.
   // It corresponds the the [translation message in the GTFS realtime
@@ -1059,29 +1081,31 @@ message Alert {
   }
   // Header of the alert, in zero or more languages.
   // This corresponds to the `header_text` field in the realtime alert message.
-  repeated Text header = 7;
+  repeated Text header = 8;
   // Description of the alert, in zero or more languages.
   // This corresponds to the `description_text` field in the realtime alert message.
-  repeated Text description = 8;
+  repeated Text description = 9;
   // URL for additional information about the alert, in zero or more languages.
   // This corresponds to the `url` field in the realtime alert message.
-  repeated Text url = 9;
+  repeated Text url = 10;
 
   // TODO: add informed entites for the alert.
 
   // Reference is the reference type for the agency resource.
   message Reference {
     string id = 1;
-    System.Reference system = 2;
-    Cause cause = 3;
-    Effect effect = 4;
-    optional string href = 5;
+    Resource resource = 2;
+    System.Reference system = 3;
+    Cause cause = 4;
+    Effect effect = 5;
   }
 }
 
 message Transfer {
-  Stop.Reference from_stop = 1;
-  Stop.Reference to_stop = 2;
+  // TODO: id, system, resource
+  // Probably will use the pk of the DB row for the ID
+  Stop.Reference from_stop = 4;
+  Stop.Reference to_stop = 5;
 
   enum Type {
     RECOMMENDED = 0;
@@ -1089,10 +1113,10 @@ message Transfer {
     REQUIRES_TIME = 2;
     NO_POSSIBLE = 3;
   }
-  Type type = 3;
+  Type type = 6;
 
-  optional int32 min_transfer_time = 4;
-  optional int32 distance = 5;
+  optional int32 min_transfer_time = 7;
+  optional int32 distance = 8;
 }
 
 // The feed update resource.
@@ -1106,11 +1130,11 @@ message FeedUpdate {
   // ID of the feed update. This is the primary key of the associated Postgres
   // database row so it's actually globally unique.
   string id = 1;
+  // Generic metadata about the feed update resource.
+  Resource resource = 2;
   // Feed corresponding to this update.
   // This is the parent resource in Transiter's resource hierarchy.
-  Feed.Reference feed = 2;
-  // URL of this update resource.
-  optional string href = 3;
+  Feed.Reference feed = 3;
 
   // Unix timestamp of when the update started.
   int64 started_at = 4;

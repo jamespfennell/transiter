@@ -87,7 +87,7 @@ def install_system(
     def install(system_id, system_config, sync=True, expected_status="ACTIVE"):
         def delete():
             requests.delete(
-                transiter_host + "/admin/systems/" + system_id + "?sync=true"
+                transiter_host + "/systems/" + system_id + "?sync=true"
             )
 
         system_config_url = source_server.create(
@@ -97,7 +97,7 @@ def install_system(
         source_server.put(system_config_url, system_config)
 
         response = requests.put(
-            transiter_host + "/admin/systems/" + system_id,
+            transiter_host + "/systems/" + system_id,
             json={
                 "yaml_config": {
                     "url": source_server_host_within_transiter + "/" + system_config_url
