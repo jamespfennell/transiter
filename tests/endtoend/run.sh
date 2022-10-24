@@ -3,7 +3,7 @@ set -e
 
 docker-compose -f tests/endtoend/compose.yml down
 
-docker build . -t jamespfennell/transiter-go:latest
+docker build . -t jamespfennell/transiter:latest
 
 docker-compose -f tests/endtoend/compose.yml up --build --detach sourceserver transiter db
 

@@ -14,7 +14,7 @@ services:
       - "5432"
 
   transiter-server:
-    image: jamespfennell/transiter-go:latest
+    image: jamespfennell/transiter:latest
     entrypoint:
       - transiter
       - server
