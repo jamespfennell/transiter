@@ -1,0 +1,27 @@
+version: '3.5'
+
+services:
+
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=transiter
+      - POSTGRES_PASSWORD=transiter
+      - POSTGRES_DB=transiter
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+
+  transiter-server:
+    image: jamespfennell/transiter-go:latest
+    entrypoint:
+      - transiter
+      - server
+      - -p
+      - postgres://transiter:transiter@postgres:5432/transiter
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+      - "8083:8083"

@@ -14,26 +14,37 @@ The endpoint for a particular stop, for example, returns the stop's static data
 
 You can get a sense for the data that's available by navigating
     through the [live demo site](https://demo.transiter.dev).
+Transiter has a [dedicated documentation website](https://docs.transiter.dev)
+
+
+**Project status**: a
+    [migration from Python to Go](https://jpfennell.com/posts/transiter-python-go)
+    was recently merged into mainline.
+There are still some features missing in the Go version
+    and adding these is being tracked in 
+    [issue #87](https://github.com/jamespfennell/transiter/issues/87).
+The Python version of Transiter can be viewed in 
+    [this archived GitHub repository](https://github.com/jamespfennell/transiter-python).
 
 ## Getting started
 
-To build Transiter you need to have Go 1.18 installed, 
-    and to run it you need a Postgres instance.
-If Docker is available you can easily spin up Postgres with:
+Transiter uses Postgres database for storing data.
+If Docker compose is available you can easily spin up Postgres with:
 
 ```
-docker run -e POSTGRES_USER=transiter -e POSTGRES_PASSWORD=transiter -e POSTGRES_DB=transiter -b 5432:5432 postgres
+docker-compose up postgres
 ```
 
-With the databse running, the Transiter _server_ is launched using:
+Transiter is written in Go.
+With Go installed and the database running, the Transiter _server_ is launched using:
 
 ```
 go run . server
 ```
 
-The HTTP API will now be available on `localhost:8080`.
-You can also interact with the server using Transiter _client_ commands; 
-    for example to list all installed transit system run:
+Transiter's HTTP API will now be available on `localhost:8080`.
+You can also interact with the server using Transiter _client_ commands.
+For example to list all installed transit system run:
 
 ```
 go run . list
@@ -54,11 +65,16 @@ To get data about the Rockefeller Center station, say, visit:
 localhost:8080/systems/us-ny-subway/stops/D15
 ```
 
+[Transiter's documentation website](https://docs.transiter.dev) has much more information,
+    including how to run Tranister with Docker and how to use a non-default Postgres configuration.
+
+
 ## Development
 
 Transiter uses [sqlc](https://github.com/kyleconroy/sqlc)
     for generating database access methods.
-The schema and queries are stored in the `db` directory and the Go files are generated using:
+The schema and queries are stored in the `db` directory.
+The Go files are generated using the following command in the repo root:
 
 ```
 sqlc generate

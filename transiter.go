@@ -137,7 +137,7 @@ func main() {
 						Name:    "postgres-connection-string",
 						Aliases: []string{"p"},
 						Usage:   "Postgres connection string",
-						Value:   "postgres://transiter:transiter@localhost:5432/transiter?sslmode=disable",
+						Value:   "postgres://transiter:transiter@localhost:5432/transiter",
 					},
 					&cli.BoolFlag{
 						Name:  "read-only",
