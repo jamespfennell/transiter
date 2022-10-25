@@ -52,4 +52,4 @@ RUN mkdocs build --strict -f mkdocs.yml -d gen
 FROM caddy:2
 WORKDIR /transiter
 COPY --from=docs-builder /transiter/gen .
-ENTRYPOINT ["caddy", "file-server", "--listen", ":8888"]
+ENTRYPOINT ["caddy", "file-server", "--listen", ":80"]

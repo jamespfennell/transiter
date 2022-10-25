@@ -83,4 +83,5 @@ jobs:
           tags: jamespfennell/transiter-docs:latest
           # Only push to Docker Hub if this workflow is a push to mainline
           push: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
+          file: docs/Dockerfile
           context: .
