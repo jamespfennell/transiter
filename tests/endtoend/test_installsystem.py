@@ -1,5 +1,6 @@
 import pytest
 import requests
+from haversine import haversine
 
 STOP_IDS = {
     "1A",
@@ -69,19 +70,23 @@ def test_install_system__stops(system_id, install_system_1, transiter_host, sync
     stop_response = requests.get(
         transiter_host + "/systems/" + system_id + "/stops/StopID"
     ).json()
-    assert "StopID" == stop_response["id"]
-    assert "StopCode" == stop_response["code"]
-    assert "StopName" == stop_response["name"]
-    assert "StopDesc" == stop_response["description"]
-    assert "ZoneId" == stop_response["zoneId"]
-    assert 10.5 == stop_response["latitude"]
-    assert 20.5 == stop_response["longitude"]
-    assert "StopUrl" == stop_response["url"]
-    assert "STOP" == stop_response["type"]
-    assert "StopTimezone" == stop_response["timezone"]
-    assert True == stop_response["wheelchairBoarding"]
-    assert "PlatformCode" == stop_response["platformCode"]
-    assert "ParentStopID" == stop_response["parentStop"]["id"]
+
+    def assert_stop_response_for_StopID(stop_response):
+        assert "StopID" == stop_response["id"]
+        assert "StopCode" == stop_response["code"]
+        assert "StopName" == stop_response["name"]
+        assert "StopDesc" == stop_response["description"]
+        assert "ZoneId" == stop_response["zoneId"]
+        assert 40.7527 == stop_response["latitude"]
+        assert -73.9772 == stop_response["longitude"]
+        assert "StopUrl" == stop_response["url"]
+        assert "STOP" == stop_response["type"]
+        assert "StopTimezone" == stop_response["timezone"]
+        assert True == stop_response["wheelchairBoarding"]
+        assert "PlatformCode" == stop_response["platformCode"]
+        assert "ParentStopID" == stop_response["parentStop"]["id"]
+
+    assert_stop_response_for_StopID(stop_response)
 
     parent_stop_response = requests.get(
         transiter_host + "/systems/" + system_id + "/stops/ParentStopID"
@@ -89,6 +94,47 @@ def test_install_system__stops(system_id, install_system_1, transiter_host, sync
     assert 1 == len(parent_stop_response["childStops"])
     assert "StopID" == parent_stop_response["childStops"][0]["id"]
     assert "STATION" == parent_stop_response["type"]
+
+    # Geolocation
+    relative_lat_lon = (40.7559, -73.9871)
+    stop_lat_lon = (stop_response["latitude"], stop_response["longitude"])
+
+    dist_km = haversine(relative_lat_lon, stop_lat_lon)
+    assert dist_km > 0.9 and dist_km < 1.0
+
+    query_params = {
+        "search_mode": "DISTANCE",
+        "latitude": relative_lat_lon[0],
+        "longitude": relative_lat_lon[1],
+        "max_distance": 1.0,
+    }
+    stops_response_geo = requests.get(
+        transiter_host + "/systems/" + system_id + "/stops", params=query_params
+    ).json()
+    stops_geo = stops_response_geo["stops"]
+
+    # Only 'StopID' is within 1km of the relative location
+    assert 1 == len(stops_geo)
+    assert_stop_response_for_StopID(stops_geo[0])
+
+    query_params_closer = {**query_params, "max_distance": 0.5}
+    stops_response_geo_empty = requests.get(
+        transiter_host + "/systems/" + system_id + "/stops", params=query_params_closer
+    ).json()
+
+    # No stops within 0.5km of relative location
+    assert 0 == len(stops_response_geo_empty["stops"])
+
+    query_params_all_of_earth = {**query_params, "max_distance": 40075}
+    stops_response_geo_all = requests.get(
+        transiter_host + "/systems/" + system_id + "/stops",
+        params=query_params_all_of_earth,
+    ).json()
+
+    # All stops returned
+    ordered_stop_ids = [stop["id"] for stop in stops_response_geo_all["stops"]]
+    assert STOP_IDS == set(actual_stop_ids)
+    assert sorted(ordered_stop_ids) == ordered_stop_ids
 
 
 @pytest.mark.parametrize("sync", [True, False])
