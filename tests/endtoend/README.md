@@ -19,6 +19,7 @@ During a test run, there are four live components:
 1. Postgres.
 
 1. The Transiter instance, listening on its default ports.
+    (In fact, the tests only use the admin HTTP service, which by default listens on 8082.)
 
 1. A source server, which is used to simulate external transit agency data sources.
    This listens by default on port 8090.
@@ -28,11 +29,34 @@ During a test run, there are four live components:
 
 ## Running the test
 
-**Simplist way**: in the root of repo, run `bash tests/endtoend/run.sh`.
+### Simplist way
 
-The test requires a running Transiter instance with an HTTP admin service
-listening at the location given 
-in the environment variable `TRANSITER_HOST`.
+If you are on a machine with Docker and Docker compose available,
+    then in the root of the repo just run `bash tests/endtoend/run.sh`.
+
+### Manual
+
+The Python tests have some dependencies which need to be installed.
+As usual, it's best to do this in a virtualenv. Then:
+```
+pip install -r tests/endtoend/requirements.txt
+```
+
+Steps:
+
+1. Ensure Postgres is running with a `transiter` database and a user/password `transiter`/`transiter`.
+
+1. Run Transiter using `go run . server`.
+    (You can also perform the test with different Postgres credentials or a different Postgres database name.
+    You just need to provide these to the Go binary using the `--postgres-connection-string` flag.)
+
+1. In another terminal, run the source server using `go run tests/endtoend/sourceserver/sourceserver.go`.
+
+1. In another terminal, run the tests using `pytest path/to/test.py`.
+
+**Advanced usage**
+The test assumes there is a running Transiter instance with an HTTP admin service
+listening at the location given in the environment variable `TRANSITER_HOST`.
 It also requires the source server to be running. 
 The source server should be accessible to the test driver
 at the location `SOURCE_SERVER_HOST` and be accessible
@@ -45,18 +69,12 @@ The defaults for these are:
 
 - `SOURCE_SERVER_HOST_WITHIN_TRANSITER=SOURCE_SERVER_HOST`
 
-### Manual
+So by default everything works without customization, but all of the ports/addresses
+    can be customized if you need.
 
-Run Transiter using `go run . server`.
+### Manual with Docker compose
 
-Run the source server using `go run tests/endtoend/sourceserver/sourceserver.go`.
-
-Run the tests using `pytest path/to/test.py`.
-
-### Full Docker compose
-
-The easiest way to run the tests is using Docker compose.
-This assumes that Docker image has been built locally with:
+Assuming the Docker image has been built locally with:
 
     docker build . -t jamespfennell/transiter:latest   
 
