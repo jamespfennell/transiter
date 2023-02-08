@@ -47,16 +47,16 @@ The public API is a read-only API so all of the resources come from somewhere el
 
 | Resource    | Reference type | List endpoint | Get endpoint | Source |
 | ----------- | --------------- | ---------- | ------------------ | -------|
-| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static    
-| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime 
-| Feed        | System          |            |                    | system config  
+| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
+| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
+| Feed        | System          |            |                    | system config
 | Feed update | Feed            |            |                    | Transiter update process
 | Route       | System          |            |                    | GTFS static
-| Trip        | Route           |            |                    | GTFS realtime      
-| Stop        | System          |            |                    | GTFS static   
+| Trip        | Route           |            |                    | GTFS realtime
+| Stop        | System          |            |                    | GTFS static
 | System      | None            |            |                    | system config
-| Transfer    | System          |            |                    | GTFS static       
-| Vehicle     | System or trip  |            |                    | GTFS realtime     
+| Transfer    | System          |            |                    | GTFS static
+| Vehicle     | System or trip  |            |                    | GTFS realtime
 
 */
 syntax = "proto3";
@@ -123,7 +123,7 @@ service Public {
 
   // List stops
   //
-  // `GET /systems/<system_id>/stops/<stop_id>`
+  // `GET /systems/<system_id>/stops`
   //
   // List all stops in a system.
   //
@@ -368,6 +368,27 @@ message ListStopsRequest {
   // If true, the transfers field will not be populated.
   // This will generally make the response faster to generate.
   bool skip_transfers = 7;
+
+  // The maximum distance in kilometers that a stop must be from
+  // latitude, longitude to be listed when using DISTANCE search mode.
+  optional double max_distance = 10;
+
+  // The latitude relative to the returned stops when using DISTANCE search mode.
+  optional double latitude = 11;
+
+  // The longitude relative to the returned stops when using DISTANCE search mode.
+  optional double longitude = 12;
+
+  // The possible search types when listing stops.
+  enum SearchMode {
+    // Return a paginated list of stops sorted by stop ID.
+    ID = 0;
+    // Return all stops within max_distance from latitude, longitude.
+    DISTANCE = 1;
+  }
+
+  // The type of search to perform when listing stops.
+  optional SearchMode search_mode = 13;
 }
 
 // Response payload for the list stops endpoint.

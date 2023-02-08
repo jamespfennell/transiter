@@ -27,7 +27,7 @@ SELECT route.id, route.color FROM route
 WHERE route.agency_pk = sqlc.arg(agency_pk);
 
 -- name: ListStopsInSystem :many
-SELECT * FROM stop 
+SELECT * FROM stop
 WHERE system_pk = sqlc.arg(system_pk)
   AND id >= sqlc.arg(first_stop_id)
   AND (
@@ -36,6 +36,16 @@ WHERE system_pk = sqlc.arg(system_pk)
   )
 ORDER BY id
 LIMIT sqlc.arg(num_stops);
+
+-- name: ListStopsInSystemGeoFilter :many
+SELECT * FROM stop
+WHERE system_pk = sqlc.arg(system_pk)
+  AND (
+    NOT sqlc.arg(only_return_specified_ids)::bool OR
+    id = ANY(sqlc.arg(stop_ids)::text[])
+  )
+  AND (6371 * acos(cos(radians(latitude)) * cos(radians(sqlc.arg(latitude)::numeric)) * cos(radians(sqlc.arg(longitude)::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians(sqlc.arg(latitude)::numeric)))) <= sqlc.arg(max_distance)::numeric
+ORDER BY id;
 
 -- name: GetStopInSystem :one
 SELECT stop.* FROM stop
@@ -52,23 +62,23 @@ SELECT trip_stop_time.*, trip.*, vehicle.id vehicle_id FROM trip_stop_time
     ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time;
 
 -- name: ListStopsInStopTree :many
-WITH RECURSIVE 
+WITH RECURSIVE
 ancestor AS (
-	SELECT initial.pk, initial.parent_stop_pk
-	  FROM stop initial
-	  WHERE	initial.pk = $1
-	UNION
-	SELECT parent.pk, parent.parent_stop_pk
-		FROM stop parent
-		INNER JOIN ancestor ON ancestor.parent_stop_pk = parent.pk
+    SELECT initial.pk, initial.parent_stop_pk
+      FROM stop initial
+      WHERE	initial.pk = $1
+    UNION
+    SELECT parent.pk, parent.parent_stop_pk
+        FROM stop parent
+        INNER JOIN ancestor ON ancestor.parent_stop_pk = parent.pk
 ),
 descendent AS (
-	SELECT * FROM ancestor
-	UNION
-	SELECT child.pk, child.parent_stop_pk
-		FROM stop child
-		INNER JOIN descendent ON descendent.pk = child.parent_stop_pk
-) 
+    SELECT * FROM ancestor
+    UNION
+    SELECT child.pk, child.parent_stop_pk
+        FROM stop child
+        INNER JOIN descendent ON descendent.pk = child.parent_stop_pk
+)
 SELECT stop.* FROM stop
   INNER JOIN descendent
   ON stop.pk = descendent.pk;
@@ -87,7 +97,7 @@ WITH last_stop_sequence AS (
 SELECT lss.trip_pk, stop.pk destination_pk
   FROM last_stop_sequence lss
   INNER JOIN trip_stop_time
-    ON lss.trip_pk = trip_stop_time.trip_pk 
+    ON lss.trip_pk = trip_stop_time.trip_pk
     AND lss.stop_sequence = trip_stop_time.stop_sequence
   INNER JOIN stop
     ON trip_stop_time.stop_pk = stop.pk;
@@ -102,7 +112,7 @@ SELECT lss.trip_pk, stop.pk destination_pk
 SELECT stop.pk, service_map_config.id
 FROM service_map_config
     INNER JOIN stop ON service_map_config.system_pk = stop.system_pk
-WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]); 
+WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]);
 
 -- name: ListServiceMapsForStops :many
 SELECT stop.pk stop_pk, service_map_config.id config_id, service_map.route_pk route_pk
@@ -140,7 +150,7 @@ ORDER BY service_map_config.id, service_map_vertex.position;
 
 
 -- name: ListTransfersInSystem :many
-SELECT 
+SELECT
     transfer.*,
     from_stop.id from_stop_id, from_stop.name from_stop_name, from_system.id from_system_id,
     to_stop.id to_stop_id, to_stop.name to_stop_name, to_system.id to_system_id
@@ -149,7 +159,7 @@ FROM transfer
     INNER JOIN system from_system ON from_stop.system_pk = from_system.pk
     INNER JOIN stop to_stop ON to_stop.pk = transfer.to_stop_pk
     INNER JOIN system to_system ON to_stop.system_pk = to_system.pk
-WHERE transfer.system_pk = $1 
+WHERE transfer.system_pk = $1
 ORDER BY transfer.pk;
 
 -- ListActiveAlertsForRoutes returns preview information about active alerts for the provided routes.
@@ -191,13 +201,13 @@ ORDER BY alert.id ASC;
 
 
 -- name: ListUpdatesInFeed :many
-SELECT * FROM feed_update 
+SELECT * FROM feed_update
 WHERE feed_pk = sqlc.arg(feed_pk)
 ORDER BY pk DESC
 LIMIT 100;
 
 -- name: ListTrips :many
-SELECT * FROM trip 
+SELECT * FROM trip
 WHERE trip.route_pk = sqlc.arg(route_pk)
 ORDER BY trip.id;
 

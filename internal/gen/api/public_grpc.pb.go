@@ -50,7 +50,7 @@ type PublicClient interface {
 	GetAgency(ctx context.Context, in *GetAgencyRequest, opts ...grpc.CallOption) (*Agency, error)
 	// List stops
 	//
-	// `GET /systems/<system_id>/stops/<stop_id>`
+	// `GET /systems/<system_id>/stops`
 	//
 	// List all stops in a system.
 	//
@@ -326,7 +326,7 @@ type PublicServer interface {
 	GetAgency(context.Context, *GetAgencyRequest) (*Agency, error)
 	// List stops
 	//
-	// `GET /systems/<system_id>/stops/<stop_id>`
+	// `GET /systems/<system_id>/stops`
 	//
 	// List all stops in a system.
 	//

@@ -82,6 +82,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// The possible search types when listing stops.
+type ListStopsRequest_SearchMode int32
+
+const (
+	// Return a paginated list of stops sorted by stop ID.
+	ListStopsRequest_ID ListStopsRequest_SearchMode = 0
+	// Return all stops within max_distance from latitude, longitude.
+	ListStopsRequest_DISTANCE ListStopsRequest_SearchMode = 1
+)
+
+// Enum value maps for ListStopsRequest_SearchMode.
+var (
+	ListStopsRequest_SearchMode_name = map[int32]string{
+		0: "ID",
+		1: "DISTANCE",
+	}
+	ListStopsRequest_SearchMode_value = map[string]int32{
+		"ID":       0,
+		"DISTANCE": 1,
+	}
+)
+
+func (x ListStopsRequest_SearchMode) Enum() *ListStopsRequest_SearchMode {
+	p := new(ListStopsRequest_SearchMode)
+	*p = x
+	return p
+}
+
+func (x ListStopsRequest_SearchMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ListStopsRequest_SearchMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_public_proto_enumTypes[0].Descriptor()
+}
+
+func (ListStopsRequest_SearchMode) Type() protoreflect.EnumType {
+	return &file_api_public_proto_enumTypes[0]
+}
+
+func (x ListStopsRequest_SearchMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ListStopsRequest_SearchMode.Descriptor instead.
+func (ListStopsRequest_SearchMode) EnumDescriptor() ([]byte, []int) {
+	return file_api_public_proto_rawDescGZIP(), []int{8, 0}
+}
+
 // Enum describing the possible statuses of a system.
 type System_Status int32
 
@@ -135,11 +184,11 @@ func (x System_Status) String() string {
 }
 
 func (System_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_public_proto_enumTypes[0].Descriptor()
+	return file_api_public_proto_enumTypes[1].Descriptor()
 }
 
 func (System_Status) Type() protoreflect.EnumType {
-	return &file_api_public_proto_enumTypes[0]
+	return &file_api_public_proto_enumTypes[1]
 }
 
 func (x System_Status) Number() protoreflect.EnumNumber {
@@ -191,11 +240,11 @@ func (x Stop_Type) String() string {
 }
 
 func (Stop_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_public_proto_enumTypes[1].Descriptor()
+	return file_api_public_proto_enumTypes[2].Descriptor()
 }
 
 func (Stop_Type) Type() protoreflect.EnumType {
-	return &file_api_public_proto_enumTypes[1]
+	return &file_api_public_proto_enumTypes[2]
 }
 
 func (x Stop_Type) Number() protoreflect.EnumNumber {
@@ -248,11 +297,11 @@ func (x Route_ContinuousPolicy) String() string {
 }
 
 func (Route_ContinuousPolicy) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_public_proto_enumTypes[2].Descriptor()
+	return file_api_public_proto_enumTypes[3].Descriptor()
 }
 
 func (Route_ContinuousPolicy) Type() protoreflect.EnumType {
-	return &file_api_public_proto_enumTypes[2]
+	return &file_api_public_proto_enumTypes[3]
 }
 
 func (x Route_ContinuousPolicy) Number() protoreflect.EnumNumber {
@@ -323,11 +372,11 @@ func (x Route_Type) String() string {
 }
 
 func (Route_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_public_proto_enumTypes[3].Descriptor()
+	return file_api_public_proto_enumTypes[4].Descriptor()
 }
 
 func (Route_Type) Type() protoreflect.EnumType {
-	return &file_api_public_proto_enumTypes[3]
+	return &file_api_public_proto_enumTypes[4]
 }
 
 func (x Route_Type) Number() protoreflect.EnumNumber {
@@ -402,11 +451,11 @@ func (x Alert_Cause) String() string {
 }
 
 func (Alert_Cause) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_public_proto_enumTypes[4].Descriptor()
+	return file_api_public_proto_enumTypes[5].Descriptor()
 }
 
 func (Alert_Cause) Type() protoreflect.EnumType {
-	return &file_api_public_proto_enumTypes[4]
+	return &file_api_public_proto_enumTypes[5]
 }
 
 func (x Alert_Cause) Number() protoreflect.EnumNumber {
@@ -478,11 +527,11 @@ func (x Alert_Effect) String() string {
 }
 
 func (Alert_Effect) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_public_proto_enumTypes[5].Descriptor()
+	return file_api_public_proto_enumTypes[6].Descriptor()
 }
 
 func (Alert_Effect) Type() protoreflect.EnumType {
-	return &file_api_public_proto_enumTypes[5]
+	return &file_api_public_proto_enumTypes[6]
 }
 
 func (x Alert_Effect) Number() protoreflect.EnumNumber {
@@ -530,11 +579,11 @@ func (x Transfer_Type) String() string {
 }
 
 func (Transfer_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_public_proto_enumTypes[6].Descriptor()
+	return file_api_public_proto_enumTypes[7].Descriptor()
 }
 
 func (Transfer_Type) Type() protoreflect.EnumType {
-	return &file_api_public_proto_enumTypes[6]
+	return &file_api_public_proto_enumTypes[7]
 }
 
 func (x Transfer_Type) Number() protoreflect.EnumNumber {
@@ -609,11 +658,11 @@ func (x FeedUpdate_Result) String() string {
 }
 
 func (FeedUpdate_Result) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_public_proto_enumTypes[7].Descriptor()
+	return file_api_public_proto_enumTypes[8].Descriptor()
 }
 
 func (FeedUpdate_Result) Type() protoreflect.EnumType {
-	return &file_api_public_proto_enumTypes[7]
+	return &file_api_public_proto_enumTypes[8]
 }
 
 func (x FeedUpdate_Result) Number() protoreflect.EnumNumber {
@@ -1054,6 +1103,15 @@ type ListStopsRequest struct {
 	// If true, the transfers field will not be populated.
 	// This will generally make the response faster to generate.
 	SkipTransfers bool `protobuf:"varint,7,opt,name=skip_transfers,json=skipTransfers,proto3" json:"skip_transfers,omitempty"`
+	// The maximum distance in kilometers that a stop must be from
+	// latitude, longitude to be listed when using DISTANCE search mode.
+	MaxDistance *float64 `protobuf:"fixed64,10,opt,name=max_distance,json=maxDistance,proto3,oneof" json:"max_distance,omitempty"`
+	// The latitude relative to the returned stops when using DISTANCE search mode.
+	Latitude *float64 `protobuf:"fixed64,11,opt,name=latitude,proto3,oneof" json:"latitude,omitempty"`
+	// The longitude relative to the returned stops when using DISTANCE search mode.
+	Longitude *float64 `protobuf:"fixed64,12,opt,name=longitude,proto3,oneof" json:"longitude,omitempty"`
+	// The type of search to perform when listing stops.
+	SearchMode *ListStopsRequest_SearchMode `protobuf:"varint,13,opt,name=search_mode,json=searchMode,proto3,enum=ListStopsRequest_SearchMode,oneof" json:"search_mode,omitempty"`
 }
 
 func (x *ListStopsRequest) Reset() {
@@ -1149,6 +1207,34 @@ func (x *ListStopsRequest) GetSkipTransfers() bool {
 		return x.SkipTransfers
 	}
 	return false
+}
+
+func (x *ListStopsRequest) GetMaxDistance() float64 {
+	if x != nil && x.MaxDistance != nil {
+		return *x.MaxDistance
+	}
+	return 0
+}
+
+func (x *ListStopsRequest) GetLatitude() float64 {
+	if x != nil && x.Latitude != nil {
+		return *x.Latitude
+	}
+	return 0
+}
+
+func (x *ListStopsRequest) GetLongitude() float64 {
+	if x != nil && x.Longitude != nil {
+		return *x.Longitude
+	}
+	return 0
+}
+
+func (x *ListStopsRequest) GetSearchMode() ListStopsRequest_SearchMode {
+	if x != nil && x.SearchMode != nil {
+		return *x.SearchMode
+	}
+	return ListStopsRequest_ID
 }
 
 // Response payload for the list stops endpoint.
@@ -4970,7 +5056,7 @@ var file_api_public_proto_rawDesc = []byte{
 	0x09, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x08, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x49, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x61, 0x67,
 	0x65, 0x6e, 0x63, 0x79, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x61,
-	0x67, 0x65, 0x6e, 0x63, 0x79, 0x49, 0x64, 0x22, 0xe8, 0x02, 0x0a, 0x10, 0x4c, 0x69, 0x73, 0x74,
+	0x67, 0x65, 0x6e, 0x63, 0x79, 0x49, 0x64, 0x22, 0xf8, 0x04, 0x0a, 0x10, 0x4c, 0x69, 0x73, 0x74,
 	0x53, 0x74, 0x6f, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1b, 0x0a, 0x09,
 	0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x08, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x49, 0x64, 0x12, 0x39, 0x0a, 0x19, 0x6f, 0x6e, 0x6c,
@@ -4991,9 +5077,26 @@ var file_api_public_proto_rawDesc = []byte{
 	0x74, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x73, 0x6b, 0x69, 0x70, 0x41, 0x6c,
 	0x65, 0x72, 0x74, 0x73, 0x12, 0x25, 0x0a, 0x0e, 0x73, 0x6b, 0x69, 0x70, 0x5f, 0x74, 0x72, 0x61,
 	0x6e, 0x73, 0x66, 0x65, 0x72, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x73, 0x6b,
-	0x69, 0x70, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x73, 0x42, 0x0b, 0x0a, 0x09, 0x5f,
-	0x66, 0x69, 0x72, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x42, 0x08, 0x0a, 0x06, 0x5f, 0x6c, 0x69, 0x6d,
-	0x69, 0x74, 0x22, 0x57, 0x0a, 0x0e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x74, 0x6f, 0x70, 0x73, 0x52,
+	0x69, 0x70, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x73, 0x12, 0x26, 0x0a, 0x0c, 0x6d,
+	0x61, 0x78, 0x5f, 0x64, 0x69, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x0a, 0x20, 0x01, 0x28,
+	0x01, 0x48, 0x02, 0x52, 0x0b, 0x6d, 0x61, 0x78, 0x44, 0x69, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65,
+	0x88, 0x01, 0x01, 0x12, 0x1f, 0x0a, 0x08, 0x6c, 0x61, 0x74, 0x69, 0x74, 0x75, 0x64, 0x65, 0x18,
+	0x0b, 0x20, 0x01, 0x28, 0x01, 0x48, 0x03, 0x52, 0x08, 0x6c, 0x61, 0x74, 0x69, 0x74, 0x75, 0x64,
+	0x65, 0x88, 0x01, 0x01, 0x12, 0x21, 0x0a, 0x09, 0x6c, 0x6f, 0x6e, 0x67, 0x69, 0x74, 0x75, 0x64,
+	0x65, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x01, 0x48, 0x04, 0x52, 0x09, 0x6c, 0x6f, 0x6e, 0x67, 0x69,
+	0x74, 0x75, 0x64, 0x65, 0x88, 0x01, 0x01, 0x12, 0x42, 0x0a, 0x0b, 0x73, 0x65, 0x61, 0x72, 0x63,
+	0x68, 0x5f, 0x6d, 0x6f, 0x64, 0x65, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1c, 0x2e, 0x4c,
+	0x69, 0x73, 0x74, 0x53, 0x74, 0x6f, 0x70, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e,
+	0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x4d, 0x6f, 0x64, 0x65, 0x48, 0x05, 0x52, 0x0a, 0x73, 0x65,
+	0x61, 0x72, 0x63, 0x68, 0x4d, 0x6f, 0x64, 0x65, 0x88, 0x01, 0x01, 0x22, 0x22, 0x0a, 0x0a, 0x53,
+	0x65, 0x61, 0x72, 0x63, 0x68, 0x4d, 0x6f, 0x64, 0x65, 0x12, 0x06, 0x0a, 0x02, 0x49, 0x44, 0x10,
+	0x00, 0x12, 0x0c, 0x0a, 0x08, 0x44, 0x49, 0x53, 0x54, 0x41, 0x4e, 0x43, 0x45, 0x10, 0x01, 0x42,
+	0x0b, 0x0a, 0x09, 0x5f, 0x66, 0x69, 0x72, 0x73, 0x74, 0x5f, 0x69, 0x64, 0x42, 0x08, 0x0a, 0x06,
+	0x5f, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x42, 0x0f, 0x0a, 0x0d, 0x5f, 0x6d, 0x61, 0x78, 0x5f, 0x64,
+	0x69, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x0b, 0x0a, 0x09, 0x5f, 0x6c, 0x61, 0x74, 0x69,
+	0x74, 0x75, 0x64, 0x65, 0x42, 0x0c, 0x0a, 0x0a, 0x5f, 0x6c, 0x6f, 0x6e, 0x67, 0x69, 0x74, 0x75,
+	0x64, 0x65, 0x42, 0x0e, 0x0a, 0x0c, 0x5f, 0x73, 0x65, 0x61, 0x72, 0x63, 0x68, 0x5f, 0x6d, 0x6f,
+	0x64, 0x65, 0x22, 0x57, 0x0a, 0x0e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x74, 0x6f, 0x70, 0x73, 0x52,
 	0x65, 0x70, 0x6c, 0x79, 0x12, 0x1b, 0x0a, 0x05, 0x73, 0x74, 0x6f, 0x70, 0x73, 0x18, 0x01, 0x20,
 	0x03, 0x28, 0x0b, 0x32, 0x05, 0x2e, 0x53, 0x74, 0x6f, 0x70, 0x52, 0x05, 0x73, 0x74, 0x6f, 0x70,
 	0x73, 0x12, 0x1c, 0x0a, 0x07, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01,
@@ -5671,201 +5774,203 @@ func file_api_public_proto_rawDescGZIP() []byte {
 	return file_api_public_proto_rawDescData
 }
 
-var file_api_public_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
+var file_api_public_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
 var file_api_public_proto_msgTypes = make([]protoimpl.MessageInfo, 56)
 var file_api_public_proto_goTypes = []interface{}{
-	(System_Status)(0),                             // 0: System.Status
-	(Stop_Type)(0),                                 // 1: Stop.Type
-	(Route_ContinuousPolicy)(0),                    // 2: Route.ContinuousPolicy
-	(Route_Type)(0),                                // 3: Route.Type
-	(Alert_Cause)(0),                               // 4: Alert.Cause
-	(Alert_Effect)(0),                              // 5: Alert.Effect
-	(Transfer_Type)(0),                             // 6: Transfer.Type
-	(FeedUpdate_Result)(0),                         // 7: FeedUpdate.Result
-	(*EntrypointRequest)(nil),                      // 8: EntrypointRequest
-	(*EntrypointReply)(nil),                        // 9: EntrypointReply
-	(*ListSystemsRequest)(nil),                     // 10: ListSystemsRequest
-	(*ListSystemsReply)(nil),                       // 11: ListSystemsReply
-	(*GetSystemRequest)(nil),                       // 12: GetSystemRequest
-	(*ListAgenciesRequest)(nil),                    // 13: ListAgenciesRequest
-	(*ListAgenciesReply)(nil),                      // 14: ListAgenciesReply
-	(*GetAgencyRequest)(nil),                       // 15: GetAgencyRequest
-	(*ListStopsRequest)(nil),                       // 16: ListStopsRequest
-	(*ListStopsReply)(nil),                         // 17: ListStopsReply
-	(*GetStopRequest)(nil),                         // 18: GetStopRequest
-	(*ListRoutesRequest)(nil),                      // 19: ListRoutesRequest
-	(*ListRoutesReply)(nil),                        // 20: ListRoutesReply
-	(*GetRouteRequest)(nil),                        // 21: GetRouteRequest
-	(*ListTripsRequest)(nil),                       // 22: ListTripsRequest
-	(*ListTripsReply)(nil),                         // 23: ListTripsReply
-	(*ListAlertsRequest)(nil),                      // 24: ListAlertsRequest
-	(*ListAlertsReply)(nil),                        // 25: ListAlertsReply
-	(*GetAlertRequest)(nil),                        // 26: GetAlertRequest
-	(*GetTripRequest)(nil),                         // 27: GetTripRequest
-	(*ListFeedsRequest)(nil),                       // 28: ListFeedsRequest
-	(*ListFeedsReply)(nil),                         // 29: ListFeedsReply
-	(*ListFeedUpdatesRequest)(nil),                 // 30: ListFeedUpdatesRequest
-	(*ListFeedUpdatesReply)(nil),                   // 31: ListFeedUpdatesReply
-	(*GetFeedRequest)(nil),                         // 32: GetFeedRequest
-	(*ListTransfersRequest)(nil),                   // 33: ListTransfersRequest
-	(*ListTransfersReply)(nil),                     // 34: ListTransfersReply
-	(*System)(nil),                                 // 35: System
-	(*Resource)(nil),                               // 36: Resource
-	(*ChildResources)(nil),                         // 37: ChildResources
-	(*Stop)(nil),                                   // 38: Stop
-	(*StopTime)(nil),                               // 39: StopTime
-	(*Trip)(nil),                                   // 40: Trip
-	(*Vehicle)(nil),                                // 41: Vehicle
-	(*Route)(nil),                                  // 42: Route
-	(*Feed)(nil),                                   // 43: Feed
-	(*Agency)(nil),                                 // 44: Agency
-	(*Alert)(nil),                                  // 45: Alert
-	(*Transfer)(nil),                               // 46: Transfer
-	(*FeedUpdate)(nil),                             // 47: FeedUpdate
-	(*EntrypointReply_TransiterDetails)(nil),       // 48: EntrypointReply.TransiterDetails
-	(*EntrypointReply_TransiterDetails_Build)(nil), // 49: EntrypointReply.TransiterDetails.Build
-	(*System_Reference)(nil),                       // 50: System.Reference
-	(*Stop_ServiceMap)(nil),                        // 51: Stop.ServiceMap
-	(*Stop_HeadsignRule)(nil),                      // 52: Stop.HeadsignRule
-	(*Stop_Reference)(nil),                         // 53: Stop.Reference
-	(*StopTime_EstimatedTime)(nil),                 // 54: StopTime.EstimatedTime
-	(*Trip_Reference)(nil),                         // 55: Trip.Reference
-	(*Vehicle_Reference)(nil),                      // 56: Vehicle.Reference
-	(*Route_ServiceMap)(nil),                       // 57: Route.ServiceMap
-	(*Route_Reference)(nil),                        // 58: Route.Reference
-	(*Feed_Reference)(nil),                         // 59: Feed.Reference
-	(*Agency_Reference)(nil),                       // 60: Agency.Reference
-	(*Alert_ActivePeriod)(nil),                     // 61: Alert.ActivePeriod
-	(*Alert_Text)(nil),                             // 62: Alert.Text
-	(*Alert_Reference)(nil),                        // 63: Alert.Reference
+	(ListStopsRequest_SearchMode)(0),               // 0: ListStopsRequest.SearchMode
+	(System_Status)(0),                             // 1: System.Status
+	(Stop_Type)(0),                                 // 2: Stop.Type
+	(Route_ContinuousPolicy)(0),                    // 3: Route.ContinuousPolicy
+	(Route_Type)(0),                                // 4: Route.Type
+	(Alert_Cause)(0),                               // 5: Alert.Cause
+	(Alert_Effect)(0),                              // 6: Alert.Effect
+	(Transfer_Type)(0),                             // 7: Transfer.Type
+	(FeedUpdate_Result)(0),                         // 8: FeedUpdate.Result
+	(*EntrypointRequest)(nil),                      // 9: EntrypointRequest
+	(*EntrypointReply)(nil),                        // 10: EntrypointReply
+	(*ListSystemsRequest)(nil),                     // 11: ListSystemsRequest
+	(*ListSystemsReply)(nil),                       // 12: ListSystemsReply
+	(*GetSystemRequest)(nil),                       // 13: GetSystemRequest
+	(*ListAgenciesRequest)(nil),                    // 14: ListAgenciesRequest
+	(*ListAgenciesReply)(nil),                      // 15: ListAgenciesReply
+	(*GetAgencyRequest)(nil),                       // 16: GetAgencyRequest
+	(*ListStopsRequest)(nil),                       // 17: ListStopsRequest
+	(*ListStopsReply)(nil),                         // 18: ListStopsReply
+	(*GetStopRequest)(nil),                         // 19: GetStopRequest
+	(*ListRoutesRequest)(nil),                      // 20: ListRoutesRequest
+	(*ListRoutesReply)(nil),                        // 21: ListRoutesReply
+	(*GetRouteRequest)(nil),                        // 22: GetRouteRequest
+	(*ListTripsRequest)(nil),                       // 23: ListTripsRequest
+	(*ListTripsReply)(nil),                         // 24: ListTripsReply
+	(*ListAlertsRequest)(nil),                      // 25: ListAlertsRequest
+	(*ListAlertsReply)(nil),                        // 26: ListAlertsReply
+	(*GetAlertRequest)(nil),                        // 27: GetAlertRequest
+	(*GetTripRequest)(nil),                         // 28: GetTripRequest
+	(*ListFeedsRequest)(nil),                       // 29: ListFeedsRequest
+	(*ListFeedsReply)(nil),                         // 30: ListFeedsReply
+	(*ListFeedUpdatesRequest)(nil),                 // 31: ListFeedUpdatesRequest
+	(*ListFeedUpdatesReply)(nil),                   // 32: ListFeedUpdatesReply
+	(*GetFeedRequest)(nil),                         // 33: GetFeedRequest
+	(*ListTransfersRequest)(nil),                   // 34: ListTransfersRequest
+	(*ListTransfersReply)(nil),                     // 35: ListTransfersReply
+	(*System)(nil),                                 // 36: System
+	(*Resource)(nil),                               // 37: Resource
+	(*ChildResources)(nil),                         // 38: ChildResources
+	(*Stop)(nil),                                   // 39: Stop
+	(*StopTime)(nil),                               // 40: StopTime
+	(*Trip)(nil),                                   // 41: Trip
+	(*Vehicle)(nil),                                // 42: Vehicle
+	(*Route)(nil),                                  // 43: Route
+	(*Feed)(nil),                                   // 44: Feed
+	(*Agency)(nil),                                 // 45: Agency
+	(*Alert)(nil),                                  // 46: Alert
+	(*Transfer)(nil),                               // 47: Transfer
+	(*FeedUpdate)(nil),                             // 48: FeedUpdate
+	(*EntrypointReply_TransiterDetails)(nil),       // 49: EntrypointReply.TransiterDetails
+	(*EntrypointReply_TransiterDetails_Build)(nil), // 50: EntrypointReply.TransiterDetails.Build
+	(*System_Reference)(nil),                       // 51: System.Reference
+	(*Stop_ServiceMap)(nil),                        // 52: Stop.ServiceMap
+	(*Stop_HeadsignRule)(nil),                      // 53: Stop.HeadsignRule
+	(*Stop_Reference)(nil),                         // 54: Stop.Reference
+	(*StopTime_EstimatedTime)(nil),                 // 55: StopTime.EstimatedTime
+	(*Trip_Reference)(nil),                         // 56: Trip.Reference
+	(*Vehicle_Reference)(nil),                      // 57: Vehicle.Reference
+	(*Route_ServiceMap)(nil),                       // 58: Route.ServiceMap
+	(*Route_Reference)(nil),                        // 59: Route.Reference
+	(*Feed_Reference)(nil),                         // 60: Feed.Reference
+	(*Agency_Reference)(nil),                       // 61: Agency.Reference
+	(*Alert_ActivePeriod)(nil),                     // 62: Alert.ActivePeriod
+	(*Alert_Text)(nil),                             // 63: Alert.Text
+	(*Alert_Reference)(nil),                        // 64: Alert.Reference
 }
 var file_api_public_proto_depIdxs = []int32{
-	48,  // 0: EntrypointReply.transiter:type_name -> EntrypointReply.TransiterDetails
-	37,  // 1: EntrypointReply.systems:type_name -> ChildResources
-	35,  // 2: ListSystemsReply.systems:type_name -> System
-	44,  // 3: ListAgenciesReply.agencies:type_name -> Agency
-	38,  // 4: ListStopsReply.stops:type_name -> Stop
-	42,  // 5: ListRoutesReply.routes:type_name -> Route
-	40,  // 6: ListTripsReply.trips:type_name -> Trip
-	45,  // 7: ListAlertsReply.alerts:type_name -> Alert
-	43,  // 8: ListFeedsReply.feeds:type_name -> Feed
-	47,  // 9: ListFeedUpdatesReply.updates:type_name -> FeedUpdate
-	46,  // 10: ListTransfersReply.transfers:type_name -> Transfer
-	36,  // 11: System.resource:type_name -> Resource
-	0,   // 12: System.status:type_name -> System.Status
-	37,  // 13: System.agencies:type_name -> ChildResources
-	37,  // 14: System.feeds:type_name -> ChildResources
-	37,  // 15: System.routes:type_name -> ChildResources
-	37,  // 16: System.stops:type_name -> ChildResources
-	37,  // 17: System.transfers:type_name -> ChildResources
-	36,  // 18: Stop.resource:type_name -> Resource
-	50,  // 19: Stop.system:type_name -> System.Reference
-	1,   // 20: Stop.type:type_name -> Stop.Type
-	53,  // 21: Stop.parent_stop:type_name -> Stop.Reference
-	53,  // 22: Stop.child_stops:type_name -> Stop.Reference
-	51,  // 23: Stop.service_maps:type_name -> Stop.ServiceMap
-	63,  // 24: Stop.alerts:type_name -> Alert.Reference
-	39,  // 25: Stop.stop_times:type_name -> StopTime
-	46,  // 26: Stop.transfers:type_name -> Transfer
-	52,  // 27: Stop.headsign_rules:type_name -> Stop.HeadsignRule
-	53,  // 28: StopTime.stop:type_name -> Stop.Reference
-	55,  // 29: StopTime.trip:type_name -> Trip.Reference
-	54,  // 30: StopTime.arrival:type_name -> StopTime.EstimatedTime
-	54,  // 31: StopTime.departure:type_name -> StopTime.EstimatedTime
-	36,  // 32: Trip.resource:type_name -> Resource
-	58,  // 33: Trip.route:type_name -> Route.Reference
-	56,  // 34: Trip.vehicle:type_name -> Vehicle.Reference
-	39,  // 35: Trip.stop_times:type_name -> StopTime
-	36,  // 36: Route.resource:type_name -> Resource
-	50,  // 37: Route.system:type_name -> System.Reference
-	2,   // 38: Route.continuous_pickup:type_name -> Route.ContinuousPolicy
-	2,   // 39: Route.continuous_drop_off:type_name -> Route.ContinuousPolicy
-	3,   // 40: Route.type:type_name -> Route.Type
-	60,  // 41: Route.agency:type_name -> Agency.Reference
-	63,  // 42: Route.alerts:type_name -> Alert.Reference
-	57,  // 43: Route.service_maps:type_name -> Route.ServiceMap
-	36,  // 44: Feed.resource:type_name -> Resource
-	50,  // 45: Feed.system:type_name -> System.Reference
-	37,  // 46: Feed.updates:type_name -> ChildResources
-	36,  // 47: Agency.resource:type_name -> Resource
-	50,  // 48: Agency.system:type_name -> System.Reference
-	58,  // 49: Agency.routes:type_name -> Route.Reference
-	63,  // 50: Agency.alerts:type_name -> Alert.Reference
-	36,  // 51: Alert.resource:type_name -> Resource
-	50,  // 52: Alert.system:type_name -> System.Reference
-	4,   // 53: Alert.cause:type_name -> Alert.Cause
-	5,   // 54: Alert.effect:type_name -> Alert.Effect
-	61,  // 55: Alert.current_active_period:type_name -> Alert.ActivePeriod
-	61,  // 56: Alert.all_active_periods:type_name -> Alert.ActivePeriod
-	62,  // 57: Alert.header:type_name -> Alert.Text
-	62,  // 58: Alert.description:type_name -> Alert.Text
-	62,  // 59: Alert.url:type_name -> Alert.Text
-	53,  // 60: Transfer.from_stop:type_name -> Stop.Reference
-	53,  // 61: Transfer.to_stop:type_name -> Stop.Reference
-	6,   // 62: Transfer.type:type_name -> Transfer.Type
-	36,  // 63: FeedUpdate.resource:type_name -> Resource
-	59,  // 64: FeedUpdate.feed:type_name -> Feed.Reference
-	7,   // 65: FeedUpdate.result:type_name -> FeedUpdate.Result
-	49,  // 66: EntrypointReply.TransiterDetails.build:type_name -> EntrypointReply.TransiterDetails.Build
-	36,  // 67: System.Reference.resource:type_name -> Resource
-	58,  // 68: Stop.ServiceMap.routes:type_name -> Route.Reference
-	53,  // 69: Stop.HeadsignRule.stop:type_name -> Stop.Reference
-	36,  // 70: Stop.Reference.resource:type_name -> Resource
-	50,  // 71: Stop.Reference.system:type_name -> System.Reference
-	36,  // 72: Trip.Reference.resource:type_name -> Resource
-	58,  // 73: Trip.Reference.route:type_name -> Route.Reference
-	53,  // 74: Trip.Reference.destination:type_name -> Stop.Reference
-	56,  // 75: Trip.Reference.vehicle:type_name -> Vehicle.Reference
-	53,  // 76: Route.ServiceMap.stops:type_name -> Stop.Reference
-	36,  // 77: Route.Reference.resource:type_name -> Resource
-	50,  // 78: Route.Reference.system:type_name -> System.Reference
-	36,  // 79: Feed.Reference.resource:type_name -> Resource
-	50,  // 80: Feed.Reference.system:type_name -> System.Reference
-	36,  // 81: Agency.Reference.resource:type_name -> Resource
-	50,  // 82: Agency.Reference.system:type_name -> System.Reference
-	36,  // 83: Alert.Reference.resource:type_name -> Resource
-	50,  // 84: Alert.Reference.system:type_name -> System.Reference
-	4,   // 85: Alert.Reference.cause:type_name -> Alert.Cause
-	5,   // 86: Alert.Reference.effect:type_name -> Alert.Effect
-	8,   // 87: Public.Entrypoint:input_type -> EntrypointRequest
-	10,  // 88: Public.ListSystems:input_type -> ListSystemsRequest
-	12,  // 89: Public.GetSystem:input_type -> GetSystemRequest
-	13,  // 90: Public.ListAgencies:input_type -> ListAgenciesRequest
-	15,  // 91: Public.GetAgency:input_type -> GetAgencyRequest
-	16,  // 92: Public.ListStops:input_type -> ListStopsRequest
-	18,  // 93: Public.GetStop:input_type -> GetStopRequest
-	19,  // 94: Public.ListRoutes:input_type -> ListRoutesRequest
-	21,  // 95: Public.GetRoute:input_type -> GetRouteRequest
-	22,  // 96: Public.ListTrips:input_type -> ListTripsRequest
-	27,  // 97: Public.GetTrip:input_type -> GetTripRequest
-	24,  // 98: Public.ListAlerts:input_type -> ListAlertsRequest
-	26,  // 99: Public.GetAlert:input_type -> GetAlertRequest
-	33,  // 100: Public.ListTransfers:input_type -> ListTransfersRequest
-	28,  // 101: Public.ListFeeds:input_type -> ListFeedsRequest
-	32,  // 102: Public.GetFeed:input_type -> GetFeedRequest
-	30,  // 103: Public.ListFeedUpdates:input_type -> ListFeedUpdatesRequest
-	9,   // 104: Public.Entrypoint:output_type -> EntrypointReply
-	11,  // 105: Public.ListSystems:output_type -> ListSystemsReply
-	35,  // 106: Public.GetSystem:output_type -> System
-	14,  // 107: Public.ListAgencies:output_type -> ListAgenciesReply
-	44,  // 108: Public.GetAgency:output_type -> Agency
-	17,  // 109: Public.ListStops:output_type -> ListStopsReply
-	38,  // 110: Public.GetStop:output_type -> Stop
-	20,  // 111: Public.ListRoutes:output_type -> ListRoutesReply
-	42,  // 112: Public.GetRoute:output_type -> Route
-	23,  // 113: Public.ListTrips:output_type -> ListTripsReply
-	40,  // 114: Public.GetTrip:output_type -> Trip
-	25,  // 115: Public.ListAlerts:output_type -> ListAlertsReply
-	45,  // 116: Public.GetAlert:output_type -> Alert
-	34,  // 117: Public.ListTransfers:output_type -> ListTransfersReply
-	29,  // 118: Public.ListFeeds:output_type -> ListFeedsReply
-	43,  // 119: Public.GetFeed:output_type -> Feed
-	31,  // 120: Public.ListFeedUpdates:output_type -> ListFeedUpdatesReply
-	104, // [104:121] is the sub-list for method output_type
-	87,  // [87:104] is the sub-list for method input_type
-	87,  // [87:87] is the sub-list for extension type_name
-	87,  // [87:87] is the sub-list for extension extendee
-	0,   // [0:87] is the sub-list for field type_name
+	49,  // 0: EntrypointReply.transiter:type_name -> EntrypointReply.TransiterDetails
+	38,  // 1: EntrypointReply.systems:type_name -> ChildResources
+	36,  // 2: ListSystemsReply.systems:type_name -> System
+	45,  // 3: ListAgenciesReply.agencies:type_name -> Agency
+	0,   // 4: ListStopsRequest.search_mode:type_name -> ListStopsRequest.SearchMode
+	39,  // 5: ListStopsReply.stops:type_name -> Stop
+	43,  // 6: ListRoutesReply.routes:type_name -> Route
+	41,  // 7: ListTripsReply.trips:type_name -> Trip
+	46,  // 8: ListAlertsReply.alerts:type_name -> Alert
+	44,  // 9: ListFeedsReply.feeds:type_name -> Feed
+	48,  // 10: ListFeedUpdatesReply.updates:type_name -> FeedUpdate
+	47,  // 11: ListTransfersReply.transfers:type_name -> Transfer
+	37,  // 12: System.resource:type_name -> Resource
+	1,   // 13: System.status:type_name -> System.Status
+	38,  // 14: System.agencies:type_name -> ChildResources
+	38,  // 15: System.feeds:type_name -> ChildResources
+	38,  // 16: System.routes:type_name -> ChildResources
+	38,  // 17: System.stops:type_name -> ChildResources
+	38,  // 18: System.transfers:type_name -> ChildResources
+	37,  // 19: Stop.resource:type_name -> Resource
+	51,  // 20: Stop.system:type_name -> System.Reference
+	2,   // 21: Stop.type:type_name -> Stop.Type
+	54,  // 22: Stop.parent_stop:type_name -> Stop.Reference
+	54,  // 23: Stop.child_stops:type_name -> Stop.Reference
+	52,  // 24: Stop.service_maps:type_name -> Stop.ServiceMap
+	64,  // 25: Stop.alerts:type_name -> Alert.Reference
+	40,  // 26: Stop.stop_times:type_name -> StopTime
+	47,  // 27: Stop.transfers:type_name -> Transfer
+	53,  // 28: Stop.headsign_rules:type_name -> Stop.HeadsignRule
+	54,  // 29: StopTime.stop:type_name -> Stop.Reference
+	56,  // 30: StopTime.trip:type_name -> Trip.Reference
+	55,  // 31: StopTime.arrival:type_name -> StopTime.EstimatedTime
+	55,  // 32: StopTime.departure:type_name -> StopTime.EstimatedTime
+	37,  // 33: Trip.resource:type_name -> Resource
+	59,  // 34: Trip.route:type_name -> Route.Reference
+	57,  // 35: Trip.vehicle:type_name -> Vehicle.Reference
+	40,  // 36: Trip.stop_times:type_name -> StopTime
+	37,  // 37: Route.resource:type_name -> Resource
+	51,  // 38: Route.system:type_name -> System.Reference
+	3,   // 39: Route.continuous_pickup:type_name -> Route.ContinuousPolicy
+	3,   // 40: Route.continuous_drop_off:type_name -> Route.ContinuousPolicy
+	4,   // 41: Route.type:type_name -> Route.Type
+	61,  // 42: Route.agency:type_name -> Agency.Reference
+	64,  // 43: Route.alerts:type_name -> Alert.Reference
+	58,  // 44: Route.service_maps:type_name -> Route.ServiceMap
+	37,  // 45: Feed.resource:type_name -> Resource
+	51,  // 46: Feed.system:type_name -> System.Reference
+	38,  // 47: Feed.updates:type_name -> ChildResources
+	37,  // 48: Agency.resource:type_name -> Resource
+	51,  // 49: Agency.system:type_name -> System.Reference
+	59,  // 50: Agency.routes:type_name -> Route.Reference
+	64,  // 51: Agency.alerts:type_name -> Alert.Reference
+	37,  // 52: Alert.resource:type_name -> Resource
+	51,  // 53: Alert.system:type_name -> System.Reference
+	5,   // 54: Alert.cause:type_name -> Alert.Cause
+	6,   // 55: Alert.effect:type_name -> Alert.Effect
+	62,  // 56: Alert.current_active_period:type_name -> Alert.ActivePeriod
+	62,  // 57: Alert.all_active_periods:type_name -> Alert.ActivePeriod
+	63,  // 58: Alert.header:type_name -> Alert.Text
+	63,  // 59: Alert.description:type_name -> Alert.Text
+	63,  // 60: Alert.url:type_name -> Alert.Text
+	54,  // 61: Transfer.from_stop:type_name -> Stop.Reference
+	54,  // 62: Transfer.to_stop:type_name -> Stop.Reference
+	7,   // 63: Transfer.type:type_name -> Transfer.Type
+	37,  // 64: FeedUpdate.resource:type_name -> Resource
+	60,  // 65: FeedUpdate.feed:type_name -> Feed.Reference
+	8,   // 66: FeedUpdate.result:type_name -> FeedUpdate.Result
+	50,  // 67: EntrypointReply.TransiterDetails.build:type_name -> EntrypointReply.TransiterDetails.Build
+	37,  // 68: System.Reference.resource:type_name -> Resource
+	59,  // 69: Stop.ServiceMap.routes:type_name -> Route.Reference
+	54,  // 70: Stop.HeadsignRule.stop:type_name -> Stop.Reference
+	37,  // 71: Stop.Reference.resource:type_name -> Resource
+	51,  // 72: Stop.Reference.system:type_name -> System.Reference
+	37,  // 73: Trip.Reference.resource:type_name -> Resource
+	59,  // 74: Trip.Reference.route:type_name -> Route.Reference
+	54,  // 75: Trip.Reference.destination:type_name -> Stop.Reference
+	57,  // 76: Trip.Reference.vehicle:type_name -> Vehicle.Reference
+	54,  // 77: Route.ServiceMap.stops:type_name -> Stop.Reference
+	37,  // 78: Route.Reference.resource:type_name -> Resource
+	51,  // 79: Route.Reference.system:type_name -> System.Reference
+	37,  // 80: Feed.Reference.resource:type_name -> Resource
+	51,  // 81: Feed.Reference.system:type_name -> System.Reference
+	37,  // 82: Agency.Reference.resource:type_name -> Resource
+	51,  // 83: Agency.Reference.system:type_name -> System.Reference
+	37,  // 84: Alert.Reference.resource:type_name -> Resource
+	51,  // 85: Alert.Reference.system:type_name -> System.Reference
+	5,   // 86: Alert.Reference.cause:type_name -> Alert.Cause
+	6,   // 87: Alert.Reference.effect:type_name -> Alert.Effect
+	9,   // 88: Public.Entrypoint:input_type -> EntrypointRequest
+	11,  // 89: Public.ListSystems:input_type -> ListSystemsRequest
+	13,  // 90: Public.GetSystem:input_type -> GetSystemRequest
+	14,  // 91: Public.ListAgencies:input_type -> ListAgenciesRequest
+	16,  // 92: Public.GetAgency:input_type -> GetAgencyRequest
+	17,  // 93: Public.ListStops:input_type -> ListStopsRequest
+	19,  // 94: Public.GetStop:input_type -> GetStopRequest
+	20,  // 95: Public.ListRoutes:input_type -> ListRoutesRequest
+	22,  // 96: Public.GetRoute:input_type -> GetRouteRequest
+	23,  // 97: Public.ListTrips:input_type -> ListTripsRequest
+	28,  // 98: Public.GetTrip:input_type -> GetTripRequest
+	25,  // 99: Public.ListAlerts:input_type -> ListAlertsRequest
+	27,  // 100: Public.GetAlert:input_type -> GetAlertRequest
+	34,  // 101: Public.ListTransfers:input_type -> ListTransfersRequest
+	29,  // 102: Public.ListFeeds:input_type -> ListFeedsRequest
+	33,  // 103: Public.GetFeed:input_type -> GetFeedRequest
+	31,  // 104: Public.ListFeedUpdates:input_type -> ListFeedUpdatesRequest
+	10,  // 105: Public.Entrypoint:output_type -> EntrypointReply
+	12,  // 106: Public.ListSystems:output_type -> ListSystemsReply
+	36,  // 107: Public.GetSystem:output_type -> System
+	15,  // 108: Public.ListAgencies:output_type -> ListAgenciesReply
+	45,  // 109: Public.GetAgency:output_type -> Agency
+	18,  // 110: Public.ListStops:output_type -> ListStopsReply
+	39,  // 111: Public.GetStop:output_type -> Stop
+	21,  // 112: Public.ListRoutes:output_type -> ListRoutesReply
+	43,  // 113: Public.GetRoute:output_type -> Route
+	24,  // 114: Public.ListTrips:output_type -> ListTripsReply
+	41,  // 115: Public.GetTrip:output_type -> Trip
+	26,  // 116: Public.ListAlerts:output_type -> ListAlertsReply
+	46,  // 117: Public.GetAlert:output_type -> Alert
+	35,  // 118: Public.ListTransfers:output_type -> ListTransfersReply
+	30,  // 119: Public.ListFeeds:output_type -> ListFeedsReply
+	44,  // 120: Public.GetFeed:output_type -> Feed
+	32,  // 121: Public.ListFeedUpdates:output_type -> ListFeedUpdatesReply
+	105, // [105:122] is the sub-list for method output_type
+	88,  // [88:105] is the sub-list for method input_type
+	88,  // [88:88] is the sub-list for extension type_name
+	88,  // [88:88] is the sub-list for extension extendee
+	0,   // [0:88] is the sub-list for field type_name
 }
 
 func init() { file_api_public_proto_init() }
@@ -6570,7 +6675,7 @@ func file_api_public_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_public_proto_rawDesc,
-			NumEnums:      8,
+			NumEnums:      9,
 			NumMessages:   56,
 			NumExtensions: 0,
 			NumServices:   1,

@@ -14,7 +14,7 @@ RUN go install \
     google.golang.org/grpc/cmd/protoc-gen-go-grpc \
     github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc \
     github.com/kyleconroy/sqlc/cmd/sqlc
-RUN curl -sSL "https://github.com/bufbuild/buf/releases/download/v1.6.0/buf-$(uname -s)-$(uname -m)" \
+RUN curl -sSL "https://github.com/bufbuild/buf/releases/download/v1.13.1/buf-$(uname -s)-$(uname -m)" \
     -o "/usr/bin/buf"
 RUN chmod +x "/usr/bin/buf"
 

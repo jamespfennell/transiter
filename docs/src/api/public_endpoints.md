@@ -209,7 +209,7 @@ Request payload for the get agency endpoint.
 
 ## List stops
 
-`GET /systems/<system_id>/stops/<stop_id>`
+`GET /systems/<system_id>/stops`
 
 List all stops in a system.
 
@@ -234,9 +234,27 @@ Request payload for the list stops endpoint.
 | skip_service_maps | bool | If true, the service maps field will not be populated. This will generally make the response faster to generate.
 | skip_alerts | bool | If true, the alerts field will not be populated. This will generally make the response faster to generate.
 | skip_transfers | bool | If true, the transfers field will not be populated. This will generally make the response faster to generate.
+| max_distance | double | The maximum distance in kilometers that a stop must be from latitude, longitude to be listed when using DISTANCE search mode.
+| latitude | double | The latitude relative to the returned stops when using DISTANCE search mode.
+| longitude | double | The longitude relative to the returned stops when using DISTANCE search mode.
+| search_mode | [ListStopsRequest.SearchMode](public_resources.md#ListStopsRequest.SearchMode) | The type of search to perform when listing stops.
 
 
 
+
+
+
+#### ListStopsRequest.SearchMode
+
+The possible search types when listing stops.
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ID | 0 | Return a paginated list of stops sorted by stop ID. |
+| DISTANCE | 1 | Return all stops within max_distance from latitude, longitude. |
 
 
 
