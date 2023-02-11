@@ -53,7 +53,9 @@ jobs:
         # Only push to Docker Hub if this workflow is a push to mainline
         if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         with:
-          tags: jamespfennell/transiter:latest
+          tags: |
+            jamespfennell/transiter:build-${{ github.run_number }}
+            jamespfennell/transiter:latest
           context: .
 
   docs:
