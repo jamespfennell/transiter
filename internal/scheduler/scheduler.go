@@ -446,7 +446,9 @@ func (s *maintenanceScheduler) run(ctx context.Context, admin api.AdminServer, c
 			close(s.opDone)
 			return
 		case <-ticker.C:
-			fmt.Println("RUNNING MAINTENANCE")
+			if _, err := admin.GarbageCollectFeedUpdates(ctx, &api.GarbageCollectFeedUpdatesRequest{}); err != nil {
+				fmt.Println("Error garbage collecting feed updates:", err)
+			}
 		}
 	}
 }

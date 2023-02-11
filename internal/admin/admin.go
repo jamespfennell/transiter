@@ -326,3 +326,7 @@ func unmarshalFromYaml(y []byte) (*api.SystemConfig, error) {
 	}
 	return &config, nil
 }
+
+func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.GarbageCollectFeedUpdatesRequest) (*api.GarbageCollectFeedUpdatesReply, error) {
+	return nil, fmt.Errorf("unimplemented")
+}
