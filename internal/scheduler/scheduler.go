@@ -104,6 +104,7 @@ func (s *DefaultScheduler) Run(ctx context.Context, public api.PublicServer, adm
 }
 
 func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicServer, admin api.AdminServer, clock clock.Clock) {
+	maintenanceScheduler := newMaintenanceScheduler(ctx, admin, clock)
 	systemSchedulers := map[string]struct {
 		scheduler  *systemScheduler
 		cancelFunc context.CancelFunc
@@ -155,6 +156,7 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 			for systemID := range systemSchedulers {
 				stopScheduler(systemID)
 			}
+			maintenanceScheduler.wait()
 			return
 		case <-s.resetAllRequest:
 			log.Printf("Reseting scheduler")
@@ -190,9 +192,7 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 			}
 			s.resetAllReply <- nil
 		case systemID := <-s.resetRequest:
-			fmt.Println("A", systemID)
 			feeds, err := getFeeds(systemID)
-			fmt.Println("B", feeds, err)
 			if err != nil {
 				s.resetReply <- err
 			}
@@ -421,6 +421,38 @@ func (fs *feedScheduler) status() FeedStatus {
 
 func (fs *feedScheduler) wait() {
 	<-fs.opDone
+}
+
+type maintenanceScheduler struct {
+	opDone chan struct{}
+}
+
+func newMaintenanceScheduler(ctx context.Context, admin api.AdminServer, clock clock.Clock) *maintenanceScheduler {
+	s := &maintenanceScheduler{
+		opDone: make(chan struct{}),
+	}
+	go s.run(ctx, admin, clock)
+	<-s.opDone
+	return s
+}
+
+func (s *maintenanceScheduler) run(ctx context.Context, admin api.AdminServer, clock clock.Clock) {
+	ticker := ticker.New(clock, 5*time.Minute)
+	s.opDone <- struct{}{}
+	for {
+		select {
+		case <-ctx.Done():
+			ticker.Stop()
+			close(s.opDone)
+			return
+		case <-ticker.C:
+			fmt.Println("RUNNING MAINTENANCE")
+		}
+	}
+}
+
+func (s *maintenanceScheduler) wait() {
+	<-s.opDone
 }
 
 type noOpScheduler struct{}
