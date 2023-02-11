@@ -63,6 +63,23 @@ func (q *Queries) FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdatePara
 	return err
 }
 
+const garbageCollectFeedUpdates = `-- name: GarbageCollectFeedUpdates :one
+WITH deleted_pks AS (
+    DELETE FROM feed_update
+    WHERE started_at <= NOW() - INTERVAL '7 days'
+    AND NOT feed_update.pk = ANY($1::bigint[])
+    RETURNING pk
+)
+SELECT COUNT(*) FROM deleted_pks
+`
+
+func (q *Queries) GarbageCollectFeedUpdates(ctx context.Context, activeFeedUpdatePks []int64) (int64, error) {
+	row := q.db.QueryRow(ctx, garbageCollectFeedUpdates, activeFeedUpdatePks)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getFeed = `-- name: GetFeed :one
 SELECT feed.pk, feed.id, feed.system_pk, feed.update_strategy, feed.update_period, feed.config FROM feed
     INNER JOIN system on system.pk = feed.system_pk
@@ -190,6 +207,38 @@ func (q *Queries) InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdatePara
 	var pk int64
 	err := row.Scan(&pk)
 	return pk, err
+}
+
+const listActiveFeedUpdatePks = `-- name: ListActiveFeedUpdatePks :many
+      SELECT DISTINCT source_pk FROM agency
+UNION SELECT DISTINCT source_pk FROM alert
+UNION SELECT DISTINCT source_pk FROM scheduled_service
+UNION SELECT DISTINCT source_pk FROM route
+UNION SELECT DISTINCT source_pk FROM stop
+UNION SELECT DISTINCT source_pk FROM stop_headsign_rule
+UNION SELECT DISTINCT source_pk FROM transfer
+UNION SELECT DISTINCT source_pk FROM trip
+UNION SELECT DISTINCT source_pk FROM vehicle
+`
+
+func (q *Queries) ListActiveFeedUpdatePks(ctx context.Context) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listActiveFeedUpdatePks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var source_pk int64
+		if err := rows.Scan(&source_pk); err != nil {
+			return nil, err
+		}
+		items = append(items, source_pk)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listAutoUpdateFeedsForSystem = `-- name: ListAutoUpdateFeedsForSystem :many

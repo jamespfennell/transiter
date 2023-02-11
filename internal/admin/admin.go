@@ -326,3 +326,36 @@ func unmarshalFromYaml(y []byte) (*api.SystemConfig, error) {
 	}
 	return &config, nil
 }
+
+func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.GarbageCollectFeedUpdatesRequest) (*api.GarbageCollectFeedUpdatesReply, error) {
+	fmt.Println("[gcfeedupdates] Running")
+	var activeFeedUpdatePks []int64
+	// We run in separate transactions to avoid holding a lock on the all of the entity tables
+	// while the deletions are happening. This does introduce a race condition in which a new
+	// feed update becomes active in between the two transactions. However the GC query only
+	// deletes updates older than a week, so this won't result in the feed update being deleted
+	// (unless it takes a week to run the RPC...).
+	//
+	// We could probably make this really race condition free by first querying the start time
+	// of the oldest in-progress feed update, and then ensuring we never delete feed updates
+	// more recent than this.
+	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		querier := db.New(tx)
+		var err error
+		activeFeedUpdatePks, err = querier.ListActiveFeedUpdatePks(ctx)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+	fmt.Println("[gcfeedupdates] Active feed update pks", activeFeedUpdatePks)
+	var numDeleted int64
+	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		var err error
+		numDeleted, err = db.New(tx).GarbageCollectFeedUpdates(ctx, activeFeedUpdatePks)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+	fmt.Printf("[gcfeedupdates] Deleted %d feed updates\n", numDeleted)
+	return &api.GarbageCollectFeedUpdatesReply{}, nil
+}

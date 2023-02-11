@@ -80,8 +80,22 @@ service Admin {
     };
   }
 
-// TODO: GarbageCollectFeedUpdates
-// TODO: GetFeedConfig
+  // Garbage collect feed updates
+  //
+  // `POST /gcfeedupdates`
+  //
+  // Deletes feed updates that are older than a week, with the exception that
+  // the most recent succesful update for each feed is always retained.
+  //
+  // This method exists to avoid unbounded growth in the feed updates database table.
+  // It is called periodically by the scheduler.
+  rpc GarbageCollectFeedUpdates(GarbageCollectFeedUpdatesRequest) returns (GarbageCollectFeedUpdatesReply) {
+    option (google.api.http) = {
+      post: "/gcfeedupdates"
+    };
+  }
+
+  // TODO: GetFeedConfig
 }
 
 message GetSystemConfigRequest {
@@ -291,3 +305,7 @@ message GetSchedulerStatusReply {
 message ResetSchedulerRequest {}
 
 message ResetSchedulerReply {}
+
+message GarbageCollectFeedUpdatesRequest {}
+
+message GarbageCollectFeedUpdatesReply {}

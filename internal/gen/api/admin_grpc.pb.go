@@ -62,6 +62,16 @@ type AdminClient interface {
 	//	The main usecase is when the Postgres configuration is manually
 	//	 updated and the scheduler needs to see the update.
 	ResetScheduler(ctx context.Context, in *ResetSchedulerRequest, opts ...grpc.CallOption) (*ResetSchedulerReply, error)
+	// Garbage collect feed updates
+	//
+	// `POST /gcfeedupdates`
+	//
+	// Deletes feed updates that are older than a week, with the exception that
+	// the most recent succesful update for each feed is always retained.
+	//
+	// This method exists to avoid unbounded growth in the feed updates database table.
+	// It is called periodically by the scheduler.
+	GarbageCollectFeedUpdates(ctx context.Context, in *GarbageCollectFeedUpdatesRequest, opts ...grpc.CallOption) (*GarbageCollectFeedUpdatesReply, error)
 }
 
 type adminClient struct {
@@ -126,6 +136,15 @@ func (c *adminClient) ResetScheduler(ctx context.Context, in *ResetSchedulerRequ
 	return out, nil
 }
 
+func (c *adminClient) GarbageCollectFeedUpdates(ctx context.Context, in *GarbageCollectFeedUpdatesRequest, opts ...grpc.CallOption) (*GarbageCollectFeedUpdatesReply, error) {
+	out := new(GarbageCollectFeedUpdatesReply)
+	err := c.cc.Invoke(ctx, "/Admin/GarbageCollectFeedUpdates", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServer is the server API for Admin service.
 // All implementations should embed UnimplementedAdminServer
 // for forward compatibility
@@ -174,6 +193,16 @@ type AdminServer interface {
 	//	The main usecase is when the Postgres configuration is manually
 	//	 updated and the scheduler needs to see the update.
 	ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error)
+	// Garbage collect feed updates
+	//
+	// `POST /gcfeedupdates`
+	//
+	// Deletes feed updates that are older than a week, with the exception that
+	// the most recent succesful update for each feed is always retained.
+	//
+	// This method exists to avoid unbounded growth in the feed updates database table.
+	// It is called periodically by the scheduler.
+	GarbageCollectFeedUpdates(context.Context, *GarbageCollectFeedUpdatesRequest) (*GarbageCollectFeedUpdatesReply, error)
 }
 
 // UnimplementedAdminServer should be embedded to have forward compatible implementations.
@@ -197,6 +226,9 @@ func (UnimplementedAdminServer) GetSchedulerStatus(context.Context, *GetSchedule
 }
 func (UnimplementedAdminServer) ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResetScheduler not implemented")
+}
+func (UnimplementedAdminServer) GarbageCollectFeedUpdates(context.Context, *GarbageCollectFeedUpdatesRequest) (*GarbageCollectFeedUpdatesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GarbageCollectFeedUpdates not implemented")
 }
 
 // UnsafeAdminServer may be embedded to opt out of forward compatibility for this service.
@@ -318,6 +350,24 @@ func _Admin_ResetScheduler_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Admin_GarbageCollectFeedUpdates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GarbageCollectFeedUpdatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).GarbageCollectFeedUpdates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Admin/GarbageCollectFeedUpdates",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).GarbageCollectFeedUpdates(ctx, req.(*GarbageCollectFeedUpdatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Admin_ServiceDesc is the grpc.ServiceDesc for Admin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -348,6 +398,10 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetScheduler",
 			Handler:    _Admin_ResetScheduler_Handler,
+		},
+		{
+			MethodName: "GarbageCollectFeedUpdates",
+			Handler:    _Admin_GarbageCollectFeedUpdates_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

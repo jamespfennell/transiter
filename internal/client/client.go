@@ -155,8 +155,7 @@ func (c *Client) SchedulerStatus(ctx context.Context) error {
 }
 
 func (c *Client) ResetScheduler(ctx context.Context) error {
-	var req api.ResetSchedulerRequest
-	_, err := c.adminClient.ResetScheduler(ctx, &req)
+	_, err := c.adminClient.ResetScheduler(ctx, &api.ResetSchedulerRequest{})
 	return err
 }
 
@@ -165,4 +164,9 @@ func convertTime(t int64) string {
 		return "(none)"
 	}
 	return fmt.Sprintf("%s ago", time.Now().Round(time.Second).Sub(time.Unix(t, 0)))
+}
+
+func (c *Client) GarbageCollectFeedUpdates(ctx context.Context) error {
+	_, err := c.adminClient.GarbageCollectFeedUpdates(ctx, &api.GarbageCollectFeedUpdatesRequest{})
+	return err
 }

@@ -311,6 +311,24 @@ func local_request_Admin_ResetScheduler_0(ctx context.Context, marshaler runtime
 
 }
 
+func request_Admin_GarbageCollectFeedUpdates_0(ctx context.Context, marshaler runtime.Marshaler, client AdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GarbageCollectFeedUpdatesRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := client.GarbageCollectFeedUpdates(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_Admin_GarbageCollectFeedUpdates_0(ctx context.Context, marshaler runtime.Marshaler, server AdminServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GarbageCollectFeedUpdatesRequest
+	var metadata runtime.ServerMetadata
+
+	msg, err := server.GarbageCollectFeedUpdates(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterAdminHandlerServer registers the http handlers for service Admin to "mux".
 // UnaryRPC     :call AdminServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -452,6 +470,29 @@ func RegisterAdminHandlerServer(ctx context.Context, mux *runtime.ServeMux, serv
 		}
 
 		forward_Admin_ResetScheduler_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_Admin_GarbageCollectFeedUpdates_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/.Admin/GarbageCollectFeedUpdates", runtime.WithHTTPPathPattern("/gcfeedupdates"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_Admin_GarbageCollectFeedUpdates_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_Admin_GarbageCollectFeedUpdates_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -616,6 +657,26 @@ func RegisterAdminHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 
 	})
 
+	mux.Handle("POST", pattern_Admin_GarbageCollectFeedUpdates_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/.Admin/GarbageCollectFeedUpdates", runtime.WithHTTPPathPattern("/gcfeedupdates"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_Admin_GarbageCollectFeedUpdates_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_Admin_GarbageCollectFeedUpdates_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -631,6 +692,8 @@ var (
 	pattern_Admin_GetSchedulerStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"scheduler"}, ""))
 
 	pattern_Admin_ResetScheduler_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"scheduler"}, ""))
+
+	pattern_Admin_GarbageCollectFeedUpdates_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"gcfeedupdates"}, ""))
 )
 
 var (
@@ -645,4 +708,6 @@ var (
 	forward_Admin_GetSchedulerStatus_0 = runtime.ForwardResponseMessage
 
 	forward_Admin_ResetScheduler_0 = runtime.ForwardResponseMessage
+
+	forward_Admin_GarbageCollectFeedUpdates_0 = runtime.ForwardResponseMessage
 )
