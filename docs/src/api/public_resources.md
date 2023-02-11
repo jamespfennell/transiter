@@ -50,15 +50,15 @@ The public API is a read-only API so all of the resources come from somewhere el
 
 | Resource    | Reference type | List endpoint | Get endpoint | Source |
 | ----------- | --------------- | ---------- | ------------------ | -------|
-| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static    
-| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime 
-| Feed        | System          |            |                    | system config  
+| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
+| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
+| Feed        | System          |            |                    | system config
 | Feed update | Feed            |            |                    | Transiter update process
 | Route       | System          |            |                    | GTFS static
-| Trip        | Route           |            |                    | GTFS realtime      
-| Stop        | System          |            |                    | GTFS static   
+| Trip        | Route           |            |                    | GTFS realtime
+| Stop        | System          |            |                    | GTFS static
 | System      | None            |            |                    | system config
-| Transfer    | System          |            |                    | GTFS static       
+| Transfer    | System          |            |                    | GTFS static
 | Vehicle     | System or trip  |            |                    | GTFS realtime
 
 

@@ -247,6 +247,44 @@ No fields.
 
 
 
+## Garbage collect feed updates
+
+`POST /gcfeedupdates`
+
+Deletes feed updates that are older than a week, with the exception that
+the most recent succesful update for each feed is always retained.
+
+This method exists to avoid unbounded growth in the feed updates database table.
+It is called periodically by the scheduler.
+
+### Request type: GarbageCollectFeedUpdatesRequest
+
+
+	
+
+
+No fields.
+
+
+
+
+
+
+
+### Response type: GarbageCollectFeedUpdatesReply
+
+
+	
+
+
+No fields.
+
+
+
+
+
+
+
 
 
 
