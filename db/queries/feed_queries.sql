@@ -65,3 +65,12 @@ SELECT * FROM feed_update WHERE pk = sqlc.arg(pk);
 
 -- name: CountUpdatesInFeed :one
 SELECT COUNT(*) FROM feed_update WHERE feed_pk = sqlc.arg(feed_pk);
+
+-- name: ListActiveFeedUpdatePks :many
+SELECT DISTINCT route.source_pk FROM route
+UNION SELECT DISTINCT stop.source_pk FROM stop;
+
+-- name: GarbageCollectFeedUpdates :exec
+DELETE FROM feed_update
+WHERE started_at <= NOW() - INTERVAL '7 days'
+AND feed_update.pk NOT IN (sqlc.arg(active_feed_update_pks));

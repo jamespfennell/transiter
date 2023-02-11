@@ -328,5 +328,15 @@ func unmarshalFromYaml(y []byte) (*api.SystemConfig, error) {
 }
 
 func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.GarbageCollectFeedUpdatesRequest) (*api.GarbageCollectFeedUpdatesReply, error) {
+	var activeFeedUpdatePks []int64
+	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		querier := db.New(tx)
+		var err error
+		activeFeedUpdatePks, err = querier.ListActiveFeedUpdatePks(ctx)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+	fmt.Println("Active feed update pks", activeFeedUpdatePks)
 	return nil, fmt.Errorf("unimplemented")
 }

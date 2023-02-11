@@ -63,6 +63,17 @@ func (q *Queries) FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdatePara
 	return err
 }
 
+const garbageCollectFeedUpdates = `-- name: GarbageCollectFeedUpdates :exec
+DELETE FROM feed_update
+WHERE started_at <= NOW() - INTERVAL '7 days'
+AND feed_update.pk NOT IN ($1)
+`
+
+func (q *Queries) GarbageCollectFeedUpdates(ctx context.Context, activeFeedUpdatePks int64) error {
+	_, err := q.db.Exec(ctx, garbageCollectFeedUpdates, activeFeedUpdatePks)
+	return err
+}
+
 const getFeed = `-- name: GetFeed :one
 SELECT feed.pk, feed.id, feed.system_pk, feed.update_strategy, feed.update_period, feed.config FROM feed
     INNER JOIN system on system.pk = feed.system_pk
@@ -190,6 +201,31 @@ func (q *Queries) InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdatePara
 	var pk int64
 	err := row.Scan(&pk)
 	return pk, err
+}
+
+const listActiveFeedUpdatePks = `-- name: ListActiveFeedUpdatePks :many
+SELECT DISTINCT route.source_pk FROM route
+UNION SELECT DISTINCT stop.source_pk FROM stop
+`
+
+func (q *Queries) ListActiveFeedUpdatePks(ctx context.Context) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listActiveFeedUpdatePks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var source_pk int64
+		if err := rows.Scan(&source_pk); err != nil {
+			return nil, err
+		}
+		items = append(items, source_pk)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listAutoUpdateFeedsForSystem = `-- name: ListAutoUpdateFeedsForSystem :many
