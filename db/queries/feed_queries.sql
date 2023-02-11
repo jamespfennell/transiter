@@ -67,10 +67,21 @@ SELECT * FROM feed_update WHERE pk = sqlc.arg(pk);
 SELECT COUNT(*) FROM feed_update WHERE feed_pk = sqlc.arg(feed_pk);
 
 -- name: ListActiveFeedUpdatePks :many
-SELECT DISTINCT route.source_pk FROM route
-UNION SELECT DISTINCT stop.source_pk FROM stop;
+      SELECT DISTINCT source_pk FROM agency
+UNION SELECT DISTINCT source_pk FROM alert
+UNION SELECT DISTINCT source_pk FROM scheduled_service
+UNION SELECT DISTINCT source_pk FROM route
+UNION SELECT DISTINCT source_pk FROM stop
+UNION SELECT DISTINCT source_pk FROM stop_headsign_rule
+UNION SELECT DISTINCT source_pk FROM transfer
+UNION SELECT DISTINCT source_pk FROM trip
+UNION SELECT DISTINCT source_pk FROM vehicle;
 
--- name: GarbageCollectFeedUpdates :exec
-DELETE FROM feed_update
-WHERE started_at <= NOW() - INTERVAL '7 days'
-AND feed_update.pk NOT IN (sqlc.arg(active_feed_update_pks));
+-- name: GarbageCollectFeedUpdates :one
+WITH deleted_pks AS (
+    DELETE FROM feed_update
+    WHERE started_at <= NOW() - INTERVAL '7 days'
+    AND NOT feed_update.pk = ANY(sqlc.arg(active_feed_update_pks)::bigint[])
+    RETURNING pk
+)
+SELECT COUNT(*) FROM deleted_pks;

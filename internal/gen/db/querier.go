@@ -33,7 +33,7 @@ type Querier interface {
 	DeleteTripStopTimes(ctx context.Context, pks []int64) error
 	EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHeadwaysForRoutesParams) ([]EstimateHeadwaysForRoutesRow, error)
 	FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdateParams) error
-	GarbageCollectFeedUpdates(ctx context.Context, activeFeedUpdatePks int64) error
+	GarbageCollectFeedUpdates(ctx context.Context, activeFeedUpdatePks []int64) (int64, error)
 	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
 	GetAlertInSystem(ctx context.Context, arg GetAlertInSystemParams) (Alert, error)
 	GetDestinationsForTrips(ctx context.Context, tripPks []int64) ([]GetDestinationsForTripsRow, error)

@@ -63,15 +63,21 @@ func (q *Queries) FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdatePara
 	return err
 }
 
-const garbageCollectFeedUpdates = `-- name: GarbageCollectFeedUpdates :exec
-DELETE FROM feed_update
-WHERE started_at <= NOW() - INTERVAL '7 days'
-AND feed_update.pk NOT IN ($1)
+const garbageCollectFeedUpdates = `-- name: GarbageCollectFeedUpdates :one
+WITH deleted_pks AS (
+    DELETE FROM feed_update
+    WHERE started_at <= NOW() - INTERVAL '7 days'
+    AND NOT feed_update.pk = ANY($1::bigint[])
+    RETURNING pk
+)
+SELECT COUNT(*) FROM deleted_pks
 `
 
-func (q *Queries) GarbageCollectFeedUpdates(ctx context.Context, activeFeedUpdatePks int64) error {
-	_, err := q.db.Exec(ctx, garbageCollectFeedUpdates, activeFeedUpdatePks)
-	return err
+func (q *Queries) GarbageCollectFeedUpdates(ctx context.Context, activeFeedUpdatePks []int64) (int64, error) {
+	row := q.db.QueryRow(ctx, garbageCollectFeedUpdates, activeFeedUpdatePks)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const getFeed = `-- name: GetFeed :one
@@ -204,8 +210,15 @@ func (q *Queries) InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdatePara
 }
 
 const listActiveFeedUpdatePks = `-- name: ListActiveFeedUpdatePks :many
-SELECT DISTINCT route.source_pk FROM route
-UNION SELECT DISTINCT stop.source_pk FROM stop
+      SELECT DISTINCT source_pk FROM agency
+UNION SELECT DISTINCT source_pk FROM alert
+UNION SELECT DISTINCT source_pk FROM scheduled_service
+UNION SELECT DISTINCT source_pk FROM route
+UNION SELECT DISTINCT source_pk FROM stop
+UNION SELECT DISTINCT source_pk FROM stop_headsign_rule
+UNION SELECT DISTINCT source_pk FROM transfer
+UNION SELECT DISTINCT source_pk FROM trip
+UNION SELECT DISTINCT source_pk FROM vehicle
 `
 
 func (q *Queries) ListActiveFeedUpdatePks(ctx context.Context) ([]int64, error) {
