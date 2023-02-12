@@ -27,13 +27,18 @@ const XTransiterHost = "X-Transiter-Host"
 var xTransiterHostLower = strings.ToLower(XTransiterHost)
 
 func NewGenerator(ctx context.Context) Generator {
+	var hrefEnabled bool
+	var baseURL string
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if baseURL, ok := md[xTransiterHostLower]; ok {
-			return Generator{hrefEnabled: true, baseURL: baseURL[0]}
+		if hdrVal, ok := md[xTransiterHostLower]; ok {
+			hrefEnabled = true
+			baseURL = hdrVal[0]
 		}
 	}
 	return Generator{
-		systems: map[string]*api.System_Reference{},
+		hrefEnabled: hrefEnabled,
+		baseURL:     baseURL,
+		systems:     map[string]*api.System_Reference{},
 	}
 }
 
