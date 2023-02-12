@@ -57,6 +57,7 @@ jobs:
             jamespfennell/transiter:build-${{ github.run_number }}
             jamespfennell/transiter:latest
           context: .
+          push: true
 
   docs:
     runs-on: ubuntu-latest
