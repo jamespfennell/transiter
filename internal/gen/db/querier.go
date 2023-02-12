@@ -94,7 +94,7 @@ type Querier interface {
 	ListStopTimesAtStops(ctx context.Context, stopPks []int64) ([]ListStopTimesAtStopsRow, error)
 	ListStopsInStopTree(ctx context.Context, pk int64) ([]Stop, error)
 	ListStopsInSystem(ctx context.Context, arg ListStopsInSystemParams) ([]Stop, error)
-	ListStopsInSystemGeoFilter(ctx context.Context, arg ListStopsInSystemGeoFilterParams) ([]Stop, error)
+	ListStopsInSystemGeographic(ctx context.Context, arg ListStopsInSystemGeographicParams) ([]Stop, error)
 	ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]ListStopsTimesForTripRow, error)
 	ListSystemIDs(ctx context.Context) ([]string, error)
 	ListSystems(ctx context.Context) ([]System, error)

@@ -132,9 +132,7 @@ def test_install_system__stops(system_id, install_system_1, transiter_host, sync
     ).json()
 
     # All stops returned
-    ordered_stop_ids = [stop["id"] for stop in stops_response_geo_all["stops"]]
-    assert STOP_IDS == set(actual_stop_ids)
-    assert sorted(ordered_stop_ids) == ordered_stop_ids
+    assert STOP_IDS == set(stop["id"] for stop in stops_response_geo_all["stops"])
 
 
 @pytest.mark.parametrize("sync", [True, False])

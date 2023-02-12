@@ -812,34 +812,36 @@ func (q *Queries) ListStopsInSystem(ctx context.Context, arg ListStopsInSystemPa
 	return items, nil
 }
 
-const listStopsInSystemGeoFilter = `-- name: ListStopsInSystemGeoFilter :many
-SELECT pk, id, system_pk, source_pk, parent_stop_pk, name, longitude, latitude, url, code, description, platform_code, timezone, type, wheelchair_boarding, zone_id FROM stop
-WHERE system_pk = $1
-  AND (
-    NOT $2::bool OR
-    id = ANY($3::text[])
-  )
-  AND (6371 * acos(cos(radians(latitude)) * cos(radians($4::numeric)) * cos(radians($5::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians($4::numeric)))) <= $6::numeric
-ORDER BY id
+const listStopsInSystemGeographic = `-- name: ListStopsInSystemGeographic :many
+WITH distance AS (
+  SELECT 
+  pk stop_pk,
+  (6371 * acos(cos(radians(latitude)) * cos(radians($3::numeric)) * cos(radians($4::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians($3::numeric)))) val
+  FROM stop
+  WHERE stop.system_pk = $5
+)
+SELECT stop.pk, stop.id, stop.system_pk, stop.source_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id FROM stop
+INNER JOIN distance ON stop.pk = distance.stop_pk
+AND distance.val <= $1::numeric
+ORDER BY distance.val
+LIMIT $2
 `
 
-type ListStopsInSystemGeoFilterParams struct {
-	SystemPk               int64
-	OnlyReturnSpecifiedIds bool
-	StopIds                []string
-	Latitude               pgtype.Numeric
-	Longitude              pgtype.Numeric
-	MaxDistance            pgtype.Numeric
+type ListStopsInSystemGeographicParams struct {
+	MaxDistance pgtype.Numeric
+	MaxResults  int32
+	Latitude    pgtype.Numeric
+	Longitude   pgtype.Numeric
+	SystemPk    int64
 }
 
-func (q *Queries) ListStopsInSystemGeoFilter(ctx context.Context, arg ListStopsInSystemGeoFilterParams) ([]Stop, error) {
-	rows, err := q.db.Query(ctx, listStopsInSystemGeoFilter,
-		arg.SystemPk,
-		arg.OnlyReturnSpecifiedIds,
-		arg.StopIds,
+func (q *Queries) ListStopsInSystemGeographic(ctx context.Context, arg ListStopsInSystemGeographicParams) ([]Stop, error) {
+	rows, err := q.db.Query(ctx, listStopsInSystemGeographic,
+		arg.MaxDistance,
+		arg.MaxResults,
 		arg.Latitude,
 		arg.Longitude,
-		arg.MaxDistance,
+		arg.SystemPk,
 	)
 	if err != nil {
 		return nil, err

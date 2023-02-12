@@ -34,22 +34,19 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 	}
 
 	var stops []db.Stop
-	if req.SearchMode != nil && *req.SearchMode == api.ListStopsRequest_DISTANCE {
+	if req.GetSearchMode() == api.ListStopsRequest_DISTANCE {
 		if req.Latitude == nil || req.Longitude == nil || req.MaxDistance == nil {
 			return nil, errors.NewInvalidArgumentError("latitude, longitude, and max_distance are required when using DISTANCE search_mode")
 		}
-
 		if firstID != "" {
 			return nil, errors.NewInvalidArgumentError("first_id can not be used when using DISTANCE search_mode")
 		}
-
-		stops, err = r.Querier.ListStopsInSystemGeoFilter(ctx, db.ListStopsInSystemGeoFilterParams{
-			SystemPk:               system.Pk,
-			OnlyReturnSpecifiedIds: req.OnlyReturnSpecifiedIds,
-			StopIds:                req.Id,
-			Latitude:               convertGpsDataForQuery(*req.Latitude),
-			Longitude:              convertGpsDataForQuery(*req.Longitude),
-			MaxDistance:            convertGpsDataForQuery(*req.MaxDistance),
+		stops, err = r.Querier.ListStopsInSystemGeographic(ctx, db.ListStopsInSystemGeographicParams{
+			SystemPk:    system.Pk,
+			Latitude:    convertGpsDataForQuery(*req.Latitude),
+			Longitude:   convertGpsDataForQuery(*req.Longitude),
+			MaxDistance: convertGpsDataForQuery(*req.MaxDistance),
+			MaxResults:  numStops,
 		})
 	} else {
 		stops, err = r.Querier.ListStopsInSystem(ctx, db.ListStopsInSystemParams{

@@ -37,15 +37,19 @@ WHERE system_pk = sqlc.arg(system_pk)
 ORDER BY id
 LIMIT sqlc.arg(num_stops);
 
--- name: ListStopsInSystemGeoFilter :many
-SELECT * FROM stop
-WHERE system_pk = sqlc.arg(system_pk)
-  AND (
-    NOT sqlc.arg(only_return_specified_ids)::bool OR
-    id = ANY(sqlc.arg(stop_ids)::text[])
-  )
-  AND (6371 * acos(cos(radians(latitude)) * cos(radians(sqlc.arg(latitude)::numeric)) * cos(radians(sqlc.arg(longitude)::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians(sqlc.arg(latitude)::numeric)))) <= sqlc.arg(max_distance)::numeric
-ORDER BY id;
+-- name: ListStopsInSystemGeographic :many
+WITH distance AS (
+  SELECT 
+  pk stop_pk,
+  (6371 * acos(cos(radians(latitude)) * cos(radians(sqlc.arg(latitude)::numeric)) * cos(radians(sqlc.arg(longitude)::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians(sqlc.arg(latitude)::numeric)))) val
+  FROM stop
+  WHERE stop.system_pk = sqlc.arg(system_pk)
+)
+SELECT stop.* FROM stop
+INNER JOIN distance ON stop.pk = distance.stop_pk
+AND distance.val <= sqlc.arg(max_distance)::numeric
+ORDER BY distance.val
+LIMIT sqlc.arg(max_results);
 
 -- name: GetStopInSystem :one
 SELECT stop.* FROM stop

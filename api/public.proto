@@ -345,15 +345,30 @@ message ListStopsRequest {
   // This is a URL parameter in the HTTP API.
   string system_id = 1;
 
+  // The possible search modes when listing stops.
+  enum SearchMode {
+    // Return a paginated list of stops sorted by stop ID.
+    ID = 0;
+    // Return all stops within max_distance of (latitude, longitude), sorted by the distance.
+    DISTANCE = 1;
+  }
+  // The type of search to perform when listing stops.
+  optional SearchMode search_mode = 13;
+
   // If true, only return stops whose IDs are specified in the repeated `id` field.
+  // Only supported when the search mode is ID.
   bool only_return_specified_ids = 8;
   // IDs to return if `only_return_specified_ids` is set to true. It is an error to
   // populate this field if `only_return_specified_ids` is false.
+  // Only supported when the search mode is ID.
   repeated string id = 9;
-
   // ID of the first stop to return. If not set, the stop with the smallest ID will be first.
+  // Only supported when the search mode is ID.
   optional string first_id = 2;
+
   // Maximum number of stops to return.
+  // This is supported in all search modes.
+  // For performance reasons, if it is larger than 100 it is rounded down to 100.
   optional int32 limit = 3;
 
   // If true, the stop times field will not be populated.
@@ -378,17 +393,6 @@ message ListStopsRequest {
 
   // The longitude relative to the returned stops when using DISTANCE search mode.
   optional double longitude = 12;
-
-  // The possible search types when listing stops.
-  enum SearchMode {
-    // Return a paginated list of stops sorted by stop ID.
-    ID = 0;
-    // Return all stops within max_distance from latitude, longitude.
-    DISTANCE = 1;
-  }
-
-  // The type of search to perform when listing stops.
-  optional SearchMode search_mode = 13;
 }
 
 // Response payload for the list stops endpoint.
