@@ -152,14 +152,19 @@ func main() {
 						Value: false,
 					},
 					&cli.BoolFlag{
-						Name:  "disable-scheduler",
-						Usage: "Don't run the feed update scheduler",
-						Value: false,
+						Name:  "enable-scheduler",
+						Usage: "Enable the feed update scheduler",
+						Value: true,
 					},
 					&cli.BoolFlag{
-						Name:  "no-public-metrics",
-						Usage: "Don't report Prometheous metrics on the public HTTP server",
-						Value: false,
+						Name:  "enable-pprof",
+						Usage: "Enable pprof debugging via the admin HTTP API",
+						Value: true,
+					},
+					&cli.BoolFlag{
+						Name:  "enable-public-metrics",
+						Usage: "Report Prometheus metrics on the public HTTP API's /metrics endpoint. Metrics are always reported on the admin HTTP API",
+						Value: true,
 					},
 					&cli.Int64Flag{
 						Name:  "max-connections",
@@ -169,15 +174,16 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					args := server.RunArgs{
-						PublicHTTPAddr:   c.String("public-http-addr"),
-						PublicGrpcAddr:   c.String("public-grpc-addr"),
-						AdminHTTPAddr:    c.String("admin-http-addr"),
-						AdminGrpcAddr:    c.String("admin-grpc-addr"),
-						PostgresConnStr:  c.String("postgres-connection-string"),
-						MaxConnections:   int32(c.Int64("max-connections")),
-						DisableScheduler: c.Bool("disable-scheduler"),
-						NoPublicMetrics:  c.Bool("no-public-metrics"),
-						ReadOnly:         c.Bool("read-only"),
+						PublicHTTPAddr:      c.String("public-http-addr"),
+						PublicGrpcAddr:      c.String("public-grpc-addr"),
+						AdminHTTPAddr:       c.String("admin-http-addr"),
+						AdminGrpcAddr:       c.String("admin-grpc-addr"),
+						PostgresConnStr:     c.String("postgres-connection-string"),
+						MaxConnections:      int32(c.Int64("max-connections")),
+						EnableScheduler:     c.Bool("enable-scheduler"),
+						EnablePublicMetrics: c.Bool("enable-public-metrics"),
+						ReadOnly:            c.Bool("read-only"),
+						EnablePprof:         c.Bool("enable-pprof"),
 					}
 					return server.Run(c.Context, args)
 				},

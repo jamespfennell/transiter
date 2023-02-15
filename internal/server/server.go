@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"sync"
 	"time"
 
@@ -26,15 +27,16 @@ import (
 )
 
 type RunArgs struct {
-	PublicHTTPAddr   string
-	PublicGrpcAddr   string
-	AdminHTTPAddr    string
-	AdminGrpcAddr    string
-	PostgresConnStr  string
-	MaxConnections   int32
-	DisableScheduler bool
-	NoPublicMetrics  bool
-	ReadOnly         bool
+	PublicHTTPAddr      string
+	PublicGrpcAddr      string
+	AdminHTTPAddr       string
+	AdminGrpcAddr       string
+	PostgresConnStr     string
+	MaxConnections      int32
+	EnableScheduler     bool
+	EnablePublicMetrics bool
+	EnablePprof         bool
+	ReadOnly            bool
 }
 
 func Run(ctx context.Context, args RunArgs) error {
@@ -77,7 +79,7 @@ func Run(ctx context.Context, args RunArgs) error {
 	var realScheduler *scheduler.DefaultScheduler
 	var s scheduler.Scheduler
 
-	if args.DisableScheduler || args.ReadOnly {
+	if !args.EnableScheduler || args.ReadOnly {
 		s = scheduler.NoOpScheduler()
 	} else {
 		realScheduler = scheduler.NewDefaultScheduler()
@@ -110,7 +112,7 @@ func Run(ctx context.Context, args RunArgs) error {
 			api.RegisterPublicHandlerServer(ctx, mux, publicService)
 			h := http.NewServeMux()
 			h.Handle("/", mux)
-			if !args.NoPublicMetrics {
+			if args.EnablePublicMetrics {
 				h.Handle("/metrics", monitoring.Handler())
 			}
 			log.Printf("Public HTTP API listening on %s\n", args.PublicHTTPAddr)
@@ -145,8 +147,14 @@ func Run(ctx context.Context, args RunArgs) error {
 			mux := newServeMux()
 			api.RegisterPublicHandlerServer(ctx, mux, publicService)
 			api.RegisterAdminHandlerServer(ctx, mux, adminService)
+			h := http.NewServeMux()
+			h.Handle("/", mux)
+			h.Handle("/metrics", monitoring.Handler())
+			if args.EnablePprof {
+				registerPprofHandlers(h)
+			}
 			log.Printf("Admin HTTP API listening on %s", args.AdminHTTPAddr)
-			http.ListenAndServe(args.AdminHTTPAddr, mux)
+			_ = http.ListenAndServe(args.AdminHTTPAddr, h)
 			log.Printf("Admin HTTP API stopped")
 		}()
 	}
@@ -197,4 +205,12 @@ func newServeMux() *runtime.ServeMux {
 		// Option to map internal errors to nice HTTP error
 		errors.ServeMuxOption(),
 	)
+}
+
+func registerPprofHandlers(h *http.ServeMux) {
+	h.HandleFunc("/debug/pprof/", pprof.Index)
+	h.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	h.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	h.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	h.HandleFunc("/debug/pprof/trace", pprof.Trace)
 }
