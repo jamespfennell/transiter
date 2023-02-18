@@ -27,6 +27,7 @@ import (
 )
 
 func Do(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error {
+	startTime := time.Now()
 	var updatePk int64
 	if err := pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		var err error
@@ -35,18 +36,23 @@ func Do(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error 
 	}); err != nil {
 		return err
 	}
-	var updateErr error
-	if err := pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	var r runResult
+	var runErr error
+	commitErr := pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		// We don't return the error through the transaction function as we want to commit the feed update
 		// result irrespective of whether it was success or failure.
-		updateErr = runInExistingTx(ctx, db.New(tx), systemID, feedID, updatePk)
+		r, runErr = runInExistingTx(ctx, db.New(tx), systemID, feedID, updatePk)
 		return nil
-	}); err != nil {
-		log.Printf("Failed to commit feed update transaction: %s", err)
-		// TODO: try to mark it as failed again
-		return err
+	})
+	if commitErr != nil {
+		log.Printf("Failed to commit feed update transaction: %s", commitErr)
 	}
-	return updateErr
+	// We don't overwrite `runErr` if it is non-nil as it came earlier and probably is more useful
+	if runErr == nil {
+		runErr = commitErr
+	}
+	monitoring.RecordFeedUpdate(systemID, feedID, r.Status, r.Result, time.Since(startTime))
+	return runErr
 }
 
 func DoInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string) error {
@@ -54,7 +60,8 @@ func DoInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID st
 	if err != nil {
 		return err
 	}
-	return runInExistingTx(ctx, querier, systemID, feedID, updatePk)
+	_, err = runInExistingTx(ctx, querier, systemID, feedID, updatePk)
+	return err
 }
 
 func createInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string) (int64, error) {
@@ -72,7 +79,7 @@ func createInExistingTx(ctx context.Context, querier db.Querier, systemID, feedI
 	})
 }
 
-func runInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string, updatePk int64) error {
+func runInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string, updatePk int64) (runResult, error) {
 	r := run(ctx, querier, systemID, updatePk)
 
 	contentLength := sql.NullInt32{}
@@ -98,15 +105,13 @@ func runInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID s
 	}); err != nil {
 		// TODO: we should rollback the transaction if this happens?
 		log.Printf("Error while finishing feed update for pk=%d: %s\n", updatePk, r.Err)
-		return err
+		return r, err
 	}
 
-	monitoring.RecordFeedUpdate(systemID, feedID, r.Status, r.Result)
 	if r.Err != nil {
 		log.Printf("Error update for pk=%d: %s\n", updatePk, r.Err)
-		return r.Err
 	}
-	return nil
+	return r, r.Err
 }
 
 type runResult struct {

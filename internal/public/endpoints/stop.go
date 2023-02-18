@@ -16,7 +16,6 @@ import (
 )
 
 func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api.ListStopsReply, error) {
-	startTime := time.Now()
 	if !req.OnlyReturnSpecifiedIds && len(req.Id) > 0 {
 		return nil, errors.NewInvalidArgumentError("only_return_specified_ids is false but IDs were provided")
 	}
@@ -70,7 +69,6 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("ListStops(%s, %d stops) took %s\n", req.SystemId, len(stops), time.Since(startTime))
 	return &api.ListStopsReply{
 		Stops:  apiStops,
 		NextId: nextID,
