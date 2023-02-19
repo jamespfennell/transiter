@@ -3,7 +3,6 @@ package update
 
 import (
 	"context"
-	"crypto/md5"
 	"database/sql"
 	"fmt"
 	"io"
@@ -151,7 +150,7 @@ func run(ctx context.Context, querier db.Querier, systemID string, updatePk int6
 		r.markErr(constants.ResultEmptyFeed, fmt.Errorf("empty feed content"))
 		return r
 	}
-	r.ContentHash = calculateContentHash(content)
+	r.ContentHash = common.HashBytes(content)
 	lastContentHash, err := getLastContentHash(ctx, querier, feed.Pk)
 	if err != nil {
 		r.markErr(constants.ResultInternalError, err)
@@ -228,10 +227,6 @@ func getFeedContent(ctx context.Context, systemID string, feedConfig *api.FeedCo
 		return nil, fmt.Errorf("HTTP request for %s/%s returned non-ok status %s", systemID, feedConfig.Id, resp.Status)
 	}
 	return io.ReadAll(resp.Body)
-}
-
-func calculateContentHash(content []byte) string {
-	return fmt.Sprintf("%x", md5.Sum(content))
 }
 
 // TODO: move to wrappers and write DB tests

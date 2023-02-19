@@ -270,6 +270,7 @@ type Trip struct {
 	SourcePk    int64
 	DirectionID sql.NullBool
 	StartedAt   sql.NullTime
+	GtfsHash    string
 }
 
 type TripStopTime struct {

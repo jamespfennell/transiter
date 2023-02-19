@@ -200,7 +200,7 @@ func (q *Queries) GetSystem(ctx context.Context, id string) (System, error) {
 }
 
 const getTrip = `-- name: GetTrip :one
-SELECT pk, id, route_pk, source_pk, direction_id, started_at FROM trip
+SELECT pk, id, route_pk, source_pk, direction_id, started_at, gtfs_hash FROM trip
 WHERE trip.id = $1
     AND trip.route_pk = $2
 `
@@ -220,12 +220,13 @@ func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (Trip, error) 
 		&i.SourcePk,
 		&i.DirectionID,
 		&i.StartedAt,
+		&i.GtfsHash,
 	)
 	return i, err
 }
 
 const getTripByPk = `-- name: GetTripByPk :one
-SELECT pk, id, route_pk, source_pk, direction_id, started_at FROM trip WHERE pk = $1
+SELECT pk, id, route_pk, source_pk, direction_id, started_at, gtfs_hash FROM trip WHERE pk = $1
 `
 
 func (q *Queries) GetTripByPk(ctx context.Context, pk int64) (Trip, error) {
@@ -238,6 +239,7 @@ func (q *Queries) GetTripByPk(ctx context.Context, pk int64) (Trip, error) {
 		&i.SourcePk,
 		&i.DirectionID,
 		&i.StartedAt,
+		&i.GtfsHash,
 	)
 	return i, err
 }
@@ -617,7 +619,7 @@ func (q *Queries) ListStopHeadsignRulesForStops(ctx context.Context, stopPks []i
 }
 
 const listStopTimesAtStops = `-- name: ListStopTimesAtStops :many
-SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, vehicle.id vehicle_id FROM trip_stop_time
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, vehicle.id vehicle_id FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
@@ -645,6 +647,7 @@ type ListStopTimesAtStopsRow struct {
 	SourcePk             int64
 	DirectionID          sql.NullBool
 	StartedAt            sql.NullTime
+	GtfsHash             string
 	VehicleID            sql.NullString
 }
 
@@ -677,6 +680,7 @@ func (q *Queries) ListStopTimesAtStops(ctx context.Context, stopPks []int64) ([]
 			&i.SourcePk,
 			&i.DirectionID,
 			&i.StartedAt,
+			&i.GtfsHash,
 			&i.VehicleID,
 		); err != nil {
 			return nil, err
@@ -1075,7 +1079,7 @@ func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk sql.NullIn
 }
 
 const listTrips = `-- name: ListTrips :many
-SELECT pk, id, route_pk, source_pk, direction_id, started_at FROM trip
+SELECT pk, id, route_pk, source_pk, direction_id, started_at, gtfs_hash FROM trip
 WHERE trip.route_pk = $1
 ORDER BY trip.id
 `
@@ -1096,6 +1100,7 @@ func (q *Queries) ListTrips(ctx context.Context, routePk int64) ([]Trip, error) 
 			&i.SourcePk,
 			&i.DirectionID,
 			&i.StartedAt,
+			&i.GtfsHash,
 		); err != nil {
 			return nil, err
 		}

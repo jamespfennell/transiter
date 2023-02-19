@@ -1,19 +1,20 @@
 -- name: InsertTrip :one
 INSERT INTO trip
-    (id, route_pk, source_pk, direction_id, started_at)
+    (id, route_pk, source_pk, direction_id, started_at, gtfs_hash)
 VALUES
-    (sqlc.arg(id), sqlc.arg(route_pk), sqlc.arg(source_pk), sqlc.arg(direction_id), sqlc.arg(started_at))
+    (sqlc.arg(id), sqlc.arg(route_pk), sqlc.arg(source_pk), sqlc.arg(direction_id), sqlc.arg(started_at), sqlc.arg(gtfs_hash))
 RETURNING pk;
 
 -- name: UpdateTrip :exec
 UPDATE trip SET 
     source_pk = sqlc.arg(source_pk),
     direction_id = sqlc.arg(direction_id),
-    started_at = sqlc.arg(started_at)
+    started_at = sqlc.arg(started_at),
+    gtfs_hash = sqlc.arg(gtfs_hash)
 WHERE pk = sqlc.arg(pk);
 
 -- name: ListTripsForUpdate :many
-SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id
+SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id, gtfs_hash
 FROM trip
 WHERE
     trip.route_pk = ANY(sqlc.arg(route_pks)::bigint[]);

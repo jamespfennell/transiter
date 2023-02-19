@@ -3,7 +3,6 @@ package dbwrappers
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"time"
 
@@ -97,56 +96,36 @@ type TripUID struct {
 	RoutePk int64
 }
 
-type TripForUpdate struct {
-	Pk          int64
-	ID          string
-	RoutePk     int64
-	DirectionID sql.NullBool
-	StopTimes   []StopTimeForUpdate
-}
-
-type StopTimeForUpdate struct {
-	Pk           int64
-	StopPk       int64
-	StopSequence int32
-	Past         bool
-}
-
-func ListTripsForUpdate(ctx context.Context, querier db.Querier, routePks []int64) (map[TripUID]*TripForUpdate, error) {
-	tripRows, err := querier.ListTripsForUpdate(ctx, routePks)
+func ListTripsForUpdate(ctx context.Context, querier db.Querier, routePks []int64) (map[TripUID]db.ListTripsForUpdateRow, error) {
+	rows, err := querier.ListTripsForUpdate(ctx, routePks)
 	if err != nil {
 		return nil, err
 	}
-	result := map[TripUID]*TripForUpdate{}
-	tripPkToUID := map[int64]TripUID{}
+	m := map[TripUID]db.ListTripsForUpdateRow{}
+	for _, row := range rows {
+		uid := TripUID{RoutePk: row.RoutePk, ID: row.ID}
+		m[uid] = row
+	}
+	return m, nil
+}
+
+func ListStopTimesForUpdate(ctx context.Context, querier db.Querier, tripUIDToPk map[TripUID]int64) (map[TripUID][]db.ListTripStopTimesForUpdateRow, error) {
 	var tripPks []int64
-	for _, tripRow := range tripRows {
-		uid := TripUID{RoutePk: tripRow.RoutePk, ID: tripRow.ID}
-		tripPks = append(tripPks, tripRow.Pk)
-		tripPkToUID[tripRow.Pk] = uid
-		result[uid] = &TripForUpdate{
-			Pk:          tripRow.Pk,
-			ID:          tripRow.ID,
-			RoutePk:     tripRow.RoutePk,
-			DirectionID: tripRow.DirectionID,
-		}
+	tripPkToUID := map[int64]TripUID{}
+	for uid, pk := range tripUIDToPk {
+		tripPks = append(tripPks, pk)
+		tripPkToUID[pk] = uid
 	}
-	stopTimeRows, err := querier.ListTripStopTimesForUpdate(ctx, tripPks)
+	rows, err := querier.ListTripStopTimesForUpdate(ctx, tripPks)
 	if err != nil {
 		return nil, err
 	}
-	for _, stopTimeRow := range stopTimeRows {
-		uid := tripPkToUID[stopTimeRow.TripPk]
-		tripForUpdate := result[uid]
-		tripForUpdate.StopTimes = append(tripForUpdate.StopTimes, StopTimeForUpdate{
-			Pk:           stopTimeRow.Pk,
-			StopPk:       stopTimeRow.StopPk,
-			StopSequence: stopTimeRow.StopSequence,
-			Past:         stopTimeRow.Past,
-		})
-		result[uid] = tripForUpdate
+	m := map[TripUID][]db.ListTripStopTimesForUpdateRow{}
+	for _, row := range rows {
+		uid := tripPkToUID[row.TripPk]
+		m[uid] = append(m[uid], row)
 	}
-	return result, nil
+	return m, nil
 }
 
 func Ping(ctx context.Context, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {

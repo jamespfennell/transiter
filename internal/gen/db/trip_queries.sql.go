@@ -58,9 +58,9 @@ func (q *Queries) DeleteTripStopTimes(ctx context.Context, pks []int64) error {
 
 const insertTrip = `-- name: InsertTrip :one
 INSERT INTO trip
-    (id, route_pk, source_pk, direction_id, started_at)
+    (id, route_pk, source_pk, direction_id, started_at, gtfs_hash)
 VALUES
-    ($1, $2, $3, $4, $5)
+    ($1, $2, $3, $4, $5, $6)
 RETURNING pk
 `
 
@@ -70,6 +70,7 @@ type InsertTripParams struct {
 	SourcePk    int64
 	DirectionID sql.NullBool
 	StartedAt   sql.NullTime
+	GtfsHash    string
 }
 
 func (q *Queries) InsertTrip(ctx context.Context, arg InsertTripParams) (int64, error) {
@@ -79,6 +80,7 @@ func (q *Queries) InsertTrip(ctx context.Context, arg InsertTripParams) (int64, 
 		arg.SourcePk,
 		arg.DirectionID,
 		arg.StartedAt,
+		arg.GtfsHash,
 	)
 	var pk int64
 	err := row.Scan(&pk)
@@ -167,7 +169,7 @@ func (q *Queries) ListTripStopTimesForUpdate(ctx context.Context, tripPks []int6
 }
 
 const listTripsForUpdate = `-- name: ListTripsForUpdate :many
-SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id
+SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id, gtfs_hash
 FROM trip
 WHERE
     trip.route_pk = ANY($1::bigint[])
@@ -178,6 +180,7 @@ type ListTripsForUpdateRow struct {
 	ID          string
 	RoutePk     int64
 	DirectionID sql.NullBool
+	GtfsHash    string
 }
 
 func (q *Queries) ListTripsForUpdate(ctx context.Context, routePks []int64) ([]ListTripsForUpdateRow, error) {
@@ -194,6 +197,7 @@ func (q *Queries) ListTripsForUpdate(ctx context.Context, routePks []int64) ([]L
 			&i.ID,
 			&i.RoutePk,
 			&i.DirectionID,
+			&i.GtfsHash,
 		); err != nil {
 			return nil, err
 		}
@@ -228,14 +232,16 @@ const updateTrip = `-- name: UpdateTrip :exec
 UPDATE trip SET 
     source_pk = $1,
     direction_id = $2,
-    started_at = $3
-WHERE pk = $4
+    started_at = $3,
+    gtfs_hash = $4
+WHERE pk = $5
 `
 
 type UpdateTripParams struct {
 	SourcePk    int64
 	DirectionID sql.NullBool
 	StartedAt   sql.NullTime
+	GtfsHash    string
 	Pk          int64
 }
 
@@ -244,6 +250,7 @@ func (q *Queries) UpdateTrip(ctx context.Context, arg UpdateTripParams) error {
 		arg.SourcePk,
 		arg.DirectionID,
 		arg.StartedAt,
+		arg.GtfsHash,
 		arg.Pk,
 	)
 	return err

@@ -184,6 +184,7 @@ func NewTripFromDB(in db.Trip, stopTimes []db.ListStopsTimesForTripRow, routePkT
 	in.Pk = 0
 	in.RoutePk = 0
 	in.SourcePk = 0
+	in.GtfsHash = ""
 	return Trip{
 		RouteID:   routeID,
 		DBFields:  in,
