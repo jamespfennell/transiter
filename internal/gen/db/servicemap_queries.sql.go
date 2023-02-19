@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const deleteServiceMap = `-- name: DeleteServiceMap :exec
@@ -107,6 +108,41 @@ func (q *Queries) ListServiceMapConfigsInSystem(ctx context.Context, systemPk in
 			&i.SystemPk,
 			&i.Config,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStopPksForRealtimeMap = `-- name: ListStopPksForRealtimeMap :many
+SELECT trip.pk trip_pk, trip.direction_id, trip_stop_time.stop_pk
+FROM trip
+INNER JOIN trip_stop_time on trip_stop_time.trip_pk = trip.pk
+WHERE trip.route_pk = $1
+AND trip.direction_id IS NOT NULL
+ORDER BY trip.pk, trip_stop_time.stop_sequence
+`
+
+type ListStopPksForRealtimeMapRow struct {
+	TripPk      int64
+	DirectionID sql.NullBool
+	StopPk      int64
+}
+
+func (q *Queries) ListStopPksForRealtimeMap(ctx context.Context, routePk int64) ([]ListStopPksForRealtimeMapRow, error) {
+	rows, err := q.db.Query(ctx, listStopPksForRealtimeMap, routePk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStopPksForRealtimeMapRow
+	for rows.Next() {
+		var i ListStopPksForRealtimeMapRow
+		if err := rows.Scan(&i.TripPk, &i.DirectionID, &i.StopPk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

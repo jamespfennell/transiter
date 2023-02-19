@@ -3,7 +3,6 @@ package servicemaps
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -102,42 +101,39 @@ func UpdateStaticMaps(ctx context.Context, querier db.Querier, args UpdateStatic
 		return err
 	}
 
-	for _, smc := range configs {
-		if smc.Config.Source != api.ServiceMapConfig_STATIC {
-			continue
-		}
+	for _, smc := range configs[api.ServiceMapConfig_STATIC] {
 		routePkToStopPks := buildStaticMaps(smc.Config, args.RouteIDToPk, stopIDToStationPk, args.Trips)
-		if err := persistMaps(ctx, querier, &smc, routePkToStopPks); err != nil {
-			return err
+		for routePk, stopPks := range routePkToStopPks {
+			if err := persistMap(ctx, querier, &smc, routePk, stopPks); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func persistMaps(ctx context.Context, querier db.Querier, smc *Config, routePkToStopPks map[int64][]int64) error {
-	for routePk, stopPks := range routePkToStopPks {
-		if err := querier.DeleteServiceMap(ctx, db.DeleteServiceMapParams{
-			ConfigPk: smc.Pk,
-			RoutePk:  routePk,
+func persistMap(ctx context.Context, querier db.Querier, smc *Config, routePk int64, stopPks []int64) error {
+	if err := querier.DeleteServiceMap(ctx, db.DeleteServiceMapParams{
+		ConfigPk: smc.Pk,
+		RoutePk:  routePk,
+	}); err != nil {
+		return err
+	}
+	// TODO: consider not deleting and then inserting
+	mapPk, err := querier.InsertServiceMap(ctx, db.InsertServiceMapParams{
+		ConfigPk: smc.Pk,
+		RoutePk:  routePk,
+	})
+	if err != nil {
+		return err
+	}
+	for i, stopPk := range stopPks {
+		if err := querier.InsertServiceMapStop(ctx, db.InsertServiceMapStopParams{
+			MapPk:    mapPk,
+			StopPk:   stopPk,
+			Position: int32(i),
 		}); err != nil {
 			return err
-		}
-		// TODO: consider not deleting and then inserting
-		mapPk, err := querier.InsertServiceMap(ctx, db.InsertServiceMapParams{
-			ConfigPk: smc.Pk,
-			RoutePk:  routePk,
-		})
-		if err != nil {
-			return err
-		}
-		for i, stopPk := range stopPks {
-			if err := querier.InsertServiceMapStop(ctx, db.InsertServiceMapStopParams{
-				MapPk:    mapPk,
-				StopPk:   stopPk,
-				Position: int32(i),
-			}); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
@@ -203,7 +199,16 @@ func buildStaticMaps(smc *api.ServiceMapConfig, routeIDToPk map[string]int64, st
 		}
 	}
 
-	return buildMaps(routePkToEdges)
+	m := map[int64][]int64{}
+	for routePk := range routePkToKeyToCount {
+		var err error
+		m[routePk], err = buildMap(routePkToEdges[routePk])
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+	}
+	return m
 }
 
 func calculateTripKey(trip *gtfs.ScheduledTrip, stopIDToStationPk map[string]int64) string {
@@ -308,111 +313,113 @@ func buildIncludedServiceIDs(smc *api.ServiceMapConfig, trips []gtfs.ScheduledTr
 	return includedServiceIDs
 }
 
-func buildMaps(routePkToEdges map[int64]map[graph.Edge]bool) map[int64][]int64 {
-	routePkToStopPks := map[int64][]int64{}
-	for routePk, edgesSet := range routePkToEdges {
-		var edges []graph.Edge
-		for edge := range edgesSet {
-			edges = append(edges, edge)
-		}
-		g := graph.NewGraph(edges...)
-		orderedNodes, err := graph.SortBasic(g)
-		if err != nil {
-			continue
-		}
-		routePkToStopPks[routePk] = []int64{}
-		for _, node := range orderedNodes {
-			routePkToStopPks[routePk] = append(routePkToStopPks[routePk], node.GetLabel())
-		}
+func buildMap(edgesSet map[graph.Edge]bool) ([]int64, error) {
+	var edges []graph.Edge
+	for edge := range edgesSet {
+		edges = append(edges, edge)
 	}
-	return routePkToStopPks
-}
-
-type Trip struct {
-	RoutePk     int64
-	DirectionID sql.NullBool
-	StopPks     []int64
-}
-
-type UpdateRealtimeMapsArgs struct {
-	SystemPk      int64
-	OldTrips      []Trip
-	NewTrips      []Trip
-	StaleRoutePks []int64
+	g := graph.NewGraph(edges...)
+	orderedNodes, err := graph.SortBasic(g)
+	if err != nil {
+		return nil, fmt.Errorf("service map cannot be topologically sorted: %w", err)
+	}
+	stopPks := []int64{}
+	for _, node := range orderedNodes {
+		stopPks = append(stopPks, node.GetLabel())
+	}
+	return stopPks, nil
 }
 
 // UpdateRealtimeMaps updates the realtime service maps
-func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, args UpdateRealtimeMapsArgs) error {
-	stopPksSet := map[int64]bool{}
-	var stopPks []int64
-	for _, trips := range [][]Trip{args.OldTrips, args.NewTrips} {
-		for _, trip := range trips {
-			for _, stopPk := range trip.StopPks {
-				if !stopPksSet[stopPk] {
-					stopPks = append(stopPks, stopPk)
+func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, systemPk int64, routePks []int64) error {
+	configs, err := ListConfigsInSystem(ctx, querier, systemPk)
+	if err != nil {
+		return err
+	}
+	for _, routePk := range routePks {
+		tripStopPks, err := getTripStopPks(ctx, querier, routePk)
+		if err != nil {
+			return err
+		}
+
+		stopPksSeen := map[int64]bool{}
+		var allStopPks []int64
+		for _, stopPks := range tripStopPks {
+			for _, stopPk := range stopPks {
+				if stopPksSeen[stopPk] {
+					continue
 				}
-				stopPksSet[stopPk] = true
+				stopPksSeen[stopPk] = true
+				allStopPks = append(allStopPks, stopPk)
 			}
 		}
-	}
-
-	stopPkToStationPk, err := dbwrappers.MapStopPkToStationPk(ctx, querier, stopPks)
-	if err != nil {
-		return err
-	}
-
-	routePkToOldEdges := buildRealtimeMapEdges(args.OldTrips, stopPkToStationPk)
-	routePkToNewEdges := buildRealtimeMapEdges(args.NewTrips, stopPkToStationPk)
-	for routePk, oldEdges := range routePkToOldEdges {
-		newEdges := routePkToNewEdges[routePk]
-		if graph.EdgeSetsEqual(oldEdges, newEdges) {
-			delete(routePkToNewEdges, routePk)
+		stopPkToStationPk, err := dbwrappers.MapStopPkToStationPk(ctx, querier, allStopPks)
+		if err != nil {
+			return err
 		}
-	}
-	for _, routePk := range args.StaleRoutePks {
-		routePkToNewEdges[routePk] = map[graph.Edge]bool{}
-	}
 
-	routePkToStopPks := buildMaps(routePkToNewEdges)
-	configs, err := ListConfigsInSystem(ctx, querier, args.SystemPk)
-	if err != nil {
-		return err
-	}
-	for _, smc := range configs {
-		if smc.Config.Source != api.ServiceMapConfig_REALTIME {
+		edges := buildRealtimeMapEdges(tripStopPks, stopPkToStationPk)
+		mapAsStopPks, err := buildMap(edges)
+		if err != nil {
+			fmt.Println(err)
 			continue
 		}
-		if err := persistMaps(ctx, querier, &smc, routePkToStopPks); err != nil {
-			return err
+		for _, smc := range configs[api.ServiceMapConfig_REALTIME] {
+			if err := persistMap(ctx, querier, &smc, routePk, mapAsStopPks); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func buildRealtimeMapEdges(trips []Trip, stopPkToStationPk map[int64]int64) map[int64]map[graph.Edge]bool {
-	m := map[int64]map[graph.Edge]bool{}
-	for _, trip := range trips {
-		if !trip.DirectionID.Valid {
-			continue
+func getTripStopPks(ctx context.Context, querier db.Querier, routePk int64) ([][]int64, error) {
+	rows, err := querier.ListStopPksForRealtimeMap(ctx, routePk)
+	if err != nil {
+		return nil, err
+	}
+	var result [][]int64
+	var currentTripPk int64 = -1
+	var currentDirectionID bool
+	var currentStopPks []int64
+	updateResult := func() {
+		if len(currentStopPks) == 0 {
+			return
 		}
-		if _, ok := m[trip.RoutePk]; !ok {
-			m[trip.RoutePk] = map[graph.Edge]bool{}
+		if !currentDirectionID {
+			reverse(currentStopPks)
 		}
-		for i := 1; i < len(trip.StopPks); i++ {
-			var edge graph.Edge
-			switch trip.DirectionID.Bool {
-			case true:
-				edge = graph.Edge{
-					FromLabel: stopPkToStationPk[trip.StopPks[i-1]],
-					ToLabel:   stopPkToStationPk[trip.StopPks[i]],
-				}
-			case false:
-				edge = graph.Edge{
-					FromLabel: stopPkToStationPk[trip.StopPks[i]],
-					ToLabel:   stopPkToStationPk[trip.StopPks[i-1]],
-				}
+		result = append(result, currentStopPks)
+		currentStopPks = []int64{}
+	}
+	for _, row := range rows {
+		if row.TripPk != currentTripPk {
+			updateResult()
+		}
+		currentTripPk = row.TripPk
+		// The query guarantees that the direction ID column is not null
+		currentDirectionID = row.DirectionID.Bool
+		currentStopPks = append(currentStopPks, row.StopPk)
+	}
+	updateResult()
+	return result, nil
+}
+
+func reverse(s []int64) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
+func buildRealtimeMapEdges(tripStopPks [][]int64, stopPkToStationPk map[int64]int64) map[graph.Edge]bool {
+	m := map[graph.Edge]bool{}
+	for _, stopPks := range tripStopPks {
+		for i := 1; i < len(stopPks); i++ {
+			edge := graph.Edge{
+				FromLabel: stopPkToStationPk[stopPks[i-1]],
+				ToLabel:   stopPkToStationPk[stopPks[i]],
 			}
-			m[trip.RoutePk][edge] = true
+			m[edge] = true
 		}
 	}
 	return m
@@ -423,13 +430,14 @@ type Config struct {
 	Config *api.ServiceMapConfig
 }
 
-// ListConfigsInSystem lists all of the service map configs in the provided system
-func ListConfigsInSystem(ctx context.Context, querier db.Querier, systemPk int64) ([]Config, error) {
+// ListConfigsInSystem lists all of the service map configs in the provided system,
+// grouped by source.
+func ListConfigsInSystem(ctx context.Context, querier db.Querier, systemPk int64) (map[api.ServiceMapConfig_Source][]Config, error) {
 	rawConfigs, err := querier.ListServiceMapConfigsInSystem(ctx, systemPk)
 	if err != nil {
 		return nil, err
 	}
-	var configs []Config
+	configs := map[api.ServiceMapConfig_Source][]Config{}
 	for _, rawConfig := range rawConfigs {
 		smc := Config{
 			Pk:     rawConfig.Pk,
@@ -439,7 +447,7 @@ func ListConfigsInSystem(ctx context.Context, querier db.Querier, systemPk int64
 			log.Printf("Invalid service map config, skipping: %+v", err)
 			continue
 		}
-		configs = append(configs, smc)
+		configs[smc.Config.GetSource()] = append(configs[smc.Config.GetSource()], smc)
 	}
 	return configs, nil
 }

@@ -90,6 +90,7 @@ type Querier interface {
 	ListServiceMapsForRoutes(ctx context.Context, routePks []int64) ([]ListServiceMapsForRoutesRow, error)
 	ListServiceMapsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsForStopsRow, error)
 	ListStopHeadsignRulesForStops(ctx context.Context, stopPks []int64) ([]StopHeadsignRule, error)
+	ListStopPksForRealtimeMap(ctx context.Context, routePk int64) ([]ListStopPksForRealtimeMapRow, error)
 	ListStopPreviews(ctx context.Context, stopPks []int64) ([]ListStopPreviewsRow, error)
 	ListStopTimesAtStops(ctx context.Context, stopPks []int64) ([]ListStopTimesAtStopsRow, error)
 	ListStopsInStopTree(ctx context.Context, pk int64) ([]Stop, error)

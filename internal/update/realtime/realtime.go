@@ -60,7 +60,6 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		return err
 	}
 
-	var serviceMapTrips []servicemaps.Trip
 	processedIds := map[dbwrappers.TripUID]bool{}
 
 	stopHeadsignMatcher, err := NewStopHeadsignMatcher(ctx, updateCtx.Querier, stopIDToPk, trips)
@@ -114,10 +113,6 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 				stopSequenceToStopTimePk[stopTime.StopSequence] = stopTime.Pk
 			}
 		}
-		serviceMapTrip := servicemaps.Trip{
-			RoutePk:     routePk,
-			DirectionID: convert.DirectionID(trip.ID.DirectionID),
-		}
 		for _, stopTime := range trip.StopTimeUpdates {
 			if stopTime.StopID == nil {
 				continue
@@ -130,7 +125,6 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 				continue
 			}
 			headsign := stopHeadsignMatcher.Match(stopPk, stopTime.NyctTrack)
-			serviceMapTrip.StopPks = append(serviceMapTrip.StopPks, stopPk)
 			pk, ok := stopSequenceToStopTimePk[int32(*stopTime.StopSequence)]
 			if ok {
 				if err := updateCtx.Querier.UpdateTripStopTime(ctx, db.UpdateTripStopTimeParams{
@@ -167,8 +161,6 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 				}
 			}
 		}
-		serviceMapTrips = append(serviceMapTrips, serviceMapTrip)
-
 		currentStopSequence := int32(math.MaxInt32)
 		for _, stopTime := range trip.StopTimeUpdates {
 			if stopTime.StopSequence != nil {
@@ -202,36 +194,21 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		return err
 	}
 
-	routePksSet := map[int64]bool{}
+	allRoutePksSet := map[int64]bool{}
 	for _, routePk := range routePks {
-		routePksSet[routePk] = true
+		allRoutePksSet[routePk] = true
+	}
+	for _, routePk := range potentiallyStaleRoutePks {
+		allRoutePksSet[routePk] = true
 	}
 	var staleRoutePks []int64
-	for _, routePk := range potentiallyStaleRoutePks {
-		if !routePksSet[routePk] {
-			staleRoutePks = append(staleRoutePks, routePk)
-		}
+	for routePk := range allRoutePksSet {
+		staleRoutePks = append(staleRoutePks, routePk)
 	}
 
-	var oldServiceMapTrips []servicemaps.Trip
-	for _, trip := range existingTrips {
-		var stopPks []int64
-		for _, stopTime := range trip.StopTimes {
-			stopPks = append(stopPks, stopTime.StopPk)
-		}
-		oldServiceMapTrips = append(oldServiceMapTrips, servicemaps.Trip{
-			RoutePk:     trip.RoutePk,
-			DirectionID: trip.DirectionID,
-			StopPks:     stopPks,
-		})
-	}
-
-	if err := servicemaps.UpdateRealtimeMaps(ctx, updateCtx.Querier, servicemaps.UpdateRealtimeMapsArgs{
-		SystemPk:      updateCtx.SystemPk,
-		OldTrips:      oldServiceMapTrips,
-		NewTrips:      serviceMapTrips,
-		StaleRoutePks: staleRoutePks,
-	}); err != nil {
+	// TODO: try not to do all routePks.
+	// Only add routePks if there is a trip that (a) was deleted or (b) had its list of stops changed
+	if err := servicemaps.UpdateRealtimeMaps(ctx, updateCtx.Querier, updateCtx.SystemPk, staleRoutePks); err != nil {
 		return err
 	}
 	return nil
