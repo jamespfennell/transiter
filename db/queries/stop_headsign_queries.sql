@@ -10,3 +10,8 @@ DELETE FROM stop_headsign_rule
 USING feed_update
 WHERE feed_update.pk = stop_headsign_rule.source_pk
 AND feed_update.feed_pk = sqlc.arg(source_pk);
+
+-- name: ListStopHeadsignRulesForStops :many
+SELECT * FROM stop_headsign_rule
+WHERE stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
+ORDER BY priority ASC;

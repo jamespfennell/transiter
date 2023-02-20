@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/convert"
+	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/servicemaps"
 	"github.com/jamespfennell/transiter/internal/update/common"
@@ -46,7 +47,7 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Stat
 }
 
 func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencies []gtfs.Agency) (map[string]int64, error) {
-	idToPk, err := buildAgencyIDToPkMap(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	idToPk, err := dbwrappers.MapAgencyIDToPk(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencie
 }
 
 func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []gtfs.Route, agencyIDToPk map[string]int64) (map[string]int64, error) {
-	idToPk, err := buildRouteIDToPkMap(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	idToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +163,7 @@ func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []
 }
 
 func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gtfs.Stop) (map[string]int64, error) {
-	idToPk, err := buildStopIDToPkMap(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	idToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +236,7 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 		if !ok {
 			continue
 		}
-		if err := updateCtx.Querier.UpdateStopParent(ctx, db.UpdateStopParentParams{
+		if err := updateCtx.Querier.UpdateStop_Parent(ctx, db.UpdateStop_ParentParams{
 			Pk: idToPk[stop.Id],
 			ParentStopPk: sql.NullInt64{
 				Int64: parentStopPk,
@@ -276,42 +277,6 @@ func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transf
 		}
 	}
 	return nil
-}
-
-func buildAgencyIDToPkMap(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
-	idToPk := map[string]int64{}
-	rows, err := querier.MapAgencyPkToIdInSystem(ctx, systemPk)
-	if err != nil {
-		return nil, err
-	}
-	for _, row := range rows {
-		idToPk[row.ID] = row.Pk
-	}
-	return idToPk, nil
-}
-
-func buildRouteIDToPkMap(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
-	idToPk := map[string]int64{}
-	rows, err := querier.MapRoutePkToIdInSystem(ctx, systemPk)
-	if err != nil {
-		return nil, err
-	}
-	for _, row := range rows {
-		idToPk[row.ID] = row.Pk
-	}
-	return idToPk, nil
-}
-
-func buildStopIDToPkMap(ctx context.Context, querier db.Querier, systemPk int64) (map[string]int64, error) {
-	idToPk := map[string]int64{}
-	rows, err := querier.MapStopPkToIdInSystem(ctx, systemPk)
-	if err != nil {
-		return nil, err
-	}
-	for _, row := range rows {
-		idToPk[row.ID] = row.Pk
-	}
-	return idToPk, nil
 }
 
 func convertGpsData(f *float64) pgtype.Numeric {

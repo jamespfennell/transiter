@@ -98,11 +98,19 @@ func (q *Queries) EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHea
 }
 
 const getRoute = `-- name: GetRoute :one
-SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE pk = $1
+SELECT route.pk, route.id, route.system_pk, route.source_pk, route.color, route.text_color, route.short_name, route.long_name, route.description, route.url, route.sort_order, route.type, route.agency_pk, route.continuous_drop_off, route.continuous_pickup FROM route
+    INNER JOIN system ON route.system_pk = system.pk
+    WHERE system.pk = $1
+    AND route.id = $2
 `
 
-func (q *Queries) GetRoute(ctx context.Context, pk int64) (Route, error) {
-	row := q.db.QueryRow(ctx, getRoute, pk)
+type GetRouteParams struct {
+	SystemPk int64
+	RouteID  string
+}
+
+func (q *Queries) GetRoute(ctx context.Context, arg GetRouteParams) (Route, error) {
+	row := q.db.QueryRow(ctx, getRoute, arg.SystemPk, arg.RouteID)
 	var i Route
 	err := row.Scan(
 		&i.Pk,
@@ -175,29 +183,69 @@ func (q *Queries) InsertRoute(ctx context.Context, arg InsertRouteParams) (int64
 	return pk, err
 }
 
-const listRoutePreviews = `-- name: ListRoutePreviews :many
+const listRoutes = `-- name: ListRoutes :many
+SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE system_pk = $1 ORDER BY id
+`
+
+func (q *Queries) ListRoutes(ctx context.Context, systemPk int64) ([]Route, error) {
+	rows, err := q.db.Query(ctx, listRoutes, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Route
+	for rows.Next() {
+		var i Route
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.Color,
+			&i.TextColor,
+			&i.ShortName,
+			&i.LongName,
+			&i.Description,
+			&i.Url,
+			&i.SortOrder,
+			&i.Type,
+			&i.AgencyPk,
+			&i.ContinuousDropOff,
+			&i.ContinuousPickup,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRoutesByPk = `-- name: ListRoutesByPk :many
 SELECT route.pk, route.id id, route.color, system.id system_id
 FROM route
     INNER JOIN system on route.system_pk = system.pk
 WHERE route.pk = ANY($1::bigint[])
 `
 
-type ListRoutePreviewsRow struct {
+type ListRoutesByPkRow struct {
 	Pk       int64
 	ID       string
 	Color    string
 	SystemID string
 }
 
-func (q *Queries) ListRoutePreviews(ctx context.Context, routePks []int64) ([]ListRoutePreviewsRow, error) {
-	rows, err := q.db.Query(ctx, listRoutePreviews, routePks)
+func (q *Queries) ListRoutesByPk(ctx context.Context, routePks []int64) ([]ListRoutesByPkRow, error) {
+	rows, err := q.db.Query(ctx, listRoutesByPk, routePks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListRoutePreviewsRow
+	var items []ListRoutesByPkRow
 	for rows.Next() {
-		var i ListRoutePreviewsRow
+		var i ListRoutesByPkRow
 		if err := rows.Scan(
 			&i.Pk,
 			&i.ID,
@@ -214,25 +262,26 @@ func (q *Queries) ListRoutePreviews(ctx context.Context, routePks []int64) ([]Li
 	return items, nil
 }
 
-const mapRoutePkToIdInSystem = `-- name: MapRoutePkToIdInSystem :many
-SELECT pk, id FROM route WHERE system_pk = $1
+const listRoutesInAgency = `-- name: ListRoutesInAgency :many
+SELECT route.id, route.color FROM route
+WHERE route.agency_pk = $1
 `
 
-type MapRoutePkToIdInSystemRow struct {
-	Pk int64
-	ID string
+type ListRoutesInAgencyRow struct {
+	ID    string
+	Color string
 }
 
-func (q *Queries) MapRoutePkToIdInSystem(ctx context.Context, systemPk int64) ([]MapRoutePkToIdInSystemRow, error) {
-	rows, err := q.db.Query(ctx, mapRoutePkToIdInSystem, systemPk)
+func (q *Queries) ListRoutesInAgency(ctx context.Context, agencyPk int64) ([]ListRoutesInAgencyRow, error) {
+	rows, err := q.db.Query(ctx, listRoutesInAgency, agencyPk)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MapRoutePkToIdInSystemRow
+	var items []ListRoutesInAgencyRow
 	for rows.Next() {
-		var i MapRoutePkToIdInSystemRow
-		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
+		var i ListRoutesInAgencyRow
+		if err := rows.Scan(&i.ID, &i.Color); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -243,32 +292,36 @@ func (q *Queries) MapRoutePkToIdInSystem(ctx context.Context, systemPk int64) ([
 	return items, nil
 }
 
-const mapRoutesInSystem = `-- name: MapRoutesInSystem :many
+const mapRouteIDToPkInSystem = `-- name: MapRouteIDToPkInSystem :many
 SELECT pk, id from route
 WHERE
     system_pk = $1
-    AND id = ANY($2::text[])
+    AND (
+        NOT $2::bool
+        OR id = ANY($3::text[])
+    )
 `
 
-type MapRoutesInSystemParams struct {
-	SystemPk int64
-	RouteIds []string
+type MapRouteIDToPkInSystemParams struct {
+	SystemPk        int64
+	FilterByRouteID bool
+	RouteIds        []string
 }
 
-type MapRoutesInSystemRow struct {
+type MapRouteIDToPkInSystemRow struct {
 	Pk int64
 	ID string
 }
 
-func (q *Queries) MapRoutesInSystem(ctx context.Context, arg MapRoutesInSystemParams) ([]MapRoutesInSystemRow, error) {
-	rows, err := q.db.Query(ctx, mapRoutesInSystem, arg.SystemPk, arg.RouteIds)
+func (q *Queries) MapRouteIDToPkInSystem(ctx context.Context, arg MapRouteIDToPkInSystemParams) ([]MapRouteIDToPkInSystemRow, error) {
+	rows, err := q.db.Query(ctx, mapRouteIDToPkInSystem, arg.SystemPk, arg.FilterByRouteID, arg.RouteIds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MapRoutesInSystemRow
+	var items []MapRouteIDToPkInSystemRow
 	for rows.Next() {
-		var i MapRoutesInSystemRow
+		var i MapRouteIDToPkInSystemRow
 		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
 			return nil, err
 		}

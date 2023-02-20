@@ -56,6 +56,73 @@ func (q *Queries) DeleteTripStopTimes(ctx context.Context, pks []int64) error {
 	return err
 }
 
+const getDestinationsForTrips = `-- name: GetDestinationsForTrips :many
+WITH last_stop_sequence AS (
+  SELECT trip_pk, MAX(stop_sequence) as stop_sequence
+    FROM trip_stop_time
+    WHERE trip_pk = ANY($1::bigint[])
+    GROUP BY trip_pk
+)
+SELECT lss.trip_pk, stop.pk destination_pk
+  FROM last_stop_sequence lss
+  INNER JOIN trip_stop_time
+    ON lss.trip_pk = trip_stop_time.trip_pk
+    AND lss.stop_sequence = trip_stop_time.stop_sequence
+  INNER JOIN stop
+    ON trip_stop_time.stop_pk = stop.pk
+`
+
+type GetDestinationsForTripsRow struct {
+	TripPk        int64
+	DestinationPk int64
+}
+
+func (q *Queries) GetDestinationsForTrips(ctx context.Context, tripPks []int64) ([]GetDestinationsForTripsRow, error) {
+	rows, err := q.db.Query(ctx, getDestinationsForTrips, tripPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDestinationsForTripsRow
+	for rows.Next() {
+		var i GetDestinationsForTripsRow
+		if err := rows.Scan(&i.TripPk, &i.DestinationPk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getTrip = `-- name: GetTrip :one
+SELECT pk, id, route_pk, source_pk, direction_id, started_at, gtfs_hash FROM trip
+WHERE trip.id = $1
+    AND trip.route_pk = $2
+`
+
+type GetTripParams struct {
+	TripID  string
+	RoutePk int64
+}
+
+func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (Trip, error) {
+	row := q.db.QueryRow(ctx, getTrip, arg.TripID, arg.RoutePk)
+	var i Trip
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.RoutePk,
+		&i.SourcePk,
+		&i.DirectionID,
+		&i.StartedAt,
+		&i.GtfsHash,
+	)
+	return i, err
+}
+
 const insertTrip = `-- name: InsertTrip :one
 INSERT INTO trip
     (id, route_pk, source_pk, direction_id, started_at, gtfs_hash)
@@ -128,6 +195,68 @@ func (q *Queries) InsertTripStopTime(ctx context.Context, arg InsertTripStopTime
 	return err
 }
 
+const listStopsTimesForTrip = `-- name: ListStopsTimesForTrip :many
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, stop.id stop_id, stop.name stop_name
+FROM trip_stop_time
+    INNER JOIN stop ON trip_stop_time.stop_pk = stop.pk
+WHERE trip_stop_time.trip_pk = $1
+ORDER BY trip_stop_time.stop_sequence ASC
+`
+
+type ListStopsTimesForTripRow struct {
+	Pk                   int64
+	StopPk               int64
+	TripPk               int64
+	ArrivalTime          sql.NullTime
+	ArrivalDelay         sql.NullInt32
+	ArrivalUncertainty   sql.NullInt32
+	DepartureTime        sql.NullTime
+	DepartureDelay       sql.NullInt32
+	DepartureUncertainty sql.NullInt32
+	StopSequence         int32
+	Track                sql.NullString
+	Headsign             sql.NullString
+	Past                 bool
+	StopID               string
+	StopName             sql.NullString
+}
+
+func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]ListStopsTimesForTripRow, error) {
+	rows, err := q.db.Query(ctx, listStopsTimesForTrip, tripPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStopsTimesForTripRow
+	for rows.Next() {
+		var i ListStopsTimesForTripRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.StopPk,
+			&i.TripPk,
+			&i.ArrivalTime,
+			&i.ArrivalDelay,
+			&i.ArrivalUncertainty,
+			&i.DepartureTime,
+			&i.DepartureDelay,
+			&i.DepartureUncertainty,
+			&i.StopSequence,
+			&i.Track,
+			&i.Headsign,
+			&i.Past,
+			&i.StopID,
+			&i.StopName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTripStopTimesForUpdate = `-- name: ListTripStopTimesForUpdate :many
 SELECT pk, trip_pk, stop_pk, stop_sequence, past FROM trip_stop_time
 WHERE trip_pk = ANY($1::bigint[])
@@ -157,6 +286,40 @@ func (q *Queries) ListTripStopTimesForUpdate(ctx context.Context, tripPks []int6
 			&i.StopPk,
 			&i.StopSequence,
 			&i.Past,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTrips = `-- name: ListTrips :many
+SELECT pk, id, route_pk, source_pk, direction_id, started_at, gtfs_hash FROM trip
+WHERE trip.route_pk = $1
+ORDER BY trip.id
+`
+
+func (q *Queries) ListTrips(ctx context.Context, routePk int64) ([]Trip, error) {
+	rows, err := q.db.Query(ctx, listTrips, routePk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Trip
+	for rows.Next() {
+		var i Trip
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.RoutePk,
+			&i.SourcePk,
+			&i.DirectionID,
+			&i.StartedAt,
+			&i.GtfsHash,
 		); err != nil {
 			return nil, err
 		}

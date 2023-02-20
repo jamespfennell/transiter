@@ -1,6 +1,3 @@
--- name: MapStopPkToIdInSystem :many
-SELECT pk, id FROM stop WHERE system_pk = sqlc.arg(system_pk);
-
 -- name: InsertStop :one
 INSERT INTO stop
     (id, system_pk, source_pk, name, longitude, latitude,
@@ -30,7 +27,7 @@ UPDATE stop SET
 WHERE
     pk = sqlc.arg(pk);
 
--- name: UpdateStopParent :exec
+-- name: UpdateStop_Parent :exec
 UPDATE stop SET
     parent_stop_pk = sqlc.arg(parent_stop_pk)
 WHERE
@@ -45,45 +42,74 @@ WHERE
     AND feed_update.pk != sqlc.arg(update_pk)
 RETURNING stop.id;
 
--- name: MapStopIDToStationPk :many
+-- name: ListStops :many
+SELECT * FROM stop
+WHERE system_pk = sqlc.arg(system_pk)
+  AND id >= sqlc.arg(first_stop_id)
+  AND (
+    NOT sqlc.arg(only_return_specified_ids)::bool OR
+    id = ANY(sqlc.arg(stop_ids)::text[])
+  )
+ORDER BY id
+LIMIT sqlc.arg(num_stops);
+
+-- name: ListStops_Geographic :many
+WITH distance AS (
+  SELECT 
+  pk stop_pk,
+  (6371 * acos(cos(radians(latitude)) * cos(radians(sqlc.arg(latitude)::numeric)) * cos(radians(sqlc.arg(longitude)::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians(sqlc.arg(latitude)::numeric)))) val
+  FROM stop
+  WHERE stop.system_pk = sqlc.arg(system_pk)
+)
+SELECT stop.* FROM stop
+INNER JOIN distance ON stop.pk = distance.stop_pk
+AND distance.val <= sqlc.arg(max_distance)::numeric
+ORDER BY distance.val
+LIMIT sqlc.arg(max_results);
+
+-- name: GetStop :one
+SELECT stop.* FROM stop
+    INNER JOIN system ON stop.system_pk = system.pk
+    WHERE system.id = sqlc.arg(system_id)
+    AND stop.id = sqlc.arg(stop_id);
+
+-- name: ListTripStopTimesByStops :many
+SELECT trip_stop_time.*, trip.*, vehicle.id vehicle_id FROM trip_stop_time
+    INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
+    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+    WHERE trip_stop_time.stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
+    AND NOT trip_stop_time.past
+    ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time;
+
+-- name: ListStopsByPk :many
+SELECT stop.pk, stop.id stop_id, stop.name, system.id system_id
+FROM stop
+    INNER JOIN system on stop.system_pk = system.pk
+WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]);
+
+-- name: MapStopPkToChildPks :many
+SELECT parent_stop_pk parent_pk, pk child_pk
+FROM stop
+WHERE stop.parent_stop_pk = ANY(sqlc.arg(stop_pks)::bigint[]);
+
+-- name: MapStopIDAndPkToStationPk :many
 WITH RECURSIVE 
 ancestor AS (
 	SELECT 
     id stop_id, 
-    pk station_pk, 
-    parent_stop_pk,
-    (type = 'STATION') is_station 
-    FROM stop
-	  WHERE	stop.system_pk = sqlc.arg(system_pk)
-	UNION
-	SELECT
-    child.stop_id stop_id, 
-    parent.pk station_pk, 
-    parent.parent_stop_pk, 
-    (parent.type = 'STATION') is_station 
-		FROM stop parent
-		INNER JOIN ancestor child 
-    ON child.parent_stop_pk = parent.pk
-    AND NOT child.is_station
-)
-SELECT stop_id, station_pk
-  FROM ancestor
-  WHERE parent_stop_pk IS NULL
-  OR is_station;
-
-
--- name: MapStopPkToStationPk :many
-WITH RECURSIVE 
-ancestor AS (
-	SELECT 
     pk stop_pk,
     pk station_pk, 
     parent_stop_pk,
     (type = 'STATION') is_station 
     FROM stop
-        WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
+        WHERE stop.system_pk = sqlc.arg(system_pk)
+        AND (
+            NOT sqlc.arg(filter_by_stop_pk)::bool
+            OR stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
+        )
 	UNION
 	SELECT
+    child.stop_id stop_id,
     child.stop_pk stop_pk,
     parent.pk station_pk, 
     parent.parent_stop_pk, 
@@ -93,11 +119,10 @@ ancestor AS (
     ON child.parent_stop_pk = parent.pk
     AND NOT child.is_station
 )
-SELECT stop_pk, station_pk
+SELECT stop_id, stop_pk, station_pk
   FROM ancestor
   WHERE parent_stop_pk IS NULL
   OR is_station;
-
 
 -- name: MapStopPkToDescendentPks :many
 WITH RECURSIVE descendent AS (
@@ -116,21 +141,11 @@ WITH RECURSIVE descendent AS (
 )
 SELECT root_stop_pk, descendent_stop_pk FROM descendent;
 
-
--- name: MapStopsInSystem :many
+-- name: MapStopIDToPk :many
 SELECT pk, id from stop
 WHERE
     system_pk = sqlc.arg(system_pk)
-    AND id = ANY(sqlc.arg(stop_ids)::text[]);
-
-
--- name: ListStopPreviews :many
-SELECT stop.pk, stop.id stop_id, stop.name, system.id system_id
-FROM stop
-    INNER JOIN system on stop.system_pk = system.pk
-WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[]);
-
--- name: ListChildrenForStops :many
-SELECT parent_stop_pk parent_pk, pk child_pk
-FROM stop
-WHERE stop.parent_stop_pk = ANY(sqlc.arg(stop_pks)::bigint[]);
+    AND (
+        NOT sqlc.arg(filter_by_stop_id)::bool
+        OR id = ANY(sqlc.arg(stop_ids)::text[])
+    );

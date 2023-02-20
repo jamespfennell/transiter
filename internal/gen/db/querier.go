@@ -34,20 +34,17 @@ type Querier interface {
 	EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHeadwaysForRoutesParams) ([]EstimateHeadwaysForRoutesRow, error)
 	FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdateParams) error
 	GarbageCollectFeedUpdates(ctx context.Context, activeFeedUpdatePks []int64) (int64, error)
-	GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error)
+	GetAgency(ctx context.Context, arg GetAgencyParams) (Agency, error)
 	GetAlertInSystem(ctx context.Context, arg GetAlertInSystemParams) (Alert, error)
 	GetDestinationsForTrips(ctx context.Context, tripPks []int64) ([]GetDestinationsForTripsRow, error)
 	GetFeed(ctx context.Context, arg GetFeedParams) (Feed, error)
 	GetFeedForUpdate(ctx context.Context, updatePk int64) (Feed, error)
 	GetFeedUpdate(ctx context.Context, pk int64) (FeedUpdate, error)
 	GetLastFeedUpdateContentHash(ctx context.Context, feedPk int64) (sql.NullString, error)
-	GetRoute(ctx context.Context, pk int64) (Route, error)
-	GetRouteInSystem(ctx context.Context, arg GetRouteInSystemParams) (Route, error)
-	GetStopInSystem(ctx context.Context, arg GetStopInSystemParams) (Stop, error)
-	// TODO: move all queries from this file in the $x_queries.sql files.
+	GetRoute(ctx context.Context, arg GetRouteParams) (Route, error)
+	GetStop(ctx context.Context, arg GetStopParams) (Stop, error)
 	GetSystem(ctx context.Context, id string) (System, error)
 	GetTrip(ctx context.Context, arg GetTripParams) (Trip, error)
-	GetTripByPk(ctx context.Context, pk int64) (Trip, error)
 	InsertAgency(ctx context.Context, arg InsertAgencyParams) (int64, error)
 	InsertAlert(ctx context.Context, arg InsertAlertParams) (int64, error)
 	InsertAlertActivePeriod(ctx context.Context, arg InsertAlertActivePeriodParams) error
@@ -72,18 +69,15 @@ type Querier interface {
 	ListActiveAlertsForStops(ctx context.Context, arg ListActiveAlertsForStopsParams) ([]ListActiveAlertsForStopsRow, error)
 	ListActiveFeedUpdatePks(ctx context.Context) ([]int64, error)
 	ListActivePeriodsForAlerts(ctx context.Context, pks []int64) ([]ListActivePeriodsForAlertsRow, error)
+	ListAgencies(ctx context.Context, systemPk int64) ([]Agency, error)
 	ListAgenciesByPk(ctx context.Context, pk []int64) ([]Agency, error)
-	ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]Agency, error)
 	ListAlertPksAndHashes(ctx context.Context, arg ListAlertPksAndHashesParams) ([]ListAlertPksAndHashesRow, error)
 	ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Alert, error)
 	ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlertsInSystemAndByIDsParams) ([]Alert, error)
-	ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error)
-	ListChildrenForStops(ctx context.Context, stopPks []int64) ([]ListChildrenForStopsRow, error)
 	ListFeeds(ctx context.Context, systemPk int64) ([]Feed, error)
-	ListRoutePreviews(ctx context.Context, routePks []int64) ([]ListRoutePreviewsRow, error)
-	ListRoutesByPk(ctx context.Context, routePks []int64) ([]Route, error)
+	ListRoutes(ctx context.Context, systemPk int64) ([]Route, error)
+	ListRoutesByPk(ctx context.Context, routePks []int64) ([]ListRoutesByPkRow, error)
 	ListRoutesInAgency(ctx context.Context, agencyPk int64) ([]ListRoutesInAgencyRow, error)
-	ListRoutesInSystem(ctx context.Context, systemPk int64) ([]Route, error)
 	ListServiceMapConfigsInSystem(ctx context.Context, systemPk int64) ([]ServiceMapConfig, error)
 	ListServiceMapsConfigIDsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsConfigIDsForStopsRow, error)
 	// TODO: make this better?
@@ -91,28 +85,24 @@ type Querier interface {
 	ListServiceMapsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsForStopsRow, error)
 	ListStopHeadsignRulesForStops(ctx context.Context, stopPks []int64) ([]StopHeadsignRule, error)
 	ListStopPksForRealtimeMap(ctx context.Context, routePk int64) ([]ListStopPksForRealtimeMapRow, error)
-	ListStopPreviews(ctx context.Context, stopPks []int64) ([]ListStopPreviewsRow, error)
-	ListStopTimesAtStops(ctx context.Context, stopPks []int64) ([]ListStopTimesAtStopsRow, error)
-	ListStopsInStopTree(ctx context.Context, pk int64) ([]Stop, error)
-	ListStopsInSystem(ctx context.Context, arg ListStopsInSystemParams) ([]Stop, error)
-	ListStopsInSystemGeographic(ctx context.Context, arg ListStopsInSystemGeographicParams) ([]Stop, error)
+	ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, error)
+	ListStopsByPk(ctx context.Context, stopPks []int64) ([]ListStopsByPkRow, error)
 	ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]ListStopsTimesForTripRow, error)
-	ListSystemIDs(ctx context.Context) ([]string, error)
+	ListStops_Geographic(ctx context.Context, arg ListStops_GeographicParams) ([]Stop, error)
 	ListSystems(ctx context.Context) ([]System, error)
 	ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]Transfer, error)
 	ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) ([]ListTransfersInSystemRow, error)
+	ListTripStopTimesByStops(ctx context.Context, stopPks []int64) ([]ListTripStopTimesByStopsRow, error)
 	ListTripStopTimesForUpdate(ctx context.Context, tripPks []int64) ([]ListTripStopTimesForUpdateRow, error)
 	ListTrips(ctx context.Context, routePk int64) ([]Trip, error)
 	ListTripsForUpdate(ctx context.Context, routePks []int64) ([]ListTripsForUpdateRow, error)
 	ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUpdate, error)
-	MapAgencyPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdInSystemRow, error)
-	MapRoutePkToIdInSystem(ctx context.Context, systemPk int64) ([]MapRoutePkToIdInSystemRow, error)
-	MapRoutesInSystem(ctx context.Context, arg MapRoutesInSystemParams) ([]MapRoutesInSystemRow, error)
-	MapStopIDToStationPk(ctx context.Context, systemPk int64) ([]MapStopIDToStationPkRow, error)
+	MapAgencyPkToId(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdRow, error)
+	MapRouteIDToPkInSystem(ctx context.Context, arg MapRouteIDToPkInSystemParams) ([]MapRouteIDToPkInSystemRow, error)
+	MapStopIDAndPkToStationPk(ctx context.Context, arg MapStopIDAndPkToStationPkParams) ([]MapStopIDAndPkToStationPkRow, error)
+	MapStopIDToPk(ctx context.Context, arg MapStopIDToPkParams) ([]MapStopIDToPkRow, error)
+	MapStopPkToChildPks(ctx context.Context, stopPks []int64) ([]MapStopPkToChildPksRow, error)
 	MapStopPkToDescendentPks(ctx context.Context, stopPks []int64) ([]MapStopPkToDescendentPksRow, error)
-	MapStopPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapStopPkToIdInSystemRow, error)
-	MapStopPkToStationPk(ctx context.Context, stopPks []int64) ([]MapStopPkToStationPkRow, error)
-	MapStopsInSystem(ctx context.Context, arg MapStopsInSystemParams) ([]MapStopsInSystemRow, error)
 	MarkAlertsFresh(ctx context.Context, arg MarkAlertsFreshParams) error
 	MarkTripStopTimesPast(ctx context.Context, arg MarkTripStopTimesPastParams) error
 	UpdateAgency(ctx context.Context, arg UpdateAgencyParams) error
@@ -120,7 +110,7 @@ type Querier interface {
 	UpdateRoute(ctx context.Context, arg UpdateRouteParams) error
 	UpdateServiceMapConfig(ctx context.Context, arg UpdateServiceMapConfigParams) error
 	UpdateStop(ctx context.Context, arg UpdateStopParams) error
-	UpdateStopParent(ctx context.Context, arg UpdateStopParentParams) error
+	UpdateStop_Parent(ctx context.Context, arg UpdateStop_ParentParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
 	UpdateSystemStatus(ctx context.Context, arg UpdateSystemStatusParams) error
 	UpdateTrip(ctx context.Context, arg UpdateTripParams) error

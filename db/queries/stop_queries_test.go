@@ -60,7 +60,7 @@ func TestMapStopIDToStationPk(t *testing.T) {
 				stop := system.NewStop(id, db.InsertStopParams{
 					Type: t.String(),
 				})
-				err := q.UpdateStopParent(context.Background(), db.UpdateStopParentParams{
+				err := q.UpdateStop_Parent(context.Background(), db.UpdateStop_ParentParams{
 					Pk:           stop.Pk,
 					ParentStopPk: convert.NullInt64(parentPk),
 				})
@@ -86,7 +86,7 @@ func TestMapStopPkToDescendentPks(t *testing.T) {
 		stop := system.NewStop(id, db.InsertStopParams{
 			Type: t.String(),
 		})
-		err := q.UpdateStopParent(context.Background(), db.UpdateStopParentParams{
+		err := q.UpdateStop_Parent(context.Background(), db.UpdateStop_ParentParams{
 			Pk:           stop.Pk,
 			ParentStopPk: convert.NullInt64(parentPk),
 		})

@@ -59,3 +59,107 @@ func (q *Queries) InsertTransfer(ctx context.Context, arg InsertTransferParams) 
 	)
 	return err
 }
+
+const listTransfersFromStops = `-- name: ListTransfersFromStops :many
+  SELECT transfer.pk, transfer.source_pk, transfer.config_source_pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.distance
+  FROM transfer
+  WHERE transfer.from_stop_pk = ANY($1::bigint[])
+`
+
+func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]Transfer, error) {
+	rows, err := q.db.Query(ctx, listTransfersFromStops, fromStopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Transfer
+	for rows.Next() {
+		var i Transfer
+		if err := rows.Scan(
+			&i.Pk,
+			&i.SourcePk,
+			&i.ConfigSourcePk,
+			&i.SystemPk,
+			&i.FromStopPk,
+			&i.ToStopPk,
+			&i.Type,
+			&i.MinTransferTime,
+			&i.Distance,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTransfersInSystem = `-- name: ListTransfersInSystem :many
+SELECT
+    transfer.pk, transfer.source_pk, transfer.config_source_pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.distance,
+    from_stop.id from_stop_id, from_stop.name from_stop_name, from_system.id from_system_id,
+    to_stop.id to_stop_id, to_stop.name to_stop_name, to_system.id to_system_id
+FROM transfer
+    INNER JOIN stop from_stop ON from_stop.pk = transfer.from_stop_pk
+    INNER JOIN system from_system ON from_stop.system_pk = from_system.pk
+    INNER JOIN stop to_stop ON to_stop.pk = transfer.to_stop_pk
+    INNER JOIN system to_system ON to_stop.system_pk = to_system.pk
+WHERE transfer.system_pk = $1
+ORDER BY transfer.pk
+`
+
+type ListTransfersInSystemRow struct {
+	Pk              int64
+	SourcePk        sql.NullInt64
+	ConfigSourcePk  sql.NullInt64
+	SystemPk        sql.NullInt64
+	FromStopPk      int64
+	ToStopPk        int64
+	Type            string
+	MinTransferTime sql.NullInt32
+	Distance        sql.NullInt32
+	FromStopID      string
+	FromStopName    sql.NullString
+	FromSystemID    string
+	ToStopID        string
+	ToStopName      sql.NullString
+	ToSystemID      string
+}
+
+func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk sql.NullInt64) ([]ListTransfersInSystemRow, error) {
+	rows, err := q.db.Query(ctx, listTransfersInSystem, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTransfersInSystemRow
+	for rows.Next() {
+		var i ListTransfersInSystemRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.SourcePk,
+			&i.ConfigSourcePk,
+			&i.SystemPk,
+			&i.FromStopPk,
+			&i.ToStopPk,
+			&i.Type,
+			&i.MinTransferTime,
+			&i.Distance,
+			&i.FromStopID,
+			&i.FromStopName,
+			&i.FromSystemID,
+			&i.ToStopID,
+			&i.ToStopName,
+			&i.ToSystemID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

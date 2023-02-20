@@ -8,13 +8,13 @@ import (
 )
 
 func Entrypoint(ctx context.Context, r *Context, req *api.EntrypointRequest) (*api.EntrypointReply, error) {
-	systemIDs, err := r.Querier.ListSystemIDs(ctx)
+	systemIDs, err := r.Querier.ListSystems(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var systems []*api.System_Reference
-	for _, id := range systemIDs {
-		systems = append(systems, r.Reference.System(id))
+	for _, system := range systemIDs {
+		systems = append(systems, r.Reference.System(system.ID))
 	}
 	return &api.EntrypointReply{
 		Transiter: &api.EntrypointReply_TransiterDetails{

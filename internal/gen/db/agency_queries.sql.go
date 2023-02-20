@@ -45,19 +45,19 @@ func (q *Queries) DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenci
 	return items, nil
 }
 
-const getAgencyInSystem = `-- name: GetAgencyInSystem :one
+const getAgency = `-- name: GetAgency :one
 SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency
 WHERE agency.system_pk = $1
     AND agency.id = $2
 `
 
-type GetAgencyInSystemParams struct {
+type GetAgencyParams struct {
 	SystemPk int64
 	AgencyID string
 }
 
-func (q *Queries) GetAgencyInSystem(ctx context.Context, arg GetAgencyInSystemParams) (Agency, error) {
-	row := q.db.QueryRow(ctx, getAgencyInSystem, arg.SystemPk, arg.AgencyID)
+func (q *Queries) GetAgency(ctx context.Context, arg GetAgencyParams) (Agency, error) {
+	row := q.db.QueryRow(ctx, getAgency, arg.SystemPk, arg.AgencyID)
 	var i Agency
 	err := row.Scan(
 		&i.Pk,
@@ -115,6 +115,42 @@ func (q *Queries) InsertAgency(ctx context.Context, arg InsertAgencyParams) (int
 	return pk, err
 }
 
+const listAgencies = `-- name: ListAgencies :many
+SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency WHERE system_pk = $1 ORDER BY id
+`
+
+func (q *Queries) ListAgencies(ctx context.Context, systemPk int64) ([]Agency, error) {
+	rows, err := q.db.Query(ctx, listAgencies, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Agency
+	for rows.Next() {
+		var i Agency
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.Name,
+			&i.Url,
+			&i.Timezone,
+			&i.Language,
+			&i.Phone,
+			&i.FareUrl,
+			&i.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAgenciesByPk = `-- name: ListAgenciesByPk :many
 SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency WHERE pk = ANY($1::bigint[])
 `
@@ -151,60 +187,24 @@ func (q *Queries) ListAgenciesByPk(ctx context.Context, pk []int64) ([]Agency, e
 	return items, nil
 }
 
-const listAgenciesInSystem = `-- name: ListAgenciesInSystem :many
-SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency WHERE system_pk = $1 ORDER BY id
-`
-
-func (q *Queries) ListAgenciesInSystem(ctx context.Context, systemPk int64) ([]Agency, error) {
-	rows, err := q.db.Query(ctx, listAgenciesInSystem, systemPk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Agency
-	for rows.Next() {
-		var i Agency
-		if err := rows.Scan(
-			&i.Pk,
-			&i.ID,
-			&i.SystemPk,
-			&i.SourcePk,
-			&i.Name,
-			&i.Url,
-			&i.Timezone,
-			&i.Language,
-			&i.Phone,
-			&i.FareUrl,
-			&i.Email,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const mapAgencyPkToIdInSystem = `-- name: MapAgencyPkToIdInSystem :many
+const mapAgencyPkToId = `-- name: MapAgencyPkToId :many
 SELECT pk, id FROM agency WHERE system_pk = $1
 `
 
-type MapAgencyPkToIdInSystemRow struct {
+type MapAgencyPkToIdRow struct {
 	Pk int64
 	ID string
 }
 
-func (q *Queries) MapAgencyPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdInSystemRow, error) {
-	rows, err := q.db.Query(ctx, mapAgencyPkToIdInSystem, systemPk)
+func (q *Queries) MapAgencyPkToId(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdRow, error) {
+	rows, err := q.db.Query(ctx, mapAgencyPkToId, systemPk)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MapAgencyPkToIdInSystemRow
+	var items []MapAgencyPkToIdRow
 	for rows.Next() {
-		var i MapAgencyPkToIdInSystemRow
+		var i MapAgencyPkToIdRow
 		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
 			return nil, err
 		}

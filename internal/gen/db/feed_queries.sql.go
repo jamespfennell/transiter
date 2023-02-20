@@ -241,39 +241,6 @@ func (q *Queries) ListActiveFeedUpdatePks(ctx context.Context) ([]int64, error) 
 	return items, nil
 }
 
-const listAutoUpdateFeedsForSystem = `-- name: ListAutoUpdateFeedsForSystem :many
-SELECT feed.id, feed.update_period
-FROM feed
-    INNER JOIN system ON system.pk = feed.system_pk
-WHERE feed.update_strategy = 'PERIODIC'
-    AND system.id = $1
-`
-
-type ListAutoUpdateFeedsForSystemRow struct {
-	ID           string
-	UpdatePeriod sql.NullFloat64
-}
-
-func (q *Queries) ListAutoUpdateFeedsForSystem(ctx context.Context, systemID string) ([]ListAutoUpdateFeedsForSystemRow, error) {
-	rows, err := q.db.Query(ctx, listAutoUpdateFeedsForSystem, systemID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListAutoUpdateFeedsForSystemRow
-	for rows.Next() {
-		var i ListAutoUpdateFeedsForSystemRow
-		if err := rows.Scan(&i.ID, &i.UpdatePeriod); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listFeeds = `-- name: ListFeeds :many
 SELECT pk, id, system_pk, update_strategy, update_period, config FROM feed WHERE system_pk = $1 ORDER BY id
 `
@@ -294,6 +261,43 @@ func (q *Queries) ListFeeds(ctx context.Context, systemPk int64) ([]Feed, error)
 			&i.UpdateStrategy,
 			&i.UpdatePeriod,
 			&i.Config,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUpdatesInFeed = `-- name: ListUpdatesInFeed :many
+SELECT pk, feed_pk, started_at, finished, finished_at, result, content_length, content_hash, error_message FROM feed_update
+WHERE feed_pk = $1
+ORDER BY pk DESC
+LIMIT 100
+`
+
+func (q *Queries) ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUpdate, error) {
+	rows, err := q.db.Query(ctx, listUpdatesInFeed, feedPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FeedUpdate
+	for rows.Next() {
+		var i FeedUpdate
+		if err := rows.Scan(
+			&i.Pk,
+			&i.FeedPk,
+			&i.StartedAt,
+			&i.Finished,
+			&i.FinishedAt,
+			&i.Result,
+			&i.ContentLength,
+			&i.ContentHash,
+			&i.ErrorMessage,
 		); err != nil {
 			return nil, err
 		}

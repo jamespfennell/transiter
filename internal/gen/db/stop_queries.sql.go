@@ -47,6 +47,42 @@ func (q *Queries) DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsPara
 	return items, nil
 }
 
+const getStop = `-- name: GetStop :one
+SELECT stop.pk, stop.id, stop.system_pk, stop.source_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id FROM stop
+    INNER JOIN system ON stop.system_pk = system.pk
+    WHERE system.id = $1
+    AND stop.id = $2
+`
+
+type GetStopParams struct {
+	SystemID string
+	StopID   string
+}
+
+func (q *Queries) GetStop(ctx context.Context, arg GetStopParams) (Stop, error) {
+	row := q.db.QueryRow(ctx, getStop, arg.SystemID, arg.StopID)
+	var i Stop
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.SourcePk,
+		&i.ParentStopPk,
+		&i.Name,
+		&i.Longitude,
+		&i.Latitude,
+		&i.Url,
+		&i.Code,
+		&i.Description,
+		&i.PlatformCode,
+		&i.Timezone,
+		&i.Type,
+		&i.WheelchairBoarding,
+		&i.ZoneID,
+	)
+	return i, err
+}
+
 const insertStop = `-- name: InsertStop :one
 INSERT INTO stop
     (id, system_pk, source_pk, name, longitude, latitude,
@@ -98,27 +134,59 @@ func (q *Queries) InsertStop(ctx context.Context, arg InsertStopParams) (int64, 
 	return pk, err
 }
 
-const listChildrenForStops = `-- name: ListChildrenForStops :many
-SELECT parent_stop_pk parent_pk, pk child_pk
-FROM stop
-WHERE stop.parent_stop_pk = ANY($1::bigint[])
+const listStops = `-- name: ListStops :many
+SELECT pk, id, system_pk, source_pk, parent_stop_pk, name, longitude, latitude, url, code, description, platform_code, timezone, type, wheelchair_boarding, zone_id FROM stop
+WHERE system_pk = $1
+  AND id >= $2
+  AND (
+    NOT $3::bool OR
+    id = ANY($4::text[])
+  )
+ORDER BY id
+LIMIT $5
 `
 
-type ListChildrenForStopsRow struct {
-	ParentPk sql.NullInt64
-	ChildPk  int64
+type ListStopsParams struct {
+	SystemPk               int64
+	FirstStopID            string
+	OnlyReturnSpecifiedIds bool
+	StopIds                []string
+	NumStops               int32
 }
 
-func (q *Queries) ListChildrenForStops(ctx context.Context, stopPks []int64) ([]ListChildrenForStopsRow, error) {
-	rows, err := q.db.Query(ctx, listChildrenForStops, stopPks)
+func (q *Queries) ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, error) {
+	rows, err := q.db.Query(ctx, listStops,
+		arg.SystemPk,
+		arg.FirstStopID,
+		arg.OnlyReturnSpecifiedIds,
+		arg.StopIds,
+		arg.NumStops,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListChildrenForStopsRow
+	var items []Stop
 	for rows.Next() {
-		var i ListChildrenForStopsRow
-		if err := rows.Scan(&i.ParentPk, &i.ChildPk); err != nil {
+		var i Stop
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.ParentStopPk,
+			&i.Name,
+			&i.Longitude,
+			&i.Latitude,
+			&i.Url,
+			&i.Code,
+			&i.Description,
+			&i.PlatformCode,
+			&i.Timezone,
+			&i.Type,
+			&i.WheelchairBoarding,
+			&i.ZoneID,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -129,29 +197,29 @@ func (q *Queries) ListChildrenForStops(ctx context.Context, stopPks []int64) ([]
 	return items, nil
 }
 
-const listStopPreviews = `-- name: ListStopPreviews :many
+const listStopsByPk = `-- name: ListStopsByPk :many
 SELECT stop.pk, stop.id stop_id, stop.name, system.id system_id
 FROM stop
     INNER JOIN system on stop.system_pk = system.pk
 WHERE stop.pk = ANY($1::bigint[])
 `
 
-type ListStopPreviewsRow struct {
+type ListStopsByPkRow struct {
 	Pk       int64
 	StopID   string
 	Name     sql.NullString
 	SystemID string
 }
 
-func (q *Queries) ListStopPreviews(ctx context.Context, stopPks []int64) ([]ListStopPreviewsRow, error) {
-	rows, err := q.db.Query(ctx, listStopPreviews, stopPks)
+func (q *Queries) ListStopsByPk(ctx context.Context, stopPks []int64) ([]ListStopsByPkRow, error) {
+	rows, err := q.db.Query(ctx, listStopsByPk, stopPks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListStopPreviewsRow
+	var items []ListStopsByPkRow
 	for rows.Next() {
-		var i ListStopPreviewsRow
+		var i ListStopsByPkRow
 		if err := rows.Scan(
 			&i.Pk,
 			&i.StopID,
@@ -168,19 +236,166 @@ func (q *Queries) ListStopPreviews(ctx context.Context, stopPks []int64) ([]List
 	return items, nil
 }
 
-const mapStopIDToStationPk = `-- name: MapStopIDToStationPk :many
+const listStops_Geographic = `-- name: ListStops_Geographic :many
+WITH distance AS (
+  SELECT 
+  pk stop_pk,
+  (6371 * acos(cos(radians(latitude)) * cos(radians($3::numeric)) * cos(radians($4::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians($3::numeric)))) val
+  FROM stop
+  WHERE stop.system_pk = $5
+)
+SELECT stop.pk, stop.id, stop.system_pk, stop.source_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id FROM stop
+INNER JOIN distance ON stop.pk = distance.stop_pk
+AND distance.val <= $1::numeric
+ORDER BY distance.val
+LIMIT $2
+`
+
+type ListStops_GeographicParams struct {
+	MaxDistance pgtype.Numeric
+	MaxResults  int32
+	Latitude    pgtype.Numeric
+	Longitude   pgtype.Numeric
+	SystemPk    int64
+}
+
+func (q *Queries) ListStops_Geographic(ctx context.Context, arg ListStops_GeographicParams) ([]Stop, error) {
+	rows, err := q.db.Query(ctx, listStops_Geographic,
+		arg.MaxDistance,
+		arg.MaxResults,
+		arg.Latitude,
+		arg.Longitude,
+		arg.SystemPk,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Stop
+	for rows.Next() {
+		var i Stop
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.SourcePk,
+			&i.ParentStopPk,
+			&i.Name,
+			&i.Longitude,
+			&i.Latitude,
+			&i.Url,
+			&i.Code,
+			&i.Description,
+			&i.PlatformCode,
+			&i.Timezone,
+			&i.Type,
+			&i.WheelchairBoarding,
+			&i.ZoneID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTripStopTimesByStops = `-- name: ListTripStopTimesByStops :many
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, vehicle.id vehicle_id FROM trip_stop_time
+    INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
+    LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+    WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
+    AND NOT trip_stop_time.past
+    ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time
+`
+
+type ListTripStopTimesByStopsRow struct {
+	Pk                   int64
+	StopPk               int64
+	TripPk               int64
+	ArrivalTime          sql.NullTime
+	ArrivalDelay         sql.NullInt32
+	ArrivalUncertainty   sql.NullInt32
+	DepartureTime        sql.NullTime
+	DepartureDelay       sql.NullInt32
+	DepartureUncertainty sql.NullInt32
+	StopSequence         int32
+	Track                sql.NullString
+	Headsign             sql.NullString
+	Past                 bool
+	Pk_2                 int64
+	ID                   string
+	RoutePk              int64
+	SourcePk             int64
+	DirectionID          sql.NullBool
+	StartedAt            sql.NullTime
+	GtfsHash             string
+	VehicleID            sql.NullString
+}
+
+func (q *Queries) ListTripStopTimesByStops(ctx context.Context, stopPks []int64) ([]ListTripStopTimesByStopsRow, error) {
+	rows, err := q.db.Query(ctx, listTripStopTimesByStops, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTripStopTimesByStopsRow
+	for rows.Next() {
+		var i ListTripStopTimesByStopsRow
+		if err := rows.Scan(
+			&i.Pk,
+			&i.StopPk,
+			&i.TripPk,
+			&i.ArrivalTime,
+			&i.ArrivalDelay,
+			&i.ArrivalUncertainty,
+			&i.DepartureTime,
+			&i.DepartureDelay,
+			&i.DepartureUncertainty,
+			&i.StopSequence,
+			&i.Track,
+			&i.Headsign,
+			&i.Past,
+			&i.Pk_2,
+			&i.ID,
+			&i.RoutePk,
+			&i.SourcePk,
+			&i.DirectionID,
+			&i.StartedAt,
+			&i.GtfsHash,
+			&i.VehicleID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mapStopIDAndPkToStationPk = `-- name: MapStopIDAndPkToStationPk :many
 WITH RECURSIVE 
 ancestor AS (
 	SELECT 
     id stop_id, 
+    pk stop_pk,
     pk station_pk, 
     parent_stop_pk,
     (type = 'STATION') is_station 
     FROM stop
-	  WHERE	stop.system_pk = $1
+        WHERE stop.system_pk = $1
+        AND (
+            NOT $2::bool
+            OR stop.pk = ANY($3::bigint[])
+        )
 	UNION
 	SELECT
-    child.stop_id stop_id, 
+    child.stop_id stop_id,
+    child.stop_pk stop_pk,
     parent.pk station_pk, 
     parent.parent_stop_pk, 
     (parent.type = 'STATION') is_station 
@@ -189,27 +404,106 @@ ancestor AS (
     ON child.parent_stop_pk = parent.pk
     AND NOT child.is_station
 )
-SELECT stop_id, station_pk
+SELECT stop_id, stop_pk, station_pk
   FROM ancestor
   WHERE parent_stop_pk IS NULL
   OR is_station
 `
 
-type MapStopIDToStationPkRow struct {
+type MapStopIDAndPkToStationPkParams struct {
+	SystemPk       int64
+	FilterByStopPk bool
+	StopPks        []int64
+}
+
+type MapStopIDAndPkToStationPkRow struct {
 	StopID    string
+	StopPk    int64
 	StationPk int64
 }
 
-func (q *Queries) MapStopIDToStationPk(ctx context.Context, systemPk int64) ([]MapStopIDToStationPkRow, error) {
-	rows, err := q.db.Query(ctx, mapStopIDToStationPk, systemPk)
+func (q *Queries) MapStopIDAndPkToStationPk(ctx context.Context, arg MapStopIDAndPkToStationPkParams) ([]MapStopIDAndPkToStationPkRow, error) {
+	rows, err := q.db.Query(ctx, mapStopIDAndPkToStationPk, arg.SystemPk, arg.FilterByStopPk, arg.StopPks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MapStopIDToStationPkRow
+	var items []MapStopIDAndPkToStationPkRow
 	for rows.Next() {
-		var i MapStopIDToStationPkRow
-		if err := rows.Scan(&i.StopID, &i.StationPk); err != nil {
+		var i MapStopIDAndPkToStationPkRow
+		if err := rows.Scan(&i.StopID, &i.StopPk, &i.StationPk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mapStopIDToPk = `-- name: MapStopIDToPk :many
+SELECT pk, id from stop
+WHERE
+    system_pk = $1
+    AND (
+        NOT $2::bool
+        OR id = ANY($3::text[])
+    )
+`
+
+type MapStopIDToPkParams struct {
+	SystemPk       int64
+	FilterByStopID bool
+	StopIds        []string
+}
+
+type MapStopIDToPkRow struct {
+	Pk int64
+	ID string
+}
+
+func (q *Queries) MapStopIDToPk(ctx context.Context, arg MapStopIDToPkParams) ([]MapStopIDToPkRow, error) {
+	rows, err := q.db.Query(ctx, mapStopIDToPk, arg.SystemPk, arg.FilterByStopID, arg.StopIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapStopIDToPkRow
+	for rows.Next() {
+		var i MapStopIDToPkRow
+		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mapStopPkToChildPks = `-- name: MapStopPkToChildPks :many
+SELECT parent_stop_pk parent_pk, pk child_pk
+FROM stop
+WHERE stop.parent_stop_pk = ANY($1::bigint[])
+`
+
+type MapStopPkToChildPksRow struct {
+	ParentPk sql.NullInt64
+	ChildPk  int64
+}
+
+func (q *Queries) MapStopPkToChildPks(ctx context.Context, stopPks []int64) ([]MapStopPkToChildPksRow, error) {
+	rows, err := q.db.Query(ctx, mapStopPkToChildPks, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapStopPkToChildPksRow
+	for rows.Next() {
+		var i MapStopPkToChildPksRow
+		if err := rows.Scan(&i.ParentPk, &i.ChildPk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -253,124 +547,6 @@ func (q *Queries) MapStopPkToDescendentPks(ctx context.Context, stopPks []int64)
 	for rows.Next() {
 		var i MapStopPkToDescendentPksRow
 		if err := rows.Scan(&i.RootStopPk, &i.DescendentStopPk); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const mapStopPkToIdInSystem = `-- name: MapStopPkToIdInSystem :many
-SELECT pk, id FROM stop WHERE system_pk = $1
-`
-
-type MapStopPkToIdInSystemRow struct {
-	Pk int64
-	ID string
-}
-
-func (q *Queries) MapStopPkToIdInSystem(ctx context.Context, systemPk int64) ([]MapStopPkToIdInSystemRow, error) {
-	rows, err := q.db.Query(ctx, mapStopPkToIdInSystem, systemPk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []MapStopPkToIdInSystemRow
-	for rows.Next() {
-		var i MapStopPkToIdInSystemRow
-		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const mapStopPkToStationPk = `-- name: MapStopPkToStationPk :many
-WITH RECURSIVE 
-ancestor AS (
-	SELECT 
-    pk stop_pk,
-    pk station_pk, 
-    parent_stop_pk,
-    (type = 'STATION') is_station 
-    FROM stop
-        WHERE stop.pk = ANY($1::bigint[])
-	UNION
-	SELECT
-    child.stop_pk stop_pk,
-    parent.pk station_pk, 
-    parent.parent_stop_pk, 
-    (parent.type = 'STATION') is_station 
-		FROM stop parent
-		INNER JOIN ancestor child 
-    ON child.parent_stop_pk = parent.pk
-    AND NOT child.is_station
-)
-SELECT stop_pk, station_pk
-  FROM ancestor
-  WHERE parent_stop_pk IS NULL
-  OR is_station
-`
-
-type MapStopPkToStationPkRow struct {
-	StopPk    int64
-	StationPk int64
-}
-
-func (q *Queries) MapStopPkToStationPk(ctx context.Context, stopPks []int64) ([]MapStopPkToStationPkRow, error) {
-	rows, err := q.db.Query(ctx, mapStopPkToStationPk, stopPks)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []MapStopPkToStationPkRow
-	for rows.Next() {
-		var i MapStopPkToStationPkRow
-		if err := rows.Scan(&i.StopPk, &i.StationPk); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const mapStopsInSystem = `-- name: MapStopsInSystem :many
-SELECT pk, id from stop
-WHERE
-    system_pk = $1
-    AND id = ANY($2::text[])
-`
-
-type MapStopsInSystemParams struct {
-	SystemPk int64
-	StopIds  []string
-}
-
-type MapStopsInSystemRow struct {
-	Pk int64
-	ID string
-}
-
-func (q *Queries) MapStopsInSystem(ctx context.Context, arg MapStopsInSystemParams) ([]MapStopsInSystemRow, error) {
-	rows, err := q.db.Query(ctx, mapStopsInSystem, arg.SystemPk, arg.StopIds)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []MapStopsInSystemRow
-	for rows.Next() {
-		var i MapStopsInSystemRow
-		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -435,19 +611,19 @@ func (q *Queries) UpdateStop(ctx context.Context, arg UpdateStopParams) error {
 	return err
 }
 
-const updateStopParent = `-- name: UpdateStopParent :exec
+const updateStop_Parent = `-- name: UpdateStop_Parent :exec
 UPDATE stop SET
     parent_stop_pk = $1
 WHERE
     pk = $2
 `
 
-type UpdateStopParentParams struct {
+type UpdateStop_ParentParams struct {
 	ParentStopPk sql.NullInt64
 	Pk           int64
 }
 
-func (q *Queries) UpdateStopParent(ctx context.Context, arg UpdateStopParentParams) error {
-	_, err := q.db.Exec(ctx, updateStopParent, arg.ParentStopPk, arg.Pk)
+func (q *Queries) UpdateStop_Parent(ctx context.Context, arg UpdateStop_ParentParams) error {
+	_, err := q.db.Exec(ctx, updateStop_Parent, arg.ParentStopPk, arg.Pk)
 	return err
 }

@@ -1,6 +1,3 @@
--- name: MapRoutePkToIdInSystem :many
-SELECT pk, id FROM route WHERE system_pk = sqlc.arg(system_pk);
-
 -- name: InsertRoute :one
 INSERT INTO route
     (id, system_pk, source_pk, color, text_color,
@@ -11,9 +8,6 @@ VALUES
      sqlc.arg(short_name), sqlc.arg(long_name), sqlc.arg(description), sqlc.arg(url), sqlc.arg(sort_order),
      sqlc.arg(type), sqlc.arg(continuous_pickup),sqlc.arg(continuous_drop_off), sqlc.arg(agency_pk))
 RETURNING pk;
-
--- name: GetRoute :one
-SELECT * FROM route WHERE pk = sqlc.arg(pk);
 
 -- name: UpdateRoute :exec
 UPDATE route SET
@@ -41,11 +35,23 @@ WHERE
     AND feed_update.pk != sqlc.arg(update_pk)
 RETURNING route.id;
 
--- name: MapRoutesInSystem :many
+-- name: ListRoutes :many
+SELECT * FROM route WHERE system_pk = $1 ORDER BY id;
+
+-- name: GetRoute :one
+SELECT route.* FROM route
+    INNER JOIN system ON route.system_pk = system.pk
+    WHERE system.pk = sqlc.arg(system_pk)
+    AND route.id = sqlc.arg(route_id);
+
+-- name: MapRouteIDToPkInSystem :many
 SELECT pk, id from route
 WHERE
     system_pk = sqlc.arg(system_pk)
-    AND id = ANY(sqlc.arg(route_ids)::text[]);
+    AND (
+        NOT sqlc.arg(filter_by_route_id)::bool
+        OR id = ANY(sqlc.arg(route_ids)::text[])
+    );
 
 -- name: EstimateHeadwaysForRoutes :many
 WITH per_stop_data AS (
@@ -68,9 +74,12 @@ SELECT
 FROM per_stop_data
 GROUP BY route_pk;
 
-
--- name: ListRoutePreviews :many
+-- name: ListRoutesByPk :many
 SELECT route.pk, route.id id, route.color, system.id system_id
 FROM route
     INNER JOIN system on route.system_pk = system.pk
 WHERE route.pk = ANY(sqlc.arg(route_pks)::bigint[]);
+
+-- name: ListRoutesInAgency :many
+SELECT route.id, route.color FROM route
+WHERE route.agency_pk = sqlc.arg(agency_pk);

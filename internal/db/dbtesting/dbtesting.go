@@ -196,7 +196,7 @@ func (s *System) NewAgency(id string) db.Agency {
 			return err
 		},
 		func() (db.Agency, error) {
-			return s.q.GetAgencyInSystem(context.Background(), db.GetAgencyInSystemParams{
+			return s.q.GetAgency(context.Background(), db.GetAgencyParams{
 				SystemPk: s.Data.Pk,
 				AgencyID: id,
 			})
@@ -210,12 +210,11 @@ type Route struct {
 }
 
 func (s *System) NewRoute(id string) Route {
-	var pk int64
 	route := insertAndGet(
 		s.q, id,
 		func() error {
 			var err error
-			pk, err = s.q.InsertRoute(context.Background(), db.InsertRouteParams{
+			_, err = s.q.InsertRoute(context.Background(), db.InsertRouteParams{
 				ID:       id,
 				SystemPk: s.Data.Pk,
 				SourcePk: s.DefaulUpdate.Pk,
@@ -224,7 +223,10 @@ func (s *System) NewRoute(id string) Route {
 			return err
 		},
 		func() (db.Route, error) {
-			return s.q.GetRoute(context.Background(), pk)
+			return s.q.GetRoute(context.Background(), db.GetRouteParams{
+				SystemPk: s.Data.Pk,
+				RouteID:  id,
+			})
 		},
 	)
 	return Route{
@@ -253,7 +255,10 @@ func (r *Route) NewTrip(id string, stopTimes []StopTime) db.Trip {
 			return err
 		},
 		func() (db.Trip, error) {
-			return r.s.q.GetTripByPk(context.Background(), pk)
+			return r.s.q.GetTrip(context.Background(), db.GetTripParams{
+				RoutePk: r.Data.Pk,
+				TripID:  id,
+			})
 		},
 	)
 	for i, stopTime := range stopTimes {
@@ -294,7 +299,7 @@ func (s *System) NewStop(id string, params ...db.InsertStopParams) db.Stop {
 			return err
 		},
 		func() (db.Stop, error) {
-			return s.q.GetStopInSystem(context.Background(), db.GetStopInSystemParams{
+			return s.q.GetStop(context.Background(), db.GetStopParams{
 				SystemID: s.Data.ID,
 				StopID:   id,
 			})

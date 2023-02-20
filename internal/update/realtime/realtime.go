@@ -476,7 +476,7 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 	agencyIDToPk := map[string]int64{}
 	if agencyReferenced {
 		var err error
-		agencyIDToPk, err = dbwrappers.MapAgencyIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+		agencyIDToPk, err = dbwrappers.MapAgencyIDToPk(ctx, updateCtx.Querier, updateCtx.SystemPk)
 		if err != nil {
 			return err
 		}

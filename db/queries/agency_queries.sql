@@ -1,6 +1,3 @@
--- name: MapAgencyPkToIdInSystem :many
-SELECT pk, id FROM agency WHERE system_pk = sqlc.arg(system_pk);
-
 -- name: InsertAgency :one
 INSERT INTO agency
     (id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email)
@@ -31,13 +28,16 @@ WHERE
     AND feed_update.pk != sqlc.arg(update_pk)
 RETURNING agency.id;
 
--- name: ListAgenciesInSystem :many
+-- name: ListAgencies :many
 SELECT agency.* FROM agency WHERE system_pk = $1 ORDER BY id;
 
 -- name: ListAgenciesByPk :many
 SELECT agency.* FROM agency WHERE pk = ANY(sqlc.arg(pk)::bigint[]);
 
--- name: GetAgencyInSystem :one
+-- name: GetAgency :one
 SELECT agency.* FROM agency
 WHERE agency.system_pk = sqlc.arg(system_pk)
     AND agency.id = sqlc.arg(agency_id);
+
+-- name: MapAgencyPkToId :many
+SELECT pk, id FROM agency WHERE system_pk = sqlc.arg(system_pk);

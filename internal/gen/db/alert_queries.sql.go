@@ -214,6 +214,123 @@ func (q *Queries) ListActiveAlertsForAgencies(ctx context.Context, arg ListActiv
 	return items, nil
 }
 
+const listActiveAlertsForRoutes = `-- name: ListActiveAlertsForRoutes :many
+SELECT route.pk route_pk, alert.id, alert.cause, alert.effect
+FROM route
+    INNER JOIN alert_route ON route.pk = alert_route.route_pk
+    INNER JOIN alert ON alert_route.alert_pk = alert.pk
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE route.pk = ANY($1::bigint[])
+    AND (
+        alert_active_period.starts_at < $2
+        OR alert_active_period.starts_at IS NULL
+    )
+    AND (
+        alert_active_period.ends_at > $2
+        OR alert_active_period.ends_at IS NULL
+    )
+ORDER BY alert.id ASC
+`
+
+type ListActiveAlertsForRoutesParams struct {
+	RoutePks    []int64
+	PresentTime sql.NullTime
+}
+
+type ListActiveAlertsForRoutesRow struct {
+	RoutePk int64
+	ID      string
+	Cause   string
+	Effect  string
+}
+
+// ListActiveAlertsForRoutes returns preview information about active alerts for the provided routes.
+func (q *Queries) ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error) {
+	rows, err := q.db.Query(ctx, listActiveAlertsForRoutes, arg.RoutePks, arg.PresentTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveAlertsForRoutesRow
+	for rows.Next() {
+		var i ListActiveAlertsForRoutesRow
+		if err := rows.Scan(
+			&i.RoutePk,
+			&i.ID,
+			&i.Cause,
+			&i.Effect,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveAlertsForStops = `-- name: ListActiveAlertsForStops :many
+SELECT stop.pk stop_pk, alert.pk, alert.id, alert.cause, alert.effect, alert_active_period.starts_at, alert_active_period.ends_at
+FROM stop
+    INNER JOIN alert_stop ON stop.pk = alert_stop.stop_pk
+    INNER JOIN alert ON alert_stop.alert_pk = alert.pk
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE stop.pk = ANY($1::bigint[])
+    AND (
+        alert_active_period.starts_at < $2
+        OR alert_active_period.starts_at IS NULL
+    )
+    AND (
+        alert_active_period.ends_at > $2
+        OR alert_active_period.ends_at IS NULL
+    )
+ORDER BY alert.id ASC
+`
+
+type ListActiveAlertsForStopsParams struct {
+	StopPks     []int64
+	PresentTime sql.NullTime
+}
+
+type ListActiveAlertsForStopsRow struct {
+	StopPk   int64
+	Pk       int64
+	ID       string
+	Cause    string
+	Effect   string
+	StartsAt sql.NullTime
+	EndsAt   sql.NullTime
+}
+
+func (q *Queries) ListActiveAlertsForStops(ctx context.Context, arg ListActiveAlertsForStopsParams) ([]ListActiveAlertsForStopsRow, error) {
+	rows, err := q.db.Query(ctx, listActiveAlertsForStops, arg.StopPks, arg.PresentTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveAlertsForStopsRow
+	for rows.Next() {
+		var i ListActiveAlertsForStopsRow
+		if err := rows.Scan(
+			&i.StopPk,
+			&i.Pk,
+			&i.ID,
+			&i.Cause,
+			&i.Effect,
+			&i.StartsAt,
+			&i.EndsAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listActivePeriodsForAlerts = `-- name: ListActivePeriodsForAlerts :many
 SELECT alert.pk, alert_active_period.starts_at, alert_active_period.ends_at
 FROM alert

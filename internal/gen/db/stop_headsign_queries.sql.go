@@ -48,3 +48,36 @@ func (q *Queries) InsertStopHeadSignRule(ctx context.Context, arg InsertStopHead
 	)
 	return err
 }
+
+const listStopHeadsignRulesForStops = `-- name: ListStopHeadsignRulesForStops :many
+SELECT pk, source_pk, priority, stop_pk, track, headsign FROM stop_headsign_rule
+WHERE stop_pk = ANY($1::bigint[])
+ORDER BY priority ASC
+`
+
+func (q *Queries) ListStopHeadsignRulesForStops(ctx context.Context, stopPks []int64) ([]StopHeadsignRule, error) {
+	rows, err := q.db.Query(ctx, listStopHeadsignRulesForStops, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []StopHeadsignRule
+	for rows.Next() {
+		var i StopHeadsignRule
+		if err := rows.Scan(
+			&i.Pk,
+			&i.SourcePk,
+			&i.Priority,
+			&i.StopPk,
+			&i.Track,
+			&i.Headsign,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

@@ -1,3 +1,35 @@
+-- name: GetDestinationsForTrips :many
+WITH last_stop_sequence AS (
+  SELECT trip_pk, MAX(stop_sequence) as stop_sequence
+    FROM trip_stop_time
+    WHERE trip_pk = ANY(sqlc.arg(trip_pks)::bigint[])
+    GROUP BY trip_pk
+)
+SELECT lss.trip_pk, stop.pk destination_pk
+  FROM last_stop_sequence lss
+  INNER JOIN trip_stop_time
+    ON lss.trip_pk = trip_stop_time.trip_pk
+    AND lss.stop_sequence = trip_stop_time.stop_sequence
+  INNER JOIN stop
+    ON trip_stop_time.stop_pk = stop.pk;
+
+-- name: ListTrips :many
+SELECT * FROM trip
+WHERE trip.route_pk = sqlc.arg(route_pk)
+ORDER BY trip.id;
+
+-- name: GetTrip :one
+SELECT * FROM trip
+WHERE trip.id = sqlc.arg(trip_id)
+    AND trip.route_pk = sqlc.arg(route_pk);
+
+-- name: ListStopsTimesForTrip :many
+SELECT trip_stop_time.*, stop.id stop_id, stop.name stop_name
+FROM trip_stop_time
+    INNER JOIN stop ON trip_stop_time.stop_pk = stop.pk
+WHERE trip_stop_time.trip_pk = sqlc.arg(trip_pk)
+ORDER BY trip_stop_time.stop_sequence ASC;
+
 -- name: InsertTrip :one
 INSERT INTO trip
     (id, route_pk, source_pk, direction_id, started_at, gtfs_hash)

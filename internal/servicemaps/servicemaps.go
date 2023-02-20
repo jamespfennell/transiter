@@ -353,7 +353,7 @@ func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, systemPk int64,
 				allStopPks = append(allStopPks, stopPk)
 			}
 		}
-		stopPkToStationPk, err := dbwrappers.MapStopPkToStationPk(ctx, querier, allStopPks)
+		stopPkToStationPk, err := dbwrappers.MapStopPkToStationPk(ctx, querier, systemPk, allStopPks)
 		if err != nil {
 			return err
 		}

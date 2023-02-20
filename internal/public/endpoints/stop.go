@@ -3,7 +3,6 @@ package endpoints
 import (
 	"context"
 	"database/sql"
-	"log"
 	"time"
 
 	"github.com/jackc/pgtype"
@@ -40,7 +39,7 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 		if firstID != "" {
 			return nil, errors.NewInvalidArgumentError("first_id can not be used when using DISTANCE search_mode")
 		}
-		stops, err = r.Querier.ListStopsInSystemGeographic(ctx, db.ListStopsInSystemGeographicParams{
+		stops, err = r.Querier.ListStops_Geographic(ctx, db.ListStops_GeographicParams{
 			SystemPk:    system.Pk,
 			Latitude:    convertGpsDataForQuery(*req.Latitude),
 			Longitude:   convertGpsDataForQuery(*req.Longitude),
@@ -48,7 +47,7 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 			MaxResults:  numStops,
 		})
 	} else {
-		stops, err = r.Querier.ListStopsInSystem(ctx, db.ListStopsInSystemParams{
+		stops, err = r.Querier.ListStops(ctx, db.ListStopsParams{
 			SystemPk:               system.Pk,
 			FirstStopID:            firstID,
 			NumStops:               numStops + 1,
@@ -98,7 +97,6 @@ func ListTransfers(ctx context.Context, r *Context, req *api.ListTransfersReques
 }
 
 func GetStop(ctx context.Context, r *Context, req *api.GetStopRequest) (*api.Stop, error) {
-	startTime := time.Now()
 	_, stop, err := getStop(ctx, r.Querier, req.SystemId, req.StopId)
 	if err != nil {
 		return nil, err
@@ -107,7 +105,6 @@ func GetStop(ctx context.Context, r *Context, req *api.GetStopRequest) (*api.Sto
 	if err != nil {
 		return nil, err
 	}
-	log.Println("GetStop() took", time.Since(startTime))
 	return apiStops[0], nil
 }
 
@@ -140,11 +137,13 @@ func buildStopsResponse(ctx context.Context, r *Context, systemID string, stops 
 	stopPkToApiStopTimes := buildStopPkToApiStopsTimes(r, data, routePkToApiPreview, stopPkToApiPreview)
 	stopPkToApiHeadsignRules := buildStopPkToApiHeadsignRules(data, stopPkToApiPreview)
 	stopPkToChildren := map[int64][]*api.Stop_Reference{}
-	for _, row := range data.children {
-		stopPkToChildren[row.ParentPk.Int64] = append(
-			stopPkToChildren[row.ParentPk.Int64],
-			stopPkToApiPreview[row.ChildPk],
-		)
+	for stopPk, childPks := range data.stopPkToChildPks {
+		for _, childPk := range childPks {
+			stopPkToChildren[stopPk] = append(
+				stopPkToChildren[stopPk],
+				stopPkToApiPreview[childPk],
+			)
+		}
 	}
 
 	var result []*api.Stop
@@ -183,14 +182,14 @@ type rawStopData struct {
 	stopPkToDescendentPks map[int64]map[int64]bool
 	transfers             []db.Transfer
 	alerts                []db.ListActiveAlertsForStopsRow
-	stopTimes             []db.ListStopTimesAtStopsRow
+	stopTimes             []db.ListTripStopTimesByStopsRow
 	tripDestinations      []db.GetDestinationsForTripsRow
 	serviceMaps           []db.ListServiceMapsForStopsRow
 	serviceMapConfigIDs   []db.ListServiceMapsConfigIDsForStopsRow
 	headsignRules         []db.StopHeadsignRule
-	allStops              []db.ListStopPreviewsRow
-	allRoutes             []db.ListRoutePreviewsRow
-	children              []db.ListChildrenForStopsRow
+	allStops              []db.ListStopsByPkRow
+	allRoutes             []db.ListRoutesByPkRow
+	stopPkToChildPks      map[int64][]int64
 }
 
 func getRawStopData(ctx context.Context, r *Context, stops []db.Stop, req stopRequest) (rawStopData, error) {
@@ -206,7 +205,7 @@ func getRawStopData(ctx context.Context, r *Context, stops []db.Stop, req stopRe
 		}
 	}
 
-	d.children, err = r.Querier.ListChildrenForStops(ctx, stopPks)
+	d.stopPkToChildPks, err = dbwrappers.MapStopPkToChildPks(ctx, r.Querier, stopPks)
 	if err != nil {
 		return d, err
 	}
@@ -238,7 +237,7 @@ func getRawStopData(ctx context.Context, r *Context, stops []db.Stop, req stopRe
 		}
 	}
 	if !req.GetSkipStopTimes() {
-		d.stopTimes, err = r.Querier.ListStopTimesAtStops(ctx, allDescendentPks)
+		d.stopTimes, err = r.Querier.ListTripStopTimesByStops(ctx, allDescendentPks)
 		if err != nil {
 			return d, err
 		}
@@ -279,7 +278,7 @@ func getRawStopData(ctx context.Context, r *Context, stops []db.Stop, req stopRe
 	for i := range d.tripDestinations {
 		allStopPksMap[d.tripDestinations[i].DestinationPk] = true
 	}
-	d.allStops, err = r.Querier.ListStopPreviews(ctx, mapToSlice(allStopPksMap))
+	d.allStops, err = r.Querier.ListStopsByPk(ctx, mapToSlice(allStopPksMap))
 	if err != nil {
 		return d, err
 	}
@@ -291,7 +290,7 @@ func getRawStopData(ctx context.Context, r *Context, stops []db.Stop, req stopRe
 	for i := range d.stopTimes {
 		allRoutePksMap[d.stopTimes[i].RoutePk] = true
 	}
-	d.allRoutes, err = r.Querier.ListRoutePreviews(ctx, mapToSlice(allRoutePksMap))
+	d.allRoutes, err = r.Querier.ListRoutesByPk(ctx, mapToSlice(allRoutePksMap))
 	if err != nil {
 		return d, err
 	}

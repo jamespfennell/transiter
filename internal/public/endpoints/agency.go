@@ -18,7 +18,7 @@ func ListAgencies(ctx context.Context, r *Context, req *api.ListAgenciesRequest)
 	if err != nil {
 		return nil, err
 	}
-	dbAgencies, err := r.Querier.ListAgenciesInSystem(ctx, system.Pk)
+	dbAgencies, err := r.Querier.ListAgencies(ctx, system.Pk)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func GetAgency(ctx context.Context, r *Context, req *api.GetAgencyRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	dbAgency, err := r.Querier.GetAgencyInSystem(ctx, db.GetAgencyInSystemParams{
+	dbAgency, err := r.Querier.GetAgency(ctx, db.GetAgencyParams{
 		SystemPk: system.Pk,
 		AgencyID: req.AgencyId,
 	})

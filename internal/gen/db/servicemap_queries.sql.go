@@ -118,6 +118,120 @@ func (q *Queries) ListServiceMapConfigsInSystem(ctx context.Context, systemPk in
 	return items, nil
 }
 
+const listServiceMapsConfigIDsForStops = `-- name: ListServiceMapsConfigIDsForStops :many
+SELECT stop.pk, service_map_config.id
+FROM service_map_config
+    INNER JOIN stop ON service_map_config.system_pk = stop.system_pk
+WHERE stop.pk = ANY($1::bigint[])
+`
+
+type ListServiceMapsConfigIDsForStopsRow struct {
+	Pk int64
+	ID string
+}
+
+func (q *Queries) ListServiceMapsConfigIDsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsConfigIDsForStopsRow, error) {
+	rows, err := q.db.Query(ctx, listServiceMapsConfigIDsForStops, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceMapsConfigIDsForStopsRow
+	for rows.Next() {
+		var i ListServiceMapsConfigIDsForStopsRow
+		if err := rows.Scan(&i.Pk, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listServiceMapsForRoutes = `-- name: ListServiceMapsForRoutes :many
+SELECT DISTINCT route.pk route_pk, service_map_config.id config_id, service_map_vertex.position, stop.id stop_id, stop.name stop_name
+FROM service_map_config
+  INNER JOIN system ON service_map_config.system_pk = system.pk
+  INNER JOIN route ON route.system_pk = system.pk
+  LEFT JOIN service_map ON service_map.config_pk = service_map_config.pk AND service_map.route_pk = route.pk
+  LEFT JOIN service_map_vertex ON service_map_vertex.map_pk = service_map.pk
+  LEFT JOIN stop ON stop.pk = service_map_vertex.stop_pk
+WHERE route.pk = ANY($1::bigint[])
+ORDER BY service_map_config.id, service_map_vertex.position
+`
+
+type ListServiceMapsForRoutesRow struct {
+	RoutePk  int64
+	ConfigID string
+	Position sql.NullInt32
+	StopID   sql.NullString
+	StopName sql.NullString
+}
+
+// TODO: make this better?
+func (q *Queries) ListServiceMapsForRoutes(ctx context.Context, routePks []int64) ([]ListServiceMapsForRoutesRow, error) {
+	rows, err := q.db.Query(ctx, listServiceMapsForRoutes, routePks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceMapsForRoutesRow
+	for rows.Next() {
+		var i ListServiceMapsForRoutesRow
+		if err := rows.Scan(
+			&i.RoutePk,
+			&i.ConfigID,
+			&i.Position,
+			&i.StopID,
+			&i.StopName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listServiceMapsForStops = `-- name: ListServiceMapsForStops :many
+SELECT stop.pk stop_pk, service_map_config.id config_id, service_map.route_pk route_pk
+FROM stop
+  INNER JOIN service_map_vertex vertex ON vertex.stop_pk = stop.pk
+  INNER JOIN service_map ON service_map.pk = vertex.map_pk
+  INNER JOIN service_map_config ON service_map_config.pk = service_map.config_pk
+WHERE stop.pk = ANY($1::bigint[])
+`
+
+type ListServiceMapsForStopsRow struct {
+	StopPk   int64
+	ConfigID string
+	RoutePk  int64
+}
+
+func (q *Queries) ListServiceMapsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsForStopsRow, error) {
+	rows, err := q.db.Query(ctx, listServiceMapsForStops, stopPks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListServiceMapsForStopsRow
+	for rows.Next() {
+		var i ListServiceMapsForStopsRow
+		if err := rows.Scan(&i.StopPk, &i.ConfigID, &i.RoutePk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStopPksForRealtimeMap = `-- name: ListStopPksForRealtimeMap :many
 SELECT trip.pk trip_pk, trip.direction_id, trip_stop_time.stop_pk
 FROM trip

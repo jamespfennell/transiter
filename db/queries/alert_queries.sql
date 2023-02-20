@@ -79,3 +79,40 @@ SELECT alert.pk, alert_active_period.starts_at, alert_active_period.ends_at
 FROM alert
     INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
 WHERE alert.pk = ANY(sqlc.arg(pks)::bigint[]);
+
+
+-- ListActiveAlertsForRoutes returns preview information about active alerts for the provided routes.
+-- name: ListActiveAlertsForRoutes :many
+SELECT route.pk route_pk, alert.id, alert.cause, alert.effect
+FROM route
+    INNER JOIN alert_route ON route.pk = alert_route.route_pk
+    INNER JOIN alert ON alert_route.alert_pk = alert.pk
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE route.pk = ANY(sqlc.arg(route_pks)::bigint[])
+    AND (
+        alert_active_period.starts_at < sqlc.arg(present_time)
+        OR alert_active_period.starts_at IS NULL
+    )
+    AND (
+        alert_active_period.ends_at > sqlc.arg(present_time)
+        OR alert_active_period.ends_at IS NULL
+    )
+ORDER BY alert.id ASC;
+
+
+-- name: ListActiveAlertsForStops :many
+SELECT stop.pk stop_pk, alert.pk, alert.id, alert.cause, alert.effect, alert_active_period.starts_at, alert_active_period.ends_at
+FROM stop
+    INNER JOIN alert_stop ON stop.pk = alert_stop.stop_pk
+    INNER JOIN alert ON alert_stop.alert_pk = alert.pk
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
+    AND (
+        alert_active_period.starts_at < sqlc.arg(present_time)
+        OR alert_active_period.starts_at IS NULL
+    )
+    AND (
+        alert_active_period.ends_at > sqlc.arg(present_time)
+        OR alert_active_period.ends_at IS NULL
+    )
+ORDER BY alert.id ASC;

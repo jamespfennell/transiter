@@ -29,13 +29,6 @@ WHERE pk = sqlc.arg(feed_pk);
 -- name: DeleteFeed :exec
 DELETE FROM feed WHERE pk = sqlc.arg(pk);
 
--- name: ListAutoUpdateFeedsForSystem :many
-SELECT feed.id, feed.update_period
-FROM feed
-    INNER JOIN system ON system.pk = feed.system_pk
-WHERE feed.update_strategy = 'PERIODIC'
-    AND system.id = sqlc.arg(system_id);
-
 -- name: InsertFeedUpdate :one
 INSERT INTO feed_update
     (feed_pk, started_at, finished)
@@ -85,3 +78,9 @@ WITH deleted_pks AS (
     RETURNING pk
 )
 SELECT COUNT(*) FROM deleted_pks;
+
+-- name: ListUpdatesInFeed :many
+SELECT * FROM feed_update
+WHERE feed_pk = sqlc.arg(feed_pk)
+ORDER BY pk DESC
+LIMIT 100;

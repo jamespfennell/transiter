@@ -16,7 +16,7 @@ func ListRoutes(ctx context.Context, r *Context, req *api.ListRoutesRequest) (*a
 	if err != nil {
 		return nil, err
 	}
-	routes, err := r.Querier.ListRoutesInSystem(ctx, system.Pk)
+	routes, err := r.Querier.ListRoutes(ctx, system.Pk)
 	if err != nil {
 		return nil, err
 	}

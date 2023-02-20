@@ -34,7 +34,7 @@ func getRoute(ctx context.Context, querier db.Querier, systemID, routeID string)
 	if err != nil {
 		return system, db.Route{}, err
 	}
-	route, err := querier.GetRouteInSystem(ctx, db.GetRouteInSystemParams{SystemPk: system.Pk, RouteID: routeID})
+	route, err := querier.GetRoute(ctx, db.GetRouteParams{SystemPk: system.Pk, RouteID: routeID})
 	return system, route, noRowsToNotFound(err, fmt.Sprintf("route %q in system %q", routeID, system.ID))
 }
 
@@ -43,7 +43,7 @@ func getStop(ctx context.Context, querier db.Querier, systemID, stopID string) (
 	if err != nil {
 		return system, db.Stop{}, err
 	}
-	route, err := querier.GetStopInSystem(ctx, db.GetStopInSystemParams{SystemID: system.ID, StopID: stopID})
+	route, err := querier.GetStop(ctx, db.GetStopParams{SystemID: system.ID, StopID: stopID})
 	return system, route, noRowsToNotFound(err, fmt.Sprintf("stop %q in system %q", stopID, system.ID))
 }
 
