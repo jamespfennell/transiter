@@ -28,8 +28,9 @@ The Python version of Transiter can be viewed in
 
 ## Getting started
 
-Transiter uses Postgres database for storing data.
-If Docker compose is available you can easily spin up Postgres with:
+Transiter uses Postgres for storing data,
+    and by default assumes the database/user/password is `transiter`/`transiter`/`transiter`.
+If Docker compose is available you can easily spin up a Postgres instance with this configuration from the root of the repo:
 
 ```
 docker-compose up postgres
@@ -52,14 +53,22 @@ go run . list
 
 This will show that there are no transit systems installed, 
     and the next step is install one!
-If you have an MTA API key you can install the NYC Subway:
+
+**NY/NJ PATH train**:
+
+```
+go run . install -f us-ny-path systems/us-ny-path.yaml
+```
+
+**New York City subway**: If you have an [MTA API key](https://api.mta.info/#/landing):
 
 ```
 go run . install --arg mta_api_key=$MTA_API_KEY -f us-ny-subway systems/us-ny-subway.yaml
 ```
 
-The server logs will show that GTFS feed updates are happening, and the HTTP API will be populated with data.
-To get data about the Rockefeller Center station, say, visit:
+In either case, the server logs will show that GTFS feed updates are happening,
+    and the HTTP API will be populated with data.
+If you installed the NYC subway, to get data about the Rockefeller Center station visit:
 
 ```
 localhost:8080/systems/us-ny-subway/stops/D15

@@ -141,9 +141,18 @@ func (c *Client) SchedulerStatus(ctx context.Context) error {
 	t.AddRow("", "", "", "finished", "succesful", "running")
 	t.AddRow("", "", "", "update", "update", "")
 	t.AddSeperator()
+	var lastSystemID string
 	for _, feed := range reply.Feeds {
+		if lastSystemID != "" && lastSystemID != feed.SystemId {
+			t.AddSeperator()
+		}
+		var systemIDToPrint string
+		if lastSystemID == "" || lastSystemID != feed.SystemId {
+			systemIDToPrint = feed.SystemId
+		}
+		lastSystemID = feed.SystemId
 		t.AddRow(
-			feed.SystemId,
+			systemIDToPrint,
 			feed.FeedId,
 			(time.Millisecond * time.Duration(feed.Period)).String(),
 			convertTime(feed.LastFinishedUpdate),
