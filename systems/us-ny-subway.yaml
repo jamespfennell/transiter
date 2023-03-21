@@ -4,13 +4,13 @@ feeds:
   - id: gtfsstatic
     requiredForInstall: true
 
-    url: 'http://web.mta.info/developers/data/nyct/subway/google_transit.zip'
+    url: "http://web.mta.info/developers/data/nyct/subway/google_transit.zip"
 
     parser: GTFS_STATIC
 
   - id: subwaycsv
     requiredForInstall: true
-    url: 'https://atisdata.s3.amazonaws.com/Station/Stations.csv'
+    url: "https://atisdata.s3.amazonaws.com/Station/Stations.csv"
     parser: NYCT_SUBWAY_CSV
 
   - id: "alerts"
@@ -71,7 +71,6 @@ feeds:
       extension: NYCT_TRIPS
       nyctTripsOptions:
         filterStaleUnassignedTrips: true
-
 
   - id: G
     updateStrategy: PERIODIC

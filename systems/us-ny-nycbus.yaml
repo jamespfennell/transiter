@@ -1,0 +1,56 @@
+name: New York City Buses
+
+feeds:
+  - id: gtfsstatic_bronx
+    requiredForInstall: true
+
+    url: "http://web.mta.info/developers/data/nyct/bus/google_transit_bronx.zip"
+
+    parser: GTFS_STATIC
+
+  - id: gtfsstatic_brooklyn
+    requiredForInstall: true
+
+    url: "http://web.mta.info/developers/data/nyct/bus/google_transit_brooklyn.zip"
+
+    parser: GTFS_STATIC
+
+  - id: gtfsstatic_manhattan
+    requiredForInstall: true
+
+    url: "http://web.mta.info/developers/data/nyct/bus/google_transit_manhattan.zip"
+
+    parser: GTFS_STATIC
+
+  - id: gtfsstatic_queens
+    requiredForInstall: true
+
+    url: "http://web.mta.info/developers/data/nyct/bus/google_transit_queens.zip"
+
+    parser: GTFS_STATIC
+
+  - id: gtfsstatic_staten_island
+    requiredForInstall: true
+
+    url: "http://web.mta.info/developers/data/nyct/bus/google_transit_staten_island.zip"
+
+    parser: GTFS_STATIC
+
+  - id: trips
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
+
+    url: "https://gtfsrt.prod.obanyc.com/tripUpdates?key={{ .Args.mta_bus_api_key }}"
+
+    parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+        extension: NYCT_BUS_TRIPS
+        reassignStopSequences: true
+
+  - id: "alerts"
+    updateStrategy: PERIODIC
+    updatePeriodS: 5
+
+    url: "http://gtfsrt.prod.obanyc.com/alerts?key={{ .Args.mta_bus_api_key }}"
+
+    parser: GTFS_REALTIME
