@@ -106,8 +106,10 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 			if !keepGoing {
 				return nil
 			}
-			err = performSystemInstall(ctx, querier, req.SystemId, systemConfig)
-			if err := finishSystemInstall(ctx, querier, req.SystemId, err); err != nil {
+			if err := performSystemInstall(ctx, querier, req.SystemId, systemConfig); err != nil {
+				return err
+			}
+			if err := finishSystemInstall(ctx, querier, req.SystemId, nil); err != nil {
 				return err
 			}
 			return nil
@@ -133,13 +135,16 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 				err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
 					return performSystemInstall(ctx, db.New(tx), req.SystemId, systemConfig)
 				})
+				if err != nil {
+					log.Printf("Failed to install system %q, going to mark as FAILED. Install error: %s", req.SystemId, err)
+				}
 				if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
 					return finishSystemInstall(ctx, db.New(tx), req.SystemId, err)
 				}); err != nil {
-					log.Printf("Failed to finish installing system %q: %s", req.SystemId, err)
+					log.Printf("Failed to mark install of system %q as finished: %s", req.SystemId, err)
 					return
 				}
-				log.Printf("Installed system %q\n", req.SystemId)
+				log.Printf("Finished install of system %q\n", req.SystemId)
 				s.scheduler.ResetSystem(ctx, req.SystemId)
 			}()
 		}
@@ -253,13 +258,10 @@ func finishSystemInstall(ctx context.Context, querier db.Querier, systemID strin
 	} else {
 		newStatus = constants.Active
 	}
-	if err := querier.UpdateSystemStatus(ctx, db.UpdateSystemStatusParams{
+	return querier.UpdateSystemStatus(ctx, db.UpdateSystemStatusParams{
 		Pk:     system.Pk,
 		Status: newStatus,
-	}); err != nil {
-		return err
-	}
-	return installErr
+	})
 }
 
 func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest) (*api.DeleteSystemReply, error) {

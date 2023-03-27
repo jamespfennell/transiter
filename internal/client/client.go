@@ -121,10 +121,10 @@ func (c *Client) ListSystems(ctx context.Context) error {
 		return nil
 	}
 	t := table.New()
-	t.AddRow("ID", "Name")
+	t.AddRow("ID", "Name", "Status")
 	t.AddSeperator()
 	for _, system := range rep.Systems {
-		t.AddRow(system.Id, system.Name)
+		t.AddRow(system.Id, system.Name, system.Status.String())
 	}
 	fmt.Printf("%s", t.Render())
 	return nil
