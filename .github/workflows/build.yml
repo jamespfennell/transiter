@@ -38,7 +38,7 @@ jobs:
         run: docker-compose -f tests/endtoend/compose.yml up --build --exit-code-from testrunner testrunner
 
       - name: Linter
-        run: go install honnef.co/go/tools/cmd/staticcheck@2022.1 && staticcheck ./...
+        run: go install honnef.co/go/tools/cmd/staticcheck@2023.1 && staticcheck ./...
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
