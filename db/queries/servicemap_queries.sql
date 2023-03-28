@@ -37,6 +37,7 @@ FROM trip
 INNER JOIN trip_stop_time on trip_stop_time.trip_pk = trip.pk
 WHERE trip.route_pk = sqlc.arg(route_pk)
 AND trip.direction_id IS NOT NULL
+AND trip_stop_time.past IS FALSE
 ORDER BY trip.pk, trip_stop_time.stop_sequence;
 
 -- name: ListServiceMapsConfigIDsForStops :many
