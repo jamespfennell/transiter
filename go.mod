@@ -10,7 +10,7 @@ require (
 	github.com/jackc/pgtype v1.12.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/jackc/tern v1.13.0
-	github.com/jamespfennell/gtfs v0.1.10
+	github.com/jamespfennell/gtfs v0.1.12
 	github.com/kyleconroy/sqlc v1.16.0
 	github.com/prometheus/client_golang v0.9.3
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
