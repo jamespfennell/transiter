@@ -6,14 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
 
 type UpdateContext struct {
-	Querier  db.Querier
-	SystemPk int64
-	FeedPk   int64
-	UpdatePk int64
+	Querier    db.Querier
+	SystemPk   int64
+	FeedPk     int64
+	UpdatePk   int64
+	FeedConfig *api.FeedConfig
 }
 
 func HashBytes(b []byte) string {

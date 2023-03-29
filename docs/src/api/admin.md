@@ -356,6 +356,7 @@ Message describing options for the GTFS realtime parser.
 | extension | [GtfsRealtimeOptions.Extension](admin.md#GtfsRealtimeOptions.Extension) | 
 | nyct_trips_options | [GtfsRealtimeOptions.NyctTripsOptions](admin.md#GtfsRealtimeOptions.NyctTripsOptions) | 
 | nyct_alerts_options | [GtfsRealtimeOptions.NyctAlertsOptions](admin.md#GtfsRealtimeOptions.NyctAlertsOptions) | 
+| reassign_stop_sequences | bool | If true, stop sequences in the GTFS realtime feed data are ignored, and alternative stop sequences are generated and assigned by Transiter. This setting is designed for buggy GTFS realtime feeds in which stop sequences (incorrectly) change between updates. In many cases Transiter is able to generate stop sequences that are correct and stable across updates.<br /><br />This should not be used for systems where a trip can call at the same stop multiple times.
 
 
 

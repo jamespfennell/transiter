@@ -162,10 +162,11 @@ func run(ctx context.Context, querier db.Querier, systemID string, updatePk int6
 		return r
 	}
 	updateCtx := common.UpdateContext{
-		Querier:  querier,
-		SystemPk: feed.SystemPk,
-		FeedPk:   feed.Pk,
-		UpdatePk: updatePk,
+		Querier:    querier,
+		SystemPk:   feed.SystemPk,
+		FeedPk:     feed.Pk,
+		UpdatePk:   updatePk,
+		FeedConfig: &feedConfig,
 	}
 	var parseErr error
 	var updateErr error

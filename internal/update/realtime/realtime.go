@@ -172,7 +172,10 @@ type updateStopTimesInDBArgs struct {
 // updateStopTimesInDB updates the trip stop times in the database. The boolean return value indicates
 // whether the path of the trip has changed.
 func updateStopTimesInDB(ctx context.Context, updateCtx common.UpdateContext, args updateStopTimesInDBArgs) (bool, error) {
-	populateStopSequences(args.trip, args.existingStopTimes, args.stopIDToPk)
+	// Check to see if stop sequences should be reassigned by transiter (even if present in GTFS).
+	reassignStopSequences := updateCtx.FeedConfig.GetGtfsRealtimeOptions().GetReassignStopSequences()
+
+	populateStopSequences(args.trip, args.existingStopTimes, args.stopIDToPk, reassignStopSequences)
 	stopSequenceToStopTimePk := map[int32]db.ListTripStopTimesForUpdateRow{}
 	for _, stopTime := range args.existingStopTimes {
 		stopSequenceToStopTimePk[stopTime.StopSequence] = stopTime
@@ -293,7 +296,8 @@ func routeIDsInTrips(trips []gtfs.Trip) []string {
 	return routeIDs
 }
 
-func populateStopSequences(trip *gtfs.Trip, existingStopTimes []db.ListTripStopTimesForUpdateRow, stopIDToPk map[string]int64) {
+func populateStopSequences(trip *gtfs.Trip, existingStopTimes []db.ListTripStopTimesForUpdateRow, stopIDToPk map[string]int64, reassignStopSequences bool) {
+	useFeedStopSequences := !reassignStopSequences
 	stopPkToCurrentSequence := map[int64]int64{}
 	for _, stopTime := range existingStopTimes {
 		if _, ok := stopPkToCurrentSequence[stopTime.StopPk]; ok {
@@ -314,8 +318,8 @@ func populateStopSequences(trip *gtfs.Trip, existingStopTimes []db.ListTripStopT
 		if !ok {
 			continue
 		}
-		// If the stop sequence from the feed is valid, we use that.
-		if stopTime.StopSequence != nil && lastSequence < int64(*stopTime.StopSequence) {
+		// If using feed stop sequences and the stop sequence from the feed is valid, we use that.
+		if useFeedStopSequences && stopTime.StopSequence != nil && lastSequence < int64(*stopTime.StopSequence) {
 			lastSequence = int64(*stopTime.StopSequence)
 			continue
 		}
