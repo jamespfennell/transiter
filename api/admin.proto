@@ -235,6 +235,17 @@ message GtfsRealtimeOptions {
     bool add_nyct_metadata = 4;
   }
   optional NyctAlertsOptions nyct_alerts_options = 3;
+
+  // If true, stop sequences in the GTFS realtime feed data are ignored, and
+  // alternative stop sequences are generated and assigned by Transiter.
+  // This setting is designed for buggy GTFS realtime feeds in which
+  // stop sequences (incorrectly) change between updates. In many cases
+  // Transiter is able to generate stop sequences that are correct and
+  // stable across updates.
+  //
+  // This should not be used for systems where a trip can call at the same
+  // stop multiple times.
+  bool reassign_stop_sequences = 4;
 }
 
 // Description of the configuration for a collection of service maps.

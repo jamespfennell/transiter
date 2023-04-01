@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/db/dbtesting"
+	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/update/common"
 )
@@ -27,8 +28,9 @@ func TestUpdateTrips(t *testing.T) {
 		name string
 		// The update process will run N times, 1 for each trip version. Providing <nil> for a version
 		// will run an update with no trips.
-		tripVersions []*gtfs.Trip
-		wantTrip     *Trip
+		tripVersions        []*gtfs.Trip
+		wantTrip            *Trip
+		gtfsRealTimeOptions *api.GtfsRealtimeOptions
 	}{
 		{
 			name: "simple case",
@@ -110,6 +112,32 @@ func TestUpdateTrips(t *testing.T) {
 				wantSt(3, stopID4, wArrTime(31)),
 			}),
 		},
+		{
+			name: "reassign stop sequences",
+			gtfsRealTimeOptions: &api.GtfsRealtimeOptions{
+				ReassignStopSequences: true,
+			},
+			tripVersions: []*gtfs.Trip{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+					gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(1)),
+					gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(2)),
+					gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(3)),
+					gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(4)),
+				}),
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+					gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(2)),
+					gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(3)),
+					gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(4)),
+					gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(5)),
+				}),
+			},
+			wantTrip: wantTrip(tripID1, routeID1, true, []StopTime{
+				wantSt(0, stopID1, wArrTime(5)),
+				wantSt(1, stopID2, wArrTime(10)),
+				wantSt(2, stopID3, wArrTime(20)),
+				wantSt(3, stopID4, wArrTime(30)),
+			}),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			querier := dbtesting.NewQuerier(t)
@@ -134,6 +162,9 @@ func TestUpdateTrips(t *testing.T) {
 				SystemPk: system.Data.Pk,
 				FeedPk:   feed.Data.Pk,
 				UpdatePk: update.Pk,
+				FeedConfig: &api.FeedConfig{
+					GtfsRealtimeOptions: tc.gtfsRealTimeOptions,
+				},
 			}
 
 			for i, tripVersion := range tc.tripVersions {
@@ -293,6 +324,12 @@ func gDepTime(i int) gtfsStuOpt {
 	t := mkTime(i)
 	return func(stu *gtfs.StopTimeUpdate) {
 		stu.Departure.Time = &t
+	}
+}
+
+func gStopSeq(i uint32) gtfsStuOpt {
+	return func(stu *gtfs.StopTimeUpdate) {
+		stu.StopSequence = &i
 	}
 }
 
