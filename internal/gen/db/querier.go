@@ -56,7 +56,7 @@ type Querier interface {
 	InsertRoute(ctx context.Context, arg InsertRouteParams) (int64, error)
 	InsertServiceMap(ctx context.Context, arg InsertServiceMapParams) (int64, error)
 	InsertServiceMapConfig(ctx context.Context, arg InsertServiceMapConfigParams) error
-	InsertServiceMapStop(ctx context.Context, arg InsertServiceMapStopParams) error
+	InsertServiceMapStop(ctx context.Context, arg []InsertServiceMapStopParams) (int64, error)
 	InsertStop(ctx context.Context, arg InsertStopParams) (int64, error)
 	InsertStopHeadSignRule(ctx context.Context, arg InsertStopHeadSignRuleParams) error
 	InsertSystem(ctx context.Context, arg InsertSystemParams) (int64, error)

@@ -71,22 +71,10 @@ func (q *Queries) InsertServiceMapConfig(ctx context.Context, arg InsertServiceM
 	return err
 }
 
-const insertServiceMapStop = `-- name: InsertServiceMapStop :exec
-INSERT INTO service_map_vertex
-    (map_pk, stop_pk, position)
-VALUES
-    ($1, $2, $3)
-`
-
 type InsertServiceMapStopParams struct {
 	MapPk    int64
 	StopPk   int64
 	Position int32
-}
-
-func (q *Queries) InsertServiceMapStop(ctx context.Context, arg InsertServiceMapStopParams) error {
-	_, err := q.db.Exec(ctx, insertServiceMapStop, arg.MapPk, arg.StopPk, arg.Position)
-	return err
 }
 
 const listServiceMapConfigsInSystem = `-- name: ListServiceMapConfigsInSystem :many

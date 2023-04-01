@@ -22,7 +22,7 @@ VALUES
     (sqlc.arg(config_pk), sqlc.arg(route_pk))
 RETURNING pk;
 
--- name: InsertServiceMapStop :exec
+-- name: InsertServiceMapStop :copyfrom
 INSERT INTO service_map_vertex
     (map_pk, stop_pk, position)
 VALUES

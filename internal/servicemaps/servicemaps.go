@@ -127,14 +127,16 @@ func persistMap(ctx context.Context, querier db.Querier, smc *Config, routePk in
 	if err != nil {
 		return err
 	}
+	var insertParams []db.InsertServiceMapStopParams
 	for i, stopPk := range stopPks {
-		if err := querier.InsertServiceMapStop(ctx, db.InsertServiceMapStopParams{
+		insertParams = append(insertParams, db.InsertServiceMapStopParams{
 			MapPk:    mapPk,
 			StopPk:   stopPk,
 			Position: int32(i),
-		}); err != nil {
-			return err
-		}
+		})
+	}
+	if _, err := querier.InsertServiceMapStop(ctx, insertParams); err != nil {
+		return err
 	}
 	return nil
 }
