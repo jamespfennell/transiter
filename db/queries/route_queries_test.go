@@ -2,12 +2,12 @@ package queries
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/transiter/internal/db/dbtesting"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
@@ -57,7 +57,7 @@ func TestEstimateHeadwaysForRoutes(t *testing.T) {
 
 	gotRows, err := querier.EstimateHeadwaysForRoutes(context.Background(), db.EstimateHeadwaysForRoutesParams{
 		RoutePks:    []int64{route1.Data.Pk, route2.Data.Pk},
-		PresentTime: sql.NullTime{Valid: true, Time: startTime},
+		PresentTime: pgtype.Timestamptz{Valid: true, Time: startTime},
 	})
 	querier.AssertNilErr(err, "EstimateHeadwaysForRoutes()")
 	wantRows := []db.EstimateHeadwaysForRoutesRow{

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/admin"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
@@ -48,9 +48,9 @@ func Run(ctx context.Context, args RunArgs) error {
 	if err != nil {
 		return err
 	}
-	config.LazyConnect = true
+	// TODO config.LazyConnect = true
 	config.MaxConns = args.MaxConnections
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return fmt.Errorf("could not connect to database: %w", err)
 	}

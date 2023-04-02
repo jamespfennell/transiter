@@ -2,10 +2,9 @@ package endpoints
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 
@@ -41,9 +40,9 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 		}
 		stops, err = r.Querier.ListStops_Geographic(ctx, db.ListStops_GeographicParams{
 			SystemPk:    system.Pk,
-			Latitude:    convertGpsDataForQuery(*req.Latitude),
-			Longitude:   convertGpsDataForQuery(*req.Longitude),
-			MaxDistance: convertGpsDataForQuery(*req.MaxDistance),
+			Latitude:    convert.Gps(req.Latitude),
+			Longitude:   convert.Gps(req.Longitude),
+			MaxDistance: convert.Gps(req.MaxDistance),
 			MaxResults:  numStops,
 		})
 	} else {
@@ -79,7 +78,7 @@ func ListTransfers(ctx context.Context, r *Context, req *api.ListTransfersReques
 	if err != nil {
 		return nil, err
 	}
-	transfers, err := r.Querier.ListTransfersInSystem(ctx, sql.NullInt64{Valid: true, Int64: system.Pk})
+	transfers, err := r.Querier.ListTransfersInSystem(ctx, pgtype.Int8{Valid: true, Int64: system.Pk})
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +157,8 @@ func buildStopsResponse(ctx context.Context, r *Context, systemID string, stops 
 			Name:               convert.SQLNullString(stop.Name),
 			Description:        convert.SQLNullString(stop.Description),
 			ZoneId:             convert.SQLNullString(stop.ZoneID),
-			Longitude:          convertGpsData(stop.Longitude),
-			Latitude:           convertGpsData(stop.Latitude),
+			Longitude:          convert.SQLGps(stop.Longitude),
+			Latitude:           convert.SQLGps(stop.Latitude),
 			Url:                convert.SQLNullString(stop.Url),
 			Type:               convert.StopType(stop.Type),
 			Timezone:           convert.SQLNullString(stop.Timezone),
@@ -230,7 +229,7 @@ func getRawStopData(ctx context.Context, r *Context, stops []db.Stop, req stopRe
 	if !req.GetSkipAlerts() {
 		d.alerts, err = r.Querier.ListActiveAlertsForStops(ctx, db.ListActiveAlertsForStopsParams{
 			StopPks:     allDescendentPks,
-			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
+			PresentTime: pgtype.Timestamptz{Valid: true, Time: time.Now()},
 		})
 		if err != nil {
 			return d, err
@@ -406,27 +405,12 @@ func liftToAncestors[T any](data rawStopData, in map[int64][]T) map[int64][]T {
 	return out
 }
 
-func buildEstimatedTime(time sql.NullTime, delay sql.NullInt32, uncertainty sql.NullInt32) *api.StopTime_EstimatedTime {
+func buildEstimatedTime(time pgtype.Timestamptz, delay, uncertainty pgtype.Int4) *api.StopTime_EstimatedTime {
 	return &api.StopTime_EstimatedTime{
 		Time:        convert.SQLNullTime(time),
 		Delay:       convert.SQLNullInt32(delay),
 		Uncertainty: convert.SQLNullInt32(uncertainty),
 	}
-}
-
-func convertGpsData(n pgtype.Numeric) *float64 {
-	if n.Status != pgtype.Present {
-		return nil
-	}
-	var r float64
-	n.AssignTo(&r)
-	return &r
-}
-
-func convertGpsDataForQuery(n float64) pgtype.Numeric {
-	var num = pgtype.Numeric{}
-	num.Set(n)
-	return num
 }
 
 func mapToSlice(m map[int64]bool) []int64 {

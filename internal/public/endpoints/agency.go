@@ -2,11 +2,11 @@ package endpoints
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -84,7 +84,7 @@ func buildApiAgencies(ctx context.Context, r *Context, systemID string, dbAgenci
 func getAlertsForAgencies(ctx context.Context, r *Context, systemID string, agencyPks []int64) ([]*api.Alert_Reference, error) {
 	dbAlerts, err := r.Querier.ListActiveAlertsForAgencies(ctx, db.ListActiveAlertsForAgenciesParams{
 		AgencyPks:   agencyPks,
-		PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
+		PresentTime: pgtype.Timestamptz{Valid: true, Time: time.Now()},
 	})
 	if err != nil {
 		return nil, err

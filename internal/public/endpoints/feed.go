@@ -71,7 +71,7 @@ func ListFeedUpdates(ctx context.Context, r *Context, req *api.ListFeedUpdatesRe
 	for _, update := range updates {
 		reply.Updates = append(reply.Updates, &api.FeedUpdate{
 			Id:            fmt.Sprintf("%d", update.Pk),
-			StartedAt:     update.StartedAt.Unix(),
+			StartedAt:     update.StartedAt.Time.Unix(),
 			Finished:      update.Finished,
 			FinishedAt:    convert.SQLNullTime(update.FinishedAt),
 			Result:        convert.FeedUpdateResult(update.Result),

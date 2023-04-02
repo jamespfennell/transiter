@@ -3,7 +3,6 @@ package dbtesting
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -11,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/db/schema"
 	"github.com/jamespfennell/transiter/internal/db/constants"
@@ -61,7 +60,7 @@ func getDB(t *testing.T) *pgxpool.Pool {
 		return d
 	}
 	var err error
-	d, err = pgxpool.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s?sslmode=disable",
+	d, err = pgxpool.New(context.Background(), fmt.Sprintf("postgres://%s:%s@%s?sslmode=disable",
 		"transiter", // TODO customize?
 		"transiter",
 		"localhost:5432",
@@ -83,7 +82,7 @@ func getDB(t *testing.T) *pgxpool.Pool {
 		t.Fatalf("failed to create Postgres database %s: %+v", dbName, err)
 	}
 
-	d, err = pgxpool.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
+	d, err = pgxpool.New(context.Background(), fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
 		"transiter", // TODO customize?
 		"transiter",
 		"localhost:5432",
@@ -173,7 +172,8 @@ func (f *Feed) NewUpdate() db.FeedUpdate {
 		func() error {
 			var err error
 			pk, err = f.s.q.InsertFeedUpdate(context.Background(), db.InsertFeedUpdateParams{
-				FeedPk: f.Data.Pk,
+				FeedPk:    f.Data.Pk,
+				StartedAt: pgtype.Timestamptz{Valid: true},
 			})
 			return err
 		},
@@ -266,8 +266,8 @@ func (r *Route) NewTrip(id string, stopTimes []StopTime) db.Trip {
 			StopPk:        stopTime.Stop.Pk,
 			TripPk:        pk,
 			StopSequence:  int32(i),
-			DepartureTime: sql.NullTime{Valid: true, Time: stopTime.Departure},
-			ArrivalTime:   sql.NullTime{Valid: true, Time: stopTime.Arrival},
+			DepartureTime: pgtype.Timestamptz{Valid: true, Time: stopTime.Departure},
+			ArrivalTime:   pgtype.Timestamptz{Valid: true, Time: stopTime.Arrival},
 		})
 		r.s.q.AssertNilErr(err, "insert trip stop time")
 	}
@@ -282,13 +282,6 @@ func (s *System) NewStop(id string, params ...db.InsertStopParams) db.Stop {
 	p.ID = id
 	p.SystemPk = s.Data.Pk
 	p.SourcePk = s.DefaulUpdate.Pk
-	var zeroNumeric pgtype.Numeric
-	if p.Longitude == zeroNumeric {
-		p.Longitude = pgtype.Numeric{Status: pgtype.Null}
-	}
-	if p.Latitude == zeroNumeric {
-		p.Latitude = pgtype.Numeric{Status: pgtype.Null}
-	}
 	if p.Type == "" {
 		p.Type = gtfs.Station.String()
 	}

@@ -28,7 +28,7 @@ RUN buf generate
 # Generate the DB files
 COPY sqlc.yaml .
 COPY db db
-RUN sqlc generate
+RUN sqlc --experimental generate
 
 # Move the newly generated files so that they don't get clobbered when we copy the source code in
 RUN mv internal/gen internal/genNew

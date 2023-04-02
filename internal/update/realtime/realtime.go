@@ -4,12 +4,12 @@ package realtime
 import (
 	"context"
 	"crypto/md5"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
@@ -558,11 +558,11 @@ func convertAlertText(text []gtfs.AlertText) string {
 	return string(b)
 }
 
-func convertOptionalTime(in *time.Time) sql.NullTime {
+func convertOptionalTime(in *time.Time) pgtype.Timestamptz {
 	if in == nil {
-		return sql.NullTime{}
+		return pgtype.Timestamptz{}
 	}
-	return sql.NullTime{
+	return pgtype.Timestamptz{
 		Valid: true,
 		Time:  *in,
 	}

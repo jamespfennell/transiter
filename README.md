@@ -86,7 +86,7 @@ The schema and queries are stored in the `db` directory.
 The Go files are generated using the following command in the repo root:
 
 ```
-sqlc generate
+sqlc --experimental generate
 ```
 
 Transiter uses [gRPC](https://grpc.io/) for developing the API.

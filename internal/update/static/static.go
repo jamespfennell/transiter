@@ -3,10 +3,8 @@ package static
 
 import (
 	"context"
-	"database/sql"
 	"log"
 
-	"github.com/jackc/pgtype"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
@@ -184,8 +182,8 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 				SourcePk:           updateCtx.UpdatePk,
 				Name:               convert.NullString(stop.Name),
 				Type:               stop.Type.String(),
-				Longitude:          convertGpsData(stop.Longitude),
-				Latitude:           convertGpsData(stop.Latitude),
+				Longitude:          convert.Gps(stop.Longitude),
+				Latitude:           convert.Gps(stop.Latitude),
 				Url:                convert.NullString(stop.Url),
 				Code:               convert.NullString(stop.Code),
 				Description:        convert.NullString(stop.Description),
@@ -201,8 +199,8 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 				SourcePk:           updateCtx.UpdatePk,
 				Name:               convert.NullString(stop.Name),
 				Type:               stop.Type.String(),
-				Longitude:          convertGpsData(stop.Longitude),
-				Latitude:           convertGpsData(stop.Latitude),
+				Longitude:          convert.Gps(stop.Longitude),
+				Latitude:           convert.Gps(stop.Latitude),
 				Url:                convert.NullString(stop.Url),
 				Code:               convert.NullString(stop.Code),
 				Description:        convert.NullString(stop.Description),
@@ -237,11 +235,8 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 			continue
 		}
 		if err := updateCtx.Querier.UpdateStop_Parent(ctx, db.UpdateStop_ParentParams{
-			Pk: idToPk[stop.Id],
-			ParentStopPk: sql.NullInt64{
-				Int64: parentStopPk,
-				Valid: true,
-			},
+			Pk:           idToPk[stop.Id],
+			ParentStopPk: convert.NullInt64(&parentStopPk),
 		}); err != nil {
 			return nil, err
 		}
@@ -277,10 +272,4 @@ func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transf
 		}
 	}
 	return nil
-}
-
-func convertGpsData(f *float64) pgtype.Numeric {
-	var r pgtype.Numeric
-	_ = r.Set(f)
-	return r
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/public/reference"

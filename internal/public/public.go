@@ -5,8 +5,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/monitoring"
@@ -95,7 +95,7 @@ func (s *Server) GetAlert(ctx context.Context, req *api.GetAlertRequest) (*api.A
 func run[S, T any](ctx context.Context, s *Server, methodName string, f func(context.Context, *endpoints.Context, S) (T, error), req S) (T, error) {
 	startTime := time.Now()
 	var t T
-	err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
+	err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
 		var err error
 		t, err = f(ctx, &endpoints.Context{Querier: db.New(tx), Reference: reference.NewGenerator(ctx)}, req)
 		return err

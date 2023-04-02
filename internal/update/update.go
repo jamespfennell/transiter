@@ -3,16 +3,17 @@ package update
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jamespfennell/gtfs"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -28,7 +29,7 @@ import (
 func Do(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error {
 	startTime := time.Now()
 	var updatePk int64
-	if err := pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	if err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		var err error
 		updatePk, err = createInExistingTx(ctx, db.New(tx), systemID, feedID)
 		return err
@@ -37,7 +38,7 @@ func Do(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error 
 	}
 	var r runResult
 	var runErr error
-	commitErr := pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	commitErr := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		// We don't return the error through the transaction function as we want to commit the feed update
 		// result irrespective of whether it was success or failure.
 		r, runErr = runInExistingTx(ctx, db.New(tx), systemID, feedID, updatePk)
@@ -74,30 +75,30 @@ func createInExistingTx(ctx context.Context, querier db.Querier, systemID, feedI
 	}
 	return querier.InsertFeedUpdate(ctx, db.InsertFeedUpdateParams{
 		FeedPk:    feed.Pk,
-		StartedAt: time.Now(),
+		StartedAt: pgtype.Timestamptz{Valid: true, Time: time.Now()},
 	})
 }
 
 func runInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string, updatePk int64) (runResult, error) {
 	r := run(ctx, querier, systemID, updatePk)
 
-	contentLength := sql.NullInt32{}
+	contentLength := pgtype.Int4{}
 	if r.ContentLength != -1 {
-		contentLength = sql.NullInt32{Valid: true, Int32: r.ContentLength}
+		contentLength = pgtype.Int4{Valid: true, Int32: r.ContentLength}
 	}
-	contentHash := sql.NullString{}
+	contentHash := pgtype.Text{}
 	if r.ContentHash != "" {
-		contentHash = sql.NullString{Valid: true, String: r.ContentHash}
+		contentHash = pgtype.Text{Valid: true, String: r.ContentHash}
 	}
-	errorMessage := sql.NullString{}
+	errorMessage := pgtype.Text{}
 	if r.Err != nil {
 		log.Printf("Error during feed update: %s\n", r.Err)
-		errorMessage = sql.NullString{Valid: true, String: r.Err.Error()}
+		errorMessage = pgtype.Text{Valid: true, String: r.Err.Error()}
 	}
 	if err := querier.FinishFeedUpdate(ctx, db.FinishFeedUpdateParams{
 		UpdatePk:      updatePk,
-		Result:        sql.NullString{Valid: true, String: r.Result},
-		FinishedAt:    sql.NullTime{Valid: true, Time: time.Now()},
+		Result:        convert.NullString(&r.Result),
+		FinishedAt:    pgtype.Timestamptz{Valid: true, Time: time.Now()},
 		ContentLength: contentLength,
 		ContentHash:   contentHash,
 		ErrorMessage:  errorMessage,

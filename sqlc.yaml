@@ -3,7 +3,7 @@ packages:
   - path: "internal/gen/db"
     name: "db"
     engine: "postgresql"
-    sql_package: "pgx/v4"
+    sql_package: "pgx/v5"
     schema: "db/schema/"
     queries: "db/queries/"
     emit_interface: true

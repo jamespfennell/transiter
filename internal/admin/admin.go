@@ -11,8 +11,8 @@ import (
 	"text/template"
 
 	"github.com/ghodss/yaml"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -39,7 +39,7 @@ func New(pool *pgxpool.Pool, scheduler scheduler.Scheduler) *Service {
 
 func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigRequest) (*api.SystemConfig, error) {
 	reply := &api.SystemConfig{}
-	err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		querier := db.New(tx)
 		system, err := querier.GetSystem(ctx, req.SystemId)
 		if err != nil {
@@ -97,7 +97,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	log.Printf("Config for install/update for system %s:\n%+v\n", req.SystemId, systemConfig)
 
 	if req.Synchronous {
-		if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 			querier := db.New(tx)
 			keepGoing, err := beginSystemInstall(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
 			if err != nil {
@@ -120,7 +120,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		s.scheduler.ResetSystem(ctx, req.SystemId)
 	} else {
 		var keepGoing bool
-		if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 			querier := db.New(tx)
 			var err error
 			keepGoing, err = beginSystemInstall(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
@@ -132,13 +132,13 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 			go func() {
 				// TODO: can we wire through the context on the server?
 				ctx := context.Background()
-				err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+				err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 					return performSystemInstall(ctx, db.New(tx), req.SystemId, systemConfig)
 				})
 				if err != nil {
 					log.Printf("Failed to install system %q, going to mark as FAILED. Install error: %s", req.SystemId, err)
 				}
-				if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+				if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 					return finishSystemInstall(ctx, db.New(tx), req.SystemId, err)
 				}); err != nil {
 					log.Printf("Failed to mark install of system %q as finished: %s", req.SystemId, err)
@@ -266,7 +266,7 @@ func finishSystemInstall(ctx context.Context, querier db.Querier, systemID strin
 
 func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest) (*api.DeleteSystemReply, error) {
 	log.Printf("Recieved delete request for system %q", req.SystemId)
-	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		querier := db.New(tx)
 		system, err := querier.GetSystem(ctx, req.SystemId)
 		if err != nil {
@@ -341,7 +341,7 @@ func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.Garbag
 	// We could probably make this really race condition free by first querying the start time
 	// of the oldest in-progress feed update, and then ensuring we never delete feed updates
 	// more recent than this.
-	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		querier := db.New(tx)
 		var err error
 		activeFeedUpdatePks, err = querier.ListActiveFeedUpdatePks(ctx)
@@ -351,7 +351,7 @@ func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.Garbag
 	}
 	fmt.Println("[gcfeedupdates] Active feed update pks", activeFeedUpdatePks)
 	var numDeleted int64
-	if err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		var err error
 		numDeleted, err = db.New(tx).GarbageCollectFeedUpdates(ctx, activeFeedUpdatePks)
 		return err

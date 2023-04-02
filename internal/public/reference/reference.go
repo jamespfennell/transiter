@@ -3,10 +3,10 @@ package reference
 
 import (
 	"context"
-	"database/sql"
 	"path"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"google.golang.org/grpc/metadata"
@@ -122,7 +122,7 @@ func (h Generator) StopsHref(systemID string) *string {
 	return h.generateHref("systems", systemID, "stops")
 }
 
-func (h Generator) Stop(id string, systemID string, name sql.NullString) *api.Stop_Reference {
+func (h Generator) Stop(id string, systemID string, name pgtype.Text) *api.Stop_Reference {
 	return &api.Stop_Reference{
 		Id:       id,
 		System:   h.System(systemID),

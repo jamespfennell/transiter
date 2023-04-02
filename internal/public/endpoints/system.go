@@ -2,9 +2,9 @@ package endpoints
 
 import (
 	"context"
-	"database/sql"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
@@ -55,7 +55,7 @@ func buildApiSystems(ctx context.Context, r *Context, systems []db.System) ([]*a
 		if err != nil {
 			return nil, err
 		}
-		numTransfers, err := r.Querier.CountTransfersInSystem(ctx, sql.NullInt64{Valid: true, Int64: system.Pk})
+		numTransfers, err := r.Querier.CountTransfersInSystem(ctx, pgtype.Int8{Valid: true, Int64: system.Pk})
 		if err != nil {
 			return nil, err
 		}

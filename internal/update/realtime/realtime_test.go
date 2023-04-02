@@ -2,12 +2,13 @@ package realtime
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/gtfs"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbtesting"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -228,7 +229,7 @@ func wantTrip(tripID, routeID string, directionID bool, sts []StopTime) *Trip {
 		RouteID: routeID,
 		DBFields: db.Trip{
 			ID:          tripID,
-			DirectionID: sql.NullBool{Valid: true, Bool: directionID},
+			DirectionID: convert.NullBool(&directionID),
 		},
 		StopTimes: sts,
 	}
@@ -246,7 +247,7 @@ func NewStopTimeFromDB(in db.ListStopsTimesForTripRow, stopPkToID map[int64]stri
 	in.TripPk = 0
 	in.StopPk = 0
 	in.StopID = ""
-	in.StopName = sql.NullString{}
+	in.StopName = pgtype.Text{}
 	return StopTime{
 		StopID:   stopID,
 		DBFields: in,
@@ -271,14 +272,14 @@ type wantStOpt func(st *StopTime)
 func wArrTime(i int) wantStOpt {
 	t := mkTime(i)
 	return func(st *StopTime) {
-		st.DBFields.ArrivalTime = sql.NullTime{Valid: true, Time: t}
+		st.DBFields.ArrivalTime = convert.NullTime(&t)
 	}
 }
 
 func wDepTime(i int) wantStOpt {
 	t := mkTime(i)
 	return func(st *StopTime) {
-		st.DBFields.DepartureTime = sql.NullTime{Valid: true, Time: t}
+		st.DBFields.DepartureTime = convert.NullTime(&t)
 	}
 }
 

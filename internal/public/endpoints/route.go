@@ -2,10 +2,10 @@ package endpoints
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -108,7 +108,7 @@ func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []
 func buildEstimateHeadwaysForRoutes(ctx context.Context, querier db.Querier, routePks []int64) (map[int64]*int32, error) {
 	rows, err := querier.EstimateHeadwaysForRoutes(ctx, db.EstimateHeadwaysForRoutesParams{
 		RoutePks: routePks,
-		PresentTime: sql.NullTime{
+		PresentTime: pgtype.Timestamptz{
 			Valid: true,
 			Time:  time.Now(),
 		},
@@ -127,7 +127,7 @@ func buildAlertPreviews(ctx context.Context, r *Context, systemID string, routeP
 	alerts, err := r.Querier.ListActiveAlertsForRoutes(
 		ctx, db.ListActiveAlertsForRoutesParams{
 			RoutePks:    routePks,
-			PresentTime: sql.NullTime{Valid: true, Time: time.Now()},
+			PresentTime: pgtype.Timestamptz{Valid: true, Time: time.Now()},
 		})
 	if err != nil {
 		return nil, err

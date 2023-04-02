@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/gtfs/extensions"
 	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
@@ -16,7 +18,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 )
 
-func SQLNullTime(t sql.NullTime) *int64 {
+func SQLNullTime(t pgtype.Timestamptz) *int64 {
 	if !t.Valid {
 		return nil
 	}
@@ -24,7 +26,7 @@ func SQLNullTime(t sql.NullTime) *int64 {
 	return &r
 }
 
-func SQLNullString(t sql.NullString) *string {
+func SQLNullString(t pgtype.Text) *string {
 	if !t.Valid {
 		return nil
 	}
@@ -38,96 +40,115 @@ func SQLNullFloat64(t sql.NullFloat64) *float64 {
 	return &t.Float64
 }
 
-func SQLNullInt64(t sql.NullInt64) *int64 {
+func SQLNullInt64(t pgtype.Int8) *int64 {
 	if !t.Valid {
 		return nil
 	}
 	return &t.Int64
 }
 
-func SQLNullInt32(t sql.NullInt32) *int32 {
+func SQLNullInt32(t pgtype.Int4) *int32 {
 	if !t.Valid {
 		return nil
 	}
 	return &t.Int32
 }
 
-func NullInt32(t *int32) sql.NullInt32 {
+func NullInt32(t *int32) pgtype.Int4 {
 	if t == nil {
-		return sql.NullInt32{}
+		return pgtype.Int4{}
 	}
-	return sql.NullInt32{Valid: true, Int32: *t}
+	return pgtype.Int4{Valid: true, Int32: *t}
 }
 
-func NullInt64(t *int64) sql.NullInt64 {
+func NullInt64(t *int64) pgtype.Int8 {
 	if t == nil {
-		return sql.NullInt64{}
+		return pgtype.Int8{}
 	}
-	return sql.NullInt64{Valid: true, Int64: *t}
+	return pgtype.Int8{Valid: true, Int64: *t}
 }
 
-func NullFloat64(t *float64) sql.NullFloat64 {
+func NullFloat64(t *float64) pgtype.Float8 {
 	if t == nil {
-		return sql.NullFloat64{}
+		return pgtype.Float8{}
 	}
-	return sql.NullFloat64{Valid: true, Float64: *t}
+	return pgtype.Float8{Valid: true, Float64: *t}
 }
 
-func NullString(t *string) sql.NullString {
+func NullString(t *string) pgtype.Text {
 	if t == nil {
-		return sql.NullString{}
+		return pgtype.Text{}
 	}
-	return sql.NullString{Valid: true, String: *t}
+	return pgtype.Text{Valid: true, String: *t}
 }
 
-func NullBool(t *bool) sql.NullBool {
+func NullBool(t *bool) pgtype.Bool {
 	if t == nil {
-		return sql.NullBool{}
+		return pgtype.Bool{}
 	}
-	return sql.NullBool{Valid: true, Bool: *t}
+	return pgtype.Bool{Valid: true, Bool: *t}
 }
 
-func SQLNullBool(t sql.NullBool) *bool {
+func SQLNullBool(t pgtype.Bool) *bool {
 	if !t.Valid {
 		return nil
 	}
 	return &t.Bool
 }
 
-func DirectionID(d gtfs.DirectionID) sql.NullBool {
+func Gps(f *float64) pgtype.Numeric {
+	if f == nil {
+		return pgtype.Numeric{}
+	}
+	return pgtype.Numeric{
+		Int:   big.NewInt(int64(*f * 1000000)),
+		Exp:   -6,
+		Valid: true,
+	}
+}
+
+func SQLGps(n pgtype.Numeric) *float64 {
+	if !n.Valid {
+		return nil
+	}
+	f := float64(n.Int.Int64()) / 1000000
+	return &f
+}
+
+func DirectionID(d gtfs.DirectionID) pgtype.Bool {
 	switch d {
 	case gtfs.DirectionIDFalse:
-		return sql.NullBool{
+		return pgtype.Bool{
 			Valid: true,
 			Bool:  false,
 		}
 	case gtfs.DirectionIDTrue:
-		return sql.NullBool{
+		return pgtype.Bool{
 			Valid: true,
 			Bool:  true,
 		}
 	default:
-		return sql.NullBool{
+		return pgtype.Bool{
 			Valid: false,
 		}
 	}
 }
 
-func NullTime(t *time.Time) sql.NullTime {
+func NullTime(t *time.Time) pgtype.Timestamptz {
 	if t == nil {
-		return sql.NullTime{}
+		return pgtype.Timestamptz{}
 	}
-	return sql.NullTime{
+	return pgtype.Timestamptz{
 		Valid: true,
 		Time:  *t,
 	}
 }
 
-func NullDuration(d *time.Duration) sql.NullInt32 {
+func NullDuration(d *time.Duration) pgtype.Int4 {
 	if d == nil {
-		return sql.NullInt32{}
+		return pgtype.Int4{}
 	}
-	return sql.NullInt32{
+	return pgtype.Int4{
 		Valid: true,
 		Int32: int32(d.Milliseconds() / 1000),
 	}
@@ -162,7 +183,7 @@ func StopType(t string) api.Stop_Type {
 	return api.Stop_Type(api.Stop_Type_value[t])
 }
 
-func FeedUpdateResult(result sql.NullString) *api.FeedUpdate_Result {
+func FeedUpdateResult(result pgtype.Text) *api.FeedUpdate_Result {
 	if !result.Valid {
 		return nil
 	}
