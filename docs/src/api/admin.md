@@ -375,6 +375,7 @@ Message describing options for the GTFS realtime parser.
 | NO_EXTENSION | 0 |  |
 | NYCT_TRIPS | 1 |  |
 | NYCT_ALERTS | 2 |  |
+| NYCT_BUS_TRIPS | 3 |  |
 
 
 
