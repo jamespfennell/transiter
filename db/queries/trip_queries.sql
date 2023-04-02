@@ -37,7 +37,7 @@ VALUES
     (sqlc.arg(id), sqlc.arg(route_pk), sqlc.arg(source_pk), sqlc.arg(direction_id), sqlc.arg(started_at), sqlc.arg(gtfs_hash))
 RETURNING pk;
 
--- name: UpdateTrip :exec
+-- name: UpdateTrip :batchexec
 UPDATE trip SET 
     source_pk = sqlc.arg(source_pk),
     direction_id = sqlc.arg(direction_id),
@@ -82,7 +82,7 @@ SET
 WHERE
     pk = sqlc.arg(pk);
 
--- name: MarkTripStopTimesPast :exec
+-- name: MarkTripStopTimesPast :batchexec
 UPDATE trip_stop_time
 SET
     past = TRUE

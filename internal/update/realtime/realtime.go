@@ -186,10 +186,8 @@ func newStagedUpdates(trips []gtfs.Trip) stagedUpdates {
 }
 
 func (s *stagedUpdates) run(ctx context.Context, updateCtx common.UpdateContext) error {
-	for _, param := range s.updateTrips {
-		if err := updateCtx.Querier.UpdateTrip(ctx, param); err != nil {
-			return nil
-		}
+	if err := dbwrappers.BatchUpdate(ctx, updateCtx.Querier.UpdateTrip, s.updateTrips); err != nil {
+		return err
 	}
 	if err := updateCtx.Querier.DeleteTripStopTimes(ctx, s.deleteStopTimes); err != nil {
 		return err
@@ -197,10 +195,8 @@ func (s *stagedUpdates) run(ctx context.Context, updateCtx common.UpdateContext)
 	if _, err := updateCtx.Querier.InsertTripStopTime(ctx, s.insertStopTimes); err != nil {
 		return err
 	}
-	for _, param := range s.markStopTimesPast {
-		if err := updateCtx.Querier.MarkTripStopTimesPast(ctx, param); err != nil {
-			return err
-		}
+	if err := dbwrappers.BatchUpdate(ctx, updateCtx.Querier.MarkTripStopTimesPast, s.markStopTimesPast); err != nil {
+		return err
 	}
 	*s = stagedUpdates{}
 	return nil

@@ -105,7 +105,7 @@ type Querier interface {
 	MapStopPkToChildPks(ctx context.Context, stopPks []int64) ([]MapStopPkToChildPksRow, error)
 	MapStopPkToDescendentPks(ctx context.Context, stopPks []int64) ([]MapStopPkToDescendentPksRow, error)
 	MarkAlertsFresh(ctx context.Context, arg MarkAlertsFreshParams) error
-	MarkTripStopTimesPast(ctx context.Context, arg MarkTripStopTimesPastParams) error
+	MarkTripStopTimesPast(ctx context.Context, arg []MarkTripStopTimesPastParams) *MarkTripStopTimesPastBatchResults
 	UpdateAgency(ctx context.Context, arg UpdateAgencyParams) error
 	UpdateFeed(ctx context.Context, arg UpdateFeedParams) error
 	UpdateRoute(ctx context.Context, arg UpdateRouteParams) error
@@ -114,7 +114,7 @@ type Querier interface {
 	UpdateStop_Parent(ctx context.Context, arg UpdateStop_ParentParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
 	UpdateSystemStatus(ctx context.Context, arg UpdateSystemStatusParams) error
-	UpdateTrip(ctx context.Context, arg UpdateTripParams) error
+	UpdateTrip(ctx context.Context, arg []UpdateTripParams) *UpdateTripBatchResults
 	UpdateTripStopTime(ctx context.Context, arg UpdateTripStopTimeParams) error
 }
 

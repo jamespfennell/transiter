@@ -170,3 +170,17 @@ func Ping(ctx context.Context, pool *pgxpool.Pool, numRetries int, waitBetweenPi
 	}
 	return err
 }
+
+type batchResult interface {
+	Exec(f func(i int, err error))
+}
+
+func BatchUpdate[T any, S batchResult](ctx context.Context, f func(ctx context.Context, args []T) S, args []T) error {
+	var err error
+	f(ctx, args).Exec(func(i int, rowErr error) {
+		if rowErr != nil {
+			err = rowErr
+		}
+	})
+	return err
+}

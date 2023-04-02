@@ -347,53 +347,6 @@ func (q *Queries) ListTripsForUpdate(ctx context.Context, routePks []int64) ([]L
 	return items, nil
 }
 
-const markTripStopTimesPast = `-- name: MarkTripStopTimesPast :exec
-UPDATE trip_stop_time
-SET
-    past = TRUE
-WHERE
-    trip_pk = $1
-    AND stop_sequence < $2
-`
-
-type MarkTripStopTimesPastParams struct {
-	TripPk              int64
-	CurrentStopSequence int32
-}
-
-func (q *Queries) MarkTripStopTimesPast(ctx context.Context, arg MarkTripStopTimesPastParams) error {
-	_, err := q.db.Exec(ctx, markTripStopTimesPast, arg.TripPk, arg.CurrentStopSequence)
-	return err
-}
-
-const updateTrip = `-- name: UpdateTrip :exec
-UPDATE trip SET 
-    source_pk = $1,
-    direction_id = $2,
-    started_at = $3,
-    gtfs_hash = $4
-WHERE pk = $5
-`
-
-type UpdateTripParams struct {
-	SourcePk    int64
-	DirectionID pgtype.Bool
-	StartedAt   pgtype.Timestamptz
-	GtfsHash    string
-	Pk          int64
-}
-
-func (q *Queries) UpdateTrip(ctx context.Context, arg UpdateTripParams) error {
-	_, err := q.db.Exec(ctx, updateTrip,
-		arg.SourcePk,
-		arg.DirectionID,
-		arg.StartedAt,
-		arg.GtfsHash,
-		arg.Pk,
-	)
-	return err
-}
-
 const updateTripStopTime = `-- name: UpdateTripStopTime :exec
 UPDATE trip_stop_time
 SET
