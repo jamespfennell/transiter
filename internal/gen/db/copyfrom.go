@@ -42,3 +42,46 @@ func (r iteratorForInsertServiceMapStop) Err() error {
 func (q *Queries) InsertServiceMapStop(ctx context.Context, arg []InsertServiceMapStopParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"service_map_vertex"}, []string{"map_pk", "stop_pk", "position"}, &iteratorForInsertServiceMapStop{rows: arg})
 }
+
+// iteratorForInsertTripStopTime implements pgx.CopyFromSource.
+type iteratorForInsertTripStopTime struct {
+	rows                 []InsertTripStopTimeParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForInsertTripStopTime) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForInsertTripStopTime) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].StopPk,
+		r.rows[0].TripPk,
+		r.rows[0].ArrivalTime,
+		r.rows[0].ArrivalDelay,
+		r.rows[0].ArrivalUncertainty,
+		r.rows[0].DepartureTime,
+		r.rows[0].DepartureDelay,
+		r.rows[0].DepartureUncertainty,
+		r.rows[0].StopSequence,
+		r.rows[0].Track,
+		r.rows[0].Headsign,
+		r.rows[0].Past,
+	}, nil
+}
+
+func (r iteratorForInsertTripStopTime) Err() error {
+	return nil
+}
+
+func (q *Queries) InsertTripStopTime(ctx context.Context, arg []InsertTripStopTimeParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"trip_stop_time"}, []string{"stop_pk", "trip_pk", "arrival_time", "arrival_delay", "arrival_uncertainty", "departure_time", "departure_delay", "departure_uncertainty", "stop_sequence", "track", "headsign", "past"}, &iteratorForInsertTripStopTime{rows: arg})
+}

@@ -155,16 +155,6 @@ func (q *Queries) InsertTrip(ctx context.Context, arg InsertTripParams) (int64, 
 	return pk, err
 }
 
-const insertTripStopTime = `-- name: InsertTripStopTime :exec
-INSERT INTO trip_stop_time
-    (stop_pk, trip_pk, arrival_time, arrival_delay, arrival_uncertainty,
-     departure_time, departure_delay, departure_uncertainty, stop_sequence, track, headsign, past)
-VALUES
-    ($1, $2, $3, $4,
-     $5, $6, $7,
-     $8, $9, $10, $11, FALSE)
-`
-
 type InsertTripStopTimeParams struct {
 	StopPk               int64
 	TripPk               int64
@@ -177,23 +167,7 @@ type InsertTripStopTimeParams struct {
 	StopSequence         int32
 	Track                pgtype.Text
 	Headsign             pgtype.Text
-}
-
-func (q *Queries) InsertTripStopTime(ctx context.Context, arg InsertTripStopTimeParams) error {
-	_, err := q.db.Exec(ctx, insertTripStopTime,
-		arg.StopPk,
-		arg.TripPk,
-		arg.ArrivalTime,
-		arg.ArrivalDelay,
-		arg.ArrivalUncertainty,
-		arg.DepartureTime,
-		arg.DepartureDelay,
-		arg.DepartureUncertainty,
-		arg.StopSequence,
-		arg.Track,
-		arg.Headsign,
-	)
-	return err
+	Past                 bool
 }
 
 const listStopsTimesForTrip = `-- name: ListStopsTimesForTrip :many

@@ -261,16 +261,18 @@ func (r *Route) NewTrip(id string, stopTimes []StopTime) db.Trip {
 			})
 		},
 	)
+	var insertParams []db.InsertTripStopTimeParams
 	for i, stopTime := range stopTimes {
-		err := r.s.q.InsertTripStopTime(context.Background(), db.InsertTripStopTimeParams{
+		insertParams = append(insertParams, db.InsertTripStopTimeParams{
 			StopPk:        stopTime.Stop.Pk,
 			TripPk:        pk,
 			StopSequence:  int32(i),
 			DepartureTime: pgtype.Timestamptz{Valid: true, Time: stopTime.Departure},
 			ArrivalTime:   pgtype.Timestamptz{Valid: true, Time: stopTime.Arrival},
 		})
-		r.s.q.AssertNilErr(err, "insert trip stop time")
 	}
+	_, err := r.s.q.InsertTripStopTime(context.Background(), insertParams)
+	r.s.q.AssertNilErr(err, "insert trip stop time")
 	return trip
 }
 

@@ -58,6 +58,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		return err
 	}
 
+	stagedUpdates := newStagedUpdates(trips)
 	seenUIDs := map[dbwrappers.TripUID]bool{}
 	tripUIDToPk := map[dbwrappers.TripUID]int64{}
 	tripUIDToTrip := map[dbwrappers.TripUID]*gtfs.Trip{}
@@ -90,21 +91,23 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		var tripPk int64
 		if existingTrip, ok := existingTrips[uid]; ok {
 			// Even if the data is the same, we update the trip to update the source pk.
-			if err := updateCtx.Querier.UpdateTrip(ctx, db.UpdateTripParams{
+			stagedUpdates.updateTrips = append(stagedUpdates.updateTrips, db.UpdateTripParams{
 				Pk:          existingTrip.Pk,
 				SourcePk:    updateCtx.UpdatePk,
 				DirectionID: convert.DirectionID(trip.ID.DirectionID),
 				//StartedAt:    trip.ID.StartDate, // TODO: also the start time?
 				GtfsHash: gtfsHash,
-			}); err != nil {
-				return err
-			}
+			})
 			if existingTrip.GtfsHash == gtfsHash {
 				continue
 			}
 			tripPk = existingTrip.Pk
 		} else {
 			var err error
+			// We need the newly generated primary key from inserting a new trip, and there's so
+			// simple way to do this in a batched approach. So we just issue one query per trip.
+			// This code path is only run the first time a trip is seen in a feed, so it's not too
+			// bad to do this.
 			tripPk, err = updateCtx.Querier.InsertTrip(ctx, db.InsertTripParams{
 				ID:          trip.ID.ID,
 				RoutePk:     routePk,
@@ -129,19 +132,19 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	}
 	routePksWithPathChanges := map[int64]bool{}
 	for uid, trip := range tripUIDToTrip {
-		pathChanged, err := updateStopTimesInDB(ctx, updateCtx, updateStopTimesInDBArgs{
+		if pathChanged := calculateStopTimeChanges(ctx, updateCtx, updateStopTimesInDBArgs{
 			tripPk:              tripUIDToPk[uid],
 			trip:                trip,
 			existingStopTimes:   existingStopTimes[uid],
 			stopHeadsignMatcher: stopHeadsignMatcher,
 			stopIDToPk:          stopIDToPk,
-		})
-		if err != nil {
-			return err
-		}
-		if pathChanged {
+		}, &stagedUpdates); pathChanged {
 			routePksWithPathChanges[uid.RoutePk] = true
 		}
+	}
+
+	if err := stagedUpdates.run(ctx, updateCtx); err != nil {
+		return err
 	}
 
 	routePksWithDeletedTrips, err := updateCtx.Querier.DeleteStaleTrips(ctx, db.DeleteStaleTripsParams{
@@ -161,6 +164,48 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	return nil
 }
 
+type stagedUpdates struct {
+	updateTrips       []db.UpdateTripParams
+	deleteStopTimes   []int64
+	insertStopTimes   []db.InsertTripStopTimeParams
+	markStopTimesPast []db.MarkTripStopTimesPastParams
+}
+
+func newStagedUpdates(trips []gtfs.Trip) stagedUpdates {
+	nTrips := len(trips)
+	var nStopTimes int
+	for i := range trips {
+		nStopTimes += len(trips[i].StopTimeUpdates)
+	}
+	return stagedUpdates{
+		updateTrips:       make([]db.UpdateTripParams, 0, nTrips),
+		deleteStopTimes:   make([]int64, 0, nStopTimes),
+		insertStopTimes:   make([]db.InsertTripStopTimeParams, 0, nStopTimes),
+		markStopTimesPast: make([]db.MarkTripStopTimesPastParams, 0, nTrips),
+	}
+}
+
+func (s *stagedUpdates) run(ctx context.Context, updateCtx common.UpdateContext) error {
+	for _, param := range s.updateTrips {
+		if err := updateCtx.Querier.UpdateTrip(ctx, param); err != nil {
+			return nil
+		}
+	}
+	if err := updateCtx.Querier.DeleteTripStopTimes(ctx, s.deleteStopTimes); err != nil {
+		return err
+	}
+	if _, err := updateCtx.Querier.InsertTripStopTime(ctx, s.insertStopTimes); err != nil {
+		return err
+	}
+	for _, param := range s.markStopTimesPast {
+		if err := updateCtx.Querier.MarkTripStopTimesPast(ctx, param); err != nil {
+			return err
+		}
+	}
+	*s = stagedUpdates{}
+	return nil
+}
+
 type updateStopTimesInDBArgs struct {
 	stopHeadsignMatcher *StopHeadsignMatcher
 	tripPk              int64
@@ -169,9 +214,9 @@ type updateStopTimesInDBArgs struct {
 	stopIDToPk          map[string]int64
 }
 
-// updateStopTimesInDB updates the trip stop times in the database. The boolean return value indicates
+// calculateStopTimeChanges updates the trip stop times in the database. The boolean return value indicates
 // whether the path of the trip has changed.
-func updateStopTimesInDB(ctx context.Context, updateCtx common.UpdateContext, args updateStopTimesInDBArgs) (bool, error) {
+func calculateStopTimeChanges(ctx context.Context, updateCtx common.UpdateContext, args updateStopTimesInDBArgs, t *stagedUpdates) bool {
 	// Check to see if stop sequences should be reassigned by transiter (even if present in GTFS).
 	reassignStopSequences := updateCtx.FeedConfig.GetGtfsRealtimeOptions().GetReassignStopSequences()
 
@@ -195,44 +240,30 @@ func updateStopTimesInDB(ctx context.Context, updateCtx common.UpdateContext, ar
 		headsign := args.stopHeadsignMatcher.Match(stopPk, stopTime.NyctTrack)
 		existingStopTime, ok := stopSequenceToStopTimePk[int32(*stopTime.StopSequence)]
 		if ok {
-			if err := updateCtx.Querier.UpdateTripStopTime(ctx, db.UpdateTripStopTimeParams{
-				Pk:                   existingStopTime.Pk,
-				StopPk:               stopPk,
-				ArrivalTime:          convert.NullTime(stopTime.GetArrival().Time),
-				ArrivalDelay:         convert.NullDuration(stopTime.GetArrival().Delay),
-				ArrivalUncertainty:   convert.NullInt32(stopTime.GetArrival().Uncertainty),
-				DepartureTime:        convert.NullTime(stopTime.GetDeparture().Time),
-				DepartureDelay:       convert.NullDuration(stopTime.GetDeparture().Delay),
-				DepartureUncertainty: convert.NullInt32(stopTime.GetDeparture().Uncertainty),
-				StopSequence:         int32(*stopTime.StopSequence),
-				Track:                convert.NullString(stopTime.NyctTrack),
-				Headsign:             convert.NullString(headsign),
-			}); err != nil {
-				return false, err
-			}
+			t.deleteStopTimes = append(t.deleteStopTimes, existingStopTime.Pk)
 			delete(stopSequenceToStopTimePk, int32(*stopTime.StopSequence))
 			if stopPk != existingStopTime.Pk {
 				pathChanged = true
 			}
 		} else {
-			if err := updateCtx.Querier.InsertTripStopTime(ctx, db.InsertTripStopTimeParams{
-				TripPk:               args.tripPk,
-				StopPk:               stopPk,
-				ArrivalTime:          convert.NullTime(stopTime.GetArrival().Time),
-				ArrivalDelay:         convert.NullDuration(stopTime.GetArrival().Delay),
-				ArrivalUncertainty:   convert.NullInt32(stopTime.GetArrival().Uncertainty),
-				DepartureTime:        convert.NullTime(stopTime.GetDeparture().Time),
-				DepartureDelay:       convert.NullDuration(stopTime.GetDeparture().Delay),
-				DepartureUncertainty: convert.NullInt32(stopTime.GetDeparture().Uncertainty),
-				StopSequence:         int32(*stopTime.StopSequence),
-				Track:                convert.NullString(stopTime.NyctTrack),
-				Headsign:             convert.NullString(headsign),
-			}); err != nil {
-				return false, err
-			}
 			pathChanged = true
 		}
+		t.insertStopTimes = append(t.insertStopTimes, db.InsertTripStopTimeParams{
+			TripPk:               args.tripPk,
+			StopPk:               stopPk,
+			ArrivalTime:          convert.NullTime(stopTime.GetArrival().Time),
+			ArrivalDelay:         convert.NullDuration(stopTime.GetArrival().Delay),
+			ArrivalUncertainty:   convert.NullInt32(stopTime.GetArrival().Uncertainty),
+			DepartureTime:        convert.NullTime(stopTime.GetDeparture().Time),
+			DepartureDelay:       convert.NullDuration(stopTime.GetDeparture().Delay),
+			DepartureUncertainty: convert.NullInt32(stopTime.GetDeparture().Uncertainty),
+			StopSequence:         int32(*stopTime.StopSequence),
+			Track:                convert.NullString(stopTime.NyctTrack),
+			Headsign:             convert.NullString(headsign),
+			Past:                 false,
+		})
 	}
+
 	currentStopSequence := int32(math.MaxInt32)
 	for _, stopTime := range args.trip.StopTimeUpdates {
 		if stopTime.StopSequence != nil {
@@ -240,30 +271,20 @@ func updateStopTimesInDB(ctx context.Context, updateCtx common.UpdateContext, ar
 			break
 		}
 	}
-	if err := updateCtx.Querier.MarkTripStopTimesPast(ctx, db.MarkTripStopTimesPastParams{
+	t.markStopTimesPast = append(t.markStopTimesPast, db.MarkTripStopTimesPastParams{
 		TripPk:              args.tripPk,
 		CurrentStopSequence: currentStopSequence,
-	}); err != nil {
-		return false, err
+	})
+
+	for stopSequence, stopTime := range stopSequenceToStopTimePk {
+		if stopSequence < currentStopSequence {
+			continue
+		}
+		t.deleteStopTimes = append(t.deleteStopTimes, stopTime.Pk)
+		pathChanged = true
 	}
 
-	{
-		var stopTimePksToDelete []int64
-		for stopSequence, stopTime := range stopSequenceToStopTimePk {
-			if stopSequence < currentStopSequence {
-				continue
-			}
-			stopTimePksToDelete = append(stopTimePksToDelete, stopTime.Pk)
-		}
-		if err := updateCtx.Querier.DeleteTripStopTimes(ctx, stopTimePksToDelete); err != nil {
-			return false, err
-		}
-		if len(stopTimePksToDelete) > 0 {
-			pathChanged = true
-		}
-	}
-
-	return pathChanged, nil
+	return pathChanged
 }
 
 func stopIDsInTrips(trips []gtfs.Trip) []string {

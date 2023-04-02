@@ -56,14 +56,14 @@ SELECT pk, trip_pk, stop_pk, stop_sequence, past FROM trip_stop_time
 WHERE trip_pk = ANY(sqlc.arg(trip_pks)::bigint[])
 ORDER BY trip_pk, stop_sequence;
 
--- name: InsertTripStopTime :exec
+-- name: InsertTripStopTime :copyfrom
 INSERT INTO trip_stop_time
     (stop_pk, trip_pk, arrival_time, arrival_delay, arrival_uncertainty,
      departure_time, departure_delay, departure_uncertainty, stop_sequence, track, headsign, past)
 VALUES
     (sqlc.arg(stop_pk), sqlc.arg(trip_pk), sqlc.arg(arrival_time), sqlc.arg(arrival_delay),
      sqlc.arg(arrival_uncertainty), sqlc.arg(departure_time), sqlc.arg(departure_delay),
-     sqlc.arg(departure_uncertainty), sqlc.arg(stop_sequence), sqlc.arg(track), sqlc.arg(headsign), FALSE);
+     sqlc.arg(departure_uncertainty), sqlc.arg(stop_sequence), sqlc.arg(track), sqlc.arg(headsign), sqlc.arg(past));
 
 -- name: UpdateTripStopTime :exec
 UPDATE trip_stop_time
