@@ -43,19 +43,17 @@ STOP_ID_TO_USUAL_ROUTES = {
 ROUTE_ID_TO_USUAL_ROUTE = {"A": ["1A", "1D", "1E", "1G"], "B": []}
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def test_install_system__basic_data(system_id, install_system_1, transiter_host, sync):
+def test_install_system__basic_data(system_id, install_system_1, transiter_host):
 
-    install_system_1(system_id, sync=sync)
+    install_system_1(system_id)
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     assert system_response["name"] == "Test System"
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def test_install_system__stops(system_id, install_system_1, transiter_host, sync):
+def test_install_system__stops(system_id, install_system_1, transiter_host):
 
-    install_system_1(system_id, sync=sync)
+    install_system_1(system_id)
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     stops_count = system_response["stops"]["count"]
@@ -135,9 +133,8 @@ def test_install_system__stops(system_id, install_system_1, transiter_host, sync
     assert STOP_IDS == set(stop["id"] for stop in stops_response_geo_all["stops"])
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def test_install_system__transfers(system_id, install_system_1, transiter_host, sync):
-    install_system_1(system_id, sync=sync)
+def test_install_system__transfers(system_id, install_system_1, transiter_host):
+    install_system_1(system_id)
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     stops_count = system_response["transfers"]["count"]
@@ -166,10 +163,9 @@ def test_install_system__transfers(system_id, install_system_1, transiter_host, 
     assert 0 == len(stop_response["transfers"])
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def test_install_system__routes(system_id, install_system_1, transiter_host, sync):
+def test_install_system__routes(system_id, install_system_1, transiter_host):
 
-    install_system_1(system_id, sync=sync)
+    install_system_1(system_id)
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     routes_count = system_response["routes"]["count"]
@@ -196,10 +192,9 @@ def test_install_system__routes(system_id, install_system_1, transiter_host, syn
     assert "SUBWAY" == route_response["type"]
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def test_install_system__feeds(system_id, install_system_1, transiter_host, sync):
+def test_install_system__feeds(system_id, install_system_1, transiter_host):
 
-    install_system_1(system_id, sync=sync)
+    install_system_1(system_id)
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     feeds_count = system_response["feeds"]["count"]
@@ -212,11 +207,10 @@ def test_install_system__feeds(system_id, install_system_1, transiter_host, sync
     assert FEED_IDS == actual_feed_ids
 
 
-@pytest.mark.parametrize("sync", [True, False])
 def test_install_system__success__service_map_stop(
-    system_id, install_system_1, transiter_host, sync
+    system_id, install_system_1, transiter_host
 ):
-    install_system_1(system_id, sync=sync)
+    install_system_1(system_id)
 
     for stop_id, usual_route in STOP_ID_TO_USUAL_ROUTES.items():
         stop_response = requests.get(
@@ -230,11 +224,10 @@ def test_install_system__success__service_map_stop(
         assert usual_route == actual
 
 
-@pytest.mark.parametrize("sync", [True, False])
 def test_install_system__service_map_route(
-    system_id, install_system_1, transiter_host, sync
+    system_id, install_system_1, transiter_host
 ):
-    install_system_1(system_id, sync=sync)
+    install_system_1(system_id)
 
     for route_id, usual_stops in ROUTE_ID_TO_USUAL_ROUTE.items():
         route_response = requests.get(
@@ -269,8 +262,7 @@ def test_install_system__agency(system_id, install_system_1, transiter_host):
     assert "AgencyEmail" == agency_response["email"]
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def _test_install_system__bad_config(system_id, install_system, transiter_host, sync):
+def _test_install_system__bad_config(system_id, install_system, transiter_host):
     install_system(
         system_id,
         "This is not a valid Transiter YAML config!",
@@ -296,8 +288,7 @@ feeds:
 """
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def _test_install_system__bad_update(system_id, install_system, transiter_host, sync):
+def _test_install_system__bad_update(system_id, install_system, transiter_host):
     install_system(
         system_id,
         SYSTEM_CONFIG.format(feed_url="non_url"),
@@ -319,18 +310,17 @@ def _test_update_static_entities(
     source_server.put(static_feed_url, updated_gtfs_zip)
 
     response = requests.post(
-        transiter_host + "/systems/" + system_id + "/feeds/gtfsstatic?sync=true"
+        transiter_host + "/systems/" + system_id + "/feeds/gtfsstatic"
     ).json()
 
     assert response["status"] != "FAILURE"
 
 
-@pytest.mark.parametrize("sync", [True, False])
-def test_delete(system_id, install_system_1, transiter_host, sync):
+def test_delete(system_id, install_system_1, transiter_host):
     install_system_1(system_id)
 
     response = requests.delete(
-        transiter_host + "/systems/" + system_id + "?sync=" + str(sync).lower()
+        transiter_host + "/systems/" + system_id
     )
     response.raise_for_status()
 

@@ -104,7 +104,7 @@ def setup_test(system_id, install_system_1, transiter_host, source_server):
 
     source_server.put(realtime_feed_url, message.SerializeToString())
     requests.post(
-        "{}/systems/{}/feeds/GtfsRealtimeFeed?sync=true".format(
+        "{}/systems/{}/feeds/GtfsRealtimeFeed".format(
             transiter_host, system_id
         )
     ).raise_for_status()

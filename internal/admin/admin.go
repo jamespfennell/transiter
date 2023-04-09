@@ -96,58 +96,34 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	}
 	log.Printf("Config for install/update for system %s:\n%+v\n", req.SystemId, systemConfig)
 
-	if req.Synchronous {
-		if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-			querier := db.New(tx)
-			keepGoing, err := beginSystemInstall(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
+	var keepGoing bool
+	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		querier := db.New(tx)
+		var err error
+		keepGoing, err = beginSystemInstall(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+	if keepGoing {
+		go func() {
+			// TODO: can we wire through the context on the server?
+			ctx := context.Background()
+			err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+				return performSystemInstall(ctx, db.New(tx), req.SystemId, systemConfig)
+			})
 			if err != nil {
-				return err
+				log.Printf("Failed to install system %q, going to mark as FAILED. Install error: %s", req.SystemId, err)
 			}
-			if !keepGoing {
-				return nil
+			if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+				return finishSystemInstall(ctx, db.New(tx), req.SystemId, err)
+			}); err != nil {
+				log.Printf("Failed to mark install of system %q as finished: %s", req.SystemId, err)
+				return
 			}
-			if err := performSystemInstall(ctx, querier, req.SystemId, systemConfig); err != nil {
-				return err
-			}
-			if err := finishSystemInstall(ctx, querier, req.SystemId, nil); err != nil {
-				return err
-			}
-			return nil
-		}); err != nil {
-			return nil, err
-		}
-		log.Printf("Installed system %q\n", req.SystemId)
-		s.scheduler.ResetSystem(ctx, req.SystemId)
-	} else {
-		var keepGoing bool
-		if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-			querier := db.New(tx)
-			var err error
-			keepGoing, err = beginSystemInstall(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
-			return err
-		}); err != nil {
-			return nil, err
-		}
-		if keepGoing {
-			go func() {
-				// TODO: can we wire through the context on the server?
-				ctx := context.Background()
-				err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-					return performSystemInstall(ctx, db.New(tx), req.SystemId, systemConfig)
-				})
-				if err != nil {
-					log.Printf("Failed to install system %q, going to mark as FAILED. Install error: %s", req.SystemId, err)
-				}
-				if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-					return finishSystemInstall(ctx, db.New(tx), req.SystemId, err)
-				}); err != nil {
-					log.Printf("Failed to mark install of system %q as finished: %s", req.SystemId, err)
-					return
-				}
-				log.Printf("Finished install of system %q\n", req.SystemId)
-				s.scheduler.ResetSystem(ctx, req.SystemId)
-			}()
-		}
+			log.Printf("Finished install of system %q\n", req.SystemId)
+			s.scheduler.ResetSystem(ctx, req.SystemId)
+		}()
 	}
 	return &api.InstallOrUpdateSystemReply{}, nil
 }

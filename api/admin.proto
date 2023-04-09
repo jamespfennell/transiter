@@ -23,7 +23,12 @@ service Admin {
   //
   // Installs or updates the system based on the configuration provided in the
   // request payload.
-  // If the system does not exist an install is performed; otherwise an update.
+  // If the system does not exist an install is performed; otherwise the system is updated.
+  //
+  // This is an asynchronous operation.
+  // The system configuration is validated before the request finishes
+  // but database and feed updates are performed asynchronously. The status of the operation can
+  // determined by polling the GetSystem method and inspecting the status field.
   rpc InstallOrUpdateSystem(InstallOrUpdateSystemRequest) returns (InstallOrUpdateSystemReply) {
     option (google.api.http) = {
       put: "/systems/{system_id}"
@@ -103,6 +108,8 @@ message GetSystemConfigRequest {
 }
 
 message InstallOrUpdateSystemRequest {
+  reserved 5;
+
   // ID of the system to install or update.
   string system_id = 1;
 
@@ -113,20 +120,7 @@ message InstallOrUpdateSystemRequest {
   }
 
   // If true, do not perform an update if the system already exists.
-  // TODO: rename skip_update = 4; ?
   bool install_only = 4;
-
-  // If false (the default), the system configuration is validated before the request finishes
-  // but databse updates are performed asynchronously. The status of the operation can
-  // be polled using GetSystem and inspecting the status field.
-  //
-  // If true, the install/update operation is perfomed synchronously in the
-  // request and in a single database transaction.
-  // In this case, if the operation fails there will no database artifacts.
-  // The problem
-  // is that installs can take a long time and the request may be cancelled before it completes
-  // e.g. by an intermediate proxy.
-  bool synchronous = 5;
 }
 
 // TextConfig contains a Transiter system configuration in non-proto format

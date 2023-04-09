@@ -84,7 +84,7 @@ def install_system(
     transiter_host,
     source_server_host_within_transiter,
 ):
-    def install(system_id, system_config, sync=True, expected_status="ACTIVE"):
+    def install(system_id, system_config, expected_status="ACTIVE"):
         def delete():
             requests.delete(
                 transiter_host + "/systems/" + system_id + "?sync=true"
@@ -102,21 +102,19 @@ def install_system(
                 "yaml_config": {
                     "url": source_server_host_within_transiter + "/" + system_config_url
                 },
-                "synchronous": sync,
             },
         )
         if expected_status == "ACTIVE":
             # Uncomment this line to debug system install failures
             # print(json.dumps(response.json(), indent=2))
             response.raise_for_status()
-        if not sync:
-            for _ in range(100):
-                response = requests.get(transiter_host + "/systems/" + system_id)
-                response.raise_for_status()
-                if response.json()["status"] == expected_status:
-                    break
-                time.sleep(0.05)
-            assert response.json()["status"] == expected_status
+        for _ in range(100):
+            response = requests.get(transiter_host + "/systems/" + system_id)
+            response.raise_for_status()
+            if response.json()["status"] == expected_status:
+                break
+            time.sleep(0.05)
+        assert response.json()["status"] == expected_status
 
         request.addfinalizer(delete)
 
@@ -150,7 +148,7 @@ def install_system_1(
     source_server_host_within_transiter,
     install_system,
 ):
-    def install(system_id, realtime_periodic_update_period="3600000", sync=True):
+    def install(system_id, realtime_periodic_update_period="3600000"):
         static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
         source_server.put(static_feed_url, get_zip("gtfsstatic"))
         realtime_feed_url = source_server.create(
@@ -165,7 +163,7 @@ def install_system_1(
             realtime_periodic_update_period=realtime_periodic_update_period,
         )
 
-        install_system(system_id, system_config, sync=sync)
+        install_system(system_id, system_config)
         return static_feed_url, realtime_feed_url
 
     return install

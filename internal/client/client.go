@@ -79,7 +79,6 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 		Config: &api.InstallOrUpdateSystemRequest_YamlConfig{
 			YamlConfig: yamlConfig,
 		},
-		Synchronous: false,
 	}
 	_, err := c.adminClient.InstallOrUpdateSystem(ctx, &req)
 	if err != nil {

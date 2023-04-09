@@ -78,7 +78,7 @@ class TestTrip:
                 ).SerializeToString(),
             )
             requests.post(
-                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed?sync=true"
+                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
             )
 
         stop_id_to_stop_sequence = {
@@ -130,7 +130,7 @@ class TestTrip:
                 ).SerializeToString(),
             )
             requests.post(
-                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed?sync=true"
+                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
             )
 
         stop_ids_in_second_update = {

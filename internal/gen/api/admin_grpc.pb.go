@@ -28,7 +28,12 @@ type AdminClient interface {
 	//
 	// Installs or updates the system based on the configuration provided in the
 	// request payload.
-	// If the system does not exist an install is performed; otherwise an update.
+	// If the system does not exist an install is performed; otherwise the system is updated.
+	//
+	// This is an asynchronous operation.
+	// The system configuration is validated before the request finishes
+	// but database and feed updates are performed asynchronously. The status of the operation can
+	// determined by polling the GetSystem method and inspecting the status field.
 	InstallOrUpdateSystem(ctx context.Context, in *InstallOrUpdateSystemRequest, opts ...grpc.CallOption) (*InstallOrUpdateSystemReply, error)
 	// Delete a system
 	//
@@ -159,7 +164,12 @@ type AdminServer interface {
 	//
 	// Installs or updates the system based on the configuration provided in the
 	// request payload.
-	// If the system does not exist an install is performed; otherwise an update.
+	// If the system does not exist an install is performed; otherwise the system is updated.
+	//
+	// This is an asynchronous operation.
+	// The system configuration is validated before the request finishes
+	// but database and feed updates are performed asynchronously. The status of the operation can
+	// determined by polling the GetSystem method and inspecting the status field.
 	InstallOrUpdateSystem(context.Context, *InstallOrUpdateSystemRequest) (*InstallOrUpdateSystemReply, error)
 	// Delete a system
 	//

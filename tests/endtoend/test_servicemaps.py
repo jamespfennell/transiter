@@ -147,7 +147,7 @@ def _perform_service_map_test(
         transiter_host
         + "/systems/"
         + system_id
-        + "/feeds/GtfsRealtimeFeed?sync=true"
+        + "/feeds/GtfsRealtimeFeed"
     ).json()
 
     route_data = requests.get(
