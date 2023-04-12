@@ -24,6 +24,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/scheduler"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/NYTimes/gziphandler"
 )
 
 type RunArgs struct {
@@ -116,7 +117,7 @@ func Run(ctx context.Context, args RunArgs) error {
 				h.Handle("/metrics", monitoring.Handler())
 			}
 			log.Printf("Public HTTP API listening on %s\n", args.PublicHTTPAddr)
-			_ = http.ListenAndServe(args.PublicHTTPAddr, h)
+			_ = http.ListenAndServe(args.PublicHTTPAddr, gziphandler.GzipHandler(h))
 			log.Printf("Public HTTP API stopped")
 		}()
 	}
