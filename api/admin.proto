@@ -28,7 +28,7 @@ service Admin {
   // This is an asynchronous operation.
   // The system configuration is validated before the request finishes
   // but database and feed updates are performed asynchronously. The status of the operation can
-  // determined by polling the GetSystem method and inspecting the status field.
+  // be determined by polling the GetSystem method and inspecting the status field.
   rpc InstallOrUpdateSystem(InstallOrUpdateSystemRequest) returns (InstallOrUpdateSystemReply) {
     option (google.api.http) = {
       put: "/systems/{system_id}"

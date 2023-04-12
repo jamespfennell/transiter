@@ -35,7 +35,12 @@
 
 Installs or updates the system based on the configuration provided in the
 request payload.
-If the system does not exist an install is performed; otherwise an update.
+If the system does not exist an install is performed; otherwise the system is updated.
+
+This is an asynchronous operation.
+The system configuration is validated before the request finishes
+but database and feed updates are performed asynchronously. The status of the operation can
+be determined by polling the GetSystem method and inspecting the status field.
 
 ### Request type: InstallOrUpdateSystemRequest
 
@@ -48,8 +53,7 @@ If the system does not exist an install is performed; otherwise an update.
 | system_id | string | ID of the system to install or update.
 | system_config | [SystemConfig](admin.md#SystemConfig) | 
 | yaml_config | [TextConfig](admin.md#TextConfig) | TODO: TextConfig json_config = 4;
-| install_only | bool | If true, do not perform an update if the system already exists. TODO: rename skip_update = 4; ?
-| synchronous | bool | If false (the default), the system configuration is validated before the request finishes but databse updates are performed asynchronously. The status of the operation can be polled using GetSystem and inspecting the status field.<br /><br />If true, the install/update operation is perfomed synchronously in the request and in a single database transaction. In this case, if the operation fails there will no database artifacts. The problem is that installs can take a long time and the request may be cancelled before it completes e.g. by an intermediate proxy.
+| install_only | bool | If true, do not perform an update if the system already exists.
 
 
 

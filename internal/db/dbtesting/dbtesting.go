@@ -170,11 +170,11 @@ func (f *Feed) NewUpdate() db.FeedUpdate {
 	return insertAndGet(
 		f.s.q, fmt.Sprintf("feed update %s/%s/<update_pk>", f.Data.ID, f.s.Data.ID),
 		func() error {
-			var err error
-			pk, err = f.s.q.InsertFeedUpdate(context.Background(), db.InsertFeedUpdateParams{
+			feedUpdate, err := f.s.q.InsertFeedUpdate(context.Background(), db.InsertFeedUpdateParams{
 				FeedPk:    f.Data.Pk,
 				StartedAt: pgtype.Timestamptz{Valid: true},
 			})
+			pk = feedUpdate.Pk
 			return err
 		},
 		func() (db.FeedUpdate, error) {

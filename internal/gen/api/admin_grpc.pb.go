@@ -33,7 +33,7 @@ type AdminClient interface {
 	// This is an asynchronous operation.
 	// The system configuration is validated before the request finishes
 	// but database and feed updates are performed asynchronously. The status of the operation can
-	// determined by polling the GetSystem method and inspecting the status field.
+	// be determined by polling the GetSystem method and inspecting the status field.
 	InstallOrUpdateSystem(ctx context.Context, in *InstallOrUpdateSystemRequest, opts ...grpc.CallOption) (*InstallOrUpdateSystemReply, error)
 	// Delete a system
 	//
@@ -169,7 +169,7 @@ type AdminServer interface {
 	// This is an asynchronous operation.
 	// The system configuration is validated before the request finishes
 	// but database and feed updates are performed asynchronously. The status of the operation can
-	// determined by polling the GetSystem method and inspecting the status field.
+	// be determined by polling the GetSystem method and inspecting the status field.
 	InstallOrUpdateSystem(context.Context, *InstallOrUpdateSystemRequest) (*InstallOrUpdateSystemReply, error)
 	// Delete a system
 	//

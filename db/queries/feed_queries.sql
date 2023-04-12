@@ -34,7 +34,7 @@ INSERT INTO feed_update
     (feed_pk, started_at, finished)
 VALUES
     (sqlc.arg(feed_pk), sqlc.arg(started_at), false)
-RETURNING pk;
+RETURNING *;
 
 -- name: GetLastFeedUpdateContentHash :one
 SELECT content_hash

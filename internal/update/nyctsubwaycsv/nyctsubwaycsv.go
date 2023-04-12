@@ -14,11 +14,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/update/common"
 )
 
-func ParseAndUpdate(ctx context.Context, updateCtx common.UpdateContext, content []byte) error {
-	rules, err := parse(content)
-	if err != nil {
-		return err
-	}
+func Update(ctx context.Context, updateCtx common.UpdateContext, rules []StopHeadsignRule) error {
 	if err := updateCtx.Querier.DeleteStopHeadsignRules(ctx, updateCtx.FeedPk); err != nil {
 		return err
 	}
@@ -53,13 +49,13 @@ func ParseAndUpdate(ctx context.Context, updateCtx common.UpdateContext, content
 	return nil
 }
 
-type rule struct {
+type StopHeadsignRule struct {
 	stopID   string
 	track    *string
 	headsign string
 }
 
-func parse(content []byte) ([]rule, error) {
+func Parse(content []byte) ([]StopHeadsignRule, error) {
 	csvReader := csv.NewReader(bytes.NewReader(content))
 	records, err := csvReader.ReadAll()
 	if err != nil {
@@ -98,14 +94,14 @@ func parse(content []byte) ([]rule, error) {
 	for _, row := range records[1:] {
 		northStopID := row[stopIDCol] + "N"
 		if headsign, ok := cleanHeadsign(row[northHeadsignCol]); ok && !customStopIDs[northStopID] {
-			rules = append(rules, rule{
+			rules = append(rules, StopHeadsignRule{
 				stopID:   northStopID,
 				headsign: headsign,
 			})
 		}
 		southStopID := row[stopIDCol] + "S"
 		if headsign, ok := cleanHeadsign(row[southHeadsignCol]); ok && !customStopIDs[southStopID] {
-			rules = append(rules, rule{
+			rules = append(rules, StopHeadsignRule{
 				stopID:   southStopID,
 				headsign: headsign,
 			})
@@ -122,7 +118,7 @@ func cleanHeadsign(s string) (string, bool) {
 	return strings.ReplaceAll(s, "&", "and"), true
 }
 
-func customRules() []rule {
+func customRules() []StopHeadsignRule {
 	eastSideAndQueens := "East Side and Queens"
 	manhattan := "Manhattan"
 	rockaways := "Euclid - Lefferts - Rockaways" // To be consistent with the MTA
@@ -130,7 +126,7 @@ func customRules() []rule {
 	uptownAndTheBronx := "Uptown and The Bronx"
 	queens := "Queens"
 
-	var rules []rule
+	var rules []StopHeadsignRule
 	for _, g := range []struct {
 		stopID          string
 		track           string
@@ -204,12 +200,12 @@ func customRules() []rule {
 	} {
 		g := g
 		rules = append(rules,
-			rule{
+			StopHeadsignRule{
 				stopID:   g.stopID,
 				track:    &g.track,
 				headsign: g.trackHeadsign,
 			},
-			rule{
+			StopHeadsignRule{
 				stopID:   g.stopID,
 				headsign: g.defaultHeadsign,
 			},

@@ -100,7 +100,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		querier := db.New(tx)
 		var err error
-		keepGoing, err = beginSystemInstall(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
+		keepGoing, err = upsertSystemEntry(ctx, querier, req.SystemId, systemConfig.Name, req.InstallOnly)
 		return err
 	}); err != nil {
 		return nil, err
@@ -109,14 +109,12 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		go func() {
 			// TODO: can we wire through the context on the server?
 			ctx := context.Background()
-			err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-				return performSystemInstall(ctx, db.New(tx), req.SystemId, systemConfig)
-			})
+			err := performInstall(ctx, s.pool, req.SystemId, systemConfig)
 			if err != nil {
 				log.Printf("Failed to install system %q, going to mark as FAILED. Install error: %s", req.SystemId, err)
 			}
 			if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-				return finishSystemInstall(ctx, db.New(tx), req.SystemId, err)
+				return markSystemInstallFinished(ctx, db.New(tx), req.SystemId, err)
 			}); err != nil {
 				log.Printf("Failed to mark install of system %q as finished: %s", req.SystemId, err)
 				return
@@ -128,33 +126,47 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	return &api.InstallOrUpdateSystemReply{}, nil
 }
 
-func beginSystemInstall(ctx context.Context, querier db.Querier, systemID string, systemName string, installOnly bool) (bool, error) {
+func upsertSystemEntry(ctx context.Context, querier db.Querier, systemID string, systemName string, installOnly bool) (bool, error) {
 	system, err := querier.GetSystem(ctx, systemID)
 	if err == pgx.ErrNoRows {
-		if _, err = querier.InsertSystem(ctx, db.InsertSystemParams{
+		_, err = querier.InsertSystem(ctx, db.InsertSystemParams{
 			ID:     systemID,
 			Name:   systemName,
 			Status: constants.Installing,
-		}); err != nil {
-			return false, err
-		}
-	} else if err != nil {
-		return false, err
-	} else {
-		if installOnly && system.Status == constants.Active {
-			return false, nil
-		}
-		if err = querier.UpdateSystemStatus(ctx, db.UpdateSystemStatusParams{
-			Pk:     system.Pk,
-			Status: constants.Updating,
-		}); err != nil {
-			return false, err
-		}
+		})
+		return true, err
 	}
-	return true, nil
+	if err != nil {
+		return false, err
+	}
+	if installOnly && system.Status == constants.Active {
+		return false, nil
+	}
+	err = querier.UpdateSystemStatus(ctx, db.UpdateSystemStatusParams{
+		Pk:     system.Pk,
+		Status: constants.Updating,
+	})
+	return true, err
 }
 
-func performSystemInstall(ctx context.Context, querier db.Querier, systemID string, config *api.SystemConfig) error {
+func performInstall(ctx context.Context, pool *pgxpool.Pool, systemID string, systemConfig *api.SystemConfig) error {
+	if err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		return upsertSystemMetadata(ctx, db.New(tx), systemID, systemConfig)
+	}); err != nil {
+		return err
+	}
+	for _, feed := range systemConfig.GetFeeds() {
+		if !feed.RequiredForInstall {
+			continue
+		}
+		if err := update.Update(ctx, pool, systemID, feed.Id); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func upsertSystemMetadata(ctx context.Context, querier db.Querier, systemID string, config *api.SystemConfig) error {
 	system, err := querier.GetSystem(ctx, systemID)
 	if err != nil {
 		return err
@@ -207,11 +219,6 @@ func performSystemInstall(ctx context.Context, querier db.Querier, systemID stri
 				Config:         string(j),
 			})
 		}
-		if newFeed.RequiredForInstall {
-			if err := update.DoInExistingTx(ctx, querier, systemID, newFeed.Id); err != nil {
-				return err
-			}
-		}
 	}
 	for _, pk := range feedIDToPk {
 		querier.DeleteFeed(ctx, pk)
@@ -219,7 +226,7 @@ func performSystemInstall(ctx context.Context, querier db.Querier, systemID stri
 	return nil
 }
 
-func finishSystemInstall(ctx context.Context, querier db.Querier, systemID string, installErr error) error {
+func markSystemInstallFinished(ctx context.Context, querier db.Querier, systemID string, installErr error) error {
 	system, err := querier.GetSystem(ctx, systemID)
 	if err != nil {
 		return err

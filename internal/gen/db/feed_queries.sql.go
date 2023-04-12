@@ -194,7 +194,7 @@ INSERT INTO feed_update
     (feed_pk, started_at, finished)
 VALUES
     ($1, $2, false)
-RETURNING pk
+RETURNING pk, feed_pk, started_at, finished, finished_at, result, content_length, content_hash, error_message
 `
 
 type InsertFeedUpdateParams struct {
@@ -202,11 +202,21 @@ type InsertFeedUpdateParams struct {
 	StartedAt pgtype.Timestamptz
 }
 
-func (q *Queries) InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdateParams) (int64, error) {
+func (q *Queries) InsertFeedUpdate(ctx context.Context, arg InsertFeedUpdateParams) (FeedUpdate, error) {
 	row := q.db.QueryRow(ctx, insertFeedUpdate, arg.FeedPk, arg.StartedAt)
-	var pk int64
-	err := row.Scan(&pk)
-	return pk, err
+	var i FeedUpdate
+	err := row.Scan(
+		&i.Pk,
+		&i.FeedPk,
+		&i.StartedAt,
+		&i.Finished,
+		&i.FinishedAt,
+		&i.Result,
+		&i.ContentLength,
+		&i.ContentHash,
+		&i.ErrorMessage,
+	)
+	return i, err
 }
 
 const listActiveFeedUpdatePks = `-- name: ListActiveFeedUpdatePks :many

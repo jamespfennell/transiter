@@ -1,4 +1,4 @@
-// Package update implements the feed update functionality.
+// Package update implements the feed update mechanism.
 package update
 
 import (
@@ -13,7 +13,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jamespfennell/gtfs"
-	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -26,184 +25,176 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func Do(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error {
+func Update(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error {
 	startTime := time.Now()
-	var updatePk int64
+
+	// DB transaction 1: insert the update. If this fails no database artifacts will be left.
+	var feed db.Feed
+	var feedUpdate db.FeedUpdate
+	var lastContentHash string
 	if err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		var err error
-		updatePk, err = createInExistingTx(ctx, db.New(tx), systemID, feedID)
+		feed, feedUpdate, lastContentHash, err = createUpdate(ctx, db.New(tx), systemID, feedID)
 		return err
 	}); err != nil {
 		return err
 	}
-	var r runResult
-	var runErr error
-	commitErr := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		// We don't return the error through the transaction function as we want to commit the feed update
-		// result irrespective of whether it was success or failure.
-		r, runErr = runInExistingTx(ctx, db.New(tx), systemID, feedID, updatePk)
-		return nil
-	})
-	if commitErr != nil {
-		log.Printf("Failed to commit feed update transaction: %s", commitErr)
-	}
-	// We don't overwrite `runErr` if it is non-nil as it came earlier and probably is more useful
-	if runErr == nil {
-		runErr = commitErr
-	}
-	monitoring.RecordFeedUpdate(systemID, feedID, r.Status, r.Result, time.Since(startTime))
-	return runErr
-}
 
-func DoInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string) error {
-	updatePk, err := createInExistingTx(ctx, querier, systemID, feedID)
-	if err != nil {
-		return err
+	// DB transaction 2: perform the update. If this fails any database changes are rolled back.
+	//
+	// This is in a separate transaction to (1) because the first steps of performing an update
+	// don't require a database connection and may take a long time.
+	// These steps include downloading the feed data (theoretically unbounded, though we enforce a timeout)
+	// and parsing the feed (for the Brooklyn MTA buses this is over a second).
+	// By not holding a transaction open we reduce the risk that this transaction, or another incompatible
+	// concurrent transaction, will fail.
+	//
+	// Moreover this enables us to have asynchronous updates in the future, if we want.
+	err := run(ctx, pool, systemID, feed, &feedUpdate, lastContentHash)
+
+	// DB transaction 3: commit the result of the update.
+	//
+	// This is a separate transaction to (2) because in the case when the update fails we want to
+	// rollback the update itself but commit the failure result.
+	if commitErr := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		querier := db.New(tx)
+		return querier.FinishFeedUpdate(ctx, db.FinishFeedUpdateParams{
+			UpdatePk:      feedUpdate.Pk,
+			Result:        feedUpdate.Result,
+			FinishedAt:    pgtype.Timestamptz{Valid: true, Time: time.Now()},
+			ContentLength: feedUpdate.ContentLength,
+			ContentHash:   feedUpdate.ContentHash,
+			ErrorMessage:  feedUpdate.ErrorMessage,
+		})
+	}); commitErr != nil {
+		log.Printf("(really bad error!) failed to commit feed update transaction: %s", commitErr)
+		if err == nil {
+			err = commitErr
+		}
 	}
-	_, err = runInExistingTx(ctx, querier, systemID, feedID, updatePk)
+
+	status := "SUCCESS"
+	if err != nil {
+		log.Printf("Error update for pk=%d: %s\n", feedUpdate.Pk, err)
+		status = "FAILURE"
+	}
+	monitoring.RecordFeedUpdate(systemID, feedID, status, feedUpdate.Result.String, time.Since(startTime))
 	return err
 }
 
-func createInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string) (int64, error) {
+func createUpdate(ctx context.Context, querier db.Querier, systemID, feedID string) (db.Feed, db.FeedUpdate, string, error) {
 	log.Printf("Creating update for %s/%s\n", systemID, feedID)
 	feed, err := querier.GetFeed(ctx, db.GetFeedParams{
 		SystemID: systemID,
 		FeedID:   feedID,
 	})
 	if err != nil {
-		return 0, errors.NewNotFoundError(fmt.Sprintf("unknown feed %s/%s", systemID, feedID))
+		return db.Feed{}, db.FeedUpdate{}, "", errors.NewNotFoundError(fmt.Sprintf("unknown feed %s/%s", systemID, feedID))
 	}
-	return querier.InsertFeedUpdate(ctx, db.InsertFeedUpdateParams{
+	lastContentHash, err := getLastContentHash(ctx, querier, feed.Pk)
+	if err != nil {
+		return db.Feed{}, db.FeedUpdate{}, "", err
+	}
+	feedUpdate, err := querier.InsertFeedUpdate(ctx, db.InsertFeedUpdateParams{
 		FeedPk:    feed.Pk,
 		StartedAt: pgtype.Timestamptz{Valid: true, Time: time.Now()},
 	})
-}
-
-func runInExistingTx(ctx context.Context, querier db.Querier, systemID, feedID string, updatePk int64) (runResult, error) {
-	r := run(ctx, querier, systemID, updatePk)
-
-	contentLength := pgtype.Int4{}
-	if r.ContentLength != -1 {
-		contentLength = pgtype.Int4{Valid: true, Int32: r.ContentLength}
-	}
-	contentHash := pgtype.Text{}
-	if r.ContentHash != "" {
-		contentHash = pgtype.Text{Valid: true, String: r.ContentHash}
-	}
-	errorMessage := pgtype.Text{}
-	if r.Err != nil {
-		log.Printf("Error during feed update: %s\n", r.Err)
-		errorMessage = pgtype.Text{Valid: true, String: r.Err.Error()}
-	}
-	if err := querier.FinishFeedUpdate(ctx, db.FinishFeedUpdateParams{
-		UpdatePk:      updatePk,
-		Result:        convert.NullString(&r.Result),
-		FinishedAt:    pgtype.Timestamptz{Valid: true, Time: time.Now()},
-		ContentLength: contentLength,
-		ContentHash:   contentHash,
-		ErrorMessage:  errorMessage,
-	}); err != nil {
-		// TODO: we should rollback the transaction if this happens?
-		log.Printf("Error while finishing feed update for pk=%d: %s\n", updatePk, r.Err)
-		return r, err
-	}
-
-	if r.Err != nil {
-		log.Printf("Error update for pk=%d: %s\n", updatePk, r.Err)
-	}
-	return r, r.Err
-}
-
-type runResult struct {
-	Status        string
-	Result        string
-	Err           error
-	ContentLength int32
-	ContentHash   string
-}
-
-func (r *runResult) markErr(result string, err error) {
-	r.Status = constants.StatusFailure
-	r.Result = result
-	r.Err = err
-}
-
-func run(ctx context.Context, querier db.Querier, systemID string, updatePk int64) runResult {
-	var r runResult
-	r.ContentLength = -1
-	feed, err := querier.GetFeedForUpdate(ctx, updatePk)
 	if err != nil {
-		r.markErr(constants.ResultInternalError, err)
-		return r
+		return db.Feed{}, db.FeedUpdate{}, "", err
 	}
+	return feed, feedUpdate, lastContentHash, nil
+}
+
+func markFailure(feedUpdate *db.FeedUpdate, result string, err error) error {
+	feedUpdate.Result = pgtype.Text{Valid: true, String: result}
+	feedUpdate.ErrorMessage = pgtype.Text{Valid: true, String: err.Error()}
+	return err
+}
+
+func markSuccess(feedUpdate *db.FeedUpdate, result string) error {
+	feedUpdate.Result = pgtype.Text{Valid: true, String: result}
+	return nil
+}
+
+func run(ctx context.Context, pool *pgxpool.Pool, systemID string, feed db.Feed, feedUpdate *db.FeedUpdate, lastContentHash string) error {
 	var feedConfig api.FeedConfig
 	if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
-		r.markErr(constants.ResultInvalidFeedConfig, fmt.Errorf("failed to parse feed config: %w", err))
-		return r
+		return markFailure(feedUpdate, constants.ResultInvalidFeedConfig, fmt.Errorf("failed to parse feed config: %w", err))
 	}
 	content, err := getFeedContent(ctx, systemID, &feedConfig)
 	if err != nil {
-		r.markErr(constants.ResultDownloadError, err)
-		return r
+		return markFailure(feedUpdate, constants.ResultDownloadError, err)
 	}
-	r.ContentLength = int32(len(content))
+	feedUpdate.ContentLength = pgtype.Int4{Valid: true, Int32: int32(len(content))}
 	if len(content) == 0 {
-		r.markErr(constants.ResultEmptyFeed, fmt.Errorf("empty feed content"))
-		return r
+		return markFailure(feedUpdate, constants.ResultEmptyFeed, fmt.Errorf("empty feed content"))
 	}
-	r.ContentHash = common.HashBytes(content)
-	lastContentHash, err := getLastContentHash(ctx, querier, feed.Pk)
-	if err != nil {
-		r.markErr(constants.ResultInternalError, err)
-		return r
+	contentHash := common.HashBytes(content)
+	feedUpdate.ContentHash = pgtype.Text{Valid: true, String: contentHash}
+	if contentHash == lastContentHash {
+		return markSuccess(feedUpdate, constants.ResultNotNeeded)
 	}
-	if r.ContentHash == lastContentHash {
-		r.Status = constants.StatusSuccess
-		r.Result = constants.ResultNotNeeded
-		return r
+
+	var p interface {
+		parse(b []byte) error
+		update(ctx context.Context, updateCtx common.UpdateContext) error
 	}
-	updateCtx := common.UpdateContext{
-		Querier:    querier,
-		SystemPk:   feed.SystemPk,
-		FeedPk:     feed.Pk,
-		UpdatePk:   updatePk,
-		FeedConfig: &feedConfig,
-	}
-	var parseErr error
-	var updateErr error
 	switch feedConfig.Parser {
 	case "GTFS_STATIC":
-		var data *gtfs.Static
-		data, parseErr = static.Parse(content)
-		if parseErr != nil {
-			break
+		p = &parserAndUpdater[*gtfs.Static]{
+			parseFn:  static.Parse,
+			updateFn: static.Update,
 		}
-		updateErr = static.Update(ctx, updateCtx, data)
 	case "GTFS_REALTIME":
-		var data *gtfs.Realtime
-		data, parseErr = realtime.Parse(content, feedConfig.GtfsRealtimeOptions)
-		if parseErr != nil {
-			break
+		p = &parserAndUpdater[*gtfs.Realtime]{
+			parseFn: func(b []byte) (*gtfs.Realtime, error) {
+				return realtime.Parse(b, feedConfig.GtfsRealtimeOptions)
+			},
+			updateFn: realtime.Update,
 		}
-		updateErr = realtime.Update(ctx, updateCtx, data)
 	case "NYCT_SUBWAY_CSV":
-		// TODO: parse error
-		updateErr = nyctsubwaycsv.ParseAndUpdate(ctx, updateCtx, content)
+		p = &parserAndUpdater[[]nyctsubwaycsv.StopHeadsignRule]{
+			parseFn:  nyctsubwaycsv.Parse,
+			updateFn: nyctsubwaycsv.Update,
+		}
 	default:
-		r.markErr(constants.ResultInvalidParser, fmt.Errorf("invalid feed parser %q", feedConfig.Parser))
-		return r
+		return markFailure(feedUpdate, constants.ResultInvalidParser, fmt.Errorf("invalid feed parser %q", feedConfig.Parser))
 	}
-	if parseErr != nil {
-		r.markErr(constants.ResultParseError, parseErr)
-		return r
+	if err := p.parse(content); err != nil {
+		return markFailure(feedUpdate, constants.ResultParseError, err)
 	}
-	if updateErr != nil {
-		r.markErr(constants.ResultUpdateError, updateErr)
-		return r
+
+	if err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		updateCtx := common.UpdateContext{
+			Querier:    db.New(tx),
+			SystemPk:   feed.SystemPk,
+			FeedPk:     feed.Pk,
+			UpdatePk:   feedUpdate.Pk,
+			FeedConfig: &feedConfig,
+		}
+		return p.update(ctx, updateCtx)
+	}); err != nil {
+		return markFailure(feedUpdate, constants.ResultUpdateError, err)
 	}
-	r.Status = constants.StatusSuccess
-	r.Result = constants.ResultUpdated
-	return r
+	return markSuccess(feedUpdate, constants.ResultUpdated)
+}
+
+// parserAndUpdater is a helper type for linking the parse and update steps together in
+// a type safe way.
+type parserAndUpdater[T any] struct {
+	parseFn   func(b []byte) (T, error)
+	updateFn  func(context.Context, common.UpdateContext, T) error
+	parsedVal T
+}
+
+func (p *parserAndUpdater[T]) parse(b []byte) error {
+	var err error
+	p.parsedVal, err = p.parseFn(b)
+	return err
+}
+
+func (p *parserAndUpdater[T]) update(ctx context.Context, updateCtx common.UpdateContext) error {
+	return p.updateFn(ctx, updateCtx, p.parsedVal)
 }
 
 func getFeedContent(ctx context.Context, systemID string, feedConfig *api.FeedConfig) ([]byte, error) {
@@ -231,7 +222,6 @@ func getFeedContent(ctx context.Context, systemID string, feedConfig *api.FeedCo
 	return io.ReadAll(resp.Body)
 }
 
-// TODO: move to wrappers and write DB tests
 func getLastContentHash(ctx context.Context, querier db.Querier, feedPk int64) (string, error) {
 	hash, err := querier.GetLastFeedUpdateContentHash(ctx, feedPk)
 	if err != nil {
