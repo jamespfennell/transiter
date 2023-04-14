@@ -4,6 +4,7 @@ package realtime
 import (
 	"context"
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -78,15 +79,15 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 
 		// We calculate a hash of the GTFS data to see if we can skip updating the stop times.
 		// Skipping these stop times is a fairly significant optimization.
+		h := sha256.New()
 		var gtfsHash string
 		{
-			trip := *trip
-			trip.Vehicle = nil
-			var err error
-			gtfsHash, err = common.HashValue(trip)
-			if err != nil {
-				return err
+			h.Reset()
+			trip.Hash(h)
+			if trip.Vehicle != nil {
+				trip.Vehicle.Hash(h)
 			}
+			gtfsHash = fmt.Sprintf("%x", h.Sum(nil))
 		}
 		var tripPk int64
 		if existingTrip, ok := existingTrips[uid]; ok {
