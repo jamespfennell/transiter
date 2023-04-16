@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/jamespfennell/transiter/internal/argsflag"
@@ -185,7 +186,23 @@ func main() {
 						ReadOnly:            c.Bool("read-only"),
 						EnablePprof:         c.Bool("enable-pprof"),
 					}
-					return server.Run(c.Context, args)
+					ctx, cancel := context.WithCancel(c.Context)
+					ch := make(chan os.Signal, 1)
+					signal.Notify(ch, os.Interrupt)
+					// Ensure that the channel doesn't leak
+					defer func() {
+						signal.Stop(ch)
+						cancel()
+					}()
+					// Listen for the channel and cancel accordingly
+					go func() {
+						select {
+						case <-ch:
+							cancel()
+						case <-ctx.Done():
+						}
+					}()
+					return server.Run(ctx, args)
 				},
 			},
 			{

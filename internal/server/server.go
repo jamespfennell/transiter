@@ -103,6 +103,8 @@ func Run(ctx context.Context, args RunArgs) error {
 		log.Println("Scheduler running")
 	}
 
+	var shutdownFuncs []func(context.Context) error
+
 	if args.PublicHTTPAddr != "-" {
 		wg.Add(1)
 		go func() {
@@ -115,8 +117,10 @@ func Run(ctx context.Context, args RunArgs) error {
 			if args.EnablePublicMetrics {
 				h.Handle("/metrics", monitoring.Handler())
 			}
+			server := &http.Server{Addr: args.PublicHTTPAddr, Handler: h}
+			shutdownFuncs = append(shutdownFuncs, server.Shutdown)
 			log.Printf("Public HTTP API listening on %s\n", args.PublicHTTPAddr)
-			_ = http.ListenAndServe(args.PublicHTTPAddr, h)
+			server.ListenAndServe()
 			log.Printf("Public HTTP API stopped")
 		}()
 	}
@@ -127,6 +131,10 @@ func Run(ctx context.Context, args RunArgs) error {
 			defer cancelFunc()
 			defer wg.Done()
 			grpcServer := grpc.NewServer()
+			shutdownFuncs = append(shutdownFuncs, func(ctx context.Context) error {
+				grpcServer.GracefulStop()
+				return nil
+			})
 			api.RegisterPublicServer(grpcServer, publicService)
 			lis, err := net.Listen("tcp", args.PublicGrpcAddr)
 			if err != nil {
@@ -153,8 +161,10 @@ func Run(ctx context.Context, args RunArgs) error {
 			if args.EnablePprof {
 				registerPprofHandlers(h)
 			}
+			server := &http.Server{Addr: args.AdminHTTPAddr, Handler: h}
+			shutdownFuncs = append(shutdownFuncs, server.Shutdown)
 			log.Printf("Admin HTTP API listening on %s", args.AdminHTTPAddr)
-			_ = http.ListenAndServe(args.AdminHTTPAddr, h)
+			server.ListenAndServe()
 			log.Printf("Admin HTTP API stopped")
 		}()
 	}
@@ -165,6 +175,10 @@ func Run(ctx context.Context, args RunArgs) error {
 			defer cancelFunc()
 			defer wg.Done()
 			grpcServer := grpc.NewServer()
+			shutdownFuncs = append(shutdownFuncs, func(ctx context.Context) error {
+				grpcServer.GracefulStop()
+				return nil
+			})
 			api.RegisterPublicServer(grpcServer, publicService)
 			api.RegisterAdminServer(grpcServer, adminService)
 			lis, err := net.Listen("tcp", args.AdminGrpcAddr)
@@ -178,8 +192,13 @@ func Run(ctx context.Context, args RunArgs) error {
 		}()
 	}
 
-	wg.Wait()
+	<-ctx.Done()
 	log.Printf("Shutting down server")
+	for _, f := range shutdownFuncs {
+		f(context.Background())
+	}
+	wg.Wait()
+	log.Printf("Server shutdown complete")
 	return ctx.Err()
 }
 
