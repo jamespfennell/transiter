@@ -172,6 +172,11 @@ func main() {
 						Usage: "Maximum size of the Postgres connection pool",
 						Value: 50,
 					},
+					&cli.Int64Flag{
+						Name:  "max-stops-per-request",
+						Usage: "Maximum number of stops that will be returned in a single list stops request. Specifying a value <= 0 will disable the limit.",
+						Value: 100,
+					},
 				},
 				Action: func(c *cli.Context) error {
 					args := server.RunArgs{
@@ -185,6 +190,7 @@ func main() {
 						EnablePublicMetrics: c.Bool("enable-public-metrics"),
 						ReadOnly:            c.Bool("read-only"),
 						EnablePprof:         c.Bool("enable-pprof"),
+						MaxStopsPerRequest:  int32(c.Int64("max-stops-per-request")),
 					}
 					ctx, cancel := context.WithCancel(c.Context)
 					ch := make(chan os.Signal, 1)
