@@ -289,6 +289,76 @@ No fields.
 
 
 
+## Get the current log level.
+
+`GET /loglevel`
+
+### Request type: GetLogLevelRequest
+
+
+	
+
+
+No fields.
+
+
+
+
+
+
+
+### Response type: GetLogLevelReply
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| log_level | string | 
+
+
+
+
+
+
+
+
+## Set the log level.
+
+`PUT /loglevel`
+
+### Request type: SetLogLevelRequest
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| log_level | string | 
+
+
+
+
+
+
+
+
+### Response type: SetLogLevelReply
+
+
+	
+
+
+No fields.
+
+
+
+
+
+
+
 
 
 
