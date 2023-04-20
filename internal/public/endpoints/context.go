@@ -10,9 +10,16 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/reference"
 )
 
+type EndpointOptions struct {
+	// The maximum number of stops that can be returned in a single request.
+	// Defaults to 100.
+	MaxStopsPerRequest int32
+}
+
 type Context struct {
-	Querier   db.Querier
-	Reference reference.Generator
+	Querier         db.Querier
+	Reference       reference.Generator
+	EndpointOptions EndpointOptions
 }
 
 func getSystem(ctx context.Context, querier db.Querier, id string) (db.System, error) {

@@ -19,6 +19,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/monitoring"
 	"github.com/jamespfennell/transiter/internal/public"
+	"github.com/jamespfennell/transiter/internal/public/endpoints"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/public/reference"
 	"github.com/jamespfennell/transiter/internal/scheduler"
@@ -37,6 +38,7 @@ type RunArgs struct {
 	EnablePublicMetrics bool
 	EnablePprof         bool
 	ReadOnly            bool
+	MaxStopsPerRequest  int32
 }
 
 func Run(ctx context.Context, args RunArgs) error {
@@ -86,7 +88,9 @@ func Run(ctx context.Context, args RunArgs) error {
 		s = realScheduler
 	}
 
-	publicService := public.New(pool)
+	publicService := public.New(pool, &endpoints.EndpointOptions{
+		MaxStopsPerRequest: args.MaxStopsPerRequest,
+	})
 	adminService := admin.New(pool, s)
 
 	if realScheduler != nil {

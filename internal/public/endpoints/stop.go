@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -21,7 +22,10 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	numStops := int32(100)
+	numStops := r.EndpointOptions.MaxStopsPerRequest
+	if numStops <= 0 {
+		numStops = math.MaxInt32
+	}
 	if req.Limit != nil && *req.Limit < numStops {
 		numStops = *req.Limit
 	}
