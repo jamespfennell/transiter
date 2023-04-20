@@ -159,7 +159,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		routePksWithPathChanges[routePk] = true
 	}
 
-	if err := servicemaps.UpdateRealtimeMaps(ctx, updateCtx.Querier, updateCtx.SystemPk, mapKeys(routePksWithPathChanges)); err != nil {
+	if err := servicemaps.UpdateRealtimeMaps(ctx, updateCtx.Querier, updateCtx.Logger, updateCtx.SystemPk, mapKeys(routePksWithPathChanges)); err != nil {
 		return err
 	}
 	return nil

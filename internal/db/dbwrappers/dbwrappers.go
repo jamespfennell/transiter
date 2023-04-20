@@ -3,11 +3,12 @@ package dbwrappers
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"golang.org/x/exp/slog"
 )
 
 func MapStopPkToDescendentPks(ctx context.Context, querier db.Querier, stopPks []int64) (map[int64]map[int64]bool, error) {
@@ -154,17 +155,17 @@ func ListStopTimesForUpdate(ctx context.Context, querier db.Querier, tripUIDToPk
 	return m, nil
 }
 
-func Ping(ctx context.Context, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {
+func Ping(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {
 	var err error
 	for i := 0; i < numRetries; i++ {
 		err = pool.Ping(ctx)
 		if err == nil {
-			log.Printf("Database ping successful")
+			logger.InfoCtx(ctx, "database ping succesful")
 			break
 		}
-		log.Printf("Failed to ping the database: %s\n", err)
+		logger.WarnCtx(ctx, fmt.Sprintf("failed to ping the databse: %s", err))
 		if i != numRetries-1 {
-			log.Printf("Will try to ping again in %s", waitBetweenPings)
+			logger.WarnCtx(ctx, fmt.Sprintf("will try to ping again in %s", waitBetweenPings))
 			time.Sleep(waitBetweenPings)
 		}
 	}

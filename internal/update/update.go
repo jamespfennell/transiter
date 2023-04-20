@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -22,11 +21,14 @@ import (
 	"github.com/jamespfennell/transiter/internal/update/nyctsubwaycsv"
 	"github.com/jamespfennell/transiter/internal/update/realtime"
 	"github.com/jamespfennell/transiter/internal/update/static"
+	"golang.org/x/exp/slog"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func Update(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) error {
+func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, systemID, feedID string) error {
 	startTime := time.Now()
+	logger = logger.With(slog.String("system_id", systemID), slog.String("feed_id", feedID))
+	logger.DebugCtx(ctx, "starting feed update")
 
 	// DB transaction 1: insert the update. If this fails no database artifacts will be left.
 	var feed db.Feed
@@ -37,8 +39,10 @@ func Update(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) er
 		feed, feedUpdate, lastContentHash, err = createUpdate(ctx, db.New(tx), systemID, feedID)
 		return err
 	}); err != nil {
+		logger.ErrorCtx(ctx, fmt.Sprintf("failed to insert new feed update: %s", err))
 		return err
 	}
+	logger = logger.With(slog.Int64("update_id", feedUpdate.Pk))
 
 	// DB transaction 2: perform the update. If this fails any database changes are rolled back.
 	//
@@ -50,7 +54,7 @@ func Update(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) er
 	// concurrent transaction, will fail.
 	//
 	// Moreover this enables us to have asynchronous updates in the future, if we want.
-	err := run(ctx, pool, systemID, feed, &feedUpdate, lastContentHash)
+	err := run(ctx, pool, logger, systemID, feed, &feedUpdate, lastContentHash)
 
 	// DB transaction 3: commit the result of the update.
 	//
@@ -67,7 +71,7 @@ func Update(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) er
 			ErrorMessage:  feedUpdate.ErrorMessage,
 		})
 	}); commitErr != nil {
-		log.Printf("(really bad error!) failed to commit feed update transaction: %s", commitErr)
+		logger.ErrorCtx(ctx, fmt.Sprintf("failed to commit finish feed update transaction (this is really bad!): %s", commitErr))
 		if err == nil {
 			err = commitErr
 		}
@@ -75,15 +79,15 @@ func Update(ctx context.Context, pool *pgxpool.Pool, systemID, feedID string) er
 
 	status := "SUCCESS"
 	if err != nil {
-		log.Printf("Error update for pk=%d: %s\n", feedUpdate.Pk, err)
+		logger.ErrorCtx(ctx, fmt.Sprintf("update failed with reason %s and error %s", feedUpdate.Result.String, err))
 		status = "FAILURE"
 	}
 	monitoring.RecordFeedUpdate(systemID, feedID, status, feedUpdate.Result.String, time.Since(startTime))
+	logger.DebugCtx(ctx, fmt.Sprintf("finished update with result %s in %s", feedUpdate.Result.String, time.Since(startTime)))
 	return err
 }
 
 func createUpdate(ctx context.Context, querier db.Querier, systemID, feedID string) (db.Feed, db.FeedUpdate, string, error) {
-	log.Printf("Creating update for %s/%s\n", systemID, feedID)
 	feed, err := querier.GetFeed(ctx, db.GetFeedParams{
 		SystemID: systemID,
 		FeedID:   feedID,
@@ -116,7 +120,7 @@ func markSuccess(feedUpdate *db.FeedUpdate, result string) error {
 	return nil
 }
 
-func run(ctx context.Context, pool *pgxpool.Pool, systemID string, feed db.Feed, feedUpdate *db.FeedUpdate, lastContentHash string) error {
+func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID string, feed db.Feed, feedUpdate *db.FeedUpdate, lastContentHash string) error {
 	var feedConfig api.FeedConfig
 	if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
 		return markFailure(feedUpdate, constants.ResultInvalidFeedConfig, fmt.Errorf("failed to parse feed config: %w", err))
@@ -167,6 +171,7 @@ func run(ctx context.Context, pool *pgxpool.Pool, systemID string, feed db.Feed,
 	if err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		updateCtx := common.UpdateContext{
 			Querier:    db.New(tx),
+			Logger:     logger,
 			SystemPk:   feed.SystemPk,
 			FeedPk:     feed.Pk,
 			UpdatePk:   feedUpdate.Pk,

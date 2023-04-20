@@ -4,7 +4,6 @@ package servicemaps
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/graph"
+	"golang.org/x/exp/slog"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -90,8 +90,8 @@ type UpdateStaticMapsArgs struct {
 }
 
 // UpdateStaticMaps updates the static service maps
-func UpdateStaticMaps(ctx context.Context, querier db.Querier, args UpdateStaticMapsArgs) error {
-	configs, err := ListConfigsInSystem(ctx, querier, args.SystemPk)
+func UpdateStaticMaps(ctx context.Context, querier db.Querier, logger *slog.Logger, args UpdateStaticMapsArgs) error {
+	configs, err := ListConfigsInSystem(ctx, querier, logger, args.SystemPk)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func UpdateStaticMaps(ctx context.Context, querier db.Querier, args UpdateStatic
 	}
 
 	for _, smc := range configs[api.ServiceMapConfig_STATIC] {
-		routePkToStopPks := buildStaticMaps(smc.Config, args.RouteIDToPk, stopIDToStationPk, args.Trips)
+		routePkToStopPks := buildStaticMaps(logger, smc.Config, args.RouteIDToPk, stopIDToStationPk, args.Trips)
 		for routePk, stopPks := range routePkToStopPks {
 			if err := persistMap(ctx, querier, &smc, routePk, stopPks); err != nil {
 				return err
@@ -141,7 +141,7 @@ func persistMap(ctx context.Context, querier db.Querier, smc *Config, routePk in
 	return nil
 }
 
-func buildStaticMaps(smc *api.ServiceMapConfig, routeIDToPk map[string]int64, stopIDToStationPk map[string]int64, trips []gtfs.ScheduledTrip) map[int64][]int64 {
+func buildStaticMaps(logger *slog.Logger, smc *api.ServiceMapConfig, routeIDToPk map[string]int64, stopIDToStationPk map[string]int64, trips []gtfs.ScheduledTrip) map[int64][]int64 {
 	includedServiceIDs := buildIncludedServiceIDs(smc, trips)
 
 	routePkToKeyToCount := map[int64]map[string]int{}
@@ -206,7 +206,7 @@ func buildStaticMaps(smc *api.ServiceMapConfig, routeIDToPk map[string]int64, st
 		var err error
 		m[routePk], err = buildMap(routePkToEdges[routePk])
 		if err != nil {
-			fmt.Println(err)
+			logger.Error(fmt.Sprintf("error building static map: %s", err))
 			continue
 		}
 	}
@@ -333,8 +333,8 @@ func buildMap(edgesSet map[graph.Edge]bool) ([]int64, error) {
 }
 
 // UpdateRealtimeMaps updates the realtime service maps
-func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, systemPk int64, routePks []int64) error {
-	configs, err := ListConfigsInSystem(ctx, querier, systemPk)
+func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, logger *slog.Logger, systemPk int64, routePks []int64) error {
+	configs, err := ListConfigsInSystem(ctx, querier, logger, systemPk)
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, systemPk int64,
 		edges := buildRealtimeMapEdges(tripStopPks, stopPkToStationPk)
 		mapAsStopPks, err := buildMap(edges)
 		if err != nil {
-			fmt.Println(err)
+			logger.ErrorCtx(ctx, fmt.Sprintf("error building realtime map: %s", err))
 			continue
 		}
 		for _, smc := range configs[api.ServiceMapConfig_REALTIME] {
@@ -434,7 +434,7 @@ type Config struct {
 
 // ListConfigsInSystem lists all of the service map configs in the provided system,
 // grouped by source.
-func ListConfigsInSystem(ctx context.Context, querier db.Querier, systemPk int64) (map[api.ServiceMapConfig_Source][]Config, error) {
+func ListConfigsInSystem(ctx context.Context, querier db.Querier, logger *slog.Logger, systemPk int64) (map[api.ServiceMapConfig_Source][]Config, error) {
 	rawConfigs, err := querier.ListServiceMapConfigsInSystem(ctx, systemPk)
 	if err != nil {
 		return nil, err
@@ -446,7 +446,7 @@ func ListConfigsInSystem(ctx context.Context, querier db.Querier, systemPk int64
 			Config: &api.ServiceMapConfig{},
 		}
 		if err := protojson.Unmarshal(rawConfig.Config, smc.Config); err != nil {
-			log.Printf("Invalid service map config, skipping: %+v", err)
+			slog.ErrorCtx(ctx, fmt.Sprintf("invalid service map config for system_pk=%d, skipping: %s", systemPk, err))
 			continue
 		}
 		configs[smc.Config.GetSource()] = append(configs[smc.Config.GetSource()], smc)

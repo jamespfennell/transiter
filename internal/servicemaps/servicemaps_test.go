@@ -7,6 +7,7 @@ import (
 
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/gen/api"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -123,7 +124,7 @@ func TestBuildStaticMaps(t *testing.T) {
 			}
 			routeIDToPk := map[string]int64{"1": 1}
 			stopIDToPk := map[string]int64{"1": 1, "2": 2, "3": 3, "4": 4}
-			gotAll := buildStaticMaps(config, routeIDToPk, stopIDToPk, tc.trips)
+			gotAll := buildStaticMaps(slog.Default(), config, routeIDToPk, stopIDToPk, tc.trips)
 
 			got, ok := gotAll[1]
 			if !ok {

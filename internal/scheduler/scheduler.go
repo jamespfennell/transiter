@@ -31,13 +31,13 @@ package scheduler
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 	"time"
 
 	"github.com/benbjohnson/clock"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/scheduler/ticker"
+	"golang.org/x/exp/slog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -99,12 +99,12 @@ func NewDefaultScheduler() *DefaultScheduler {
 }
 
 // Run runs the scheduler until the provided context is cancelled.
-func (s *DefaultScheduler) Run(ctx context.Context, public api.PublicServer, admin api.AdminServer) {
-	s.runWithClock(ctx, public, admin, clock.New())
+func (s *DefaultScheduler) Run(ctx context.Context, public api.PublicServer, admin api.AdminServer, logger *slog.Logger) {
+	s.runWithClock(ctx, public, admin, clock.New(), logger)
 }
 
-func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicServer, admin api.AdminServer, clock clock.Clock) {
-	maintenanceScheduler := newMaintenanceScheduler(ctx, admin, clock)
+func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicServer, admin api.AdminServer, clock clock.Clock, logger *slog.Logger) {
+	maintenanceScheduler := newMaintenanceScheduler(ctx, admin, clock, logger)
 	systemSchedulers := map[string]struct {
 		scheduler  *systemScheduler
 		cancelFunc context.CancelFunc
@@ -159,7 +159,7 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 			maintenanceScheduler.wait()
 			return
 		case <-s.resetAllRequest:
-			log.Printf("Reseting scheduler")
+			logger.InfoCtx(ctx, "reseting scheduler")
 			resp, err := public.ListSystems(ctx, &api.ListSystemsRequest{})
 			if err != nil {
 				s.resetAllReply <- fmt.Errorf("failed to get systems data during scheduler reset: %w", err)
@@ -197,8 +197,10 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 				s.resetReply <- err
 			}
 			if len(feeds) == 0 {
+				logger.InfoCtx(ctx, "stopping scheduler for system", slog.String("system_id", systemID))
 				stopScheduler(systemID)
 			} else {
+				logger.InfoCtx(ctx, "reseting scheduler for system", slog.String("system_id", systemID))
 				resetScheduler(systemID, feeds)
 			}
 			s.resetReply <- nil
@@ -213,7 +215,6 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 }
 
 func (s *DefaultScheduler) Reset(ctx context.Context) error {
-	log.Printf("Preparing to reset scheduler")
 	s.resetAllRequest <- struct{}{}
 	select {
 	case err := <-s.resetAllReply:
@@ -224,7 +225,6 @@ func (s *DefaultScheduler) Reset(ctx context.Context) error {
 }
 
 func (s *DefaultScheduler) ResetSystem(ctx context.Context, systemID string) error {
-	log.Printf("Preparing to reset scheduler for system %q\n", systemID)
 	s.resetRequest <- systemID
 	select {
 	case err := <-s.resetReply:
@@ -427,16 +427,16 @@ type maintenanceScheduler struct {
 	opDone chan struct{}
 }
 
-func newMaintenanceScheduler(ctx context.Context, admin api.AdminServer, clock clock.Clock) *maintenanceScheduler {
+func newMaintenanceScheduler(ctx context.Context, admin api.AdminServer, clock clock.Clock, logger *slog.Logger) *maintenanceScheduler {
 	s := &maintenanceScheduler{
 		opDone: make(chan struct{}),
 	}
-	go s.run(ctx, admin, clock)
+	go s.run(ctx, admin, clock, logger)
 	<-s.opDone
 	return s
 }
 
-func (s *maintenanceScheduler) run(ctx context.Context, admin api.AdminServer, clock clock.Clock) {
+func (s *maintenanceScheduler) run(ctx context.Context, admin api.AdminServer, clock clock.Clock, logger *slog.Logger) {
 	ticker := ticker.New(clock, 5*time.Minute)
 	s.opDone <- struct{}{}
 	for {
@@ -447,7 +447,7 @@ func (s *maintenanceScheduler) run(ctx context.Context, admin api.AdminServer, c
 			return
 		case <-ticker.C:
 			if _, err := admin.GarbageCollectFeedUpdates(ctx, &api.GarbageCollectFeedUpdatesRequest{}); err != nil {
-				fmt.Println("Error garbage collecting feed updates:", err)
+				logger.ErrorCtx(ctx, fmt.Sprintf("failed to GC feed updates: %s", err))
 			}
 		}
 	}

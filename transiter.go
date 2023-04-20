@@ -11,6 +11,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/client"
 	"github.com/jamespfennell/transiter/internal/server"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/slog"
 )
 
 func main() {
@@ -98,6 +99,25 @@ func main() {
 				}),
 			},
 			{
+				Name:  "log-level",
+				Usage: "get or set the log level",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "set",
+						Usage: "The new value of the log level. If not set, the current log level is just printed.",
+						Value: "",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					return clientAction(func(ctx context.Context, client *client.Client) error {
+						if logLevel := c.String("set"); logLevel != "" {
+							return client.SetLogLevel(ctx, logLevel)
+						}
+						return client.GetLogLevel(ctx)
+					})(c)
+				},
+			},
+			{
 				Name:  "scheduler",
 				Usage: "perform operations on the Transiter feed update scheduler",
 				Subcommands: []*cli.Command{
@@ -177,8 +197,17 @@ func main() {
 						Usage: "Maximum number of stops that will be returned in a single list stops request. Specifying a value <= 0 will disable the limit.",
 						Value: 100,
 					},
+					&cli.StringFlag{
+						Name:  "log-level",
+						Usage: "Log level, either debug, info, warning or error",
+						Value: "info",
+					},
 				},
 				Action: func(c *cli.Context) error {
+					var logLevel slog.Level
+					if err := logLevel.UnmarshalText([]byte(c.String("log-level"))); err != nil {
+						return err
+					}
 					args := server.RunArgs{
 						PublicHTTPAddr:      c.String("public-http-addr"),
 						PublicGrpcAddr:      c.String("public-grpc-addr"),
@@ -191,6 +220,7 @@ func main() {
 						ReadOnly:            c.Bool("read-only"),
 						EnablePprof:         c.Bool("enable-pprof"),
 						MaxStopsPerRequest:  int32(c.Int64("max-stops-per-request")),
+						LogLevel:            logLevel,
 					}
 					ctx, cancel := context.WithCancel(c.Context)
 					ch := make(chan os.Signal, 1)

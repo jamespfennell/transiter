@@ -3,7 +3,7 @@ package static
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/convert"
@@ -34,7 +34,7 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Stat
 	if err := updateTransfers(ctx, updateCtx, data.Transfers, stopIDToPk); err != nil {
 		return err
 	}
-	if err := servicemaps.UpdateStaticMaps(ctx, updateCtx.Querier, servicemaps.UpdateStaticMapsArgs{
+	if err := servicemaps.UpdateStaticMaps(ctx, updateCtx.Querier, updateCtx.Logger, servicemaps.UpdateStaticMapsArgs{
 		SystemPk:    updateCtx.SystemPk,
 		Trips:       data.Trips,
 		RouteIDToPk: routeIDToPk,
@@ -104,7 +104,7 @@ func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []
 	for _, route := range routes {
 		agencyPk, ok := agencyIDToPk[route.Agency.Id]
 		if !ok {
-			log.Printf("no agency %q in the database; skipping route %q", route.Agency.Id, route.Id)
+			updateCtx.Logger.WarnCtx(ctx, fmt.Sprintf("no agency %q in the database; skipping route %q", route.Agency.Id, route.Id))
 			continue
 		}
 		pk, ok := idToPk[route.Id]

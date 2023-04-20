@@ -8,8 +8,7 @@ import (
 )
 
 func (s *Service) UpdateFeed(ctx context.Context, req *api.UpdateFeedRequest) (*api.UpdateFeedReply, error) {
-	// TODO: this should be asynchronous
-	if err := update.Update(ctx, s.pool, req.SystemId, req.FeedId); err != nil {
+	if err := update.Update(ctx, s.logger, s.pool, req.SystemId, req.FeedId); err != nil {
 		return nil, err
 	}
 	return &api.UpdateFeedReply{}, nil

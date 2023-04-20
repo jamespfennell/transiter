@@ -100,6 +100,24 @@ service Admin {
     };
   }
 
+  // Get the current log level.
+  //
+  // `GET /loglevel`
+  rpc GetLogLevel(GetLogLevelRequest) returns (GetLogLevelReply) {
+    option (google.api.http) = {
+      get: "/loglevel"
+    };
+  }
+
+  // Set the log level.
+  //
+  // `PUT /loglevel`
+  rpc SetLogLevel(SetLogLevelRequest) returns (SetLogLevelReply) {
+    option (google.api.http) = {
+      put: "/loglevel"
+    };
+  }
+
   // TODO: GetFeedConfig
 }
 
@@ -315,3 +333,12 @@ message ResetSchedulerReply {}
 message GarbageCollectFeedUpdatesRequest {}
 
 message GarbageCollectFeedUpdatesReply {}
+
+message GetLogLevelRequest {}
+message GetLogLevelReply {
+  string log_level = 1;
+}
+message SetLogLevelRequest {
+  string log_level = 1;
+}
+message SetLogLevelReply {}

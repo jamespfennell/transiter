@@ -13,6 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/urfave/cli/v2 v2.25.1
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	google.golang.org/genproto v0.0.0-20230331144136-dcfb400f0633
 	google.golang.org/grpc v1.54.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
@@ -32,7 +33,6 @@ require (
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/exp v0.0.0-20220428152302-39d4317da171 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 )
 

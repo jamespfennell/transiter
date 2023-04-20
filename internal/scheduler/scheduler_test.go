@@ -9,6 +9,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/jamespfennell/transiter/internal/gen/api"
+	"golang.org/x/exp/slog"
 )
 
 const systemID1 = "systemID1"
@@ -180,7 +181,7 @@ func TestScheduler(t *testing.T) {
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
-				scheduler.runWithClock(ctx, &server, &server, clock)
+				scheduler.runWithClock(ctx, &server, &server, clock, slog.Default())
 				wg.Done()
 			}()
 			if err := scheduler.Reset(ctx); err != nil {

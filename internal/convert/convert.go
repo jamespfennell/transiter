@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/big"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/jamespfennell/gtfs/extensions/nyctbustrips"
 	"github.com/jamespfennell/gtfs/extensions/nycttrips"
 	"github.com/jamespfennell/transiter/internal/gen/api"
+	"golang.org/x/exp/slog"
 )
 
 func SQLNullTime(t pgtype.Timestamptz) *int64 {
@@ -183,14 +183,14 @@ func StopType(t string) api.Stop_Type {
 	return api.Stop_Type(api.Stop_Type_value[t])
 }
 
-func FeedUpdateResult(result pgtype.Text) *api.FeedUpdate_Result {
+func FeedUpdateResult(logger *slog.Logger, result pgtype.Text) *api.FeedUpdate_Result {
 	if !result.Valid {
 		return nil
 	}
 	if i, ok := api.FeedUpdate_Result_value[result.String]; ok {
 		return api.FeedUpdate_Result(i).Enum()
 	}
-	log.Printf("Unknown feed update result %s\n", result.String)
+	logger.Error(fmt.Sprintf("unknown feed update result %s", result.String))
 	return api.FeedUpdate_INTERNAL_ERROR.Enum()
 }
 

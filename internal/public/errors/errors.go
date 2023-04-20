@@ -3,10 +3,11 @@ package errors
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"golang.org/x/exp/slog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -42,25 +43,24 @@ func NewInvalidArgumentError(msg string) error {
 }
 
 // ServeMuxOption returns a `runtime.ServeMuxOption` that makes errors user-friendly at the API boundary.
-func ServeMuxOption() runtime.ServeMuxOption {
-	return runtime.WithErrorHandler(errorHandler)
-}
-
-func errorHandler(ctx context.Context, mux *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, req *http.Request, err error) {
-	switch err.(type) {
-	case publicErr:
-		// nothing to do
-	case interface {
-		GRPCStatus() *status.Status
-	}:
-		// nothing to do
-	default:
-		log.Printf("Unexpected internal error: %s\n", err)
-		s := status.New(codes.Internal, "internal error")
-		s, _ = s.WithDetails(status.Convert(err).Proto())
-		err = publicErr{
-			Status: s,
+func ServeMuxOption(logger *slog.Logger) runtime.ServeMuxOption {
+	return runtime.WithErrorHandler(func(ctx context.Context, sm *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
+		switch err.(type) {
+		case publicErr:
+			// nothing to do
+		case interface {
+			GRPCStatus() *status.Status
+		}:
+			// nothing to do
+		default:
+			logger.ErrorCtx(ctx, fmt.Sprintf("unexpected internal error: %s", err))
+			s := status.New(codes.Internal, "internal error")
+			s, _ = s.WithDetails(status.Convert(err).Proto())
+			err = publicErr{
+				Status: s,
+			}
 		}
-	}
-	runtime.DefaultHTTPErrorHandler(ctx, mux, m, w, req, err)
+		logger.DebugCtx(ctx, fmt.Sprintf("returning API error: %s", err))
+		runtime.DefaultHTTPErrorHandler(ctx, sm, m, w, r, err)
+	})
 }

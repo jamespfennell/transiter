@@ -8,10 +8,12 @@ import (
 
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"golang.org/x/exp/slog"
 )
 
 type UpdateContext struct {
 	Querier    db.Querier
+	Logger     *slog.Logger
 	SystemPk   int64
 	FeedPk     int64
 	UpdatePk   int64

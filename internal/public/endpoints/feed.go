@@ -74,7 +74,7 @@ func ListFeedUpdates(ctx context.Context, r *Context, req *api.ListFeedUpdatesRe
 			StartedAt:     update.StartedAt.Time.Unix(),
 			Finished:      update.Finished,
 			FinishedAt:    convert.SQLNullTime(update.FinishedAt),
-			Result:        convert.FeedUpdateResult(update.Result),
+			Result:        convert.FeedUpdateResult(r.Logger, update.Result),
 			ContentHash:   convert.SQLNullString(update.ContentHash),
 			ContentLength: convert.SQLNullInt32(update.ContentLength),
 			ErrorMessage:  convert.SQLNullString(update.ErrorMessage),

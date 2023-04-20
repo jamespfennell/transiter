@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"text/template"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/scheduler"
 	"github.com/jamespfennell/transiter/internal/servicemaps"
 	"github.com/jamespfennell/transiter/internal/update"
+	"golang.org/x/exp/slog"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -28,12 +28,16 @@ import (
 type Service struct {
 	pool      *pgxpool.Pool
 	scheduler scheduler.Scheduler
+	logger    *slog.Logger
+	levelVar  *slog.LevelVar
 }
 
-func New(pool *pgxpool.Pool, scheduler scheduler.Scheduler) *Service {
+func New(pool *pgxpool.Pool, scheduler scheduler.Scheduler, logger *slog.Logger, levelVar *slog.LevelVar) *Service {
 	return &Service{
 		pool:      pool,
 		scheduler: scheduler,
+		logger:    logger,
+		levelVar:  levelVar,
 	}
 }
 
@@ -67,7 +71,8 @@ func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigR
 }
 
 func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrUpdateSystemRequest) (*api.InstallOrUpdateSystemReply, error) {
-	log.Printf("Recieved install or update request for system %q", req.SystemId)
+	logger := s.logger.With(slog.String("system_id", req.GetSystemId()))
+	logger.InfoCtx(ctx, "recieved install or update systm request")
 
 	var err error
 	var systemConfig *api.SystemConfig
@@ -94,7 +99,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	default:
 		return nil, fmt.Errorf("no system configuration provided")
 	}
-	log.Printf("Config for install/update for system %s:\n%+v\n", req.SystemId, systemConfig)
+	logger.InfoCtx(ctx, fmt.Sprintf("config: %+v", systemConfig))
 
 	var keepGoing bool
 	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
@@ -109,17 +114,17 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		go func() {
 			// TODO: can we wire through the context on the server?
 			ctx := context.Background()
-			err := performInstall(ctx, s.pool, req.SystemId, systemConfig)
+			err := performInstall(ctx, logger, s.pool, req.SystemId, systemConfig)
 			if err != nil {
-				log.Printf("Failed to install system %q, going to mark as FAILED. Install error: %s", req.SystemId, err)
+				logger.ErrorCtx(ctx, fmt.Sprintf("install or update failed: %s", err))
 			}
 			if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 				return markSystemInstallFinished(ctx, db.New(tx), req.SystemId, err)
 			}); err != nil {
-				log.Printf("Failed to mark install of system %q as finished: %s", req.SystemId, err)
+				logger.ErrorCtx(ctx, fmt.Sprintf("failed to mark install or update finished: %s", err))
 				return
 			}
-			log.Printf("Finished install of system %q\n", req.SystemId)
+			logger.InfoCtx(ctx, "install or update finished")
 			s.scheduler.ResetSystem(ctx, req.SystemId)
 		}()
 	}
@@ -149,7 +154,7 @@ func upsertSystemEntry(ctx context.Context, querier db.Querier, systemID string,
 	return true, err
 }
 
-func performInstall(ctx context.Context, pool *pgxpool.Pool, systemID string, systemConfig *api.SystemConfig) error {
+func performInstall(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, systemID string, systemConfig *api.SystemConfig) error {
 	if err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return upsertSystemMetadata(ctx, db.New(tx), systemID, systemConfig)
 	}); err != nil {
@@ -159,7 +164,7 @@ func performInstall(ctx context.Context, pool *pgxpool.Pool, systemID string, sy
 		if !feed.RequiredForInstall {
 			continue
 		}
-		if err := update.Update(ctx, pool, systemID, feed.Id); err != nil {
+		if err := update.Update(ctx, logger, pool, systemID, feed.Id); err != nil {
 			return err
 		}
 	}
@@ -248,7 +253,9 @@ func markSystemInstallFinished(ctx context.Context, querier db.Querier, systemID
 }
 
 func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest) (*api.DeleteSystemReply, error) {
-	log.Printf("Recieved delete request for system %q", req.SystemId)
+	logger := s.logger.With(slog.String("system_id", req.GetSystemId()))
+	logger.InfoCtx(ctx, "recieved delete system request")
+
 	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		querier := db.New(tx)
 		system, err := querier.GetSystem(ctx, req.SystemId)
@@ -262,7 +269,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 	}); err != nil {
 		return nil, err
 	}
-	log.Printf("Deleted system %q", req.SystemId)
+	logger.InfoCtx(ctx, "delete system")
 	s.scheduler.ResetSystem(ctx, req.SystemId)
 	return &api.DeleteSystemReply{}, nil
 }
@@ -313,7 +320,7 @@ func unmarshalFromYaml(y []byte) (*api.SystemConfig, error) {
 }
 
 func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.GarbageCollectFeedUpdatesRequest) (*api.GarbageCollectFeedUpdatesReply, error) {
-	fmt.Println("[gcfeedupdates] Running")
+	s.logger.InfoCtx(ctx, "feed update GC: starting")
 	var activeFeedUpdatePks []int64
 	// We run in separate transactions to avoid holding a lock on the all of the entity tables
 	// while the deletions are happening. This does introduce a race condition in which a new
@@ -332,7 +339,7 @@ func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.Garbag
 	}); err != nil {
 		return nil, err
 	}
-	fmt.Println("[gcfeedupdates] Active feed update pks", activeFeedUpdatePks)
+	s.logger.InfoCtx(ctx, fmt.Sprintf("feed update GC: found %d active feed updates: %v", len(activeFeedUpdatePks), activeFeedUpdatePks))
 	var numDeleted int64
 	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		var err error
@@ -341,6 +348,6 @@ func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.Garbag
 	}); err != nil {
 		return nil, err
 	}
-	fmt.Printf("[gcfeedupdates] Deleted %d feed updates\n", numDeleted)
+	s.logger.InfoCtx(ctx, fmt.Sprintf("feed update GC: deleted %d feed updates", numDeleted))
 	return &api.GarbageCollectFeedUpdatesReply{}, nil
 }

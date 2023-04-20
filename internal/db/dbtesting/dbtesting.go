@@ -18,6 +18,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"golang.org/x/exp/slog"
 )
 
 type Querier struct {
@@ -68,7 +69,7 @@ func getDB(t *testing.T) *pgxpool.Pool {
 	if err != nil {
 		t.Fatalf("failed to connect to Postgres: %+v", err)
 	}
-	if err := dbwrappers.Ping(context.Background(), d, 100, 50*time.Millisecond); err != nil {
+	if err := dbwrappers.Ping(context.Background(), slog.Default(), d, 100, 50*time.Millisecond); err != nil {
 		log.Fatalf("Failed to connect to the database; exiting: %s\n", err)
 	}
 

@@ -2,7 +2,7 @@ package endpoints
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -101,7 +101,7 @@ func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []
 			Alerts:            alerts[route.Pk],
 		})
 	}
-	log.Printf("buildRouteResource(%v) took %s\n", routePks, time.Since(startTime))
+	r.Logger.DebugCtx(ctx, fmt.Sprintf("buildRouteResource(%v) took %s\n", routePks, time.Since(startTime)))
 	return apiRoutes, nil
 }
 

@@ -12,21 +12,23 @@ import (
 	"github.com/jamespfennell/transiter/internal/monitoring"
 	"github.com/jamespfennell/transiter/internal/public/endpoints"
 	"github.com/jamespfennell/transiter/internal/public/reference"
+	"golang.org/x/exp/slog"
 )
 
 // Server implements the Transiter public API.
 type Server struct {
 	pool            *pgxpool.Pool
+	logger          *slog.Logger
 	endpointOptions *endpoints.EndpointOptions
 }
 
 // New creates a new `Server` that uses the provided pool to connect to the database.
-func New(pool *pgxpool.Pool, endpointOptions *endpoints.EndpointOptions) *Server {
+func New(pool *pgxpool.Pool, logger *slog.Logger, endpointOptions *endpoints.EndpointOptions) *Server {
 	if endpointOptions == nil {
 		endpointOptions = &endpoints.EndpointOptions{MaxStopsPerRequest: 100}
 	}
 
-	return &Server{pool: pool, endpointOptions: endpointOptions}
+	return &Server{pool: pool, logger: logger, endpointOptions: endpointOptions}
 }
 
 func (s *Server) Entrypoint(ctx context.Context, req *api.EntrypointRequest) (*api.EntrypointReply, error) {
@@ -102,7 +104,12 @@ func run[S, T any](ctx context.Context, s *Server, methodName string, f func(con
 	var t T
 	err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
 		var err error
-		t, err = f(ctx, &endpoints.Context{Querier: db.New(tx), Reference: reference.NewGenerator(ctx), EndpointOptions: *s.endpointOptions}, req)
+		t, err = f(ctx, &endpoints.Context{
+			Querier:         db.New(tx),
+			Reference:       reference.NewGenerator(ctx),
+			Logger:          s.logger,
+			EndpointOptions: *s.endpointOptions,
+		}, req)
 		return err
 	})
 	monitoring.RecordPublicRequest(methodName, err, time.Since(startTime))

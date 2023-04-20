@@ -178,3 +178,19 @@ func (c *Client) GarbageCollectFeedUpdates(ctx context.Context) error {
 	_, err := c.adminClient.GarbageCollectFeedUpdates(ctx, &api.GarbageCollectFeedUpdatesRequest{})
 	return err
 }
+
+func (c *Client) GetLogLevel(ctx context.Context) error {
+	r, err := c.adminClient.GetLogLevel(ctx, &api.GetLogLevelRequest{})
+	if err != nil {
+		return err
+	}
+	fmt.Println(r.GetLogLevel())
+	return nil
+}
+
+func (c *Client) SetLogLevel(ctx context.Context, logLevel string) error {
+	_, err := c.adminClient.SetLogLevel(ctx, &api.SetLogLevelRequest{
+		LogLevel: logLevel,
+	})
+	return err
+}

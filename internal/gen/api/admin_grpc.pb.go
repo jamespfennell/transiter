@@ -77,6 +77,14 @@ type AdminClient interface {
 	// This method exists to avoid unbounded growth in the feed updates database table.
 	// It is called periodically by the scheduler.
 	GarbageCollectFeedUpdates(ctx context.Context, in *GarbageCollectFeedUpdatesRequest, opts ...grpc.CallOption) (*GarbageCollectFeedUpdatesReply, error)
+	// Get the current log level.
+	//
+	// `GET /loglevel`
+	GetLogLevel(ctx context.Context, in *GetLogLevelRequest, opts ...grpc.CallOption) (*GetLogLevelReply, error)
+	// Set the log level.
+	//
+	// `PUT /loglevel`
+	SetLogLevel(ctx context.Context, in *SetLogLevelRequest, opts ...grpc.CallOption) (*SetLogLevelReply, error)
 }
 
 type adminClient struct {
@@ -150,6 +158,24 @@ func (c *adminClient) GarbageCollectFeedUpdates(ctx context.Context, in *Garbage
 	return out, nil
 }
 
+func (c *adminClient) GetLogLevel(ctx context.Context, in *GetLogLevelRequest, opts ...grpc.CallOption) (*GetLogLevelReply, error) {
+	out := new(GetLogLevelReply)
+	err := c.cc.Invoke(ctx, "/Admin/GetLogLevel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminClient) SetLogLevel(ctx context.Context, in *SetLogLevelRequest, opts ...grpc.CallOption) (*SetLogLevelReply, error) {
+	out := new(SetLogLevelReply)
+	err := c.cc.Invoke(ctx, "/Admin/SetLogLevel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServer is the server API for Admin service.
 // All implementations should embed UnimplementedAdminServer
 // for forward compatibility
@@ -213,6 +239,14 @@ type AdminServer interface {
 	// This method exists to avoid unbounded growth in the feed updates database table.
 	// It is called periodically by the scheduler.
 	GarbageCollectFeedUpdates(context.Context, *GarbageCollectFeedUpdatesRequest) (*GarbageCollectFeedUpdatesReply, error)
+	// Get the current log level.
+	//
+	// `GET /loglevel`
+	GetLogLevel(context.Context, *GetLogLevelRequest) (*GetLogLevelReply, error)
+	// Set the log level.
+	//
+	// `PUT /loglevel`
+	SetLogLevel(context.Context, *SetLogLevelRequest) (*SetLogLevelReply, error)
 }
 
 // UnimplementedAdminServer should be embedded to have forward compatible implementations.
@@ -239,6 +273,12 @@ func (UnimplementedAdminServer) ResetScheduler(context.Context, *ResetSchedulerR
 }
 func (UnimplementedAdminServer) GarbageCollectFeedUpdates(context.Context, *GarbageCollectFeedUpdatesRequest) (*GarbageCollectFeedUpdatesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GarbageCollectFeedUpdates not implemented")
+}
+func (UnimplementedAdminServer) GetLogLevel(context.Context, *GetLogLevelRequest) (*GetLogLevelReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLogLevel not implemented")
+}
+func (UnimplementedAdminServer) SetLogLevel(context.Context, *SetLogLevelRequest) (*SetLogLevelReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetLogLevel not implemented")
 }
 
 // UnsafeAdminServer may be embedded to opt out of forward compatibility for this service.
@@ -378,6 +418,42 @@ func _Admin_GarbageCollectFeedUpdates_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Admin_GetLogLevel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLogLevelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).GetLogLevel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Admin/GetLogLevel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).GetLogLevel(ctx, req.(*GetLogLevelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admin_SetLogLevel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetLogLevelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).SetLogLevel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Admin/SetLogLevel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).SetLogLevel(ctx, req.(*SetLogLevelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Admin_ServiceDesc is the grpc.ServiceDesc for Admin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -412,6 +488,14 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GarbageCollectFeedUpdates",
 			Handler:    _Admin_GarbageCollectFeedUpdates_Handler,
+		},
+		{
+			MethodName: "GetLogLevel",
+			Handler:    _Admin_GetLogLevel_Handler,
+		},
+		{
+			MethodName: "SetLogLevel",
+			Handler:    _Admin_SetLogLevel_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
