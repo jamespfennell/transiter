@@ -33,14 +33,13 @@ UPDATE stop SET
 WHERE
     pk = sqlc.arg(pk);
 
--- name: DeleteStaleStops :many
+-- name: DeleteStaleStops :exec
 DELETE FROM stop
 USING feed_update
 WHERE 
     feed_update.pk = stop.source_pk
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
-    AND feed_update.pk != sqlc.arg(update_pk)
-RETURNING stop.id;
+    AND NOT stop.pk = ANY(sqlc.arg(updated_stop_pks)::bigint[]);
 
 -- name: ListStops :many
 SELECT * FROM stop

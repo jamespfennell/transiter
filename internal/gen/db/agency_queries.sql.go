@@ -11,39 +11,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deleteStaleAgencies = `-- name: DeleteStaleAgencies :many
+const deleteStaleAgencies = `-- name: DeleteStaleAgencies :exec
 DELETE FROM agency
 USING feed_update
 WHERE 
     feed_update.pk = agency.source_pk
     AND feed_update.feed_pk = $1
-    AND feed_update.pk != $2
-RETURNING agency.id
+    AND NOT agency.pk = ANY($2::bigint[])
 `
 
 type DeleteStaleAgenciesParams struct {
-	FeedPk   int64
-	UpdatePk int64
+	FeedPk           int64
+	UpdatedAgencyPks []int64
 }
 
-func (q *Queries) DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, deleteStaleAgencies, arg.FeedPk, arg.UpdatePk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		items = append(items, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) error {
+	_, err := q.db.Exec(ctx, deleteStaleAgencies, arg.FeedPk, arg.UpdatedAgencyPks)
+	return err
 }
 
 const getAgency = `-- name: GetAgency :one

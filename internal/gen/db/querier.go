@@ -21,16 +21,14 @@ type Querier interface {
 	DeleteFeed(ctx context.Context, pk int64) error
 	DeleteServiceMap(ctx context.Context, arg DeleteServiceMapParams) error
 	DeleteServiceMapConfig(ctx context.Context, pk int64) error
-	DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) ([]string, error)
-	// TODO: These DeleteStaleT queries can be simpler and just take the update_pk
+	DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) error
 	DeleteStaleAlerts(ctx context.Context, arg DeleteStaleAlertsParams) error
-	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) ([]string, error)
-	DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) ([]string, error)
-	DeleteStaleTransfers(ctx context.Context, arg DeleteStaleTransfersParams) error
-	// TODO: These DeleteStaleT queries can be simpler and just take the update_pk
+	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) error
+	DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) error
 	DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) ([]int64, error)
 	DeleteStopHeadsignRules(ctx context.Context, sourcePk int64) error
 	DeleteSystem(ctx context.Context, pk int64) error
+	DeleteTransfers(ctx context.Context, feedPk int64) error
 	DeleteTripStopTimes(ctx context.Context, pks []int64) error
 	EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHeadwaysForRoutesParams) ([]EstimateHeadwaysForRoutesRow, error)
 	FinishFeedUpdate(ctx context.Context, arg FinishFeedUpdateParams) error

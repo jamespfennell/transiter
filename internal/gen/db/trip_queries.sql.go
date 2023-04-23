@@ -17,18 +17,17 @@ USING feed_update
 WHERE 
     feed_update.pk = trip.source_pk
     AND feed_update.feed_pk = $1
-    AND feed_update.pk != $2
+    AND NOT trip.pk = ANY($2::bigint[])
 RETURNING trip.route_pk
 `
 
 type DeleteStaleTripsParams struct {
-	FeedPk   int64
-	UpdatePk int64
+	FeedPk         int64
+	UpdatedTripPks []int64
 }
 
-// TODO: These DeleteStaleT queries can be simpler and just take the update_pk
 func (q *Queries) DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) ([]int64, error) {
-	rows, err := q.db.Query(ctx, deleteStaleTrips, arg.FeedPk, arg.UpdatePk)
+	rows, err := q.db.Query(ctx, deleteStaleTrips, arg.FeedPk, arg.UpdatedTripPks)
 	if err != nil {
 		return nil, err
 	}

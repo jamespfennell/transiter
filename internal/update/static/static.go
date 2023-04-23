@@ -45,13 +45,14 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Stat
 }
 
 func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencies []gtfs.Agency) (map[string]int64, error) {
-	idToPk, err := dbwrappers.MapAgencyIDToPk(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	oldIDToPk, err := dbwrappers.MapAgencyIDToPk(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
 	}
+	newIDToPk := map[string]int64{}
 	for _, agency := range agencies {
 		var err error
-		pk, ok := idToPk[agency.Id]
+		pk, ok := oldIDToPk[agency.Id]
 		if ok {
 			err = updateCtx.Querier.UpdateAgency(ctx, db.UpdateAgencyParams{
 				Pk:       pk,
@@ -77,37 +78,35 @@ func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencie
 				FareUrl:  convert.NullString(agency.FareUrl),
 				Email:    convert.NullString(agency.Email),
 			})
-			idToPk[agency.Id] = pk
+			oldIDToPk[agency.Id] = pk
 		}
 		if err != nil {
 			return nil, err
 		}
+		newIDToPk[agency.Id] = pk
 	}
-	deletedIds, err := updateCtx.Querier.DeleteStaleAgencies(ctx, db.DeleteStaleAgenciesParams{
-		FeedPk:   updateCtx.FeedPk,
-		UpdatePk: updateCtx.UpdatePk,
-	})
-	if err != nil {
+	if err := updateCtx.Querier.DeleteStaleAgencies(ctx, db.DeleteStaleAgenciesParams{
+		FeedPk:           updateCtx.FeedPk,
+		UpdatedAgencyPks: common.MapValues(newIDToPk),
+	}); err != nil {
 		return nil, err
 	}
-	for _, id := range deletedIds {
-		delete(idToPk, id)
-	}
-	return idToPk, nil
+	return newIDToPk, nil
 }
 
 func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []gtfs.Route, agencyIDToPk map[string]int64) (map[string]int64, error) {
-	idToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	oldIDToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
 	}
+	newIDToPk := map[string]int64{}
 	for _, route := range routes {
 		agencyPk, ok := agencyIDToPk[route.Agency.Id]
 		if !ok {
-			updateCtx.Logger.WarnCtx(ctx, fmt.Sprintf("no agency %q in the database; skipping route %q", route.Agency.Id, route.Id))
+			updateCtx.Logger.WarnCtx(ctx, fmt.Sprintf("route %q references agency %q that doesn't exist; skipping", route.Id, route.Agency.Id))
 			continue
 		}
-		pk, ok := idToPk[route.Id]
+		pk, ok := oldIDToPk[route.Id]
 		if ok {
 			err = updateCtx.Querier.UpdateRoute(ctx, db.UpdateRouteParams{
 				Pk:                pk,
@@ -141,30 +140,27 @@ func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []
 				ContinuousDropOff: route.ContinuousDropOff.String(),
 				AgencyPk:          agencyPk,
 			})
-			idToPk[route.Id] = pk
 		}
 		if err != nil {
 			return nil, err
 		}
+		newIDToPk[route.Id] = pk
 	}
-	deletedIds, err := updateCtx.Querier.DeleteStaleRoutes(ctx, db.DeleteStaleRoutesParams{
-		FeedPk:   updateCtx.FeedPk,
-		UpdatePk: updateCtx.UpdatePk,
-	})
-	if err != nil {
+	if err := updateCtx.Querier.DeleteStaleRoutes(ctx, db.DeleteStaleRoutesParams{
+		FeedPk:          updateCtx.FeedPk,
+		UpdatedRoutePks: common.MapValues(newIDToPk),
+	}); err != nil {
 		return nil, err
 	}
-	for _, id := range deletedIds {
-		delete(idToPk, id)
-	}
-	return idToPk, nil
+	return newIDToPk, nil
 }
 
 func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gtfs.Stop) (map[string]int64, error) {
-	idToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	oldIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
 	}
+	newIDToPk := map[string]int64{}
 	for _, stop := range stops {
 		var wheelchairBoarding *bool
 		switch stop.WheelchairBoarding {
@@ -175,7 +171,7 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 			f := false
 			wheelchairBoarding = &f
 		}
-		pk, ok := idToPk[stop.Id]
+		pk, ok := oldIDToPk[stop.Id]
 		if ok {
 			err = updateCtx.Querier.UpdateStop(ctx, db.UpdateStopParams{
 				Pk:                 pk,
@@ -209,46 +205,46 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 				WheelchairBoarding: convert.NullBool(wheelchairBoarding),
 				ZoneID:             convert.NullString(stop.ZoneId),
 			})
-			idToPk[stop.Id] = pk
 		}
 		if err != nil {
 			return nil, err
 		}
+		newIDToPk[stop.Id] = pk
 	}
-	deletedIds, err := updateCtx.Querier.DeleteStaleStops(ctx, db.DeleteStaleStopsParams{
-		FeedPk:   updateCtx.FeedPk,
-		UpdatePk: updateCtx.UpdatePk,
-	})
-	if err != nil {
+	// TODO: in the case when a parent stop is deleted but the child stop is not, the
+	// ON DELETE CASCADE may result in the child stop being deleted too. This needs to
+	// be unit tested and fixed.
+	if err := updateCtx.Querier.DeleteStaleStops(ctx, db.DeleteStaleStopsParams{
+		FeedPk:         updateCtx.FeedPk,
+		UpdatedStopPks: common.MapValues(newIDToPk),
+	}); err != nil {
 		return nil, err
-	}
-	for _, id := range deletedIds {
-		delete(idToPk, id)
 	}
 	// We now populate the parent stop field
 	for _, stop := range stops {
 		if stop.Parent == nil {
 			continue
 		}
-		parentStopPk, ok := idToPk[stop.Parent.Id]
+		parentStopPk, ok := newIDToPk[stop.Parent.Id]
 		if !ok {
+			updateCtx.Logger.WarnCtx(ctx, fmt.Sprintf("stop %q references parent stop %q that doesn't exist", stop.Id, stop.Parent.Id))
 			continue
 		}
 		if err := updateCtx.Querier.UpdateStop_Parent(ctx, db.UpdateStop_ParentParams{
-			Pk:           idToPk[stop.Id],
+			Pk:           newIDToPk[stop.Id],
 			ParentStopPk: convert.NullInt64(&parentStopPk),
 		}); err != nil {
 			return nil, err
 		}
 	}
-	return idToPk, nil
+	return newIDToPk, nil
 }
 
 func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transfers []gtfs.Transfer, stopIDToPk map[string]int64) error {
-	if err := updateCtx.Querier.DeleteStaleTransfers(ctx, db.DeleteStaleTransfersParams{
-		FeedPk:   updateCtx.FeedPk,
-		UpdatePk: updateCtx.UpdatePk,
-	}); err != nil {
+	// Transfers are special because (a) they don't have an ID and (b) no other entity references them
+	// by foriegn key. It is thus possible (and easier) to update transfers by deleting the existing transfers
+	// and inserting the new ones.
+	if err := updateCtx.Querier.DeleteTransfers(ctx, updateCtx.FeedPk); err != nil {
 		return err
 	}
 	for _, transfer := range transfers {

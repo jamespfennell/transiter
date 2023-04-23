@@ -11,39 +11,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deleteStaleStops = `-- name: DeleteStaleStops :many
+const deleteStaleStops = `-- name: DeleteStaleStops :exec
 DELETE FROM stop
 USING feed_update
 WHERE 
     feed_update.pk = stop.source_pk
     AND feed_update.feed_pk = $1
-    AND feed_update.pk != $2
-RETURNING stop.id
+    AND NOT stop.pk = ANY($2::bigint[])
 `
 
 type DeleteStaleStopsParams struct {
-	FeedPk   int64
-	UpdatePk int64
+	FeedPk         int64
+	UpdatedStopPks []int64
 }
 
-func (q *Queries) DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, deleteStaleStops, arg.FeedPk, arg.UpdatePk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		items = append(items, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) error {
+	_, err := q.db.Exec(ctx, deleteStaleStops, arg.FeedPk, arg.UpdatedStopPks)
+	return err
 }
 
 const getStop = `-- name: GetStop :one

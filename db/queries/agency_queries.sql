@@ -19,14 +19,13 @@ UPDATE agency SET
 WHERE
     pk = sqlc.arg(pk);
 
--- name: DeleteStaleAgencies :many
+-- name: DeleteStaleAgencies :exec
 DELETE FROM agency
 USING feed_update
 WHERE 
     feed_update.pk = agency.source_pk
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
-    AND feed_update.pk != sqlc.arg(update_pk)
-RETURNING agency.id;
+    AND NOT agency.pk = ANY(sqlc.arg(updated_agency_pks)::bigint[]);
 
 -- name: ListAgencies :many
 SELECT agency.* FROM agency WHERE system_pk = $1 ORDER BY id;

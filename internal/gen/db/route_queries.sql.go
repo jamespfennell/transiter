@@ -11,39 +11,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deleteStaleRoutes = `-- name: DeleteStaleRoutes :many
+const deleteStaleRoutes = `-- name: DeleteStaleRoutes :exec
 DELETE FROM route
 USING feed_update
 WHERE 
     feed_update.pk = route.source_pk
     AND feed_update.feed_pk = $1
-    AND feed_update.pk != $2
-RETURNING route.id
+    AND NOT route.pk = ANY($2::bigint[])
 `
 
 type DeleteStaleRoutesParams struct {
-	FeedPk   int64
-	UpdatePk int64
+	FeedPk          int64
+	UpdatedRoutePks []int64
 }
 
-func (q *Queries) DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, deleteStaleRoutes, arg.FeedPk, arg.UpdatePk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		items = append(items, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) error {
+	_, err := q.db.Exec(ctx, deleteStaleRoutes, arg.FeedPk, arg.UpdatedRoutePks)
+	return err
 }
 
 const estimateHeadwaysForRoutes = `-- name: EstimateHeadwaysForRoutes :many

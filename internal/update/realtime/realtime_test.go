@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/convert"
@@ -49,6 +50,19 @@ func TestUpdateTrips(t *testing.T) {
 				wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
 				wantSt(3, stopID4, wArrTime(30)),
 			}),
+		},
+		{
+			name: "trip deleted",
+			tripVersions: []*gtfs.Trip{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+					gtfsStu(gStopID(stopID1), gDepTime(5)),
+					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+					gtfsStu(gStopID(stopID4), gArrTime(30)),
+				}),
+				nil,
+			},
+			wantTrip: nil,
 		},
 		{
 			name: "same update twice",
@@ -179,21 +193,9 @@ func TestUpdateTrips(t *testing.T) {
 				}
 			}
 
-			dbTrip, err := querier.GetTrip(ctx, db.GetTripParams{
-				RoutePk: routeIDToPk[tc.wantTrip.RouteID],
-				TripID:  tc.wantTrip.DBFields.ID,
-			})
-			if err != nil {
-				t.Fatalf("GetTrip(routeID=%s, tripID=%s) err got = %v, want = <nil>", tc.wantTrip.RouteID, tc.wantTrip.DBFields.ID, err)
-			}
-			dbStopTimes, err := querier.ListStopsTimesForTrip(ctx, dbTrip.Pk)
-			if err != nil {
-				t.Fatalf("ListStopTimesForTrip(routeID=%s, tripID=%s) err got = %v, want = <nil>", tc.wantTrip.RouteID, tc.wantTrip.DBFields.ID, err)
-			}
+			gotTrip := readTripFromDB(ctx, t, querier, routeIDToPk, stopPkToID)
 
-			gotTrip := NewTripFromDB(dbTrip, dbStopTimes, routePkToID, stopPkToID)
-
-			if diff := cmp.Diff(gotTrip, *tc.wantTrip); diff != "" {
+			if diff := cmp.Diff(gotTrip, tc.wantTrip); diff != "" {
 				t.Errorf("got = %v, want = %v, diff = %s", gotTrip, tc.wantTrip, diff)
 			}
 		})
@@ -206,20 +208,34 @@ type Trip struct {
 	StopTimes []StopTime
 }
 
-func NewTripFromDB(in db.Trip, stopTimes []db.ListStopsTimesForTripRow, routePkToID, stopPkToID map[int64]string) Trip {
+func readTripFromDB(ctx context.Context, t *testing.T, querier db.Querier, routeIDToPk map[string]int64, stopPkToID map[int64]string) *Trip {
+	dbTrip, err := querier.GetTrip(ctx, db.GetTripParams{
+		RoutePk: routeIDToPk[routeID1],
+		TripID:  tripID1,
+	})
+	if err == pgx.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		t.Fatalf("GetTrip(routeID=%s, tripID=%s) err got = %v, want = <nil>", routeID1, tripID1, err)
+	}
+	dbStopTimes, err := querier.ListStopsTimesForTrip(ctx, dbTrip.Pk)
+	if err != nil {
+		t.Fatalf("ListStopTimesForTrip(routeID=%s, tripID=%s) err got = %v, want = <nil>", routeID1, tripID1, err)
+	}
+
 	var outStopTimes []StopTime
-	for _, inStopTime := range stopTimes {
+	for _, inStopTime := range dbStopTimes {
 		outStopTimes = append(outStopTimes, NewStopTimeFromDB(inStopTime, stopPkToID))
 	}
-	routeID := routePkToID[in.RoutePk]
 	// Clear all primary key columns
-	in.Pk = 0
-	in.RoutePk = 0
-	in.SourcePk = 0
-	in.GtfsHash = ""
-	return Trip{
-		RouteID:   routeID,
-		DBFields:  in,
+	dbTrip.Pk = 0
+	dbTrip.RoutePk = 0
+	dbTrip.SourcePk = 0
+	dbTrip.GtfsHash = ""
+	return &Trip{
+		RouteID:   routeID1,
+		DBFields:  dbTrip,
 		StopTimes: outStopTimes,
 	}
 }

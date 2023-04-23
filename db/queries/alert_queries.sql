@@ -34,15 +34,13 @@ UPDATE alert
 SET source_pk = sqlc.arg(update_pk)
 WHERE pk = ANY(sqlc.arg(alert_pks)::bigint[]);
 
--- TODO: These DeleteStaleT queries can be simpler and just take the update_pk
 -- name: DeleteStaleAlerts :exec
 DELETE FROM alert
 USING feed_update
 WHERE 
     feed_update.pk = alert.source_pk
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
-    AND feed_update.pk != sqlc.arg(update_pk);
-
+    AND NOT alert.pk = ANY(sqlc.arg(updated_alert_pks)::bigint[]);
 
 -- name: ListActiveAlertsForAgencies :many
 SELECT alert.id, alert.cause, alert.effect

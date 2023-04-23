@@ -79,9 +79,13 @@ func MapStopPkToChildPks(ctx context.Context, querier db.Querier, stopPks []int6
 }
 
 func MapStopIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk int64, stopIDs ...[]string) (map[string]int64, error) {
+	result := map[string]int64{}
 	var queryStopIDs []string
 	if len(stopIDs) > 0 {
 		queryStopIDs = stopIDs[0]
+		if len(queryStopIDs) == 0 {
+			return result, nil
+		}
 	}
 	rows, err := querier.MapStopIDToPk(ctx, db.MapStopIDToPkParams{
 		SystemPk:       systemPk,
@@ -91,7 +95,6 @@ func MapStopIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk int
 	if err != nil {
 		return nil, err
 	}
-	result := map[string]int64{}
 	for _, row := range rows {
 		result[row.ID] = row.Pk
 	}
@@ -99,9 +102,13 @@ func MapStopIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk int
 }
 
 func MapRouteIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk int64, routeIDs ...[]string) (map[string]int64, error) {
+	result := map[string]int64{}
 	var queryRouteIDs []string
 	if len(routeIDs) > 0 {
 		queryRouteIDs = routeIDs[0]
+		if len(queryRouteIDs) == 0 {
+			return result, nil
+		}
 	}
 	rows, err := querier.MapRouteIDToPkInSystem(ctx, db.MapRouteIDToPkInSystemParams{
 		SystemPk:        systemPk,
@@ -111,7 +118,6 @@ func MapRouteIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk in
 	if err != nil {
 		return nil, err
 	}
-	result := map[string]int64{}
 	for _, row := range rows {
 		result[row.ID] = row.Pk
 	}

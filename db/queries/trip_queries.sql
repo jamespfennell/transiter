@@ -94,12 +94,11 @@ WHERE
 DELETE FROM trip_stop_time
 WHERE pk = ANY(sqlc.arg(pks)::bigint[]);
 
--- TODO: These DeleteStaleT queries can be simpler and just take the update_pk
 -- name: DeleteStaleTrips :many
 DELETE FROM trip
 USING feed_update
 WHERE 
     feed_update.pk = trip.source_pk
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
-    AND feed_update.pk != sqlc.arg(update_pk)
+    AND NOT trip.pk = ANY(sqlc.arg(updated_trip_pks)::bigint[])
 RETURNING trip.route_pk;

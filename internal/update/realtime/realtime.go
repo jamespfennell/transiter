@@ -54,7 +54,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	if err != nil {
 		return err
 	}
-	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, mapValues(routeIDToPk))
+	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, common.MapValues(routeIDToPk))
 	if err != nil {
 		return err
 	}
@@ -149,8 +149,8 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	}
 
 	routePksWithDeletedTrips, err := updateCtx.Querier.DeleteStaleTrips(ctx, db.DeleteStaleTripsParams{
-		FeedPk:   updateCtx.FeedPk,
-		UpdatePk: updateCtx.UpdatePk,
+		FeedPk:         updateCtx.FeedPk,
+		UpdatedTripPks: common.MapValues(tripUIDToPk),
 	})
 	if err != nil {
 		return err
@@ -159,7 +159,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		routePksWithPathChanges[routePk] = true
 	}
 
-	if err := servicemaps.UpdateRealtimeMaps(ctx, updateCtx.Querier, updateCtx.Logger, updateCtx.SystemPk, mapKeys(routePksWithPathChanges)); err != nil {
+	if err := servicemaps.UpdateRealtimeMaps(ctx, updateCtx.Querier, updateCtx.Logger, updateCtx.SystemPk, common.MapKeys(routePksWithPathChanges)); err != nil {
 		return err
 	}
 	return nil
@@ -422,7 +422,8 @@ func updateAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 	if err := updateCtx.Querier.DeleteAlerts(ctx, updatedAlertPks); err != nil {
 		return err
 	}
-	if err := insertAlerts(ctx, updateCtx, alertsToInsert, idToHash); err != nil {
+	newPks, err := insertAlerts(ctx, updateCtx, alertsToInsert, idToHash)
+	if err != nil {
 		return err
 	}
 	if err := updateCtx.Querier.MarkAlertsFresh(ctx, db.MarkAlertsFreshParams{
@@ -432,12 +433,19 @@ func updateAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 		return err
 	}
 	if err := updateCtx.Querier.DeleteStaleAlerts(ctx, db.DeleteStaleAlertsParams{
-		FeedPk:   updateCtx.FeedPk,
-		UpdatePk: updateCtx.UpdatePk,
+		FeedPk:          updateCtx.FeedPk,
+		UpdatedAlertPks: concatenate(unchangedAlertPks, newPks),
 	}); err != nil {
 		return err
 	}
 	return nil
+}
+
+func concatenate[V any](in1, in2 []V) []V {
+	out := make([]V, 0, len(in1)+len(in2))
+	out = append(out, in1...)
+	out = append(out, in2...)
+	return out
 }
 
 type pkAndHash struct {
@@ -476,12 +484,13 @@ func calculateHash(alert *gtfs.Alert) string {
 	return fmt.Sprintf("%x", md5.Sum(b))
 }
 
-func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []*gtfs.Alert, idToHash map[string]string) error {
+func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []*gtfs.Alert, idToHash map[string]string) ([]int64, error) {
 	// There are generally few agencies, so if an agency is referenced in informed entities we just retrieve all of them.
 	// This saves us from writing a specific SQL query for this case.
 	var agencyReferenced bool
 	var routeIDs []string
 	var stopIDs []string
+	var newAlertPks []int64
 	for _, alert := range alerts {
 		for _, informedEntity := range alert.InformedEntities {
 			if informedEntity.AgencyID != nil {
@@ -500,16 +509,16 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 		var err error
 		agencyIDToPk, err = dbwrappers.MapAgencyIDToPk(ctx, updateCtx.Querier, updateCtx.SystemPk)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	routeIDToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, routeIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, alert := range alerts {
 		pk, err := updateCtx.Querier.InsertAlert(ctx, db.InsertAlertParams{
@@ -524,8 +533,9 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 			Hash:        idToHash[alert.ID],
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
+		newAlertPks = append(newAlertPks, pk)
 		for _, informedEntity := range alert.InformedEntities {
 			if informedEntity.AgencyID != nil {
 				if agencyPk, ok := agencyIDToPk[*informedEntity.AgencyID]; ok {
@@ -533,7 +543,7 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 						AlertPk:  pk,
 						AgencyPk: agencyPk,
 					}); err != nil {
-						return err
+						return nil, err
 					}
 				}
 			}
@@ -543,7 +553,7 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 						AlertPk: pk,
 						RoutePk: routePk,
 					}); err != nil {
-						return err
+						return nil, err
 					}
 				}
 			}
@@ -553,7 +563,7 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 						AlertPk: pk,
 						StopPk:  stopPk,
 					}); err != nil {
-						return err
+						return nil, err
 					}
 				}
 			}
@@ -564,11 +574,11 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 				StartsAt: convertOptionalTime(activePeriod.StartsAt),
 				EndsAt:   convertOptionalTime(activePeriod.EndsAt),
 			}); err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
-	return nil
+	return newAlertPks, nil
 }
 
 func convertAlertText(text []gtfs.AlertText) string {
@@ -584,20 +594,4 @@ func convertOptionalTime(in *time.Time) pgtype.Timestamptz {
 		Valid: true,
 		Time:  *in,
 	}
-}
-
-func mapValues[T comparable, V any](in map[T]V) []V {
-	var out []V
-	for _, v := range in {
-		out = append(out, v)
-	}
-	return out
-}
-
-func mapKeys[T comparable, V any](in map[T]V) []T {
-	var out []T
-	for t := range in {
-		out = append(out, t)
-	}
-	return out
 }

@@ -26,17 +26,16 @@ USING feed_update
 WHERE 
     feed_update.pk = alert.source_pk
     AND feed_update.feed_pk = $1
-    AND feed_update.pk != $2
+    AND NOT alert.pk = ANY($2::bigint[])
 `
 
 type DeleteStaleAlertsParams struct {
-	FeedPk   int64
-	UpdatePk int64
+	FeedPk          int64
+	UpdatedAlertPks []int64
 }
 
-// TODO: These DeleteStaleT queries can be simpler and just take the update_pk
 func (q *Queries) DeleteStaleAlerts(ctx context.Context, arg DeleteStaleAlertsParams) error {
-	_, err := q.db.Exec(ctx, deleteStaleAlerts, arg.FeedPk, arg.UpdatePk)
+	_, err := q.db.Exec(ctx, deleteStaleAlerts, arg.FeedPk, arg.UpdatedAlertPks)
 	return err
 }
 

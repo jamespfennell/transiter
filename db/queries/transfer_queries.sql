@@ -7,13 +7,12 @@ VALUES
      sqlc.arg(from_stop_pk), sqlc.arg(to_stop_pk), sqlc.arg(type),
      sqlc.arg(min_transfer_time), NULL);
 
--- name: DeleteStaleTransfers :exec
+-- name: DeleteTransfers :exec
 DELETE FROM transfer
 USING feed_update
 WHERE 
     feed_update.pk = transfer.source_pk
-    AND feed_update.feed_pk = sqlc.arg(feed_pk)
-    AND feed_update.pk != sqlc.arg(update_pk);
+    AND feed_update.feed_pk = sqlc.arg(feed_pk);
 
 
 -- name: ListTransfersInSystem :many

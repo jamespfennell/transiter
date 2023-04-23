@@ -26,14 +26,13 @@ UPDATE route SET
 WHERE
     pk = sqlc.arg(pk);
 
--- name: DeleteStaleRoutes :many
+-- name: DeleteStaleRoutes :exec
 DELETE FROM route
 USING feed_update
 WHERE 
     feed_update.pk = route.source_pk
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
-    AND feed_update.pk != sqlc.arg(update_pk)
-RETURNING route.id;
+    AND NOT route.pk = ANY(sqlc.arg(updated_route_pks)::bigint[]);
 
 -- name: ListRoutes :many
 SELECT * FROM route WHERE system_pk = $1 ORDER BY id;

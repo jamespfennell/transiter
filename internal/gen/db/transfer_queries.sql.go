@@ -11,22 +11,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deleteStaleTransfers = `-- name: DeleteStaleTransfers :exec
+const deleteTransfers = `-- name: DeleteTransfers :exec
 DELETE FROM transfer
 USING feed_update
 WHERE 
     feed_update.pk = transfer.source_pk
     AND feed_update.feed_pk = $1
-    AND feed_update.pk != $2
 `
 
-type DeleteStaleTransfersParams struct {
-	FeedPk   int64
-	UpdatePk int64
-}
-
-func (q *Queries) DeleteStaleTransfers(ctx context.Context, arg DeleteStaleTransfersParams) error {
-	_, err := q.db.Exec(ctx, deleteStaleTransfers, arg.FeedPk, arg.UpdatePk)
+func (q *Queries) DeleteTransfers(ctx context.Context, feedPk int64) error {
+	_, err := q.db.Exec(ctx, deleteTransfers, feedPk)
 	return err
 }
 

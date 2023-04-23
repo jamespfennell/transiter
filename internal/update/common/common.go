@@ -31,3 +31,19 @@ func HashValue(a any) (string, error) {
 	}
 	return HashBytes(b), nil
 }
+
+func MapValues[K comparable, V any](in map[K]V) []V {
+	out := make([]V, 0, len(in))
+	for _, v := range in {
+		out = append(out, v)
+	}
+	return out
+}
+
+func MapKeys[T comparable, V any](in map[T]V) []T {
+	var out []T
+	for t := range in {
+		out = append(out, t)
+	}
+	return out
+}
