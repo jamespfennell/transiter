@@ -46,6 +46,7 @@ type routeRequest interface {
 	GetSkipEstimatedHeadways() bool
 	GetSkipServiceMaps() bool
 	GetSkipAlerts() bool
+	GetIncludeTrips() bool
 }
 
 func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []db.Route) ([]*api.Route, error) {
@@ -80,6 +81,20 @@ func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []
 	if err != nil {
 		return nil, err
 	}
+
+	routePkToRoute := map[int64]*db.Route{}
+	for i := range routes {
+		routePkToRoute[routes[i].Pk] = &routes[i]
+	}
+
+	trips := map[int64][]*api.Trip_Reference{}
+	if req.GetIncludeTrips() {
+		trips, err = buildTrips(ctx, r, req.GetSystemId(), routePks, routePkToRoute)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	var apiRoutes []*api.Route
 	for i := range routes {
 		route := &routes[i]
@@ -99,6 +114,7 @@ func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []
 			Agency:            agencies[route.AgencyPk],
 			ServiceMaps:       serviceMaps[route.Pk],
 			Alerts:            alerts[route.Pk],
+			Trips:             trips[route.Pk],
 		})
 	}
 	log.Printf("buildRouteResource(%v) took %s\n", routePks, time.Since(startTime))
@@ -187,4 +203,25 @@ func buildAgencies(ctx context.Context, r *Context, systemID string, routes []db
 		m[row.Pk] = r.Reference.Agency(row.ID, systemID, row.Name)
 	}
 	return m, err
+}
+
+func buildTrips(ctx context.Context, r *Context, systemID string, routePks []int64, routePkToRoute map[int64]*db.Route) (map[int64][]*api.Trip_Reference, error) {
+	tripsForRoutes, err := r.Querier.ListTripsForRoutes(
+		ctx, routePks)
+	if err != nil {
+		return nil, err
+	}
+	m := map[int64][]*api.Trip_Reference{}
+	for _, routeTrips := range tripsForRoutes {
+		m[routeTrips.RoutePk] = append(
+			m[routeTrips.RoutePk],
+			r.Reference.Trip(routeTrips.TripID,
+				r.Reference.Route(routePkToRoute[routeTrips.RoutePk].ID,
+					systemID,
+					routePkToRoute[routeTrips.RoutePk].Color),
+				nil,
+				nil),
+		)
+	}
+	return m, nil
 }

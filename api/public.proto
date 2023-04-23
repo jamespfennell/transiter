@@ -445,6 +445,12 @@ message ListRoutesRequest {
   // If true, the alerts field will not be populated.
   // This will generally make the response faster to generate.
   bool skip_alerts = 4;
+
+  // If true, include each route's active trips in the response.
+  // These are limited  previews of the trips, and should only be
+  // used for referencing full trip resources or determining if
+  // a route has active trips.
+  bool include_trips = 5;
 }
 
 // Response payload for the list routes endpoint.
@@ -473,6 +479,12 @@ message GetRouteRequest {
   // If true, the alerts field will not be populated.
   // This will generally make the response faster to generate.
   bool skip_alerts = 5;
+
+  // If true, include the route's active trips in the response.
+  // These are limited  previews of the trips, and should only be
+  // used for referencing full trip resources or determining if
+  // a route has active trips.
+  bool include_trips = 6;
 }
 
 // Request payload for the list trips endpoint.
@@ -941,6 +953,9 @@ message Route {
     System.Reference system = 3;
     string color = 4;
   }
+
+  // Trip previews for the route.
+  repeated Trip.Reference trips = 18;
 }
 
 // The feed resource.

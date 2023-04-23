@@ -96,6 +96,7 @@ type Querier interface {
 	ListTripStopTimesByStops(ctx context.Context, stopPks []int64) ([]ListTripStopTimesByStopsRow, error)
 	ListTripStopTimesForUpdate(ctx context.Context, tripPks []int64) ([]ListTripStopTimesForUpdateRow, error)
 	ListTrips(ctx context.Context, routePk int64) ([]Trip, error)
+	ListTripsForRoutes(ctx context.Context, routePks []int64) ([]ListTripsForRoutesRow, error)
 	ListTripsForUpdate(ctx context.Context, routePks []int64) ([]ListTripsForUpdateRow, error)
 	ListUpdatesInFeed(ctx context.Context, feedPk int64) ([]FeedUpdate, error)
 	MapAgencyPkToId(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdRow, error)

@@ -14,14 +14,14 @@ UPDATE route SET
     source_pk = sqlc.arg(source_pk),
     color = sqlc.arg(color),
     text_color = sqlc.arg(text_color),
-    short_name = sqlc.arg(short_name), 
-    long_name = sqlc.arg(long_name), 
-    description = sqlc.arg(description), 
-    url = sqlc.arg(url), 
-    sort_order = sqlc.arg(sort_order), 
-    type = sqlc.arg(type), 
-    continuous_pickup = sqlc.arg(continuous_pickup), 
-    continuous_drop_off = sqlc.arg(continuous_drop_off), 
+    short_name = sqlc.arg(short_name),
+    long_name = sqlc.arg(long_name),
+    description = sqlc.arg(description),
+    url = sqlc.arg(url),
+    sort_order = sqlc.arg(sort_order),
+    type = sqlc.arg(type),
+    continuous_pickup = sqlc.arg(continuous_pickup),
+    continuous_drop_off = sqlc.arg(continuous_drop_off),
     agency_pk = sqlc.arg(agency_pk)
 WHERE
     pk = sqlc.arg(pk);
@@ -29,7 +29,7 @@ WHERE
 -- name: DeleteStaleRoutes :many
 DELETE FROM route
 USING feed_update
-WHERE 
+WHERE
     feed_update.pk = route.source_pk
     AND feed_update.feed_pk = sqlc.arg(feed_pk)
     AND feed_update.pk != sqlc.arg(update_pk)
@@ -68,7 +68,7 @@ WITH per_stop_data AS (
     GROUP BY trip_stop_time.stop_pk, trip.route_pk
         HAVING COUNT(*) > 1
 )
-SELECT 
+SELECT
     route_pk,
     COALESCE(ROUND(SUM(total_diff) / (SUM(num_diffs)))::integer, -1)::integer estimated_headway
 FROM per_stop_data
@@ -83,3 +83,9 @@ WHERE route.pk = ANY(sqlc.arg(route_pks)::bigint[]);
 -- name: ListRoutesInAgency :many
 SELECT route.id, route.color FROM route
 WHERE route.agency_pk = sqlc.arg(agency_pk);
+
+-- name: ListTripsForRoutes :many
+SELECT route.pk route_pk, trip.id trip_id FROM route
+    INNER JOIN trip ON route.pk = trip.route_pk
+WHERE route_pk = ANY(sqlc.arg(route_pks)::bigint[])
+GROUP BY route.pk, trip.id;

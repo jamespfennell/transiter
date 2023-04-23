@@ -14,7 +14,7 @@ import (
 const deleteStaleRoutes = `-- name: DeleteStaleRoutes :many
 DELETE FROM route
 USING feed_update
-WHERE 
+WHERE
     feed_update.pk = route.source_pk
     AND feed_update.feed_pk = $1
     AND feed_update.pk != $2
@@ -61,7 +61,7 @@ WITH per_stop_data AS (
     GROUP BY trip_stop_time.stop_pk, trip.route_pk
         HAVING COUNT(*) > 1
 )
-SELECT 
+SELECT
     route_pk,
     COALESCE(ROUND(SUM(total_diff) / (SUM(num_diffs)))::integer, -1)::integer estimated_headway
 FROM per_stop_data
@@ -293,6 +293,38 @@ func (q *Queries) ListRoutesInAgency(ctx context.Context, agencyPk int64) ([]Lis
 	return items, nil
 }
 
+const listTripsForRoutes = `-- name: ListTripsForRoutes :many
+SELECT route.pk route_pk, trip.id trip_id FROM route
+    INNER JOIN trip ON route.pk = trip.route_pk
+WHERE route_pk = ANY($1::bigint[])
+GROUP BY route.pk, trip.id
+`
+
+type ListTripsForRoutesRow struct {
+	RoutePk int64
+	TripID  string
+}
+
+func (q *Queries) ListTripsForRoutes(ctx context.Context, routePks []int64) ([]ListTripsForRoutesRow, error) {
+	rows, err := q.db.Query(ctx, listTripsForRoutes, routePks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTripsForRoutesRow
+	for rows.Next() {
+		var i ListTripsForRoutesRow
+		if err := rows.Scan(&i.RoutePk, &i.TripID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const mapRouteIDToPkInSystem = `-- name: MapRouteIDToPkInSystem :many
 SELECT pk, id from route
 WHERE
@@ -339,14 +371,14 @@ UPDATE route SET
     source_pk = $1,
     color = $2,
     text_color = $3,
-    short_name = $4, 
-    long_name = $5, 
-    description = $6, 
-    url = $7, 
-    sort_order = $8, 
-    type = $9, 
-    continuous_pickup = $10, 
-    continuous_drop_off = $11, 
+    short_name = $4,
+    long_name = $5,
+    description = $6,
+    url = $7,
+    sort_order = $8,
+    type = $9,
+    continuous_pickup = $10,
+    continuous_drop_off = $11,
     agency_pk = $12
 WHERE
     pk = $13

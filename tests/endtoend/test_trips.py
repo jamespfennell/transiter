@@ -166,6 +166,80 @@ class TestTrip:
         assert expected_past_stop_ids == actual_past_stop_ids
         assert expected_future_stop_ids == actual_future_stop_ids
 
+    def test_route_view(
+        self,
+        install_system_1,
+        system_id,
+        transiter_host,
+        source_server,
+        stop_id_to_time_2,
+        current_time,
+        use_stop_sequences,
+    ):
+        __, realtime_feed_url = install_system_1(system_id)
+
+        for stop_id_to_time, time_at_update in [
+            (TRIP_INITIAL_TIMETABLE, 0),
+            (stop_id_to_time_2, current_time),
+        ]:
+            source_server.put(
+                realtime_feed_url,
+                build_gtfs_rt_message(
+                    time_at_update, stop_id_to_time, use_stop_sequences
+                ).SerializeToString(),
+            )
+            requests.post(
+                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
+            )
+
+        # Don't include trips (single route request)
+        response = requests.get(
+            f"{transiter_host}/systems/{system_id}/routes/{ROUTE_ID}"
+        ).json()
+        print(response)
+
+        trips = response["trips"]
+        assert 0 == len(trips)
+
+        # Don't include trips (list routes request)
+        response = requests.get(f"{transiter_host}/systems/{system_id}/routes").json()
+        print(response)
+
+        routes = response["routes"]
+        assert 3 == len(routes)
+
+        for route in routes:
+            assert 0 == len(route["trips"])
+
+        # Include trips (single route request)
+        response = requests.get(
+            f"{transiter_host}/systems/{system_id}/routes/{ROUTE_ID}?include_trips=true"
+        ).json()
+        print(response)
+
+        trips = response["trips"]
+        assert 1 == len(trips)
+
+        assert trips[0]["id"] == TRIP_ID
+        assert trips[0]["route"]["id"] == ROUTE_ID
+
+        # Include trips (list routes request)
+        response = requests.get(
+            f"{transiter_host}/systems/{system_id}/routes?include_trips=true"
+        ).json()
+        print(response)
+
+        routes = response["routes"]
+        assert 3 == len(routes)
+
+        for route in routes:
+            if route["id"] == ROUTE_ID:
+                assert 1 == len(route["trips"])
+                assert route["trips"][0]["id"] == TRIP_ID
+                assert route["trips"][0]["route"]["id"] == ROUTE_ID
+            else:
+                assert 0 == len(route["trips"])
+
 
 def build_gtfs_rt_message(current_time, stop_id_to_time, use_stop_sequences):
     return gtfs.FeedMessage(

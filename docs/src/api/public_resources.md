@@ -426,6 +426,7 @@ Transiter adds some additional related fields (agency, alerts)
 | alerts | [Alert.Reference](public_resources.md#Alert.Reference) | Active alerts for this route.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
 | estimated_headway | int32 | An estimate of the interval of time between consecutive realtime trips, in seconds.<br /><br />If there is insufficient data to compute an estimate, the field will be empty.<br /><br />The estimate is computed as follows. For each stop that has realtime trips for the route, the list of arrival times for those trips is examined. The difference between consecutive arrival times is calculated. If there are `N` trips, there will be `N-1` such arrival time diffs. The estimated headway is the average of these diffs across all stops.
 | service_maps | [Route.ServiceMap](public_resources.md#Route.ServiceMap) | List of service maps for this route.
+| trips | [Trip.Reference](public_resources.md#Trip.Reference) | Trip previews for the route.
 
 
 

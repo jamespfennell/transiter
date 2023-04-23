@@ -326,6 +326,7 @@ Request payload for the list routes endpoint.
 | skip_estimated_headways | bool | If true, the estimated headway fields will not be populated. This will generally make the response faster to generate.
 | skip_service_maps | bool | If true, the service maps field will not be populated. This will generally make the response faster to generate.
 | skip_alerts | bool | If true, the alerts field will not be populated. This will generally make the response faster to generate.
+| include_trips | bool | If true, include each route's active trips in the response. These are limited previews of the trips, and should only be used for referencing full trip resources or determining if a route has active trips.
 
 
 
@@ -370,6 +371,7 @@ Request payload for the get route endpoint.
 | skip_estimated_headways | bool | If true, the estimated headway field will not be populated. This will generally make the response faster to generate.
 | skip_service_maps | bool | If true, the service maps field will not be populated. This will generally make the response faster to generate.
 | skip_alerts | bool | If true, the alerts field will not be populated. This will generally make the response faster to generate.
+| include_trips | bool | If true, include the route's active trips in the response. These are limited previews of the trips, and should only be used for referencing full trip resources or determining if a route has active trips.
 
 
 
