@@ -52,6 +52,7 @@ TRIP_INITIAL_TIMETABLE = {
         },
     ],
 )
+@pytest.mark.parametrize("direction_id", [True, False])
 class TestTrip:
     def test_stop_view(
         self,
@@ -62,6 +63,7 @@ class TestTrip:
         stop_id_to_time_2,
         current_time,
         use_stop_sequences,
+        direction_id,
     ):
         __, realtime_feed_url = install_system_1(system_id)
 
@@ -72,7 +74,7 @@ class TestTrip:
             source_server.put(
                 realtime_feed_url,
                 build_gtfs_rt_message(
-                    time_at_update, stop_id_to_time, use_stop_sequences
+                    time_at_update, stop_id_to_time, use_stop_sequences, direction_id
                 ).SerializeToString(),
             )
             requests.post(
@@ -100,6 +102,7 @@ class TestTrip:
 
             assert stop_time["trip"]["id"] == TRIP_ID
             assert stop_time["trip"]["route"]["id"] == ROUTE_ID
+            assert stop_time["trip"]["directionId"] == direction_id
             assert stop_time["arrival"]["time"] == str(time)
             assert stop_time["departure"]["time"] == str(time + 15)
             if use_stop_sequences:
@@ -114,6 +117,7 @@ class TestTrip:
         stop_id_to_time_2,
         current_time,
         use_stop_sequences,
+        direction_id,
     ):
         __, realtime_feed_url = install_system_1(system_id)
 
@@ -165,7 +169,9 @@ class TestTrip:
         assert expected_future_stop_ids == actual_future_stop_ids
 
 
-def build_gtfs_rt_message(current_time, stop_id_to_time, use_stop_sequences):
+def build_gtfs_rt_message(
+    current_time, stop_id_to_time, use_stop_sequences, direction_id=True
+):
     return gtfs.FeedMessage(
         header=gtfs.FeedHeader(gtfs_realtime_version="2.0", timestamp=current_time),
         entity=[
@@ -173,7 +179,7 @@ def build_gtfs_rt_message(current_time, stop_id_to_time, use_stop_sequences):
                 id="1",
                 trip_update=gtfs.TripUpdate(
                     trip=gtfs.TripDescriptor(
-                        trip_id=TRIP_ID, route_id=ROUTE_ID, direction_id=True
+                        trip_id=TRIP_ID, route_id=ROUTE_ID, direction_id=direction_id
                     ),
                     stop_time_update=[
                         gtfs.TripUpdate.StopTimeUpdate(

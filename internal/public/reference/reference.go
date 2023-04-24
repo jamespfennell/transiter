@@ -108,12 +108,13 @@ func (h Generator) Route(id string, systemID string, color string) *api.Route_Re
 	}
 }
 
-func (h Generator) Trip(id string, route *api.Route_Reference, destination *api.Stop_Reference, vehicle *api.Vehicle_Reference) *api.Trip_Reference {
+func (h Generator) Trip(id string, route *api.Route_Reference, destination *api.Stop_Reference, vehicle *api.Vehicle_Reference, directionID bool) *api.Trip_Reference {
 	return &api.Trip_Reference{
 		Id:          id,
 		Route:       route,
 		Destination: destination,
 		Vehicle:     vehicle,
+		DirectionId: directionID,
 		Resource:    h.generateResource("systems", route.System.Id, "routes", route.Id, "trips", id),
 	}
 }
