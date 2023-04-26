@@ -17,10 +17,8 @@ TRIP_INITIAL_TIMETABLE = {
 }
 
 
-# TODO: add current_time=4000 case when bug in import driver is fixed.
-#  Or else just add a different test
 @pytest.mark.parametrize("use_stop_sequences", [True, False])
-@pytest.mark.parametrize("current_time", [0, 700])
+@pytest.mark.parametrize("current_time", [0, 10, 700, 4000])
 @pytest.mark.parametrize(
     "stop_id_to_time_2",
     [

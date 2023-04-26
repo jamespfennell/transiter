@@ -63,6 +63,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	seenUIDs := map[dbwrappers.TripUID]bool{}
 	tripUIDToPk := map[dbwrappers.TripUID]int64{}
 	tripUIDToTrip := map[dbwrappers.TripUID]*gtfs.Trip{}
+	activeTripPks := []int64{}
 	for i := range trips {
 		trip := &trips[i]
 		routePk, ok := routeIDToPk[trip.ID.RouteID]
@@ -100,6 +101,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 				GtfsHash: gtfsHash,
 			})
 			if existingTrip.GtfsHash == gtfsHash {
+				activeTripPks = append(activeTripPks, existingTrip.Pk)
 				continue
 			}
 			tripPk = existingTrip.Pk
@@ -121,6 +123,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 				return err
 			}
 		}
+		activeTripPks = append(activeTripPks, tripPk)
 		tripUIDToPk[uid] = tripPk
 		tripUIDToTrip[uid] = trip
 	}
@@ -150,7 +153,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 
 	routePksWithDeletedTrips, err := updateCtx.Querier.DeleteStaleTrips(ctx, db.DeleteStaleTripsParams{
 		FeedPk:         updateCtx.FeedPk,
-		UpdatedTripPks: common.MapValues(tripUIDToPk),
+		UpdatedTripPks: activeTripPks,
 	})
 	if err != nil {
 		return err

@@ -66,16 +66,20 @@ func TestUpdateTrips(t *testing.T) {
 		},
 		{
 			name: "same update twice",
-			tripVersions: func(t *gtfs.Trip) []*gtfs.Trip {
-				return []*gtfs.Trip{t, t}
-			}(
+			tripVersions: []*gtfs.Trip{
 				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
 					gtfsStu(gStopID(stopID4), gArrTime(30)),
 				}),
-			),
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+					gtfsStu(gStopID(stopID1), gDepTime(5)),
+					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+					gtfsStu(gStopID(stopID4), gArrTime(30)),
+				}),
+			},
 			wantTrip: wantTrip(tripID1, routeID1, true, []StopTime{
 				wantSt(0, stopID1, wDepTime(5)),
 				wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
