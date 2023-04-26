@@ -219,6 +219,7 @@ func GtfsRealtimeExtension(in *api.GtfsRealtimeOptions) (extensions.Extension, e
 		inOpts := in.GetNyctTripsOptions()
 		return nycttrips.Extension(nycttrips.ExtensionOpts{
 			FilterStaleUnassignedTrips: inOpts.GetFilterStaleUnassignedTrips(),
+			PreserveMTrainPlatformsInBushwick: inOpts.GetPreserveMTrainPlatformsInBushwick(),
 		}), nil
 	case api.GtfsRealtimeOptions_NYCT_ALERTS:
 		inOpts := in.GetNyctAlertsOptions()

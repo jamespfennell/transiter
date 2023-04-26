@@ -233,6 +233,7 @@ message GtfsRealtimeOptions {
 
   message NyctTripsOptions {
     bool filter_stale_unassigned_trips = 1;
+    bool preserve_m_train_platforms_in_bushwick = 2;
   }
   optional NyctTripsOptions nyct_trips_options = 2;
 
