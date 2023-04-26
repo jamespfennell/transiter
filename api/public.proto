@@ -820,6 +820,7 @@ message Trip {
     Route.Reference route = 3;
     Stop.Reference destination = 4;
     optional Vehicle.Reference vehicle = 5;
+    bool direction_id = 6;
   }
 }
 

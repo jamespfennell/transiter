@@ -809,6 +809,7 @@ Reference is the reference type for the trip resource.
 | route | [Route.Reference](public_resources.md#Route.Reference) | 
 | destination | [Stop.Reference](public_resources.md#Stop.Reference) | 
 | vehicle | [Vehicle.Reference](public_resources.md#Vehicle.Reference) | 
+| direction_id | bool | 
 
 
 

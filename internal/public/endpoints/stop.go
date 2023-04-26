@@ -374,6 +374,7 @@ func buildStopPkToApiStopsTimes(r *Context, data rawStopData, routePkToApiPrevie
 				routePkToApiPreview[stopTime.RoutePk],
 				tripPkToDestination[stopTime.TripPk],
 				nil, // TODO: vehice
+				stopTime.DirectionID.Bool,
 			),
 			Stop: stopPkToApiPreview[stopTime.StopPk],
 		}
