@@ -495,6 +495,7 @@ Message describing options for the GTFS realtime parser.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | filter_stale_unassigned_trips | bool | 
+| preserve_m_train_platforms_in_bushwick | bool | 
 
 
 
