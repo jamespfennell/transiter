@@ -13,10 +13,8 @@ import (
 
 const deleteStaleStops = `-- name: DeleteStaleStops :exec
 DELETE FROM stop
-USING feed_update
 WHERE 
-    feed_update.pk = stop.source_pk
-    AND feed_update.feed_pk = $1
+    stop.feed_pk = $1
     AND NOT stop.pk = ANY($2::bigint[])
 `
 
@@ -31,7 +29,7 @@ func (q *Queries) DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsPara
 }
 
 const getStop = `-- name: GetStop :one
-SELECT stop.pk, stop.id, stop.system_pk, stop.source_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id FROM stop
+SELECT stop.pk, stop.id, stop.system_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id, stop.feed_pk FROM stop
     INNER JOIN system ON stop.system_pk = system.pk
     WHERE system.id = $1
     AND stop.id = $2
@@ -49,7 +47,6 @@ func (q *Queries) GetStop(ctx context.Context, arg GetStopParams) (Stop, error) 
 		&i.Pk,
 		&i.ID,
 		&i.SystemPk,
-		&i.SourcePk,
 		&i.ParentStopPk,
 		&i.Name,
 		&i.Longitude,
@@ -62,13 +59,14 @@ func (q *Queries) GetStop(ctx context.Context, arg GetStopParams) (Stop, error) 
 		&i.Type,
 		&i.WheelchairBoarding,
 		&i.ZoneID,
+		&i.FeedPk,
 	)
 	return i, err
 }
 
 const insertStop = `-- name: InsertStop :one
 INSERT INTO stop
-    (id, system_pk, source_pk, name, longitude, latitude,
+    (id, system_pk, feed_pk, name, longitude, latitude,
      url, code, description, platform_code, timezone, type,
      wheelchair_boarding, zone_id)
 VALUES
@@ -81,7 +79,7 @@ RETURNING pk
 type InsertStopParams struct {
 	ID                 string
 	SystemPk           int64
-	SourcePk           int64
+	FeedPk             int64
 	Name               pgtype.Text
 	Longitude          pgtype.Numeric
 	Latitude           pgtype.Numeric
@@ -99,7 +97,7 @@ func (q *Queries) InsertStop(ctx context.Context, arg InsertStopParams) (int64, 
 	row := q.db.QueryRow(ctx, insertStop,
 		arg.ID,
 		arg.SystemPk,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.Name,
 		arg.Longitude,
 		arg.Latitude,
@@ -118,7 +116,7 @@ func (q *Queries) InsertStop(ctx context.Context, arg InsertStopParams) (int64, 
 }
 
 const listStops = `-- name: ListStops :many
-SELECT pk, id, system_pk, source_pk, parent_stop_pk, name, longitude, latitude, url, code, description, platform_code, timezone, type, wheelchair_boarding, zone_id FROM stop
+SELECT pk, id, system_pk, parent_stop_pk, name, longitude, latitude, url, code, description, platform_code, timezone, type, wheelchair_boarding, zone_id, feed_pk FROM stop
 WHERE system_pk = $1
   AND id >= $2
   AND (
@@ -156,7 +154,6 @@ func (q *Queries) ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, e
 			&i.Pk,
 			&i.ID,
 			&i.SystemPk,
-			&i.SourcePk,
 			&i.ParentStopPk,
 			&i.Name,
 			&i.Longitude,
@@ -169,6 +166,7 @@ func (q *Queries) ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, e
 			&i.Type,
 			&i.WheelchairBoarding,
 			&i.ZoneID,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}
@@ -227,7 +225,7 @@ WITH distance AS (
   FROM stop
   WHERE stop.system_pk = $5
 )
-SELECT stop.pk, stop.id, stop.system_pk, stop.source_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id FROM stop
+SELECT stop.pk, stop.id, stop.system_pk, stop.parent_stop_pk, stop.name, stop.longitude, stop.latitude, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id, stop.feed_pk FROM stop
 INNER JOIN distance ON stop.pk = distance.stop_pk
 AND distance.val <= $1::numeric
 ORDER BY distance.val
@@ -261,7 +259,6 @@ func (q *Queries) ListStops_Geographic(ctx context.Context, arg ListStops_Geogra
 			&i.Pk,
 			&i.ID,
 			&i.SystemPk,
-			&i.SourcePk,
 			&i.ParentStopPk,
 			&i.Name,
 			&i.Longitude,
@@ -274,6 +271,7 @@ func (q *Queries) ListStops_Geographic(ctx context.Context, arg ListStops_Geogra
 			&i.Type,
 			&i.WheelchairBoarding,
 			&i.ZoneID,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}
@@ -286,7 +284,7 @@ func (q *Queries) ListStops_Geographic(ctx context.Context, arg ListStops_Geogra
 }
 
 const listTripStopTimesByStops = `-- name: ListTripStopTimesByStops :many
-SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.source_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, vehicle.id vehicle_id FROM trip_stop_time
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, trip.feed_pk, vehicle.id vehicle_id FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
@@ -311,10 +309,10 @@ type ListTripStopTimesByStopsRow struct {
 	Pk_2                 int64
 	ID                   string
 	RoutePk              int64
-	SourcePk             int64
 	DirectionID          pgtype.Bool
 	StartedAt            pgtype.Timestamptz
 	GtfsHash             string
+	FeedPk               int64
 	VehicleID            pgtype.Text
 }
 
@@ -344,10 +342,10 @@ func (q *Queries) ListTripStopTimesByStops(ctx context.Context, stopPks []int64)
 			&i.Pk_2,
 			&i.ID,
 			&i.RoutePk,
-			&i.SourcePk,
 			&i.DirectionID,
 			&i.StartedAt,
 			&i.GtfsHash,
+			&i.FeedPk,
 			&i.VehicleID,
 		); err != nil {
 			return nil, err
@@ -542,7 +540,7 @@ func (q *Queries) MapStopPkToDescendentPks(ctx context.Context, stopPks []int64)
 
 const updateStop = `-- name: UpdateStop :exec
 UPDATE stop SET
-    source_pk = $1,
+    feed_pk = $1,
     name = $2,
     longitude = $3,
     latitude = $4,
@@ -560,7 +558,7 @@ WHERE
 `
 
 type UpdateStopParams struct {
-	SourcePk           int64
+	FeedPk             int64
 	Name               pgtype.Text
 	Longitude          pgtype.Numeric
 	Latitude           pgtype.Numeric
@@ -577,7 +575,7 @@ type UpdateStopParams struct {
 
 func (q *Queries) UpdateStop(ctx context.Context, arg UpdateStopParams) error {
 	_, err := q.db.Exec(ctx, updateStop,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.Name,
 		arg.Longitude,
 		arg.Latitude,

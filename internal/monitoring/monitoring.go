@@ -11,20 +11,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var feedUpdateCount = promauto.NewCounterVec(
-	prometheus.CounterOpts{
-		Name: "transiter_feed_update_count",
-		Help: "Number of completed feed updates",
-	},
-	[]string{"system_id", "feed_id", "status", "result"},
-)
 var feedUpdateLatency = promauto.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Name:    "transiter_feed_update_latency",
 		Help:    "Time taken to complete a feed update in seconds",
 		Buckets: []float64{0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8, 1.1, 1.4},
 	},
-	[]string{"system_id", "feed_id", "status", "result"},
+	[]string{"system_id", "feed_id", "result"},
 )
 var publicRequestCount = promauto.NewCounterVec(
 	prometheus.CounterOpts{
@@ -42,9 +35,8 @@ var publicRequestLatency = promauto.NewHistogramVec(
 	[]string{"method_name", "is_error"},
 )
 
-func RecordFeedUpdate(systemID, feedID, status, result string, duration time.Duration) {
-	feedUpdateCount.WithLabelValues(systemID, feedID, status, result).Inc()
-	feedUpdateLatency.WithLabelValues(systemID, feedID, status, result).Observe(duration.Seconds())
+func RecordFeedUpdate(systemID, feedID, result string, duration time.Duration) {
+	feedUpdateLatency.WithLabelValues(systemID, feedID, result).Observe(duration.Seconds())
 }
 
 func RecordPublicRequest(methodName string, err error, duration time.Duration) {

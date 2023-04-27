@@ -13,10 +13,8 @@ import (
 
 const deleteStaleAgencies = `-- name: DeleteStaleAgencies :exec
 DELETE FROM agency
-USING feed_update
 WHERE 
-    feed_update.pk = agency.source_pk
-    AND feed_update.feed_pk = $1
+    agency.feed_pk = $1
     AND NOT agency.pk = ANY($2::bigint[])
 `
 
@@ -31,7 +29,7 @@ func (q *Queries) DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenci
 }
 
 const getAgency = `-- name: GetAgency :one
-SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency
+SELECT agency.pk, agency.id, agency.system_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email, agency.feed_pk FROM agency
 WHERE agency.system_pk = $1
     AND agency.id = $2
 `
@@ -48,7 +46,6 @@ func (q *Queries) GetAgency(ctx context.Context, arg GetAgencyParams) (Agency, e
 		&i.Pk,
 		&i.ID,
 		&i.SystemPk,
-		&i.SourcePk,
 		&i.Name,
 		&i.Url,
 		&i.Timezone,
@@ -56,13 +53,14 @@ func (q *Queries) GetAgency(ctx context.Context, arg GetAgencyParams) (Agency, e
 		&i.Phone,
 		&i.FareUrl,
 		&i.Email,
+		&i.FeedPk,
 	)
 	return i, err
 }
 
 const insertAgency = `-- name: InsertAgency :one
 INSERT INTO agency
-    (id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email)
+    (id, system_pk, feed_pk, name, url, timezone, language, phone, fare_url, email)
 VALUES
     ($1, $2, $3, $4, $5,
      $6, $7, $8, $9, $10)
@@ -72,7 +70,7 @@ RETURNING pk
 type InsertAgencyParams struct {
 	ID       string
 	SystemPk int64
-	SourcePk int64
+	FeedPk   int64
 	Name     string
 	Url      string
 	Timezone string
@@ -86,7 +84,7 @@ func (q *Queries) InsertAgency(ctx context.Context, arg InsertAgencyParams) (int
 	row := q.db.QueryRow(ctx, insertAgency,
 		arg.ID,
 		arg.SystemPk,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.Name,
 		arg.Url,
 		arg.Timezone,
@@ -101,7 +99,7 @@ func (q *Queries) InsertAgency(ctx context.Context, arg InsertAgencyParams) (int
 }
 
 const listAgencies = `-- name: ListAgencies :many
-SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency WHERE system_pk = $1 ORDER BY id
+SELECT agency.pk, agency.id, agency.system_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email, agency.feed_pk FROM agency WHERE system_pk = $1 ORDER BY id
 `
 
 func (q *Queries) ListAgencies(ctx context.Context, systemPk int64) ([]Agency, error) {
@@ -117,7 +115,6 @@ func (q *Queries) ListAgencies(ctx context.Context, systemPk int64) ([]Agency, e
 			&i.Pk,
 			&i.ID,
 			&i.SystemPk,
-			&i.SourcePk,
 			&i.Name,
 			&i.Url,
 			&i.Timezone,
@@ -125,6 +122,7 @@ func (q *Queries) ListAgencies(ctx context.Context, systemPk int64) ([]Agency, e
 			&i.Phone,
 			&i.FareUrl,
 			&i.Email,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}
@@ -137,7 +135,7 @@ func (q *Queries) ListAgencies(ctx context.Context, systemPk int64) ([]Agency, e
 }
 
 const listAgenciesByPk = `-- name: ListAgenciesByPk :many
-SELECT agency.pk, agency.id, agency.system_pk, agency.source_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email FROM agency WHERE pk = ANY($1::bigint[])
+SELECT agency.pk, agency.id, agency.system_pk, agency.name, agency.url, agency.timezone, agency.language, agency.phone, agency.fare_url, agency.email, agency.feed_pk FROM agency WHERE pk = ANY($1::bigint[])
 `
 
 func (q *Queries) ListAgenciesByPk(ctx context.Context, pk []int64) ([]Agency, error) {
@@ -153,7 +151,6 @@ func (q *Queries) ListAgenciesByPk(ctx context.Context, pk []int64) ([]Agency, e
 			&i.Pk,
 			&i.ID,
 			&i.SystemPk,
-			&i.SourcePk,
 			&i.Name,
 			&i.Url,
 			&i.Timezone,
@@ -161,6 +158,7 @@ func (q *Queries) ListAgenciesByPk(ctx context.Context, pk []int64) ([]Agency, e
 			&i.Phone,
 			&i.FareUrl,
 			&i.Email,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}
@@ -203,7 +201,7 @@ func (q *Queries) MapAgencyPkToId(ctx context.Context, systemPk int64) ([]MapAge
 
 const updateAgency = `-- name: UpdateAgency :exec
 UPDATE agency SET
-    source_pk = $1,
+    feed_pk = $1,
     name = $2,
     url = $3,
     timezone = $4, 
@@ -216,7 +214,7 @@ WHERE
 `
 
 type UpdateAgencyParams struct {
-	SourcePk int64
+	FeedPk   int64
 	Name     string
 	Url      string
 	Timezone string
@@ -229,7 +227,7 @@ type UpdateAgencyParams struct {
 
 func (q *Queries) UpdateAgency(ctx context.Context, arg UpdateAgencyParams) error {
 	_, err := q.db.Exec(ctx, updateAgency,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.Name,
 		arg.Url,
 		arg.Timezone,

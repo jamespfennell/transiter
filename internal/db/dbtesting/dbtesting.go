@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -73,7 +75,7 @@ func getDB(t *testing.T) *pgxpool.Pool {
 		log.Fatalf("Failed to connect to the database; exiting: %s\n", err)
 	}
 
-	dbName := "transitertestdatabase"
+	dbName := "transiter_test_database_" + strings.Replace(uuid.NewString(), "-", "_", -1)
 	_, err = d.Exec(context.Background(), "DROP DATABASE IF EXISTS "+dbName)
 	if err != nil {
 		t.Fatalf("failed to drop Postgres database %s: %+v", dbName, err)
@@ -103,7 +105,6 @@ func getDB(t *testing.T) *pgxpool.Pool {
 type System struct {
 	Data          *db.System
 	DefaultFeed   *Feed
-	DefaulUpdate  *db.FeedUpdate
 	DefaultAgency *db.Agency
 	q             *Querier
 }
@@ -132,8 +133,6 @@ func (q *Querier) NewSystem(id string) System {
 	}
 	feed := s.NewFeed("defaultFeed")
 	s.DefaultFeed = &feed
-	update := feed.NewUpdate()
-	s.DefaulUpdate = &update
 	agency := s.NewAgency("defaultAgency")
 	s.DefaultAgency = &agency
 	return s
@@ -166,24 +165,6 @@ func (s *System) NewFeed(id string) Feed {
 	}
 }
 
-func (f *Feed) NewUpdate() db.FeedUpdate {
-	var pk int64
-	return insertAndGet(
-		f.s.q, fmt.Sprintf("feed update %s/%s/<update_pk>", f.Data.ID, f.s.Data.ID),
-		func() error {
-			feedUpdate, err := f.s.q.InsertFeedUpdate(context.Background(), db.InsertFeedUpdateParams{
-				FeedPk:    f.Data.Pk,
-				StartedAt: pgtype.Timestamptz{Valid: true},
-			})
-			pk = feedUpdate.Pk
-			return err
-		},
-		func() (db.FeedUpdate, error) {
-			return f.s.q.GetFeedUpdate(context.Background(), pk)
-		},
-	)
-}
-
 func (s *System) NewAgency(id string) db.Agency {
 	return insertAndGet(
 		s.q, id,
@@ -192,7 +173,7 @@ func (s *System) NewAgency(id string) db.Agency {
 			_, err = s.q.InsertAgency(context.Background(), db.InsertAgencyParams{
 				ID:       id,
 				SystemPk: s.Data.Pk,
-				SourcePk: s.DefaulUpdate.Pk,
+				FeedPk:   s.DefaultFeed.Data.Pk,
 			})
 			return err
 		},
@@ -218,7 +199,7 @@ func (s *System) NewRoute(id string) Route {
 			_, err = s.q.InsertRoute(context.Background(), db.InsertRouteParams{
 				ID:       id,
 				SystemPk: s.Data.Pk,
-				SourcePk: s.DefaulUpdate.Pk,
+				FeedPk:   s.DefaultFeed.Data.Pk,
 				AgencyPk: s.DefaultAgency.Pk,
 			})
 			return err
@@ -249,9 +230,9 @@ func (r *Route) NewTrip(id string, stopTimes []StopTime) db.Trip {
 		func() error {
 			var err error
 			pk, err = r.s.q.InsertTrip(context.Background(), db.InsertTripParams{
-				ID:       id,
-				SourcePk: r.s.DefaulUpdate.Pk,
-				RoutePk:  r.Data.Pk,
+				ID:      id,
+				FeedPk:  r.s.DefaultFeed.Data.Pk,
+				RoutePk: r.Data.Pk,
 			})
 			return err
 		},
@@ -284,7 +265,7 @@ func (s *System) NewStop(id string, params ...db.InsertStopParams) db.Stop {
 	}
 	p.ID = id
 	p.SystemPk = s.Data.Pk
-	p.SourcePk = s.DefaulUpdate.Pk
+	p.FeedPk = s.DefaultFeed.Data.Pk
 	if p.Type == "" {
 		p.Type = gtfs.Station.String()
 	}

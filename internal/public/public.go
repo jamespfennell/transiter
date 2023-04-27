@@ -79,10 +79,6 @@ func (s *Server) GetFeed(ctx context.Context, req *api.GetFeedRequest) (*api.Fee
 	return run(ctx, s, "GetFeed", endpoints.GetFeed, req)
 }
 
-func (s *Server) ListFeedUpdates(ctx context.Context, req *api.ListFeedUpdatesRequest) (*api.ListFeedUpdatesReply, error) {
-	return run(ctx, s, "ListFeedUpdates", endpoints.ListFeedUpdates, req)
-}
-
 func (s *Server) ListTrips(ctx context.Context, req *api.ListTripsRequest) (*api.ListTripsReply, error) {
 	return run(ctx, s, "ListTrips", endpoints.ListTrips, req)
 }

@@ -16,7 +16,6 @@ type UpdateContext struct {
 	Logger     *slog.Logger
 	SystemPk   int64
 	FeedPk     int64
-	UpdatePk   int64
 	FeedConfig *api.FeedConfig
 }
 

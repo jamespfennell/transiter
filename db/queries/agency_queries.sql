@@ -1,14 +1,14 @@
 -- name: InsertAgency :one
 INSERT INTO agency
-    (id, system_pk, source_pk, name, url, timezone, language, phone, fare_url, email)
+    (id, system_pk, feed_pk, name, url, timezone, language, phone, fare_url, email)
 VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(source_pk), sqlc.arg(name), sqlc.arg(url),
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(feed_pk), sqlc.arg(name), sqlc.arg(url),
      sqlc.arg(timezone), sqlc.arg(language), sqlc.arg(phone), sqlc.arg(fare_url), sqlc.arg(email))
 RETURNING pk;
 
 -- name: UpdateAgency :exec
 UPDATE agency SET
-    source_pk = sqlc.arg(source_pk),
+    feed_pk = sqlc.arg(feed_pk),
     name = sqlc.arg(name),
     url = sqlc.arg(url),
     timezone = sqlc.arg(timezone), 
@@ -21,10 +21,8 @@ WHERE
 
 -- name: DeleteStaleAgencies :exec
 DELETE FROM agency
-USING feed_update
 WHERE 
-    feed_update.pk = agency.source_pk
-    AND feed_update.feed_pk = sqlc.arg(feed_pk)
+    agency.feed_pk = sqlc.arg(feed_pk)
     AND NOT agency.pk = ANY(sqlc.arg(updated_agency_pks)::bigint[]);
 
 -- name: ListAgencies :many

@@ -77,9 +77,10 @@ class TestTrip:
                     time_at_update, stop_id_to_time, use_stop_sequences, direction_id
                 ).SerializeToString(),
             )
-            requests.post(
+            response = requests.post(
                 f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
-            )
+            ).json()
+            print(response)
 
         stop_id_to_stop_sequence = {
             stop_id: stop_sequence + 25
@@ -131,9 +132,10 @@ class TestTrip:
                     time_at_update, stop_id_to_time, use_stop_sequences
                 ).SerializeToString(),
             )
-            requests.post(
+            response = requests.post(
                 f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
-            )
+            ).json()
+            print(response)
 
         stop_ids_in_second_update = {
             stop_id

@@ -85,21 +85,6 @@ service Admin {
     };
   }
 
-  // Garbage collect feed updates
-  //
-  // `POST /gcfeedupdates`
-  //
-  // Deletes feed updates that are older than a week, with the exception that
-  // the most recent succesful update for each feed is always retained.
-  //
-  // This method exists to avoid unbounded growth in the feed updates database table.
-  // It is called periodically by the scheduler.
-  rpc GarbageCollectFeedUpdates(GarbageCollectFeedUpdatesRequest) returns (GarbageCollectFeedUpdatesReply) {
-    option (google.api.http) = {
-      post: "/gcfeedupdates"
-    };
-  }
-
   // Get the current log level.
   //
   // `GET /loglevel`
@@ -311,7 +296,68 @@ message UpdateFeedRequest {
   string feed_id = 2;
 }
 
-message UpdateFeedReply {}
+// Description of a feed update operation.
+message FeedUpdate {
+  // ID of the feed update. This is a randomly generated UUID.
+  // It can be used to find server logs for the update operation.
+  string update_id = 1;
+
+  // Unix timestamp of when the update started.
+  int64 started_at_ms = 4;
+  // Unix timestamp of when the update finished.
+  // Only populated if the update is finished.
+  optional int64 finished_at_ms = 6;
+
+  optional int64 total_latency_ms = 20;
+  optional int64 download_latency_ms = 21;
+  optional int64 parse_latency_ms = 22;
+  optional int64 update_latency_ms = 23;
+
+  enum Status {
+    // Unknown status.
+    UNKNOWN = 0;
+    // Feed update is in progress. Currently this status never appears in the admin API, but is
+    // added in case Transiter support async feed updates in the future.
+    RUNNING = 1;
+    // Finished successfully.
+    UPDATED = 2;
+    // The update was skipped because the downloaded data was identical to the data for the last successful update.
+    SKIPPED = 3;
+    // Failed to download feed data.
+    FAILED_DOWNLOAD_ERROR = 4;
+    // Feed data was empty.
+    FAILED_EMPTY_FEED = 5;
+    // The feed configuration is invalid. This typically indicates a bug in Transiter because
+    // the feed configuration is validated when the system is being installed.
+    FAILED_INVALID_FEED_CONFIG = 6;
+    // The parser specified in the feed configuration is unknown.
+    FAILED_UNKNOWN_PARSER = 7;
+    // Failed to parse the feed data.
+    // This means the feed data was corrupted or otherwise invalid.
+    FAILED_PARSE_ERROR = 8;
+    // Failed to update the database using the new feed data.
+    // This typically indicates a bug in Transiter or a transient error connecting to the database.
+    FAILED_UPDATE_ERROR = 9;
+    // An internal unspecified error occured.
+    FAILED_INTERNAL_ERROR = 10;
+  }
+  // Status of the update.
+  Status status = 7;
+  // Number of bytes in the downloaded feed data.
+  // Only populated if the update successfully downloaded data.
+  optional int32 content_length = 8;
+  // Hash of the downloaded feed data. This is used to skip updates
+  // if the feed data hasn't changed.
+  // Only populated if the update successfully downloaded data.
+  optional string content_hash = 9;
+  // Error message of the update.
+  // Only populated if the update finished in an error
+  optional string error_message = 10;
+}
+
+message UpdateFeedReply {
+  FeedUpdate feed_update = 1;
+}
 
 message GetSchedulerStatusRequest {}
 
@@ -330,10 +376,6 @@ message GetSchedulerStatusReply {
 message ResetSchedulerRequest {}
 
 message ResetSchedulerReply {}
-
-message GarbageCollectFeedUpdatesRequest {}
-
-message GarbageCollectFeedUpdatesReply {}
 
 message GetLogLevelRequest {}
 message GetLogLevelReply {

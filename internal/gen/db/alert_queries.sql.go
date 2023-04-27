@@ -22,10 +22,8 @@ func (q *Queries) DeleteAlerts(ctx context.Context, alertPks []int64) error {
 
 const deleteStaleAlerts = `-- name: DeleteStaleAlerts :exec
 DELETE FROM alert
-USING feed_update
 WHERE 
-    feed_update.pk = alert.source_pk
-    AND feed_update.feed_pk = $1
+    alert.feed_pk = $1
     AND NOT alert.pk = ANY($2::bigint[])
 `
 
@@ -40,7 +38,7 @@ func (q *Queries) DeleteStaleAlerts(ctx context.Context, arg DeleteStaleAlertsPa
 }
 
 const getAlertInSystem = `-- name: GetAlertInSystem :one
-SELECT alert.pk, alert.id, alert.source_pk, alert.system_pk, alert.cause, alert.effect, alert.header, alert.description, alert.url, alert.hash FROM alert WHERE alert.system_pk = $1 AND alert.id = $2
+SELECT alert.pk, alert.id, alert.system_pk, alert.cause, alert.effect, alert.header, alert.description, alert.url, alert.hash, alert.feed_pk FROM alert WHERE alert.system_pk = $1 AND alert.id = $2
 `
 
 type GetAlertInSystemParams struct {
@@ -54,7 +52,6 @@ func (q *Queries) GetAlertInSystem(ctx context.Context, arg GetAlertInSystemPara
 	err := row.Scan(
 		&i.Pk,
 		&i.ID,
-		&i.SourcePk,
 		&i.SystemPk,
 		&i.Cause,
 		&i.Effect,
@@ -62,13 +59,14 @@ func (q *Queries) GetAlertInSystem(ctx context.Context, arg GetAlertInSystemPara
 		&i.Description,
 		&i.Url,
 		&i.Hash,
+		&i.FeedPk,
 	)
 	return i, err
 }
 
 const insertAlert = `-- name: InsertAlert :one
 INSERT INTO alert
-    (id, system_pk, source_pk, cause, effect, header, description, url, hash)
+    (id, system_pk, feed_pk, cause, effect, header, description, url, hash)
 VALUES
     ($1, $2, $3, $4,$5, 
      $6, $7, $8, $9)
@@ -78,7 +76,7 @@ RETURNING pk
 type InsertAlertParams struct {
 	ID          string
 	SystemPk    int64
-	SourcePk    int64
+	FeedPk      int64
 	Cause       string
 	Effect      string
 	Header      string
@@ -91,7 +89,7 @@ func (q *Queries) InsertAlert(ctx context.Context, arg InsertAlertParams) (int64
 	row := q.db.QueryRow(ctx, insertAlert,
 		arg.ID,
 		arg.SystemPk,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.Cause,
 		arg.Effect,
 		arg.Header,
@@ -402,7 +400,7 @@ func (q *Queries) ListAlertPksAndHashes(ctx context.Context, arg ListAlertPksAnd
 }
 
 const listAlertsInSystem = `-- name: ListAlertsInSystem :many
-SELECT pk, id, source_pk, system_pk, cause, effect, header, description, url, hash FROM alert WHERE system_pk = $1 ORDER BY id ASC
+SELECT pk, id, system_pk, cause, effect, header, description, url, hash, feed_pk FROM alert WHERE system_pk = $1 ORDER BY id ASC
 `
 
 func (q *Queries) ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Alert, error) {
@@ -417,7 +415,6 @@ func (q *Queries) ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Ale
 		if err := rows.Scan(
 			&i.Pk,
 			&i.ID,
-			&i.SourcePk,
 			&i.SystemPk,
 			&i.Cause,
 			&i.Effect,
@@ -425,6 +422,7 @@ func (q *Queries) ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Ale
 			&i.Description,
 			&i.Url,
 			&i.Hash,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}
@@ -437,7 +435,7 @@ func (q *Queries) ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Ale
 }
 
 const listAlertsInSystemAndByIDs = `-- name: ListAlertsInSystemAndByIDs :many
-SELECT pk, id, source_pk, system_pk, cause, effect, header, description, url, hash FROM alert
+SELECT pk, id, system_pk, cause, effect, header, description, url, hash, feed_pk FROM alert
     WHERE system_pk = $1
     AND id = ANY($2::text[])
 ORDER BY id ASC
@@ -460,7 +458,6 @@ func (q *Queries) ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlerts
 		if err := rows.Scan(
 			&i.Pk,
 			&i.ID,
-			&i.SourcePk,
 			&i.SystemPk,
 			&i.Cause,
 			&i.Effect,
@@ -468,6 +465,7 @@ func (q *Queries) ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlerts
 			&i.Description,
 			&i.Url,
 			&i.Hash,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}
@@ -477,20 +475,4 @@ func (q *Queries) ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlerts
 		return nil, err
 	}
 	return items, nil
-}
-
-const markAlertsFresh = `-- name: MarkAlertsFresh :exec
-UPDATE alert
-SET source_pk = $1
-WHERE pk = ANY($2::bigint[])
-`
-
-type MarkAlertsFreshParams struct {
-	UpdatePk int64
-	AlertPks []int64
-}
-
-func (q *Queries) MarkAlertsFresh(ctx context.Context, arg MarkAlertsFreshParams) error {
-	_, err := q.db.Exec(ctx, markAlertsFresh, arg.UpdatePk, arg.AlertPks)
-	return err
 }

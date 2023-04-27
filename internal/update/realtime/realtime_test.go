@@ -173,14 +173,12 @@ func TestUpdateTrips(t *testing.T) {
 				routeIDToPk[routeID] = route.Data.Pk
 			}
 			feed := system.NewFeed("feedID")
-			update := feed.NewUpdate()
 
 			ctx := context.Background()
 			updateCtx := common.UpdateContext{
 				Querier:  querier,
 				SystemPk: system.Data.Pk,
 				FeedPk:   feed.Data.Pk,
-				UpdatePk: update.Pk,
 				FeedConfig: &api.FeedConfig{
 					GtfsRealtimeOptions: tc.gtfsRealTimeOptions,
 				},
@@ -235,7 +233,7 @@ func readTripFromDB(ctx context.Context, t *testing.T, querier db.Querier, route
 	// Clear all primary key columns
 	dbTrip.Pk = 0
 	dbTrip.RoutePk = 0
-	dbTrip.SourcePk = 0
+	dbTrip.FeedPk = 0
 	dbTrip.GtfsHash = ""
 	return &Trip{
 		RouteID:   routeID1,

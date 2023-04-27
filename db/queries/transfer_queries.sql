@@ -1,18 +1,15 @@
 -- name: InsertTransfer :exec
 INSERT INTO transfer
-    (system_pk, source_pk, config_source_pk, from_stop_pk, to_stop_pk,
+    (system_pk, feed_pk, from_stop_pk, to_stop_pk,
      type, min_transfer_time, distance)
 VALUES
-    (sqlc.arg(system_pk), sqlc.arg(source_pk), NULL,
+    (sqlc.arg(system_pk), sqlc.arg(feed_pk),
      sqlc.arg(from_stop_pk), sqlc.arg(to_stop_pk), sqlc.arg(type),
      sqlc.arg(min_transfer_time), NULL);
 
 -- name: DeleteTransfers :exec
 DELETE FROM transfer
-USING feed_update
-WHERE 
-    feed_update.pk = transfer.source_pk
-    AND feed_update.feed_pk = sqlc.arg(feed_pk);
+WHERE transfer.feed_pk = sqlc.arg(feed_pk);
 
 
 -- name: ListTransfersInSystem :many

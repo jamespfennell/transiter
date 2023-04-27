@@ -129,12 +129,12 @@ type TripUID struct {
 	RoutePk int64
 }
 
-func ListTripsForUpdate(ctx context.Context, querier db.Querier, routePks []int64) (map[TripUID]db.ListTripsForUpdateRow, error) {
-	rows, err := querier.ListTripsForUpdate(ctx, routePks)
+func ListTripsForUpdate(ctx context.Context, querier db.Querier, routePks []int64) (map[TripUID]db.Trip, error) {
+	rows, err := querier.ListTrips(ctx, routePks)
 	if err != nil {
 		return nil, err
 	}
-	m := map[TripUID]db.ListTripsForUpdateRow{}
+	m := map[TripUID]db.Trip{}
 	for _, row := range rows {
 		uid := TripUID{RoutePk: row.RoutePk, ID: row.ID}
 		m[uid] = row
@@ -166,7 +166,7 @@ func Ping(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, numRetri
 	for i := 0; i < numRetries; i++ {
 		err = pool.Ping(ctx)
 		if err == nil {
-			logger.InfoCtx(ctx, "database ping succesful")
+			logger.InfoCtx(ctx, "database ping successful")
 			break
 		}
 		logger.WarnCtx(ctx, fmt.Sprintf("failed to ping the databse: %s", err))

@@ -9,7 +9,6 @@ System
  |- Agency
  |- Alert
  |- Feed
- |   |- Feed update
  |- Route
  |   |- Trip
  |       |- Vehicle with no ID
@@ -50,7 +49,6 @@ The public API is a read-only API so all of the resources come from somewhere el
 | [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
 | Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
 | Feed        | System          |            |                    | system config
-| Feed update | Feed            |            |                    | Transiter update process
 | Route       | System          |            |                    | GTFS static
 | Trip        | Route           |            |                    | GTFS realtime
 | Stop        | System          |            |                    | GTFS static
@@ -248,16 +246,6 @@ service Public {
     };
   }
 
-  // List feed updates
-  //
-  // `GET /systems/<system_id>/feeds/<feed_id>/updates`
-  //
-  // List feeds updates for a feed.
-  rpc ListFeedUpdates(ListFeedUpdatesRequest) returns (ListFeedUpdatesReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/feeds/{feed_id}/updates"
-    };
-  }
 }
 
 // Request payload for the entrypoint endpoint.
@@ -552,24 +540,6 @@ message ListFeedsRequest {
 message ListFeedsReply {
   // List of feeds.
   repeated Feed feeds = 1;
-}
-
-// Request payload for the list feed updates endpoint.
-message ListFeedUpdatesRequest {
-  // ID of the system the feed is in.
-  //
-  // This is a URL parameter in the HTTP API.
-  string system_id = 1;
-  // ID of the feed for which to list updates.
-  //
-  // This is a URL parameter in the HTTP API.
-  string feed_id = 2;
-}
-
-// Response payload for the list feed updates endpoint.
-message ListFeedUpdatesReply {
-  // List of updates.
-  repeated FeedUpdate updates = 1;
 }
 
 // Request payload for the get feed endpoint.
@@ -949,7 +919,7 @@ message Route {
 // Each feed is defined in the system configuration file.
 // Feeds are included in the public API because there are non-admin use-cases for this resource.
 // For example, an app might publish the staleness of realtime data
-//   by checking for the last succesful feed update.
+//   by checking the last successful feed update time.
 //
 // More detailed information on a feed -- its full configuration, and the
 //   current status of its periodic updates -- can be retrieved through the admin API.
@@ -962,8 +932,10 @@ message Feed {
   // This is the parent resource in Transiter's resource hierarchy.
   System.Reference system = 3;
 
-  // Updates for this feed.
-  ChildResources updates = 4;
+  optional int64 last_update_ms = 4;
+  optional int64 last_successful_update_ms = 5;
+  optional int64 last_skipped_update_ms = 6;
+  optional int64 last_failed_update_ms = 7;
 
   // Reference is the reference type for the feed resource.
   message Reference {
@@ -1143,67 +1115,4 @@ message Transfer {
 
   optional int32 min_transfer_time = 7;
   optional int32 distance = 8;
-}
-
-// The feed update resource.
-//
-// Each feed update event
-//   -- triggered manually though the admin API, or automatically by the scheduler --
-// generates a feed update resource.
-// This resource is updated as the feed update progresses.
-// A background task in Transiter periodically garbage collects old updates.
-message FeedUpdate {
-  // ID of the feed update. This is the primary key of the associated Postgres
-  // database row so it's actually globally unique.
-  string id = 1;
-  // Generic metadata about the feed update resource.
-  Resource resource = 2;
-  // Feed corresponding to this update.
-  // This is the parent resource in Transiter's resource hierarchy.
-  Feed.Reference feed = 3;
-
-  // Unix timestamp of when the update started.
-  int64 started_at = 4;
-  // Whether the update has finished. If false, the update is still in progress.
-  bool finished = 5;
-  // Unix timestamp of when the update finished.
-  // Only populated if the update is finished.
-  optional int64 finished_at = 6;
-
-  enum Result {
-    // Finished succesfully.
-    UPDATED = 0;
-    // The update was skipped because the downloaded data was identical to the data for the last succesful update.
-    NOT_NEEDED = 1;
-    // Failed to download feed data.
-    DOWNLOAD_ERROR = 2;
-    // Feed data was empty.
-    EMPTY_FEED = 3;
-    // The feed configuration is invalid. This typically indicates a bug in Transiter because
-    // the feed configuration is validated when the system is being installed.
-    INVALID_FEED_CONFIG = 4;
-    // The parser specified in the feed configuration is invalid.
-    INVALID_PARSER = 5;
-    // Failed to parse the feed data.
-    // This means the feed data was corrupted or otherwise invalid.
-    PARSE_ERROR = 6;
-    // Failed to update the database using the new feed data.
-    // This typically indicates a bug in Transiter or a transient error connecting to the database.
-    UPDATE_ERROR = 7;
-    // An internal unspecified error occured.
-    INTERNAL_ERROR = 8;
-  }
-  // Result of the update.
-  // Only populated if the update is finished.
-  optional Result result = 7;
-  // Number of bytes in the downloaded feed data.
-  // Only populated if the update succesfully downloaded the data.
-  optional int32 content_length = 8;
-  // Hash of the downloaded feed data. This is used to skip updates
-  // if the feed data hasn't changed.
-  // Only populated if the update succesfully downloaded the data.
-  optional string content_hash = 9;
-  // Error message of the update.
-  // Only populated if the update finished in an error
-  optional string error_message = 10;
 }

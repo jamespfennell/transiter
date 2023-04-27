@@ -56,7 +56,7 @@ func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencie
 		if ok {
 			err = updateCtx.Querier.UpdateAgency(ctx, db.UpdateAgencyParams{
 				Pk:       pk,
-				SourcePk: updateCtx.UpdatePk,
+				FeedPk:   updateCtx.FeedPk,
 				Name:     agency.Name,
 				Url:      agency.Url,
 				Timezone: agency.Timezone,
@@ -69,7 +69,7 @@ func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencie
 			pk, err = updateCtx.Querier.InsertAgency(ctx, db.InsertAgencyParams{
 				ID:       agency.Id,
 				SystemPk: updateCtx.SystemPk,
-				SourcePk: updateCtx.UpdatePk,
+				FeedPk:   updateCtx.FeedPk,
 				Name:     agency.Name,
 				Url:      agency.Url,
 				Timezone: agency.Timezone,
@@ -110,7 +110,7 @@ func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []
 		if ok {
 			err = updateCtx.Querier.UpdateRoute(ctx, db.UpdateRouteParams{
 				Pk:                pk,
-				SourcePk:          updateCtx.UpdatePk,
+				FeedPk:            updateCtx.FeedPk,
 				Color:             route.Color,
 				TextColor:         route.TextColor,
 				ShortName:         convert.NullString(route.ShortName),
@@ -127,7 +127,7 @@ func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []
 			pk, err = updateCtx.Querier.InsertRoute(ctx, db.InsertRouteParams{
 				ID:                route.Id,
 				SystemPk:          updateCtx.SystemPk,
-				SourcePk:          updateCtx.UpdatePk,
+				FeedPk:            updateCtx.FeedPk,
 				Color:             route.Color,
 				TextColor:         route.TextColor,
 				ShortName:         convert.NullString(route.ShortName),
@@ -175,7 +175,7 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 		if ok {
 			err = updateCtx.Querier.UpdateStop(ctx, db.UpdateStopParams{
 				Pk:                 pk,
-				SourcePk:           updateCtx.UpdatePk,
+				FeedPk:             updateCtx.FeedPk,
 				Name:               convert.NullString(stop.Name),
 				Type:               stop.Type.String(),
 				Longitude:          convert.Gps(stop.Longitude),
@@ -192,7 +192,7 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 			pk, err = updateCtx.Querier.InsertStop(ctx, db.InsertStopParams{
 				ID:                 stop.Id,
 				SystemPk:           updateCtx.SystemPk,
-				SourcePk:           updateCtx.UpdatePk,
+				FeedPk:             updateCtx.FeedPk,
 				Name:               convert.NullString(stop.Name),
 				Type:               stop.Type.String(),
 				Longitude:          convert.Gps(stop.Longitude),
@@ -211,9 +211,6 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 		}
 		newIDToPk[stop.Id] = pk
 	}
-	// TODO: in the case when a parent stop is deleted but the child stop is not, the
-	// ON DELETE CASCADE may result in the child stop being deleted too. This needs to
-	// be unit tested and fixed.
 	if err := updateCtx.Querier.DeleteStaleStops(ctx, db.DeleteStaleStopsParams{
 		FeedPk:         updateCtx.FeedPk,
 		UpdatedStopPks: common.MapValues(newIDToPk),
@@ -258,7 +255,7 @@ func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transf
 		}
 		if err := updateCtx.Querier.InsertTransfer(ctx, db.InsertTransferParams{
 			SystemPk:        convert.NullInt64(&updateCtx.SystemPk),
-			SourcePk:        convert.NullInt64(&updateCtx.UpdatePk),
+			FeedPk:          updateCtx.FeedPk,
 			FromStopPk:      fromPk,
 			ToStopPk:        toPk,
 			Type:            transfer.Type.String(),

@@ -12,7 +12,6 @@ System
 |- Agency
 |- Alert
 |- Feed
-|   |- Feed update
 |- Route
 |   |- Trip
 |       |- Vehicle with no ID
@@ -53,7 +52,6 @@ The public API is a read-only API so all of the resources come from somewhere el
 | [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
 | Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
 | Feed        | System          |            |                    | system config
-| Feed update | Feed            |            |                    | Transiter update process
 | Route       | System          |            |                    | GTFS static
 | Trip        | Route           |            |                    | GTFS realtime
 | Stop        | System          |            |                    | GTFS static
@@ -280,7 +278,7 @@ The feed resource.
 Each feed is defined in the system configuration file.
 Feeds are included in the public API because there are non-admin use-cases for this resource.
 For example, an app might publish the staleness of realtime data
-  by checking for the last succesful feed update.
+  by checking the last successful feed update time.
 
 More detailed information on a feed -- its full configuration, and the
   current status of its periodic updates -- can be retrieved through the admin API.
@@ -292,7 +290,10 @@ More detailed information on a feed -- its full configuration, and the
 | id | string | ID of the feed, as specified in the system configuration file.
 | resource | [Resource](public_resources.md#Resource) | Generic metadata about the feed resource.
 | system | [System.Reference](public_resources.md#System.Reference) | System corresponding to this feed. This is the parent resource in Transiter's resource hierarchy.
-| updates | [ChildResources](public_resources.md#ChildResources) | Updates for this feed.
+| last_update_ms | int64 | 
+| last_successful_update_ms | int64 | 
+| last_skipped_update_ms | int64 | 
+| last_failed_update_ms | int64 | 
 
 
 
@@ -313,63 +314,6 @@ Reference is the reference type for the feed resource.
 
 
 
-
-
-
-
-
-
-## FeedUpdate
-
-The feed update resource.
-
-Each feed update event
-  -- triggered manually though the admin API, or automatically by the scheduler --
-generates a feed update resource.
-This resource is updated as the feed update progresses.
-A background task in Transiter periodically garbage collects old updates.
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| id | string | ID of the feed update. This is the primary key of the associated Postgres database row so it's actually globally unique.
-| resource | [Resource](public_resources.md#Resource) | Generic metadata about the feed update resource.
-| feed | [Feed.Reference](public_resources.md#Feed.Reference) | Feed corresponding to this update. This is the parent resource in Transiter's resource hierarchy.
-| started_at | int64 | Unix timestamp of when the update started.
-| finished | bool | Whether the update has finished. If false, the update is still in progress.
-| finished_at | int64 | Unix timestamp of when the update finished. Only populated if the update is finished.
-| result | [FeedUpdate.Result](public_resources.md#FeedUpdate.Result) | Result of the update. Only populated if the update is finished.
-| content_length | int32 | Number of bytes in the downloaded feed data. Only populated if the update succesfully downloaded the data.
-| content_hash | string | Hash of the downloaded feed data. This is used to skip updates if the feed data hasn't changed. Only populated if the update succesfully downloaded the data.
-| error_message | string | Error message of the update. Only populated if the update finished in an error
-
-
-
-
-
-
-#### FeedUpdate.Result
-
-
-	
-
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| UPDATED | 0 | Finished succesfully. |
-| NOT_NEEDED | 1 | The update was skipped because the downloaded data was identical to the data for the last succesful update. |
-| DOWNLOAD_ERROR | 2 | Failed to download feed data. |
-| EMPTY_FEED | 3 | Feed data was empty. |
-| INVALID_FEED_CONFIG | 4 | The feed configuration is invalid. This typically indicates a bug in Transiter because
-the feed configuration is validated when the system is being installed. |
-| INVALID_PARSER | 5 | The parser specified in the feed configuration is invalid. |
-| PARSE_ERROR | 6 | Failed to parse the feed data.
-This means the feed data was corrupted or otherwise invalid. |
-| UPDATE_ERROR | 7 | Failed to update the database using the new feed data.
-This typically indicates a bug in Transiter or a transient error connecting to the database. |
-| INTERNAL_ERROR | 8 | An internal unspecified error occured. |
 
 
 

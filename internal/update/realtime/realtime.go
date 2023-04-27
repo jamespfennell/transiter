@@ -92,29 +92,25 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		}
 		var tripPk int64
 		if existingTrip, ok := existingTrips[uid]; ok {
-			// Even if the data is the same, we update the trip to update the source pk.
+			if existingTrip.GtfsHash == gtfsHash && existingTrip.FeedPk == updateCtx.FeedPk {
+				activeTripPks = append(activeTripPks, existingTrip.Pk)
+				continue
+			}
 			stagedUpdates.updateTrips = append(stagedUpdates.updateTrips, db.UpdateTripParams{
 				Pk:          existingTrip.Pk,
-				SourcePk:    updateCtx.UpdatePk,
+				FeedPk:      updateCtx.FeedPk,
 				DirectionID: convert.DirectionID(trip.ID.DirectionID),
 				//StartedAt:    trip.ID.StartDate, // TODO: also the start time?
 				GtfsHash: gtfsHash,
 			})
-			if existingTrip.GtfsHash == gtfsHash {
-				activeTripPks = append(activeTripPks, existingTrip.Pk)
-				continue
-			}
 			tripPk = existingTrip.Pk
 		} else {
 			var err error
-			// We need the newly generated primary key from inserting a new trip, and there's so
-			// simple way to do this in a batched approach. So we just issue one query per trip.
-			// This code path is only run the first time a trip is seen in a feed, so it's not too
-			// bad to do this.
+			// TODO: we should batch this
 			tripPk, err = updateCtx.Querier.InsertTrip(ctx, db.InsertTripParams{
 				ID:          trip.ID.ID,
 				RoutePk:     routePk,
-				SourcePk:    updateCtx.UpdatePk,
+				FeedPk:      updateCtx.FeedPk,
 				DirectionID: convert.DirectionID(trip.ID.DirectionID),
 				//StartedAt:    trip.ID.StartDate, // TODO: also the start time?
 				GtfsHash: gtfsHash,
@@ -429,12 +425,6 @@ func updateAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 	if err != nil {
 		return err
 	}
-	if err := updateCtx.Querier.MarkAlertsFresh(ctx, db.MarkAlertsFreshParams{
-		AlertPks: unchangedAlertPks,
-		UpdatePk: updateCtx.UpdatePk,
-	}); err != nil {
-		return err
-	}
 	if err := updateCtx.Querier.DeleteStaleAlerts(ctx, db.DeleteStaleAlertsParams{
 		FeedPk:          updateCtx.FeedPk,
 		UpdatedAlertPks: concatenate(unchangedAlertPks, newPks),
@@ -527,7 +517,7 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 		pk, err := updateCtx.Querier.InsertAlert(ctx, db.InsertAlertParams{
 			ID:          alert.ID,
 			SystemPk:    updateCtx.SystemPk,
-			SourcePk:    updateCtx.UpdatePk,
+			FeedPk:      updateCtx.FeedPk,
 			Cause:       alert.Cause.String(),
 			Effect:      alert.Effect.String(),
 			Header:      convertAlertText(alert.Header),

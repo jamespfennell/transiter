@@ -623,47 +623,6 @@ Request payload for the get feed endpoint.
 
 ### Response type: [Feed](public_resources.md#Feed)
 
-## List feed updates
-
-`GET /systems/<system_id>/feeds/<feed_id>/updates`
-
-List feeds updates for a feed.
-
-### Request type: ListFeedUpdatesRequest
-
-Request payload for the list feed updates endpoint.
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| system_id | string | ID of the system the feed is in.<br /><br />This is a URL parameter in the HTTP API.
-| feed_id | string | ID of the feed for which to list updates.<br /><br />This is a URL parameter in the HTTP API.
-
-
-
-
-
-
-
-
-### Response type: ListFeedUpdatesReply
-
-Response payload for the list feed updates endpoint.
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| updates | [FeedUpdate](public_resources.md#FeedUpdate) | List of updates.
-
-
-
-
-
-
-
-
 
 
 

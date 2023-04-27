@@ -137,7 +137,7 @@ func (c *Client) SchedulerStatus(ctx context.Context) error {
 	}
 	t := table.New()
 	t.AddRow("System ID", "Feed ID", "Period", "Last", "Last", "Currently")
-	t.AddRow("", "", "", "finished", "succesful", "running")
+	t.AddRow("", "", "", "finished", "successful", "running")
 	t.AddRow("", "", "", "update", "update", "")
 	t.AddSeperator()
 	var lastSystemID string
@@ -172,11 +172,6 @@ func convertTime(t int64) string {
 		return "(none)"
 	}
 	return fmt.Sprintf("%s ago", time.Now().Round(time.Second).Sub(time.Unix(t, 0)))
-}
-
-func (c *Client) GarbageCollectFeedUpdates(ctx context.Context) error {
-	_, err := c.adminClient.GarbageCollectFeedUpdates(ctx, &api.GarbageCollectFeedUpdatesRequest{})
-	return err
 }
 
 func (c *Client) GetLogLevel(ctx context.Context) error {

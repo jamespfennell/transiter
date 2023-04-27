@@ -13,26 +13,24 @@ import (
 
 const deleteStopHeadsignRules = `-- name: DeleteStopHeadsignRules :exec
 DELETE FROM stop_headsign_rule
-USING feed_update
-WHERE feed_update.pk = stop_headsign_rule.source_pk
-AND feed_update.feed_pk = $1
+WHERE stop_headsign_rule.feed_pk = $1
 `
 
-func (q *Queries) DeleteStopHeadsignRules(ctx context.Context, sourcePk int64) error {
-	_, err := q.db.Exec(ctx, deleteStopHeadsignRules, sourcePk)
+func (q *Queries) DeleteStopHeadsignRules(ctx context.Context, feedPk int64) error {
+	_, err := q.db.Exec(ctx, deleteStopHeadsignRules, feedPk)
 	return err
 }
 
 const insertStopHeadSignRule = `-- name: InsertStopHeadSignRule :exec
 INSERT INTO stop_headsign_rule
-    (source_pk, priority, stop_pk, track, headsign)
+    (feed_pk, priority, stop_pk, track, headsign)
 VALUES
     ($1, $2, $3,
      $4, $5)
 `
 
 type InsertStopHeadSignRuleParams struct {
-	SourcePk int64
+	FeedPk   int64
 	Priority int32
 	StopPk   int64
 	Track    pgtype.Text
@@ -41,7 +39,7 @@ type InsertStopHeadSignRuleParams struct {
 
 func (q *Queries) InsertStopHeadSignRule(ctx context.Context, arg InsertStopHeadSignRuleParams) error {
 	_, err := q.db.Exec(ctx, insertStopHeadSignRule,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.Priority,
 		arg.StopPk,
 		arg.Track,
@@ -51,7 +49,7 @@ func (q *Queries) InsertStopHeadSignRule(ctx context.Context, arg InsertStopHead
 }
 
 const listStopHeadsignRulesForStops = `-- name: ListStopHeadsignRulesForStops :many
-SELECT pk, source_pk, priority, stop_pk, track, headsign FROM stop_headsign_rule
+SELECT pk, priority, stop_pk, track, headsign, feed_pk FROM stop_headsign_rule
 WHERE stop_pk = ANY($1::bigint[])
 ORDER BY priority ASC
 `
@@ -67,11 +65,11 @@ func (q *Queries) ListStopHeadsignRulesForStops(ctx context.Context, stopPks []i
 		var i StopHeadsignRule
 		if err := rows.Scan(
 			&i.Pk,
-			&i.SourcePk,
 			&i.Priority,
 			&i.StopPk,
 			&i.Track,
 			&i.Headsign,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}

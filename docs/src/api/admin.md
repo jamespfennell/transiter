@@ -147,7 +147,10 @@ Triggers a feed update for the specified feed.
 	
 
 
-No fields.
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| feed_update | [FeedUpdate](admin.md#FeedUpdate) | 
+
 
 
 
@@ -238,44 +241,6 @@ No fields.
 
 
 ### Response type: ResetSchedulerReply
-
-
-	
-
-
-No fields.
-
-
-
-
-
-
-
-## Garbage collect feed updates
-
-`POST /gcfeedupdates`
-
-Deletes feed updates that are older than a week, with the exception that
-the most recent succesful update for each feed is always retained.
-
-This method exists to avoid unbounded growth in the feed updates database table.
-It is called periodically by the scheduler.
-
-### Request type: GarbageCollectFeedUpdatesRequest
-
-
-	
-
-
-No fields.
-
-
-
-
-
-
-
-### Response type: GarbageCollectFeedUpdatesReply
 
 
 	
@@ -415,6 +380,59 @@ No fields.
 | ---- | ------ | ----------- |
 | NONE | 0 |  |
 | PERIODIC | 1 |  |
+
+
+
+
+### FeedUpdate
+
+Description of a feed update operation.
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| update_id | string | ID of the feed update. This is a randomly generated UUID. It can be used to find server logs for the update operation.
+| started_at_ms | int64 | Unix timestamp of when the update started.
+| finished_at_ms | int64 | Unix timestamp of when the update finished. Only populated if the update is finished.
+| total_latency_ms | int64 | 
+| download_latency_ms | int64 | 
+| parse_latency_ms | int64 | 
+| update_latency_ms | int64 | 
+| status | [FeedUpdate.Status](admin.md#FeedUpdate.Status) | Status of the update.
+| content_length | int32 | Number of bytes in the downloaded feed data. Only populated if the update successfully downloaded data.
+| content_hash | string | Hash of the downloaded feed data. This is used to skip updates if the feed data hasn't changed. Only populated if the update successfully downloaded data.
+| error_message | string | Error message of the update. Only populated if the update finished in an error
+
+
+
+
+
+
+#### FeedUpdate.Status
+
+
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN | 0 | Unknown status. |
+| RUNNING | 1 | Feed update is in progress. Currently this status never appears in the admin API, but is
+added in case Transiter support async feed updates in the future. |
+| UPDATED | 2 | Finished successfully. |
+| SKIPPED | 3 | The update was skipped because the downloaded data was identical to the data for the last successful update. |
+| FAILED_DOWNLOAD_ERROR | 4 | Failed to download feed data. |
+| FAILED_EMPTY_FEED | 5 | Feed data was empty. |
+| FAILED_INVALID_FEED_CONFIG | 6 | The feed configuration is invalid. This typically indicates a bug in Transiter because
+the feed configuration is validated when the system is being installed. |
+| FAILED_UNKNOWN_PARSER | 7 | The parser specified in the feed configuration is unknown. |
+| FAILED_PARSE_ERROR | 8 | Failed to parse the feed data.
+This means the feed data was corrupted or otherwise invalid. |
+| FAILED_UPDATE_ERROR | 9 | Failed to update the database using the new feed data.
+This typically indicates a bug in Transiter or a transient error connecting to the database. |
+| FAILED_INTERNAL_ERROR | 10 | An internal unspecified error occured. |
 
 
 

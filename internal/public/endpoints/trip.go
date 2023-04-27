@@ -16,7 +16,7 @@ func ListTrips(ctx context.Context, r *Context, req *api.ListTripsRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	trips, err := r.Querier.ListTrips(ctx, route.Pk)
+	trips, err := r.Querier.ListTrips(ctx, []int64{route.Pk})
 	if err != nil {
 		return nil, err
 	}

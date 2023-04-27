@@ -26,6 +26,14 @@ func SQLNullTime(t pgtype.Timestamptz) *int64 {
 	return &r
 }
 
+func SQLNullTimeMs(t pgtype.Timestamptz) *int64 {
+	if !t.Valid {
+		return nil
+	}
+	r := t.Time.UnixMilli()
+	return &r
+}
+
 func SQLNullString(t pgtype.Text) *string {
 	if !t.Valid {
 		return nil
@@ -183,15 +191,15 @@ func StopType(t string) api.Stop_Type {
 	return api.Stop_Type(api.Stop_Type_value[t])
 }
 
-func FeedUpdateResult(logger *slog.Logger, result pgtype.Text) *api.FeedUpdate_Result {
+func FeedUpdateStatus(logger *slog.Logger, result pgtype.Text) *api.FeedUpdate_Status {
 	if !result.Valid {
 		return nil
 	}
-	if i, ok := api.FeedUpdate_Result_value[result.String]; ok {
-		return api.FeedUpdate_Result(i).Enum()
+	if i, ok := api.FeedUpdate_Status_value[result.String]; ok {
+		return api.FeedUpdate_Status(i).Enum()
 	}
 	logger.Error(fmt.Sprintf("unknown feed update result %s", result.String))
-	return api.FeedUpdate_INTERNAL_ERROR.Enum()
+	return api.FeedUpdate_UNKNOWN.Enum()
 }
 
 func ContinuousPolicy(p string) api.Route_ContinuousPolicy {

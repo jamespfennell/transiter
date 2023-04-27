@@ -63,7 +63,7 @@ type FeedStatus struct {
 	Period time.Duration
 	// Time of the last update that finished.
 	LastFinishedUpdate time.Time
-	// Time of the last update that finished succesfully.
+	// Time of the last update that finished successfully.
 	LastSuccessfulUpdate time.Time
 	// Whether an update for this feed is currently reunning.
 	CurrentlyRunning bool
@@ -104,7 +104,6 @@ func (s *DefaultScheduler) Run(ctx context.Context, public api.PublicServer, adm
 }
 
 func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicServer, admin api.AdminServer, clock clock.Clock, logger *slog.Logger) {
-	maintenanceScheduler := newMaintenanceScheduler(ctx, admin, clock, logger)
 	systemSchedulers := map[string]struct {
 		scheduler  *systemScheduler
 		cancelFunc context.CancelFunc
@@ -156,7 +155,6 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 			for systemID := range systemSchedulers {
 				stopScheduler(systemID)
 			}
-			maintenanceScheduler.wait()
 			return
 		case <-s.resetAllRequest:
 			logger.InfoCtx(ctx, "reseting scheduler")
@@ -365,7 +363,7 @@ func newFeedScheduler(ctx context.Context, admin api.AdminServer, clock clock.Cl
 func (fs *feedScheduler) run(ctx context.Context, admin api.AdminServer, clock clock.Clock, systemID, feedID string, period time.Duration) {
 	ticker := ticker.New(clock, period)
 	fs.opDone <- struct{}{}
-	var lastSuccesfulUpdate time.Time
+	var lastSuccessfulUpdate time.Time
 	var lastFinishedUpdate time.Time
 	updateRunning := false
 	for {
@@ -392,7 +390,7 @@ func (fs *feedScheduler) run(ctx context.Context, admin api.AdminServer, clock c
 		case err := <-fs.updateFinished:
 			now := time.Now()
 			if err == nil {
-				lastSuccesfulUpdate = now
+				lastSuccessfulUpdate = now
 			}
 			lastFinishedUpdate = now
 			updateRunning = false
@@ -402,7 +400,7 @@ func (fs *feedScheduler) run(ctx context.Context, admin api.AdminServer, clock c
 				FeedID:               feedID,
 				CurrentlyRunning:     updateRunning,
 				LastFinishedUpdate:   lastFinishedUpdate,
-				LastSuccessfulUpdate: lastSuccesfulUpdate,
+				LastSuccessfulUpdate: lastSuccessfulUpdate,
 				Period:               period,
 			}
 		}
@@ -421,40 +419,6 @@ func (fs *feedScheduler) status() FeedStatus {
 
 func (fs *feedScheduler) wait() {
 	<-fs.opDone
-}
-
-type maintenanceScheduler struct {
-	opDone chan struct{}
-}
-
-func newMaintenanceScheduler(ctx context.Context, admin api.AdminServer, clock clock.Clock, logger *slog.Logger) *maintenanceScheduler {
-	s := &maintenanceScheduler{
-		opDone: make(chan struct{}),
-	}
-	go s.run(ctx, admin, clock, logger)
-	<-s.opDone
-	return s
-}
-
-func (s *maintenanceScheduler) run(ctx context.Context, admin api.AdminServer, clock clock.Clock, logger *slog.Logger) {
-	ticker := ticker.New(clock, 5*time.Minute)
-	s.opDone <- struct{}{}
-	for {
-		select {
-		case <-ctx.Done():
-			ticker.Stop()
-			close(s.opDone)
-			return
-		case <-ticker.C:
-			if _, err := admin.GarbageCollectFeedUpdates(ctx, &api.GarbageCollectFeedUpdatesRequest{}); err != nil {
-				logger.ErrorCtx(ctx, fmt.Sprintf("failed to GC feed updates: %s", err))
-			}
-		}
-	}
-}
-
-func (s *maintenanceScheduler) wait() {
-	<-s.opDone
 }
 
 type noOpScheduler struct{}

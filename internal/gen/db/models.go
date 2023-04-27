@@ -14,7 +14,6 @@ type Agency struct {
 	Pk       int64
 	ID       string
 	SystemPk int64
-	SourcePk int64
 	Name     string
 	Url      string
 	Timezone string
@@ -22,12 +21,12 @@ type Agency struct {
 	Phone    pgtype.Text
 	FareUrl  pgtype.Text
 	Email    pgtype.Text
+	FeedPk   int64
 }
 
 type Alert struct {
 	Pk          int64
 	ID          string
-	SourcePk    int64
 	SystemPk    int64
 	Cause       string
 	Effect      string
@@ -35,6 +34,7 @@ type Alert struct {
 	Description string
 	Url         string
 	Hash        string
+	FeedPk      int64
 }
 
 type AlertActivePeriod struct {
@@ -65,31 +65,23 @@ type AlertTrip struct {
 }
 
 type Feed struct {
-	Pk             int64
-	ID             string
-	SystemPk       int64
-	UpdateStrategy string
-	UpdatePeriod   pgtype.Float8
-	Config         string
-}
-
-type FeedUpdate struct {
-	Pk            int64
-	FeedPk        int64
-	StartedAt     pgtype.Timestamptz
-	Finished      bool
-	FinishedAt    pgtype.Timestamptz
-	Result        pgtype.Text
-	ContentLength pgtype.Int4
-	ContentHash   pgtype.Text
-	ErrorMessage  pgtype.Text
+	Pk                   int64
+	ID                   string
+	SystemPk             int64
+	UpdateStrategy       string
+	UpdatePeriod         pgtype.Float8
+	Config               string
+	LastContentHash      pgtype.Text
+	LastUpdate           pgtype.Timestamptz
+	LastSuccessfulUpdate pgtype.Timestamptz
+	LastSkippedUpdate    pgtype.Timestamptz
+	LastFailedUpdate     pgtype.Timestamptz
 }
 
 type Route struct {
 	Pk                int64
 	ID                string
 	SystemPk          int64
-	SourcePk          int64
 	Color             string
 	TextColor         string
 	ShortName         pgtype.Text
@@ -101,13 +93,13 @@ type Route struct {
 	AgencyPk          int64
 	ContinuousDropOff string
 	ContinuousPickup  string
+	FeedPk            int64
 }
 
 type ScheduledService struct {
 	Pk        int64
 	ID        string
 	SystemPk  int64
-	SourcePk  int64
 	Monday    pgtype.Bool
 	Tuesday   pgtype.Bool
 	Wednesday pgtype.Bool
@@ -117,6 +109,7 @@ type ScheduledService struct {
 	Sunday    pgtype.Bool
 	EndDate   pgtype.Date
 	StartDate pgtype.Date
+	FeedPk    int64
 }
 
 type ScheduledServiceAddition struct {
@@ -193,7 +186,6 @@ type Stop struct {
 	Pk                 int64
 	ID                 string
 	SystemPk           int64
-	SourcePk           int64
 	ParentStopPk       pgtype.Int8
 	Name               pgtype.Text
 	Longitude          pgtype.Numeric
@@ -206,15 +198,16 @@ type Stop struct {
 	Type               string
 	WheelchairBoarding pgtype.Bool
 	ZoneID             pgtype.Text
+	FeedPk             int64
 }
 
 type StopHeadsignRule struct {
 	Pk       int64
-	SourcePk int64
 	Priority int32
 	StopPk   int64
 	Track    pgtype.Text
 	Headsign string
+	FeedPk   int64
 }
 
 type System struct {
@@ -225,51 +218,25 @@ type System struct {
 	Status   string
 }
 
-type SystemUpdate struct {
-	Pk               int64
-	SystemPk         int64
-	Status           string
-	StatusMessage    pgtype.Text
-	TotalDuration    pgtype.Float8
-	ScheduledAt      pgtype.Timestamptz
-	CompletedAt      pgtype.Timestamptz
-	Config           pgtype.Text
-	ConfigTemplate   pgtype.Text
-	ConfigParameters pgtype.Text
-	ConfigSourceUrl  pgtype.Text
-	TransiterVersion pgtype.Text
-}
-
 type Transfer struct {
 	Pk              int64
-	SourcePk        pgtype.Int8
-	ConfigSourcePk  pgtype.Int8
 	SystemPk        pgtype.Int8
 	FromStopPk      int64
 	ToStopPk        int64
 	Type            string
 	MinTransferTime pgtype.Int4
 	Distance        pgtype.Int4
-}
-
-type TransfersConfig struct {
-	Pk       int64
-	Distance pgtype.Numeric
-}
-
-type TransfersConfigSystem struct {
-	TransfersConfigPk pgtype.Int8
-	SystemPk          pgtype.Int8
+	FeedPk          int64
 }
 
 type Trip struct {
 	Pk          int64
 	ID          string
 	RoutePk     int64
-	SourcePk    int64
 	DirectionID pgtype.Bool
 	StartedAt   pgtype.Timestamptz
 	GtfsHash    string
+	FeedPk      int64
 }
 
 type TripStopTime struct {
@@ -291,7 +258,6 @@ type TripStopTime struct {
 type Vehicle struct {
 	Pk                  int64
 	ID                  pgtype.Text
-	SourcePk            int64
 	SystemPk            int64
 	TripPk              pgtype.Int8
 	Label               pgtype.Text
@@ -307,4 +273,5 @@ type Vehicle struct {
 	CurrentStopPk       pgtype.Int8
 	CurrentStopSequence pgtype.Int4
 	OccupancyStatus     string
+	FeedPk              int64
 }

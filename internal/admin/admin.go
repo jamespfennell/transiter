@@ -164,7 +164,7 @@ func performInstall(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool
 		if !feed.RequiredForInstall {
 			continue
 		}
-		if err := update.Update(ctx, logger, pool, systemID, feed.Id); err != nil {
+		if _, err := update.Update(ctx, logger, pool, systemID, feed.Id); err != nil {
 			return err
 		}
 	}
@@ -317,37 +317,4 @@ func unmarshalFromYaml(y []byte) (*api.SystemConfig, error) {
 		return nil, err
 	}
 	return &config, nil
-}
-
-func (s *Service) GarbageCollectFeedUpdates(ctx context.Context, req *api.GarbageCollectFeedUpdatesRequest) (*api.GarbageCollectFeedUpdatesReply, error) {
-	s.logger.InfoCtx(ctx, "feed update GC: starting")
-	var activeFeedUpdatePks []int64
-	// We run in separate transactions to avoid holding a lock on the all of the entity tables
-	// while the deletions are happening. This does introduce a race condition in which a new
-	// feed update becomes active in between the two transactions. However the GC query only
-	// deletes updates older than a week, so this won't result in the feed update being deleted
-	// (unless it takes a week to run the RPC...).
-	//
-	// We could probably make this really race condition free by first querying the start time
-	// of the oldest in-progress feed update, and then ensuring we never delete feed updates
-	// more recent than this.
-	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		querier := db.New(tx)
-		var err error
-		activeFeedUpdatePks, err = querier.ListActiveFeedUpdatePks(ctx)
-		return err
-	}); err != nil {
-		return nil, err
-	}
-	s.logger.InfoCtx(ctx, fmt.Sprintf("feed update GC: found %d active feed updates: %v", len(activeFeedUpdatePks), activeFeedUpdatePks))
-	var numDeleted int64
-	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		var err error
-		numDeleted, err = db.New(tx).GarbageCollectFeedUpdates(ctx, activeFeedUpdatePks)
-		return err
-	}); err != nil {
-		return nil, err
-	}
-	s.logger.InfoCtx(ctx, fmt.Sprintf("feed update GC: deleted %d feed updates", numDeleted))
-	return &api.GarbageCollectFeedUpdatesReply{}, nil
 }

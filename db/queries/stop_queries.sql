@@ -1,17 +1,17 @@
 -- name: InsertStop :one
 INSERT INTO stop
-    (id, system_pk, source_pk, name, longitude, latitude,
+    (id, system_pk, feed_pk, name, longitude, latitude,
      url, code, description, platform_code, timezone, type,
      wheelchair_boarding, zone_id)
 VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(source_pk), sqlc.arg(name), sqlc.arg(longitude),
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(feed_pk), sqlc.arg(name), sqlc.arg(longitude),
      sqlc.arg(latitude), sqlc.arg(url), sqlc.arg(code), sqlc.arg(description), sqlc.arg(platform_code),
      sqlc.arg(timezone), sqlc.arg(type), sqlc.arg(wheelchair_boarding), sqlc.arg(zone_id))
 RETURNING pk;
 
 -- name: UpdateStop :exec
 UPDATE stop SET
-    source_pk = sqlc.arg(source_pk),
+    feed_pk = sqlc.arg(feed_pk),
     name = sqlc.arg(name),
     longitude = sqlc.arg(longitude),
     latitude = sqlc.arg(latitude),
@@ -35,10 +35,8 @@ WHERE
 
 -- name: DeleteStaleStops :exec
 DELETE FROM stop
-USING feed_update
 WHERE 
-    feed_update.pk = stop.source_pk
-    AND feed_update.feed_pk = sqlc.arg(feed_pk)
+    stop.feed_pk = sqlc.arg(feed_pk)
     AND NOT stop.pk = ANY(sqlc.arg(updated_stop_pks)::bigint[]);
 
 -- name: ListStops :many

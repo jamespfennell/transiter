@@ -41,13 +41,6 @@ func main() {
 				},
 			},
 			{
-				Name:  "gcfeedupdates",
-				Usage: "garbage collect old feed updates",
-				Action: clientAction(func(ctx context.Context, client *client.Client) error {
-					return client.GarbageCollectFeedUpdates(ctx)
-				}),
-			},
-			{
 				Name:  "install",
 				Usage: "install a transit system",
 				Flags: []cli.Flag{

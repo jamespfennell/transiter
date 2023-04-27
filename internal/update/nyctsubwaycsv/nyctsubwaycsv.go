@@ -37,7 +37,7 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, rules []StopHea
 			continue
 		}
 		if err := updateCtx.Querier.InsertStopHeadSignRule(ctx, db.InsertStopHeadSignRuleParams{
-			SourcePk: updateCtx.UpdatePk,
+			FeedPk:   updateCtx.FeedPk,
 			Priority: int32(i),
 			StopPk:   stopPk,
 			Track:    convert.NullString(rule.track),

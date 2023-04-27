@@ -5,9 +5,9 @@ AND system_pk = sqlc.arg(system_pk);
 
 -- name: InsertAlert :one
 INSERT INTO alert
-    (id, system_pk, source_pk, cause, effect, header, description, url, hash)
+    (id, system_pk, feed_pk, cause, effect, header, description, url, hash)
 VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(source_pk), sqlc.arg(cause),sqlc.arg(effect), 
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(feed_pk), sqlc.arg(cause),sqlc.arg(effect), 
      sqlc.arg(header), sqlc.arg(description), sqlc.arg(url), sqlc.arg(hash))
 RETURNING pk;
 
@@ -29,17 +29,10 @@ INSERT INTO alert_route (alert_pk, route_pk) VALUES (sqlc.arg(alert_pk), sqlc.ar
 -- name: DeleteAlerts :exec
 DELETE FROM alert WHERE pk = ANY(sqlc.arg(alert_pks)::bigint[]);
 
--- name: MarkAlertsFresh :exec
-UPDATE alert
-SET source_pk = sqlc.arg(update_pk)
-WHERE pk = ANY(sqlc.arg(alert_pks)::bigint[]);
-
 -- name: DeleteStaleAlerts :exec
 DELETE FROM alert
-USING feed_update
 WHERE 
-    feed_update.pk = alert.source_pk
-    AND feed_update.feed_pk = sqlc.arg(feed_pk)
+    alert.feed_pk = sqlc.arg(feed_pk)
     AND NOT alert.pk = ANY(sqlc.arg(updated_alert_pks)::bigint[]);
 
 -- name: ListActiveAlertsForAgencies :many

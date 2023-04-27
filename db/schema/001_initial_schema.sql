@@ -256,7 +256,6 @@ CREATE TABLE system (
 );
 
 
--- TODO: delete this?!?!
 CREATE TABLE system_update (
     pk BIGSERIAL PRIMARY KEY,
     system_pk BIGINT NOT NULL,

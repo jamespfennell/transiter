@@ -13,10 +13,7 @@ import (
 
 const deleteTransfers = `-- name: DeleteTransfers :exec
 DELETE FROM transfer
-USING feed_update
-WHERE 
-    feed_update.pk = transfer.source_pk
-    AND feed_update.feed_pk = $1
+WHERE transfer.feed_pk = $1
 `
 
 func (q *Queries) DeleteTransfers(ctx context.Context, feedPk int64) error {
@@ -26,17 +23,17 @@ func (q *Queries) DeleteTransfers(ctx context.Context, feedPk int64) error {
 
 const insertTransfer = `-- name: InsertTransfer :exec
 INSERT INTO transfer
-    (system_pk, source_pk, config_source_pk, from_stop_pk, to_stop_pk,
+    (system_pk, feed_pk, from_stop_pk, to_stop_pk,
      type, min_transfer_time, distance)
 VALUES
-    ($1, $2, NULL,
+    ($1, $2,
      $3, $4, $5,
      $6, NULL)
 `
 
 type InsertTransferParams struct {
 	SystemPk        pgtype.Int8
-	SourcePk        pgtype.Int8
+	FeedPk          int64
 	FromStopPk      int64
 	ToStopPk        int64
 	Type            string
@@ -46,7 +43,7 @@ type InsertTransferParams struct {
 func (q *Queries) InsertTransfer(ctx context.Context, arg InsertTransferParams) error {
 	_, err := q.db.Exec(ctx, insertTransfer,
 		arg.SystemPk,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.FromStopPk,
 		arg.ToStopPk,
 		arg.Type,
@@ -56,7 +53,7 @@ func (q *Queries) InsertTransfer(ctx context.Context, arg InsertTransferParams) 
 }
 
 const listTransfersFromStops = `-- name: ListTransfersFromStops :many
-  SELECT transfer.pk, transfer.source_pk, transfer.config_source_pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.distance
+  SELECT transfer.pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.distance, transfer.feed_pk
   FROM transfer
   WHERE transfer.from_stop_pk = ANY($1::bigint[])
 `
@@ -72,14 +69,13 @@ func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int6
 		var i Transfer
 		if err := rows.Scan(
 			&i.Pk,
-			&i.SourcePk,
-			&i.ConfigSourcePk,
 			&i.SystemPk,
 			&i.FromStopPk,
 			&i.ToStopPk,
 			&i.Type,
 			&i.MinTransferTime,
 			&i.Distance,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}
@@ -93,7 +89,7 @@ func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int6
 
 const listTransfersInSystem = `-- name: ListTransfersInSystem :many
 SELECT
-    transfer.pk, transfer.source_pk, transfer.config_source_pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.distance,
+    transfer.pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.distance, transfer.feed_pk,
     from_stop.id from_stop_id, from_stop.name from_stop_name, from_system.id from_system_id,
     to_stop.id to_stop_id, to_stop.name to_stop_name, to_system.id to_system_id
 FROM transfer
@@ -107,14 +103,13 @@ ORDER BY transfer.pk
 
 type ListTransfersInSystemRow struct {
 	Pk              int64
-	SourcePk        pgtype.Int8
-	ConfigSourcePk  pgtype.Int8
 	SystemPk        pgtype.Int8
 	FromStopPk      int64
 	ToStopPk        int64
 	Type            string
 	MinTransferTime pgtype.Int4
 	Distance        pgtype.Int4
+	FeedPk          int64
 	FromStopID      string
 	FromStopName    pgtype.Text
 	FromSystemID    string
@@ -134,14 +129,13 @@ func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk pgtype.Int
 		var i ListTransfersInSystemRow
 		if err := rows.Scan(
 			&i.Pk,
-			&i.SourcePk,
-			&i.ConfigSourcePk,
 			&i.SystemPk,
 			&i.FromStopPk,
 			&i.ToStopPk,
 			&i.Type,
 			&i.MinTransferTime,
 			&i.Distance,
+			&i.FeedPk,
 			&i.FromStopID,
 			&i.FromStopName,
 			&i.FromSystemID,

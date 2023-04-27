@@ -121,12 +121,6 @@ type PublicClient interface {
 	//
 	// Get a feed in a system by its ID.
 	GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*Feed, error)
-	// List feed updates
-	//
-	// `GET /systems/<system_id>/feeds/<feed_id>/updates`
-	//
-	// List feeds updates for a feed.
-	ListFeedUpdates(ctx context.Context, in *ListFeedUpdatesRequest, opts ...grpc.CallOption) (*ListFeedUpdatesReply, error)
 }
 
 type publicClient struct {
@@ -281,15 +275,6 @@ func (c *publicClient) GetFeed(ctx context.Context, in *GetFeedRequest, opts ...
 	return out, nil
 }
 
-func (c *publicClient) ListFeedUpdates(ctx context.Context, in *ListFeedUpdatesRequest, opts ...grpc.CallOption) (*ListFeedUpdatesReply, error) {
-	out := new(ListFeedUpdatesReply)
-	err := c.cc.Invoke(ctx, "/Public/ListFeedUpdates", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // PublicServer is the server API for Public service.
 // All implementations should embed UnimplementedPublicServer
 // for forward compatibility
@@ -397,12 +382,6 @@ type PublicServer interface {
 	//
 	// Get a feed in a system by its ID.
 	GetFeed(context.Context, *GetFeedRequest) (*Feed, error)
-	// List feed updates
-	//
-	// `GET /systems/<system_id>/feeds/<feed_id>/updates`
-	//
-	// List feeds updates for a feed.
-	ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error)
 }
 
 // UnimplementedPublicServer should be embedded to have forward compatible implementations.
@@ -456,9 +435,6 @@ func (UnimplementedPublicServer) ListFeeds(context.Context, *ListFeedsRequest) (
 }
 func (UnimplementedPublicServer) GetFeed(context.Context, *GetFeedRequest) (*Feed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeed not implemented")
-}
-func (UnimplementedPublicServer) ListFeedUpdates(context.Context, *ListFeedUpdatesRequest) (*ListFeedUpdatesReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListFeedUpdates not implemented")
 }
 
 // UnsafePublicServer may be embedded to opt out of forward compatibility for this service.
@@ -760,24 +736,6 @@ func _Public_GetFeed_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Public_ListFeedUpdates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListFeedUpdatesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PublicServer).ListFeedUpdates(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/Public/ListFeedUpdates",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PublicServer).ListFeedUpdates(ctx, req.(*ListFeedUpdatesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Public_ServiceDesc is the grpc.ServiceDesc for Public service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -848,10 +806,6 @@ var Public_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFeed",
 			Handler:    _Public_GetFeed_Handler,
-		},
-		{
-			MethodName: "ListFeedUpdates",
-			Handler:    _Public_ListFeedUpdates_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

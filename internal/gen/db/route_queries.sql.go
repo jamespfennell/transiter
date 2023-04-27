@@ -13,10 +13,8 @@ import (
 
 const deleteStaleRoutes = `-- name: DeleteStaleRoutes :exec
 DELETE FROM route
-USING feed_update
 WHERE 
-    feed_update.pk = route.source_pk
-    AND feed_update.feed_pk = $1
+    route.feed_pk = $1
     AND NOT route.pk = ANY($2::bigint[])
 `
 
@@ -83,7 +81,7 @@ func (q *Queries) EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHea
 }
 
 const getRoute = `-- name: GetRoute :one
-SELECT route.pk, route.id, route.system_pk, route.source_pk, route.color, route.text_color, route.short_name, route.long_name, route.description, route.url, route.sort_order, route.type, route.agency_pk, route.continuous_drop_off, route.continuous_pickup FROM route
+SELECT route.pk, route.id, route.system_pk, route.color, route.text_color, route.short_name, route.long_name, route.description, route.url, route.sort_order, route.type, route.agency_pk, route.continuous_drop_off, route.continuous_pickup, route.feed_pk FROM route
     INNER JOIN system ON route.system_pk = system.pk
     WHERE system.pk = $1
     AND route.id = $2
@@ -101,7 +99,6 @@ func (q *Queries) GetRoute(ctx context.Context, arg GetRouteParams) (Route, erro
 		&i.Pk,
 		&i.ID,
 		&i.SystemPk,
-		&i.SourcePk,
 		&i.Color,
 		&i.TextColor,
 		&i.ShortName,
@@ -113,13 +110,14 @@ func (q *Queries) GetRoute(ctx context.Context, arg GetRouteParams) (Route, erro
 		&i.AgencyPk,
 		&i.ContinuousDropOff,
 		&i.ContinuousPickup,
+		&i.FeedPk,
 	)
 	return i, err
 }
 
 const insertRoute = `-- name: InsertRoute :one
 INSERT INTO route
-    (id, system_pk, source_pk, color, text_color,
+    (id, system_pk, feed_pk, color, text_color,
      short_name, long_name, description, url, sort_order,
      type, continuous_pickup, continuous_drop_off, agency_pk)
 VALUES
@@ -132,7 +130,7 @@ RETURNING pk
 type InsertRouteParams struct {
 	ID                string
 	SystemPk          int64
-	SourcePk          int64
+	FeedPk            int64
 	Color             string
 	TextColor         string
 	ShortName         pgtype.Text
@@ -150,7 +148,7 @@ func (q *Queries) InsertRoute(ctx context.Context, arg InsertRouteParams) (int64
 	row := q.db.QueryRow(ctx, insertRoute,
 		arg.ID,
 		arg.SystemPk,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.Color,
 		arg.TextColor,
 		arg.ShortName,
@@ -169,7 +167,7 @@ func (q *Queries) InsertRoute(ctx context.Context, arg InsertRouteParams) (int64
 }
 
 const listRoutes = `-- name: ListRoutes :many
-SELECT pk, id, system_pk, source_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup FROM route WHERE system_pk = $1 ORDER BY id
+SELECT pk, id, system_pk, color, text_color, short_name, long_name, description, url, sort_order, type, agency_pk, continuous_drop_off, continuous_pickup, feed_pk FROM route WHERE system_pk = $1 ORDER BY id
 `
 
 func (q *Queries) ListRoutes(ctx context.Context, systemPk int64) ([]Route, error) {
@@ -185,7 +183,6 @@ func (q *Queries) ListRoutes(ctx context.Context, systemPk int64) ([]Route, erro
 			&i.Pk,
 			&i.ID,
 			&i.SystemPk,
-			&i.SourcePk,
 			&i.Color,
 			&i.TextColor,
 			&i.ShortName,
@@ -197,6 +194,7 @@ func (q *Queries) ListRoutes(ctx context.Context, systemPk int64) ([]Route, erro
 			&i.AgencyPk,
 			&i.ContinuousDropOff,
 			&i.ContinuousPickup,
+			&i.FeedPk,
 		); err != nil {
 			return nil, err
 		}
@@ -320,7 +318,7 @@ func (q *Queries) MapRouteIDToPkInSystem(ctx context.Context, arg MapRouteIDToPk
 
 const updateRoute = `-- name: UpdateRoute :exec
 UPDATE route SET
-    source_pk = $1,
+    feed_pk = $1,
     color = $2,
     text_color = $3,
     short_name = $4, 
@@ -337,7 +335,7 @@ WHERE
 `
 
 type UpdateRouteParams struct {
-	SourcePk          int64
+	FeedPk            int64
 	Color             string
 	TextColor         string
 	ShortName         pgtype.Text
@@ -354,7 +352,7 @@ type UpdateRouteParams struct {
 
 func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error {
 	_, err := q.db.Exec(ctx, updateRoute,
-		arg.SourcePk,
+		arg.FeedPk,
 		arg.Color,
 		arg.TextColor,
 		arg.ShortName,

@@ -15,8 +15,8 @@ SELECT lss.trip_pk, stop.pk destination_pk
 
 -- name: ListTrips :many
 SELECT * FROM trip
-WHERE trip.route_pk = sqlc.arg(route_pk)
-ORDER BY trip.id;
+WHERE route_pk = ANY(sqlc.arg(route_pks)::bigint[])
+ORDER BY route_pk, id;
 
 -- name: GetTrip :one
 SELECT * FROM trip
@@ -32,24 +32,18 @@ ORDER BY trip_stop_time.stop_sequence ASC;
 
 -- name: InsertTrip :one
 INSERT INTO trip
-    (id, route_pk, source_pk, direction_id, started_at, gtfs_hash)
+    (id, route_pk, feed_pk, direction_id, started_at, gtfs_hash)
 VALUES
-    (sqlc.arg(id), sqlc.arg(route_pk), sqlc.arg(source_pk), sqlc.arg(direction_id), sqlc.arg(started_at), sqlc.arg(gtfs_hash))
+    (sqlc.arg(id), sqlc.arg(route_pk), sqlc.arg(feed_pk), sqlc.arg(direction_id), sqlc.arg(started_at), sqlc.arg(gtfs_hash))
 RETURNING pk;
 
 -- name: UpdateTrip :batchexec
 UPDATE trip SET 
-    source_pk = sqlc.arg(source_pk),
+    feed_pk = sqlc.arg(feed_pk),
     direction_id = sqlc.arg(direction_id),
     started_at = sqlc.arg(started_at),
     gtfs_hash = sqlc.arg(gtfs_hash)
 WHERE pk = sqlc.arg(pk);
-
--- name: ListTripsForUpdate :many
-SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id, gtfs_hash
-FROM trip
-WHERE
-    trip.route_pk = ANY(sqlc.arg(route_pks)::bigint[]);
 
 -- name: ListTripStopTimesForUpdate :many
 SELECT pk, trip_pk, stop_pk, stop_sequence, past FROM trip_stop_time
@@ -96,9 +90,7 @@ WHERE pk = ANY(sqlc.arg(pks)::bigint[]);
 
 -- name: DeleteStaleTrips :many
 DELETE FROM trip
-USING feed_update
 WHERE 
-    feed_update.pk = trip.source_pk
-    AND feed_update.feed_pk = sqlc.arg(feed_pk)
+    trip.feed_pk = sqlc.arg(feed_pk)
     AND NOT trip.pk = ANY(sqlc.arg(updated_trip_pks)::bigint[])
 RETURNING trip.route_pk;

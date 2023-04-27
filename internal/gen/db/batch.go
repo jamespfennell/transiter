@@ -69,7 +69,7 @@ func (b *MarkTripStopTimesPastBatchResults) Close() error {
 
 const updateTrip = `-- name: UpdateTrip :batchexec
 UPDATE trip SET 
-    source_pk = $1,
+    feed_pk = $1,
     direction_id = $2,
     started_at = $3,
     gtfs_hash = $4
@@ -83,7 +83,7 @@ type UpdateTripBatchResults struct {
 }
 
 type UpdateTripParams struct {
-	SourcePk    int64
+	FeedPk      int64
 	DirectionID pgtype.Bool
 	StartedAt   pgtype.Timestamptz
 	GtfsHash    string
@@ -94,7 +94,7 @@ func (q *Queries) UpdateTrip(ctx context.Context, arg []UpdateTripParams) *Updat
 	batch := &pgx.Batch{}
 	for _, a := range arg {
 		vals := []interface{}{
-			a.SourcePk,
+			a.FeedPk,
 			a.DirectionID,
 			a.StartedAt,
 			a.GtfsHash,
