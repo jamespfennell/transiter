@@ -19,8 +19,8 @@ UPDATE stop SET
     code = sqlc.arg(code),
     description = sqlc.arg(description),
     platform_code = sqlc.arg(platform_code),
-    timezone = sqlc.arg(timezone), 
-    type = sqlc.arg(type), 
+    timezone = sqlc.arg(timezone),
+    type = sqlc.arg(type),
     wheelchair_boarding = sqlc.arg(wheelchair_boarding),
     zone_id = sqlc.arg(zone_id),
     parent_stop_pk = NULL
@@ -35,7 +35,7 @@ WHERE
 
 -- name: DeleteStaleStops :exec
 DELETE FROM stop
-WHERE 
+WHERE
     stop.feed_pk = sqlc.arg(feed_pk)
     AND NOT stop.pk = ANY(sqlc.arg(updated_stop_pks)::bigint[]);
 
@@ -52,7 +52,7 @@ LIMIT sqlc.arg(num_stops);
 
 -- name: ListStops_Geographic :many
 WITH distance AS (
-  SELECT 
+  SELECT
   pk stop_pk,
   (6371 * acos(cos(radians(latitude)) * cos(radians(sqlc.arg(latitude)::numeric)) * cos(radians(sqlc.arg(longitude)::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians(sqlc.arg(latitude)::numeric)))) val
   FROM stop
@@ -71,7 +71,13 @@ SELECT stop.* FROM stop
     AND stop.id = sqlc.arg(stop_id);
 
 -- name: ListTripStopTimesByStops :many
-SELECT trip_stop_time.*, trip.*, vehicle.id vehicle_id FROM trip_stop_time
+SELECT trip_stop_time.*,
+       trip.*, vehicle.id vehicle_id,
+       vehicle.latitude vehicle_latitude,
+       vehicle.longitude vehicle_longitude,
+       vehicle.bearing vehicle_bearing,
+       vehicle.updated_at vehicle_updated_at
+    FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
@@ -90,29 +96,29 @@ FROM stop
 WHERE stop.parent_stop_pk = ANY(sqlc.arg(stop_pks)::bigint[]);
 
 -- name: MapStopIDAndPkToStationPk :many
-WITH RECURSIVE 
+WITH RECURSIVE
 ancestor AS (
-	SELECT 
-    id stop_id, 
+    SELECT
+    id stop_id,
     pk stop_pk,
-    pk station_pk, 
+    pk station_pk,
     parent_stop_pk,
-    (type = 'STATION') is_station 
+    (type = 'STATION') is_station
     FROM stop
         WHERE stop.system_pk = sqlc.arg(system_pk)
         AND (
             NOT sqlc.arg(filter_by_stop_pk)::bool
             OR stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
         )
-	UNION
-	SELECT
+    UNION
+    SELECT
     child.stop_id stop_id,
     child.stop_pk stop_pk,
-    parent.pk station_pk, 
-    parent.parent_stop_pk, 
-    (parent.type = 'STATION') is_station 
-		FROM stop parent
-		INNER JOIN ancestor child 
+    parent.pk station_pk,
+    parent.parent_stop_pk,
+    (parent.type = 'STATION') is_station
+        FROM stop parent
+        INNER JOIN ancestor child
     ON child.parent_stop_pk = parent.pk
     AND NOT child.is_station
 )
@@ -123,17 +129,17 @@ SELECT stop_id, stop_pk, station_pk
 
 -- name: MapStopPkToDescendentPks :many
 WITH RECURSIVE descendent AS (
-	SELECT
+    SELECT
     stop.pk root_stop_pk,
     stop.pk descendent_stop_pk
     FROM stop
         WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
-	UNION
-	SELECT
+    UNION
+    SELECT
     descendent.root_stop_pk root_stop_pk,
     child.pk descendent_stop_pk
-		FROM stop child
-		INNER JOIN descendent
+        FROM stop child
+        INNER JOIN descendent
     ON child.parent_stop_pk = descendent.descendent_stop_pk
 )
 SELECT root_stop_pk, descendent_stop_pk FROM descendent;

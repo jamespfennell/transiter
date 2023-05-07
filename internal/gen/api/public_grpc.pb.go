@@ -121,6 +121,18 @@ type PublicClient interface {
 	//
 	// Get a feed in a system by its ID.
 	GetFeed(ctx context.Context, in *GetFeedRequest, opts ...grpc.CallOption) (*Feed, error)
+	// List vehicles
+	//
+	// `GET /systems/<system_id>/vehicles`
+	//
+	// List all feeds for a system.
+	ListVehicles(ctx context.Context, in *ListVehiclesRequest, opts ...grpc.CallOption) (*ListVehiclesReply, error)
+	// Get vehicle
+	//
+	// `GET /systems/<system_id>/vehicles/<vehicle_id>`
+	//
+	// Get a vehicle in a system by its ID.
+	GetVehicle(ctx context.Context, in *GetVehicleRequest, opts ...grpc.CallOption) (*Vehicle, error)
 }
 
 type publicClient struct {
@@ -275,6 +287,24 @@ func (c *publicClient) GetFeed(ctx context.Context, in *GetFeedRequest, opts ...
 	return out, nil
 }
 
+func (c *publicClient) ListVehicles(ctx context.Context, in *ListVehiclesRequest, opts ...grpc.CallOption) (*ListVehiclesReply, error) {
+	out := new(ListVehiclesReply)
+	err := c.cc.Invoke(ctx, "/Public/ListVehicles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *publicClient) GetVehicle(ctx context.Context, in *GetVehicleRequest, opts ...grpc.CallOption) (*Vehicle, error) {
+	out := new(Vehicle)
+	err := c.cc.Invoke(ctx, "/Public/GetVehicle", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PublicServer is the server API for Public service.
 // All implementations should embed UnimplementedPublicServer
 // for forward compatibility
@@ -382,6 +412,18 @@ type PublicServer interface {
 	//
 	// Get a feed in a system by its ID.
 	GetFeed(context.Context, *GetFeedRequest) (*Feed, error)
+	// List vehicles
+	//
+	// `GET /systems/<system_id>/vehicles`
+	//
+	// List all feeds for a system.
+	ListVehicles(context.Context, *ListVehiclesRequest) (*ListVehiclesReply, error)
+	// Get vehicle
+	//
+	// `GET /systems/<system_id>/vehicles/<vehicle_id>`
+	//
+	// Get a vehicle in a system by its ID.
+	GetVehicle(context.Context, *GetVehicleRequest) (*Vehicle, error)
 }
 
 // UnimplementedPublicServer should be embedded to have forward compatible implementations.
@@ -435,6 +477,12 @@ func (UnimplementedPublicServer) ListFeeds(context.Context, *ListFeedsRequest) (
 }
 func (UnimplementedPublicServer) GetFeed(context.Context, *GetFeedRequest) (*Feed, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeed not implemented")
+}
+func (UnimplementedPublicServer) ListVehicles(context.Context, *ListVehiclesRequest) (*ListVehiclesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListVehicles not implemented")
+}
+func (UnimplementedPublicServer) GetVehicle(context.Context, *GetVehicleRequest) (*Vehicle, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVehicle not implemented")
 }
 
 // UnsafePublicServer may be embedded to opt out of forward compatibility for this service.
@@ -736,6 +784,42 @@ func _Public_GetFeed_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Public_ListVehicles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVehiclesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PublicServer).ListVehicles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Public/ListVehicles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PublicServer).ListVehicles(ctx, req.(*ListVehiclesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Public_GetVehicle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVehicleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PublicServer).GetVehicle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Public/GetVehicle",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PublicServer).GetVehicle(ctx, req.(*GetVehicleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Public_ServiceDesc is the grpc.ServiceDesc for Public service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -806,6 +890,14 @@ var Public_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFeed",
 			Handler:    _Public_GetFeed_Handler,
+		},
+		{
+			MethodName: "ListVehicles",
+			Handler:    _Public_ListVehicles_Handler,
+		},
+		{
+			MethodName: "GetVehicle",
+			Handler:    _Public_GetVehicle_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

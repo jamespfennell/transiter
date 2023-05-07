@@ -223,7 +223,7 @@ type StopTime struct {
 	Arrival   time.Time
 }
 
-func (r *Route) NewTrip(id string, stopTimes []StopTime) db.Trip {
+func (r *Route) NewTrip(id string, stopTimes []StopTime) db.GetTripRow {
 	var pk int64
 	trip := insertAndGet(
 		r.s.q, id,
@@ -236,7 +236,7 @@ func (r *Route) NewTrip(id string, stopTimes []StopTime) db.Trip {
 			})
 			return err
 		},
-		func() (db.Trip, error) {
+		func() (db.GetTripRow, error) {
 			return r.s.q.GetTrip(context.Background(), db.GetTripParams{
 				RoutePk: r.Data.Pk,
 				TripID:  id,

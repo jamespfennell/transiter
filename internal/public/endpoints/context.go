@@ -15,6 +15,9 @@ type EndpointOptions struct {
 	// The maximum number of stops that can be returned in a single request.
 	// Defaults to 100.
 	MaxStopsPerRequest int32
+	// The maximum number of vehicles that can be returned in a single request.
+	// Defaults to 100.
+	MaxVehiclesPerRequest int32
 }
 
 type Context struct {

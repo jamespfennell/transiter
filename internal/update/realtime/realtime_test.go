@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/gtfs"
@@ -14,15 +15,19 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/update/common"
+	"golang.org/x/exp/slog"
 )
 
 const (
-	routeID1 = "routeID1"
-	stopID1  = "stopID1"
-	stopID2  = "stopID2"
-	stopID3  = "stopID3"
-	stopID4  = "stopID4"
-	tripID1  = "tripID1"
+	systemID   = "systemID1"
+	routeID1   = "routeID1"
+	stopID1    = "stopID1"
+	stopID2    = "stopID2"
+	stopID3    = "stopID3"
+	stopID4    = "stopID4"
+	tripID1    = "tripID1"
+	vehicleID1 = "vehicleID1"
+	vehicleID2 = "vehicleID2"
 )
 
 func TestUpdateTrips(t *testing.T) {
@@ -160,7 +165,7 @@ func TestUpdateTrips(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			querier := dbtesting.NewQuerier(t)
-			system := querier.NewSystem("system")
+			system := querier.NewSystem(systemID)
 			stopPkToID := map[int64]string{}
 			for _, stopID := range []string{stopID1, stopID2, stopID3, stopID4} {
 				stopPkToID[system.NewStop(stopID).Pk] = stopID
@@ -182,6 +187,7 @@ func TestUpdateTrips(t *testing.T) {
 				FeedConfig: &api.FeedConfig{
 					GtfsRealtimeOptions: tc.gtfsRealTimeOptions,
 				},
+				Logger: slog.Default(),
 			}
 
 			for i, tripVersion := range tc.tripVersions {
@@ -204,10 +210,518 @@ func TestUpdateTrips(t *testing.T) {
 	}
 }
 
+func TestUpdateVehicles(t *testing.T) {
+	for _, tc := range []struct {
+		name              string
+		vehicleGroups     [][]*gtfs.Vehicle
+		wantVehicleGroups [][]*Vehicle
+		tripVersions      []*gtfs.Trip
+	}{
+		{
+			name: "simple case",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(ptr(vehicleID1), systemID, nil, nil, nil, nil, nil,
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+			},
+		},
+		{
+			name: "trip with no id",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID:                &gtfs.VehicleID{},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{},
+			},
+		},
+		{
+			name: "entity not in message",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{},
+			},
+		},
+		{
+			name: "lots of fields",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID:           ptr(vehicleID1),
+							Label:        ptr("label"),
+							LicencePlate: ptr("licencePlate"),
+						},
+						Position: &gtfs.Position{
+							Latitude:  ptr(float32(1.0)),
+							Longitude: ptr(float32(2.0)),
+							Bearing:   ptr(float32(3.0)),
+							Odometer:  ptr(4.0),
+							Speed:     ptr(float32(5.0)),
+						},
+						// STOPPED_AT
+						CurrentStatus: ptr(gtfs.CurrentStatus(1)),
+						Timestamp:     ptr(mkTime(6)),
+						// RUNNING_SMOOTHLY
+						CongestionLevel: gtfs.CongestionLevel(1),
+						// MANY_SEATS_AVAILABLE
+						OccupancyStatus:     ptr(gtfs.OccupancyStatus(1)),
+						OccupancyPercentage: ptr(uint32(8)),
+						IsEntityInMessage:   true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(
+						ptr(vehicleID1), systemID, nil,
+						ptr("label"), ptr("licencePlate"),
+						ptr(float32(1.0)), ptr(float32(2.0)), ptr(float32(3.0)), ptr(4.0), ptr(float32(5.0)),
+						ptr(gtfs.CongestionLevel(1)),
+						ptr(mkTime(6)),
+						nil,
+						ptr(gtfs.OccupancyStatus(1)),
+						ptr(gtfs.CurrentStatus(1)),
+						nil,
+						ptr(uint32(8))),
+				},
+			},
+		},
+		{
+			name: "associated trip",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+			},
+			tripVersions: []*gtfs.Trip{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+			},
+		},
+		{
+			name: "duplicate trips, same update",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						IsEntityInMessage: true,
+					},
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID2),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+			},
+			tripVersions: []*gtfs.Trip{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+			},
+		},
+		{
+			name: "trip changes vehicles across updates",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						IsEntityInMessage: true,
+					},
+				},
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID2),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+				{
+					wantVehicle(ptr(vehicleID2), systemID, ptr(tripID1),
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+			},
+			tripVersions: []*gtfs.Trip{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+			},
+		},
+		{
+			name: "duplicate trips, different updates",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						IsEntityInMessage: true,
+					},
+				},
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						IsEntityInMessage: true,
+					},
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID2),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+				{
+					// If an existing vehicle and incoming vehicle both have same trip ID, we
+					// keep the exsiting vehicle and ignore the incoming vehicle.
+					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+			},
+			tripVersions: []*gtfs.Trip{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+			},
+		},
+		{
+			name: "duplicate vehicle ids",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						IsEntityInMessage: true,
+					},
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(ptr(vehicleID1), systemID, nil,
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+			},
+			tripVersions: []*gtfs.Trip{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+			},
+		},
+		{
+			name: "associated trip and stop",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						Trip: &gtfs.Trip{
+							ID: gtfs.TripID{
+								ID: tripID1,
+							},
+						},
+						CurrentStopSequence: ptr(uint32(0)),
+						StopID:              ptr(stopID1),
+						IsEntityInMessage:   true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, ptr(int32(0)), nil, nil, ptr(stopID1), nil),
+				},
+			},
+			tripVersions: []*gtfs.Trip{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+					gtfsStu(gStopID(stopID1), gDepTime(5)),
+					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+				}),
+			},
+		}, {
+			name: "vehicle update",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						Position: &gtfs.Position{
+							Latitude:  ptr(float32(1.0)),
+							Longitude: ptr(float32(2.0)),
+							Bearing:   ptr(float32(3.0)),
+							Odometer:  ptr(4.0),
+							Speed:     ptr(float32(5.0)),
+						},
+						IsEntityInMessage: true,
+					},
+				},
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						Position: &gtfs.Position{
+							Latitude:  ptr(float32(2.0)),
+							Longitude: ptr(float32(3.0)),
+							Bearing:   ptr(float32(4.0)),
+							Odometer:  ptr(5.0),
+							Speed:     ptr(float32(6.0)),
+						},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(
+						ptr(vehicleID1), systemID, nil,
+						nil, nil,
+						ptr(float32(1.0)), ptr(float32(2.0)), ptr(float32(3.0)), ptr(4.0), ptr(float32(5.0)),
+						nil,
+						nil,
+						nil,
+						nil,
+						nil,
+						nil,
+						nil),
+				},
+				{
+					wantVehicle(
+						ptr(vehicleID1), systemID, nil,
+						nil, nil,
+						ptr(float32(2.0)), ptr(float32(3.0)), ptr(float32(4.0)), ptr(5.0), ptr(float32(6.0)),
+						nil,
+						nil,
+						nil,
+						nil,
+						nil,
+						nil,
+						nil),
+				},
+			},
+		},
+		{
+			name: "stale vehicle deleted",
+			vehicleGroups: [][]*gtfs.Vehicle{
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID1),
+						},
+						IsEntityInMessage: true,
+					},
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID2),
+						},
+						IsEntityInMessage: true,
+					},
+				},
+				{
+					{
+						ID: &gtfs.VehicleID{
+							ID: ptr(vehicleID2),
+						},
+						IsEntityInMessage: true,
+					},
+				},
+			},
+			wantVehicleGroups: [][]*Vehicle{
+				{
+					wantVehicle(ptr(vehicleID1), systemID, nil, nil, nil, nil, nil,
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+					wantVehicle(ptr(vehicleID2), systemID, nil, nil, nil, nil, nil,
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+				{
+					wantVehicle(ptr(vehicleID2), systemID, nil, nil, nil, nil, nil,
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			querier := dbtesting.NewQuerier(t)
+			system := querier.NewSystem(systemID)
+			stopPkToID := map[int64]string{}
+			for _, stopID := range []string{stopID1, stopID2, stopID3, stopID4} {
+				stopPkToID[system.NewStop(stopID).Pk] = stopID
+			}
+			for _, routeID := range []string{routeID1} {
+				system.NewRoute(routeID)
+			}
+			tripsFeed := system.NewFeed("trips")
+			vehiclesFeed := system.NewFeed("vehicles")
+
+			ctx := context.Background()
+			updateCtx := common.UpdateContext{
+				Querier:  querier,
+				SystemPk: system.Data.Pk,
+				Logger:   slog.Default(),
+			}
+
+			for i, tripVersion := range tc.tripVersions {
+				updateCtx.FeedPk = tripsFeed.Data.Pk
+				var r gtfs.Realtime
+				if tripVersion != nil {
+					r.Trips = append(r.Trips, *tripVersion)
+				}
+				err := Update(ctx, updateCtx, &r)
+				if err != nil {
+					t.Fatalf("Update(trip version %d) got = %v, want = <nil>", err, i)
+				}
+			}
+
+			systemPkToID := map[int64]string{}
+			systemPkToID[system.Data.Pk] = systemID
+
+			if len(tc.vehicleGroups) != len(tc.wantVehicleGroups) {
+				t.Fatalf("len(vehicleGroups) != len(wantVehicleGroups)")
+			}
+
+			updateCtx.FeedPk = vehiclesFeed.Data.Pk
+			updateCtx.FeedConfig = &api.FeedConfig{
+				GtfsRealtimeOptions: &api.GtfsRealtimeOptions{
+					OnlyProcessFullEntities: true,
+				},
+			}
+			for i := range tc.vehicleGroups {
+				vehicles := tc.vehicleGroups[i]
+				wantVehicles := tc.wantVehicleGroups[i]
+
+				var r gtfs.Realtime
+				for _, vehicle := range vehicles {
+					r.Vehicles = append(r.Vehicles, *vehicle)
+				}
+
+				err := Update(ctx, updateCtx, &r)
+				if err != nil {
+					t.Fatalf("Update(vehicle %d) got = %v, want = <nil>", err, i)
+				}
+
+				dbVehicles := readVehiclesFromDB(ctx, t, querier, system.Data.Pk, systemPkToID)
+
+				opt := cmp.Options{
+					cmpopts.IgnoreUnexported(pgtype.Numeric{}),
+					cmp.Comparer(compareNumerics),
+				}
+				if diff := cmp.Diff(dbVehicles, wantVehicles, opt); diff != "" {
+					t.Errorf("got = %v, want = %v, diff = %s", vehicles, tc.vehicleGroups, diff)
+				}
+			}
+		})
+	}
+}
+
 type Trip struct {
 	RouteID   string
-	DBFields  db.Trip
+	DBFields  db.GetTripRow
 	StopTimes []StopTime
+}
+
+type Vehicle struct {
+	SystemID      string
+	TripID        *string
+	CurrentStopID *string
+	DBFields      db.GetVehicleRow
 }
 
 func readTripFromDB(ctx context.Context, t *testing.T, querier db.Querier, routeIDToPk map[string]int64, stopPkToID map[int64]string) *Trip {
@@ -242,14 +756,112 @@ func readTripFromDB(ctx context.Context, t *testing.T, querier db.Querier, route
 	}
 }
 
+func readVehiclesFromDB(
+	ctx context.Context,
+	t *testing.T, querier db.Querier,
+	systemPk int64,
+	systemPkToID map[int64]string) []*Vehicle {
+	dbVehicles, err := querier.ListVehicles(ctx, db.ListVehiclesParams{
+		SystemPk:       systemPk,
+		NumVehicles:    100,
+		FirstVehicleID: convert.NullString(ptr("")),
+	})
+	if err == pgx.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		t.Fatalf("ListVehicles(systemPk=%d) err got = %v, want = <nil>", systemPk, err)
+	}
+
+	vehicles := make([]*Vehicle, 0, len(dbVehicles))
+
+	for _, dbVehicle := range dbVehicles {
+		systemID, ok := systemPkToID[dbVehicle.SystemPk]
+		if !ok {
+			t.Fatalf("systemPkToID[%d] not found", systemPk)
+		}
+
+		var tripID *string = nil
+		if dbVehicle.TripID.Valid {
+			tripID = &dbVehicle.TripID.String
+		}
+
+		var currentStopID *string = nil
+		if dbVehicle.StopID.Valid {
+			currentStopID = &dbVehicle.StopID.String
+		}
+
+		vehicles = append(vehicles, &Vehicle{
+			SystemID:      systemID,
+			TripID:        tripID,
+			CurrentStopID: currentStopID,
+			DBFields: db.GetVehicleRow{
+				ID:                  dbVehicle.ID,
+				Label:               dbVehicle.Label,
+				LicensePlate:        dbVehicle.LicensePlate,
+				Latitude:            dbVehicle.Latitude,
+				Longitude:           dbVehicle.Longitude,
+				Bearing:             dbVehicle.Bearing,
+				Odometer:            dbVehicle.Odometer,
+				Speed:               dbVehicle.Speed,
+				CongestionLevel:     dbVehicle.CongestionLevel,
+				UpdatedAt:           dbVehicle.UpdatedAt,
+				OccupancyStatus:     dbVehicle.OccupancyStatus,
+				CurrentStatus:       dbVehicle.CurrentStatus,
+				CurrentStopSequence: dbVehicle.CurrentStopSequence,
+				OccupancyPercentage: dbVehicle.OccupancyPercentage,
+			},
+		})
+	}
+
+	return vehicles
+}
+
 func wantTrip(tripID, routeID string, directionID bool, sts []StopTime) *Trip {
 	return &Trip{
 		RouteID: routeID,
-		DBFields: db.Trip{
+		DBFields: db.GetTripRow{
 			ID:          tripID,
 			DirectionID: convert.NullBool(&directionID),
 		},
 		StopTimes: sts,
+	}
+}
+
+func wantVehicle(
+	vehicleID *string,
+	systemID string,
+	tripID, label, licensePlate *string,
+	latitude, longitude, bearing *float32,
+	odometer *float64,
+	speed *float32,
+	congestionLevel *gtfs.CongestionLevel,
+	updatedAt *time.Time,
+	currentStopSequence *int32,
+	occupancyStatus *gtfs.OccupancyStatus,
+	currentStatus *gtfs.CurrentStatus,
+	currentStopID *string,
+	occupancyPercentage *uint32) *Vehicle {
+	return &Vehicle{
+		SystemID:      systemID,
+		TripID:        tripID,
+		CurrentStopID: currentStopID,
+		DBFields: db.GetVehicleRow{
+			ID:                  convert.NullString(vehicleID),
+			Label:               convert.NullString(label),
+			LicensePlate:        convert.NullString(licensePlate),
+			CurrentStatus:       convert.NullVehicleCurrentStatus(currentStatus),
+			Latitude:            convert.Gps(latitude),
+			Longitude:           convert.Gps(longitude),
+			Bearing:             convert.NullFloat32(bearing),
+			Odometer:            convert.NullFloat64(odometer),
+			Speed:               convert.NullFloat32(speed),
+			CongestionLevel:     convert.NullCongestionLevel(congestionLevel),
+			UpdatedAt:           convert.NullTime(updatedAt),
+			CurrentStopSequence: convert.NullInt32(currentStopSequence),
+			OccupancyStatus:     convert.NullOccupancyStatus(occupancyStatus),
+			OccupancyPercentage: convert.NullUInt32ToSigned(occupancyPercentage),
+		},
 	}
 }
 
@@ -368,4 +980,36 @@ func gtfsTrip(tripID, routeID string, directionID gtfs.DirectionID, stus []gtfs.
 		},
 		StopTimeUpdates: stus,
 	}
+}
+
+func compareNumerics(x, y pgtype.Numeric) bool {
+	if !x.Valid && !y.Valid {
+		return true
+	}
+
+	if x.NaN && y.NaN {
+		return true
+	}
+
+	if x.NaN != y.NaN {
+		return false
+	}
+
+	if x.Valid != y.Valid {
+		return false
+	}
+
+	if x.Int == nil && y.Int == nil {
+		return x.Exp == y.Exp
+	}
+
+	if x.Int == nil || y.Int == nil {
+		return false
+	}
+
+	if x.Int.Cmp(y.Int) != 0 {
+		return false
+	}
+
+	return x.Exp == y.Exp
 }

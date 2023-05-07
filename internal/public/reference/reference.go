@@ -136,10 +136,10 @@ func (h Generator) TransfersHref(systemID string) *string {
 	return h.generateHref("systems", systemID, "transfers")
 }
 
-func (h Generator) Vehicle(id string) *api.Vehicle_Reference {
-	// TODO: vehicle
+func (h Generator) Vehicle(id string, systemID string) *api.Vehicle_Reference {
 	return &api.Vehicle_Reference{
-		Id: id,
+		Id:       id,
+		Resource: h.generateResource("systems", systemID, "vehicles", id),
 	}
 }
 

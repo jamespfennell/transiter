@@ -456,6 +456,7 @@ Message describing additional options for the GTFS realtime feeds.
 | nyct_trips_options | [GtfsRealtimeOptions.NyctTripsOptions](admin.md#GtfsRealtimeOptions.NyctTripsOptions) | 
 | nyct_alerts_options | [GtfsRealtimeOptions.NyctAlertsOptions](admin.md#GtfsRealtimeOptions.NyctAlertsOptions) | 
 | reassign_stop_sequences | bool | If true, stop sequences in the GTFS realtime feed data are ignored, and alternative stop sequences are generated and assigned by Transiter. This setting is designed for buggy GTFS realtime feeds in which stop sequences (incorrectly) change between updates. In many cases Transiter is able to generate stop sequences that are correct and stable across updates.<br /><br />This should not be used for systems where a trip can call at the same stop multiple times.
+| only_process_full_entities | bool | If true, only process entities in a feed if the message contains the full entity. This is useful for cases where there are multiple feeds for the same system, and some feeds contain only partial information about entities.
 
 
 

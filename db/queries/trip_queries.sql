@@ -14,12 +14,33 @@ SELECT lss.trip_pk, stop.pk destination_pk
     ON trip_stop_time.stop_pk = stop.pk;
 
 -- name: ListTrips :many
-SELECT * FROM trip
+SELECT trip.*,
+       vehicle.id as vehicle_id,
+       vehicle.latitude as vehicle_latitude,
+       vehicle.longitude as vehicle_longitude,
+       vehicle.bearing as vehicle_bearing,
+       vehicle.updated_at as vehicle_updated_at
+FROM trip
+LEFT JOIN vehicle ON trip.pk = vehicle.trip_pk
 WHERE route_pk = ANY(sqlc.arg(route_pks)::bigint[])
 ORDER BY route_pk, id;
 
+-- name: ListTripPksInSystem :many
+SELECT trip.id, trip.pk
+FROM trip
+    INNER JOIN feed ON trip.feed_pk = feed.pk
+WHERE trip.id = ANY(sqlc.arg(trip_ids)::text[])
+    AND feed.system_pk = sqlc.arg(system_pk);
+
 -- name: GetTrip :one
-SELECT * FROM trip
+SELECT trip.*,
+       vehicle.id as vehicle_id,
+       vehicle.latitude as vehicle_latitude,
+       vehicle.longitude as vehicle_longitude,
+       vehicle.bearing as vehicle_bearing,
+       vehicle.updated_at as vehicle_updated_at
+FROM trip
+LEFT JOIN vehicle ON trip.pk = vehicle.trip_pk
 WHERE trip.id = sqlc.arg(trip_id)
     AND trip.route_pk = sqlc.arg(route_pk);
 
@@ -38,7 +59,7 @@ VALUES
 RETURNING pk;
 
 -- name: UpdateTrip :batchexec
-UPDATE trip SET 
+UPDATE trip SET
     feed_pk = sqlc.arg(feed_pk),
     direction_id = sqlc.arg(direction_id),
     started_at = sqlc.arg(started_at),
@@ -90,7 +111,15 @@ WHERE pk = ANY(sqlc.arg(pks)::bigint[]);
 
 -- name: DeleteStaleTrips :many
 DELETE FROM trip
-WHERE 
+WHERE
     trip.feed_pk = sqlc.arg(feed_pk)
     AND NOT trip.pk = ANY(sqlc.arg(updated_trip_pks)::bigint[])
 RETURNING trip.route_pk;
+
+-- name: MapTripIDToPkInSystem :many
+SELECT trip.id, trip.pk
+FROM trip
+    INNER JOIN feed ON trip.feed_pk = feed.pk
+WHERE trip.id = ANY(sqlc.arg(trip_ids)::text[])
+    AND feed.system_pk = sqlc.arg(system_pk)
+FOR UPDATE;
