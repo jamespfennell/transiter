@@ -90,7 +90,7 @@ func Run(ctx context.Context, args RunArgs) error {
 	var s scheduler.Scheduler
 
 	if !args.EnableScheduler || args.ReadOnly {
-		s = scheduler.NoOpScheduler()
+		s = scheduler.NoOpScheduler(logger)
 	} else {
 		realScheduler = scheduler.NewDefaultScheduler()
 		s = realScheduler

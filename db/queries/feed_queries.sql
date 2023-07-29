@@ -9,16 +9,13 @@ SELECT feed.* FROM feed
 
 -- name: InsertFeed :exec
 INSERT INTO feed
-    (id, system_pk, update_strategy, update_period, config)
+    (id, system_pk, config)
 VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(update_strategy), 
-     sqlc.arg(update_period), sqlc.arg(config));
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(config));
 
 -- name: UpdateFeed :exec
 UPDATE feed
-SET update_strategy = sqlc.arg(update_strategy),
-    update_period = sqlc.arg(update_period), 
-    config = sqlc.arg(config)
+SET config = sqlc.arg(config)
 WHERE pk = sqlc.arg(feed_pk);
 
 -- name: MarkSuccessfulUpdate :exec

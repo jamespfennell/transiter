@@ -25,6 +25,23 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+const (
+	NyctSubwayCsv = "NYC_SUBWAY_CSV"
+	GtfsRealtime  = "GTFS_REALTIME"
+	GtfsStatic    = "GTFS_STATIC"
+)
+
+func NormalizeFeedConfig(feedConfig *api.FeedConfig) {
+	if t := feedConfig.GetType(); t == "" {
+		//lint:ignore SA1019 this is where we apply the deprecation logic!
+		feedConfig.Type = feedConfig.GetParser()
+	}
+	if feedConfig.RequiredForInstall == nil {
+		b := feedConfig.Type != GtfsRealtime
+		feedConfig.RequiredForInstall = &b
+	}
+}
+
 func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, systemID, feedID string) (*api.FeedUpdate, error) {
 	startTime := time.Now()
 	updateID := uuid.New().String()
@@ -104,6 +121,7 @@ func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID 
 	if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
 		return markFailure(feedUpdate, api.FeedUpdate_FAILED_INVALID_FEED_CONFIG, fmt.Errorf("failed to parse feed config: %w", err))
 	}
+	NormalizeFeedConfig(&feedConfig)
 	content, err := getFeedContent(ctx, systemID, &feedConfig)
 	if err != nil {
 		return markFailure(feedUpdate, api.FeedUpdate_FAILED_DOWNLOAD_ERROR, err)
@@ -123,26 +141,26 @@ func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID 
 		parse(b []byte) error
 		update(ctx context.Context, updateCtx common.UpdateContext) error
 	}
-	switch feedConfig.Parser {
-	case "GTFS_STATIC":
+	switch feedConfig.Type {
+	case GtfsStatic:
 		p = &parserAndUpdater[*gtfs.Static]{
 			parseFn:  static.Parse,
 			updateFn: static.Update,
 		}
-	case "GTFS_REALTIME":
+	case GtfsRealtime:
 		p = &parserAndUpdater[*gtfs.Realtime]{
 			parseFn: func(b []byte) (*gtfs.Realtime, error) {
 				return realtime.Parse(b, feedConfig.GtfsRealtimeOptions)
 			},
 			updateFn: realtime.Update,
 		}
-	case "NYCT_SUBWAY_CSV":
+	case NyctSubwayCsv:
 		p = &parserAndUpdater[[]nyctsubwaycsv.StopHeadsignRule]{
 			parseFn:  nyctsubwaycsv.Parse,
 			updateFn: nyctsubwaycsv.Update,
 		}
 	default:
-		return markFailure(feedUpdate, api.FeedUpdate_FAILED_UNKNOWN_PARSER, fmt.Errorf("unknown feed parser %q", feedConfig.Parser))
+		return markFailure(feedUpdate, api.FeedUpdate_FAILED_UNKNOWN_FEED_TYPE, fmt.Errorf("unknown feed type %q", feedConfig.Type))
 	}
 	if err := p.parse(content); err != nil {
 		return markFailure(feedUpdate, api.FeedUpdate_FAILED_PARSE_ERROR, err)

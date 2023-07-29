@@ -12,7 +12,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -161,7 +160,8 @@ func performInstall(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool
 		return err
 	}
 	for _, feed := range systemConfig.GetFeeds() {
-		if !feed.RequiredForInstall {
+		update.NormalizeFeedConfig(feed)
+		if !feed.GetRequiredForInstall() {
 			continue
 		}
 		if _, err := update.Update(ctx, logger, pool, systemID, feed.Id); err != nil {
@@ -206,10 +206,8 @@ func upsertSystemMetadata(ctx context.Context, querier db.Querier, systemID stri
 		}
 		if pk, ok := feedIDToPk[newFeed.Id]; ok {
 			if err := querier.UpdateFeed(ctx, db.UpdateFeedParams{
-				FeedPk:         pk,
-				UpdateStrategy: newFeed.UpdateStrategy.String(),
-				UpdatePeriod:   convert.NullFloat64(newFeed.UpdatePeriodS),
-				Config:         string(j),
+				FeedPk: pk,
+				Config: string(j),
 			}); err != nil {
 				return err
 			}
@@ -217,11 +215,9 @@ func upsertSystemMetadata(ctx context.Context, querier db.Querier, systemID stri
 		} else {
 			// TODO: is there a lint to detect not handling the error here?
 			querier.InsertFeed(ctx, db.InsertFeedParams{
-				ID:             newFeed.Id,
-				SystemPk:       system.Pk,
-				UpdateStrategy: newFeed.UpdateStrategy.String(),
-				UpdatePeriod:   convert.NullFloat64(newFeed.UpdatePeriodS),
-				Config:         string(j),
+				ID:       newFeed.Id,
+				SystemPk: system.Pk,
+				Config:   string(j),
 			})
 		}
 	}
@@ -254,7 +250,7 @@ func markSystemInstallFinished(ctx context.Context, querier db.Querier, systemID
 
 func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest) (*api.DeleteSystemReply, error) {
 	logger := s.logger.With(slog.String("system_id", req.GetSystemId()))
-	logger.InfoCtx(ctx, "recieved delete system request")
+	logger.InfoCtx(ctx, "received delete system request")
 
 	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		querier := db.New(tx)

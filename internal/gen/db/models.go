@@ -68,8 +68,6 @@ type Feed struct {
 	Pk                   int64
 	ID                   string
 	SystemPk             int64
-	UpdateStrategy       string
-	UpdatePeriod         pgtype.Float8
 	Config               string
 	LastContentHash      pgtype.Text
 	LastUpdate           pgtype.Timestamptz

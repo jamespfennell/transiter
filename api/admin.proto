@@ -176,17 +176,74 @@ message FeedConfig {
   // This must be unique within the system.
   string id = 1;
 
-  // If true, an update of this feed will be performed during the system installation,
-  // and if the update fails the system installation will fail.
-  bool required_for_install = 2;
+  // The type of the feed.
+  // Allowable values are `GTFS_STATIC`, `GTFS_REALTIME` and `NYCT_SUBWAY_CSV`.
+  //
+  // The are possible future plans to support plugging in additional custom types at build time.
+  // This is why the field is a string and not an enum.
+  string type = 13;
 
-  enum UpdateStrategy {
-    NONE = 0;
+  // Deprecated: use `type` instead.
+  string parser = 8 [deprecated = true];
+
+  // Additional options GTFS realtime feeds.
+  optional GtfsRealtimeOptions gtfs_realtime_options = 9;
+
+  // Required for install specifies whether an update should be performed for this feed during system install. 
+  // If true, an update is performed and if the update fails the installation fails.
+  //
+  // If unspecified, defaults to false for GTFS realtime feeds and true for all other
+  // types of feeds.
+  optional bool required_for_install = 2;
+
+  // Transiter runs a background task called the scheduler which performs feed updates automatically.
+  // A scheduling policy determines when the scheduler will perform feed updates for this feed.
+  enum SchedulingPolicy {
+    // Use the default policy, which is PERIODIC for GTFS realtime feeds and DAILY for all other feeds.
+    DEFAULT = 0;
+    // Perform an update periodically, with the period specified in the `periodic_update_period_ms` field.
     PERIODIC = 1;
+    // Perform an update once a day, with the time of day specified in the `daily_update_time` field.
+    DAILY = 2;
+    // Don't perform updates in the scheduler. Updates can always be triggered manually using the admin API.
+    NONE = 3;
   }
-  UpdateStrategy update_strategy = 3;
+  // The scheduling policy to use for this feed.
+  //
+  // If unspecified, it takes the value `DEFAULT``.
+  SchedulingPolicy scheduling_policy = 14;
 
-  optional double update_period_s = 4;
+  // Deprecated: use `scheduling_policy` instead.
+  SchedulingPolicy update_strategy = 3 [deprecated=true];
+
+  // For feeds with a `PERIODIC` scheduling policy, the update period.
+  //
+  // If unspecified, defaults to 5 seconds.
+  optional int64 periodic_update_period_ms = 10;
+
+  // Deprecated: use `periodic_update_period_ms` instead.
+  optional double update_period_s = 4 [deprecated = true];
+
+  // For feeds with a `DAILY` scheduling policy,
+  // the time of day in the form HH:MM at which to perform an update.
+  //
+  // If unspecified, defaults to 03:00 for the first feed in the system, 03:10 for the second feed,
+  // and so on.
+  // The idea of the default is to run at night when the system is either quiet or not running.
+  // The staggering is to avoid updates stepping on each other, and to spread out the load.
+  string daily_update_time = 11;
+
+  // For feeds with a `DAILY` scheduling policy,
+  // the timezone for the time of day specified in the `daily_update_time`.
+  //
+  // If empty, a default is provided as follows.
+  // The scheduler lists the agencies for the system in order of ID and uses
+  // the first valid timezone it finds.
+  // Given the GTFS static specification this should always work.
+  // Moreover, all agencies should have the same timezone so listing in order of ID shouldn't matter.
+  // But in reality it may not work.
+  // If there is no valid agency timezones, the scheduler will log a warning and fall back to UTC.
+  string daily_update_timezone = 12;
 
   // URL at which the feed can be downloaded using a HTTP GET request.
   // Transiter does not currently support non-GET requests.
@@ -195,18 +252,9 @@ message FeedConfig {
   optional int64 request_timeout_ms = 6;
   // HTTP headers to send in the request.
   map<string, string> http_headers = 7;
-
-  // The parser to parse the feed with. Current options are "GTFS_STATIC",
-  // "GTFS_REALTIME" and "NYCT_SUBWAY_CSV".
-  //
-  // The are future plans to support plugging in additional custom parsers at
-  // build time. This is why the field is a string and not an enum.
-  string parser = 8;
-  // Additional options for the GTFS realtime parser, if that is the parser in use.
-  optional GtfsRealtimeOptions gtfs_realtime_options = 9;
 }
 
-// Message describing options for the GTFS realtime parser.
+// Message describing additional options for the GTFS realtime feeds.
 message GtfsRealtimeOptions {
   enum Extension {
     NO_EXTENSION = 0;
@@ -330,8 +378,6 @@ message FeedUpdate {
     // The feed configuration is invalid. This typically indicates a bug in Transiter because
     // the feed configuration is validated when the system is being installed.
     FAILED_INVALID_FEED_CONFIG = 6;
-    // The parser specified in the feed configuration is unknown.
-    FAILED_UNKNOWN_PARSER = 7;
     // Failed to parse the feed data.
     // This means the feed data was corrupted or otherwise invalid.
     FAILED_PARSE_ERROR = 8;
@@ -340,6 +386,8 @@ message FeedUpdate {
     FAILED_UPDATE_ERROR = 9;
     // An internal unspecified error occured.
     FAILED_INTERNAL_ERROR = 10;
+    // The feed has an unknown type.
+    FAILED_UNKNOWN_FEED_TYPE = 11;
   }
   // Status of the update.
   Status status = 7;
@@ -364,8 +412,7 @@ message GetSchedulerStatusRequest {}
 message GetSchedulerStatusReply {
   message Feed {
     string system_id = 1;
-    string feed_id = 2;
-    int64 period = 3;
+    FeedConfig feed_config = 7;
     int64 last_successful_update = 4;
     int64 last_finished_update = 5;
     bool currently_running = 6;

@@ -163,16 +163,23 @@ func ListStopTimesForUpdate(ctx context.Context, querier db.Querier, tripUIDToPk
 
 func Ping(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {
 	var err error
+	ticker := time.NewTicker(waitBetweenPings)
+	defer ticker.Stop()
 	for i := 0; i < numRetries; i++ {
 		err = pool.Ping(ctx)
 		if err == nil {
 			logger.InfoCtx(ctx, "database ping successful")
 			break
 		}
-		logger.WarnCtx(ctx, fmt.Sprintf("failed to ping the databse: %s", err))
-		if i != numRetries-1 {
-			logger.WarnCtx(ctx, fmt.Sprintf("will try to ping again in %s", waitBetweenPings))
-			time.Sleep(waitBetweenPings)
+		logger.WarnCtx(ctx, fmt.Sprintf("failed to ping the database: %s", err))
+		if i == numRetries-1 {
+			break
+		}
+		logger.WarnCtx(ctx, fmt.Sprintf("will try to ping again in %s", waitBetweenPings))
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
 		}
 	}
 	return err

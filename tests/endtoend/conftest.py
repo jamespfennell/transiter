@@ -135,7 +135,7 @@ feeds:
   - id: GtfsRealtimeFeed
     url: "{realtime_feed_url}"
     parser: GTFS_REALTIME
-    updateStrategy: PERIODIC
+    schedulingPolicy: PERIODIC
     updatePeriodS: {realtime_periodic_update_period}
 
 """

@@ -2,24 +2,14 @@ name: New York City Subway
 
 feeds:
   - id: gtfsstatic
-    requiredForInstall: true
-
+    parser: GTFS_STATIC
     url: "http://web.mta.info/developers/data/nyct/subway/google_transit.zip"
 
-    parser: GTFS_STATIC
-
   - id: subwaycsv
-    requiredForInstall: true
-    url: "https://atisdata.s3.amazonaws.com/Station/Stations.csv"
     parser: NYCT_SUBWAY_CSV
+    url: "https://atisdata.s3.amazonaws.com/Station/Stations.csv"
 
   - id: "alerts"
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
-
-    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
-    httpHeaders:
-      X-API-KEY: "{{ .Args.mta_api_key }}"
 
     parser: GTFS_REALTIME
     gtfsRealtimeOptions:
@@ -30,117 +20,105 @@ feeds:
         skipTimetabledNoServiceAlerts: true
         addNyctMetadata: true
 
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
   - id: "1234567"
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
+
+    parser: GTFS_REALTIME
+    gtfsRealtimeOptions:
+      extension: NYCT_TRIPS
+      nyctTripsOptions:
+        filterStaleUnassignedTrips: true
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
+  - id: ACE
+
     parser: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
         filterStaleUnassignedTrips: true
-
-  - id: ACE
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
+  - id: BDFM
+
     parser: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
         filterStaleUnassignedTrips: true
-
-  - id: BDFM
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
+  - id: G
+
     parser: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
         filterStaleUnassignedTrips: true
-
-  - id: G
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-g"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
+  - id: JZ
+
     parser: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
         filterStaleUnassignedTrips: true
-
-  - id: JZ
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-jz"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
+  - id: L
+
     parser: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
         filterStaleUnassignedTrips: true
-
-  - id: L
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-l"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
+  - id: NQRW
+
     parser: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
         filterStaleUnassignedTrips: true
-
-  - id: NQRW
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
 
+  - id: SIR
+
     parser: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
         filterStaleUnassignedTrips: true
-
-  - id: SIR
-    updateStrategy: PERIODIC
-    updatePeriodS: 5
 
     url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-si"
     httpHeaders:
       X-API-KEY: "{{ .Args.mta_api_key }}"
-
-    parser: GTFS_REALTIME
-    gtfsRealtimeOptions:
-      extension: NYCT_TRIPS
-      nyctTripsOptions:
-        filterStaleUnassignedTrips: true
 
 serviceMaps:
   - id: alltimes

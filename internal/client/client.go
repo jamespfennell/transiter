@@ -136,7 +136,7 @@ func (c *Client) SchedulerStatus(ctx context.Context) error {
 		return err
 	}
 	t := table.New()
-	t.AddRow("System ID", "Feed ID", "Period", "Last", "Last", "Currently")
+	t.AddRow("System ID", "Feed ID", "Scheduling policy", "Last", "Last", "Currently")
 	t.AddRow("", "", "", "finished", "successful", "running")
 	t.AddRow("", "", "", "update", "update", "")
 	t.AddSeperator()
@@ -150,10 +150,24 @@ func (c *Client) SchedulerStatus(ctx context.Context) error {
 			systemIDToPrint = feed.SystemId
 		}
 		lastSystemID = feed.SystemId
+		var schedulingPolicy string
+		switch feed.FeedConfig.GetSchedulingPolicy() {
+		case api.FeedConfig_DAILY:
+			schedulingPolicy = fmt.Sprintf(
+				"daily @ %s (%s)",
+				feed.FeedConfig.GetDailyUpdateTime(),
+				feed.FeedConfig.GetDailyUpdateTimezone())
+		case api.FeedConfig_PERIODIC:
+			schedulingPolicy = fmt.Sprintf(
+				"periodic %s",
+				(time.Millisecond * time.Duration(feed.FeedConfig.GetPeriodicUpdatePeriodMs())).String())
+		default:
+			schedulingPolicy = "unknown"
+		}
 		t.AddRow(
 			systemIDToPrint,
-			feed.FeedId,
-			(time.Millisecond * time.Duration(feed.Period)).String(),
+			feed.FeedConfig.GetId(),
+			schedulingPolicy,
 			convertTime(feed.LastFinishedUpdate),
 			convertTime(feed.LastSuccessfulUpdate),
 			fmt.Sprintf("%t", feed.CurrentlyRunning))

@@ -1,12 +1,4 @@
-// Package ticker implements a ticker for the scheduler.
-//
-// This ticker ticks at a given period like the standard library's ticker, has an additional features:
-//
-// (1) Before sending the first tick it waits a random duration (at most the period). This means that
-//
-//	ticks are smoothed out across different tickers started at the same time.
-//
-// (2) It has support for pausing the ticks.
+// Package ticker implements tickers for the scheduler.
 package ticker
 
 import (
@@ -16,77 +8,121 @@ import (
 	"github.com/benbjohnson/clock"
 )
 
-type Ticker struct {
-	C <-chan time.Time
-
-	tickC  chan time.Time
-	resetC chan time.Duration
-	pauseC chan time.Duration
-	stopC  chan struct{}
-
-	// Channel for notifying that an operation is complete. Operation here can be
-	// create ticker, reset, pause and stop. This is added to make unit tests deterministic.
-	opDoneC chan struct{}
+// Ticker describes the interface for tickers in this package.
+type Ticker interface {
+	// C returns the channel that ticks are sent on.
+	C() <-chan time.Time
+	// Stop stops the ticker.
+	Stop()
 }
 
-// New creates a new ticker based on the provided clock and with the provided initial period.
-func New(clock clock.Clock, period time.Duration) *Ticker {
-	tickC := make(chan time.Time)
-	t := Ticker{
-		C:       tickC,
-		tickC:   tickC,
-		resetC:  make(chan time.Duration),
-		pauseC:  make(chan time.Duration),
-		stopC:   make(chan struct{}),
-		opDoneC: make(chan struct{}),
+type periodicTicker struct {
+	c     chan time.Time
+	stopC chan chan struct{}
+}
+
+// NewPeriodic creates a new ticker based on the provided clock and with the provided period.
+//
+// This ticker ticks at a given period like the standard library's ticker, but has an additional feature.
+// Before sending the first tick it waits a random duration of time (but no more than the period).
+// This means that ticks are smoothed out across different tickers started at the same time.
+func NewPeriodic(clock clock.Clock, period time.Duration) Ticker {
+	t := periodicTicker{
+		c:     make(chan time.Time),
+		stopC: make(chan chan struct{}),
 	}
-	go t.run(clock, period)
-	<-t.opDoneC
+	initComplete := make(chan struct{})
+	go t.run(clock, period, initComplete)
+	<-initComplete
 	return &t
 }
 
-// Reset changes the period of the ticker.
-func (t *Ticker) Reset(period time.Duration) {
-	t.resetC <- period
-	<-t.opDoneC
-}
-
-// Pause pauses the ticker for the provided duration.
-func (t *Ticker) Pause(duration time.Duration) {
-	t.pauseC <- duration
-	<-t.opDoneC
+func (t *periodicTicker) C() <-chan time.Time {
+	return t.c
 }
 
 // Stop stops the ticker.
-func (t *Ticker) Stop() {
-	t.stopC <- struct{}{}
+func (t *periodicTicker) Stop() {
+	reply := make(chan struct{})
+	t.stopC <- reply
+	<-reply
 }
 
-func (t *Ticker) run(clock clock.Clock, period time.Duration) {
+func (t *periodicTicker) run(clock clock.Clock, period time.Duration, initComplete chan struct{}) {
 	rand := rand.New(rand.NewSource(clock.Now().UnixNano()))
 	tickerPeriod := time.Duration(float64(period) * rand.Float64())
-	c := clock.Ticker(tickerPeriod)
-	t.opDoneC <- struct{}{}
-	reset := func() {
-		c.Reset(tickerPeriod)
-	}
+	base := clock.Ticker(tickerPeriod)
+	initComplete <- struct{}{}
 	for {
 		select {
-		case tickTime := <-c.C:
-			t.tickC <- tickTime
+		case tickTime := <-base.C:
+			t.c <- tickTime
 			if tickerPeriod != period {
 				tickerPeriod = period
-				reset()
+				base.Reset(tickerPeriod)
 			}
-		case period = <-t.resetC:
-			tickerPeriod = time.Duration(float64(period) * rand.Float64())
-			reset()
-			t.opDoneC <- struct{}{}
-		case tickerPeriod = <-t.pauseC:
-			reset()
-			t.opDoneC <- struct{}{}
-		case <-t.stopC:
-			c.Stop()
+		case reply := <-t.stopC:
+			base.Stop()
+			reply <- struct{}{}
+			return
+		}
+	}
+}
+
+type dailyTicker struct {
+	c     chan time.Time
+	stopC chan chan struct{}
+}
+
+func NewDaily(clock clock.Clock, hour, minute int, tz *time.Location) Ticker {
+	t := dailyTicker{
+		c:     make(chan time.Time),
+		stopC: make(chan chan struct{}),
+	}
+	initComplete := make(chan struct{})
+	go t.run(clock, hour, minute, tz, initComplete)
+	<-initComplete
+	return &t
+}
+
+func (t *dailyTicker) C() <-chan time.Time {
+	return t.c
+}
+
+// Stop stops the ticker.
+func (t *dailyTicker) Stop() {
+	reply := make(chan struct{})
+	t.stopC <- reply
+	<-reply
+}
+
+func (t *dailyTicker) run(clock clock.Clock, hour, minute int, tz *time.Location, initComplete chan struct{}) {
+	now := clock.Now()
+	lowerBound := now.Add(-7 * 24 * time.Hour)
+	year := lowerBound.Year()
+	month := lowerBound.Month()
+	day := lowerBound.Day()
+	var firstTickTime time.Time
+	for {
+		firstTickTime = time.Date(year, month, day, hour, minute, 0, 0, tz)
+		if firstTickTime.After(now) {
+			break
+		}
+		day++
+	}
+	period := firstTickTime.Sub(now)
+	base := clock.Ticker(period)
+	initComplete <- struct{}{}
+	for {
+		select {
+		case tickTime := <-base.C:
+			t.c <- tickTime
+			day++
+			period = clock.Until(time.Date(year, month, day, hour, minute, 0, 0, tz))
+			base.Reset(period)
+		case reply := <-t.stopC:
+			base.Stop()
+			reply <- struct{}{}
 			return
 		}
 	}

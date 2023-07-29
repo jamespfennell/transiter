@@ -9,12 +9,14 @@ import (
 
 func (s *Service) GetSchedulerStatus(ctx context.Context, req *api.GetSchedulerStatusRequest) (*api.GetSchedulerStatusReply, error) {
 	reply := &api.GetSchedulerStatusReply{}
-	feeds := s.scheduler.Status()
+	feeds, err := s.scheduler.Status(ctx)
+	if err != nil {
+		return nil, err
+	}
 	for _, feed := range feeds {
 		reply.Feeds = append(reply.Feeds, &api.GetSchedulerStatusReply_Feed{
 			SystemId:             feed.SystemID,
-			FeedId:               feed.FeedID,
-			Period:               feed.Period.Milliseconds(),
+			FeedConfig:           feed.FeedConfig,
 			LastSuccessfulUpdate: convertTime(feed.LastSuccessfulUpdate),
 			LastFinishedUpdate:   convertTime(feed.LastFinishedUpdate),
 			CurrentlyRunning:     feed.CurrentlyRunning,

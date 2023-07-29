@@ -1,4 +1,4 @@
-// Package constants contains the canoncial string values for constants that are persisted in the database.
+// Package constants contains the canonical string values for constants that are persisted in the database.
 package constants
 
 const (
