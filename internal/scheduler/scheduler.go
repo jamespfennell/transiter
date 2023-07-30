@@ -133,9 +133,11 @@ func (s *DefaultScheduler) runWithClock(ctx context.Context, public api.PublicSe
 		systemResp, err := admin.GetSystemConfig(ctx, &api.GetSystemConfigRequest{SystemId: systemID})
 		if err != nil {
 			s, ok := status.FromError(err)
-			if !ok || s.Code() != codes.NotFound {
-				return fmt.Errorf("failed to get system config for system %s during scheduler reset: %w", systemID, err)
+			if ok && s.Code() == codes.NotFound {
+				stopScheduler(systemID)
+				return nil
 			}
+			return fmt.Errorf("failed to get system config for system %s during scheduler reset: %w", systemID, err)
 		}
 		agenciesResp, err := public.ListAgencies(ctx, &api.ListAgenciesRequest{SystemId: systemID})
 		if err != nil {

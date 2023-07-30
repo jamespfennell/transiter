@@ -265,8 +265,10 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 	}); err != nil {
 		return nil, err
 	}
-	logger.InfoCtx(ctx, "delete system")
-	s.scheduler.ResetSystem(ctx, req.SystemId)
+	if err := s.scheduler.ResetSystem(ctx, req.SystemId); err != nil {
+		return nil, err
+	}
+	logger.InfoCtx(ctx, "system deleted")
 	return &api.DeleteSystemReply{}, nil
 }
 
