@@ -124,7 +124,9 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 				return
 			}
 			logger.InfoCtx(ctx, "install or update finished")
-			s.scheduler.ResetSystem(ctx, req.SystemId)
+			if err := s.scheduler.ResetSystem(ctx, req.SystemId); err != nil {
+				logger.ErrorCtx(ctx, fmt.Sprintf("failed reset scheduler after install or update finished: %s", err))
+			}
 		}()
 	}
 	return &api.InstallOrUpdateSystemReply{}, nil
@@ -213,16 +215,19 @@ func upsertSystemMetadata(ctx context.Context, querier db.Querier, systemID stri
 			}
 			delete(feedIDToPk, newFeed.Id)
 		} else {
-			// TODO: is there a lint to detect not handling the error here?
-			querier.InsertFeed(ctx, db.InsertFeedParams{
+			if err := querier.InsertFeed(ctx, db.InsertFeedParams{
 				ID:       newFeed.Id,
 				SystemPk: system.Pk,
 				Config:   string(j),
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
 	for _, pk := range feedIDToPk {
-		querier.DeleteFeed(ctx, pk)
+		if err := querier.DeleteFeed(ctx, pk); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -277,12 +282,12 @@ func getRawSystemConfigFromURL(url string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
 	}
-	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
 	}
-	return body, nil
+	return body, resp.Body.Close()
 }
 
 func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[string]string) (*api.SystemConfig, error) {
