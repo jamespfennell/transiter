@@ -164,7 +164,9 @@ func NullDuration(d *time.Duration) pgtype.Int4 {
 
 func AlertText(s string) []*api.Alert_Text {
 	var in []gtfs.AlertText
-	json.Unmarshal([]byte(s), &in)
+	if err := json.Unmarshal([]byte(s), &in); err != nil {
+		in = nil
+	}
 	var out []*api.Alert_Text
 	for _, text := range in {
 		out = append(out, &api.Alert_Text{
@@ -226,7 +228,7 @@ func GtfsRealtimeExtension(in *api.GtfsRealtimeOptions) (extensions.Extension, e
 	case api.GtfsRealtimeOptions_NYCT_TRIPS:
 		inOpts := in.GetNyctTripsOptions()
 		return nycttrips.Extension(nycttrips.ExtensionOpts{
-			FilterStaleUnassignedTrips: inOpts.GetFilterStaleUnassignedTrips(),
+			FilterStaleUnassignedTrips:        inOpts.GetFilterStaleUnassignedTrips(),
 			PreserveMTrainPlatformsInBushwick: inOpts.GetPreserveMTrainPlatformsInBushwick(),
 		}), nil
 	case api.GtfsRealtimeOptions_NYCT_ALERTS:
