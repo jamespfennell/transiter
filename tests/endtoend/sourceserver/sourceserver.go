@@ -26,9 +26,11 @@ func main() {
 		if r.URL.Path == "/" {
 			switch r.Method {
 			case "GET":
-				io.WriteString(w, strings.Join(pathToContent.Keys(), "\n"))
+				_, err := io.WriteString(w, strings.Join(pathToContent.Keys(), "\n"))
+				panicIfErr(err)
 			case "POST":
-				io.WriteString(w, idGenerator.Generate())
+				_, err := io.WriteString(w, idGenerator.Generate())
+				panicIfErr(err)
 			default:
 				w.WriteHeader(http.StatusMethodNotAllowed)
 			}
@@ -40,7 +42,8 @@ func main() {
 					w.WriteHeader(http.StatusNotFound)
 					return
 				}
-				io.WriteString(w, content)
+				_, err := io.WriteString(w, content)
+				panicIfErr(err)
 			case "PUT":
 				b, err := io.ReadAll(r.Body)
 				if err != nil {
@@ -63,6 +66,12 @@ func main() {
 	log.Printf("Source server listening on %s\n", *addr)
 	err := http.ListenAndServe(*addr, nil)
 	log.Printf("Source server stopped: %s\n", err)
+}
+
+func panicIfErr(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 type concurrentMap struct {

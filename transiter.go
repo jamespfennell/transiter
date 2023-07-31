@@ -276,9 +276,11 @@ func clientAction(f func(ctx context.Context, client *client.Client) error) func
 		if err != nil {
 			return err
 		}
-		defer client.Close()
-		// TODO: parse the error to remove RPC references
-		// For example when a yaml config url provided to install is incorrect
-		return f(context.Background(), client)
+		if err := f(context.Background(), client); err != nil {
+			// TODO: parse the error to remove RPC references
+			// For example when a yaml config url provided to install is incorrect
+			return err
+		}
+		return client.Close()
 	}
 }
