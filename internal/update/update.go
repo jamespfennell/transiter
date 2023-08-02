@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	NyctSubwayCsv = "NYC_SUBWAY_CSV"
+	NyctSubwayCsv = "NYCT_SUBWAY_CSV"
 	GtfsRealtime  = "GTFS_REALTIME"
 	GtfsStatic    = "GTFS_STATIC"
 )
