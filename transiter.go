@@ -178,7 +178,7 @@ func main() {
 					&cli.BoolFlag{
 						Name:  "disable-public-metrics",
 						Usage: "Don't report Prometheus metrics on the public HTTP API's /metrics endpoint. Metrics are always reported on the admin HTTP API",
-						Value: true,
+						Value: false,
 					},
 					&cli.Int64Flag{
 						Name:  "max-connections",
