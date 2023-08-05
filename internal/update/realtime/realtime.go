@@ -618,7 +618,7 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 
 		// Note: We can insert a vehicle with no ID if it has an associated
 		// trip, per the GTFS-realtime spec. For now, we'll just skip them.
-		if vehicle.GetID().ID == nil || *vehicle.GetID().ID == "" {
+		if vehicle.GetID().ID == "" {
 			updateCtx.Logger.DebugCtx(ctx, "Vehicle has no ID or empty ID")
 			continue
 		}
@@ -638,7 +638,7 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 	var tripIDs []string
 	for i := range validVehicleEntities {
 		vehicle := &validVehicleEntities[i]
-		vehicleIDs = append(vehicleIDs, *vehicle.ID.ID)
+		vehicleIDs = append(vehicleIDs, vehicle.ID.ID)
 		if vehicle.StopID != nil {
 			stopIDs = append(stopIDs, *vehicle.StopID)
 		}
@@ -660,7 +660,7 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 	}
 
 	// This statement does not currently lock the rows in the stop table associated
-	// with vehicles being inserted/updated. However, chanegs to the stop table should
+	// with vehicles being inserted/updated. However, changes to the stop table should
 	// be rare, so conflicts should not be a major issue.
 	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDs)
 	if err != nil {
@@ -678,11 +678,11 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 	insertedVehicleIDs := map[string]bool{}
 	insertedTripIDs := map[string]bool{}
 	for _, vehicle := range validVehicleEntities {
-		if _, ok := insertedVehicleIDs[*vehicle.ID.ID]; ok {
-			updateCtx.Logger.DebugCtx(ctx, "Duplicate vehicle ID in same update", *vehicle.ID.ID)
+		if _, ok := insertedVehicleIDs[vehicle.ID.ID]; ok {
+			updateCtx.Logger.DebugCtx(ctx, "Duplicate vehicle ID in same update", vehicle.ID.ID)
 			continue
 		}
-		insertedVehicleIDs[*vehicle.ID.ID] = true
+		insertedVehicleIDs[vehicle.ID.ID] = true
 
 		if _, ok := insertedTripIDs[vehicle.GetTrip().ID.ID]; ok {
 			updateCtx.Logger.DebugCtx(ctx, "Duplicate trip ID in same update", vehicle.GetTrip().ID.ID)
@@ -694,7 +694,7 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 			// Check that the trip ID is not associated with multiple vehicle IDs.
 			if tripPk, ok := tripIDToPk[vehicle.GetTrip().ID.ID]; ok {
 				if vehicleIDForTripPk, ok := tripPkToVehicleID[tripPk]; ok {
-					if vehicleIDForTripPk != *vehicle.ID.ID {
+					if vehicleIDForTripPk != vehicle.ID.ID {
 						updateCtx.Logger.DebugCtx(ctx, "Trip ID has multiple vehicle IDs", vehicle.GetTrip().ID.ID)
 						continue
 					}
@@ -726,15 +726,15 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 			speed = vehicle.Position.Speed
 		}
 
-		if vehiclePk, vehicleExists := vehicleIDToPk[*vehicle.ID.ID]; vehicleExists {
+		if vehiclePk, vehicleExists := vehicleIDToPk[vehicle.ID.ID]; vehicleExists {
 			// Update
 			err := updateCtx.Querier.UpdateVehicle(ctx, db.UpdateVehicleParams{
 				Pk:                  vehiclePk,
 				TripPk:              convert.NullInt64(tripPkOrNil),
 				FeedPk:              updateCtx.FeedPk,
 				CurrentStopPk:       convert.NullInt64(stopPkOrNil),
-				Label:               convert.NullString(vehicle.ID.Label),
-				LicensePlate:        convert.NullString(vehicle.ID.LicencePlate),
+				Label:               convert.NullIfEmptyString(vehicle.ID.Label),
+				LicensePlate:        convert.NullIfEmptyString(vehicle.ID.LicencePlate),
 				CurrentStatus:       convert.NullVehicleCurrentStatus(vehicle.CurrentStatus),
 				Latitude:            convert.Gps(latitude),
 				Longitude:           convert.Gps(longitude),
@@ -754,13 +754,13 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 		} else {
 			// Insert
 			err := updateCtx.Querier.InsertVehicle(ctx, db.InsertVehicleParams{
-				ID:                  convert.NullString(vehicle.ID.ID),
+				ID:                  convert.NullIfEmptyString(vehicle.ID.ID),
 				SystemPk:            updateCtx.SystemPk,
 				TripPk:              convert.NullInt64(tripPkOrNil),
 				FeedPk:              updateCtx.FeedPk,
 				CurrentStopPk:       convert.NullInt64(stopPkOrNil),
-				Label:               convert.NullString(vehicle.ID.Label),
-				LicensePlate:        convert.NullString(vehicle.ID.LicencePlate),
+				Label:               convert.NullIfEmptyString(vehicle.ID.Label),
+				LicensePlate:        convert.NullIfEmptyString(vehicle.ID.LicencePlate),
 				CurrentStatus:       convert.NullVehicleCurrentStatus(vehicle.CurrentStatus),
 				Latitude:            convert.Gps(latitude),
 				Longitude:           convert.Gps(longitude),

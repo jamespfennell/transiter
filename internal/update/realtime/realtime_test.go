@@ -223,7 +223,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						IsEntityInMessage: true,
 					},
@@ -231,7 +231,7 @@ func TestUpdateVehicles(t *testing.T) {
 			},
 			wantVehicleGroups: [][]*Vehicle{
 				{
-					wantVehicle(ptr(vehicleID1), systemID, nil, nil, nil, nil, nil,
+					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 			},
@@ -256,7 +256,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 					},
 				},
@@ -271,9 +271,9 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID:           ptr(vehicleID1),
-							Label:        ptr("label"),
-							LicencePlate: ptr("licencePlate"),
+							ID:           vehicleID1,
+							Label:        "label",
+							LicencePlate: "licencePlate",
 						},
 						Position: &gtfs.Position{
 							Latitude:  ptr(float32(1.0)),
@@ -297,7 +297,7 @@ func TestUpdateVehicles(t *testing.T) {
 			wantVehicleGroups: [][]*Vehicle{
 				{
 					wantVehicle(
-						ptr(vehicleID1), systemID, nil,
+						vehicleID1, systemID, nil,
 						ptr("label"), ptr("licencePlate"),
 						ptr(float32(1.0)), ptr(float32(2.0)), ptr(float32(3.0)), ptr(4.0), ptr(float32(5.0)),
 						ptr(gtfs.CongestionLevel(1)),
@@ -316,7 +316,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -329,7 +329,7 @@ func TestUpdateVehicles(t *testing.T) {
 			},
 			wantVehicleGroups: [][]*Vehicle{
 				{
-					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+					wantVehicle(vehicleID1, systemID, ptr(tripID1),
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 			},
@@ -343,7 +343,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -354,7 +354,7 @@ func TestUpdateVehicles(t *testing.T) {
 					},
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID2),
+							ID: vehicleID2,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -367,7 +367,7 @@ func TestUpdateVehicles(t *testing.T) {
 			},
 			wantVehicleGroups: [][]*Vehicle{
 				{
-					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+					wantVehicle(vehicleID1, systemID, ptr(tripID1),
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 			},
@@ -381,7 +381,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -394,7 +394,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID2),
+							ID: vehicleID2,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -407,11 +407,11 @@ func TestUpdateVehicles(t *testing.T) {
 			},
 			wantVehicleGroups: [][]*Vehicle{
 				{
-					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+					wantVehicle(vehicleID1, systemID, ptr(tripID1),
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 				{
-					wantVehicle(ptr(vehicleID2), systemID, ptr(tripID1),
+					wantVehicle(vehicleID2, systemID, ptr(tripID1),
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 			},
@@ -425,7 +425,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -438,7 +438,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -449,7 +449,7 @@ func TestUpdateVehicles(t *testing.T) {
 					},
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID2),
+							ID: vehicleID2,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -462,13 +462,13 @@ func TestUpdateVehicles(t *testing.T) {
 			},
 			wantVehicleGroups: [][]*Vehicle{
 				{
-					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+					wantVehicle(vehicleID1, systemID, ptr(tripID1),
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 				{
 					// If an existing vehicle and incoming vehicle both have same trip ID, we
 					// keep the exsiting vehicle and ignore the incoming vehicle.
-					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+					wantVehicle(vehicleID1, systemID, ptr(tripID1),
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 			},
@@ -482,13 +482,13 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						IsEntityInMessage: true,
 					},
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						IsEntityInMessage: true,
 					},
@@ -496,7 +496,7 @@ func TestUpdateVehicles(t *testing.T) {
 			},
 			wantVehicleGroups: [][]*Vehicle{
 				{
-					wantVehicle(ptr(vehicleID1), systemID, nil,
+					wantVehicle(vehicleID1, systemID, nil,
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 			},
@@ -510,7 +510,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						Trip: &gtfs.Trip{
 							ID: gtfs.TripID{
@@ -525,7 +525,7 @@ func TestUpdateVehicles(t *testing.T) {
 			},
 			wantVehicleGroups: [][]*Vehicle{
 				{
-					wantVehicle(ptr(vehicleID1), systemID, ptr(tripID1),
+					wantVehicle(vehicleID1, systemID, ptr(tripID1),
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, ptr(int32(0)), nil, nil, ptr(stopID1), nil),
 				},
 			},
@@ -541,7 +541,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						Position: &gtfs.Position{
 							Latitude:  ptr(float32(1.0)),
@@ -556,7 +556,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						Position: &gtfs.Position{
 							Latitude:  ptr(float32(2.0)),
@@ -572,7 +572,7 @@ func TestUpdateVehicles(t *testing.T) {
 			wantVehicleGroups: [][]*Vehicle{
 				{
 					wantVehicle(
-						ptr(vehicleID1), systemID, nil,
+						vehicleID1, systemID, nil,
 						nil, nil,
 						ptr(float32(1.0)), ptr(float32(2.0)), ptr(float32(3.0)), ptr(4.0), ptr(float32(5.0)),
 						nil,
@@ -585,7 +585,7 @@ func TestUpdateVehicles(t *testing.T) {
 				},
 				{
 					wantVehicle(
-						ptr(vehicleID1), systemID, nil,
+						vehicleID1, systemID, nil,
 						nil, nil,
 						ptr(float32(2.0)), ptr(float32(3.0)), ptr(float32(4.0)), ptr(5.0), ptr(float32(6.0)),
 						nil,
@@ -604,13 +604,13 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID1),
+							ID: vehicleID1,
 						},
 						IsEntityInMessage: true,
 					},
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID2),
+							ID: vehicleID2,
 						},
 						IsEntityInMessage: true,
 					},
@@ -618,7 +618,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					{
 						ID: &gtfs.VehicleID{
-							ID: ptr(vehicleID2),
+							ID: vehicleID2,
 						},
 						IsEntityInMessage: true,
 					},
@@ -626,13 +626,13 @@ func TestUpdateVehicles(t *testing.T) {
 			},
 			wantVehicleGroups: [][]*Vehicle{
 				{
-					wantVehicle(ptr(vehicleID1), systemID, nil, nil, nil, nil, nil,
+					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-					wantVehicle(ptr(vehicleID2), systemID, nil, nil, nil, nil, nil,
+					wantVehicle(vehicleID2, systemID, nil, nil, nil, nil, nil,
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 				{
-					wantVehicle(ptr(vehicleID2), systemID, nil, nil, nil, nil, nil,
+					wantVehicle(vehicleID2, systemID, nil, nil, nil, nil, nil,
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 			},
@@ -829,7 +829,7 @@ func wantTrip(tripID, routeID string, directionID bool, sts []StopTime) *Trip {
 }
 
 func wantVehicle(
-	vehicleID *string,
+	vehicleID string,
 	systemID string,
 	tripID, label, licensePlate *string,
 	latitude, longitude, bearing *float32,
@@ -847,7 +847,7 @@ func wantVehicle(
 		TripID:        tripID,
 		CurrentStopID: currentStopID,
 		DBFields: db.GetVehicleRow{
-			ID:                  convert.NullString(vehicleID),
+			ID:                  convert.NullIfEmptyString(vehicleID),
 			Label:               convert.NullString(label),
 			LicensePlate:        convert.NullString(licensePlate),
 			CurrentStatus:       convert.NullVehicleCurrentStatus(currentStatus),

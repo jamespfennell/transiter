@@ -118,6 +118,13 @@ func NullString(t *string) pgtype.Text {
 	return pgtype.Text{Valid: true, String: *t}
 }
 
+func NullIfEmptyString(t string) pgtype.Text {
+	if t == "" {
+		return pgtype.Text{}
+	}
+	return pgtype.Text{Valid: true, String: t}
+}
+
 func NullBool(t *bool) pgtype.Bool {
 	if t == nil {
 		return pgtype.Bool{}
