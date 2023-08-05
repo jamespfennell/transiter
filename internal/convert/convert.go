@@ -41,6 +41,20 @@ func SQLNullString(t pgtype.Text) *string {
 	return &t.String
 }
 
+func SQLNullFloat4(t pgtype.Float4) *float32 {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Float32
+}
+
+func SQLNullFloat8(t pgtype.Float8) *float64 {
+	if !t.Valid {
+		return nil
+	}
+	return &t.Float64
+}
+
 func SQLNullFloat64(t sql.NullFloat64) *float64 {
 	if !t.Valid {
 		return nil
@@ -69,11 +83,25 @@ func NullInt32(t *int32) pgtype.Int4 {
 	return pgtype.Int4{Valid: true, Int32: *t}
 }
 
+func NullUInt32ToSigned(t *uint32) pgtype.Int4 {
+	if t == nil {
+		return pgtype.Int4{}
+	}
+	return pgtype.Int4{Valid: true, Int32: int32(*t)}
+}
+
 func NullInt64(t *int64) pgtype.Int8 {
 	if t == nil {
 		return pgtype.Int8{}
 	}
 	return pgtype.Int8{Valid: true, Int64: *t}
+}
+
+func NullFloat32(t *float32) pgtype.Float4 {
+	if t == nil {
+		return pgtype.Float4{}
+	}
+	return pgtype.Float4{Valid: true, Float32: *t}
 }
 
 func NullFloat64(t *float64) pgtype.Float8 {
@@ -104,7 +132,7 @@ func SQLNullBool(t pgtype.Bool) *bool {
 	return &t.Bool
 }
 
-func Gps(f *float64) pgtype.Numeric {
+func Gps[T float32 | float64](f *T) pgtype.Numeric {
 	if f == nil {
 		return pgtype.Numeric{}
 	}
@@ -216,6 +244,33 @@ func RouteType(t string) api.Route_Type {
 	return api.Route_UNKNOWN
 }
 
+func NullApiCurrentStatus(t pgtype.Text) *api.Vehicle_CurrentStatus {
+	if !t.Valid {
+		return nil
+	}
+	if i, ok := api.Vehicle_CurrentStatus_value[t.String]; ok {
+		return api.Vehicle_CurrentStatus(i).Enum()
+	}
+	return nil
+}
+
+func ApiCongestionLevel(t string) api.Vehicle_CongestionLevel {
+	if i, ok := api.Vehicle_CongestionLevel_value[t]; ok {
+		return api.Vehicle_CongestionLevel(i)
+	}
+	return api.Vehicle_UNKNOWN_CONGESTION_LEVEL
+}
+
+func NullApiOccupancyStatus(t pgtype.Text) *api.Vehicle_OccupancyStatus {
+	if !t.Valid {
+		return nil
+	}
+	if i, ok := api.Vehicle_OccupancyStatus_value[t.String]; ok {
+		return api.Vehicle_OccupancyStatus(i).Enum()
+	}
+	return nil
+}
+
 func GtfsRealtimeExtension(in *api.GtfsRealtimeOptions) (extensions.Extension, error) {
 	if in == nil {
 		in = &api.GtfsRealtimeOptions{}
@@ -226,7 +281,7 @@ func GtfsRealtimeExtension(in *api.GtfsRealtimeOptions) (extensions.Extension, e
 	case api.GtfsRealtimeOptions_NYCT_TRIPS:
 		inOpts := in.GetNyctTripsOptions()
 		return nycttrips.Extension(nycttrips.ExtensionOpts{
-			FilterStaleUnassignedTrips: inOpts.GetFilterStaleUnassignedTrips(),
+			FilterStaleUnassignedTrips:        inOpts.GetFilterStaleUnassignedTrips(),
 			PreserveMTrainPlatformsInBushwick: inOpts.GetPreserveMTrainPlatformsInBushwick(),
 		}), nil
 	case api.GtfsRealtimeOptions_NYCT_ALERTS:
@@ -252,5 +307,38 @@ func GtfsRealtimeExtension(in *api.GtfsRealtimeOptions) (extensions.Extension, e
 		return nyctbustrips.Extension(), nil
 	default:
 		return nil, fmt.Errorf("unknown extension %s", in.Extension)
+	}
+}
+
+func NullVehicleCurrentStatus(currentStatus *gtfs.CurrentStatus) pgtype.Text {
+	if currentStatus == nil {
+		return pgtype.Text{}
+	}
+
+	return pgtype.Text{
+		Valid:  true,
+		String: currentStatus.String(),
+	}
+}
+
+func NullCongestionLevel(congestionLevel *gtfs.CongestionLevel) string {
+	if congestionLevel == nil {
+		// UNKNOWN_CONGESTION_LEVEL
+		return CongestionLevel(0)
+	}
+	return CongestionLevel(*congestionLevel)
+}
+
+func CongestionLevel(congestionLevel gtfs.CongestionLevel) string {
+	return congestionLevel.String()
+}
+
+func NullOccupancyStatus(occupancyStatus *gtfs.OccupancyStatus) pgtype.Text {
+	if occupancyStatus == nil {
+		return pgtype.Text{}
+	}
+	return pgtype.Text{
+		Valid:  true,
+		String: occupancyStatus.String(),
 	}
 }

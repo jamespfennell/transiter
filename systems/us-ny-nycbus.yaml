@@ -21,15 +21,23 @@ feeds:
     parser: GTFS_STATIC
     url: "http://web.mta.info/developers/data/nyct/bus/google_transit_staten_island.zip"
 
+  - id: gtfsstatic_bus_company
+    parser: GTFS_STATIC
+    url: "http://web.mta.info/developers/data/busco/google_transit.zip"
+
   - id: trips
-
     parser: GTFS_REALTIME
-    gtfsRealtimeOptions:
-        extension: NYCT_BUS_TRIPS
-        reassignStopSequences: true
-
     url: "https://gtfsrt.prod.obanyc.com/tripUpdates?key={{ .Args.mta_bus_api_key }}"
+    gtfsRealtimeOptions:
+      reassignStopSequences: true
+      onlyProcessFullEntities: true
 
   - id: "alerts"
     parser: GTFS_REALTIME
     url: "http://gtfsrt.prod.obanyc.com/alerts?key={{ .Args.mta_bus_api_key }}"
+
+  - id: "vehicles"
+    parser: GTFS_REALTIME
+    url: "http://gtfsrt.prod.obanyc.com/vehiclePositions?key={{ .Args.mta_bus_api_key }}"
+    gtfsRealtimeOptions:
+      onlyProcessFullEntities: true

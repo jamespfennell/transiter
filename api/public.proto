@@ -246,6 +246,28 @@ service Public {
     };
   }
 
+  // List vehicles
+  //
+  // `GET /systems/<system_id>/vehicles`
+  //
+  // List all feeds for a system.
+  rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesReply) {
+    option (google.api.http) = {
+      get: "/systems/{system_id}/vehicles"
+    };
+  }
+
+  // Get vehicle
+  //
+  // `GET /systems/<system_id>/vehicles/<vehicle_id>`
+  //
+  // Get a vehicle in a system by its ID.
+  rpc GetVehicle(GetVehicleRequest) returns (Vehicle) {
+    option (google.api.http) = {
+      get: "/systems/{system_id}/vehicles/{vehicle_id}"
+    };
+  }
+
 }
 
 // Request payload for the entrypoint endpoint.
@@ -566,6 +588,67 @@ message ListTransfersReply {
   repeated Transfer transfers = 1;
 }
 
+message ListVehiclesRequest {
+  // ID of the system for which to list vehicles.
+  string system_id = 1;
+
+  enum SearchMode {
+    // Return a paginated list of vehicles sorted by vehicle ID.
+    ID = 0;
+    // Return all vehicles within max_distance of (latitude, longitude), sorted by the distance.
+    DISTANCE = 1;
+  }
+  // The type of search to perform when listing vehicles.
+  optional SearchMode search_mode = 2;
+
+  // If true, only return vehicles whose IDs are specified in the repeated `id` field.
+  // Only supported when the search mode is ID.
+  bool only_return_specified_ids = 3;
+
+  // IDs to return if `only_return_specified_ids` is set to true. It is an error to
+  // populate this field if `only_return_specified_ids` is false.
+  // Only supported when the search mode is ID.
+  repeated string id = 4;
+
+  // ID of the first vehicle to return. If not set, the vehicle with the smallest ID will be first.
+  // Only supported when the search mode is ID.
+  optional string first_id = 5;
+
+  // Maximum number of vehicles to return.
+  // This is supported in all search modes.
+  // For performance reasons, if it is larger than 100 it is rounded down to 100.
+  optional int32 limit = 6;
+
+  // The maximum distance in kilometers that a vehicle must be from
+  // latitude, longitude to be listed when using DISTANCE search mode.
+  optional double max_distance = 7;
+
+  // The latitude relative to the returned vehicles when using DISTANCE search mode.
+  optional double latitude = 8;
+
+  // The longitude relative to the returned vehicles when using DISTANCE search mode.
+  optional double longitude = 9;
+}
+
+message ListVehiclesReply {
+  // List of vehicles.
+  repeated Vehicle vehicles = 1;
+
+  // ID of the next vehicle to return, if there are more results.
+  optional string next_id = 2;
+}
+
+message GetVehicleRequest {
+    // ID of the system the vehicle is in.
+    //
+    // This is a URL parameter in the HTTP API.
+    string system_id = 1;
+    // ID of the vehicle.
+    //
+    // This is a URL parameter in the HTTP API.
+    string vehicle_id = 2;
+}
+
 // The System resource.
 message System {
   // ID of the system as specified in the install request.
@@ -794,10 +877,84 @@ message Trip {
   }
 }
 
+// The Vehicle resource.
+//
+// This resource corresponds to the [vehicle position type in the GTFS static
+// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-vehicleposition).
 message Vehicle {
+  // A unique ID for the vehicle.
+  string id = 1;
+
+  // A reference to the vehicle's trip.
+  optional Trip.Reference trip = 2;
+
+  // The vehicle's current latitude.
+  optional double latitude = 3;
+
+  // The vehicle's current longitude.
+  optional double longitude = 4;
+
+  // The vehicle's current bearing.
+  optional float bearing = 5;
+
+  // The vehicle's current odometer reading.
+  optional double odometer = 6;
+
+  // The vehicle's current speed.
+  optional float speed = 7;
+
+  // The stop sequence index of the vehicle's current stop.
+  optional int32 stop_sequence = 8;
+
+  // A reference to the vehicle's current stop.
+  optional Stop.Reference stop = 9;
+
+  // Corresponds to [VehicleStopStatus](https://developers.google.com/
+  // transit/gtfs-realtime/reference#enum-vehiclestopstatus).
+  enum CurrentStatus {
+    INCOMING_AT = 0;
+    STOPPED_AT = 1;
+    IN_TRANSIT_TO = 2;
+  }
+  // The vehicle's current status.
+  optional CurrentStatus current_status = 10;
+
+  // The timestamp of the last update to the vehicle's position.
+  optional int64 updated_at = 11;
+
+  // Corresponds to [CongestionLevel](https://developers.google.com/
+  // transit/gtfs-realtime/reference#enum-congestionlevel).
+  enum CongestionLevel {
+    UNKNOWN_CONGESTION_LEVEL = 0;
+    RUNNING_SMOOTHLY = 1;
+    STOP_AND_GO = 2;
+    CONGESTION = 3;
+    SEVERE_CONGESTION = 4;
+  }
+  // The vehicle's current congestion level.
+  CongestionLevel congestion_level = 12;
+
+  // Corresponds to [OccupancyStatus](https://developers.google.com/
+  // transit/gtfs-realtime/reference#enum-occupancystatus).
+  enum OccupancyStatus {
+    EMPTY = 0;
+    MANY_SEATS_AVAILABLE = 1;
+    FEW_SEATS_AVAILABLE = 2;
+    STANDING_ROOM_ONLY = 3;
+    CRUSHED_STANDING_ROOM_ONLY = 4;
+    FULL = 5;
+    NOT_ACCEPTING_PASSENGERS = 6;
+  }
+  // The vehicle's current occupancy status.
+  optional OccupancyStatus occupancy_status = 13;
+
+  // The percentage of seats occupied.
+  optional int32 occupancy_percentage = 14;
+
   // Reference is the reference type for the vehicle resource.
   message Reference {
     string id = 1;
+    Resource resource = 2;
   }
 }
 

@@ -13,7 +13,7 @@ import (
 
 const deleteStaleTrips = `-- name: DeleteStaleTrips :many
 DELETE FROM trip
-WHERE 
+WHERE
     trip.feed_pk = $1
     AND NOT trip.pk = ANY($2::bigint[])
 RETURNING trip.route_pk
@@ -96,7 +96,14 @@ func (q *Queries) GetDestinationsForTrips(ctx context.Context, tripPks []int64) 
 }
 
 const getTrip = `-- name: GetTrip :one
-SELECT pk, id, route_pk, direction_id, started_at, gtfs_hash, feed_pk FROM trip
+SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, trip.feed_pk,
+       vehicle.id as vehicle_id,
+       vehicle.latitude as vehicle_latitude,
+       vehicle.longitude as vehicle_longitude,
+       vehicle.bearing as vehicle_bearing,
+       vehicle.updated_at as vehicle_updated_at
+FROM trip
+LEFT JOIN vehicle ON trip.pk = vehicle.trip_pk
 WHERE trip.id = $1
     AND trip.route_pk = $2
 `
@@ -106,9 +113,24 @@ type GetTripParams struct {
 	RoutePk int64
 }
 
-func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (Trip, error) {
+type GetTripRow struct {
+	Pk               int64
+	ID               string
+	RoutePk          int64
+	DirectionID      pgtype.Bool
+	StartedAt        pgtype.Timestamptz
+	GtfsHash         string
+	FeedPk           int64
+	VehicleID        pgtype.Text
+	VehicleLatitude  pgtype.Numeric
+	VehicleLongitude pgtype.Numeric
+	VehicleBearing   pgtype.Float4
+	VehicleUpdatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error) {
 	row := q.db.QueryRow(ctx, getTrip, arg.TripID, arg.RoutePk)
-	var i Trip
+	var i GetTripRow
 	err := row.Scan(
 		&i.Pk,
 		&i.ID,
@@ -117,6 +139,11 @@ func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (Trip, error) 
 		&i.StartedAt,
 		&i.GtfsHash,
 		&i.FeedPk,
+		&i.VehicleID,
+		&i.VehicleLatitude,
+		&i.VehicleLongitude,
+		&i.VehicleBearing,
+		&i.VehicleUpdatedAt,
 	)
 	return i, err
 }
@@ -229,6 +256,44 @@ func (q *Queries) ListStopsTimesForTrip(ctx context.Context, tripPk int64) ([]Li
 	return items, nil
 }
 
+const listTripPksInSystem = `-- name: ListTripPksInSystem :many
+SELECT trip.id, trip.pk
+FROM trip
+    INNER JOIN feed ON trip.feed_pk = feed.pk
+WHERE trip.id = ANY($1::text[])
+    AND feed.system_pk = $2
+`
+
+type ListTripPksInSystemParams struct {
+	TripIds  []string
+	SystemPk int64
+}
+
+type ListTripPksInSystemRow struct {
+	ID string
+	Pk int64
+}
+
+func (q *Queries) ListTripPksInSystem(ctx context.Context, arg ListTripPksInSystemParams) ([]ListTripPksInSystemRow, error) {
+	rows, err := q.db.Query(ctx, listTripPksInSystem, arg.TripIds, arg.SystemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTripPksInSystemRow
+	for rows.Next() {
+		var i ListTripPksInSystemRow
+		if err := rows.Scan(&i.ID, &i.Pk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTripStopTimesForUpdate = `-- name: ListTripStopTimesForUpdate :many
 SELECT pk, trip_pk, stop_pk, stop_sequence, past FROM trip_stop_time
 WHERE trip_pk = ANY($1::bigint[])
@@ -270,20 +335,42 @@ func (q *Queries) ListTripStopTimesForUpdate(ctx context.Context, tripPks []int6
 }
 
 const listTrips = `-- name: ListTrips :many
-SELECT pk, id, route_pk, direction_id, started_at, gtfs_hash, feed_pk FROM trip
+SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, trip.feed_pk,
+       vehicle.id as vehicle_id,
+       vehicle.latitude as vehicle_latitude,
+       vehicle.longitude as vehicle_longitude,
+       vehicle.bearing as vehicle_bearing,
+       vehicle.updated_at as vehicle_updated_at
+FROM trip
+LEFT JOIN vehicle ON trip.pk = vehicle.trip_pk
 WHERE route_pk = ANY($1::bigint[])
 ORDER BY route_pk, id
 `
 
-func (q *Queries) ListTrips(ctx context.Context, routePks []int64) ([]Trip, error) {
+type ListTripsRow struct {
+	Pk               int64
+	ID               string
+	RoutePk          int64
+	DirectionID      pgtype.Bool
+	StartedAt        pgtype.Timestamptz
+	GtfsHash         string
+	FeedPk           int64
+	VehicleID        pgtype.Text
+	VehicleLatitude  pgtype.Numeric
+	VehicleLongitude pgtype.Numeric
+	VehicleBearing   pgtype.Float4
+	VehicleUpdatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) ListTrips(ctx context.Context, routePks []int64) ([]ListTripsRow, error) {
 	rows, err := q.db.Query(ctx, listTrips, routePks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Trip
+	var items []ListTripsRow
 	for rows.Next() {
-		var i Trip
+		var i ListTripsRow
 		if err := rows.Scan(
 			&i.Pk,
 			&i.ID,
@@ -292,7 +379,51 @@ func (q *Queries) ListTrips(ctx context.Context, routePks []int64) ([]Trip, erro
 			&i.StartedAt,
 			&i.GtfsHash,
 			&i.FeedPk,
+			&i.VehicleID,
+			&i.VehicleLatitude,
+			&i.VehicleLongitude,
+			&i.VehicleBearing,
+			&i.VehicleUpdatedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mapTripIDToPkInSystem = `-- name: MapTripIDToPkInSystem :many
+SELECT trip.id, trip.pk
+FROM trip
+    INNER JOIN feed ON trip.feed_pk = feed.pk
+WHERE trip.id = ANY($1::text[])
+    AND feed.system_pk = $2
+FOR UPDATE
+`
+
+type MapTripIDToPkInSystemParams struct {
+	TripIds  []string
+	SystemPk int64
+}
+
+type MapTripIDToPkInSystemRow struct {
+	ID string
+	Pk int64
+}
+
+func (q *Queries) MapTripIDToPkInSystem(ctx context.Context, arg MapTripIDToPkInSystemParams) ([]MapTripIDToPkInSystemRow, error) {
+	rows, err := q.db.Query(ctx, mapTripIDToPkInSystem, arg.TripIds, arg.SystemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapTripIDToPkInSystemRow
+	for rows.Next() {
+		var i MapTripIDToPkInSystemRow
+		if err := rows.Scan(&i.ID, &i.Pk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

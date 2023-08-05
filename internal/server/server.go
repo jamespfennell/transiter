@@ -29,18 +29,19 @@ import (
 )
 
 type RunArgs struct {
-	PublicHTTPAddr      string
-	PublicGrpcAddr      string
-	AdminHTTPAddr       string
-	AdminGrpcAddr       string
-	PostgresConnStr     string
-	MaxConnections      int32
-	EnableScheduler     bool
-	EnablePublicMetrics bool
-	EnablePprof         bool
-	ReadOnly            bool
-	MaxStopsPerRequest  int32
-	LogLevel            slog.Level
+	PublicHTTPAddr        string
+	PublicGrpcAddr        string
+	AdminHTTPAddr         string
+	AdminGrpcAddr         string
+	PostgresConnStr       string
+	MaxConnections        int32
+	EnableScheduler       bool
+	EnablePublicMetrics   bool
+	EnablePprof           bool
+	ReadOnly              bool
+	MaxStopsPerRequest    int32
+	MaxVehiclesPerRequest int32
+	LogLevel              slog.Level
 }
 
 func Run(ctx context.Context, args RunArgs) error {

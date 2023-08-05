@@ -68,7 +68,7 @@ func (b *MarkTripStopTimesPastBatchResults) Close() error {
 }
 
 const updateTrip = `-- name: UpdateTrip :batchexec
-UPDATE trip SET 
+UPDATE trip SET
     feed_pk = $1,
     direction_id = $2,
     started_at = $3,

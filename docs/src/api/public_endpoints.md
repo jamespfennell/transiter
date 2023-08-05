@@ -623,6 +623,95 @@ Request payload for the get feed endpoint.
 
 ### Response type: [Feed](public_resources.md#Feed)
 
+## List vehicles
+
+`GET /systems/<system_id>/vehicles`
+
+List all feeds for a system.
+
+### Request type: ListVehiclesRequest
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| system_id | string | ID of the system for which to list vehicles.
+| search_mode | [ListVehiclesRequest.SearchMode](public_resources.md#ListVehiclesRequest.SearchMode) | The type of search to perform when listing vehicles.
+| only_return_specified_ids | bool | If true, only return vehicles whose IDs are specified in the repeated `id` field. Only supported when the search mode is ID.
+| id | string | IDs to return if `only_return_specified_ids` is set to true. It is an error to populate this field if `only_return_specified_ids` is false. Only supported when the search mode is ID.
+| first_id | string | ID of the first vehicle to return. If not set, the vehicle with the smallest ID will be first. Only supported when the search mode is ID.
+| limit | int32 | Maximum number of vehicles to return. This is supported in all search modes. For performance reasons, if it is larger than 100 it is rounded down to 100.
+| max_distance | double | The maximum distance in kilometers that a vehicle must be from latitude, longitude to be listed when using DISTANCE search mode.
+| latitude | double | The latitude relative to the returned vehicles when using DISTANCE search mode.
+| longitude | double | The longitude relative to the returned vehicles when using DISTANCE search mode.
+
+
+
+
+
+
+#### ListVehiclesRequest.SearchMode
+
+
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ID | 0 | Return a paginated list of vehicles sorted by vehicle ID. |
+| DISTANCE | 1 | Return all vehicles within max_distance of (latitude, longitude), sorted by the distance. |
+
+
+
+
+
+### Response type: ListVehiclesReply
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| vehicles | [Vehicle](public_resources.md#Vehicle) | List of vehicles.
+| next_id | string | ID of the next vehicle to return, if there are more results.
+
+
+
+
+
+
+
+
+## Get vehicle
+
+`GET /systems/<system_id>/vehicles/<vehicle_id>`
+
+Get a vehicle in a system by its ID.
+
+### Request type: GetVehicleRequest
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| system_id | string | ID of the system the vehicle is in.<br /><br />This is a URL parameter in the HTTP API.
+| vehicle_id | string | ID of the vehicle.<br /><br />This is a URL parameter in the HTTP API.
+
+
+
+
+
+
+
+
+### Response type: [Vehicle](public_resources.md#Vehicle)
+
 
 
 

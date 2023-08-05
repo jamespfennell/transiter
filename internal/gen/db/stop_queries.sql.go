@@ -13,7 +13,7 @@ import (
 
 const deleteStaleStops = `-- name: DeleteStaleStops :exec
 DELETE FROM stop
-WHERE 
+WHERE
     stop.feed_pk = $1
     AND NOT stop.pk = ANY($2::bigint[])
 `
@@ -219,7 +219,7 @@ func (q *Queries) ListStopsByPk(ctx context.Context, stopPks []int64) ([]ListSto
 
 const listStops_Geographic = `-- name: ListStops_Geographic :many
 WITH distance AS (
-  SELECT 
+  SELECT
   pk stop_pk,
   (6371 * acos(cos(radians(latitude)) * cos(radians($3::numeric)) * cos(radians($4::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians($3::numeric)))) val
   FROM stop
@@ -284,7 +284,13 @@ func (q *Queries) ListStops_Geographic(ctx context.Context, arg ListStops_Geogra
 }
 
 const listTripStopTimesByStops = `-- name: ListTripStopTimesByStops :many
-SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past, trip.pk, trip.id, trip.route_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, trip.feed_pk, vehicle.id vehicle_id FROM trip_stop_time
+SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_stop_time.arrival_time, trip_stop_time.arrival_delay, trip_stop_time.arrival_uncertainty, trip_stop_time.departure_time, trip_stop_time.departure_delay, trip_stop_time.departure_uncertainty, trip_stop_time.stop_sequence, trip_stop_time.track, trip_stop_time.headsign, trip_stop_time.past,
+       trip.pk, trip.id, trip.route_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, trip.feed_pk, vehicle.id vehicle_id,
+       vehicle.latitude vehicle_latitude,
+       vehicle.longitude vehicle_longitude,
+       vehicle.bearing vehicle_bearing,
+       vehicle.updated_at vehicle_updated_at
+    FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
@@ -314,6 +320,10 @@ type ListTripStopTimesByStopsRow struct {
 	GtfsHash             string
 	FeedPk               int64
 	VehicleID            pgtype.Text
+	VehicleLatitude      pgtype.Numeric
+	VehicleLongitude     pgtype.Numeric
+	VehicleBearing       pgtype.Float4
+	VehicleUpdatedAt     pgtype.Timestamptz
 }
 
 func (q *Queries) ListTripStopTimesByStops(ctx context.Context, stopPks []int64) ([]ListTripStopTimesByStopsRow, error) {
@@ -347,6 +357,10 @@ func (q *Queries) ListTripStopTimesByStops(ctx context.Context, stopPks []int64)
 			&i.GtfsHash,
 			&i.FeedPk,
 			&i.VehicleID,
+			&i.VehicleLatitude,
+			&i.VehicleLongitude,
+			&i.VehicleBearing,
+			&i.VehicleUpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -359,29 +373,29 @@ func (q *Queries) ListTripStopTimesByStops(ctx context.Context, stopPks []int64)
 }
 
 const mapStopIDAndPkToStationPk = `-- name: MapStopIDAndPkToStationPk :many
-WITH RECURSIVE 
+WITH RECURSIVE
 ancestor AS (
-	SELECT 
-    id stop_id, 
+    SELECT
+    id stop_id,
     pk stop_pk,
-    pk station_pk, 
+    pk station_pk,
     parent_stop_pk,
-    (type = 'STATION') is_station 
+    (type = 'STATION') is_station
     FROM stop
         WHERE stop.system_pk = $1
         AND (
             NOT $2::bool
             OR stop.pk = ANY($3::bigint[])
         )
-	UNION
-	SELECT
+    UNION
+    SELECT
     child.stop_id stop_id,
     child.stop_pk stop_pk,
-    parent.pk station_pk, 
-    parent.parent_stop_pk, 
-    (parent.type = 'STATION') is_station 
-		FROM stop parent
-		INNER JOIN ancestor child 
+    parent.pk station_pk,
+    parent.parent_stop_pk,
+    (parent.type = 'STATION') is_station
+        FROM stop parent
+        INNER JOIN ancestor child
     ON child.parent_stop_pk = parent.pk
     AND NOT child.is_station
 )
@@ -497,17 +511,17 @@ func (q *Queries) MapStopPkToChildPks(ctx context.Context, stopPks []int64) ([]M
 
 const mapStopPkToDescendentPks = `-- name: MapStopPkToDescendentPks :many
 WITH RECURSIVE descendent AS (
-	SELECT
+    SELECT
     stop.pk root_stop_pk,
     stop.pk descendent_stop_pk
     FROM stop
         WHERE stop.pk = ANY($1::bigint[])
-	UNION
-	SELECT
+    UNION
+    SELECT
     descendent.root_stop_pk root_stop_pk,
     child.pk descendent_stop_pk
-		FROM stop child
-		INNER JOIN descendent
+        FROM stop child
+        INNER JOIN descendent
     ON child.parent_stop_pk = descendent.descendent_stop_pk
 )
 SELECT root_stop_pk, descendent_stop_pk FROM descendent
@@ -548,8 +562,8 @@ UPDATE stop SET
     code = $6,
     description = $7,
     platform_code = $8,
-    timezone = $9, 
-    type = $10, 
+    timezone = $9,
+    type = $10,
     wheelchair_boarding = $11,
     zone_id = $12,
     parent_stop_pk = NULL

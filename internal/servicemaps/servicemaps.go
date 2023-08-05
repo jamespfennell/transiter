@@ -363,7 +363,7 @@ func UpdateRealtimeMaps(ctx context.Context, querier db.Querier, logger *slog.Lo
 		edges := buildRealtimeMapEdges(tripStopPks, stopPkToStationPk)
 		mapAsStopPks, err := buildMap(edges)
 		if err != nil {
-			logger.ErrorCtx(ctx, fmt.Sprintf("error building realtime map: %s", err))
+			logger.DebugCtx(ctx, fmt.Sprintf("error building realtime map: %s", err))
 			continue
 		}
 		for _, smc := range configs[api.ServiceMapConfig_REALTIME] {

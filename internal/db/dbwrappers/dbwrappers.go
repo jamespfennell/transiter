@@ -124,17 +124,39 @@ func MapRouteIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk in
 	return result, nil
 }
 
+func MapTripIDToPkInSystem(ctx context.Context, querier db.Querier, systemPk int64, tripIDs ...[]string) (map[string]int64, error) {
+	result := map[string]int64{}
+	var queryTripIDs []string
+	if len(tripIDs) > 0 {
+		queryTripIDs = tripIDs[0]
+		if len(queryTripIDs) == 0 {
+			return result, nil
+		}
+	}
+	rows, err := querier.MapTripIDToPkInSystem(ctx, db.MapTripIDToPkInSystemParams{
+		SystemPk: systemPk,
+		TripIds:  queryTripIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		result[row.ID] = row.Pk
+	}
+	return result, nil
+}
+
 type TripUID struct {
 	ID      string
 	RoutePk int64
 }
 
-func ListTripsForUpdate(ctx context.Context, querier db.Querier, routePks []int64) (map[TripUID]db.Trip, error) {
+func ListTripsForUpdate(ctx context.Context, querier db.Querier, systemPk int64, routePks []int64) (map[TripUID]db.ListTripsRow, error) {
 	rows, err := querier.ListTrips(ctx, routePks)
 	if err != nil {
 		return nil, err
 	}
-	m := map[TripUID]db.Trip{}
+	m := map[TripUID]db.ListTripsRow{}
 	for _, row := range rows {
 		uid := TripUID{RoutePk: row.RoutePk, ID: row.ID}
 		m[uid] = row
@@ -159,6 +181,30 @@ func ListStopTimesForUpdate(ctx context.Context, querier db.Querier, tripUIDToPk
 		m[uid] = append(m[uid], row)
 	}
 	return m, nil
+}
+
+func MapVehicleIDToPkandTripPkToVehicleID(
+	ctx context.Context,
+	querier db.Querier,
+	systemPk int64,
+	vehicleIDs []string) (map[string]int64, map[int64]string, error) {
+	rows, err := querier.ListVehicleUniqueColumns(ctx, db.ListVehicleUniqueColumnsParams{
+		SystemPk:   systemPk,
+		VehicleIds: vehicleIDs,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	vehicleIDToPk := map[string]int64{}
+	tripPkToVehicleID := map[int64]string{}
+	for _, row := range rows {
+		vehicleIDToPk[row.ID.String] = row.Pk
+		if row.TripPk.Valid {
+			tripPkToVehicleID[row.TripPk.Int64] = row.ID.String
+		}
+	}
+	return vehicleIDToPk, tripPkToVehicleID, nil
 }
 
 func Ping(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {
