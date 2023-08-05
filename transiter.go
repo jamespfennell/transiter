@@ -166,9 +166,9 @@ func main() {
 						Value: false,
 					},
 					&cli.BoolFlag{
-						Name:  "enable-scheduler",
-						Usage: "Enable the feed update scheduler",
-						Value: true,
+						Name:  "disable-scheduler",
+						Usage: "Disable the feed update scheduler",
+						Value: false,
 					},
 					&cli.BoolFlag{
 						Name:  "enable-pprof",
@@ -176,8 +176,8 @@ func main() {
 						Value: true,
 					},
 					&cli.BoolFlag{
-						Name:  "enable-public-metrics",
-						Usage: "Report Prometheus metrics on the public HTTP API's /metrics endpoint. Metrics are always reported on the admin HTTP API",
+						Name:  "disable-public-metrics",
+						Usage: "Don't report Prometheus metrics on the public HTTP API's /metrics endpoint. Metrics are always reported on the admin HTTP API",
 						Value: true,
 					},
 					&cli.Int64Flag{
@@ -213,8 +213,8 @@ func main() {
 						AdminGrpcAddr:         c.String("admin-grpc-addr"),
 						PostgresConnStr:       c.String("postgres-connection-string"),
 						MaxConnections:        int32(c.Int64("max-connections")),
-						EnableScheduler:       c.Bool("enable-scheduler"),
-						EnablePublicMetrics:   c.Bool("enable-public-metrics"),
+						DisableScheduler:      c.Bool("disable-scheduler"),
+						DisablePublicMetrics:  c.Bool("disable-public-metrics"),
 						ReadOnly:              c.Bool("read-only"),
 						EnablePprof:           c.Bool("enable-pprof"),
 						MaxStopsPerRequest:    int32(c.Int64("max-stops-per-request")),

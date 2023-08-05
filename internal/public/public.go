@@ -19,16 +19,17 @@ import (
 type Server struct {
 	pool            *pgxpool.Pool
 	logger          *slog.Logger
+	monitoring      monitoring.Monitoring
 	endpointOptions *endpoints.EndpointOptions
 }
 
 // New creates a new `Server` that uses the provided pool to connect to the database.
-func New(pool *pgxpool.Pool, logger *slog.Logger, endpointOptions *endpoints.EndpointOptions) *Server {
+func New(pool *pgxpool.Pool, logger *slog.Logger, monitoring monitoring.Monitoring, endpointOptions *endpoints.EndpointOptions) *Server {
 	if endpointOptions == nil {
 		endpointOptions = &endpoints.EndpointOptions{MaxStopsPerRequest: 100, MaxVehiclesPerRequest: 100}
 	}
 
-	return &Server{pool: pool, logger: logger, endpointOptions: endpointOptions}
+	return &Server{pool: pool, logger: logger, monitoring: monitoring, endpointOptions: endpointOptions}
 }
 
 func (s *Server) Entrypoint(ctx context.Context, req *api.EntrypointRequest) (*api.EntrypointReply, error) {
@@ -116,6 +117,6 @@ func run[S, T any](ctx context.Context, s *Server, methodName string, f func(con
 		}, req)
 		return err
 	})
-	monitoring.RecordPublicRequest(methodName, err, time.Since(startTime))
+	s.monitoring.RecordPublicRequest(methodName, err, time.Since(startTime))
 	return t, err
 }

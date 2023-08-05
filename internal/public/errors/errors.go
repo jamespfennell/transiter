@@ -42,6 +42,18 @@ func NewInvalidArgumentError(msg string) error {
 	}
 }
 
+func GetStatusCode(err error) codes.Code {
+	if err == nil {
+		return codes.OK
+	}
+	if s, ok := err.(interface {
+		GRPCStatus() *status.Status
+	}); ok {
+		return s.GRPCStatus().Code()
+	}
+	return codes.Unknown
+}
+
 // ServeMuxOption returns a `runtime.ServeMuxOption` that makes errors user-friendly at the API boundary.
 func ServeMuxOption(logger *slog.Logger) runtime.ServeMuxOption {
 	return runtime.WithErrorHandler(func(ctx context.Context, sm *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {

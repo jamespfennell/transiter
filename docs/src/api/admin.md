@@ -400,12 +400,14 @@ Description of a feed update operation.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | update_id | string | ID of the feed update. This is a randomly generated UUID. It can be used to find server logs for the update operation.
+| feed_config | [FeedConfig](admin.md#FeedConfig) | The feed configuration that was used to perform the feed update.
 | started_at_ms | int64 | Unix timestamp of when the update started.
 | finished_at_ms | int64 | Unix timestamp of when the update finished. Only populated if the update is finished.
 | total_latency_ms | int64 | 
 | download_latency_ms | int64 | 
 | parse_latency_ms | int64 | 
-| update_latency_ms | int64 | 
+| database_latency_ms | int64 | 
+| download_http_status_code | int32 | 
 | status | [FeedUpdate.Status](admin.md#FeedUpdate.Status) | Status of the update.
 | content_length | int32 | Number of bytes in the downloaded feed data. Only populated if the update successfully downloaded data.
 | content_hash | string | Hash of the downloaded feed data. This is used to skip updates if the feed data hasn't changed. Only populated if the update successfully downloaded data.

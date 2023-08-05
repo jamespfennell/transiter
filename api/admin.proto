@@ -356,6 +356,9 @@ message FeedUpdate {
   // It can be used to find server logs for the update operation.
   string update_id = 1;
 
+  // The feed configuration that was used to perform the feed update.
+  FeedConfig feed_config = 27;
+
   // Unix timestamp of when the update started.
   int64 started_at_ms = 4;
   // Unix timestamp of when the update finished.
@@ -365,7 +368,8 @@ message FeedUpdate {
   optional int64 total_latency_ms = 20;
   optional int64 download_latency_ms = 21;
   optional int64 parse_latency_ms = 22;
-  optional int64 update_latency_ms = 23;
+  optional int64 database_latency_ms = 25;
+  optional int32 download_http_status_code = 26;
 
   enum Status {
     // Unknown status.

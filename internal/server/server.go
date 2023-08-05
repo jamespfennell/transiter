@@ -35,8 +35,8 @@ type RunArgs struct {
 	AdminGrpcAddr         string
 	PostgresConnStr       string
 	MaxConnections        int32
-	EnableScheduler       bool
-	EnablePublicMetrics   bool
+	DisableScheduler      bool
+	DisablePublicMetrics  bool
 	EnablePprof           bool
 	ReadOnly              bool
 	MaxStopsPerRequest    int32
@@ -90,17 +90,18 @@ func Run(ctx context.Context, args RunArgs) error {
 	var realScheduler *scheduler.DefaultScheduler
 	var s scheduler.Scheduler
 
-	if !args.EnableScheduler || args.ReadOnly {
+	if args.DisableScheduler || args.ReadOnly {
 		s = scheduler.NoOpScheduler(logger)
 	} else {
 		realScheduler = scheduler.NewDefaultScheduler()
 		s = realScheduler
 	}
 
-	publicService := public.New(pool, logger, &endpoints.EndpointOptions{
+	monitoring := monitoring.NewPrometheusMonitoring("transiter")
+	publicService := public.New(pool, logger, monitoring, &endpoints.EndpointOptions{
 		MaxStopsPerRequest: args.MaxStopsPerRequest,
 	})
-	adminService := admin.New(pool, s, logger, &levelVar)
+	adminService := admin.New(pool, s, logger, &levelVar, monitoring)
 
 	if realScheduler != nil {
 		wg.Add(1)
@@ -111,7 +112,7 @@ func Run(ctx context.Context, args RunArgs) error {
 			logger.InfoCtx(ctx, "scheduler stopped")
 		}()
 		if err := realScheduler.Reset(ctx); err != nil {
-			return fmt.Errorf("failed to intialize the scheduler: %w", err)
+			return fmt.Errorf("failed to initialize the scheduler: %w", err)
 		}
 		logger.InfoCtx(ctx, "scheduler running")
 	}
@@ -127,7 +128,7 @@ func Run(ctx context.Context, args RunArgs) error {
 			api.RegisterPublicHandlerServer(ctx, mux, publicService)
 			h := http.NewServeMux()
 			h.Handle("/", mux)
-			if args.EnablePublicMetrics {
+			if !args.DisablePublicMetrics {
 				h.Handle("/metrics", monitoring.Handler())
 			}
 			server := &http.Server{Addr: args.PublicHTTPAddr, Handler: h}
