@@ -765,13 +765,86 @@ Reference is the reference type for the trip resource.
 
 ## Vehicle
 
+The Vehicle resource.
 
+This resource corresponds to the [vehicle position type in the GTFS static
+specification](https://developers.google.com/transit/gtfs-realtime/reference#message-vehicleposition).
 	
 
 
-No fields.
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| id | string | A unique ID for the vehicle.
+| trip | [Trip.Reference](public_resources.md#Trip.Reference) | A reference to the vehicle's trip.
+| latitude | double | The vehicle's current latitude.
+| longitude | double | The vehicle's current longitude.
+| bearing | float | The vehicle's current bearing.
+| odometer | double | The vehicle's current odometer reading.
+| speed | float | The vehicle's current speed.
+| stop_sequence | int32 | The stop sequence index of the vehicle's current stop.
+| stop | [Stop.Reference](public_resources.md#Stop.Reference) | A reference to the vehicle's current stop.
+| current_status | [Vehicle.CurrentStatus](public_resources.md#Vehicle.CurrentStatus) | The vehicle's current status.
+| updated_at | int64 | The timestamp of the last update to the vehicle's position.
+| congestion_level | [Vehicle.CongestionLevel](public_resources.md#Vehicle.CongestionLevel) | The vehicle's current congestion level.
+| occupancy_status | [Vehicle.OccupancyStatus](public_resources.md#Vehicle.OccupancyStatus) | The vehicle's current occupancy status.
+| occupancy_percentage | int32 | The percentage of seats occupied.
 
 
+
+
+
+
+#### Vehicle.CongestionLevel
+
+Corresponds to [CongestionLevel](https://developers.google.com/
+transit/gtfs-realtime/reference#enum-congestionlevel).
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNKNOWN_CONGESTION_LEVEL | 0 |  |
+| RUNNING_SMOOTHLY | 1 |  |
+| STOP_AND_GO | 2 |  |
+| CONGESTION | 3 |  |
+| SEVERE_CONGESTION | 4 |  |
+
+
+
+#### Vehicle.CurrentStatus
+
+Corresponds to [VehicleStopStatus](https://developers.google.com/
+transit/gtfs-realtime/reference#enum-vehiclestopstatus).
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| INCOMING_AT | 0 |  |
+| STOPPED_AT | 1 |  |
+| IN_TRANSIT_TO | 2 |  |
+
+
+
+#### Vehicle.OccupancyStatus
+
+Corresponds to [OccupancyStatus](https://developers.google.com/
+transit/gtfs-realtime/reference#enum-occupancystatus).
+	
+
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| EMPTY | 0 |  |
+| MANY_SEATS_AVAILABLE | 1 |  |
+| FEW_SEATS_AVAILABLE | 2 |  |
+| STANDING_ROOM_ONLY | 3 |  |
+| CRUSHED_STANDING_ROOM_ONLY | 4 |  |
+| FULL | 5 |  |
+| NOT_ACCEPTING_PASSENGERS | 6 |  |
 
 
 
@@ -784,6 +857,7 @@ Reference is the reference type for the vehicle resource.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | id | string | 
+| resource | [Resource](public_resources.md#Resource) | 
 
 
 

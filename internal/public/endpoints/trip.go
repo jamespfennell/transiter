@@ -45,14 +45,25 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 		}
 		return nil, err
 	}
-	apiTrips, err := buildApiTrips(ctx, r, &system, &route, []db.Trip{trip})
+	apiTrips, err := buildApiTrips(ctx, r, &system, &route, []db.ListTripsRow{{
+		Pk:               trip.Pk,
+		ID:               trip.ID,
+		RoutePk:          trip.RoutePk,
+		DirectionID:      trip.DirectionID,
+		StartedAt:        trip.StartedAt,
+		GtfsHash:         trip.GtfsHash,
+		FeedPk:           trip.FeedPk,
+		VehicleID:        trip.VehicleID,
+		VehicleLatitude:  trip.VehicleLatitude,
+		VehicleLongitude: trip.VehicleLongitude,
+	}})
 	if err != nil {
 		return nil, err
 	}
 	return apiTrips[0], nil
 }
 
-func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db.Route, trips []db.Trip) ([]*api.Trip, error) {
+func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db.Route, trips []db.ListTripsRow) ([]*api.Trip, error) {
 	var apiTrips []*api.Trip
 	for i := range trips {
 		trip := &trips[i]
@@ -66,10 +77,9 @@ func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db
 			StartedAt:   convert.SQLNullTime(trip.StartedAt),
 			Route:       r.Reference.Route(route.ID, system.ID, route.Color),
 		}
-		// TODO: vechices
-		// if trip.VehicleID.Valid {
-		//	reply.Vehicle = r.Reference.Vehicle(trip.VehicleID.String)
-		//}
+		if trip.VehicleID.Valid {
+			reply.Vehicle = r.Reference.Vehicle(trip.VehicleID.String, system.ID)
+		}
 		for _, stopTime := range stopTimes {
 			reply.StopTimes = append(reply.StopTimes, &api.StopTime{
 				StopSequence: stopTime.StopSequence,

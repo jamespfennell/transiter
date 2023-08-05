@@ -25,7 +25,7 @@ type Server struct {
 // New creates a new `Server` that uses the provided pool to connect to the database.
 func New(pool *pgxpool.Pool, logger *slog.Logger, endpointOptions *endpoints.EndpointOptions) *Server {
 	if endpointOptions == nil {
-		endpointOptions = &endpoints.EndpointOptions{MaxStopsPerRequest: 100}
+		endpointOptions = &endpoints.EndpointOptions{MaxStopsPerRequest: 100, MaxVehiclesPerRequest: 100}
 	}
 
 	return &Server{pool: pool, logger: logger, endpointOptions: endpointOptions}
@@ -93,6 +93,14 @@ func (s *Server) ListAlerts(ctx context.Context, req *api.ListAlertsRequest) (*a
 
 func (s *Server) GetAlert(ctx context.Context, req *api.GetAlertRequest) (*api.Alert, error) {
 	return run(ctx, s, "GetAlert", endpoints.GetAlert, req)
+}
+
+func (s *Server) ListVehicles(ctx context.Context, req *api.ListVehiclesRequest) (*api.ListVehiclesReply, error) {
+	return run(ctx, s, "ListVehicles", endpoints.ListVehicles, req)
+}
+
+func (s *Server) GetVehicle(ctx context.Context, req *api.GetVehicleRequest) (*api.Vehicle, error) {
+	return run(ctx, s, "GetVehicle", endpoints.GetVehicle, req)
 }
 
 func run[S, T any](ctx context.Context, s *Server, methodName string, f func(context.Context, *endpoints.Context, S) (T, error), req S) (T, error) {

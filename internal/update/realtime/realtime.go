@@ -37,35 +37,51 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Real
 	if err := updateAlerts(ctx, updateCtx, data.Alerts); err != nil {
 		return err
 	}
+	if err := updateVehicles(ctx, updateCtx, data.Vehicles); err != nil {
+		return err
+	}
 	return nil
 }
 
 func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gtfs.Trip) error {
+	var validTripEntities []gtfs.Trip
+	if updateCtx.FeedConfig != nil &&
+		updateCtx.FeedConfig.GetGtfsRealtimeOptions().GetOnlyProcessFullEntities() {
+		for _, trip := range trips {
+			// Only insert trips that are in the feed.
+			if trip.IsEntityInMessage {
+				validTripEntities = append(validTripEntities, trip)
+			}
+		}
+	} else {
+		validTripEntities = trips
+	}
+
 	// ASSUMPTIONS: route ID is populated. If not, get it from the static data in an earlier phase
-	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDsInTrips(trips))
+	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDsInTrips(validTripEntities))
 	if err != nil {
 		return err
 	}
-	stopHeadsignMatcher, err := NewStopHeadsignMatcher(ctx, updateCtx.Querier, stopIDToPk, trips)
+	stopHeadsignMatcher, err := NewStopHeadsignMatcher(ctx, updateCtx.Querier, stopIDToPk, validTripEntities)
 	if err != nil {
 		return err
 	}
-	routeIDToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, routeIDsInTrips(trips))
+	routeIDToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, routeIDsInTrips(validTripEntities))
 	if err != nil {
 		return err
 	}
-	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, common.MapValues(routeIDToPk))
+	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, updateCtx.SystemPk, common.MapValues(routeIDToPk))
 	if err != nil {
 		return err
 	}
 
-	stagedUpdates := newStagedUpdates(trips)
+	stagedUpdates := newStagedUpdates(validTripEntities)
 	seenUIDs := map[dbwrappers.TripUID]bool{}
 	tripUIDToPk := map[dbwrappers.TripUID]int64{}
 	tripUIDToTrip := map[dbwrappers.TripUID]*gtfs.Trip{}
 	activeTripPks := []int64{}
-	for i := range trips {
-		trip := &trips[i]
+	for i := range validTripEntities {
+		trip := &validTripEntities[i]
 		routePk, ok := routeIDToPk[trip.ID.RouteID]
 		if !ok {
 			continue
@@ -161,6 +177,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	if err := servicemaps.UpdateRealtimeMaps(ctx, updateCtx.Querier, updateCtx.Logger, updateCtx.SystemPk, common.MapKeys(routePksWithPathChanges)); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -587,4 +604,185 @@ func convertOptionalTime(in *time.Time) pgtype.Timestamptz {
 		Valid: true,
 		Time:  *in,
 	}
+}
+
+func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicles []gtfs.Vehicle) error {
+	onlyProcessFullEntities := updateCtx.FeedConfig != nil &&
+		updateCtx.FeedConfig.GetGtfsRealtimeOptions().GetOnlyProcessFullEntities()
+	var validVehicleEntities []gtfs.Vehicle
+	for _, vehicle := range vehicles {
+		// Only insert vehicles that are in the feed.
+		if onlyProcessFullEntities && !vehicle.IsEntityInMessage {
+			continue
+		}
+
+		// Note: We can insert a vehicle with no ID if it has an associated
+		// trip, per the GTFS-realtime spec. For now, we'll just skip them.
+		if vehicle.GetID().ID == nil || *vehicle.GetID().ID == "" {
+			updateCtx.Logger.DebugCtx(ctx, "Vehicle has no ID or empty ID")
+			continue
+		}
+
+		validVehicleEntities = append(validVehicleEntities, vehicle)
+	}
+
+	if len(validVehicleEntities) == 0 {
+		return updateCtx.Querier.DeleteStaleVehicles(ctx, db.DeleteStaleVehiclesParams{
+			FeedPk:           updateCtx.FeedPk,
+			ActiveVehicleIds: []string{},
+		})
+	}
+
+	var vehicleIDs []string
+	var stopIDs []string
+	var tripIDs []string
+	for i := range validVehicleEntities {
+		vehicle := &validVehicleEntities[i]
+		vehicleIDs = append(vehicleIDs, *vehicle.ID.ID)
+		if vehicle.StopID != nil {
+			stopIDs = append(stopIDs, *vehicle.StopID)
+		}
+		if vehicle.GetTrip().ID.ID != "" {
+			tripIDs = append(tripIDs, vehicle.GetTrip().ID.ID)
+		}
+	}
+
+	// This statement also acquires a lock on the rows in the trip table associated
+	// with vehicles being inserted/updated.
+	tripIDToPk, err := dbwrappers.MapTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, tripIDs)
+	if err != nil {
+		return err
+	}
+
+	vehicleIDToPk, tripPkToVehicleID, err := dbwrappers.MapVehicleIDToPkandTripPkToVehicleID(ctx, updateCtx.Querier, updateCtx.SystemPk, vehicleIDs)
+	if err != nil {
+		return err
+	}
+
+	// This statement does not currently lock the rows in the stop table associated
+	// with vehicles being inserted/updated. However, chanegs to the stop table should
+	// be rare, so conflicts should not be a major issue.
+	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDs)
+	if err != nil {
+		return err
+	}
+
+	err = updateCtx.Querier.DeleteStaleVehicles(ctx, db.DeleteStaleVehiclesParams{
+		FeedPk:           updateCtx.FeedPk,
+		ActiveVehicleIds: vehicleIDs,
+	})
+	if err != nil {
+		return err
+	}
+
+	insertedVehicleIDs := map[string]bool{}
+	insertedTripIDs := map[string]bool{}
+	for _, vehicle := range validVehicleEntities {
+		if _, ok := insertedVehicleIDs[*vehicle.ID.ID]; ok {
+			updateCtx.Logger.DebugCtx(ctx, "Duplicate vehicle ID in same update", *vehicle.ID.ID)
+			continue
+		}
+		insertedVehicleIDs[*vehicle.ID.ID] = true
+
+		if _, ok := insertedTripIDs[vehicle.GetTrip().ID.ID]; ok {
+			updateCtx.Logger.DebugCtx(ctx, "Duplicate trip ID in same update", vehicle.GetTrip().ID.ID)
+			continue
+		}
+
+		var tripPkOrNil *int64 = nil
+		if vehicle.GetTrip().ID.ID != "" {
+			// Check that the trip ID is not associated with multiple vehicle IDs.
+			if tripPk, ok := tripIDToPk[vehicle.GetTrip().ID.ID]; ok {
+				if vehicleIDForTripPk, ok := tripPkToVehicleID[tripPk]; ok {
+					if vehicleIDForTripPk != *vehicle.ID.ID {
+						updateCtx.Logger.DebugCtx(ctx, "Trip ID has multiple vehicle IDs", vehicle.GetTrip().ID.ID)
+						continue
+					}
+				}
+			} else {
+				// If trip ID points to a trip that doesn't exist, skip it.
+				updateCtx.Logger.DebugCtx(ctx, "Trip ID not found", vehicle.GetTrip().ID.ID)
+				continue
+			}
+
+			tripPkOrNil = ptr(tripIDToPk[vehicle.GetTrip().ID.ID])
+			insertedTripIDs[vehicle.GetTrip().ID.ID] = true
+		}
+
+		var stopPkOrNil *int64 = nil
+		if vehicle.StopID != nil {
+			if stopID, ok := stopIDToPk[*vehicle.StopID]; ok {
+				stopPkOrNil = &stopID
+			}
+		}
+
+		var latitude, longitude, bearing, speed *float32 = nil, nil, nil, nil
+		var odometer *float64 = nil
+		if vehicle.Position != nil {
+			latitude = vehicle.Position.Latitude
+			longitude = vehicle.Position.Longitude
+			bearing = vehicle.Position.Bearing
+			odometer = vehicle.Position.Odometer
+			speed = vehicle.Position.Speed
+		}
+
+		if vehiclePk, vehicleExists := vehicleIDToPk[*vehicle.ID.ID]; vehicleExists {
+			// Update
+			err := updateCtx.Querier.UpdateVehicle(ctx, db.UpdateVehicleParams{
+				Pk:                  vehiclePk,
+				TripPk:              convert.NullInt64(tripPkOrNil),
+				FeedPk:              updateCtx.FeedPk,
+				CurrentStopPk:       convert.NullInt64(stopPkOrNil),
+				Label:               convert.NullString(vehicle.ID.Label),
+				LicensePlate:        convert.NullString(vehicle.ID.LicencePlate),
+				CurrentStatus:       convert.NullVehicleCurrentStatus(vehicle.CurrentStatus),
+				Latitude:            convert.Gps(latitude),
+				Longitude:           convert.Gps(longitude),
+				Bearing:             convert.NullFloat32(bearing),
+				Odometer:            convert.NullFloat64(odometer),
+				Speed:               convert.NullFloat32(speed),
+				CongestionLevel:     convert.CongestionLevel(vehicle.CongestionLevel),
+				UpdatedAt:           convert.NullTime(vehicle.Timestamp),
+				CurrentStopSequence: convert.NullUInt32ToSigned(vehicle.CurrentStopSequence),
+				OccupancyStatus:     convert.NullOccupancyStatus(vehicle.OccupancyStatus),
+				OccupancyPercentage: convert.NullUInt32ToSigned(vehicle.OccupancyPercentage),
+			})
+
+			if err != nil {
+				return err
+			}
+		} else {
+			// Insert
+			err := updateCtx.Querier.InsertVehicle(ctx, db.InsertVehicleParams{
+				ID:                  convert.NullString(vehicle.ID.ID),
+				SystemPk:            updateCtx.SystemPk,
+				TripPk:              convert.NullInt64(tripPkOrNil),
+				FeedPk:              updateCtx.FeedPk,
+				CurrentStopPk:       convert.NullInt64(stopPkOrNil),
+				Label:               convert.NullString(vehicle.ID.Label),
+				LicensePlate:        convert.NullString(vehicle.ID.LicencePlate),
+				CurrentStatus:       convert.NullVehicleCurrentStatus(vehicle.CurrentStatus),
+				Latitude:            convert.Gps(latitude),
+				Longitude:           convert.Gps(longitude),
+				Bearing:             convert.NullFloat32(bearing),
+				Odometer:            convert.NullFloat64(odometer),
+				Speed:               convert.NullFloat32(speed),
+				CongestionLevel:     convert.CongestionLevel(vehicle.CongestionLevel),
+				UpdatedAt:           convert.NullTime(vehicle.Timestamp),
+				CurrentStopSequence: convert.NullUInt32ToSigned(vehicle.CurrentStopSequence),
+				OccupancyStatus:     convert.NullOccupancyStatus(vehicle.OccupancyStatus),
+				OccupancyPercentage: convert.NullUInt32ToSigned(vehicle.OccupancyPercentage),
+			})
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func ptr[T any](t T) *T {
+	return &t
 }

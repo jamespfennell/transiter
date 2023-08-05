@@ -260,16 +260,17 @@ type Vehicle struct {
 	TripPk              pgtype.Int8
 	Label               pgtype.Text
 	LicensePlate        pgtype.Text
-	CurrentStatus       string
-	Latitude            pgtype.Float8
-	Longitude           pgtype.Float8
-	Bearing             pgtype.Float8
+	CurrentStatus       pgtype.Text
+	Latitude            pgtype.Numeric
+	Longitude           pgtype.Numeric
+	Bearing             pgtype.Float4
 	Odometer            pgtype.Float8
-	Speed               pgtype.Float8
+	Speed               pgtype.Float4
 	CongestionLevel     string
 	UpdatedAt           pgtype.Timestamptz
 	CurrentStopPk       pgtype.Int8
 	CurrentStopSequence pgtype.Int4
-	OccupancyStatus     string
+	OccupancyStatus     pgtype.Text
 	FeedPk              int64
+	OccupancyPercentage pgtype.Int4
 }

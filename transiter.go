@@ -190,6 +190,11 @@ func main() {
 						Usage: "Maximum number of stops that will be returned in a single list stops request. Specifying a value <= 0 will disable the limit.",
 						Value: 100,
 					},
+					&cli.Int64Flag{
+						Name:  "max-vehicles-per-request",
+						Usage: "Maximum number of vehicles that will be returned in a single list vehicles request. Specifying a value <= 0 will disable the limit.",
+						Value: 100,
+					},
 					&cli.StringFlag{
 						Name:  "log-level",
 						Usage: "Log level, either debug, info, warning or error",
@@ -202,18 +207,19 @@ func main() {
 						return err
 					}
 					args := server.RunArgs{
-						PublicHTTPAddr:      c.String("public-http-addr"),
-						PublicGrpcAddr:      c.String("public-grpc-addr"),
-						AdminHTTPAddr:       c.String("admin-http-addr"),
-						AdminGrpcAddr:       c.String("admin-grpc-addr"),
-						PostgresConnStr:     c.String("postgres-connection-string"),
-						MaxConnections:      int32(c.Int64("max-connections")),
-						EnableScheduler:     c.Bool("enable-scheduler"),
-						EnablePublicMetrics: c.Bool("enable-public-metrics"),
-						ReadOnly:            c.Bool("read-only"),
-						EnablePprof:         c.Bool("enable-pprof"),
-						MaxStopsPerRequest:  int32(c.Int64("max-stops-per-request")),
-						LogLevel:            logLevel,
+						PublicHTTPAddr:        c.String("public-http-addr"),
+						PublicGrpcAddr:        c.String("public-grpc-addr"),
+						AdminHTTPAddr:         c.String("admin-http-addr"),
+						AdminGrpcAddr:         c.String("admin-grpc-addr"),
+						PostgresConnStr:       c.String("postgres-connection-string"),
+						MaxConnections:        int32(c.Int64("max-connections")),
+						EnableScheduler:       c.Bool("enable-scheduler"),
+						EnablePublicMetrics:   c.Bool("enable-public-metrics"),
+						ReadOnly:              c.Bool("read-only"),
+						EnablePprof:           c.Bool("enable-pprof"),
+						MaxStopsPerRequest:    int32(c.Int64("max-stops-per-request")),
+						MaxVehiclesPerRequest: int32(c.Int64("max-vehicles-per-request")),
+						LogLevel:              logLevel,
 					}
 					ctx, cancel := context.WithCancel(c.Context)
 					ch := make(chan os.Signal, 1)
