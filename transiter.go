@@ -10,6 +10,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/argsflag"
 	"github.com/jamespfennell/transiter/internal/client"
 	"github.com/jamespfennell/transiter/internal/server"
+	"github.com/jamespfennell/transiter/internal/version"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/slog"
 )
@@ -266,6 +267,31 @@ func main() {
 						},
 					},
 					// TODO: pause, unpause, status, etc
+				},
+			},
+			{
+				Name:  "version",
+				Usage: "print the version of this binary, or a Transiter server",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "server",
+						Usage: "Print the version of a Transiter server rather than this binary",
+						Value: false,
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					if !ctx.Bool("server") {
+						fmt.Println(version.Version())
+						return nil
+					}
+					return clientAction(func(ctx context.Context, client *client.Client) error {
+						version, err := client.Version(ctx)
+						if err != nil {
+							return err
+						}
+						fmt.Println(version)
+						return nil
+					})(ctx)
 				},
 			},
 		},

@@ -203,3 +203,8 @@ func (c *Client) SetLogLevel(ctx context.Context, logLevel string) error {
 	})
 	return err
 }
+
+func (c *Client) Version(ctx context.Context) (string, error) {
+	r, err := c.publicClient.Entrypoint(ctx, &api.EntrypointRequest{})
+	return r.GetTransiter().GetVersion(), err
+}

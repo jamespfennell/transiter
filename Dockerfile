@@ -40,7 +40,7 @@ COPY . ./
 RUN diff --recursive internal/gen internal/genNew
 RUN rm -r internal/genNew
 
-RUN go build .
+RUN go build --ldflags "-X github.com/jamespfennell/transiter/internal/version.version=${TRANSITER_VERSION}"  .
 
 # Only build the image if the tests pass
 RUN SKIP_DATABASE_TESTS=true go test ./...

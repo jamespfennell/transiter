@@ -1,6 +1,6 @@
 name: Build
 
-on: [push, pull_request]
+on: [push, pull_request, release]
 
 jobs:
   build-and-tests:
@@ -11,7 +11,34 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: '^1.18.0'
-      
+
+      - name: Set the version
+        run: |
+          BASE_VERSION=$(cat internal/version/BASE_VERSION)
+          VERSION=${BASE_VERSION}-alpha+build${{ github.run_number }}
+
+          # If this is a push to mainline, give it the beta release
+          if [ "${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}" = "true" ]
+          then
+            VERSION=${BASE_VERSION}-beta.${{ github.run_number }}
+          fi
+
+          # If this is a release, give it the full version.
+          # But check that the tag matches the version first.
+          if [ "${{ github.event_name }}" = "release" ]
+          then
+            if [ "${{ github.ref }}" != "refs/tags/v${BASE_VERSION}" ]
+            then
+              echo "Release tag does not match the version specified in internal/version/BASE_VERSION!"
+              echo "Release tag must be v<version>=v${BASE_VERSION}"
+              exit 1
+            fi
+            VERSION=${BASE_VERSION}
+          fi
+
+          echo "Setting version to ${VERSION}"
+          echo "TRANSITER_VERSION=${VERSION}" >> $GITHUB_ENV
+
       - name: Go build
         run: go build .
   
@@ -27,7 +54,8 @@ jobs:
       - name: Build the Docker image
         uses: docker/build-push-action@v4
         with:
-          tags: jamespfennell/transiter:latest
+          tags: |
+            jamespfennell/transiter:latest
           outputs: type=docker
           context: .
 
@@ -54,8 +82,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         with:
           tags: |
-            jamespfennell/transiter:build-${{ github.run_number }}
-            jamespfennell/transiter:latest
+            jamespfennell/transiter:${{ env.TRANSITER_VERSION }}
           context: .
           push: true
 
