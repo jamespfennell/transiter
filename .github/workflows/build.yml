@@ -56,6 +56,8 @@ jobs:
         with:
           tags: |
             jamespfennell/transiter:latest
+          build-args: |
+            "TRANSITER_VERSION=${{ env.TRANSITER_VERSION }}"
           outputs: type=docker
           context: .
 
