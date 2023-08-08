@@ -1,6 +1,6 @@
 name: Build
 
-on: [push, pull_request, release]
+on: [push, pull_request]
 
 jobs:
   build-and-tests:
@@ -24,15 +24,9 @@ jobs:
           fi
 
           # If this is a release, give it the full version.
-          # But check that the tag matches the version first.
-          if [ "${{ github.event_name }}" = "release" ]
+          # A release is defined as a tag push where the tag is `v<base version>`.
+          if [ "${{ github.ref }}" = "refs/tags/v${BASE_VERSION}" ]
           then
-            if [ "${{ github.ref }}" != "refs/tags/v${BASE_VERSION}" ]
-            then
-              echo "Release tag does not match the version specified in internal/version/BASE_VERSION!"
-              echo "Release tag must be v<version>=v${BASE_VERSION}"
-              exit 1
-            fi
             VERSION=${BASE_VERSION}
           fi
 
@@ -85,6 +79,7 @@ jobs:
         with:
           build-args: |
             "TRANSITER_VERSION=${{ env.TRANSITER_VERSION }}"
+            jamespfennell/transiter:latest
           tags: |
             jamespfennell/transiter:${{ env.TRANSITER_VERSION }}
           context: .
