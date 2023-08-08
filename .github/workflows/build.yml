@@ -83,6 +83,8 @@ jobs:
         # Only push to Docker Hub if this workflow is a push to mainline
         if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         with:
+          build-args: |
+            "TRANSITER_VERSION=${{ env.TRANSITER_VERSION }}"
           tags: |
             jamespfennell/transiter:${{ env.TRANSITER_VERSION }}
           context: .
