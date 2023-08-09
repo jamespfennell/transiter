@@ -1,4 +1,4 @@
-route_id,route_color,route_text_color,route_short_name,route_long_name,route_desc,route_type,route_url,route_sort_order,continuous_pickup,continuous_dropoff
+route_id,route_color,route_text_color,route_short_name,route_long_name,route_desc,route_type,route_url,route_sort_order,continuous_pickup,continuous_drop_off
 A,,,Fruit District Express,,,1,,,,
 B,,,Fruit District Local,,,1,,,,
 RouteID,RouteColor,RouteTextColor,RouteShortName,RouteLongName,RouteDesc,1,RouteUrl,50,2,3

@@ -133,6 +133,7 @@ Triggers a feed update for the specified feed.
 | ----- | ---- | ----------- |
 | system_id | string | 
 | feed_id | string | 
+| force | bool | If true, a full feed update will be performed even if the download data is identical to the last update for this feed.
 
 
 

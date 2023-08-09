@@ -8,7 +8,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/jackc/tern/v2 v2.0.1
-	github.com/jamespfennell/gtfs v0.1.15
+	github.com/jamespfennell/gtfs v0.1.16
 	github.com/kyleconroy/sqlc v1.17.2
 	github.com/prometheus/client_golang v1.14.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1

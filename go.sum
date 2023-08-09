@@ -88,6 +88,8 @@ github.com/jamespfennell/gtfs v0.1.14 h1:3woWtmXHFh5HMplaWpT568JPq2zkiiLyraXRe0h
 github.com/jamespfennell/gtfs v0.1.14/go.mod h1:R92JynGzDyrjrFLQ4ye5NFegBYAigK/JFY2oTKNLHfU=
 github.com/jamespfennell/gtfs v0.1.15 h1:qnEq5zgQhNDNuydbCD+SZ3p1XhxuyjjKDQr+k9nONyU=
 github.com/jamespfennell/gtfs v0.1.15/go.mod h1:nj9QFIc695IUKM5djZXzyPtCIAYxufafb0sQNbiVMOs=
+github.com/jamespfennell/gtfs v0.1.16 h1:Vtvdt2oQy5lVAkfB4cDyqeIYktwS7F4kfOcs6DN51eU=
+github.com/jamespfennell/gtfs v0.1.16/go.mod h1:nj9QFIc695IUKM5djZXzyPtCIAYxufafb0sQNbiVMOs=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
