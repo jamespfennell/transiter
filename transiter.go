@@ -248,6 +248,13 @@ func main() {
 					{
 						Name:  "update",
 						Usage: "perform a feed update",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:  "force",
+								Usage: "Perform a full update even if the downloaded data is identical to the last time this feed was updated",
+								Value: false,
+							},
+						},
 						Action: func(c *cli.Context) error {
 							if c.Args().Len() == 0 {
 								return fmt.Errorf("must provide the ID of the feed to update in the form <system_id>/<feed_id>")
@@ -262,7 +269,7 @@ func main() {
 								return fmt.Errorf("must provide the ID of the feed to update in the form <system_id>/<feed_id>")
 							}
 							return clientAction(func(ctx context.Context, client *client.Client) error {
-								return client.UpdateFeed(ctx, systemID, feedID)
+								return client.UpdateFeed(ctx, systemID, feedID, c.Bool("force"))
 							})(c)
 						},
 					},

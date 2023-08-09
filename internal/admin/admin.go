@@ -167,7 +167,7 @@ func (s *Service) performInstall(ctx context.Context, systemID string, systemCon
 		if !feed.GetRequiredForInstall() {
 			continue
 		}
-		if _, err := update.Update(ctx, s.logger, s.pool, s.monitoring, systemID, feed.Id); err != nil {
+		if _, err := update.Update(ctx, s.logger, s.pool, s.monitoring, systemID, feed.Id, false); err != nil {
 			return err
 		}
 	}

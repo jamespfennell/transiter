@@ -111,7 +111,7 @@ DROP TABLE transfers_config;
 ALTER TABLE trip DROP CONSTRAINT trip_id_route_pk_key;
 ALTER TABLE trip ADD CONSTRAINT trip_route_pk_id_key UNIQUE(route_pk, id);
 
--- 3. Create indexes on foriegn keys that lack them. There are so many because I thought
+-- 3. Create indexes on foreign keys that lack them. There are so many because I thought
 -- that foreign keys automatically got indexes.
 CREATE INDEX ix_alert_active_period__alert_pk ON alert_active_period USING btree (alert_pk);
 CREATE INDEX ix_alert_agency__alert_pk ON alert_agency USING btree (alert_pk);

@@ -348,6 +348,10 @@ message ServiceMapConfig {
 message UpdateFeedRequest {
   string system_id = 1;
   string feed_id = 2;
+
+  // If true, a full feed update will be performed even if the download data is identical
+  // to the last update for this feed.
+  bool force = 3;
 }
 
 // Description of a feed update operation.

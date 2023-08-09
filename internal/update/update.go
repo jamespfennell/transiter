@@ -43,7 +43,7 @@ func NormalizeFeedConfig(feedConfig *api.FeedConfig) {
 	}
 }
 
-func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, m monitoring.Monitoring, systemID, feedID string) (*api.FeedUpdate, error) {
+func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, m monitoring.Monitoring, systemID, feedID string, force bool) (*api.FeedUpdate, error) {
 	startTime := time.Now()
 	updateID := uuid.New().String()
 	logger = logger.With(slog.String("system_id", systemID), slog.String("feed_id", feedID), slog.String("update_id", updateID))
@@ -65,7 +65,7 @@ func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, m moni
 		return nil, err
 	}
 
-	feedUpdate, err := run(ctx, pool, logger, systemID, feed)
+	feedUpdate, err := run(ctx, pool, logger, systemID, feed, force)
 	feedUpdate.UpdateId = updateID
 	feedUpdate.StartedAtMs = startTime.UnixMilli()
 
@@ -116,7 +116,7 @@ func markSuccess(feedUpdate *api.FeedUpdate, status api.FeedUpdate_Status) (*api
 	return feedUpdate, nil
 }
 
-func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID string, feed db.Feed) (*api.FeedUpdate, error) {
+func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID string, feed db.Feed, force bool) (*api.FeedUpdate, error) {
 	feedUpdate := &api.FeedUpdate{}
 	var feedConfig api.FeedConfig
 	if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
@@ -135,7 +135,7 @@ func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID 
 	}
 	contentHash := common.HashBytes(content)
 	feedUpdate.ContentHash = &contentHash
-	if feed.LastContentHash.Valid && feed.LastContentHash.String == contentHash {
+	if feed.LastContentHash.Valid && feed.LastContentHash.String == contentHash && !force {
 		return markSuccess(feedUpdate, api.FeedUpdate_SKIPPED)
 	}
 

@@ -203,6 +203,10 @@ func local_request_Admin_DeleteSystem_0(ctx context.Context, marshaler runtime.M
 
 }
 
+var (
+	filter_Admin_UpdateFeed_0 = &utilities.DoubleArray{Encoding: map[string]int{"system_id": 0, "systemId": 1, "feed_id": 2, "feedId": 3}, Base: []int{1, 1, 2, 3, 4, 0, 0, 0, 0}, Check: []int{0, 1, 1, 1, 1, 2, 3, 4, 5}}
+)
+
 func request_Admin_UpdateFeed_0(ctx context.Context, marshaler runtime.Marshaler, client AdminClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UpdateFeedRequest
 	var metadata runtime.ServerMetadata
@@ -232,6 +236,13 @@ func request_Admin_UpdateFeed_0(ctx context.Context, marshaler runtime.Marshaler
 	protoReq.FeedId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "feed_id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Admin_UpdateFeed_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.UpdateFeed(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -268,6 +279,13 @@ func local_request_Admin_UpdateFeed_0(ctx context.Context, marshaler runtime.Mar
 	protoReq.FeedId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "feed_id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Admin_UpdateFeed_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.UpdateFeed(ctx, &protoReq)
