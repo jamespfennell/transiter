@@ -272,53 +272,36 @@ func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transf
 }
 
 func updateServices(ctx context.Context, updateCtx common.UpdateContext, services []gtfs.Service) (map[string]int64, error) {
-	oldIDToPk, err := dbwrappers.MapScheduledServiceIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	serviceIdsInUpdate := []string{}
+	for _, service := range services {
+		serviceIdsInUpdate = append(serviceIdsInUpdate, service.Id)
+	}
+
+	err := updateCtx.Querier.DeleteScheduledServices(ctx, db.DeleteScheduledServicesParams{
+		FeedPk:            updateCtx.FeedPk,
+		SystemPk:          updateCtx.SystemPk,
+		UpdatedServiceIds: serviceIdsInUpdate,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Clear out old service additions and removals for all existing services
-	if err := updateCtx.Querier.DeleteScheduledServiceAdditions(ctx, updateCtx.FeedPk); err != nil {
-		return nil, err
-	}
-	if err := updateCtx.Querier.DeleteScheduledServiceRemovals(ctx, updateCtx.FeedPk); err != nil {
-		return nil, err
-	}
-
-	newIDToPk := map[string]int64{}
+	serviceIDToPk := map[string]int64{}
 	for _, service := range services {
-		pk, ok := oldIDToPk[service.Id]
-		if ok {
-			err = updateCtx.Querier.UpdateScheduledService(ctx, db.UpdateScheduledServiceParams{
-				Pk:        pk,
-				SystemPk:  updateCtx.SystemPk,
-				FeedPk:    updateCtx.FeedPk,
-				StartDate: convert.Date(service.StartDate),
-				EndDate:   convert.Date(service.EndDate),
-				Monday:    convert.Bool(service.Monday),
-				Tuesday:   convert.Bool(service.Tuesday),
-				Wednesday: convert.Bool(service.Wednesday),
-				Thursday:  convert.Bool(service.Thursday),
-				Friday:    convert.Bool(service.Friday),
-				Saturday:  convert.Bool(service.Saturday),
-				Sunday:    convert.Bool(service.Sunday),
-			})
-		} else {
-			pk, err = updateCtx.Querier.InsertScheduledService(ctx, db.InsertScheduledServiceParams{
-				ID:        service.Id,
-				SystemPk:  updateCtx.SystemPk,
-				FeedPk:    updateCtx.FeedPk,
-				StartDate: convert.Date(service.StartDate),
-				EndDate:   convert.Date(service.EndDate),
-				Monday:    convert.Bool(service.Monday),
-				Tuesday:   convert.Bool(service.Tuesday),
-				Wednesday: convert.Bool(service.Wednesday),
-				Thursday:  convert.Bool(service.Thursday),
-				Friday:    convert.Bool(service.Friday),
-				Saturday:  convert.Bool(service.Saturday),
-				Sunday:    convert.Bool(service.Sunday),
-			})
-		}
+		pk, err := updateCtx.Querier.InsertScheduledService(ctx, db.InsertScheduledServiceParams{
+			ID:        service.Id,
+			SystemPk:  updateCtx.SystemPk,
+			FeedPk:    updateCtx.FeedPk,
+			StartDate: convert.Date(service.StartDate),
+			EndDate:   convert.Date(service.EndDate),
+			Monday:    convert.Bool(service.Monday),
+			Tuesday:   convert.Bool(service.Tuesday),
+			Wednesday: convert.Bool(service.Wednesday),
+			Thursday:  convert.Bool(service.Thursday),
+			Friday:    convert.Bool(service.Friday),
+			Saturday:  convert.Bool(service.Saturday),
+			Sunday:    convert.Bool(service.Sunday),
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -341,64 +324,10 @@ func updateServices(ctx context.Context, updateCtx common.UpdateContext, service
 			}
 		}
 
-		newIDToPk[service.Id] = pk
+		serviceIDToPk[service.Id] = pk
 	}
 
-	if err := updateCtx.Querier.DeleteStaleScheduledServices(ctx, db.DeleteStaleScheduledServicesParams{
-		FeedPk:                     updateCtx.FeedPk,
-		UpdatedScheduledServicePks: common.MapValues(newIDToPk),
-	}); err != nil {
-		return nil, err
-	}
-
-	return newIDToPk, nil
-}
-
-func updateShapes(
-	ctx context.Context,
-	updateCtx common.UpdateContext,
-	shapes []gtfs.Shape) (map[string]int64, error) {
-
-	oldIDToPk, err := dbwrappers.MapShapeIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
-	if err != nil {
-		return nil, err
-	}
-
-	shapeIDToPk := map[string]int64{}
-	for _, shape := range shapes {
-		bytes, err := protojson.Marshal(convert.ApiShape(&shape))
-		if err != nil {
-			return nil, err
-		}
-		pk, ok := oldIDToPk[shape.ID]
-		if ok {
-			err = updateCtx.Querier.UpdateScheduledTripShape(ctx, db.UpdateScheduledTripShapeParams{
-				Pk:     pk,
-				FeedPk: updateCtx.FeedPk,
-				Shape:  bytes,
-			})
-		} else {
-			pk, err = updateCtx.Querier.InsertScheduledTripShape(ctx, db.InsertScheduledTripShapeParams{
-				SystemPk: updateCtx.SystemPk,
-				FeedPk:   updateCtx.FeedPk,
-				ID:       shape.ID,
-				Shape:    bytes,
-			})
-		}
-		if err != nil {
-			return nil, err
-		}
-		shapeIDToPk[shape.ID] = pk
-	}
-
-	if err := updateCtx.Querier.DeleteStaleScheduledTripShapes(ctx, db.DeleteStaleScheduledTripShapesParams{
-		FeedPk:          updateCtx.FeedPk,
-		UpdatedShapePks: common.MapValues(shapeIDToPk),
-	}); err != nil {
-		return nil, err
-	}
-
-	return shapeIDToPk, nil
+	return serviceIDToPk, nil
 }
 
 func updateScheduledTrips(
@@ -410,19 +339,6 @@ func updateScheduledTrips(
 	stopIDToPk map[string]int64,
 	shapeIDToPk map[string]int64) error {
 
-	oldIDToPk, err := dbwrappers.MapScheduledTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
-	if err != nil {
-		return err
-	}
-
-	if err := updateCtx.Querier.DeleteScheduledTripStopTimes(ctx, updateCtx.FeedPk); err != nil {
-		return err
-	}
-	if err := updateCtx.Querier.DeleteScheduledTripFrequencies(ctx, updateCtx.FeedPk); err != nil {
-		return err
-	}
-
-	newPks := []int64{}
 	var stopTimeParams []db.InsertScheduledTripStopTimeParams
 	for _, trip := range trips {
 		routePk, ok := routeIDToPk[trip.Route.Id]
@@ -445,32 +361,17 @@ func updateScheduledTrips(
 			}
 		}
 
-		pk, ok := oldIDToPk[trip.ID]
-		if ok {
-			err = updateCtx.Querier.UpdateScheduledTrip(ctx, db.UpdateScheduledTripParams{
-				Pk:                   pk,
-				RoutePk:              routePk,
-				ServicePk:            servicePk,
-				ShapePk:              convert.NullInt64(shapePkOrNil),
-				Headsign:             convert.NullIfEmptyString(trip.Headsign),
-				ShortName:            convert.NullIfEmptyString(trip.ShortName),
-				DirectionID:          convert.DirectionID(trip.DirectionId),
-				WheelchairAccessible: convert.WheelchairAccessible(trip.WheelchairAccessible),
-				BikesAllowed:         convert.BikesAllowed(trip.BikesAllowed),
-			})
-		} else {
-			pk, err = updateCtx.Querier.InsertScheduledTrip(ctx, db.InsertScheduledTripParams{
-				ID:                   trip.ID,
-				RoutePk:              routePk,
-				ServicePk:            servicePk,
-				ShapePk:              convert.NullInt64(shapePkOrNil),
-				Headsign:             convert.NullIfEmptyString(trip.Headsign),
-				ShortName:            convert.NullIfEmptyString(trip.ShortName),
-				DirectionID:          convert.DirectionID(trip.DirectionId),
-				WheelchairAccessible: convert.WheelchairAccessible(trip.WheelchairAccessible),
-				BikesAllowed:         convert.BikesAllowed(trip.BikesAllowed),
-			})
-		}
+		pk, err := updateCtx.Querier.InsertScheduledTrip(ctx, db.InsertScheduledTripParams{
+			ID:                   trip.ID,
+			RoutePk:              routePk,
+			ServicePk:            servicePk,
+			ShapePk:              convert.NullInt64(shapePkOrNil),
+			Headsign:             convert.NullIfEmptyString(trip.Headsign),
+			ShortName:            convert.NullIfEmptyString(trip.ShortName),
+			DirectionID:          convert.DirectionID(trip.DirectionId),
+			WheelchairAccessible: convert.WheelchairAccessible(trip.WheelchairAccessible),
+			BikesAllowed:         convert.BikesAllowed(trip.BikesAllowed),
+		})
 		if err != nil {
 			return err
 		}
@@ -503,20 +404,52 @@ func updateScheduledTrips(
 				return err
 			}
 		}
-
-		newPks = append(newPks, pk)
 	}
 
 	if _, err := updateCtx.Querier.InsertScheduledTripStopTime(ctx, stopTimeParams); err != nil {
 		return err
 	}
 
-	if err := updateCtx.Querier.DeleteStaleScheduledTrips(ctx, db.DeleteStaleScheduledTripsParams{
-		FeedPk:         updateCtx.FeedPk,
-		UpdatedTripPks: newPks,
-	}); err != nil {
-		return err
+	return nil
+}
+
+func updateShapes(
+	ctx context.Context,
+	updateCtx common.UpdateContext,
+	shapes []gtfs.Shape) (map[string]int64, error) {
+
+	shapeIDsInUpdate := []string{}
+	for _, shape := range shapes {
+		shapeIDsInUpdate = append(shapeIDsInUpdate, shape.ID)
 	}
 
-	return nil
+	err := updateCtx.Querier.DeleteScheduledTripShapes(ctx, db.DeleteScheduledTripShapesParams{
+		FeedPk:          updateCtx.FeedPk,
+		SystemPk:        updateCtx.SystemPk,
+		UpdatedShapeIds: shapeIDsInUpdate,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	shapeIDToPk := map[string]int64{}
+	for _, shape := range shapes {
+		bytes, err := protojson.Marshal(convert.ApiShape(&shape))
+		if err != nil {
+			return nil, err
+		}
+		pk, err := updateCtx.Querier.InsertScheduledTripShape(ctx, db.InsertScheduledTripShapeParams{
+			SystemPk: updateCtx.SystemPk,
+			FeedPk:   updateCtx.FeedPk,
+			ID:       shape.ID,
+			Shape:    bytes,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		shapeIDToPk[shape.ID] = pk
+	}
+
+	return shapeIDToPk, nil
 }

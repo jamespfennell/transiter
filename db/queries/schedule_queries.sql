@@ -1,22 +1,28 @@
+-- name: InsertScheduledService :one
+INSERT INTO scheduled_service
+    (id, system_pk, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date, feed_pk)
+VALUES
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(monday), sqlc.arg(tuesday), sqlc.arg(wednesday), sqlc.arg(thursday), sqlc.arg(friday), sqlc.arg(saturday), sqlc.arg(sunday), sqlc.arg(start_date), sqlc.arg(end_date), sqlc.arg(feed_pk))
+RETURNING pk;
+
+-- name: InsertScheduledServiceAddition :exec
+INSERT INTO scheduled_service_addition
+    (service_pk, date)
+VALUES
+    (sqlc.arg(service_pk), sqlc.arg(date));
+
+-- name: InsertScheduledServiceRemoval :exec
+INSERT INTO scheduled_service_removal
+    (service_pk, date)
+VALUES
+    (sqlc.arg(service_pk), sqlc.arg(date));
+
 -- name: InsertScheduledTrip :one
 INSERT INTO scheduled_trip
     (id, route_pk, service_pk, shape_pk, direction_id, bikes_allowed, block_id, headsign, short_name, wheelchair_accessible)
 VALUES
     (sqlc.arg(id), sqlc.arg(route_pk), sqlc.arg(service_pk), sqlc.arg(shape_pk), sqlc.arg(direction_id), sqlc.arg(bikes_allowed), sqlc.arg(block_id), sqlc.arg(headsign), sqlc.arg(short_name), sqlc.arg(wheelchair_accessible))
 RETURNING pk;
-
--- name: UpdateScheduledTrip :exec
-UPDATE scheduled_trip SET
-    route_pk = sqlc.arg(route_pk),
-    service_pk = sqlc.arg(service_pk),
-    shape_pk = sqlc.arg(shape_pk),
-    direction_id = sqlc.arg(direction_id),
-    bikes_allowed = sqlc.arg(bikes_allowed),
-    block_id = sqlc.arg(block_id),
-    headsign = sqlc.arg(headsign),
-    short_name = sqlc.arg(short_name),
-    wheelchair_accessible = sqlc.arg(wheelchair_accessible)
-WHERE pk = sqlc.arg(pk);
 
 -- name: InsertScheduledTripStopTime :copyfrom
 INSERT INTO scheduled_trip_stop_time
@@ -39,12 +45,26 @@ VALUES
     (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(feed_pk), sqlc.arg(shape))
 RETURNING pk;
 
--- name: UpdateScheduledTripShape :exec
-UPDATE scheduled_trip_shape SET
-    id = sqlc.arg(id),
-    shape = sqlc.arg(shape),
-    feed_pk = sqlc.arg(feed_pk)
-WHERE pk = sqlc.arg(pk);
+-- name: ListScheduledServices :many
+SELECT scheduled_service.*,
+       scheduled_service_addition.additions AS additions,
+       scheduled_service_removal.removals AS removals
+FROM scheduled_service
+LEFT JOIN (SELECT service_pk,
+                  CASE WHEN COUNT(scheduled_service_addition.date) > 0
+                  THEN array_agg(scheduled_service_addition.date ORDER BY scheduled_service_addition.date)::date[]
+                  ELSE NULL::date[] END AS additions
+           FROM scheduled_service_addition
+           GROUP BY scheduled_service_addition.service_pk) AS scheduled_service_addition
+    ON scheduled_service.pk = scheduled_service_addition.service_pk
+LEFT JOIN (SELECT service_pk,
+                  CASE WHEN COUNT(scheduled_service_removal.date) > 0
+                  THEN array_agg(scheduled_service_removal.date ORDER BY scheduled_service_removal.date)::date[]
+                  ELSE NULL::date[] END AS removals
+           FROM scheduled_service_removal
+           GROUP BY scheduled_service_removal.service_pk) AS scheduled_service_removal
+    ON scheduled_service.pk = scheduled_service_removal.service_pk
+WHERE system_pk = sqlc.arg(system_pk);
 
 -- name: ListScheduledTrips :many
 SELECT
@@ -82,48 +102,14 @@ FROM scheduled_trip_shape
 INNER JOIN scheduled_trip ON scheduled_trip.shape_pk = scheduled_trip_shape.pk
 WHERE system_pk = sqlc.arg(system_pk);
 
--- name: MapScheduledTripIDToPkInSystem :many
-SELECT scheduled_trip.id, scheduled_trip.pk FROM scheduled_trip
-INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
-WHERE
-    system_pk = sqlc.arg(system_pk)
-    AND (
-        NOT sqlc.arg(filter_by_trip_id)::bool
-        OR scheduled_trip.id = ANY(sqlc.arg(trip_ids)::text[])
-    );
+-- name: DeleteScheduledServices :exec
+DELETE FROM scheduled_service
+WHERE feed_pk = sqlc.arg(feed_pk)
+OR (system_pk = sqlc.arg(system_pk) AND
+   id = ANY(sqlc.arg(updated_service_ids)::text[]));
 
--- name: MapShapeIDToPkInSystem :many
-SELECT id, pk
-FROM scheduled_trip_shape
-WHERE
-    system_pk = sqlc.arg(system_pk)
-    AND (
-        NOT sqlc.arg(filter_by_shape_id)::bool
-        OR id = ANY(sqlc.arg(shape_ids)::text[])
-    );
-
--- name: DeleteStaleScheduledTrips :exec
-DELETE FROM scheduled_trip
-USING scheduled_service
-WHERE scheduled_trip.service_pk = scheduled_service.pk
-AND feed_pk = sqlc.arg(feed_pk)
-AND NOT scheduled_trip.pk = ANY(sqlc.arg(updated_trip_pks)::bigint[]);
-
--- name: DeleteScheduledTripStopTimes :exec
-DELETE FROM scheduled_trip_stop_time
-USING scheduled_trip, scheduled_service
-WHERE scheduled_trip_stop_time.trip_pk = scheduled_trip.pk
-AND scheduled_trip.service_pk = scheduled_service.pk
-AND feed_pk = sqlc.arg(feed_pk);
-
--- name: DeleteScheduledTripFrequencies :exec
-DELETE FROM scheduled_trip_frequency
-USING scheduled_trip, scheduled_service
-WHERE scheduled_trip_frequency.trip_pk = scheduled_trip.pk
-AND scheduled_trip.service_pk = scheduled_service.pk
-AND feed_pk = sqlc.arg(feed_pk);
-
--- name: DeleteStaleScheduledTripShapes :exec
+-- name: DeleteScheduledTripShapes :exec
 DELETE FROM scheduled_trip_shape
-WHERE NOT scheduled_trip_shape.pk = ANY(sqlc.arg(updated_shape_pks)::bigint[])
-AND feed_pk = sqlc.arg(feed_pk);
+WHERE feed_pk = sqlc.arg(feed_pk)
+OR (system_pk = sqlc.arg(system_pk) AND
+   id = ANY(sqlc.arg(updated_shape_ids)::text[]));
