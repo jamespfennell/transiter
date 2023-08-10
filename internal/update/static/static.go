@@ -11,6 +11,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/servicemaps"
 	"github.com/jamespfennell/transiter/internal/update/common"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func Parse(content []byte) (*gtfs.Static, error) {
@@ -32,6 +33,14 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Stat
 		return err
 	}
 	if err := updateTransfers(ctx, updateCtx, data.Transfers, stopIDToPk); err != nil {
+		return err
+	}
+	serviceIDToPk, err := updateServices(ctx, updateCtx, data.Services)
+	if err != nil {
+		return err
+	}
+	err = updateScheduledTrips(ctx, updateCtx, data.Trips, routeIDToPk, serviceIDToPk, stopIDToPk)
+	if err != nil {
 		return err
 	}
 	if err := servicemaps.UpdateStaticMaps(ctx, updateCtx.Querier, updateCtx.Logger, servicemaps.UpdateStaticMapsArgs{
@@ -162,15 +171,6 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 	}
 	newIDToPk := map[string]int64{}
 	for _, stop := range stops {
-		var wheelchairBoarding *bool
-		switch stop.WheelchairBoarding {
-		case gtfs.WheelchairBoarding_Possible:
-			t := true
-			wheelchairBoarding = &t
-		case gtfs.WheelchairBoarding_NotPossible:
-			f := false
-			wheelchairBoarding = &f
-		}
 		pk, ok := oldIDToPk[stop.Id]
 		if ok {
 			err = updateCtx.Querier.UpdateStop(ctx, db.UpdateStopParams{
@@ -185,7 +185,7 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 				Description:        convert.NullIfEmptyString(stop.Description),
 				PlatformCode:       convert.NullIfEmptyString(stop.PlatformCode),
 				Timezone:           convert.NullIfEmptyString(stop.Timezone),
-				WheelchairBoarding: convert.NullBool(wheelchairBoarding),
+				WheelchairBoarding: convert.WheelchairAccessible(stop.WheelchairBoarding),
 				ZoneID:             convert.NullIfEmptyString(stop.ZoneId),
 			})
 		} else {
@@ -202,7 +202,7 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 				Description:        convert.NullIfEmptyString(stop.Description),
 				PlatformCode:       convert.NullIfEmptyString(stop.PlatformCode),
 				Timezone:           convert.NullIfEmptyString(stop.Timezone),
-				WheelchairBoarding: convert.NullBool(wheelchairBoarding),
+				WheelchairBoarding: convert.WheelchairAccessible(stop.WheelchairBoarding),
 				ZoneID:             convert.NullIfEmptyString(stop.ZoneId),
 			})
 		}
@@ -264,5 +264,211 @@ func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transf
 			return err
 		}
 	}
+	return nil
+}
+
+func updateServices(ctx context.Context, updateCtx common.UpdateContext, services []gtfs.Service) (map[string]int64, error) {
+	oldIDToPk, err := dbwrappers.MapScheduledServiceIDToPk(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	if err != nil {
+		return nil, err
+	}
+
+	// Clear out old service additions and removals for all existing services
+	oldPks := common.MapValues(oldIDToPk)
+	if err := updateCtx.Querier.DeleteScheduledServiceAdditions(ctx, oldPks); err != nil {
+		return nil, err
+	}
+	if err := updateCtx.Querier.DeleteScheduledServiceRemovals(ctx, oldPks); err != nil {
+		return nil, err
+	}
+
+	newIDToPk := map[string]int64{}
+	for _, service := range services {
+		pk, ok := oldIDToPk[service.Id]
+		if ok {
+			err = updateCtx.Querier.UpdateScheduledService(ctx, db.UpdateScheduledServiceParams{
+				Pk:        pk,
+				SystemPk:  updateCtx.SystemPk,
+				FeedPk:    updateCtx.FeedPk,
+				StartDate: convert.Date(service.StartDate),
+				EndDate:   convert.Date(service.EndDate),
+				Monday:    convert.Bool(service.Monday),
+				Tuesday:   convert.Bool(service.Tuesday),
+				Wednesday: convert.Bool(service.Wednesday),
+				Thursday:  convert.Bool(service.Thursday),
+				Friday:    convert.Bool(service.Friday),
+				Saturday:  convert.Bool(service.Saturday),
+				Sunday:    convert.Bool(service.Sunday),
+			})
+		} else {
+			pk, err = updateCtx.Querier.InsertScheduledService(ctx, db.InsertScheduledServiceParams{
+				ID:        service.Id,
+				SystemPk:  updateCtx.SystemPk,
+				FeedPk:    updateCtx.FeedPk,
+				StartDate: convert.Date(service.StartDate),
+				EndDate:   convert.Date(service.EndDate),
+				Monday:    convert.Bool(service.Monday),
+				Tuesday:   convert.Bool(service.Tuesday),
+				Wednesday: convert.Bool(service.Wednesday),
+				Thursday:  convert.Bool(service.Thursday),
+				Friday:    convert.Bool(service.Friday),
+				Saturday:  convert.Bool(service.Saturday),
+				Sunday:    convert.Bool(service.Sunday),
+			})
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		for _, addedDate := range service.AddedDates {
+			if err := updateCtx.Querier.InsertScheduledServiceAddition(ctx, db.InsertScheduledServiceAdditionParams{
+				ServicePk: pk,
+				Date:      convert.Date(addedDate),
+			}); err != nil {
+				return nil, err
+			}
+		}
+
+		for _, removedDate := range service.RemovedDates {
+			if err := updateCtx.Querier.InsertScheduledServiceRemoval(ctx, db.InsertScheduledServiceRemovalParams{
+				ServicePk: pk,
+				Date:      convert.Date(removedDate),
+			}); err != nil {
+				return nil, err
+			}
+		}
+
+		newIDToPk[service.Id] = pk
+	}
+
+	if err := updateCtx.Querier.DeleteStaleScheduledServices(ctx, db.DeleteStaleScheduledServicesParams{
+		FeedPk:                     updateCtx.FeedPk,
+		UpdatedScheduledServicePks: common.MapValues(newIDToPk),
+	}); err != nil {
+		return nil, err
+	}
+
+	return newIDToPk, nil
+}
+
+func updateScheduledTrips(
+	ctx context.Context,
+	updateCtx common.UpdateContext,
+	trips []gtfs.ScheduledTrip,
+	routeIDToPk map[string]int64,
+	serviceIDToPk map[string]int64,
+	stopIDToPk map[string]int64) error {
+
+	oldIDToPk, err := dbwrappers.MapScheduledTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	if err != nil {
+		return err
+	}
+
+	oldPks := common.MapValues(oldIDToPk)
+	if err := updateCtx.Querier.DeleteScheduledTripStopTimes(ctx, oldPks); err != nil {
+		return err
+	}
+	if err := updateCtx.Querier.DeleteScheduledTripFrequencies(ctx, oldPks); err != nil {
+		return err
+	}
+	if err := updateCtx.Querier.DeleteScheduledTripShapes(ctx, oldPks); err != nil {
+		return err
+	}
+
+	newPks := []int64{}
+	var stopTimeParams []db.InsertScheduledTripStopTimeParams
+	for _, trip := range trips {
+		routePk, ok := routeIDToPk[trip.Route.Id]
+		if !ok {
+			updateCtx.Logger.Warn("Skipping trip with unknown route ID", trip.Route.Id)
+			continue
+		}
+		servicePk, ok := serviceIDToPk[trip.Service.Id]
+		if !ok {
+			updateCtx.Logger.Warn("Skipping trip with unknown service ID", trip.Service.Id)
+			continue
+		}
+
+		pk, ok := oldIDToPk[trip.ID]
+		if ok {
+			err = updateCtx.Querier.UpdateScheduledTrip(ctx, db.UpdateScheduledTripParams{
+				Pk:                   pk,
+				RoutePk:              routePk,
+				ServicePk:            servicePk,
+				Headsign:             convert.NullIfEmptyString(trip.Headsign),
+				ShortName:            convert.NullIfEmptyString(trip.ShortName),
+				DirectionID:          convert.DirectionID(trip.DirectionId),
+				WheelchairAccessible: convert.WheelchairAccessible(trip.WheelchairAccessible),
+				BikesAllowed:         convert.BikesAllowed(trip.BikesAllowed),
+			})
+		} else {
+			pk, err = updateCtx.Querier.InsertScheduledTrip(ctx, db.InsertScheduledTripParams{
+				ID:                   trip.ID,
+				RoutePk:              routePk,
+				ServicePk:            servicePk,
+				Headsign:             convert.NullIfEmptyString(trip.Headsign),
+				ShortName:            convert.NullIfEmptyString(trip.ShortName),
+				DirectionID:          convert.DirectionID(trip.DirectionId),
+				WheelchairAccessible: convert.WheelchairAccessible(trip.WheelchairAccessible),
+				BikesAllowed:         convert.BikesAllowed(trip.BikesAllowed),
+			})
+		}
+		if err != nil {
+			return err
+		}
+
+		for _, stopTime := range trip.StopTimes {
+			stopTimeParams = append(stopTimeParams, db.InsertScheduledTripStopTimeParams{
+				TripPk:                pk,
+				StopPk:                stopIDToPk[stopTime.Stop.Id],
+				ArrivalTime:           convert.Duration(stopTime.ArrivalTime),
+				DepartureTime:         convert.Duration(stopTime.DepartureTime),
+				StopSequence:          int32(stopTime.StopSequence),
+				Headsign:              convert.NullIfEmptyString(stopTime.Headsign),
+				ContinuousDropOff:     stopTime.ContinuousDropOff.String(),
+				ContinuousPickup:      stopTime.ContinuousPickup.String(),
+				DropOffType:           stopTime.DropOffType.String(),
+				ExactTimes:            stopTime.ExactTimes,
+				PickupType:            stopTime.PickupType.String(),
+				ShapeDistanceTraveled: convert.NullFloat64(stopTime.ShapeDistanceTraveled),
+			})
+		}
+
+		for _, frequency := range trip.Frequencies {
+			if err := updateCtx.Querier.InsertScheduledTripFrequency(ctx, db.InsertScheduledTripFrequencyParams{
+				TripPk:         pk,
+				StartTime:      int32(frequency.StartTime.Seconds()),
+				EndTime:        int32(frequency.EndTime.Seconds()),
+				Headway:        int32(frequency.Headway.Seconds()),
+				FrequencyBased: convert.ExactTimesToIsFrequencyBased(frequency.ExactTimes),
+			}); err != nil {
+				return err
+			}
+		}
+
+		if trip.Shape != nil {
+			bytes, err := protojson.Marshal(convert.ApiShape(trip.Shape))
+			if err != nil {
+				return err
+			}
+			if err := updateCtx.Querier.InsertScheduledTripShape(ctx, db.InsertScheduledTripShapeParams{
+				TripPk: pk,
+				Shape:  bytes,
+			}); err != nil {
+				return err
+			}
+		}
+
+		newPks = append(newPks, pk)
+	}
+
+	if _, err := updateCtx.Querier.InsertScheduledTripStopTime(ctx, stopTimeParams); err != nil {
+		return err
+	}
+
+	if err := updateCtx.Querier.DeleteStaleScheduledTrips(ctx, newPks); err != nil {
+		return err
+	}
+
 	return nil
 }
