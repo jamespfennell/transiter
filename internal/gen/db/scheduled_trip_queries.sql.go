@@ -13,41 +13,61 @@ import (
 
 const deleteScheduledTripFrequencies = `-- name: DeleteScheduledTripFrequencies :exec
 DELETE FROM scheduled_trip_frequency
-WHERE trip_pk = ANY($1::bigint[])
+USING scheduled_trip, scheduled_service
+WHERE scheduled_trip_frequency.trip_pk = scheduled_trip.pk
+AND scheduled_trip.service_pk = scheduled_service.pk
+AND feed_pk = $1
 `
 
-func (q *Queries) DeleteScheduledTripFrequencies(ctx context.Context, tripPks []int64) error {
-	_, err := q.db.Exec(ctx, deleteScheduledTripFrequencies, tripPks)
+func (q *Queries) DeleteScheduledTripFrequencies(ctx context.Context, feedPk int64) error {
+	_, err := q.db.Exec(ctx, deleteScheduledTripFrequencies, feedPk)
 	return err
 }
 
 const deleteScheduledTripStopTimes = `-- name: DeleteScheduledTripStopTimes :exec
 DELETE FROM scheduled_trip_stop_time
-WHERE trip_pk = ANY($1::bigint[])
+USING scheduled_trip, scheduled_service
+WHERE scheduled_trip_stop_time.trip_pk = scheduled_trip.pk
+AND scheduled_trip.service_pk = scheduled_service.pk
+AND feed_pk = $1
 `
 
-func (q *Queries) DeleteScheduledTripStopTimes(ctx context.Context, tripPks []int64) error {
-	_, err := q.db.Exec(ctx, deleteScheduledTripStopTimes, tripPks)
+func (q *Queries) DeleteScheduledTripStopTimes(ctx context.Context, feedPk int64) error {
+	_, err := q.db.Exec(ctx, deleteScheduledTripStopTimes, feedPk)
 	return err
 }
 
 const deleteStaleScheduledTripShapes = `-- name: DeleteStaleScheduledTripShapes :exec
 DELETE FROM scheduled_trip_shape
 WHERE NOT scheduled_trip_shape.pk = ANY($1::bigint[])
+AND feed_pk = $2
 `
 
-func (q *Queries) DeleteStaleScheduledTripShapes(ctx context.Context, updatedShapePks []int64) error {
-	_, err := q.db.Exec(ctx, deleteStaleScheduledTripShapes, updatedShapePks)
+type DeleteStaleScheduledTripShapesParams struct {
+	UpdatedShapePks []int64
+	FeedPk          int64
+}
+
+func (q *Queries) DeleteStaleScheduledTripShapes(ctx context.Context, arg DeleteStaleScheduledTripShapesParams) error {
+	_, err := q.db.Exec(ctx, deleteStaleScheduledTripShapes, arg.UpdatedShapePks, arg.FeedPk)
 	return err
 }
 
 const deleteStaleScheduledTrips = `-- name: DeleteStaleScheduledTrips :exec
 DELETE FROM scheduled_trip
-WHERE NOT scheduled_trip.pk = ANY($1::bigint[])
+USING scheduled_service
+WHERE scheduled_trip.service_pk = scheduled_service.pk
+AND feed_pk = $1
+AND NOT scheduled_trip.pk = ANY($2::bigint[])
 `
 
-func (q *Queries) DeleteStaleScheduledTrips(ctx context.Context, updatedTripPks []int64) error {
-	_, err := q.db.Exec(ctx, deleteStaleScheduledTrips, updatedTripPks)
+type DeleteStaleScheduledTripsParams struct {
+	FeedPk         int64
+	UpdatedTripPks []int64
+}
+
+func (q *Queries) DeleteStaleScheduledTrips(ctx context.Context, arg DeleteStaleScheduledTripsParams) error {
+	_, err := q.db.Exec(ctx, deleteStaleScheduledTrips, arg.FeedPk, arg.UpdatedTripPks)
 	return err
 }
 
@@ -118,20 +138,26 @@ func (q *Queries) InsertScheduledTripFrequency(ctx context.Context, arg InsertSc
 
 const insertScheduledTripShape = `-- name: InsertScheduledTripShape :one
 INSERT INTO scheduled_trip_shape
-    (id, system_pk, shape)
+    (id, system_pk, feed_pk, shape)
 VALUES
-    ($1, $2, $3)
+    ($1, $2, $3, $4)
 RETURNING pk
 `
 
 type InsertScheduledTripShapeParams struct {
 	ID       string
 	SystemPk int64
+	FeedPk   int64
 	Shape    []byte
 }
 
 func (q *Queries) InsertScheduledTripShape(ctx context.Context, arg InsertScheduledTripShapeParams) (int64, error) {
-	row := q.db.QueryRow(ctx, insertScheduledTripShape, arg.ID, arg.SystemPk, arg.Shape)
+	row := q.db.QueryRow(ctx, insertScheduledTripShape,
+		arg.ID,
+		arg.SystemPk,
+		arg.FeedPk,
+		arg.Shape,
+	)
 	var pk int64
 	err := row.Scan(&pk)
 	return pk, err
@@ -201,7 +227,7 @@ func (q *Queries) ListScheduledTripFrequencies(ctx context.Context, systemPk int
 }
 
 const listScheduledTripShapes = `-- name: ListScheduledTripShapes :many
-SELECT scheduled_trip_shape.pk, scheduled_trip_shape.id, scheduled_trip_shape.system_pk, scheduled_trip_shape.shape, scheduled_trip.id trip_id
+SELECT scheduled_trip_shape.pk, scheduled_trip_shape.id, scheduled_trip_shape.system_pk, scheduled_trip_shape.feed_pk, scheduled_trip_shape.shape, scheduled_trip.id trip_id
 FROM scheduled_trip_shape
 INNER JOIN scheduled_trip ON scheduled_trip.shape_pk = scheduled_trip_shape.pk
 WHERE system_pk = $1
@@ -211,6 +237,7 @@ type ListScheduledTripShapesRow struct {
 	Pk       int64
 	ID       string
 	SystemPk int64
+	FeedPk   int64
 	Shape    []byte
 	TripID   string
 }
@@ -228,6 +255,7 @@ func (q *Queries) ListScheduledTripShapes(ctx context.Context, systemPk int64) (
 			&i.Pk,
 			&i.ID,
 			&i.SystemPk,
+			&i.FeedPk,
 			&i.Shape,
 			&i.TripID,
 		); err != nil {
@@ -498,17 +526,24 @@ func (q *Queries) UpdateScheduledTrip(ctx context.Context, arg UpdateScheduledTr
 const updateScheduledTripShape = `-- name: UpdateScheduledTripShape :exec
 UPDATE scheduled_trip_shape SET
     id = $1,
-    shape = $2
-WHERE pk = $3
+    shape = $2,
+    feed_pk = $3
+WHERE pk = $4
 `
 
 type UpdateScheduledTripShapeParams struct {
-	ID    string
-	Shape []byte
-	Pk    int64
+	ID     string
+	Shape  []byte
+	FeedPk int64
+	Pk     int64
 }
 
 func (q *Queries) UpdateScheduledTripShape(ctx context.Context, arg UpdateScheduledTripShapeParams) error {
-	_, err := q.db.Exec(ctx, updateScheduledTripShape, arg.ID, arg.Shape, arg.Pk)
+	_, err := q.db.Exec(ctx, updateScheduledTripShape,
+		arg.ID,
+		arg.Shape,
+		arg.FeedPk,
+		arg.Pk,
+	)
 	return err
 }

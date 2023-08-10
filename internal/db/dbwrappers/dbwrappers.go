@@ -207,7 +207,7 @@ func MapVehicleIDToPkandTripPkToVehicleID(
 	return vehicleIDToPk, tripPkToVehicleID, nil
 }
 
-func MapScheduledServiceIDToPk(ctx context.Context, queries db.Querier, systemPk int64, scheduledServiceIDs ...[]string) (map[string]int64, error) {
+func MapScheduledServiceIDToPkInSystem(ctx context.Context, queries db.Querier, systemPk int64, scheduledServiceIDs ...[]string) (map[string]int64, error) {
 	result := map[string]int64{}
 	var queryScheduledServiceIDs []string
 	if len(scheduledServiceIDs) > 0 {

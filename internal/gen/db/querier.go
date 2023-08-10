@@ -18,18 +18,18 @@ type Querier interface {
 	CountTransfersInSystem(ctx context.Context, systemPk pgtype.Int8) (int64, error)
 	DeleteAlerts(ctx context.Context, alertPks []int64) error
 	DeleteFeed(ctx context.Context, pk int64) error
-	DeleteScheduledServiceAdditions(ctx context.Context, servicePks []int64) error
-	DeleteScheduledServiceRemovals(ctx context.Context, servicePks []int64) error
-	DeleteScheduledTripFrequencies(ctx context.Context, tripPks []int64) error
-	DeleteScheduledTripStopTimes(ctx context.Context, tripPks []int64) error
+	DeleteScheduledServiceAdditions(ctx context.Context, feedPk int64) error
+	DeleteScheduledServiceRemovals(ctx context.Context, feedPk int64) error
+	DeleteScheduledTripFrequencies(ctx context.Context, feedPk int64) error
+	DeleteScheduledTripStopTimes(ctx context.Context, feedPk int64) error
 	DeleteServiceMap(ctx context.Context, arg DeleteServiceMapParams) error
 	DeleteServiceMapConfig(ctx context.Context, pk int64) error
 	DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) error
 	DeleteStaleAlerts(ctx context.Context, arg DeleteStaleAlertsParams) error
 	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) error
 	DeleteStaleScheduledServices(ctx context.Context, arg DeleteStaleScheduledServicesParams) error
-	DeleteStaleScheduledTripShapes(ctx context.Context, updatedShapePks []int64) error
-	DeleteStaleScheduledTrips(ctx context.Context, updatedTripPks []int64) error
+	DeleteStaleScheduledTripShapes(ctx context.Context, arg DeleteStaleScheduledTripShapesParams) error
+	DeleteStaleScheduledTrips(ctx context.Context, arg DeleteStaleScheduledTripsParams) error
 	DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) error
 	DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) ([]int64, error)
 	DeleteStaleVehicles(ctx context.Context, arg DeleteStaleVehiclesParams) error

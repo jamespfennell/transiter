@@ -272,17 +272,16 @@ func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transf
 }
 
 func updateServices(ctx context.Context, updateCtx common.UpdateContext, services []gtfs.Service) (map[string]int64, error) {
-	oldIDToPk, err := dbwrappers.MapScheduledServiceIDToPk(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	oldIDToPk, err := dbwrappers.MapScheduledServiceIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
 		return nil, err
 	}
 
 	// Clear out old service additions and removals for all existing services
-	oldPks := common.MapValues(oldIDToPk)
-	if err := updateCtx.Querier.DeleteScheduledServiceAdditions(ctx, oldPks); err != nil {
+	if err := updateCtx.Querier.DeleteScheduledServiceAdditions(ctx, updateCtx.FeedPk); err != nil {
 		return nil, err
 	}
-	if err := updateCtx.Querier.DeleteScheduledServiceRemovals(ctx, oldPks); err != nil {
+	if err := updateCtx.Querier.DeleteScheduledServiceRemovals(ctx, updateCtx.FeedPk); err != nil {
 		return nil, err
 	}
 
@@ -374,12 +373,14 @@ func updateShapes(
 		pk, ok := oldIDToPk[shape.ID]
 		if ok {
 			err = updateCtx.Querier.UpdateScheduledTripShape(ctx, db.UpdateScheduledTripShapeParams{
-				Pk:    pk,
-				Shape: bytes,
+				Pk:     pk,
+				FeedPk: updateCtx.FeedPk,
+				Shape:  bytes,
 			})
 		} else {
 			pk, err = updateCtx.Querier.InsertScheduledTripShape(ctx, db.InsertScheduledTripShapeParams{
 				SystemPk: updateCtx.SystemPk,
+				FeedPk:   updateCtx.FeedPk,
 				ID:       shape.ID,
 				Shape:    bytes,
 			})
@@ -390,7 +391,10 @@ func updateShapes(
 		shapeIDToPk[shape.ID] = pk
 	}
 
-	if err := updateCtx.Querier.DeleteStaleScheduledTripShapes(ctx, common.MapValues(shapeIDToPk)); err != nil {
+	if err := updateCtx.Querier.DeleteStaleScheduledTripShapes(ctx, db.DeleteStaleScheduledTripShapesParams{
+		FeedPk:          updateCtx.FeedPk,
+		UpdatedShapePks: common.MapValues(shapeIDToPk),
+	}); err != nil {
 		return nil, err
 	}
 
@@ -411,11 +415,10 @@ func updateScheduledTrips(
 		return err
 	}
 
-	oldPks := common.MapValues(oldIDToPk)
-	if err := updateCtx.Querier.DeleteScheduledTripStopTimes(ctx, oldPks); err != nil {
+	if err := updateCtx.Querier.DeleteScheduledTripStopTimes(ctx, updateCtx.FeedPk); err != nil {
 		return err
 	}
-	if err := updateCtx.Querier.DeleteScheduledTripFrequencies(ctx, oldPks); err != nil {
+	if err := updateCtx.Querier.DeleteScheduledTripFrequencies(ctx, updateCtx.FeedPk); err != nil {
 		return err
 	}
 
@@ -508,7 +511,10 @@ func updateScheduledTrips(
 		return err
 	}
 
-	if err := updateCtx.Querier.DeleteStaleScheduledTrips(ctx, newPks); err != nil {
+	if err := updateCtx.Querier.DeleteStaleScheduledTrips(ctx, db.DeleteStaleScheduledTripsParams{
+		FeedPk:         updateCtx.FeedPk,
+		UpdatedTripPks: newPks,
+	}); err != nil {
 		return err
 	}
 

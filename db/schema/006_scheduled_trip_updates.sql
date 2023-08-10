@@ -36,6 +36,7 @@ CREATE TABLE scheduled_trip_shape (
     pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
     system_pk BIGINT NOT NULL REFERENCES system(pk) ON DELETE CASCADE,
+    feed_pk BIGINT NOT NULL REFERENCES feed(pk) ON DELETE CASCADE,
     shape JSON NOT NULL,
 
     UNIQUE(system_pk, id)

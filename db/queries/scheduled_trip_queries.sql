@@ -34,15 +34,16 @@ VALUES
 
 -- name: InsertScheduledTripShape :one
 INSERT INTO scheduled_trip_shape
-    (id, system_pk, shape)
+    (id, system_pk, feed_pk, shape)
 VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(shape))
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(feed_pk), sqlc.arg(shape))
 RETURNING pk;
 
 -- name: UpdateScheduledTripShape :exec
 UPDATE scheduled_trip_shape SET
     id = sqlc.arg(id),
-    shape = sqlc.arg(shape)
+    shape = sqlc.arg(shape),
+    feed_pk = sqlc.arg(feed_pk)
 WHERE pk = sqlc.arg(pk);
 
 -- name: ListScheduledTrips :many
@@ -103,16 +104,26 @@ WHERE
 
 -- name: DeleteStaleScheduledTrips :exec
 DELETE FROM scheduled_trip
-WHERE NOT scheduled_trip.pk = ANY(sqlc.arg(updated_trip_pks)::bigint[]);
+USING scheduled_service
+WHERE scheduled_trip.service_pk = scheduled_service.pk
+AND feed_pk = sqlc.arg(feed_pk)
+AND NOT scheduled_trip.pk = ANY(sqlc.arg(updated_trip_pks)::bigint[]);
 
 -- name: DeleteScheduledTripStopTimes :exec
 DELETE FROM scheduled_trip_stop_time
-WHERE trip_pk = ANY(sqlc.arg(trip_pks)::bigint[]);
+USING scheduled_trip, scheduled_service
+WHERE scheduled_trip_stop_time.trip_pk = scheduled_trip.pk
+AND scheduled_trip.service_pk = scheduled_service.pk
+AND feed_pk = sqlc.arg(feed_pk);
 
 -- name: DeleteScheduledTripFrequencies :exec
 DELETE FROM scheduled_trip_frequency
-WHERE trip_pk = ANY(sqlc.arg(trip_pks)::bigint[]);
+USING scheduled_trip, scheduled_service
+WHERE scheduled_trip_frequency.trip_pk = scheduled_trip.pk
+AND scheduled_trip.service_pk = scheduled_service.pk
+AND feed_pk = sqlc.arg(feed_pk);
 
 -- name: DeleteStaleScheduledTripShapes :exec
 DELETE FROM scheduled_trip_shape
-WHERE NOT scheduled_trip_shape.pk = ANY(sqlc.arg(updated_shape_pks)::bigint[]);
+WHERE NOT scheduled_trip_shape.pk = ANY(sqlc.arg(updated_shape_pks)::bigint[])
+AND feed_pk = sqlc.arg(feed_pk);

@@ -28,7 +28,9 @@ VALUES
 
 -- name: DeleteScheduledServiceAdditions :exec
 DELETE FROM scheduled_service_addition
-WHERE service_pk = ANY(sqlc.arg(service_pks)::bigint[]);
+USING scheduled_service
+WHERE scheduled_service.pk = scheduled_service_addition.service_pk
+AND feed_pk = sqlc.arg(feed_pk);
 
 -- name: InsertScheduledServiceRemoval :exec
 INSERT INTO scheduled_service_removal
@@ -38,7 +40,9 @@ VALUES
 
 -- name: DeleteScheduledServiceRemovals :exec
 DELETE FROM scheduled_service_removal
-WHERE service_pk = ANY(sqlc.arg(service_pks)::bigint[]);
+USING scheduled_service
+WHERE scheduled_service.pk = scheduled_service_removal.service_pk
+AND feed_pk = sqlc.arg(feed_pk);
 
 -- name: ListScheduledServices :many
 SELECT scheduled_service.*,

@@ -13,21 +13,25 @@ import (
 
 const deleteScheduledServiceAdditions = `-- name: DeleteScheduledServiceAdditions :exec
 DELETE FROM scheduled_service_addition
-WHERE service_pk = ANY($1::bigint[])
+USING scheduled_service
+WHERE scheduled_service.pk = scheduled_service_addition.service_pk
+AND feed_pk = $1
 `
 
-func (q *Queries) DeleteScheduledServiceAdditions(ctx context.Context, servicePks []int64) error {
-	_, err := q.db.Exec(ctx, deleteScheduledServiceAdditions, servicePks)
+func (q *Queries) DeleteScheduledServiceAdditions(ctx context.Context, feedPk int64) error {
+	_, err := q.db.Exec(ctx, deleteScheduledServiceAdditions, feedPk)
 	return err
 }
 
 const deleteScheduledServiceRemovals = `-- name: DeleteScheduledServiceRemovals :exec
 DELETE FROM scheduled_service_removal
-WHERE service_pk = ANY($1::bigint[])
+USING scheduled_service
+WHERE scheduled_service.pk = scheduled_service_removal.service_pk
+AND feed_pk = $1
 `
 
-func (q *Queries) DeleteScheduledServiceRemovals(ctx context.Context, servicePks []int64) error {
-	_, err := q.db.Exec(ctx, deleteScheduledServiceRemovals, servicePks)
+func (q *Queries) DeleteScheduledServiceRemovals(ctx context.Context, feedPk int64) error {
+	_, err := q.db.Exec(ctx, deleteScheduledServiceRemovals, feedPk)
 	return err
 }
 

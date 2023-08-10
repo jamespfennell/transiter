@@ -147,6 +147,7 @@ type ScheduledTripShape struct {
 	Pk       int64
 	ID       string
 	SystemPk int64
+	FeedPk   int64
 	Shape    []byte
 }
 
