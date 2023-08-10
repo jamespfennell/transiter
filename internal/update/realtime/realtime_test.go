@@ -298,7 +298,7 @@ func TestUpdateVehicles(t *testing.T) {
 				{
 					wantVehicle(
 						vehicleID1, systemID, nil,
-						ptr("label"), ptr("licencePlate"),
+						ptr("label"), ptr("licensePlate"),
 						ptr(float32(1.0)), ptr(float32(2.0)), ptr(float32(3.0)), ptr(4.0), ptr(float32(5.0)),
 						ptr(gtfs.CongestionLevel(1)),
 						ptr(mkTime(6)),
