@@ -21,16 +21,6 @@ func (q *Queries) DeleteScheduledTripFrequencies(ctx context.Context, tripPks []
 	return err
 }
 
-const deleteScheduledTripShapes = `-- name: DeleteScheduledTripShapes :exec
-DELETE FROM scheduled_trip_shape
-WHERE trip_pk = ANY($1::bigint[])
-`
-
-func (q *Queries) DeleteScheduledTripShapes(ctx context.Context, tripPks []int64) error {
-	_, err := q.db.Exec(ctx, deleteScheduledTripShapes, tripPks)
-	return err
-}
-
 const deleteScheduledTripStopTimes = `-- name: DeleteScheduledTripStopTimes :exec
 DELETE FROM scheduled_trip_stop_time
 WHERE trip_pk = ANY($1::bigint[])
@@ -38,6 +28,16 @@ WHERE trip_pk = ANY($1::bigint[])
 
 func (q *Queries) DeleteScheduledTripStopTimes(ctx context.Context, tripPks []int64) error {
 	_, err := q.db.Exec(ctx, deleteScheduledTripStopTimes, tripPks)
+	return err
+}
+
+const deleteStaleScheduledTripShapes = `-- name: DeleteStaleScheduledTripShapes :exec
+DELETE FROM scheduled_trip_shape
+WHERE NOT scheduled_trip_shape.pk = ANY($1::bigint[])
+`
+
+func (q *Queries) DeleteStaleScheduledTripShapes(ctx context.Context, updatedShapePks []int64) error {
+	_, err := q.db.Exec(ctx, deleteStaleScheduledTripShapes, updatedShapePks)
 	return err
 }
 
@@ -53,9 +53,9 @@ func (q *Queries) DeleteStaleScheduledTrips(ctx context.Context, updatedTripPks 
 
 const insertScheduledTrip = `-- name: InsertScheduledTrip :one
 INSERT INTO scheduled_trip
-    (id, route_pk, service_pk, direction_id, bikes_allowed, block_id, headsign, short_name, wheelchair_accessible)
+    (id, route_pk, service_pk, shape_pk, direction_id, bikes_allowed, block_id, headsign, short_name, wheelchair_accessible)
 VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING pk
 `
 
@@ -63,6 +63,7 @@ type InsertScheduledTripParams struct {
 	ID                   string
 	RoutePk              int64
 	ServicePk            int64
+	ShapePk              pgtype.Int8
 	DirectionID          pgtype.Bool
 	BikesAllowed         pgtype.Bool
 	BlockID              pgtype.Text
@@ -76,6 +77,7 @@ func (q *Queries) InsertScheduledTrip(ctx context.Context, arg InsertScheduledTr
 		arg.ID,
 		arg.RoutePk,
 		arg.ServicePk,
+		arg.ShapePk,
 		arg.DirectionID,
 		arg.BikesAllowed,
 		arg.BlockID,
@@ -114,21 +116,25 @@ func (q *Queries) InsertScheduledTripFrequency(ctx context.Context, arg InsertSc
 	return err
 }
 
-const insertScheduledTripShape = `-- name: InsertScheduledTripShape :exec
+const insertScheduledTripShape = `-- name: InsertScheduledTripShape :one
 INSERT INTO scheduled_trip_shape
-    (trip_pk, shape)
+    (id, system_pk, shape)
 VALUES
-    ($1, $2)
+    ($1, $2, $3)
+RETURNING pk
 `
 
 type InsertScheduledTripShapeParams struct {
-	TripPk int64
-	Shape  []byte
+	ID       string
+	SystemPk int64
+	Shape    []byte
 }
 
-func (q *Queries) InsertScheduledTripShape(ctx context.Context, arg InsertScheduledTripShapeParams) error {
-	_, err := q.db.Exec(ctx, insertScheduledTripShape, arg.TripPk, arg.Shape)
-	return err
+func (q *Queries) InsertScheduledTripShape(ctx context.Context, arg InsertScheduledTripShapeParams) (int64, error) {
+	row := q.db.QueryRow(ctx, insertScheduledTripShape, arg.ID, arg.SystemPk, arg.Shape)
+	var pk int64
+	err := row.Scan(&pk)
+	return pk, err
 }
 
 type InsertScheduledTripStopTimeParams struct {
@@ -195,20 +201,18 @@ func (q *Queries) ListScheduledTripFrequencies(ctx context.Context, systemPk int
 }
 
 const listScheduledTripShapes = `-- name: ListScheduledTripShapes :many
-SELECT
-    scheduled_trip_shape.pk, scheduled_trip_shape.trip_pk, scheduled_trip_shape.shape,
-    scheduled_trip.id trip_id
+SELECT scheduled_trip_shape.pk, scheduled_trip_shape.id, scheduled_trip_shape.system_pk, scheduled_trip_shape.shape, scheduled_trip.id trip_id
 FROM scheduled_trip_shape
-INNER JOIN scheduled_trip ON scheduled_trip_shape.trip_pk = scheduled_trip.pk
-INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
-WHERE scheduled_service.system_pk = $1
+INNER JOIN scheduled_trip ON scheduled_trip.shape_pk = scheduled_trip_shape.pk
+WHERE system_pk = $1
 `
 
 type ListScheduledTripShapesRow struct {
-	Pk     int64
-	TripPk int64
-	Shape  []byte
-	TripID string
+	Pk       int64
+	ID       string
+	SystemPk int64
+	Shape    []byte
+	TripID   string
 }
 
 func (q *Queries) ListScheduledTripShapes(ctx context.Context, systemPk int64) ([]ListScheduledTripShapesRow, error) {
@@ -222,7 +226,8 @@ func (q *Queries) ListScheduledTripShapes(ctx context.Context, systemPk int64) (
 		var i ListScheduledTripShapesRow
 		if err := rows.Scan(
 			&i.Pk,
-			&i.TripPk,
+			&i.ID,
+			&i.SystemPk,
 			&i.Shape,
 			&i.TripID,
 		); err != nil {
@@ -304,7 +309,7 @@ func (q *Queries) ListScheduledTripStopTimes(ctx context.Context, systemPk int64
 
 const listScheduledTrips = `-- name: ListScheduledTrips :many
 SELECT
-    scheduled_trip.pk, scheduled_trip.id, scheduled_trip.route_pk, scheduled_trip.service_pk, scheduled_trip.direction_id, scheduled_trip.bikes_allowed, scheduled_trip.block_id, scheduled_trip.headsign, scheduled_trip.short_name, scheduled_trip.wheelchair_accessible,
+    scheduled_trip.pk, scheduled_trip.id, scheduled_trip.route_pk, scheduled_trip.service_pk, scheduled_trip.direction_id, scheduled_trip.bikes_allowed, scheduled_trip.block_id, scheduled_trip.headsign, scheduled_trip.short_name, scheduled_trip.wheelchair_accessible, scheduled_trip.shape_pk,
     route.id route_id,
     scheduled_service.id service_id
 FROM scheduled_trip
@@ -324,6 +329,7 @@ type ListScheduledTripsRow struct {
 	Headsign             pgtype.Text
 	ShortName            pgtype.Text
 	WheelchairAccessible pgtype.Bool
+	ShapePk              pgtype.Int8
 	RouteID              string
 	ServiceID            string
 }
@@ -348,6 +354,7 @@ func (q *Queries) ListScheduledTrips(ctx context.Context, systemPk int64) ([]Lis
 			&i.Headsign,
 			&i.ShortName,
 			&i.WheelchairAccessible,
+			&i.ShapePk,
 			&i.RouteID,
 			&i.ServiceID,
 		); err != nil {
@@ -403,22 +410,66 @@ func (q *Queries) MapScheduledTripIDToPkInSystem(ctx context.Context, arg MapSch
 	return items, nil
 }
 
+const mapShapeIDToPkInSystem = `-- name: MapShapeIDToPkInSystem :many
+SELECT id, pk
+FROM scheduled_trip_shape
+WHERE
+    system_pk = $1
+    AND (
+        NOT $2::bool
+        OR id = ANY($3::text[])
+    )
+`
+
+type MapShapeIDToPkInSystemParams struct {
+	SystemPk        int64
+	FilterByShapeID bool
+	ShapeIds        []string
+}
+
+type MapShapeIDToPkInSystemRow struct {
+	ID string
+	Pk int64
+}
+
+func (q *Queries) MapShapeIDToPkInSystem(ctx context.Context, arg MapShapeIDToPkInSystemParams) ([]MapShapeIDToPkInSystemRow, error) {
+	rows, err := q.db.Query(ctx, mapShapeIDToPkInSystem, arg.SystemPk, arg.FilterByShapeID, arg.ShapeIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapShapeIDToPkInSystemRow
+	for rows.Next() {
+		var i MapShapeIDToPkInSystemRow
+		if err := rows.Scan(&i.ID, &i.Pk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateScheduledTrip = `-- name: UpdateScheduledTrip :exec
 UPDATE scheduled_trip SET
     route_pk = $1,
     service_pk = $2,
-    direction_id = $3,
-    bikes_allowed = $4,
-    block_id = $5,
-    headsign = $6,
-    short_name = $7,
-    wheelchair_accessible = $8
-WHERE pk = $9
+    shape_pk = $3,
+    direction_id = $4,
+    bikes_allowed = $5,
+    block_id = $6,
+    headsign = $7,
+    short_name = $8,
+    wheelchair_accessible = $9
+WHERE pk = $10
 `
 
 type UpdateScheduledTripParams struct {
 	RoutePk              int64
 	ServicePk            int64
+	ShapePk              pgtype.Int8
 	DirectionID          pgtype.Bool
 	BikesAllowed         pgtype.Bool
 	BlockID              pgtype.Text
@@ -432,6 +483,7 @@ func (q *Queries) UpdateScheduledTrip(ctx context.Context, arg UpdateScheduledTr
 	_, err := q.db.Exec(ctx, updateScheduledTrip,
 		arg.RoutePk,
 		arg.ServicePk,
+		arg.ShapePk,
 		arg.DirectionID,
 		arg.BikesAllowed,
 		arg.BlockID,
@@ -440,5 +492,23 @@ func (q *Queries) UpdateScheduledTrip(ctx context.Context, arg UpdateScheduledTr
 		arg.WheelchairAccessible,
 		arg.Pk,
 	)
+	return err
+}
+
+const updateScheduledTripShape = `-- name: UpdateScheduledTripShape :exec
+UPDATE scheduled_trip_shape SET
+    id = $1,
+    shape = $2
+WHERE pk = $3
+`
+
+type UpdateScheduledTripShapeParams struct {
+	ID    string
+	Shape []byte
+	Pk    int64
+}
+
+func (q *Queries) UpdateScheduledTripShape(ctx context.Context, arg UpdateScheduledTripShapeParams) error {
+	_, err := q.db.Exec(ctx, updateScheduledTripShape, arg.ID, arg.Shape, arg.Pk)
 	return err
 }

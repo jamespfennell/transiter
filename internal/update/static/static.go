@@ -39,7 +39,11 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *gtfs.Stat
 	if err != nil {
 		return err
 	}
-	err = updateScheduledTrips(ctx, updateCtx, data.Trips, routeIDToPk, serviceIDToPk, stopIDToPk)
+	shapeIDToPk, err := updateShapes(ctx, updateCtx, data.Shapes)
+	if err != nil {
+		return err
+	}
+	err = updateScheduledTrips(ctx, updateCtx, data.Trips, routeIDToPk, serviceIDToPk, stopIDToPk, shapeIDToPk)
 	if err != nil {
 		return err
 	}
@@ -351,13 +355,56 @@ func updateServices(ctx context.Context, updateCtx common.UpdateContext, service
 	return newIDToPk, nil
 }
 
+func updateShapes(
+	ctx context.Context,
+	updateCtx common.UpdateContext,
+	shapes []gtfs.Shape) (map[string]int64, error) {
+
+	oldIDToPk, err := dbwrappers.MapShapeIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	if err != nil {
+		return nil, err
+	}
+
+	shapeIDToPk := map[string]int64{}
+	for _, shape := range shapes {
+		bytes, err := protojson.Marshal(convert.ApiShape(&shape))
+		if err != nil {
+			return nil, err
+		}
+		pk, ok := oldIDToPk[shape.ID]
+		if ok {
+			err = updateCtx.Querier.UpdateScheduledTripShape(ctx, db.UpdateScheduledTripShapeParams{
+				Pk:    pk,
+				Shape: bytes,
+			})
+		} else {
+			pk, err = updateCtx.Querier.InsertScheduledTripShape(ctx, db.InsertScheduledTripShapeParams{
+				SystemPk: updateCtx.SystemPk,
+				ID:       shape.ID,
+				Shape:    bytes,
+			})
+		}
+		if err != nil {
+			return nil, err
+		}
+		shapeIDToPk[shape.ID] = pk
+	}
+
+	if err := updateCtx.Querier.DeleteStaleScheduledTripShapes(ctx, common.MapValues(shapeIDToPk)); err != nil {
+		return nil, err
+	}
+
+	return shapeIDToPk, nil
+}
+
 func updateScheduledTrips(
 	ctx context.Context,
 	updateCtx common.UpdateContext,
 	trips []gtfs.ScheduledTrip,
 	routeIDToPk map[string]int64,
 	serviceIDToPk map[string]int64,
-	stopIDToPk map[string]int64) error {
+	stopIDToPk map[string]int64,
+	shapeIDToPk map[string]int64) error {
 
 	oldIDToPk, err := dbwrappers.MapScheduledTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
 	if err != nil {
@@ -371,22 +418,28 @@ func updateScheduledTrips(
 	if err := updateCtx.Querier.DeleteScheduledTripFrequencies(ctx, oldPks); err != nil {
 		return err
 	}
-	if err := updateCtx.Querier.DeleteScheduledTripShapes(ctx, oldPks); err != nil {
-		return err
-	}
 
 	newPks := []int64{}
 	var stopTimeParams []db.InsertScheduledTripStopTimeParams
 	for _, trip := range trips {
 		routePk, ok := routeIDToPk[trip.Route.Id]
 		if !ok {
-			updateCtx.Logger.Warn("Skipping trip with unknown route ID", trip.Route.Id)
+			updateCtx.Logger.Warn("Skipping trip with unknown route ID", "Route ID", trip.Route.Id)
 			continue
 		}
 		servicePk, ok := serviceIDToPk[trip.Service.Id]
 		if !ok {
-			updateCtx.Logger.Warn("Skipping trip with unknown service ID", trip.Service.Id)
+			updateCtx.Logger.Warn("Skipping trip with unknown service ID", "Service ID", trip.Service.Id)
 			continue
+		}
+
+		var shapePkOrNil *int64 = nil
+		if trip.Shape != nil {
+			if shapePk, ok := shapeIDToPk[trip.Shape.ID]; ok {
+				shapePkOrNil = &shapePk
+			} else {
+				updateCtx.Logger.Warn("Trip with unknown shape ID", "Trip ID", trip.ID, "Shape ID", trip.Shape.ID)
+			}
 		}
 
 		pk, ok := oldIDToPk[trip.ID]
@@ -395,6 +448,7 @@ func updateScheduledTrips(
 				Pk:                   pk,
 				RoutePk:              routePk,
 				ServicePk:            servicePk,
+				ShapePk:              convert.NullInt64(shapePkOrNil),
 				Headsign:             convert.NullIfEmptyString(trip.Headsign),
 				ShortName:            convert.NullIfEmptyString(trip.ShortName),
 				DirectionID:          convert.DirectionID(trip.DirectionId),
@@ -406,6 +460,7 @@ func updateScheduledTrips(
 				ID:                   trip.ID,
 				RoutePk:              routePk,
 				ServicePk:            servicePk,
+				ShapePk:              convert.NullInt64(shapePkOrNil),
 				Headsign:             convert.NullIfEmptyString(trip.Headsign),
 				ShortName:            convert.NullIfEmptyString(trip.ShortName),
 				DirectionID:          convert.DirectionID(trip.DirectionId),
@@ -441,19 +496,6 @@ func updateScheduledTrips(
 				EndTime:        int32(frequency.EndTime.Seconds()),
 				Headway:        int32(frequency.Headway.Seconds()),
 				FrequencyBased: convert.ExactTimesToIsFrequencyBased(frequency.ExactTimes),
-			}); err != nil {
-				return err
-			}
-		}
-
-		if trip.Shape != nil {
-			bytes, err := protojson.Marshal(convert.ApiShape(trip.Shape))
-			if err != nil {
-				return err
-			}
-			if err := updateCtx.Querier.InsertScheduledTripShape(ctx, db.InsertScheduledTripShapeParams{
-				TripPk: pk,
-				Shape:  bytes,
 			}); err != nil {
 				return err
 			}

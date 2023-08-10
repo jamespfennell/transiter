@@ -255,6 +255,30 @@ func MapScheduledTripIDToPkInSystem(ctx context.Context, queries db.Querier, sys
 	return result, nil
 }
 
+func MapShapeIDToPkInSystem(ctx context.Context, queries db.Querier, systemPk int64, shapeIDs ...[]string) (map[string]int64, error) {
+	result := map[string]int64{}
+	var queryShapeIDs []string
+	if len(shapeIDs) > 0 {
+		queryShapeIDs = shapeIDs[0]
+		if len(queryShapeIDs) == 0 {
+			return result, nil
+		}
+	}
+
+	rows, err := queries.MapShapeIDToPkInSystem(ctx, db.MapShapeIDToPkInSystemParams{
+		SystemPk:        systemPk,
+		FilterByShapeID: len(shapeIDs) > 0,
+		ShapeIds:        queryShapeIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		result[row.ID] = row.Pk
+	}
+	return result, nil
+}
+
 func Ping(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {
 	var err error
 	ticker := time.NewTicker(waitBetweenPings)

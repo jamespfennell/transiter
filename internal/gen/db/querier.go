@@ -21,7 +21,6 @@ type Querier interface {
 	DeleteScheduledServiceAdditions(ctx context.Context, servicePks []int64) error
 	DeleteScheduledServiceRemovals(ctx context.Context, servicePks []int64) error
 	DeleteScheduledTripFrequencies(ctx context.Context, tripPks []int64) error
-	DeleteScheduledTripShapes(ctx context.Context, tripPks []int64) error
 	DeleteScheduledTripStopTimes(ctx context.Context, tripPks []int64) error
 	DeleteServiceMap(ctx context.Context, arg DeleteServiceMapParams) error
 	DeleteServiceMapConfig(ctx context.Context, pk int64) error
@@ -29,6 +28,7 @@ type Querier interface {
 	DeleteStaleAlerts(ctx context.Context, arg DeleteStaleAlertsParams) error
 	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) error
 	DeleteStaleScheduledServices(ctx context.Context, arg DeleteStaleScheduledServicesParams) error
+	DeleteStaleScheduledTripShapes(ctx context.Context, updatedShapePks []int64) error
 	DeleteStaleScheduledTrips(ctx context.Context, updatedTripPks []int64) error
 	DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsParams) error
 	DeleteStaleTrips(ctx context.Context, arg DeleteStaleTripsParams) ([]int64, error)
@@ -60,7 +60,7 @@ type Querier interface {
 	InsertScheduledServiceRemoval(ctx context.Context, arg InsertScheduledServiceRemovalParams) error
 	InsertScheduledTrip(ctx context.Context, arg InsertScheduledTripParams) (int64, error)
 	InsertScheduledTripFrequency(ctx context.Context, arg InsertScheduledTripFrequencyParams) error
-	InsertScheduledTripShape(ctx context.Context, arg InsertScheduledTripShapeParams) error
+	InsertScheduledTripShape(ctx context.Context, arg InsertScheduledTripShapeParams) (int64, error)
 	InsertScheduledTripStopTime(ctx context.Context, arg []InsertScheduledTripStopTimeParams) (int64, error)
 	InsertServiceMap(ctx context.Context, arg InsertServiceMapParams) (int64, error)
 	InsertServiceMapConfig(ctx context.Context, arg InsertServiceMapConfigParams) error
@@ -116,6 +116,7 @@ type Querier interface {
 	MapRouteIDToPkInSystem(ctx context.Context, arg MapRouteIDToPkInSystemParams) ([]MapRouteIDToPkInSystemRow, error)
 	MapScheduledServiceIDToPkInSystem(ctx context.Context, arg MapScheduledServiceIDToPkInSystemParams) ([]MapScheduledServiceIDToPkInSystemRow, error)
 	MapScheduledTripIDToPkInSystem(ctx context.Context, arg MapScheduledTripIDToPkInSystemParams) ([]MapScheduledTripIDToPkInSystemRow, error)
+	MapShapeIDToPkInSystem(ctx context.Context, arg MapShapeIDToPkInSystemParams) ([]MapShapeIDToPkInSystemRow, error)
 	MapStopIDAndPkToStationPk(ctx context.Context, arg MapStopIDAndPkToStationPkParams) ([]MapStopIDAndPkToStationPkRow, error)
 	MapStopIDToPk(ctx context.Context, arg MapStopIDToPkParams) ([]MapStopIDToPkRow, error)
 	MapStopPkToChildPks(ctx context.Context, stopPks []int64) ([]MapStopPkToChildPksRow, error)
@@ -130,6 +131,7 @@ type Querier interface {
 	UpdateRoute(ctx context.Context, arg UpdateRouteParams) error
 	UpdateScheduledService(ctx context.Context, arg UpdateScheduledServiceParams) error
 	UpdateScheduledTrip(ctx context.Context, arg UpdateScheduledTripParams) error
+	UpdateScheduledTripShape(ctx context.Context, arg UpdateScheduledTripShapeParams) error
 	UpdateServiceMapConfig(ctx context.Context, arg UpdateServiceMapConfigParams) error
 	UpdateStop(ctx context.Context, arg UpdateStopParams) error
 	UpdateStop_Parent(ctx context.Context, arg UpdateStop_ParentParams) error

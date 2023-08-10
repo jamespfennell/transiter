@@ -131,6 +131,7 @@ type ScheduledTrip struct {
 	Headsign             pgtype.Text
 	ShortName            pgtype.Text
 	WheelchairAccessible pgtype.Bool
+	ShapePk              pgtype.Int8
 }
 
 type ScheduledTripFrequency struct {
@@ -143,9 +144,10 @@ type ScheduledTripFrequency struct {
 }
 
 type ScheduledTripShape struct {
-	Pk     int64
-	TripPk int64
-	Shape  []byte
+	Pk       int64
+	ID       string
+	SystemPk int64
+	Shape    []byte
 }
 
 type ScheduledTripStopTime struct {

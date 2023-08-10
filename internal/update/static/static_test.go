@@ -16,6 +16,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/update/common"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -1026,6 +1027,7 @@ func TestUpdate(t *testing.T) {
 							Shape:   &defaultShape,
 						},
 					},
+					Shapes: []gtfs.Shape{defaultShape},
 				},
 			},
 			wantTrips: []db.ListScheduledTripsRow{
@@ -1065,6 +1067,7 @@ func TestUpdate(t *testing.T) {
 							Shape:   &defaultShape,
 						},
 					},
+					Shapes: []gtfs.Shape{defaultShape},
 				},
 			},
 			wantTrips: []db.ListScheduledTripsRow{
@@ -1092,6 +1095,81 @@ func TestUpdate(t *testing.T) {
 			onlyCheckTrips: true,
 		},
 		{
+			name: "shape update",
+			updates: []*gtfs.Static{
+				{
+					Agencies: []gtfs.Agency{defaultAgency},
+					Routes:   []gtfs.Route{defaultRoute},
+					Services: []gtfs.Service{defaultService},
+					Stops:    []gtfs.Stop{defaultStop},
+					Trips: []gtfs.ScheduledTrip{
+						{
+							ID:      "trip_id",
+							Route:   &defaultRoute,
+							Service: &defaultService,
+							Shape:   &defaultShape,
+						},
+					},
+					Shapes: []gtfs.Shape{defaultShape},
+				},
+				{
+					Agencies: []gtfs.Agency{defaultAgency},
+					Routes:   []gtfs.Route{defaultRoute},
+					Services: []gtfs.Service{defaultService},
+					Stops:    []gtfs.Stop{defaultStop},
+					Trips: []gtfs.ScheduledTrip{
+						{
+							ID:      "trip_id",
+							Route:   &defaultRoute,
+							Service: &defaultService,
+							Shape:   &gtfs.Shape{ID: "shape_id"},
+						},
+					},
+					Shapes: []gtfs.Shape{
+						{
+							ID: "shape_id",
+							Points: []gtfs.ShapePoint{
+								{
+									Latitude:  100,
+									Longitude: 200,
+								},
+								{
+									Latitude:  -100,
+									Longitude: -200,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []db.ListScheduledTripsRow{
+				{
+					ID:        "trip_id",
+					ServiceID: "service_id",
+					RouteID:   "route_id",
+				},
+			},
+			wantTripShapes: []shapeAndTripID{
+				{
+					TripID: "trip_id",
+					Shape: &api.Shape{
+						Id: "shape_id",
+						Points: []*api.Shape_ShapePoint{
+							{
+								Latitude:  100,
+								Longitude: 200,
+							},
+							{
+								Latitude:  -100,
+								Longitude: -200,
+							},
+						},
+					},
+				},
+			},
+			onlyCheckTrips: true,
+		},
+		{
 			name: "trip shape update",
 			updates: []*gtfs.Static{
 				{
@@ -1107,6 +1185,7 @@ func TestUpdate(t *testing.T) {
 							Shape:   &defaultShape,
 						},
 					},
+					Shapes: []gtfs.Shape{defaultShape},
 				},
 				{
 					Agencies: []gtfs.Agency{defaultAgency},
@@ -1120,15 +1199,20 @@ func TestUpdate(t *testing.T) {
 							Service: &defaultService,
 							Shape: &gtfs.Shape{
 								ID: "new_shape_id",
-								Points: []gtfs.ShapePoint{
-									{
-										Latitude:  100,
-										Longitude: 200,
-									},
-									{
-										Latitude:  -100,
-										Longitude: -200,
-									},
+							},
+						},
+					},
+					Shapes: []gtfs.Shape{
+						{
+							ID: "new_shape_id",
+							Points: []gtfs.ShapePoint{
+								{
+									Latitude:  100,
+									Longitude: 200,
+								},
+								{
+									Latitude:  -100,
+									Longitude: -200,
 								},
 							},
 						},
@@ -1176,6 +1260,7 @@ func TestUpdate(t *testing.T) {
 				FeedConfig: &api.FeedConfig{
 					Parser: "GTFS_STATIC",
 				},
+				Logger: slog.Default(),
 			}
 
 			for i, update := range tc.updates {
@@ -1273,6 +1358,7 @@ func listScheduledTrips(ctx context.Context, t *testing.T, querier db.Querier, s
 		trip.Pk = 0
 		trip.ServicePk = 0
 		trip.RoutePk = 0
+		trip.ShapePk = pgtype.Int8{}
 	}
 	return trips
 }
