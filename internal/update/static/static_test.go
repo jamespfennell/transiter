@@ -36,17 +36,17 @@ func TestUpdate(t *testing.T) {
 					Stops: []gtfs.Stop{
 						{
 							Id:                 stopID1,
-							Code:               ptr("1"),
-							Name:               ptr("2"),
-							Description:        ptr("3"),
-							ZoneId:             ptr("4"),
+							Code:               "1",
+							Name:               "2",
+							Description:        "3",
+							ZoneId:             "4",
 							Longitude:          ptr(float64(5.5)),
 							Latitude:           ptr(float64(6.6)),
-							Url:                ptr("7"),
-							Type:               gtfs.Station,
-							Timezone:           ptr("8"),
-							WheelchairBoarding: gtfs.NotPossible,
-							PlatformCode:       ptr("9"),
+							Url:                "7",
+							Type:               gtfs.StopType_Station,
+							Timezone:           "8",
+							WheelchairBoarding: gtfs.WheelchairBoarding_NotPossible,
+							PlatformCode:       "9",
 						},
 					},
 				},
@@ -61,7 +61,7 @@ func TestUpdate(t *testing.T) {
 					Longitude:          convert.Gps(ptr(float64(5.5))),
 					Latitude:           convert.Gps(ptr(float64(6.6))),
 					Url:                dbString("7"),
-					Type:               gtfs.Station.String(),
+					Type:               gtfs.StopType_Station.String(),
 					Timezone:           dbString("8"),
 					WheelchairBoarding: pgtype.Bool{Valid: true, Bool: false},
 					PlatformCode:       dbString("9"),
@@ -75,7 +75,7 @@ func TestUpdate(t *testing.T) {
 					Stops: []gtfs.Stop{
 						{
 							Id:   stopID1,
-							Type: gtfs.Station,
+							Type: gtfs.StopType_Station,
 						},
 					},
 				},
@@ -90,11 +90,11 @@ func TestUpdate(t *testing.T) {
 					Stops: []gtfs.Stop{
 						{
 							Id:   stopID1,
-							Type: gtfs.Station,
+							Type: gtfs.StopType_Station,
 						},
 						{
 							Id:     stopID2,
-							Type:   gtfs.Platform,
+							Type:   gtfs.StopType_Platform,
 							Parent: &gtfs.Stop{Id: stopID1},
 						},
 					},
@@ -103,11 +103,11 @@ func TestUpdate(t *testing.T) {
 			wantStops: []db.Stop{
 				{
 					ID:   stopID1,
-					Type: gtfs.Station.String(),
+					Type: gtfs.StopType_Station.String(),
 				},
 				{
 					ID:   stopID2,
-					Type: gtfs.Platform.String(),
+					Type: gtfs.StopType_Platform.String(),
 				},
 			},
 			wantStopIDToParentID: map[string]string{
@@ -121,11 +121,11 @@ func TestUpdate(t *testing.T) {
 					Stops: []gtfs.Stop{
 						{
 							Id:   stopID1,
-							Type: gtfs.Station,
+							Type: gtfs.StopType_Station,
 						},
 						{
 							Id:     stopID2,
-							Type:   gtfs.Platform,
+							Type:   gtfs.StopType_Platform,
 							Parent: &gtfs.Stop{Id: stopID1},
 						},
 					},
@@ -134,7 +134,7 @@ func TestUpdate(t *testing.T) {
 					Stops: []gtfs.Stop{
 						{
 							Id:   stopID2,
-							Type: gtfs.Platform,
+							Type: gtfs.StopType_Platform,
 						},
 					},
 				},
@@ -142,7 +142,7 @@ func TestUpdate(t *testing.T) {
 			wantStops: []db.Stop{
 				{
 					ID:   stopID2,
-					Type: gtfs.Platform.String(),
+					Type: gtfs.StopType_Platform.String(),
 				},
 			},
 		},

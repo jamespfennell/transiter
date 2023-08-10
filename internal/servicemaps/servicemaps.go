@@ -162,7 +162,7 @@ func buildStaticMaps(logger *slog.Logger, smc *api.ServiceMapConfig, routeIDToPk
 		var edges []graph.Edge
 		for j := 1; j < len(trip.StopTimes); j++ {
 			from, to := j-1, j
-			if trip.DirectionId == gtfs.DirectionIDFalse {
+			if trip.DirectionId == gtfs.DirectionID_False {
 				from, to = j, j-1
 			}
 			fromLabel, ok := stopIDToStationPk[trip.StopTimes[from].Stop.Id]
@@ -221,7 +221,7 @@ func calculateTripKey(trip *gtfs.ScheduledTrip, stopIDToStationPk map[string]int
 		}
 		stationPks = append(stationPks, stationPk)
 	}
-	if trip.DirectionId == gtfs.DirectionIDTrue {
+	if trip.DirectionId == gtfs.DirectionID_True {
 		for i, j := 0, len(stationPks)-1; i < j; i, j = i+1, j-1 {
 			stationPks[i], stationPks[j] = stationPks[j], stationPks[i]
 		}
@@ -235,7 +235,7 @@ func calculateTripKey(trip *gtfs.ScheduledTrip, stopIDToStationPk map[string]int
 
 // isIncludedTrip returns whether the trip should be included in the service map.
 func isIncludedTrip(smc *api.ServiceMapConfig, trip *gtfs.ScheduledTrip, includedServiceIDs map[string]bool) bool {
-	if trip.DirectionId == gtfs.DirectionIDUnspecified {
+	if trip.DirectionId == gtfs.DirectionID_Unspecified {
 		return false
 	}
 	if !includedServiceIDs[trip.Service.Id] {

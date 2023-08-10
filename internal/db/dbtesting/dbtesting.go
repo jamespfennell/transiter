@@ -267,7 +267,7 @@ func (s *System) NewStop(id string, params ...db.InsertStopParams) db.Stop {
 	p.SystemPk = s.Data.Pk
 	p.FeedPk = s.DefaultFeed.Data.Pk
 	if p.Type == "" {
-		p.Type = gtfs.Station.String()
+		p.Type = gtfs.StopType_Station.String()
 	}
 	return insertAndGet(
 		s.q, id,

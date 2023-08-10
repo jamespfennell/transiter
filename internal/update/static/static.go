@@ -60,10 +60,10 @@ func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencie
 				Name:     agency.Name,
 				Url:      agency.Url,
 				Timezone: agency.Timezone,
-				Language: convert.NullString(agency.Language),
-				Phone:    convert.NullString(agency.Phone),
-				FareUrl:  convert.NullString(agency.FareUrl),
-				Email:    convert.NullString(agency.Email),
+				Language: convert.NullIfEmptyString(agency.Language),
+				Phone:    convert.NullIfEmptyString(agency.Phone),
+				FareUrl:  convert.NullIfEmptyString(agency.FareUrl),
+				Email:    convert.NullIfEmptyString(agency.Email),
 			})
 		} else {
 			pk, err = updateCtx.Querier.InsertAgency(ctx, db.InsertAgencyParams{
@@ -73,10 +73,10 @@ func updateAgencies(ctx context.Context, updateCtx common.UpdateContext, agencie
 				Name:     agency.Name,
 				Url:      agency.Url,
 				Timezone: agency.Timezone,
-				Language: convert.NullString(agency.Language),
-				Phone:    convert.NullString(agency.Phone),
-				FareUrl:  convert.NullString(agency.FareUrl),
-				Email:    convert.NullString(agency.Email),
+				Language: convert.NullIfEmptyString(agency.Language),
+				Phone:    convert.NullIfEmptyString(agency.Phone),
+				FareUrl:  convert.NullIfEmptyString(agency.FareUrl),
+				Email:    convert.NullIfEmptyString(agency.Email),
 			})
 			oldIDToPk[agency.Id] = pk
 		}
@@ -113,10 +113,10 @@ func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []
 				FeedPk:            updateCtx.FeedPk,
 				Color:             route.Color,
 				TextColor:         route.TextColor,
-				ShortName:         convert.NullString(route.ShortName),
-				LongName:          convert.NullString(route.LongName),
-				Description:       convert.NullString(route.Description),
-				Url:               convert.NullString(route.Url),
+				ShortName:         convert.NullIfEmptyString(route.ShortName),
+				LongName:          convert.NullIfEmptyString(route.LongName),
+				Description:       convert.NullIfEmptyString(route.Description),
+				Url:               convert.NullIfEmptyString(route.Url),
 				SortOrder:         convert.NullInt32(route.SortOrder),
 				Type:              route.Type.String(),
 				ContinuousPickup:  route.ContinuousPickup.String(),
@@ -130,10 +130,10 @@ func updateRoutes(ctx context.Context, updateCtx common.UpdateContext, routes []
 				FeedPk:            updateCtx.FeedPk,
 				Color:             route.Color,
 				TextColor:         route.TextColor,
-				ShortName:         convert.NullString(route.ShortName),
-				LongName:          convert.NullString(route.LongName),
-				Description:       convert.NullString(route.Description),
-				Url:               convert.NullString(route.Url),
+				ShortName:         convert.NullIfEmptyString(route.ShortName),
+				LongName:          convert.NullIfEmptyString(route.LongName),
+				Description:       convert.NullIfEmptyString(route.Description),
+				Url:               convert.NullIfEmptyString(route.Url),
 				SortOrder:         convert.NullInt32(route.SortOrder),
 				Type:              route.Type.String(),
 				ContinuousPickup:  route.ContinuousPickup.String(),
@@ -164,10 +164,10 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 	for _, stop := range stops {
 		var wheelchairBoarding *bool
 		switch stop.WheelchairBoarding {
-		case gtfs.Possible:
+		case gtfs.WheelchairBoarding_Possible:
 			t := true
 			wheelchairBoarding = &t
-		case gtfs.NotPossible:
+		case gtfs.WheelchairBoarding_NotPossible:
 			f := false
 			wheelchairBoarding = &f
 		}
@@ -176,34 +176,34 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 			err = updateCtx.Querier.UpdateStop(ctx, db.UpdateStopParams{
 				Pk:                 pk,
 				FeedPk:             updateCtx.FeedPk,
-				Name:               convert.NullString(stop.Name),
+				Name:               convert.NullIfEmptyString(stop.Name),
 				Type:               stop.Type.String(),
 				Longitude:          convert.Gps(stop.Longitude),
 				Latitude:           convert.Gps(stop.Latitude),
-				Url:                convert.NullString(stop.Url),
-				Code:               convert.NullString(stop.Code),
-				Description:        convert.NullString(stop.Description),
-				PlatformCode:       convert.NullString(stop.PlatformCode),
-				Timezone:           convert.NullString(stop.Timezone),
+				Url:                convert.NullIfEmptyString(stop.Url),
+				Code:               convert.NullIfEmptyString(stop.Code),
+				Description:        convert.NullIfEmptyString(stop.Description),
+				PlatformCode:       convert.NullIfEmptyString(stop.PlatformCode),
+				Timezone:           convert.NullIfEmptyString(stop.Timezone),
 				WheelchairBoarding: convert.NullBool(wheelchairBoarding),
-				ZoneID:             convert.NullString(stop.ZoneId),
+				ZoneID:             convert.NullIfEmptyString(stop.ZoneId),
 			})
 		} else {
 			pk, err = updateCtx.Querier.InsertStop(ctx, db.InsertStopParams{
 				ID:                 stop.Id,
 				SystemPk:           updateCtx.SystemPk,
 				FeedPk:             updateCtx.FeedPk,
-				Name:               convert.NullString(stop.Name),
+				Name:               convert.NullIfEmptyString(stop.Name),
 				Type:               stop.Type.String(),
 				Longitude:          convert.Gps(stop.Longitude),
 				Latitude:           convert.Gps(stop.Latitude),
-				Url:                convert.NullString(stop.Url),
-				Code:               convert.NullString(stop.Code),
-				Description:        convert.NullString(stop.Description),
-				PlatformCode:       convert.NullString(stop.PlatformCode),
-				Timezone:           convert.NullString(stop.Timezone),
+				Url:                convert.NullIfEmptyString(stop.Url),
+				Code:               convert.NullIfEmptyString(stop.Code),
+				Description:        convert.NullIfEmptyString(stop.Description),
+				PlatformCode:       convert.NullIfEmptyString(stop.PlatformCode),
+				Timezone:           convert.NullIfEmptyString(stop.Timezone),
 				WheelchairBoarding: convert.NullBool(wheelchairBoarding),
-				ZoneID:             convert.NullString(stop.ZoneId),
+				ZoneID:             convert.NullIfEmptyString(stop.ZoneId),
 			})
 		}
 		if err != nil {

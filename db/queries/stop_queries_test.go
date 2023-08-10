@@ -22,9 +22,9 @@ func TestMapStopIDToStationPk(t *testing.T) {
 		{
 			name: "platform and station",
 			wantFunc: func(insertStop insertStopFunc) map[string]int64 {
-				stationPk := insertStop("station", gtfs.Station, nil)
-				platformPk := insertStop("platform", gtfs.Platform, &stationPk)
-				insertStop("boarding", gtfs.BoardingArea, &platformPk)
+				stationPk := insertStop("station", gtfs.StopType_Station, nil)
+				platformPk := insertStop("platform", gtfs.StopType_Platform, &stationPk)
+				insertStop("boarding", gtfs.StopType_BoardingArea, &platformPk)
 				return map[string]int64{
 					"station":  stationPk,
 					"platform": stationPk,
@@ -35,7 +35,7 @@ func TestMapStopIDToStationPk(t *testing.T) {
 		{
 			name: "platform with no parent station",
 			wantFunc: func(insertStop insertStopFunc) map[string]int64 {
-				platformPk := insertStop("platform", gtfs.Platform, nil)
+				platformPk := insertStop("platform", gtfs.StopType_Platform, nil)
 				return map[string]int64{
 					"platform": platformPk,
 				}
@@ -44,8 +44,8 @@ func TestMapStopIDToStationPk(t *testing.T) {
 		{
 			name: "two stations",
 			wantFunc: func(insertStop insertStopFunc) map[string]int64 {
-				parentPk := insertStop("parent", gtfs.Station, nil)
-				childPk := insertStop("child", gtfs.Station, &parentPk)
+				parentPk := insertStop("parent", gtfs.StopType_Station, nil)
+				childPk := insertStop("child", gtfs.StopType_Station, &parentPk)
 				return map[string]int64{
 					"parent": parentPk,
 					"child":  childPk,
@@ -94,12 +94,12 @@ func TestMapStopPkToDescendentPks(t *testing.T) {
 		return stop.Pk
 	}
 
-	gen1 := insertStop("gen1", gtfs.Station, nil)
-	_ = insertStop("gen2A", gtfs.Platform, &gen1)
-	gen2B := insertStop("gen2B", gtfs.Platform, &gen1)
-	gen3A := insertStop("gen3A", gtfs.Platform, &gen2B)
-	gen3B := insertStop("gen3B", gtfs.Platform, &gen2B)
-	gen4 := insertStop("gen4", gtfs.Platform, &gen3B)
+	gen1 := insertStop("gen1", gtfs.StopType_Station, nil)
+	_ = insertStop("gen2A", gtfs.StopType_Platform, &gen1)
+	gen2B := insertStop("gen2B", gtfs.StopType_Platform, &gen1)
+	gen3A := insertStop("gen3A", gtfs.StopType_Platform, &gen2B)
+	gen3B := insertStop("gen3B", gtfs.StopType_Platform, &gen2B)
+	gen4 := insertStop("gen4", gtfs.StopType_Platform, &gen3B)
 
 	want := map[int64]map[int64]bool{
 		gen2B: {gen2B: true, gen3A: true, gen3B: true, gen4: true},

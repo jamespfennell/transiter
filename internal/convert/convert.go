@@ -160,12 +160,12 @@ func SQLGps(n pgtype.Numeric) *float64 {
 
 func DirectionID(d gtfs.DirectionID) pgtype.Bool {
 	switch d {
-	case gtfs.DirectionIDFalse:
+	case gtfs.DirectionID_False:
 		return pgtype.Bool{
 			Valid: true,
 			Bool:  false,
 		}
-	case gtfs.DirectionIDTrue:
+	case gtfs.DirectionID_True:
 		return pgtype.Bool{
 			Valid: true,
 			Bool:  true,

@@ -42,7 +42,7 @@ func TestUpdateTrips(t *testing.T) {
 		{
 			name: "simple case",
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
@@ -59,7 +59,7 @@ func TestUpdateTrips(t *testing.T) {
 		{
 			name: "trip deleted",
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
@@ -72,13 +72,13 @@ func TestUpdateTrips(t *testing.T) {
 		{
 			name: "same update twice",
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
 					gtfsStu(gStopID(stopID4), gArrTime(30)),
 				}),
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
@@ -95,13 +95,13 @@ func TestUpdateTrips(t *testing.T) {
 		{
 			name: "basic update case",
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
 					gtfsStu(gStopID(stopID4), gArrTime(30)),
 				}),
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(11), gDepTime(16)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
@@ -118,13 +118,13 @@ func TestUpdateTrips(t *testing.T) {
 		{
 			name: "update with stops in the past",
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
 					gtfsStu(gStopID(stopID4), gArrTime(30)),
 				}),
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
 					gtfsStu(gStopID(stopID4), gArrTime(31)),
 				}),
@@ -142,13 +142,13 @@ func TestUpdateTrips(t *testing.T) {
 				ReassignStopSequences: true,
 			},
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(1)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(2)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(3)),
 					gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(4)),
 				}),
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(2)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(3)),
 					gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(4)),
@@ -273,7 +273,7 @@ func TestUpdateVehicles(t *testing.T) {
 						ID: &gtfs.VehicleID{
 							ID:           vehicleID1,
 							Label:        "label",
-							LicencePlate: "licencePlate",
+							LicensePlate: "licensePlate",
 						},
 						Position: &gtfs.Position{
 							Latitude:  ptr(float32(1.0)),
@@ -334,7 +334,7 @@ func TestUpdateVehicles(t *testing.T) {
 				},
 			},
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 			},
 		},
 		{
@@ -372,7 +372,7 @@ func TestUpdateVehicles(t *testing.T) {
 				},
 			},
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 			},
 		},
 		{
@@ -416,7 +416,7 @@ func TestUpdateVehicles(t *testing.T) {
 				},
 			},
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 			},
 		},
 		{
@@ -467,13 +467,13 @@ func TestUpdateVehicles(t *testing.T) {
 				},
 				{
 					// If an existing vehicle and incoming vehicle both have same trip ID, we
-					// keep the exsiting vehicle and ignore the incoming vehicle.
+					// keep the existing vehicle and ignore the incoming vehicle.
 					wantVehicle(vehicleID1, systemID, ptr(tripID1),
 						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 				},
 			},
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 			},
 		},
 		{
@@ -501,7 +501,7 @@ func TestUpdateVehicles(t *testing.T) {
 				},
 			},
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{}),
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 			},
 		},
 		{
@@ -530,7 +530,7 @@ func TestUpdateVehicles(t *testing.T) {
 				},
 			},
 			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionIDTrue, []gtfs.StopTimeUpdate{
+				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
 					gtfsStu(gStopID(stopID1), gDepTime(5)),
 					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
 				}),
@@ -976,7 +976,7 @@ func gtfsTrip(tripID, routeID string, directionID gtfs.DirectionID, stus []gtfs.
 		ID: gtfs.TripID{
 			ID:          tripID1,
 			RouteID:     routeID1,
-			DirectionID: gtfs.DirectionIDTrue,
+			DirectionID: gtfs.DirectionID_True,
 		},
 		StopTimeUpdates: stus,
 	}
