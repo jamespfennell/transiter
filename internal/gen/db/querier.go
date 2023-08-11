@@ -19,9 +19,9 @@ type Querier interface {
 	DeleteAlerts(ctx context.Context, alertPks []int64) error
 	DeleteFeed(ctx context.Context, pk int64) error
 	DeleteScheduledServices(ctx context.Context, arg DeleteScheduledServicesParams) error
-	DeleteScheduledTripShapes(ctx context.Context, arg DeleteScheduledTripShapesParams) error
 	DeleteServiceMap(ctx context.Context, arg DeleteServiceMapParams) error
 	DeleteServiceMapConfig(ctx context.Context, pk int64) error
+	DeleteShapes(ctx context.Context, arg DeleteShapesParams) error
 	DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) error
 	DeleteStaleAlerts(ctx context.Context, arg DeleteStaleAlertsParams) error
 	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) error
@@ -55,11 +55,11 @@ type Querier interface {
 	InsertScheduledServiceRemoval(ctx context.Context, arg InsertScheduledServiceRemovalParams) error
 	InsertScheduledTrip(ctx context.Context, arg InsertScheduledTripParams) (int64, error)
 	InsertScheduledTripFrequency(ctx context.Context, arg InsertScheduledTripFrequencyParams) error
-	InsertScheduledTripShape(ctx context.Context, arg InsertScheduledTripShapeParams) (int64, error)
 	InsertScheduledTripStopTime(ctx context.Context, arg []InsertScheduledTripStopTimeParams) (int64, error)
 	InsertServiceMap(ctx context.Context, arg InsertServiceMapParams) (int64, error)
 	InsertServiceMapConfig(ctx context.Context, arg InsertServiceMapConfigParams) error
 	InsertServiceMapStop(ctx context.Context, arg []InsertServiceMapStopParams) (int64, error)
+	InsertShape(ctx context.Context, arg InsertShapeParams) (int64, error)
 	InsertStop(ctx context.Context, arg InsertStopParams) (int64, error)
 	InsertStopHeadSignRule(ctx context.Context, arg InsertStopHeadSignRuleParams) error
 	InsertSystem(ctx context.Context, arg InsertSystemParams) (int64, error)
@@ -83,7 +83,6 @@ type Querier interface {
 	ListRoutesInAgency(ctx context.Context, agencyPk int64) ([]ListRoutesInAgencyRow, error)
 	ListScheduledServices(ctx context.Context, systemPk int64) ([]ListScheduledServicesRow, error)
 	ListScheduledTripFrequencies(ctx context.Context, systemPk int64) ([]ListScheduledTripFrequenciesRow, error)
-	ListScheduledTripShapes(ctx context.Context, systemPk int64) ([]ListScheduledTripShapesRow, error)
 	ListScheduledTripStopTimes(ctx context.Context, systemPk int64) ([]ListScheduledTripStopTimesRow, error)
 	ListScheduledTrips(ctx context.Context, systemPk int64) ([]ListScheduledTripsRow, error)
 	ListServiceMapConfigsInSystem(ctx context.Context, systemPk int64) ([]ServiceMapConfig, error)
@@ -91,6 +90,7 @@ type Querier interface {
 	// TODO: make this better?
 	ListServiceMapsForRoutes(ctx context.Context, routePks []int64) ([]ListServiceMapsForRoutesRow, error)
 	ListServiceMapsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsForStopsRow, error)
+	ListShapes(ctx context.Context, systemPk int64) ([]ListShapesRow, error)
 	ListStopHeadsignRulesForStops(ctx context.Context, stopPks []int64) ([]StopHeadsignRule, error)
 	ListStopPksForRealtimeMap(ctx context.Context, routePk int64) ([]ListStopPksForRealtimeMapRow, error)
 	ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, error)

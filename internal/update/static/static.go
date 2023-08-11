@@ -423,7 +423,7 @@ func updateShapes(
 		shapeIDsInUpdate = append(shapeIDsInUpdate, shape.ID)
 	}
 
-	err := updateCtx.Querier.DeleteScheduledTripShapes(ctx, db.DeleteScheduledTripShapesParams{
+	err := updateCtx.Querier.DeleteShapes(ctx, db.DeleteShapesParams{
 		FeedPk:          updateCtx.FeedPk,
 		SystemPk:        updateCtx.SystemPk,
 		UpdatedShapeIds: shapeIDsInUpdate,
@@ -438,7 +438,7 @@ func updateShapes(
 		if err != nil {
 			return nil, err
 		}
-		pk, err := updateCtx.Querier.InsertScheduledTripShape(ctx, db.InsertScheduledTripShapeParams{
+		pk, err := updateCtx.Querier.InsertShape(ctx, db.InsertShapeParams{
 			SystemPk: updateCtx.SystemPk,
 			FeedPk:   updateCtx.FeedPk,
 			ID:       shape.ID,

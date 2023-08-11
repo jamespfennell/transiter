@@ -32,7 +32,7 @@ ALTER TABLE scheduled_trip_stop_time DROP COLUMN departure_time;
 ALTER TABLE scheduled_trip_stop_time
 ADD COLUMN departure_time INT;
 
-CREATE TABLE scheduled_trip_shape (
+CREATE TABLE shape (
     pk BIGSERIAL PRIMARY KEY,
     id character varying NOT NULL,
     system_pk BIGINT NOT NULL REFERENCES system(pk) ON DELETE CASCADE,
@@ -43,4 +43,4 @@ CREATE TABLE scheduled_trip_shape (
 );
 
 ALTER TABLE scheduled_trip
-ADD COLUMN shape_pk BIGINT REFERENCES scheduled_trip_shape(pk) ON DELETE SET NULL;
+ADD COLUMN shape_pk BIGINT REFERENCES shape(pk) ON DELETE SET NULL;

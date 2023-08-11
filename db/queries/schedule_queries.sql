@@ -38,13 +38,6 @@ INSERT INTO scheduled_trip_frequency
 VALUES
     (sqlc.arg(trip_pk), sqlc.arg(start_time), sqlc.arg(end_time), sqlc.arg(headway), sqlc.arg(frequency_based));
 
--- name: InsertScheduledTripShape :one
-INSERT INTO scheduled_trip_shape
-    (id, system_pk, feed_pk, shape)
-VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(feed_pk), sqlc.arg(shape))
-RETURNING pk;
-
 -- name: ListScheduledServices :many
 SELECT scheduled_service.*,
        scheduled_service_addition.additions AS additions,
@@ -96,20 +89,8 @@ INNER JOIN scheduled_trip ON scheduled_trip_frequency.trip_pk = scheduled_trip.p
 INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
 WHERE scheduled_service.system_pk = sqlc.arg(system_pk);
 
--- name: ListScheduledTripShapes :many
-SELECT scheduled_trip_shape.*, scheduled_trip.id trip_id
-FROM scheduled_trip_shape
-INNER JOIN scheduled_trip ON scheduled_trip.shape_pk = scheduled_trip_shape.pk
-WHERE system_pk = sqlc.arg(system_pk);
-
 -- name: DeleteScheduledServices :exec
 DELETE FROM scheduled_service
 WHERE feed_pk = sqlc.arg(feed_pk)
 OR (system_pk = sqlc.arg(system_pk) AND
    id = ANY(sqlc.arg(updated_service_ids)::text[]));
-
--- name: DeleteScheduledTripShapes :exec
-DELETE FROM scheduled_trip_shape
-WHERE feed_pk = sqlc.arg(feed_pk)
-OR (system_pk = sqlc.arg(system_pk) AND
-   id = ANY(sqlc.arg(updated_shape_ids)::text[]));

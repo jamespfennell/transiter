@@ -29,24 +29,6 @@ func (q *Queries) DeleteScheduledServices(ctx context.Context, arg DeleteSchedul
 	return err
 }
 
-const deleteScheduledTripShapes = `-- name: DeleteScheduledTripShapes :exec
-DELETE FROM scheduled_trip_shape
-WHERE feed_pk = $1
-OR (system_pk = $2 AND
-   id = ANY($3::text[]))
-`
-
-type DeleteScheduledTripShapesParams struct {
-	FeedPk          int64
-	SystemPk        int64
-	UpdatedShapeIds []string
-}
-
-func (q *Queries) DeleteScheduledTripShapes(ctx context.Context, arg DeleteScheduledTripShapesParams) error {
-	_, err := q.db.Exec(ctx, deleteScheduledTripShapes, arg.FeedPk, arg.SystemPk, arg.UpdatedShapeIds)
-	return err
-}
-
 const insertScheduledService = `-- name: InsertScheduledService :one
 INSERT INTO scheduled_service
     (id, system_pk, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date, feed_pk)
@@ -189,33 +171,6 @@ func (q *Queries) InsertScheduledTripFrequency(ctx context.Context, arg InsertSc
 	return err
 }
 
-const insertScheduledTripShape = `-- name: InsertScheduledTripShape :one
-INSERT INTO scheduled_trip_shape
-    (id, system_pk, feed_pk, shape)
-VALUES
-    ($1, $2, $3, $4)
-RETURNING pk
-`
-
-type InsertScheduledTripShapeParams struct {
-	ID       string
-	SystemPk int64
-	FeedPk   int64
-	Shape    []byte
-}
-
-func (q *Queries) InsertScheduledTripShape(ctx context.Context, arg InsertScheduledTripShapeParams) (int64, error) {
-	row := q.db.QueryRow(ctx, insertScheduledTripShape,
-		arg.ID,
-		arg.SystemPk,
-		arg.FeedPk,
-		arg.Shape,
-	)
-	var pk int64
-	err := row.Scan(&pk)
-	return pk, err
-}
-
 type InsertScheduledTripStopTimeParams struct {
 	TripPk                int64
 	StopPk                int64
@@ -343,49 +298,6 @@ func (q *Queries) ListScheduledTripFrequencies(ctx context.Context, systemPk int
 			&i.FrequencyBased,
 			&i.StartTime,
 			&i.EndTime,
-			&i.TripID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listScheduledTripShapes = `-- name: ListScheduledTripShapes :many
-SELECT scheduled_trip_shape.pk, scheduled_trip_shape.id, scheduled_trip_shape.system_pk, scheduled_trip_shape.feed_pk, scheduled_trip_shape.shape, scheduled_trip.id trip_id
-FROM scheduled_trip_shape
-INNER JOIN scheduled_trip ON scheduled_trip.shape_pk = scheduled_trip_shape.pk
-WHERE system_pk = $1
-`
-
-type ListScheduledTripShapesRow struct {
-	Pk       int64
-	ID       string
-	SystemPk int64
-	FeedPk   int64
-	Shape    []byte
-	TripID   string
-}
-
-func (q *Queries) ListScheduledTripShapes(ctx context.Context, systemPk int64) ([]ListScheduledTripShapesRow, error) {
-	rows, err := q.db.Query(ctx, listScheduledTripShapes, systemPk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListScheduledTripShapesRow
-	for rows.Next() {
-		var i ListScheduledTripShapesRow
-		if err := rows.Scan(
-			&i.Pk,
-			&i.ID,
-			&i.SystemPk,
-			&i.FeedPk,
-			&i.Shape,
 			&i.TripID,
 		); err != nil {
 			return nil, err

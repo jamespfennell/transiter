@@ -143,14 +143,6 @@ type ScheduledTripFrequency struct {
 	EndTime        int32
 }
 
-type ScheduledTripShape struct {
-	Pk       int64
-	ID       string
-	SystemPk int64
-	FeedPk   int64
-	Shape    []byte
-}
-
 type ScheduledTripStopTime struct {
 	Pk                    int64
 	TripPk                int64
@@ -185,6 +177,14 @@ type ServiceMapVertex struct {
 	StopPk   int64
 	MapPk    int64
 	Position int32
+}
+
+type Shape struct {
+	Pk       int64
+	ID       string
+	SystemPk int64
+	FeedPk   int64
+	Shape    []byte
 }
 
 type Stop struct {
