@@ -16,12 +16,12 @@ USING longitude::numeric(9, 6);
 ALTER TABLE vehicle
 ALTER COLUMN bearing
 TYPE real
-USING latitude::real;
+USING bearing::real;
 
 ALTER TABLE vehicle
 ALTER COLUMN speed
 TYPE real
-USING longitude::real;
+USING speed::real;
 
 ALTER TABLE vehicle
 ADD COLUMN occupancy_percentage integer;
