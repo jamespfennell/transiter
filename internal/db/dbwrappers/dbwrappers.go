@@ -207,6 +207,30 @@ func MapVehicleIDToPkandTripPkToVehicleID(
 	return vehicleIDToPk, tripPkToVehicleID, nil
 }
 
+func MapScheduledTripIDToPkInSystem(ctx context.Context, queries db.Querier, systemPk int64, scheduledTripIDs ...[]string) (map[string]int64, error) {
+	result := map[string]int64{}
+	var queryScheduledTripIDs []string
+	if len(scheduledTripIDs) > 0 {
+		queryScheduledTripIDs = scheduledTripIDs[0]
+		if len(queryScheduledTripIDs) == 0 {
+			return result, nil
+		}
+	}
+
+	rows, err := queries.MapScheduledTripIDToPkInSystem(ctx, db.MapScheduledTripIDToPkInSystemParams{
+		SystemPk:       systemPk,
+		FilterByTripID: len(scheduledTripIDs) > 0,
+		TripIds:        queryScheduledTripIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		result[row.ID] = row.Pk
+	}
+	return result, nil
+}
+
 func Ping(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {
 	var err error
 	ticker := time.NewTicker(waitBetweenPings)

@@ -17,12 +17,11 @@ INSERT INTO scheduled_service_removal
 VALUES
     (sqlc.arg(service_pk), sqlc.arg(date));
 
--- name: InsertScheduledTrip :one
+-- name: InsertScheduledTrip :copyfrom
 INSERT INTO scheduled_trip
     (id, route_pk, service_pk, shape_pk, direction_id, bikes_allowed, block_id, headsign, short_name, wheelchair_accessible)
 VALUES
-    (sqlc.arg(id), sqlc.arg(route_pk), sqlc.arg(service_pk), sqlc.arg(shape_pk), sqlc.arg(direction_id), sqlc.arg(bikes_allowed), sqlc.arg(block_id), sqlc.arg(headsign), sqlc.arg(short_name), sqlc.arg(wheelchair_accessible))
-RETURNING pk;
+    (sqlc.arg(id), sqlc.arg(route_pk), sqlc.arg(service_pk), sqlc.arg(shape_pk), sqlc.arg(direction_id), sqlc.arg(bikes_allowed), sqlc.arg(block_id), sqlc.arg(headsign), sqlc.arg(short_name), sqlc.arg(wheelchair_accessible));
 
 -- name: InsertScheduledTripStopTime :copyfrom
 INSERT INTO scheduled_trip_stop_time
@@ -88,6 +87,16 @@ FROM scheduled_trip_frequency
 INNER JOIN scheduled_trip ON scheduled_trip_frequency.trip_pk = scheduled_trip.pk
 INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
 WHERE scheduled_service.system_pk = sqlc.arg(system_pk);
+
+-- name: MapScheduledTripIDToPkInSystem :many
+SELECT scheduled_trip.id, scheduled_trip.pk FROM scheduled_trip
+INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
+WHERE
+    system_pk = sqlc.arg(system_pk)
+    AND (
+        NOT sqlc.arg(filter_by_trip_id)::bool
+        OR scheduled_trip.id = ANY(sqlc.arg(trip_ids)::text[])
+    );
 
 -- name: DeleteScheduledServices :exec
 DELETE FROM scheduled_service

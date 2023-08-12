@@ -53,7 +53,7 @@ type Querier interface {
 	InsertScheduledService(ctx context.Context, arg InsertScheduledServiceParams) (int64, error)
 	InsertScheduledServiceAddition(ctx context.Context, arg InsertScheduledServiceAdditionParams) error
 	InsertScheduledServiceRemoval(ctx context.Context, arg InsertScheduledServiceRemovalParams) error
-	InsertScheduledTrip(ctx context.Context, arg InsertScheduledTripParams) (int64, error)
+	InsertScheduledTrip(ctx context.Context, arg []InsertScheduledTripParams) (int64, error)
 	InsertScheduledTripFrequency(ctx context.Context, arg InsertScheduledTripFrequencyParams) error
 	InsertScheduledTripStopTime(ctx context.Context, arg []InsertScheduledTripStopTimeParams) (int64, error)
 	InsertServiceMap(ctx context.Context, arg InsertServiceMapParams) (int64, error)
@@ -109,6 +109,7 @@ type Querier interface {
 	ListVehicles_Geographic(ctx context.Context, arg ListVehicles_GeographicParams) ([]ListVehicles_GeographicRow, error)
 	MapAgencyPkToId(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdRow, error)
 	MapRouteIDToPkInSystem(ctx context.Context, arg MapRouteIDToPkInSystemParams) ([]MapRouteIDToPkInSystemRow, error)
+	MapScheduledTripIDToPkInSystem(ctx context.Context, arg MapScheduledTripIDToPkInSystemParams) ([]MapScheduledTripIDToPkInSystemRow, error)
 	MapStopIDAndPkToStationPk(ctx context.Context, arg MapStopIDAndPkToStationPkParams) ([]MapStopIDAndPkToStationPkRow, error)
 	MapStopIDToPk(ctx context.Context, arg MapStopIDToPkParams) ([]MapStopIDToPkRow, error)
 	MapStopPkToChildPks(ctx context.Context, stopPks []int64) ([]MapStopPkToChildPksRow, error)

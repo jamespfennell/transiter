@@ -339,7 +339,7 @@ func updateScheduledTrips(
 	stopIDToPk map[string]int64,
 	shapeIDToPk map[string]int64) error {
 
-	var stopTimeParams []db.InsertScheduledTripStopTimeParams
+	var tripParams []db.InsertScheduledTripParams
 	for _, trip := range trips {
 		routePk, ok := routeIDToPk[trip.Route.Id]
 		if !ok {
@@ -361,7 +361,7 @@ func updateScheduledTrips(
 			}
 		}
 
-		pk, err := updateCtx.Querier.InsertScheduledTrip(ctx, db.InsertScheduledTripParams{
+		tripParams = append(tripParams, db.InsertScheduledTripParams{
 			ID:                   trip.ID,
 			RoutePk:              routePk,
 			ServicePk:            servicePk,
@@ -372,13 +372,23 @@ func updateScheduledTrips(
 			WheelchairAccessible: convert.WheelchairAccessible(trip.WheelchairAccessible),
 			BikesAllowed:         convert.BikesAllowed(trip.BikesAllowed),
 		})
-		if err != nil {
-			return err
-		}
+	}
 
+	if _, err := updateCtx.Querier.InsertScheduledTrip(ctx, tripParams); err != nil {
+		return err
+	}
+
+	tripIDToPk, err := dbwrappers.MapScheduledTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	if err != nil {
+		return err
+	}
+
+	var stopTimeParams []db.InsertScheduledTripStopTimeParams
+	for _, trip := range trips {
+		tripPk := tripIDToPk[trip.ID]
 		for _, stopTime := range trip.StopTimes {
 			stopTimeParams = append(stopTimeParams, db.InsertScheduledTripStopTimeParams{
-				TripPk:                pk,
+				TripPk:                tripPk,
 				StopPk:                stopIDToPk[stopTime.Stop.Id],
 				ArrivalTime:           convert.Duration(stopTime.ArrivalTime),
 				DepartureTime:         convert.Duration(stopTime.DepartureTime),
@@ -395,7 +405,7 @@ func updateScheduledTrips(
 
 		for _, frequency := range trip.Frequencies {
 			if err := updateCtx.Querier.InsertScheduledTripFrequency(ctx, db.InsertScheduledTripFrequencyParams{
-				TripPk:         pk,
+				TripPk:         tripPk,
 				StartTime:      int32(frequency.StartTime.Seconds()),
 				EndTime:        int32(frequency.EndTime.Seconds()),
 				Headway:        int32(frequency.Headway.Seconds()),

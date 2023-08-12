@@ -106,14 +106,6 @@ func (q *Queries) InsertScheduledServiceRemoval(ctx context.Context, arg InsertS
 	return err
 }
 
-const insertScheduledTrip = `-- name: InsertScheduledTrip :one
-INSERT INTO scheduled_trip
-    (id, route_pk, service_pk, shape_pk, direction_id, bikes_allowed, block_id, headsign, short_name, wheelchair_accessible)
-VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING pk
-`
-
 type InsertScheduledTripParams struct {
 	ID                   string
 	RoutePk              int64
@@ -125,24 +117,6 @@ type InsertScheduledTripParams struct {
 	Headsign             pgtype.Text
 	ShortName            pgtype.Text
 	WheelchairAccessible pgtype.Bool
-}
-
-func (q *Queries) InsertScheduledTrip(ctx context.Context, arg InsertScheduledTripParams) (int64, error) {
-	row := q.db.QueryRow(ctx, insertScheduledTrip,
-		arg.ID,
-		arg.RoutePk,
-		arg.ServicePk,
-		arg.ShapePk,
-		arg.DirectionID,
-		arg.BikesAllowed,
-		arg.BlockID,
-		arg.Headsign,
-		arg.ShortName,
-		arg.WheelchairAccessible,
-	)
-	var pk int64
-	err := row.Scan(&pk)
-	return pk, err
 }
 
 const insertScheduledTripFrequency = `-- name: InsertScheduledTripFrequency :exec
@@ -427,6 +401,48 @@ func (q *Queries) ListScheduledTrips(ctx context.Context, systemPk int64) ([]Lis
 			&i.RouteID,
 			&i.ServiceID,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mapScheduledTripIDToPkInSystem = `-- name: MapScheduledTripIDToPkInSystem :many
+SELECT scheduled_trip.id, scheduled_trip.pk FROM scheduled_trip
+INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
+WHERE
+    system_pk = $1
+    AND (
+        NOT $2::bool
+        OR scheduled_trip.id = ANY($3::text[])
+    )
+`
+
+type MapScheduledTripIDToPkInSystemParams struct {
+	SystemPk       int64
+	FilterByTripID bool
+	TripIds        []string
+}
+
+type MapScheduledTripIDToPkInSystemRow struct {
+	ID string
+	Pk int64
+}
+
+func (q *Queries) MapScheduledTripIDToPkInSystem(ctx context.Context, arg MapScheduledTripIDToPkInSystemParams) ([]MapScheduledTripIDToPkInSystemRow, error) {
+	rows, err := q.db.Query(ctx, mapScheduledTripIDToPkInSystem, arg.SystemPk, arg.FilterByTripID, arg.TripIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapScheduledTripIDToPkInSystemRow
+	for rows.Next() {
+		var i MapScheduledTripIDToPkInSystemRow
+		if err := rows.Scan(&i.ID, &i.Pk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
