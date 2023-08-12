@@ -23,6 +23,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/public/reference"
 	"github.com/jamespfennell/transiter/internal/scheduler"
+	"github.com/jamespfennell/transiter/internal/version"
 	"golang.org/x/exp/slog"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -48,11 +49,13 @@ func Run(ctx context.Context, args RunArgs) error {
 	var levelVar slog.LevelVar
 	levelVar.Set(args.LogLevel)
 
-	handerOptions := slog.HandlerOptions{
+	logger := slog.New(slog.HandlerOptions{
 		Level: &levelVar,
-	}.NewTextHandler(os.Stdout)
-	logger := slog.New(handerOptions)
-	logger.InfoCtx(ctx, "starting Transiter server")
+	}.NewTextHandler(os.Stdout))
+	logger.InfoCtx(ctx, fmt.Sprintf("Transiter server v%s starting", version.Version()))
+	defer func() {
+		logger.InfoCtx(ctx, fmt.Sprintf("Transiter server v%s shutdown", version.Version()))
+	}()
 	ctx, cancelFunc := context.WithCancel(ctx)
 	defer cancelFunc()
 
@@ -86,6 +89,10 @@ func Run(ctx context.Context, args RunArgs) error {
 	}
 
 	var wg sync.WaitGroup
+	defer func() {
+		wg.Wait()
+		logger.InfoCtx(ctx, "all services shutdown")
+	}()
 
 	var realScheduler *scheduler.DefaultScheduler
 	var s scheduler.Scheduler
@@ -109,7 +116,7 @@ func Run(ctx context.Context, args RunArgs) error {
 			defer cancelFunc()
 			defer wg.Done()
 			realScheduler.Run(ctx, publicService, adminService, logger)
-			logger.InfoCtx(ctx, "scheduler stopped")
+			logger.InfoCtx(ctx, "scheduler shutdown complete")
 		}()
 		if err := realScheduler.Reset(ctx); err != nil {
 			return fmt.Errorf("failed to initialize the scheduler: %w", err)
@@ -117,102 +124,100 @@ func Run(ctx context.Context, args RunArgs) error {
 		logger.InfoCtx(ctx, "scheduler running")
 	}
 
-	var shutdownFuncs []func(context.Context) error
-
 	if args.PublicHTTPAddr != "-" {
+		mux := newServeMux(logger)
+		api.RegisterPublicHandlerServer(ctx, mux, publicService)
+		h := http.NewServeMux()
+		h.Handle("/", mux)
+		if !args.DisablePublicMetrics {
+			h.Handle("/metrics", monitoring.Handler())
+		}
+		server := &http.Server{Addr: args.PublicHTTPAddr, Handler: h}
+		defer func() {
+			logger.InfoCtx(ctx, "public HTTP API shutdown triggered")
+			go server.Shutdown(context.Background())
+		}()
 		wg.Add(1)
 		go func() {
 			defer cancelFunc()
 			defer wg.Done()
-			mux := newServeMux(logger)
-			api.RegisterPublicHandlerServer(ctx, mux, publicService)
-			h := http.NewServeMux()
-			h.Handle("/", mux)
-			if !args.DisablePublicMetrics {
-				h.Handle("/metrics", monitoring.Handler())
-			}
-			server := &http.Server{Addr: args.PublicHTTPAddr, Handler: h}
-			shutdownFuncs = append(shutdownFuncs, server.Shutdown)
 			logger.InfoCtx(ctx, fmt.Sprintf("public HTTP API listening on %s", args.PublicHTTPAddr))
 			server.ListenAndServe()
-			logger.InfoCtx(ctx, "public HTTP API stopped")
+			logger.InfoCtx(ctx, "public HTTP API shutdown complete")
 		}()
 	}
 
 	if args.PublicGrpcAddr != "-" {
+		grpcServer := grpc.NewServer()
+		defer func() {
+			logger.InfoCtx(ctx, "public gRPC API shutdown triggered")
+			go grpcServer.GracefulStop()
+		}()
+		api.RegisterPublicServer(grpcServer, publicService)
+		lis, err := net.Listen("tcp", args.PublicGrpcAddr)
+		if err != nil {
+			return fmt.Errorf("failed to launch public gRPC API: %w", err)
+		}
 		wg.Add(1)
 		go func() {
 			defer cancelFunc()
 			defer wg.Done()
-			grpcServer := grpc.NewServer()
-			shutdownFuncs = append(shutdownFuncs, func(ctx context.Context) error {
-				grpcServer.GracefulStop()
-				return nil
-			})
-			api.RegisterPublicServer(grpcServer, publicService)
-			lis, err := net.Listen("tcp", args.PublicGrpcAddr)
-			if err != nil {
-				logger.ErrorCtx(ctx, fmt.Sprintf("failed to launch public gRPC API: %s", err))
-				return
-			}
 			logger.InfoCtx(ctx, fmt.Sprintf("public gRPC API listening on %s", args.PublicGrpcAddr))
 			_ = grpcServer.Serve(lis)
-			logger.InfoCtx(ctx, "public gRPC API stopped")
+			logger.InfoCtx(ctx, "public gRPC API shutdown complete")
 		}()
 	}
 
 	if args.AdminHTTPAddr != "-" && !args.ReadOnly {
+		mux := newServeMux(logger)
+		api.RegisterPublicHandlerServer(ctx, mux, publicService)
+		api.RegisterAdminHandlerServer(ctx, mux, adminService)
+		h := http.NewServeMux()
+		h.Handle("/", mux)
+		h.Handle("/metrics", monitoring.Handler())
+		if args.EnablePprof {
+			registerPprofHandlers(h)
+		}
+		server := &http.Server{Addr: args.AdminHTTPAddr, Handler: h}
+		defer func() {
+			logger.InfoCtx(ctx, "admin HTTP API shutdown triggered")
+			go server.Shutdown(context.Background())
+		}()
 		wg.Add(1)
 		go func() {
 			defer cancelFunc()
 			defer wg.Done()
-			mux := newServeMux(logger)
-			api.RegisterPublicHandlerServer(ctx, mux, publicService)
-			api.RegisterAdminHandlerServer(ctx, mux, adminService)
-			h := http.NewServeMux()
-			h.Handle("/", mux)
-			h.Handle("/metrics", monitoring.Handler())
-			if args.EnablePprof {
-				registerPprofHandlers(h)
-			}
-			server := &http.Server{Addr: args.AdminHTTPAddr, Handler: h}
-			shutdownFuncs = append(shutdownFuncs, server.Shutdown)
+
 			logger.InfoCtx(ctx, fmt.Sprintf("admin HTTP API listening on %s", args.AdminHTTPAddr))
 			server.ListenAndServe()
-			logger.InfoCtx(ctx, "admin HTTP API stopped")
+			logger.InfoCtx(ctx, "admin HTTP API shutdown complete")
 		}()
 	}
 
 	if args.AdminGrpcAddr != "-" && !args.ReadOnly {
+		grpcServer := grpc.NewServer()
+		defer func() {
+			logger.InfoCtx(ctx, "admin gRPC API shutdown triggered")
+			go grpcServer.GracefulStop()
+		}()
+		api.RegisterPublicServer(grpcServer, publicService)
+		api.RegisterAdminServer(grpcServer, adminService)
+		lis, err := net.Listen("tcp", args.AdminGrpcAddr)
+		if err != nil {
+			return fmt.Errorf("failed to launch admin gRPC API: %w", err)
+		}
 		wg.Add(1)
 		go func() {
 			defer cancelFunc()
 			defer wg.Done()
-			grpcServer := grpc.NewServer()
-			shutdownFuncs = append(shutdownFuncs, func(ctx context.Context) error {
-				grpcServer.GracefulStop()
-				return nil
-			})
-			api.RegisterPublicServer(grpcServer, publicService)
-			api.RegisterAdminServer(grpcServer, adminService)
-			lis, err := net.Listen("tcp", args.AdminGrpcAddr)
-			if err != nil {
-				logger.ErrorCtx(ctx, fmt.Sprintf("failed to launch admin gRPC API: %s", err))
-				return
-			}
 			logger.InfoCtx(ctx, fmt.Sprintf("admin gRPC API listening on %s", args.AdminGrpcAddr))
 			_ = grpcServer.Serve(lis)
-			logger.InfoCtx(ctx, "admin gRPC API stopped")
+			logger.InfoCtx(ctx, "admin gRPC API shutdown complete")
 		}()
 	}
 
 	<-ctx.Done()
-	logger.InfoCtx(ctx, "recieved cancellation signal; starting server shutdown")
-	for _, f := range shutdownFuncs {
-		f(context.Background())
-	}
-	wg.Wait()
-	logger.InfoCtx(ctx, "server shutdown complete")
+	logger.InfoCtx(ctx, "received cancellation signal; starting server shutdown")
 	return ctx.Err()
 }
 

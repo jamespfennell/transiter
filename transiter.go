@@ -223,22 +223,30 @@ func main() {
 						LogLevel:              logLevel,
 					}
 					ctx, cancel := context.WithCancel(c.Context)
-					ch := make(chan os.Signal, 1)
-					signal.Notify(ch, os.Interrupt)
-					// Ensure that the channel doesn't leak
-					defer func() {
-						signal.Stop(ch)
-						cancel()
-					}()
-					// Listen for the channel and cancel accordingly
+					defer cancel()
+
+					interruptCh := make(chan os.Signal, 1)
+					signal.Notify(interruptCh, os.Interrupt)
+					defer signal.Stop(interruptCh)
+
+					shutdownCh := make(chan error, 1)
 					go func() {
-						select {
-						case <-ch:
-							cancel()
-						case <-ctx.Done():
-						}
+						shutdownCh <- server.Run(ctx, args)
 					}()
-					return server.Run(ctx, args)
+
+					var cancelled bool
+					for {
+						select {
+						case <-interruptCh:
+							if cancelled {
+								return fmt.Errorf("forced an unclean shutdown after receiving second cancellation signal")
+							}
+							cancelled = true
+							cancel()
+						case err := <-shutdownCh:
+							return err
+						}
+					}
 				},
 			},
 			{
