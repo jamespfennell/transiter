@@ -27,6 +27,30 @@ func (q *Queries) DeleteShapes(ctx context.Context, arg DeleteShapesParams) erro
 	return err
 }
 
+const getShape = `-- name: GetShape :one
+SELECT pk, id, system_pk, feed_pk, shape
+FROM shape
+WHERE system_pk = $1 AND id = $2
+`
+
+type GetShapeParams struct {
+	SystemPk int64
+	ShapeID  string
+}
+
+func (q *Queries) GetShape(ctx context.Context, arg GetShapeParams) (Shape, error) {
+	row := q.db.QueryRow(ctx, getShape, arg.SystemPk, arg.ShapeID)
+	var i Shape
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.FeedPk,
+		&i.Shape,
+	)
+	return i, err
+}
+
 const insertShape = `-- name: InsertShape :one
 INSERT INTO shape
     (id, system_pk, feed_pk, shape)
@@ -55,13 +79,66 @@ func (q *Queries) InsertShape(ctx context.Context, arg InsertShapeParams) (int64
 }
 
 const listShapes = `-- name: ListShapes :many
+SELECT pk, id, system_pk, feed_pk, shape
+FROM shape
+WHERE system_pk = $1
+   AND id >= $2
+   AND (
+      NOT $3::bool OR
+      id = ANY($4::text[])
+    )
+ORDER BY id
+LIMIT $5
+`
+
+type ListShapesParams struct {
+	SystemPk               int64
+	FirstShapeID           string
+	OnlyReturnSpecifiedIds bool
+	ShapeIds               []string
+	NumShapes              int32
+}
+
+func (q *Queries) ListShapes(ctx context.Context, arg ListShapesParams) ([]Shape, error) {
+	rows, err := q.db.Query(ctx, listShapes,
+		arg.SystemPk,
+		arg.FirstShapeID,
+		arg.OnlyReturnSpecifiedIds,
+		arg.ShapeIds,
+		arg.NumShapes,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Shape
+	for rows.Next() {
+		var i Shape
+		if err := rows.Scan(
+			&i.Pk,
+			&i.ID,
+			&i.SystemPk,
+			&i.FeedPk,
+			&i.Shape,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listShapesAndTrips = `-- name: ListShapesAndTrips :many
 SELECT shape.pk, shape.id, shape.system_pk, shape.feed_pk, shape.shape, scheduled_trip.id trip_id
 FROM shape
 INNER JOIN scheduled_trip ON scheduled_trip.shape_pk = shape.pk
 WHERE system_pk = $1
 `
 
-type ListShapesRow struct {
+type ListShapesAndTripsRow struct {
 	Pk       int64
 	ID       string
 	SystemPk int64
@@ -70,15 +147,15 @@ type ListShapesRow struct {
 	TripID   string
 }
 
-func (q *Queries) ListShapes(ctx context.Context, systemPk int64) ([]ListShapesRow, error) {
-	rows, err := q.db.Query(ctx, listShapes, systemPk)
+func (q *Queries) ListShapesAndTrips(ctx context.Context, systemPk int64) ([]ListShapesAndTripsRow, error) {
+	rows, err := q.db.Query(ctx, listShapesAndTrips, systemPk)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListShapesRow
+	var items []ListShapesAndTripsRow
 	for rows.Next() {
-		var i ListShapesRow
+		var i ListShapesAndTripsRow
 		if err := rows.Scan(
 			&i.Pk,
 			&i.ID,

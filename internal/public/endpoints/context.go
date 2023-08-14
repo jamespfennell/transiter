@@ -18,6 +18,9 @@ type EndpointOptions struct {
 	// The maximum number of vehicles that can be returned in a single request.
 	// Defaults to 100.
 	MaxVehiclesPerRequest int32
+	// The maximum number of shapes that can be returned in a single request.
+	// Defaults to 100.
+	MaxShapesPerRequest int32
 }
 
 type Context struct {

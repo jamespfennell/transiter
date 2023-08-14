@@ -196,6 +196,11 @@ func main() {
 						Usage: "Maximum number of vehicles that will be returned in a single list vehicles request. Specifying a value <= 0 will disable the limit.",
 						Value: 100,
 					},
+					&cli.Int64Flag{
+						Name:  "max-shapes-per-request",
+						Usage: "Maximum number of shapes that will be returned in a single list vehicles request. Specifying a value <= 0 will disable the limit.",
+						Value: 100,
+					},
 					&cli.StringFlag{
 						Name:  "log-level",
 						Usage: "Log level, either debug, info, warning or error",
@@ -220,6 +225,7 @@ func main() {
 						EnablePprof:           c.Bool("enable-pprof"),
 						MaxStopsPerRequest:    int32(c.Int64("max-stops-per-request")),
 						MaxVehiclesPerRequest: int32(c.Int64("max-vehicles-per-request")),
+						MaxShapesPerRequest:   int32(c.Int64("max-shapes-per-request")),
 						LogLevel:              logLevel,
 					}
 					ctx, cancel := context.WithCancel(c.Context)

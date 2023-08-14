@@ -268,6 +268,27 @@ service Public {
     };
   }
 
+  // List shapes
+  //
+  // `GET /systems/<system_id>/shapes`
+  //
+  // List all shapes in a system.
+  rpc ListShapes(ListShapesRequest) returns (ListShapesReply) {
+    option (google.api.http) = {
+      get: "/systems/{system_id}/shapes"
+    };
+  }
+
+  // Get shape
+  //
+  // `GET /systems/<system_id>/shapes/<shape_id>`
+  //
+  // Get a shape in a system by its ID.
+  rpc GetShape(GetShapeRequest) returns (Shape) {
+    option (google.api.http) = {
+      get: "/systems/{system_id}/shapes/{shape_id}"
+    };
+  }
 }
 
 // Request payload for the entrypoint endpoint.
@@ -649,6 +670,40 @@ message GetVehicleRequest {
     string vehicle_id = 2;
 }
 
+message ListShapesRequest {
+  // System to list shapes for.
+  string system_id = 1;
+
+  // If true, only return shapes whose IDs are specified in the repeated `id` field.
+  bool only_return_specified_ids = 2;
+
+  // IDs to return if `only_return_specified_ids` is set to true. It is an error to
+  // populate this field if `only_return_specified_ids` is false.
+  repeated string id = 3;
+
+  // ID of the first shape to return. If not set, the shape with the smallest ID will be first.
+  optional string first_id = 4;
+
+  // Maximum number of shapes to return.
+  optional int32 limit = 5;
+}
+
+message ListShapesReply {
+  // Shapes that were listed.
+  repeated Shape shapes = 1;
+
+  // ID of the next shape to list, if there are more results.
+  optional string next_id = 2;
+}
+
+message GetShapeRequest {
+  // System to get shape for.
+  string system_id = 1;
+
+  // ID of the shape to get.
+  string shape_id = 2;
+}
+
 // The System resource.
 message System {
   // ID of the system as specified in the install request.
@@ -865,6 +920,8 @@ message Trip {
   bool direction_id = 6;
 
   repeated StopTime stop_times = 7;
+
+  optional Shape.Reference shape = 8;
 
   // Reference is the reference type for the trip resource.
   message Reference {
@@ -1275,11 +1332,23 @@ message Transfer {
 }
 
 message Shape {
+  // Unique ID for the shape.
   string id = 1;
-  repeated ShapePoint points = 2;
+
+  // A point within the shape.
   message ShapePoint {
+    // Latitude of the point.
     double latitude = 1;
+    // Longitude of the point.
     double longitude = 2;
+    // Distance from the start of the shape to this point.
     optional double distance = 3;
+  }
+  // Ordered list of points that make up the shape.
+  repeated ShapePoint points = 2;
+
+  message Reference {
+    string id = 1;
+    Resource resource = 2;
   }
 }

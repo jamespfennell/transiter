@@ -1,5 +1,6 @@
-route_id,service_id,trip_id,direction_id
-A,Weekday,A-S-A01-Weekday-1100,1
-A,Weekday,A-N-A01-Weekend-1100,0
-A,Weekday,A-S-A01-Weekday-1130,1
-A,Weekday,A-N-A01-Weekend-1130,0
+route_id,service_id,trip_id,direction_id,shape_id
+A,Weekday,A-S-A01-Weekday-1100,1,
+A,Weekday,A-N-A01-Weekend-1100,0,
+A,Weekday,A-S-A01-Weekday-1130,1,
+A,Weekday,A-N-A01-Weekend-1130,0,
+A,Weekday,trip_id_1,1,shape_1

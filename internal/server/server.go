@@ -42,6 +42,7 @@ type RunArgs struct {
 	ReadOnly              bool
 	MaxStopsPerRequest    int32
 	MaxVehiclesPerRequest int32
+	MaxShapesPerRequest   int32
 	LogLevel              slog.Level
 }
 
@@ -106,8 +107,9 @@ func Run(ctx context.Context, args RunArgs) error {
 
 	monitoring := monitoring.NewPrometheusMonitoring("transiter")
 	publicService := public.New(pool, logger, monitoring, &endpoints.EndpointOptions{
-		MaxStopsPerRequest: args.MaxStopsPerRequest,
+		MaxStopsPerRequest:    args.MaxStopsPerRequest,
 		MaxVehiclesPerRequest: args.MaxVehiclesPerRequest,
+		MaxShapesPerRequest:   args.MaxShapesPerRequest,
 	})
 	adminService := admin.New(pool, s, logger, &levelVar, monitoring)
 
