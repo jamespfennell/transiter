@@ -456,6 +456,42 @@ This corresponds to possible values of the `route_type` column in `routes.txt`.
 
 
 
+## Shape
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| id | string | 
+| points | [Shape.ShapePoint](public_resources.md#Shape.ShapePoint) | 
+
+
+
+
+
+
+#### Shape.ShapePoint
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| latitude | double | 
+| longitude | double | 
+| distance | double | 
+
+
+
+
+
+
+
+
+
 ## Stop
 
 The Stop resource.

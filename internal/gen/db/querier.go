@@ -18,8 +18,10 @@ type Querier interface {
 	CountTransfersInSystem(ctx context.Context, systemPk pgtype.Int8) (int64, error)
 	DeleteAlerts(ctx context.Context, alertPks []int64) error
 	DeleteFeed(ctx context.Context, pk int64) error
+	DeleteScheduledServices(ctx context.Context, arg DeleteScheduledServicesParams) error
 	DeleteServiceMap(ctx context.Context, arg DeleteServiceMapParams) error
 	DeleteServiceMapConfig(ctx context.Context, pk int64) error
+	DeleteShapes(ctx context.Context, arg DeleteShapesParams) error
 	DeleteStaleAgencies(ctx context.Context, arg DeleteStaleAgenciesParams) error
 	DeleteStaleAlerts(ctx context.Context, arg DeleteStaleAlertsParams) error
 	DeleteStaleRoutes(ctx context.Context, arg DeleteStaleRoutesParams) error
@@ -48,9 +50,16 @@ type Querier interface {
 	InsertAlertStop(ctx context.Context, arg InsertAlertStopParams) error
 	InsertFeed(ctx context.Context, arg InsertFeedParams) error
 	InsertRoute(ctx context.Context, arg InsertRouteParams) (int64, error)
+	InsertScheduledService(ctx context.Context, arg InsertScheduledServiceParams) (int64, error)
+	InsertScheduledServiceAddition(ctx context.Context, arg InsertScheduledServiceAdditionParams) error
+	InsertScheduledServiceRemoval(ctx context.Context, arg InsertScheduledServiceRemovalParams) error
+	InsertScheduledTrip(ctx context.Context, arg []InsertScheduledTripParams) (int64, error)
+	InsertScheduledTripFrequency(ctx context.Context, arg InsertScheduledTripFrequencyParams) error
+	InsertScheduledTripStopTime(ctx context.Context, arg []InsertScheduledTripStopTimeParams) (int64, error)
 	InsertServiceMap(ctx context.Context, arg InsertServiceMapParams) (int64, error)
 	InsertServiceMapConfig(ctx context.Context, arg InsertServiceMapConfigParams) error
 	InsertServiceMapStop(ctx context.Context, arg []InsertServiceMapStopParams) (int64, error)
+	InsertShape(ctx context.Context, arg InsertShapeParams) (int64, error)
 	InsertStop(ctx context.Context, arg InsertStopParams) (int64, error)
 	InsertStopHeadSignRule(ctx context.Context, arg InsertStopHeadSignRuleParams) error
 	InsertSystem(ctx context.Context, arg InsertSystemParams) (int64, error)
@@ -72,11 +81,16 @@ type Querier interface {
 	ListRoutes(ctx context.Context, systemPk int64) ([]Route, error)
 	ListRoutesByPk(ctx context.Context, routePks []int64) ([]ListRoutesByPkRow, error)
 	ListRoutesInAgency(ctx context.Context, agencyPk int64) ([]ListRoutesInAgencyRow, error)
+	ListScheduledServices(ctx context.Context, systemPk int64) ([]ListScheduledServicesRow, error)
+	ListScheduledTripFrequencies(ctx context.Context, systemPk int64) ([]ListScheduledTripFrequenciesRow, error)
+	ListScheduledTripStopTimes(ctx context.Context, systemPk int64) ([]ListScheduledTripStopTimesRow, error)
+	ListScheduledTrips(ctx context.Context, systemPk int64) ([]ListScheduledTripsRow, error)
 	ListServiceMapConfigsInSystem(ctx context.Context, systemPk int64) ([]ServiceMapConfig, error)
 	ListServiceMapsConfigIDsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsConfigIDsForStopsRow, error)
 	// TODO: make this better?
 	ListServiceMapsForRoutes(ctx context.Context, routePks []int64) ([]ListServiceMapsForRoutesRow, error)
 	ListServiceMapsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsForStopsRow, error)
+	ListShapes(ctx context.Context, systemPk int64) ([]ListShapesRow, error)
 	ListStopHeadsignRulesForStops(ctx context.Context, stopPks []int64) ([]StopHeadsignRule, error)
 	ListStopPksForRealtimeMap(ctx context.Context, routePk int64) ([]ListStopPksForRealtimeMapRow, error)
 	ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, error)
@@ -95,6 +109,7 @@ type Querier interface {
 	ListVehicles_Geographic(ctx context.Context, arg ListVehicles_GeographicParams) ([]ListVehicles_GeographicRow, error)
 	MapAgencyPkToId(ctx context.Context, systemPk int64) ([]MapAgencyPkToIdRow, error)
 	MapRouteIDToPkInSystem(ctx context.Context, arg MapRouteIDToPkInSystemParams) ([]MapRouteIDToPkInSystemRow, error)
+	MapScheduledTripIDToPkInSystem(ctx context.Context, arg MapScheduledTripIDToPkInSystemParams) ([]MapScheduledTripIDToPkInSystemRow, error)
 	MapStopIDAndPkToStationPk(ctx context.Context, arg MapStopIDAndPkToStationPkParams) ([]MapStopIDAndPkToStationPkRow, error)
 	MapStopIDToPk(ctx context.Context, arg MapStopIDToPkParams) ([]MapStopIDToPkRow, error)
 	MapStopPkToChildPks(ctx context.Context, stopPks []int64) ([]MapStopPkToChildPksRow, error)

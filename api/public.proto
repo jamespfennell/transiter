@@ -1273,3 +1273,13 @@ message Transfer {
   optional int32 min_transfer_time = 7;
   optional int32 distance = 8;
 }
+
+message Shape {
+  string id = 1;
+  repeated ShapePoint points = 2;
+  message ShapePoint {
+    double latitude = 1;
+    double longitude = 2;
+    optional double distance = 3;
+  }
+}
