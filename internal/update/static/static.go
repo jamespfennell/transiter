@@ -340,6 +340,7 @@ func updateScheduledTrips(
 	shapeIDToPk map[string]int64) error {
 
 	var tripParams []db.InsertScheduledTripParams
+	var tripIDs []string
 	for _, trip := range trips {
 		routePk, ok := routeIDToPk[trip.Route.Id]
 		if !ok {
@@ -372,13 +373,14 @@ func updateScheduledTrips(
 			WheelchairAccessible: convert.WheelchairAccessible(trip.WheelchairAccessible),
 			BikesAllowed:         convert.BikesAllowed(trip.BikesAllowed),
 		})
+		tripIDs = append(tripIDs, trip.ID)
 	}
 
 	if _, err := updateCtx.Querier.InsertScheduledTrip(ctx, tripParams); err != nil {
 		return err
 	}
 
-	tripIDToPk, err := dbwrappers.MapScheduledTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk)
+	tripIDToPk, err := dbwrappers.MapScheduledTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, tripIDs)
 	if err != nil {
 		return err
 	}
