@@ -107,6 +107,7 @@ func Run(ctx context.Context, args RunArgs) error {
 	monitoring := monitoring.NewPrometheusMonitoring("transiter")
 	publicService := public.New(pool, logger, monitoring, &endpoints.EndpointOptions{
 		MaxStopsPerRequest: args.MaxStopsPerRequest,
+		MaxVehiclesPerRequest: args.MaxVehiclesPerRequest,
 	})
 	adminService := admin.New(pool, s, logger, &levelVar, monitoring)
 
