@@ -26,11 +26,7 @@ type Server struct {
 // New creates a new `Server` that uses the provided pool to connect to the database.
 func New(pool *pgxpool.Pool, logger *slog.Logger, monitoring monitoring.Monitoring, endpointOptions *endpoints.EndpointOptions) *Server {
 	if endpointOptions == nil {
-		endpointOptions = &endpoints.EndpointOptions{
-			MaxStopsPerRequest:    100,
-			MaxVehiclesPerRequest: 100,
-			MaxShapesPerRequest:   100,
-		}
+		endpointOptions = &endpoints.EndpointOptions{MaxEntitiesPerRequest: 100}
 	}
 
 	return &Server{pool: pool, logger: logger, monitoring: monitoring, endpointOptions: endpointOptions}

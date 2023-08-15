@@ -15,7 +15,7 @@ func ListShapes(ctx context.Context, r *Context, req *api.ListShapesRequest) (*a
 		return nil, err
 	}
 
-	numShapes := r.EndpointOptions.MaxShapesPerRequest
+	numShapes := r.EndpointOptions.MaxEntitiesPerRequest
 	if numShapes <= 0 {
 		// Avoid overflow since pagination over-fetches by one
 		numShapes = math.MaxInt32 - 1
