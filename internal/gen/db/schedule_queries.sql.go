@@ -29,6 +29,71 @@ func (q *Queries) DeleteScheduledServices(ctx context.Context, arg DeleteSchedul
 	return err
 }
 
+const getScheduledService = `-- name: GetScheduledService :one
+SELECT pk, id, system_pk, monday, tuesday, wednesday, thursday, friday, saturday, sunday, end_date, start_date, feed_pk from scheduled_service
+WHERE system_pk = $1
+AND id = $2
+`
+
+type GetScheduledServiceParams struct {
+	SystemPk int64
+	ID       string
+}
+
+func (q *Queries) GetScheduledService(ctx context.Context, arg GetScheduledServiceParams) (ScheduledService, error) {
+	row := q.db.QueryRow(ctx, getScheduledService, arg.SystemPk, arg.ID)
+	var i ScheduledService
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.SystemPk,
+		&i.Monday,
+		&i.Tuesday,
+		&i.Wednesday,
+		&i.Thursday,
+		&i.Friday,
+		&i.Saturday,
+		&i.Sunday,
+		&i.EndDate,
+		&i.StartDate,
+		&i.FeedPk,
+	)
+	return i, err
+}
+
+const getScheduledTrip = `-- name: GetScheduledTrip :one
+SELECT scheduled_trip.pk, scheduled_trip.id, scheduled_trip.route_pk, scheduled_trip.service_pk, scheduled_trip.direction_id, scheduled_trip.bikes_allowed, scheduled_trip.block_id, scheduled_trip.headsign, scheduled_trip.short_name, scheduled_trip.wheelchair_accessible, scheduled_trip.shape_pk
+FROM scheduled_trip
+INNER JOIN route ON scheduled_trip.route_pk = route.pk
+INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
+WHERE scheduled_service.system_pk = $1
+AND scheduled_trip.id = $2
+`
+
+type GetScheduledTripParams struct {
+	SystemPk int64
+	TripID   string
+}
+
+func (q *Queries) GetScheduledTrip(ctx context.Context, arg GetScheduledTripParams) (ScheduledTrip, error) {
+	row := q.db.QueryRow(ctx, getScheduledTrip, arg.SystemPk, arg.TripID)
+	var i ScheduledTrip
+	err := row.Scan(
+		&i.Pk,
+		&i.ID,
+		&i.RoutePk,
+		&i.ServicePk,
+		&i.DirectionID,
+		&i.BikesAllowed,
+		&i.BlockID,
+		&i.Headsign,
+		&i.ShortName,
+		&i.WheelchairAccessible,
+		&i.ShapePk,
+	)
+	return i, err
+}
+
 const insertScheduledService = `-- name: InsertScheduledService :one
 INSERT INTO scheduled_service
     (id, system_pk, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date, feed_pk)
@@ -443,6 +508,48 @@ func (q *Queries) MapScheduledTripIDToPkInSystem(ctx context.Context, arg MapSch
 	for rows.Next() {
 		var i MapScheduledTripIDToPkInSystemRow
 		if err := rows.Scan(&i.ID, &i.Pk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mapScheduledTripIDToRoutePkInSystem = `-- name: MapScheduledTripIDToRoutePkInSystem :many
+SELECT scheduled_trip.id, scheduled_trip.route_pk FROM scheduled_trip
+INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
+WHERE
+    system_pk = $1
+    AND (
+        NOT $2::bool
+        OR scheduled_trip.id = ANY($3::text[])
+    )
+`
+
+type MapScheduledTripIDToRoutePkInSystemParams struct {
+	SystemPk       int64
+	FilterByTripID bool
+	TripIds        []string
+}
+
+type MapScheduledTripIDToRoutePkInSystemRow struct {
+	ID      string
+	RoutePk int64
+}
+
+func (q *Queries) MapScheduledTripIDToRoutePkInSystem(ctx context.Context, arg MapScheduledTripIDToRoutePkInSystemParams) ([]MapScheduledTripIDToRoutePkInSystemRow, error) {
+	rows, err := q.db.Query(ctx, mapScheduledTripIDToRoutePkInSystem, arg.SystemPk, arg.FilterByTripID, arg.TripIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapScheduledTripIDToRoutePkInSystemRow
+	for rows.Next() {
+		var i MapScheduledTripIDToRoutePkInSystemRow
+		if err := rows.Scan(&i.ID, &i.RoutePk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

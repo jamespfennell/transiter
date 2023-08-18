@@ -189,7 +189,7 @@ message FeedConfig {
   // Additional options GTFS realtime feeds.
   optional GtfsRealtimeOptions gtfs_realtime_options = 9;
 
-  // Required for install specifies whether an update should be performed for this feed during system install. 
+  // Required for install specifies whether an update should be performed for this feed during system install.
   // If true, an update is performed and if the update fails the installation fails.
   //
   // If unspecified, defaults to false for GTFS realtime feeds and true for all other
