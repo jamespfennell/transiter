@@ -186,28 +186,26 @@ func ListStopTimesForUpdate(ctx context.Context, querier db.Querier, tripUIDToPk
 	return m, nil
 }
 
-func MapVehicleIDToPkandTripPkToVehicleID(
+func MapTripPkToVehicleID(
 	ctx context.Context,
 	querier db.Querier,
 	systemPk int64,
-	vehicleIDs []string) (map[string]int64, map[int64]string, error) {
-	rows, err := querier.ListVehicleUniqueColumns(ctx, db.ListVehicleUniqueColumnsParams{
+	vehicleIDs []string) (map[int64]string, error) {
+	rows, err := querier.MapTripPkToVehicleID(ctx, db.MapTripPkToVehicleIDParams{
 		SystemPk:   systemPk,
 		VehicleIds: vehicleIDs,
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	vehicleIDToPk := map[string]int64{}
 	tripPkToVehicleID := map[int64]string{}
 	for _, row := range rows {
-		vehicleIDToPk[row.ID.String] = row.Pk
 		if row.TripPk.Valid {
 			tripPkToVehicleID[row.TripPk.Int64] = row.ID.String
 		}
 	}
-	return vehicleIDToPk, tripPkToVehicleID, nil
+	return tripPkToVehicleID, nil
 }
 
 func MapScheduledTripIDToPkInSystem(ctx context.Context, queries db.Querier, systemPk int64, scheduledTripIDs ...[]string) (map[string]int64, error) {
