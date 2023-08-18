@@ -133,6 +133,18 @@ type PublicClient interface {
 	//
 	// Get a vehicle in a system by its ID.
 	GetVehicle(ctx context.Context, in *GetVehicleRequest, opts ...grpc.CallOption) (*Vehicle, error)
+	// List shapes
+	//
+	// `GET /systems/<system_id>/shapes`
+	//
+	// List all shapes in a system.
+	ListShapes(ctx context.Context, in *ListShapesRequest, opts ...grpc.CallOption) (*ListShapesReply, error)
+	// Get shape
+	//
+	// `GET /systems/<system_id>/shapes/<shape_id>`
+	//
+	// Get a shape in a system by its ID.
+	GetShape(ctx context.Context, in *GetShapeRequest, opts ...grpc.CallOption) (*Shape, error)
 }
 
 type publicClient struct {
@@ -305,6 +317,24 @@ func (c *publicClient) GetVehicle(ctx context.Context, in *GetVehicleRequest, op
 	return out, nil
 }
 
+func (c *publicClient) ListShapes(ctx context.Context, in *ListShapesRequest, opts ...grpc.CallOption) (*ListShapesReply, error) {
+	out := new(ListShapesReply)
+	err := c.cc.Invoke(ctx, "/Public/ListShapes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *publicClient) GetShape(ctx context.Context, in *GetShapeRequest, opts ...grpc.CallOption) (*Shape, error) {
+	out := new(Shape)
+	err := c.cc.Invoke(ctx, "/Public/GetShape", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PublicServer is the server API for Public service.
 // All implementations should embed UnimplementedPublicServer
 // for forward compatibility
@@ -424,6 +454,18 @@ type PublicServer interface {
 	//
 	// Get a vehicle in a system by its ID.
 	GetVehicle(context.Context, *GetVehicleRequest) (*Vehicle, error)
+	// List shapes
+	//
+	// `GET /systems/<system_id>/shapes`
+	//
+	// List all shapes in a system.
+	ListShapes(context.Context, *ListShapesRequest) (*ListShapesReply, error)
+	// Get shape
+	//
+	// `GET /systems/<system_id>/shapes/<shape_id>`
+	//
+	// Get a shape in a system by its ID.
+	GetShape(context.Context, *GetShapeRequest) (*Shape, error)
 }
 
 // UnimplementedPublicServer should be embedded to have forward compatible implementations.
@@ -483,6 +525,12 @@ func (UnimplementedPublicServer) ListVehicles(context.Context, *ListVehiclesRequ
 }
 func (UnimplementedPublicServer) GetVehicle(context.Context, *GetVehicleRequest) (*Vehicle, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVehicle not implemented")
+}
+func (UnimplementedPublicServer) ListShapes(context.Context, *ListShapesRequest) (*ListShapesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListShapes not implemented")
+}
+func (UnimplementedPublicServer) GetShape(context.Context, *GetShapeRequest) (*Shape, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetShape not implemented")
 }
 
 // UnsafePublicServer may be embedded to opt out of forward compatibility for this service.
@@ -820,6 +868,42 @@ func _Public_GetVehicle_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Public_ListShapes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListShapesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PublicServer).ListShapes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Public/ListShapes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PublicServer).ListShapes(ctx, req.(*ListShapesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Public_GetShape_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetShapeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PublicServer).GetShape(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Public/GetShape",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PublicServer).GetShape(ctx, req.(*GetShapeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Public_ServiceDesc is the grpc.ServiceDesc for Public service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -898,6 +982,14 @@ var Public_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVehicle",
 			Handler:    _Public_GetVehicle_Handler,
+		},
+		{
+			MethodName: "ListShapes",
+			Handler:    _Public_ListShapes_Handler,
+		},
+		{
+			MethodName: "GetShape",
+			Handler:    _Public_GetShape_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

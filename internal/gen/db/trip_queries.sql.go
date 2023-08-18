@@ -96,21 +96,31 @@ func (q *Queries) GetDestinationsForTrips(ctx context.Context, tripPks []int64) 
 }
 
 const getTrip = `-- name: GetTrip :one
+WITH shapes_for_scheduled_trips_in_system AS (
+  SELECT scheduled_trip.id as trip_id, shape.id as shape_id
+  FROM shape
+  INNER JOIN scheduled_trip ON shape.pk = scheduled_trip.shape_pk
+  WHERE shape.system_pk = $3
+)
 SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, trip.feed_pk,
        vehicle.id as vehicle_id,
        vehicle.latitude as vehicle_latitude,
        vehicle.longitude as vehicle_longitude,
        vehicle.bearing as vehicle_bearing,
-       vehicle.updated_at as vehicle_updated_at
+       vehicle.updated_at as vehicle_updated_at,
+       shapes_for_scheduled_trips_in_system.shape_id as shape_id
 FROM trip
 LEFT JOIN vehicle ON trip.pk = vehicle.trip_pk
+LEFT JOIN shapes_for_scheduled_trips_in_system
+     ON trip.id = shapes_for_scheduled_trips_in_system.trip_id
 WHERE trip.id = $1
     AND trip.route_pk = $2
 `
 
 type GetTripParams struct {
-	TripID  string
-	RoutePk int64
+	TripID   string
+	RoutePk  int64
+	SystemPk int64
 }
 
 type GetTripRow struct {
@@ -126,10 +136,11 @@ type GetTripRow struct {
 	VehicleLongitude pgtype.Numeric
 	VehicleBearing   pgtype.Float4
 	VehicleUpdatedAt pgtype.Timestamptz
+	ShapeID          pgtype.Text
 }
 
 func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error) {
-	row := q.db.QueryRow(ctx, getTrip, arg.TripID, arg.RoutePk)
+	row := q.db.QueryRow(ctx, getTrip, arg.TripID, arg.RoutePk, arg.SystemPk)
 	var i GetTripRow
 	err := row.Scan(
 		&i.Pk,
@@ -144,6 +155,7 @@ func (q *Queries) GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, e
 		&i.VehicleLongitude,
 		&i.VehicleBearing,
 		&i.VehicleUpdatedAt,
+		&i.ShapeID,
 	)
 	return i, err
 }
@@ -335,17 +347,31 @@ func (q *Queries) ListTripStopTimesForUpdate(ctx context.Context, tripPks []int6
 }
 
 const listTrips = `-- name: ListTrips :many
+WITH shapes_for_scheduled_trips_in_system AS (
+  SELECT scheduled_trip.id as trip_id, shape.id as shape_id
+  FROM shape
+  INNER JOIN scheduled_trip ON shape.pk = scheduled_trip.shape_pk
+  WHERE shape.system_pk = $2
+)
 SELECT trip.pk, trip.id, trip.route_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, trip.feed_pk,
        vehicle.id as vehicle_id,
        vehicle.latitude as vehicle_latitude,
        vehicle.longitude as vehicle_longitude,
        vehicle.bearing as vehicle_bearing,
-       vehicle.updated_at as vehicle_updated_at
+       vehicle.updated_at as vehicle_updated_at,
+       shapes_for_scheduled_trips_in_system.shape_id as shape_id
 FROM trip
 LEFT JOIN vehicle ON trip.pk = vehicle.trip_pk
-WHERE route_pk = ANY($1::bigint[])
-ORDER BY route_pk, id
+LEFT JOIN shapes_for_scheduled_trips_in_system
+     ON trip.id = shapes_for_scheduled_trips_in_system.trip_id
+WHERE trip.route_pk = ANY($1::bigint[])
+ORDER BY trip.route_pk, trip.id
 `
+
+type ListTripsParams struct {
+	RoutePks []int64
+	SystemPk int64
+}
 
 type ListTripsRow struct {
 	Pk               int64
@@ -360,10 +386,11 @@ type ListTripsRow struct {
 	VehicleLongitude pgtype.Numeric
 	VehicleBearing   pgtype.Float4
 	VehicleUpdatedAt pgtype.Timestamptz
+	ShapeID          pgtype.Text
 }
 
-func (q *Queries) ListTrips(ctx context.Context, routePks []int64) ([]ListTripsRow, error) {
-	rows, err := q.db.Query(ctx, listTrips, routePks)
+func (q *Queries) ListTrips(ctx context.Context, arg ListTripsParams) ([]ListTripsRow, error) {
+	rows, err := q.db.Query(ctx, listTrips, arg.RoutePks, arg.SystemPk)
 	if err != nil {
 		return nil, err
 	}
@@ -384,6 +411,7 @@ func (q *Queries) ListTrips(ctx context.Context, routePks []int64) ([]ListTripsR
 			&i.VehicleLongitude,
 			&i.VehicleBearing,
 			&i.VehicleUpdatedAt,
+			&i.ShapeID,
 		); err != nil {
 			return nil, err
 		}

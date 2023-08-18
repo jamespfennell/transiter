@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -16,7 +17,10 @@ func ListTrips(ctx context.Context, r *Context, req *api.ListTripsRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	trips, err := r.Querier.ListTrips(ctx, []int64{route.Pk})
+	trips, err := r.Querier.ListTrips(ctx, db.ListTripsParams{
+		SystemPk: system.Pk,
+		RoutePks: []int64{route.Pk},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -35,8 +39,9 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 		return nil, err
 	}
 	trip, err := r.Querier.GetTrip(ctx, db.GetTripParams{
-		TripID:  req.TripId,
-		RoutePk: route.Pk,
+		SystemPk: system.Pk,
+		TripID:   req.TripId,
+		RoutePk:  route.Pk,
 	})
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -56,6 +61,7 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 		VehicleID:        trip.VehicleID,
 		VehicleLatitude:  trip.VehicleLatitude,
 		VehicleLongitude: trip.VehicleLongitude,
+		ShapeID:          trip.ShapeID,
 	}})
 	if err != nil {
 		return nil, err
@@ -76,6 +82,7 @@ func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db
 			DirectionId: trip.DirectionID.Bool,
 			StartedAt:   convert.SQLNullTime(trip.StartedAt),
 			Route:       r.Reference.Route(route.ID, system.ID, route.Color),
+			Shape:       nullShapeReference(r, trip.ShapeID, system.ID),
 		}
 		if trip.VehicleID.Valid {
 			reply.Vehicle = r.Reference.Vehicle(trip.VehicleID.String, system.ID)
@@ -93,4 +100,11 @@ func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db
 		apiTrips = append(apiTrips, reply)
 	}
 	return apiTrips, nil
+}
+
+func nullShapeReference(r *Context, shapeID pgtype.Text, systemID string) *api.Shape_Reference {
+	if !shapeID.Valid {
+		return nil
+	}
+	return r.Reference.Shape(shapeID.String, systemID)
 }

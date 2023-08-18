@@ -152,7 +152,10 @@ type TripUID struct {
 }
 
 func ListTripsForUpdate(ctx context.Context, querier db.Querier, systemPk int64, routePks []int64) (map[TripUID]db.ListTripsRow, error) {
-	rows, err := querier.ListTrips(ctx, routePks)
+	rows, err := querier.ListTrips(ctx, db.ListTripsParams{
+		SystemPk: systemPk,
+		RoutePks: routePks,
+	})
 	if err != nil {
 		return nil, err
 	}

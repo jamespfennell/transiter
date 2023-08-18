@@ -1396,7 +1396,7 @@ type shapeAndTripID struct {
 }
 
 func listScheduledTripShapes(ctx context.Context, t *testing.T, querier db.Querier, systemPk int64) []shapeAndTripID {
-	shapes, err := querier.ListShapes(ctx, systemPk)
+	shapes, err := querier.ListShapesAndTrips(ctx, systemPk)
 	if err != nil {
 		t.Errorf("ListScheduledTripShapes() err = %v, want = nil", err)
 	}

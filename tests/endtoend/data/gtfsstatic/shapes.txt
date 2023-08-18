@@ -1,0 +1,8 @@
+shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence
+shape_1,100,200,0
+shape_1,150,250,1
+shape_1,200,300,2
+shape_2,200,300,0
+shape_2,250,350,1
+shape_2,300,400,2
+shape_3,-10,-20,0

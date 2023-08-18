@@ -14,16 +14,25 @@ SELECT lss.trip_pk, stop.pk destination_pk
     ON trip_stop_time.stop_pk = stop.pk;
 
 -- name: ListTrips :many
+WITH shapes_for_scheduled_trips_in_system AS (
+  SELECT scheduled_trip.id as trip_id, shape.id as shape_id
+  FROM shape
+  INNER JOIN scheduled_trip ON shape.pk = scheduled_trip.shape_pk
+  WHERE shape.system_pk = sqlc.arg(system_pk)
+)
 SELECT trip.*,
        vehicle.id as vehicle_id,
        vehicle.latitude as vehicle_latitude,
        vehicle.longitude as vehicle_longitude,
        vehicle.bearing as vehicle_bearing,
-       vehicle.updated_at as vehicle_updated_at
+       vehicle.updated_at as vehicle_updated_at,
+       shapes_for_scheduled_trips_in_system.shape_id as shape_id
 FROM trip
 LEFT JOIN vehicle ON trip.pk = vehicle.trip_pk
-WHERE route_pk = ANY(sqlc.arg(route_pks)::bigint[])
-ORDER BY route_pk, id;
+LEFT JOIN shapes_for_scheduled_trips_in_system
+     ON trip.id = shapes_for_scheduled_trips_in_system.trip_id
+WHERE trip.route_pk = ANY(sqlc.arg(route_pks)::bigint[])
+ORDER BY trip.route_pk, trip.id;
 
 -- name: ListTripPksInSystem :many
 SELECT trip.id, trip.pk
@@ -33,14 +42,23 @@ WHERE trip.id = ANY(sqlc.arg(trip_ids)::text[])
     AND feed.system_pk = sqlc.arg(system_pk);
 
 -- name: GetTrip :one
+WITH shapes_for_scheduled_trips_in_system AS (
+  SELECT scheduled_trip.id as trip_id, shape.id as shape_id
+  FROM shape
+  INNER JOIN scheduled_trip ON shape.pk = scheduled_trip.shape_pk
+  WHERE shape.system_pk = sqlc.arg(system_pk)
+)
 SELECT trip.*,
        vehicle.id as vehicle_id,
        vehicle.latitude as vehicle_latitude,
        vehicle.longitude as vehicle_longitude,
        vehicle.bearing as vehicle_bearing,
-       vehicle.updated_at as vehicle_updated_at
+       vehicle.updated_at as vehicle_updated_at,
+       shapes_for_scheduled_trips_in_system.shape_id as shape_id
 FROM trip
 LEFT JOIN vehicle ON trip.pk = vehicle.trip_pk
+LEFT JOIN shapes_for_scheduled_trips_in_system
+     ON trip.id = shapes_for_scheduled_trips_in_system.trip_id
 WHERE trip.id = sqlc.arg(trip_id)
     AND trip.route_pk = sqlc.arg(route_pk);
 

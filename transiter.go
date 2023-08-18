@@ -187,13 +187,8 @@ func main() {
 						Value: 50,
 					},
 					&cli.Int64Flag{
-						Name:  "max-stops-per-request",
-						Usage: "Maximum number of stops that will be returned in a single list stops request. Specifying a value <= 0 will disable the limit.",
-						Value: 100,
-					},
-					&cli.Int64Flag{
-						Name:  "max-vehicles-per-request",
-						Usage: "Maximum number of vehicles that will be returned in a single list vehicles request. Specifying a value <= 0 will disable the limit.",
+						Name:  "max-entities-per-request",
+						Usage: "Maximum number of stops, vehicles, and shapes that will be returned in a single request. Specifying a value <= 0 will disable the limit.",
 						Value: 100,
 					},
 					&cli.StringFlag{
@@ -218,8 +213,7 @@ func main() {
 						DisablePublicMetrics:  c.Bool("disable-public-metrics"),
 						ReadOnly:              c.Bool("read-only"),
 						EnablePprof:           c.Bool("enable-pprof"),
-						MaxStopsPerRequest:    int32(c.Int64("max-stops-per-request")),
-						MaxVehiclesPerRequest: int32(c.Int64("max-vehicles-per-request")),
+						MaxEntitiesPerRequest: int32(c.Int64("max-entities-per-request")),
 						LogLevel:              logLevel,
 					}
 					ctx, cancel := context.WithCancel(c.Context)
