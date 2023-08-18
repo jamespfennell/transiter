@@ -627,9 +627,8 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 	}
 
 	if len(validVehicleEntities) == 0 {
-		return updateCtx.Querier.DeleteStaleVehicles(ctx, db.DeleteStaleVehiclesParams{
-			FeedPk:           updateCtx.FeedPk,
-			ActiveVehicleIds: []string{},
+		return updateCtx.Querier.DeleteVehicles(ctx, db.DeleteVehiclesParams{
+			FeedPk: updateCtx.FeedPk,
 		})
 	}
 
@@ -654,7 +653,7 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 		return err
 	}
 
-	vehicleIDToPk, tripPkToVehicleID, err := dbwrappers.MapVehicleIDToPkandTripPkToVehicleID(ctx, updateCtx.Querier, updateCtx.SystemPk, vehicleIDs)
+	tripPkToVehicleID, err := dbwrappers.MapTripPkToVehicleID(ctx, updateCtx.Querier, updateCtx.SystemPk, vehicleIDs)
 	if err != nil {
 		return err
 	}
@@ -667,9 +666,11 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 		return err
 	}
 
-	err = updateCtx.Querier.DeleteStaleVehicles(ctx, db.DeleteStaleVehiclesParams{
-		FeedPk:           updateCtx.FeedPk,
-		ActiveVehicleIds: vehicleIDs,
+	err = updateCtx.Querier.DeleteVehicles(ctx, db.DeleteVehiclesParams{
+		SystemPk:   updateCtx.SystemPk,
+		FeedPk:     updateCtx.FeedPk,
+		VehicleIds: vehicleIDs,
+		TripPks:    common.MapValues(tripIDToPk),
 	})
 	if err != nil {
 		return err
@@ -677,6 +678,7 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 
 	insertedVehicleIDs := map[string]bool{}
 	insertedTripIDs := map[string]bool{}
+	var insertVehicleParams []db.InsertVehicleParams
 	for _, vehicle := range validVehicleEntities {
 		if _, ok := insertedVehicleIDs[vehicle.ID.ID]; ok {
 			updateCtx.Logger.DebugCtx(ctx, "Duplicate vehicle ID in same update", vehicle.ID.ID)
@@ -726,61 +728,30 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 			speed = vehicle.Position.Speed
 		}
 
-		if vehiclePk, vehicleExists := vehicleIDToPk[vehicle.ID.ID]; vehicleExists {
-			// Update
-			err := updateCtx.Querier.UpdateVehicle(ctx, db.UpdateVehicleParams{
-				Pk:                  vehiclePk,
-				TripPk:              convert.NullInt64(tripPkOrNil),
-				FeedPk:              updateCtx.FeedPk,
-				CurrentStopPk:       convert.NullInt64(stopPkOrNil),
-				Label:               convert.NullIfEmptyString(vehicle.ID.Label),
-				LicensePlate:        convert.NullIfEmptyString(vehicle.ID.LicensePlate),
-				CurrentStatus:       convert.NullVehicleCurrentStatus(vehicle.CurrentStatus),
-				Latitude:            convert.Gps(latitude),
-				Longitude:           convert.Gps(longitude),
-				Bearing:             convert.NullFloat32(bearing),
-				Odometer:            convert.NullFloat64(odometer),
-				Speed:               convert.NullFloat32(speed),
-				CongestionLevel:     convert.CongestionLevel(vehicle.CongestionLevel),
-				UpdatedAt:           convert.NullTime(vehicle.Timestamp),
-				CurrentStopSequence: convert.NullUInt32ToSigned(vehicle.CurrentStopSequence),
-				OccupancyStatus:     convert.NullOccupancyStatus(vehicle.OccupancyStatus),
-				OccupancyPercentage: convert.NullUInt32ToSigned(vehicle.OccupancyPercentage),
-			})
-
-			if err != nil {
-				return err
-			}
-		} else {
-			// Insert
-			err := updateCtx.Querier.InsertVehicle(ctx, db.InsertVehicleParams{
-				ID:                  convert.NullIfEmptyString(vehicle.ID.ID),
-				SystemPk:            updateCtx.SystemPk,
-				TripPk:              convert.NullInt64(tripPkOrNil),
-				FeedPk:              updateCtx.FeedPk,
-				CurrentStopPk:       convert.NullInt64(stopPkOrNil),
-				Label:               convert.NullIfEmptyString(vehicle.ID.Label),
-				LicensePlate:        convert.NullIfEmptyString(vehicle.ID.LicensePlate),
-				CurrentStatus:       convert.NullVehicleCurrentStatus(vehicle.CurrentStatus),
-				Latitude:            convert.Gps(latitude),
-				Longitude:           convert.Gps(longitude),
-				Bearing:             convert.NullFloat32(bearing),
-				Odometer:            convert.NullFloat64(odometer),
-				Speed:               convert.NullFloat32(speed),
-				CongestionLevel:     convert.CongestionLevel(vehicle.CongestionLevel),
-				UpdatedAt:           convert.NullTime(vehicle.Timestamp),
-				CurrentStopSequence: convert.NullUInt32ToSigned(vehicle.CurrentStopSequence),
-				OccupancyStatus:     convert.NullOccupancyStatus(vehicle.OccupancyStatus),
-				OccupancyPercentage: convert.NullUInt32ToSigned(vehicle.OccupancyPercentage),
-			})
-
-			if err != nil {
-				return err
-			}
-		}
+		insertVehicleParams = append(insertVehicleParams, db.InsertVehicleParams{
+			ID:                  convert.NullIfEmptyString(vehicle.ID.ID),
+			SystemPk:            updateCtx.SystemPk,
+			TripPk:              convert.NullInt64(tripPkOrNil),
+			FeedPk:              updateCtx.FeedPk,
+			CurrentStopPk:       convert.NullInt64(stopPkOrNil),
+			Label:               convert.NullIfEmptyString(vehicle.ID.Label),
+			LicensePlate:        convert.NullIfEmptyString(vehicle.ID.LicensePlate),
+			CurrentStatus:       convert.NullVehicleCurrentStatus(vehicle.CurrentStatus),
+			Latitude:            convert.Gps(latitude),
+			Longitude:           convert.Gps(longitude),
+			Bearing:             convert.NullFloat32(bearing),
+			Odometer:            convert.NullFloat64(odometer),
+			Speed:               convert.NullFloat32(speed),
+			CongestionLevel:     convert.CongestionLevel(vehicle.CongestionLevel),
+			UpdatedAt:           convert.NullTime(vehicle.Timestamp),
+			CurrentStopSequence: convert.NullUInt32ToSigned(vehicle.CurrentStopSequence),
+			OccupancyStatus:     convert.NullOccupancyStatus(vehicle.OccupancyStatus),
+			OccupancyPercentage: convert.NullUInt32ToSigned(vehicle.OccupancyPercentage),
+		})
 	}
 
-	return nil
+	_, err = updateCtx.Querier.InsertVehicle(ctx, insertVehicleParams)
+	return err
 }
 
 func ptr[T any](t T) *T {

@@ -11,20 +11,28 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deleteStaleVehicles = `-- name: DeleteStaleVehicles :exec
+const deleteVehicles = `-- name: DeleteVehicles :exec
 DELETE FROM vehicle
-WHERE
-  feed_pk = $1
-  AND NOT id = ANY($2::text[])
+WHERE system_pk = $1
+  AND (feed_pk = $2
+       OR vehicle.id = ANY($3::text[])
+       OR trip_pk = ANY($4::bigint[]))
 `
 
-type DeleteStaleVehiclesParams struct {
-	FeedPk           int64
-	ActiveVehicleIds []string
+type DeleteVehiclesParams struct {
+	SystemPk   int64
+	FeedPk     int64
+	VehicleIds []string
+	TripPks    []int64
 }
 
-func (q *Queries) DeleteStaleVehicles(ctx context.Context, arg DeleteStaleVehiclesParams) error {
-	_, err := q.db.Exec(ctx, deleteStaleVehicles, arg.FeedPk, arg.ActiveVehicleIds)
+func (q *Queries) DeleteVehicles(ctx context.Context, arg DeleteVehiclesParams) error {
+	_, err := q.db.Exec(ctx, deleteVehicles,
+		arg.SystemPk,
+		arg.FeedPk,
+		arg.VehicleIds,
+		arg.TripPks,
+	)
 	return err
 }
 
@@ -109,13 +117,6 @@ func (q *Queries) GetVehicle(ctx context.Context, arg GetVehicleParams) (GetVehi
 	return i, err
 }
 
-const insertVehicle = `-- name: InsertVehicle :exec
-INSERT INTO vehicle
-    (id, system_pk, trip_pk, label, license_plate, current_status, latitude, longitude, bearing, odometer, speed, congestion_level, updated_at, current_stop_pk, current_stop_sequence, occupancy_status, feed_pk, occupancy_percentage)
-VALUES
-    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-`
-
 type InsertVehicleParams struct {
 	ID                  pgtype.Text
 	SystemPk            int64
@@ -135,67 +136,6 @@ type InsertVehicleParams struct {
 	OccupancyStatus     pgtype.Text
 	FeedPk              int64
 	OccupancyPercentage pgtype.Int4
-}
-
-func (q *Queries) InsertVehicle(ctx context.Context, arg InsertVehicleParams) error {
-	_, err := q.db.Exec(ctx, insertVehicle,
-		arg.ID,
-		arg.SystemPk,
-		arg.TripPk,
-		arg.Label,
-		arg.LicensePlate,
-		arg.CurrentStatus,
-		arg.Latitude,
-		arg.Longitude,
-		arg.Bearing,
-		arg.Odometer,
-		arg.Speed,
-		arg.CongestionLevel,
-		arg.UpdatedAt,
-		arg.CurrentStopPk,
-		arg.CurrentStopSequence,
-		arg.OccupancyStatus,
-		arg.FeedPk,
-		arg.OccupancyPercentage,
-	)
-	return err
-}
-
-const listVehicleUniqueColumns = `-- name: ListVehicleUniqueColumns :many
-SELECT id, pk, trip_pk FROM vehicle
-WHERE id = ANY($1::text[])
-AND system_pk = $2
-`
-
-type ListVehicleUniqueColumnsParams struct {
-	VehicleIds []string
-	SystemPk   int64
-}
-
-type ListVehicleUniqueColumnsRow struct {
-	ID     pgtype.Text
-	Pk     int64
-	TripPk pgtype.Int8
-}
-
-func (q *Queries) ListVehicleUniqueColumns(ctx context.Context, arg ListVehicleUniqueColumnsParams) ([]ListVehicleUniqueColumnsRow, error) {
-	rows, err := q.db.Query(ctx, listVehicleUniqueColumns, arg.VehicleIds, arg.SystemPk)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListVehicleUniqueColumnsRow
-	for rows.Next() {
-		var i ListVehicleUniqueColumnsRow
-		if err := rows.Scan(&i.ID, &i.Pk, &i.TripPk); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const listVehicles = `-- name: ListVehicles :many
@@ -421,66 +361,38 @@ func (q *Queries) ListVehicles_Geographic(ctx context.Context, arg ListVehicles_
 	return items, nil
 }
 
-const updateVehicle = `-- name: UpdateVehicle :exec
-UPDATE vehicle
-SET trip_pk = $1,
-    label = $2,
-    license_plate = $3,
-    current_status = $4,
-    latitude = $5,
-    longitude = $6,
-    bearing = $7,
-    odometer = $8,
-    speed = $9,
-    congestion_level = $10,
-    updated_at = $11,
-    current_stop_pk = $12,
-    current_stop_sequence = $13,
-    occupancy_status = $14,
-    feed_pk = $15,
-    occupancy_percentage = $16
-WHERE vehicle.pk = $17
+const mapTripPkToVehicleID = `-- name: MapTripPkToVehicleID :many
+SELECT id, trip_pk FROM vehicle
+WHERE id = ANY($1::text[])
+AND system_pk = $2
 `
 
-type UpdateVehicleParams struct {
-	TripPk              pgtype.Int8
-	Label               pgtype.Text
-	LicensePlate        pgtype.Text
-	CurrentStatus       pgtype.Text
-	Latitude            pgtype.Numeric
-	Longitude           pgtype.Numeric
-	Bearing             pgtype.Float4
-	Odometer            pgtype.Float8
-	Speed               pgtype.Float4
-	CongestionLevel     string
-	UpdatedAt           pgtype.Timestamptz
-	CurrentStopPk       pgtype.Int8
-	CurrentStopSequence pgtype.Int4
-	OccupancyStatus     pgtype.Text
-	FeedPk              int64
-	OccupancyPercentage pgtype.Int4
-	Pk                  int64
+type MapTripPkToVehicleIDParams struct {
+	VehicleIds []string
+	SystemPk   int64
 }
 
-func (q *Queries) UpdateVehicle(ctx context.Context, arg UpdateVehicleParams) error {
-	_, err := q.db.Exec(ctx, updateVehicle,
-		arg.TripPk,
-		arg.Label,
-		arg.LicensePlate,
-		arg.CurrentStatus,
-		arg.Latitude,
-		arg.Longitude,
-		arg.Bearing,
-		arg.Odometer,
-		arg.Speed,
-		arg.CongestionLevel,
-		arg.UpdatedAt,
-		arg.CurrentStopPk,
-		arg.CurrentStopSequence,
-		arg.OccupancyStatus,
-		arg.FeedPk,
-		arg.OccupancyPercentage,
-		arg.Pk,
-	)
-	return err
+type MapTripPkToVehicleIDRow struct {
+	ID     pgtype.Text
+	TripPk pgtype.Int8
+}
+
+func (q *Queries) MapTripPkToVehicleID(ctx context.Context, arg MapTripPkToVehicleIDParams) ([]MapTripPkToVehicleIDRow, error) {
+	rows, err := q.db.Query(ctx, mapTripPkToVehicleID, arg.VehicleIds, arg.SystemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MapTripPkToVehicleIDRow
+	for rows.Next() {
+		var i MapTripPkToVehicleIDRow
+		if err := rows.Scan(&i.ID, &i.TripPk); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
