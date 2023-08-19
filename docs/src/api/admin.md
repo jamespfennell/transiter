@@ -478,7 +478,6 @@ Message describing additional options for the GTFS realtime feeds.
 | NO_EXTENSION | 0 |  |
 | NYCT_TRIPS | 1 |  |
 | NYCT_ALERTS | 2 |  |
-| NYCT_BUS_TRIPS | 3 |  |
 
 
 

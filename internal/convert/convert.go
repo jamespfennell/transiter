@@ -12,7 +12,6 @@ import (
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/gtfs/extensions"
 	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
-	"github.com/jamespfennell/gtfs/extensions/nyctbustrips"
 	"github.com/jamespfennell/gtfs/extensions/nycttrips"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"golang.org/x/exp/slog"
@@ -335,8 +334,6 @@ func GtfsRealtimeExtension(in *api.GtfsRealtimeOptions) (extensions.Extension, e
 			SkipTimetabledNoServiceAlerts:       inOpts.GetSkipTimetabledNoServiceAlerts(),
 			AddNyctMetadata:                     inOpts.GetAddNyctMetadata(),
 		}), nil
-	case api.GtfsRealtimeOptions_NYCT_BUS_TRIPS:
-		return nyctbustrips.Extension(), nil
 	default:
 		return nil, fmt.Errorf("unknown extension %s", in.Extension)
 	}
