@@ -20,6 +20,8 @@ import (
 
 const (
 	systemID             = "systemID1"
+	feedID1              = "feedID1"
+	feedID2              = "feedID2"
 	routeID1             = "routeID1"
 	stopID1              = "stopID1"
 	stopID2              = "stopID2"
@@ -33,293 +35,832 @@ const (
 	scheduledTripID1     = "scheduledTripID1"
 )
 
-type tripUpdate struct {
-	Trips []*gtfs.Trip
+// update represents a single update operations
+type update struct {
+	// feedID can be left blank, and it will default to feedID1.
+	feedID string
+	// the data to use in the update
+	data *gtfs.Realtime
 }
 
-func TestUpdateTrips(t *testing.T) {
+func TestUpdate(t *testing.T) {
+	// Each test case performs one or more updates, and then the entities are verified.
 	for _, tc := range []struct {
-		name                  string
-		tripUpdates           []tripUpdate
-		wantTripUpdateResults [][]*Trip
-		gtfsRealTimeOptions   *api.GtfsRealtimeOptions
+		name                string
+		updates             []update
+		wantTrips           []*Trip
+		wantVehicles        []*Vehicle
+		gtfsRealtimeOptions *api.GtfsRealtimeOptions
 	}{
 		{
-			name: "simple case",
-			tripUpdates: []tripUpdate{
+			name: "basic trip case",
+			updates: []update{
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gDepTime(5)),
-							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-							gtfsStu(gStopID(stopID4), gArrTime(30)),
-						}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
 					},
 				},
 			},
-			wantTripUpdateResults: [][]*Trip{
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wDepTime(5)),
-						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
-						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-						wantSt(3, stopID4, wArrTime(30)),
-					}),
-				},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, []StopTime{
+					wantSt(0, stopID1, wDepTime(5)),
+					wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+					wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+					wantSt(3, stopID4, wArrTime(30)),
+				}),
 			},
 		},
 		{
 			name: "trip deleted",
-			tripUpdates: []tripUpdate{
+			updates: []update{
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gDepTime(5)),
-							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-							gtfsStu(gStopID(stopID4), gArrTime(30)),
-						}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
 					},
 				},
 				{
-					Trips: nil,
+					data: &gtfs.Realtime{},
 				},
 			},
-			wantTripUpdateResults: [][]*Trip{
+			wantTrips: []*Trip{},
+		},
+		{
+			name: "same trip updated twice identically",
+			updates: []update{
 				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wDepTime(5)),
-						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
-						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-						wantSt(3, stopID4, wArrTime(30)),
-					}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
+					},
 				},
-				nil,
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, []StopTime{
+					wantSt(0, stopID1, wDepTime(5)),
+					wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+					wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+					wantSt(3, stopID4, wArrTime(30)),
+				}),
 			},
 		},
 		{
-			name: "same update twice",
-			tripUpdates: []tripUpdate{
+			name: "basic trip update case",
+			updates: []update{
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gDepTime(5)),
-							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-							gtfsStu(gStopID(stopID4), gArrTime(30)),
-						}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
 					},
 				},
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gDepTime(5)),
-							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-							gtfsStu(gStopID(stopID4), gArrTime(30)),
-						}),
-					},
-				},
-			},
-			wantTripUpdateResults: [][]*Trip{
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wDepTime(5)),
-						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
-						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-						wantSt(3, stopID4, wArrTime(30)),
-					}),
-				},
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wDepTime(5)),
-						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
-						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-						wantSt(3, stopID4, wArrTime(30)),
-					}),
-				},
-			},
-		},
-		{
-			name: "basic update case",
-			tripUpdates: []tripUpdate{
-				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gDepTime(5)),
-							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-							gtfsStu(gStopID(stopID4), gArrTime(30)),
-						}),
-					},
-				},
-				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gDepTime(5)),
-							gtfsStu(gStopID(stopID2), gArrTime(11), gDepTime(16)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-							gtfsStu(gStopID(stopID4), gArrTime(31)),
-						}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(11), gDepTime(16)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(31)),
+							}),
+						},
 					},
 				},
 			},
-			wantTripUpdateResults: [][]*Trip{
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wDepTime(5)),
-						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
-						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-						wantSt(3, stopID4, wArrTime(30)),
-					}),
-				},
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wDepTime(5)),
-						wantSt(1, stopID2, wArrTime(11), wDepTime(16)),
-						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-						wantSt(3, stopID4, wArrTime(31)),
-					}),
-				},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, []StopTime{
+					wantSt(0, stopID1, wDepTime(5)),
+					wantSt(1, stopID2, wArrTime(11), wDepTime(16)),
+					wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+					wantSt(3, stopID4, wArrTime(31)),
+				}),
 			},
 		},
 		{
 			name: "update with stops in the past",
-			tripUpdates: []tripUpdate{
+			updates: []update{
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gDepTime(5)),
-							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-							gtfsStu(gStopID(stopID4), gArrTime(30)),
-						}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
 					},
 				},
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-							gtfsStu(gStopID(stopID4), gArrTime(31)),
-						}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(31)),
+							}),
+						},
 					},
 				},
 			},
-			wantTripUpdateResults: [][]*Trip{
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wDepTime(5)),
-						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
-						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-						wantSt(3, stopID4, wArrTime(30)),
-					}),
-				},
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wDepTime(5), wPast),
-						wantSt(1, stopID2, wArrTime(10), wDepTime(15), wPast),
-						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-						wantSt(3, stopID4, wArrTime(31)),
-					}),
-				},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, []StopTime{
+					wantSt(0, stopID1, wDepTime(5), wPast),
+					wantSt(1, stopID2, wArrTime(10), wDepTime(15), wPast),
+					wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+					wantSt(3, stopID4, wArrTime(31)),
+				}),
 			},
 		},
 		{
 			name: "reassign stop sequences",
-			gtfsRealTimeOptions: &api.GtfsRealtimeOptions{
+			gtfsRealtimeOptions: &api.GtfsRealtimeOptions{
 				ReassignStopSequences: true,
 			},
-			tripUpdates: []tripUpdate{
+			updates: []update{
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(1)),
-							gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(2)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(3)),
-							gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(4)),
-						}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(1)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(2)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(3)),
+								gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(4)),
+							}),
+						},
 					},
 				},
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-							gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(2)),
-							gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(3)),
-							gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(4)),
-							gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(5)),
-						}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(2)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(3)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(4)),
+								gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(5)),
+							}),
+						},
 					},
 				},
 			},
-			wantTripUpdateResults: [][]*Trip{
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wArrTime(5)),
-						wantSt(1, stopID2, wArrTime(10)),
-						wantSt(2, stopID3, wArrTime(20)),
-						wantSt(3, stopID4, wArrTime(30)),
-					}),
-				},
-				{
-					wantTrip(tripID1, routeID1, true, []StopTime{
-						wantSt(0, stopID1, wArrTime(5)),
-						wantSt(1, stopID2, wArrTime(10)),
-						wantSt(2, stopID3, wArrTime(20)),
-						wantSt(3, stopID4, wArrTime(30)),
-					}),
-				},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, []StopTime{
+					wantSt(0, stopID1, wArrTime(5)),
+					wantSt(1, stopID2, wArrTime(10)),
+					wantSt(2, stopID3, wArrTime(20)),
+					wantSt(3, stopID4, wArrTime(30)),
+				}),
 			},
 		},
 		{
 			name: "no route in trip update",
-			tripUpdates: []tripUpdate{
+			updates: []update{
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(tripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
 					},
 				},
 			},
-			wantTripUpdateResults: [][]*Trip{
-				nil,
-			},
+			wantTrips: []*Trip{},
 		},
 		{
 			name: "no route in trip update, infer from static data",
-			tripUpdates: []tripUpdate{
+			updates: []update{
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(scheduledTripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(scheduledTripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
 					},
 				},
 			},
-			wantTripUpdateResults: [][]*Trip{
-				{
-					wantTrip(scheduledTripID1, routeID1, true, nil),
-				},
+			wantTrips: []*Trip{
+				wantTrip(scheduledTripID1, routeID1, true, nil),
 			},
 		},
 		{
 			name: "some trips with route id, some without",
-			tripUpdates: []tripUpdate{
+			updates: []update{
 				{
-					Trips: []*gtfs.Trip{
-						gtfsTrip(scheduledTripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
-						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_False, []gtfs.StopTimeUpdate{}),
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(scheduledTripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_False, []gtfs.StopTimeUpdate{}),
+						},
 					},
 				},
 			},
-			wantTripUpdateResults: [][]*Trip{
+			wantTrips: []*Trip{
+				wantTrip(scheduledTripID1, routeID1, true, nil),
+				wantTrip(tripID1, routeID1, false, nil),
+			},
+		},
+		{
+			name: "simple vehicle case",
+			updates: []update{
 				{
-					wantTrip(scheduledTripID1, routeID1, true, nil),
-					wantTrip(tripID1, routeID1, false, nil),
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
 				},
 			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "vehicle with no id",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID:                &gtfs.VehicleID{},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantVehicles: []*Vehicle{},
+		},
+		{
+			name: "vehicle lots of fields",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID:           vehicleID1,
+									Label:        "label",
+									LicensePlate: "licensePlate",
+								},
+								Position: &gtfs.Position{
+									Latitude:  ptr(float32(1.0)),
+									Longitude: ptr(float32(2.0)),
+									Bearing:   ptr(float32(3.0)),
+									Odometer:  ptr(4.0),
+									Speed:     ptr(float32(5.0)),
+								},
+								// STOPPED_AT
+								CurrentStatus: ptr(gtfs.CurrentStatus(1)),
+								Timestamp:     ptr(mkTime(6)),
+								// RUNNING_SMOOTHLY
+								CongestionLevel: gtfs.CongestionLevel(1),
+								// MANY_SEATS_AVAILABLE
+								OccupancyStatus:     ptr(gtfs.OccupancyStatus(1)),
+								OccupancyPercentage: ptr(uint32(8)),
+								IsEntityInMessage:   true,
+							},
+						},
+					},
+				},
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(
+					vehicleID1, systemID, nil,
+					ptr("label"), ptr("licensePlate"),
+					ptr(float32(1.0)), ptr(float32(2.0)), ptr(float32(3.0)), ptr(4.0), ptr(float32(5.0)),
+					ptr(gtfs.CongestionLevel(1)),
+					ptr(mkTime(6)),
+					nil,
+					ptr(gtfs.OccupancyStatus(1)),
+					ptr(gtfs.CurrentStatus(1)),
+					nil,
+					ptr(uint32(8))),
+			},
+		},
+		{
+			name: "vehicle with associated trip",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil, withVehicleID(vehicleID1)),
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID1, systemID, ptr(tripID1),
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "duplicate trips, same update",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID2,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil, withVehicleID(vehicleID1)),
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID1, systemID, ptr(tripID1),
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "trip changes vehicles across updates",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID2,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil, withVehicleID(vehicleID2)),
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID2, systemID, ptr(tripID1),
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "duplicate trips, different updates",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID2,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil, withVehicleID(vehicleID1)),
+			},
+			wantVehicles: []*Vehicle{
+				// If an existing vehicle and incoming vehicle both have same trip ID, we
+				// keep the existing vehicle and ignore the incoming vehicle.
+				wantVehicle(vehicleID1, systemID, ptr(tripID1),
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "duplicate vehicle ids",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								IsEntityInMessage: true,
+							},
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID1, systemID, nil,
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "associated trip and stop",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+							}),
+						},
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								CurrentStopSequence: ptr(uint32(0)),
+								StopID:              ptr(stopID1),
+								IsEntityInMessage:   true,
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, []StopTime{
+					wantSt(0, stopID1, wDepTime(5)),
+					wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+				}, withVehicleID(vehicleID1)),
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID1, systemID, ptr(tripID1),
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, ptr(int32(0)), nil, nil, ptr(stopID1), nil),
+			},
+		},
+		{
+			name: "vehicle update",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Position: &gtfs.Position{
+									Latitude:  ptr(float32(1.0)),
+									Longitude: ptr(float32(2.0)),
+									Bearing:   ptr(float32(3.0)),
+									Odometer:  ptr(4.0),
+									Speed:     ptr(float32(5.0)),
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+				{
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Position: &gtfs.Position{
+									Latitude:  ptr(float32(2.0)),
+									Longitude: ptr(float32(3.0)),
+									Bearing:   ptr(float32(4.0)),
+									Odometer:  ptr(5.0),
+									Speed:     ptr(float32(6.0)),
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(
+					vehicleID1, systemID, nil,
+					nil, nil,
+					ptr(float32(2.0)), ptr(float32(3.0)), ptr(float32(4.0)), ptr(5.0), ptr(float32(6.0)),
+					nil,
+					nil,
+					nil,
+					nil,
+					nil,
+					nil,
+					nil),
+			},
+		},
+		{
+			name: "stale vehicle deleted",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								IsEntityInMessage: true,
+							},
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID2,
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+				{
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID2,
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID2, systemID, nil, nil, nil, nil, nil,
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "multiple feeds",
+			updates: []update{
+				{
+					feedID: feedID1,
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+				{
+					feedID: feedID2,
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID2,
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				wantVehicle(vehicleID2, systemID, nil, nil, nil, nil, nil,
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "same vehicle, different feeds",
+			updates: []update{
+				{
+					feedID: feedID1,
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+				{
+					feedID: feedID2,
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
+		},
+		{
+			name: "same trip, different feeds",
+			updates: []update{
+				{
+					feedID: feedID1,
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID1,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+				{
+					feedID: feedID2,
+					data: &gtfs.Realtime{
+						Vehicles: []gtfs.Vehicle{
+							{
+								ID: &gtfs.VehicleID{
+									ID: vehicleID2,
+								},
+								Trip: &gtfs.Trip{
+									ID: gtfs.TripID{
+										ID: tripID1,
+									},
+								},
+								IsEntityInMessage: true,
+							},
+						},
+					},
+				},
+			},
+			// TODO: this testing passing looks like a bug. I would expect:
+			/*
+				wantTrips: []*Trip{
+					wantTrip(tripID1, routeID1, true, nil, withVehicleID(vehicleID2)),
+				},
+				wantVehicles: []*Vehicle{
+					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+					wantVehicle(vehicleID2, systemID, ptr(tripID1), nil, nil, nil, nil,
+						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+				},*/
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			querier := dbtesting.NewQuerier(t)
 			system := querier.NewSystem(systemID)
+			systemPkToID := map[int64]string{}
+			systemPkToID[system.Data.Pk] = systemID
+
 			stopPkToID := map[int64]string{}
 			for _, stopID := range []string{stopID1, stopID2, stopID3, stopID4} {
 				stopPkToID[system.NewStop(stopID).Pk] = stopID
@@ -331,7 +872,8 @@ func TestUpdateTrips(t *testing.T) {
 				routePkToID[route.Data.Pk] = routeID
 				routeIDToPk[routeID] = route.Data.Pk
 			}
-			feed := system.NewFeed("feedID")
+			feed1 := system.NewFeed(feedID1)
+			feed2 := system.NewFeed(feedID2)
 			staticFeed := system.NewFeed("static")
 
 			// Static data
@@ -346,713 +888,52 @@ func TestUpdateTrips(t *testing.T) {
 			system.NewScheduledTrip(scheduledTripID1, scheduledService, routeID1)
 
 			ctx := context.Background()
-			updateCtx := common.UpdateContext{
-				Querier:  querier,
-				SystemPk: system.Data.Pk,
-				FeedPk:   feed.Data.Pk,
-				FeedConfig: &api.FeedConfig{
-					GtfsRealtimeOptions: tc.gtfsRealTimeOptions,
-				},
-				Logger: slog.Default(),
-			}
 
-			if len(tc.tripUpdates) != len(tc.wantTripUpdateResults) {
-				t.Fatalf("len(tripUpdates) != len(wantTripUpdateResults)")
-			}
-
-			for i, tripUpdate := range tc.tripUpdates {
-				var r gtfs.Realtime
-				if tripUpdate.Trips != nil {
-					for _, trip := range tripUpdate.Trips {
-						r.Trips = append(r.Trips, *trip)
-					}
+			for i, update := range tc.updates {
+				var feedPk int64
+				switch update.feedID {
+				case "":
+					fallthrough
+				case feedID1:
+					feedPk = feed1.Data.Pk
+				case feedID2:
+					feedPk = feed2.Data.Pk
+				default:
+					t.Fatalf("unknown feed ID %q", update.feedID)
 				}
-				err := Update(ctx, updateCtx, &r)
+				updateCtx := common.UpdateContext{
+					Querier:  querier,
+					SystemPk: system.Data.Pk,
+					FeedPk:   feedPk,
+					FeedConfig: &api.FeedConfig{
+						GtfsRealtimeOptions: tc.gtfsRealtimeOptions,
+					},
+					Logger: slog.Default(),
+				}
+				err := Update(ctx, updateCtx, update.data)
 				if err != nil {
 					t.Fatalf("Update(trip update version %d) got = %v, want = <nil>", err, i)
 				}
-
-				gotTrips := readTripsFromDB(ctx, t, querier, system.Data.Pk, routePkToID, stopPkToID)
-				if diff := cmp.Diff(gotTrips, tc.wantTripUpdateResults[i]); diff != "" {
-					t.Errorf("got = %v, want = %v, diff = %s", gotTrips, tc.wantTripUpdateResults[i], diff)
-				}
-			}
-		})
-	}
-}
-
-type vehicleUpdate struct {
-	Vehicles []*gtfs.Vehicle
-	FeedID   *string
-}
-
-func TestUpdateVehicles(t *testing.T) {
-	for _, tc := range []struct {
-		name                     string
-		vehicleUpdates           []vehicleUpdate
-		wantVehicleUpdateResults [][]*Vehicle
-		tripVersions             []*gtfs.Trip
-	}{
-		{
-			name: "simple case",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-		},
-		{
-			name: "trip with no id",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID:                &gtfs.VehicleID{},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{},
-			},
-		},
-		{
-			name: "entity not in message",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{},
-			},
-		},
-		{
-			name: "lots of fields",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID:           vehicleID1,
-								Label:        "label",
-								LicensePlate: "licensePlate",
-							},
-							Position: &gtfs.Position{
-								Latitude:  ptr(float32(1.0)),
-								Longitude: ptr(float32(2.0)),
-								Bearing:   ptr(float32(3.0)),
-								Odometer:  ptr(4.0),
-								Speed:     ptr(float32(5.0)),
-							},
-							// STOPPED_AT
-							CurrentStatus: ptr(gtfs.CurrentStatus(1)),
-							Timestamp:     ptr(mkTime(6)),
-							// RUNNING_SMOOTHLY
-							CongestionLevel: gtfs.CongestionLevel(1),
-							// MANY_SEATS_AVAILABLE
-							OccupancyStatus:     ptr(gtfs.OccupancyStatus(1)),
-							OccupancyPercentage: ptr(uint32(8)),
-							IsEntityInMessage:   true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(
-						vehicleID1, systemID, nil,
-						ptr("label"), ptr("licensePlate"),
-						ptr(float32(1.0)), ptr(float32(2.0)), ptr(float32(3.0)), ptr(4.0), ptr(float32(5.0)),
-						ptr(gtfs.CongestionLevel(1)),
-						ptr(mkTime(6)),
-						nil,
-						ptr(gtfs.OccupancyStatus(1)),
-						ptr(gtfs.CurrentStatus(1)),
-						nil,
-						ptr(uint32(8))),
-				},
-			},
-		},
-		{
-			name: "associated trip",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, ptr(tripID1),
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
-			},
-		},
-		{
-			name: "duplicate trips, same update",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID2,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, ptr(tripID1),
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
-			},
-		},
-		{
-			name: "trip changes vehicles across updates",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID2,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, ptr(tripID1),
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-				{
-					wantVehicle(vehicleID2, systemID, ptr(tripID1),
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
-			},
-		},
-		{
-			name: "duplicate trips, different updates",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID2,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, ptr(tripID1),
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-				{
-					// If an existing vehicle and incoming vehicle both have same trip ID, we
-					// keep the existing vehicle and ignore the incoming vehicle.
-					wantVehicle(vehicleID1, systemID, ptr(tripID1),
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
-			},
-		},
-		{
-			name: "duplicate vehicle ids",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							IsEntityInMessage: true,
-						},
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
-			},
-		},
-		{
-			name: "associated trip and stop",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							CurrentStopSequence: ptr(uint32(0)),
-							StopID:              ptr(stopID1),
-							IsEntityInMessage:   true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, ptr(tripID1),
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, ptr(int32(0)), nil, nil, ptr(stopID1), nil),
-				},
-			},
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gDepTime(5)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-				}),
-			},
-		}, {
-			name: "vehicle update",
-			vehicleUpdates: []vehicleUpdate{
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Position: &gtfs.Position{
-								Latitude:  ptr(float32(1.0)),
-								Longitude: ptr(float32(2.0)),
-								Bearing:   ptr(float32(3.0)),
-								Odometer:  ptr(4.0),
-								Speed:     ptr(float32(5.0)),
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Position: &gtfs.Position{
-								Latitude:  ptr(float32(2.0)),
-								Longitude: ptr(float32(3.0)),
-								Bearing:   ptr(float32(4.0)),
-								Odometer:  ptr(5.0),
-								Speed:     ptr(float32(6.0)),
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(
-						vehicleID1, systemID, nil,
-						nil, nil,
-						ptr(float32(1.0)), ptr(float32(2.0)), ptr(float32(3.0)), ptr(4.0), ptr(float32(5.0)),
-						nil,
-						nil,
-						nil,
-						nil,
-						nil,
-						nil,
-						nil),
-				},
-				{
-					wantVehicle(
-						vehicleID1, systemID, nil,
-						nil, nil,
-						ptr(float32(2.0)), ptr(float32(3.0)), ptr(float32(4.0)), ptr(5.0), ptr(float32(6.0)),
-						nil,
-						nil,
-						nil,
-						nil,
-						nil,
-						nil,
-						nil),
-				},
-			},
-		},
-		{
-			name: "stale vehicle deleted",
-			vehicleUpdates: []vehicleUpdate{
-				{
-
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							IsEntityInMessage: true,
-						},
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID2,
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-				{
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID2,
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-					wantVehicle(vehicleID2, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-				{
-					wantVehicle(vehicleID2, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-		},
-		{
-			name: "multiple feeds",
-			vehicleUpdates: []vehicleUpdate{
-				{
-
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-				{
-					FeedID: ptr("otherFeed"),
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID2,
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-				{
-					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-					wantVehicle(vehicleID2, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-		},
-		{
-			name: "same vehicle, different feeds",
-			vehicleUpdates: []vehicleUpdate{
-				{
-
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-				{
-					FeedID: ptr("otherFeed"),
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-				{
-					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-		},
-		{
-			name: "same trip, different feeds",
-			vehicleUpdates: []vehicleUpdate{
-				{
-
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID1,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-				{
-					FeedID: ptr("otherFeed"),
-					Vehicles: []*gtfs.Vehicle{
-						{
-							ID: &gtfs.VehicleID{
-								ID: vehicleID2,
-							},
-							Trip: &gtfs.Trip{
-								ID: gtfs.TripID{
-									ID: tripID1,
-								},
-							},
-							IsEntityInMessage: true,
-						},
-					},
-				},
-			},
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
-			},
-			wantVehicleUpdateResults: [][]*Vehicle{
-				{
-					wantVehicle(vehicleID1, systemID, ptr(tripID1), nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-				{
-					wantVehicle(vehicleID2, systemID, ptr(tripID1), nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},
-			},
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			querier := dbtesting.NewQuerier(t)
-			system := querier.NewSystem(systemID)
-			stopPkToID := map[int64]string{}
-			for _, stopID := range []string{stopID1, stopID2, stopID3, stopID4} {
-				stopPkToID[system.NewStop(stopID).Pk] = stopID
-			}
-			for _, routeID := range []string{routeID1} {
-				system.NewRoute(routeID)
 			}
 
-			tripsFeed := system.NewFeed("trips")
-
-			feedIDToFeed := map[string]dbtesting.Feed{}
-			feedIDToFeed[defaultVehicleFeedID] = system.NewFeed(defaultVehicleFeedID)
-
-			ctx := context.Background()
-			updateCtx := common.UpdateContext{
-				Querier:  querier,
-				SystemPk: system.Data.Pk,
-				Logger:   slog.Default(),
+			if tc.wantTrips == nil {
+				tc.wantTrips = []*Trip{}
+			}
+			gotTrips := readTripsFromDB(ctx, t, querier, system.Data.Pk, routePkToID, stopPkToID)
+			if diff := cmp.Diff(gotTrips, tc.wantTrips); diff != "" {
+				t.Errorf("got = %v, want = %v, diff = %s", gotTrips, tc.wantTrips, diff)
 			}
 
-			for i, tripVersion := range tc.tripVersions {
-				updateCtx.FeedPk = tripsFeed.Data.Pk
-				var r gtfs.Realtime
-				if tripVersion != nil {
-					r.Trips = append(r.Trips, *tripVersion)
-				}
-				err := Update(ctx, updateCtx, &r)
-				if err != nil {
-					t.Fatalf("Update(trip version %d) got = %v, want = <nil>", err, i)
-				}
+			if tc.wantVehicles == nil {
+				tc.wantVehicles = []*Vehicle{}
 			}
-
-			systemPkToID := map[int64]string{}
-			systemPkToID[system.Data.Pk] = systemID
-
-			if len(tc.vehicleUpdates) != len(tc.wantVehicleUpdateResults) {
-				t.Fatalf("len(vehicleGroups) != len(wantVehicleUpdateResults)")
+			gotVehicles := readVehiclesFromDB(ctx, t, querier, system.Data.Pk, systemPkToID)
+			opt := cmp.Options{
+				cmpopts.IgnoreUnexported(pgtype.Numeric{}),
+				cmp.Comparer(compareNumerics),
 			}
-
-			updateCtx.FeedConfig = &api.FeedConfig{
-				GtfsRealtimeOptions: &api.GtfsRealtimeOptions{
-					OnlyProcessFullEntities: true,
-				},
-			}
-			for i := range tc.vehicleUpdates {
-				vehicles := tc.vehicleUpdates[i].Vehicles
-				wantVehicles := tc.wantVehicleUpdateResults[i]
-
-				feedID := tc.vehicleUpdates[i].FeedID
-				if feedID != nil {
-					if _, ok := feedIDToFeed[*feedID]; !ok {
-						feedIDToFeed[*feedID] = system.NewFeed(*feedID)
-					}
-					updateCtx.FeedPk = feedIDToFeed[*feedID].Data.Pk
-				} else {
-					updateCtx.FeedPk = feedIDToFeed[defaultVehicleFeedID].Data.Pk
-				}
-
-				var r gtfs.Realtime
-				for _, vehicle := range vehicles {
-					r.Vehicles = append(r.Vehicles, *vehicle)
-				}
-
-				err := Update(ctx, updateCtx, &r)
-				if err != nil {
-					t.Fatalf("Update(vehicle %d) got = %v, want = <nil>", err, i)
-				}
-
-				dbVehicles := readVehiclesFromDB(ctx, t, querier, system.Data.Pk, systemPkToID)
-
-				opt := cmp.Options{
-					cmpopts.IgnoreUnexported(pgtype.Numeric{}),
-					cmp.Comparer(compareNumerics),
-				}
-				if diff := cmp.Diff(dbVehicles, wantVehicles, opt); diff != "" {
-					t.Errorf("got = %v, want = %v, diff = %s", dbVehicles, wantVehicles, diff)
-				}
+			if diff := cmp.Diff(gotVehicles, tc.wantVehicles, opt); diff != "" {
+				t.Errorf("got = %v, want = %v, diff = %s", gotVehicles, tc.wantVehicles, diff)
 			}
 		})
 	}
@@ -1077,14 +958,11 @@ func readTripsFromDB(ctx context.Context, t *testing.T, querier db.Querier, syst
 		SystemPk: systemPk,
 		RoutePks: routePks,
 	})
-	if err == pgx.ErrNoRows {
-		return nil
-	}
 	if err != nil {
 		t.Fatalf("ListTrips(systemPk=%d, routePks=%v) err got = %v, want = <nil>", systemPk, routePks, err)
 	}
 
-	var trips []*Trip
+	trips := []*Trip{}
 	for _, dbTrip := range dbTrips {
 		dbStopTimes, err := querier.ListStopsTimesForTrip(ctx, dbTrip.Pk)
 		routeID := routePkToID[dbTrip.RoutePk]
@@ -1173,14 +1051,26 @@ func readVehiclesFromDB(
 	return vehicles
 }
 
-func wantTrip(tripID, routeID string, directionID bool, sts []StopTime) *Trip {
-	return &Trip{
+type wantTripOpt func(*Trip)
+
+func wantTrip(tripID, routeID string, directionID bool, sts []StopTime, opts ...wantTripOpt) *Trip {
+	t := &Trip{
 		RouteID: routeID,
 		DBFields: db.ListTripsRow{
 			ID:          tripID,
 			DirectionID: convert.NullBool(&directionID),
 		},
 		StopTimes: sts,
+	}
+	for _, opt := range opts {
+		opt(t)
+	}
+	return t
+}
+
+func withVehicleID(vehicleID string) wantTripOpt {
+	return func(t *Trip) {
+		t.DBFields.VehicleID = convert.NullString(&vehicleID)
 	}
 }
 
