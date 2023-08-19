@@ -1,0 +1,18 @@
+name: Massachusetts Bay Transportation Authority
+
+feeds:
+  - id: gtfsstatic
+    type: GTFS_STATIC
+    url: "https://cdn.mbta.com/MBTA_GTFS.zip"
+
+  - id: "gtfsrealtime-alerts"
+    type: GTFS_REALTIME
+    url: "https://cdn.mbta.com/realtime/Alerts.pb"
+
+  - id: "gtfsrealtime-trips"
+    type: GTFS_REALTIME
+    url: "https://cdn.mbta.com/realtime/TripUpdates.pb"
+
+  - id: "gtfsrealtime-vehicles"
+    type: GTFS_REALTIME
+    url: "https://cdn.mbta.com/realtime/VehiclePositions.pb"
