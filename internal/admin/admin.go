@@ -12,6 +12,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
@@ -62,7 +63,7 @@ func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigR
 		for _, feed := range feeds {
 			feed := feed
 			var feedConfig api.FeedConfig
-			if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
+			if err := convert.UnmarshalJSONAndDiscardUnknown([]byte(feed.Config), &feedConfig); err != nil {
 				return err
 			}
 			reply.Feeds = append(reply.Feeds, &feedConfig)

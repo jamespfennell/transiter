@@ -9,6 +9,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"golang.org/x/exp/slog"
+	"google.golang.org/protobuf/proto"
 )
 
 type UpdateContext struct {
@@ -45,4 +46,11 @@ func MapKeys[T comparable, V any](in map[T]V) []T {
 		out = append(out, t)
 	}
 	return out
+}
+
+func UnmarshallAndDiscardUnknown(b []byte, m proto.Message) error {
+	unmarshalOptions := proto.UnmarshalOptions{
+		DiscardUnknown: true,
+	}
+	return unmarshalOptions.Unmarshal(b, m)
 }
