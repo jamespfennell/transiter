@@ -58,6 +58,11 @@ LEFT JOIN (SELECT service_pk,
     ON scheduled_service.pk = scheduled_service_removal.service_pk
 WHERE system_pk = sqlc.arg(system_pk);
 
+-- name: GetScheduledService :one
+SELECT * from scheduled_service
+WHERE system_pk = sqlc.arg(system_pk)
+AND id = sqlc.arg(id);
+
 -- name: ListScheduledTrips :many
 SELECT
     scheduled_trip.*,
@@ -67,6 +72,14 @@ FROM scheduled_trip
 INNER JOIN route ON scheduled_trip.route_pk = route.pk
 INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
 WHERE scheduled_service.system_pk = sqlc.arg(system_pk);
+
+-- name: GetScheduledTrip :one
+SELECT scheduled_trip.*
+FROM scheduled_trip
+INNER JOIN route ON scheduled_trip.route_pk = route.pk
+INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
+WHERE scheduled_service.system_pk = sqlc.arg(system_pk)
+AND scheduled_trip.id = sqlc.arg(trip_id);
 
 -- name: ListScheduledTripStopTimes :many
 SELECT
@@ -90,6 +103,16 @@ WHERE scheduled_service.system_pk = sqlc.arg(system_pk);
 
 -- name: MapScheduledTripIDToPkInSystem :many
 SELECT scheduled_trip.id, scheduled_trip.pk FROM scheduled_trip
+INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
+WHERE
+    system_pk = sqlc.arg(system_pk)
+    AND (
+        NOT sqlc.arg(filter_by_trip_id)::bool
+        OR scheduled_trip.id = ANY(sqlc.arg(trip_ids)::text[])
+    );
+
+-- name: MapScheduledTripIDToRoutePkInSystem :many
+SELECT scheduled_trip.id, scheduled_trip.route_pk FROM scheduled_trip
 INNER JOIN scheduled_service ON scheduled_trip.service_pk = scheduled_service.pk
 WHERE
     system_pk = sqlc.arg(system_pk)

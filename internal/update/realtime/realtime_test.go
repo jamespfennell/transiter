@@ -29,139 +29,292 @@ const (
 	vehicleID1           = "vehicleID1"
 	vehicleID2           = "vehicleID2"
 	defaultVehicleFeedID = "vehicles"
+	scheduledService     = "weekdays"
+	scheduledTripID1     = "scheduledTripID1"
 )
+
+type tripUpdate struct {
+	Trips []*gtfs.Trip
+}
 
 func TestUpdateTrips(t *testing.T) {
 	for _, tc := range []struct {
-		name string
-		// The update process will run N times, 1 for each trip version. Providing <nil> for a version
-		// will run an update with no trips.
-		tripVersions        []*gtfs.Trip
-		wantTrip            *Trip
-		gtfsRealTimeOptions *api.GtfsRealtimeOptions
+		name                  string
+		tripUpdates           []tripUpdate
+		wantTripUpdateResults [][]*Trip
+		gtfsRealTimeOptions   *api.GtfsRealtimeOptions
 	}{
 		{
 			name: "simple case",
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gDepTime(5)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-					gtfsStu(gStopID(stopID4), gArrTime(30)),
-				}),
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gDepTime(5)),
+							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+							gtfsStu(gStopID(stopID4), gArrTime(30)),
+						}),
+					},
+				},
 			},
-			wantTrip: wantTrip(tripID1, routeID1, true, []StopTime{
-				wantSt(0, stopID1, wDepTime(5)),
-				wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
-				wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-				wantSt(3, stopID4, wArrTime(30)),
-			}),
+			wantTripUpdateResults: [][]*Trip{
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wDepTime(5)),
+						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+						wantSt(3, stopID4, wArrTime(30)),
+					}),
+				},
+			},
 		},
 		{
 			name: "trip deleted",
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gDepTime(5)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-					gtfsStu(gStopID(stopID4), gArrTime(30)),
-				}),
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gDepTime(5)),
+							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+							gtfsStu(gStopID(stopID4), gArrTime(30)),
+						}),
+					},
+				},
+				{
+					Trips: nil,
+				},
+			},
+			wantTripUpdateResults: [][]*Trip{
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wDepTime(5)),
+						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+						wantSt(3, stopID4, wArrTime(30)),
+					}),
+				},
 				nil,
 			},
-			wantTrip: nil,
 		},
 		{
 			name: "same update twice",
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gDepTime(5)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-					gtfsStu(gStopID(stopID4), gArrTime(30)),
-				}),
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gDepTime(5)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-					gtfsStu(gStopID(stopID4), gArrTime(30)),
-				}),
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gDepTime(5)),
+							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+							gtfsStu(gStopID(stopID4), gArrTime(30)),
+						}),
+					},
+				},
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gDepTime(5)),
+							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+							gtfsStu(gStopID(stopID4), gArrTime(30)),
+						}),
+					},
+				},
 			},
-			wantTrip: wantTrip(tripID1, routeID1, true, []StopTime{
-				wantSt(0, stopID1, wDepTime(5)),
-				wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
-				wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-				wantSt(3, stopID4, wArrTime(30)),
-			}),
+			wantTripUpdateResults: [][]*Trip{
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wDepTime(5)),
+						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+						wantSt(3, stopID4, wArrTime(30)),
+					}),
+				},
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wDepTime(5)),
+						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+						wantSt(3, stopID4, wArrTime(30)),
+					}),
+				},
+			},
 		},
 		{
 			name: "basic update case",
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gDepTime(5)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-					gtfsStu(gStopID(stopID4), gArrTime(30)),
-				}),
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gDepTime(5)),
-					gtfsStu(gStopID(stopID2), gArrTime(11), gDepTime(16)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-					gtfsStu(gStopID(stopID4), gArrTime(31)),
-				}),
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gDepTime(5)),
+							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+							gtfsStu(gStopID(stopID4), gArrTime(30)),
+						}),
+					},
+				},
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gDepTime(5)),
+							gtfsStu(gStopID(stopID2), gArrTime(11), gDepTime(16)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+							gtfsStu(gStopID(stopID4), gArrTime(31)),
+						}),
+					},
+				},
 			},
-			wantTrip: wantTrip(tripID1, routeID1, true, []StopTime{
-				wantSt(0, stopID1, wDepTime(5)),
-				wantSt(1, stopID2, wArrTime(11), wDepTime(16)),
-				wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-				wantSt(3, stopID4, wArrTime(31)),
-			}),
+			wantTripUpdateResults: [][]*Trip{
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wDepTime(5)),
+						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+						wantSt(3, stopID4, wArrTime(30)),
+					}),
+				},
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wDepTime(5)),
+						wantSt(1, stopID2, wArrTime(11), wDepTime(16)),
+						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+						wantSt(3, stopID4, wArrTime(31)),
+					}),
+				},
+			},
 		},
 		{
 			name: "update with stops in the past",
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gDepTime(5)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-					gtfsStu(gStopID(stopID4), gArrTime(30)),
-				}),
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
-					gtfsStu(gStopID(stopID4), gArrTime(31)),
-				}),
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gDepTime(5)),
+							gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+							gtfsStu(gStopID(stopID4), gArrTime(30)),
+						}),
+					},
+				},
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+							gtfsStu(gStopID(stopID4), gArrTime(31)),
+						}),
+					},
+				},
 			},
-			wantTrip: wantTrip(tripID1, routeID1, true, []StopTime{
-				wantSt(0, stopID1, wDepTime(5), wPast),
-				wantSt(1, stopID2, wArrTime(10), wDepTime(15), wPast),
-				wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
-				wantSt(3, stopID4, wArrTime(31)),
-			}),
+			wantTripUpdateResults: [][]*Trip{
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wDepTime(5)),
+						wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+						wantSt(3, stopID4, wArrTime(30)),
+					}),
+				},
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wDepTime(5), wPast),
+						wantSt(1, stopID2, wArrTime(10), wDepTime(15), wPast),
+						wantSt(2, stopID3, wArrTime(20), wDepTime(25)),
+						wantSt(3, stopID4, wArrTime(31)),
+					}),
+				},
+			},
 		},
 		{
 			name: "reassign stop sequences",
 			gtfsRealTimeOptions: &api.GtfsRealtimeOptions{
 				ReassignStopSequences: true,
 			},
-			tripVersions: []*gtfs.Trip{
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(1)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(2)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(3)),
-					gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(4)),
-				}),
-				gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
-					gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(2)),
-					gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(3)),
-					gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(4)),
-					gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(5)),
-				}),
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(1)),
+							gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(2)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(3)),
+							gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(4)),
+						}),
+					},
+				},
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+							gtfsStu(gStopID(stopID1), gArrTime(5), gStopSeq(2)),
+							gtfsStu(gStopID(stopID2), gArrTime(10), gStopSeq(3)),
+							gtfsStu(gStopID(stopID3), gArrTime(20), gStopSeq(4)),
+							gtfsStu(gStopID(stopID4), gArrTime(30), gStopSeq(5)),
+						}),
+					},
+				},
 			},
-			wantTrip: wantTrip(tripID1, routeID1, true, []StopTime{
-				wantSt(0, stopID1, wArrTime(5)),
-				wantSt(1, stopID2, wArrTime(10)),
-				wantSt(2, stopID3, wArrTime(20)),
-				wantSt(3, stopID4, wArrTime(30)),
-			}),
+			wantTripUpdateResults: [][]*Trip{
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wArrTime(5)),
+						wantSt(1, stopID2, wArrTime(10)),
+						wantSt(2, stopID3, wArrTime(20)),
+						wantSt(3, stopID4, wArrTime(30)),
+					}),
+				},
+				{
+					wantTrip(tripID1, routeID1, true, []StopTime{
+						wantSt(0, stopID1, wArrTime(5)),
+						wantSt(1, stopID2, wArrTime(10)),
+						wantSt(2, stopID3, wArrTime(20)),
+						wantSt(3, stopID4, wArrTime(30)),
+					}),
+				},
+			},
+		},
+		{
+			name: "no route in trip update",
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(tripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+					},
+				},
+			},
+			wantTripUpdateResults: [][]*Trip{
+				nil,
+			},
+		},
+		{
+			name: "no route in trip update, infer from static data",
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(scheduledTripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+					},
+				},
+			},
+			wantTripUpdateResults: [][]*Trip{
+				{
+					wantTrip(scheduledTripID1, routeID1, true, nil),
+				},
+			},
+		},
+		{
+			name: "some trips with route id, some without",
+			tripUpdates: []tripUpdate{
+				{
+					Trips: []*gtfs.Trip{
+						gtfsTrip(scheduledTripID1, "", gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						gtfsTrip(tripID1, routeID1, gtfs.DirectionID_False, []gtfs.StopTimeUpdate{}),
+					},
+				},
+			},
+			wantTripUpdateResults: [][]*Trip{
+				{
+					wantTrip(scheduledTripID1, routeID1, true, nil),
+					wantTrip(tripID1, routeID1, false, nil),
+				},
+			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -179,6 +332,18 @@ func TestUpdateTrips(t *testing.T) {
 				routeIDToPk[routeID] = route.Data.Pk
 			}
 			feed := system.NewFeed("feedID")
+			staticFeed := system.NewFeed("static")
+
+			// Static data
+			system.NewScheduledService(scheduledService, db.InsertScheduledServiceParams{
+				FeedPk:    staticFeed.Data.Pk,
+				Monday:    convert.Bool(true),
+				Tuesday:   convert.Bool(true),
+				Wednesday: convert.Bool(true),
+				Thursday:  convert.Bool(true),
+				Friday:    convert.Bool(true),
+			})
+			system.NewScheduledTrip(scheduledTripID1, scheduledService, routeID1)
 
 			ctx := context.Background()
 			updateCtx := common.UpdateContext{
@@ -191,21 +356,26 @@ func TestUpdateTrips(t *testing.T) {
 				Logger: slog.Default(),
 			}
 
-			for i, tripVersion := range tc.tripVersions {
+			if len(tc.tripUpdates) != len(tc.wantTripUpdateResults) {
+				t.Fatalf("len(tripUpdates) != len(wantTripUpdateResults)")
+			}
+
+			for i, tripUpdate := range tc.tripUpdates {
 				var r gtfs.Realtime
-				if tripVersion != nil {
-					r.Trips = append(r.Trips, *tripVersion)
+				if tripUpdate.Trips != nil {
+					for _, trip := range tripUpdate.Trips {
+						r.Trips = append(r.Trips, *trip)
+					}
 				}
 				err := Update(ctx, updateCtx, &r)
 				if err != nil {
-					t.Fatalf("Update(trip version %d) got = %v, want = <nil>", err, i)
+					t.Fatalf("Update(trip update version %d) got = %v, want = <nil>", err, i)
 				}
-			}
 
-			gotTrip := readTripFromDB(ctx, t, querier, routeIDToPk, stopPkToID)
-
-			if diff := cmp.Diff(gotTrip, tc.wantTrip); diff != "" {
-				t.Errorf("got = %v, want = %v, diff = %s", gotTrip, tc.wantTrip, diff)
+				gotTrips := readTripsFromDB(ctx, t, querier, system.Data.Pk, routePkToID, stopPkToID)
+				if diff := cmp.Diff(gotTrips, tc.wantTripUpdateResults[i]); diff != "" {
+					t.Errorf("got = %v, want = %v, diff = %s", gotTrips, tc.wantTripUpdateResults[i], diff)
+				}
 			}
 		})
 	}
@@ -842,7 +1012,7 @@ func TestUpdateVehicles(t *testing.T) {
 			systemPkToID[system.Data.Pk] = systemID
 
 			if len(tc.vehicleUpdates) != len(tc.wantVehicleUpdateResults) {
-				t.Fatalf("len(vehicleGroups) != len(wantVehicleGroups)")
+				t.Fatalf("len(vehicleGroups) != len(wantVehicleUpdateResults)")
 			}
 
 			updateCtx.FeedConfig = &api.FeedConfig{
@@ -890,7 +1060,7 @@ func TestUpdateVehicles(t *testing.T) {
 
 type Trip struct {
 	RouteID   string
-	DBFields  db.GetTripRow
+	DBFields  db.ListTripsRow
 	StopTimes []StopTime
 }
 
@@ -901,36 +1071,45 @@ type Vehicle struct {
 	DBFields      db.GetVehicleRow
 }
 
-func readTripFromDB(ctx context.Context, t *testing.T, querier db.Querier, routeIDToPk map[string]int64, stopPkToID map[int64]string) *Trip {
-	dbTrip, err := querier.GetTrip(ctx, db.GetTripParams{
-		RoutePk: routeIDToPk[routeID1],
-		TripID:  tripID1,
+func readTripsFromDB(ctx context.Context, t *testing.T, querier db.Querier, systemPk int64, routePkToID map[int64]string, stopPkToID map[int64]string) []*Trip {
+	routePks := common.MapKeys(routePkToID)
+	dbTrips, err := querier.ListTrips(ctx, db.ListTripsParams{
+		SystemPk: systemPk,
+		RoutePks: routePks,
 	})
 	if err == pgx.ErrNoRows {
 		return nil
 	}
 	if err != nil {
-		t.Fatalf("GetTrip(routeID=%s, tripID=%s) err got = %v, want = <nil>", routeID1, tripID1, err)
-	}
-	dbStopTimes, err := querier.ListStopsTimesForTrip(ctx, dbTrip.Pk)
-	if err != nil {
-		t.Fatalf("ListStopTimesForTrip(routeID=%s, tripID=%s) err got = %v, want = <nil>", routeID1, tripID1, err)
+		t.Fatalf("ListTrips(systemPk=%d, routePks=%v) err got = %v, want = <nil>", systemPk, routePks, err)
 	}
 
-	var outStopTimes []StopTime
-	for _, inStopTime := range dbStopTimes {
-		outStopTimes = append(outStopTimes, NewStopTimeFromDB(inStopTime, stopPkToID))
+	var trips []*Trip
+	for _, dbTrip := range dbTrips {
+		dbStopTimes, err := querier.ListStopsTimesForTrip(ctx, dbTrip.Pk)
+		routeID := routePkToID[dbTrip.RoutePk]
+		if err != nil {
+			t.Fatalf("ListStopTimesForTrip(routeID=%s, tripID=%s) err got = %v, want = <nil>", routeID, dbTrip.ID, err)
+		}
+
+		var outStopTimes []StopTime
+		for _, inStopTime := range dbStopTimes {
+			outStopTimes = append(outStopTimes, NewStopTimeFromDB(inStopTime, stopPkToID))
+		}
+		// Clear all primary key columns
+		dbTrip.Pk = 0
+		dbTrip.RoutePk = 0
+		dbTrip.FeedPk = 0
+		dbTrip.GtfsHash = ""
+
+		trips = append(trips, &Trip{
+			RouteID:   routeID,
+			DBFields:  dbTrip,
+			StopTimes: outStopTimes,
+		})
 	}
-	// Clear all primary key columns
-	dbTrip.Pk = 0
-	dbTrip.RoutePk = 0
-	dbTrip.FeedPk = 0
-	dbTrip.GtfsHash = ""
-	return &Trip{
-		RouteID:   routeID1,
-		DBFields:  dbTrip,
-		StopTimes: outStopTimes,
-	}
+
+	return trips
 }
 
 func readVehiclesFromDB(
@@ -997,7 +1176,7 @@ func readVehiclesFromDB(
 func wantTrip(tripID, routeID string, directionID bool, sts []StopTime) *Trip {
 	return &Trip{
 		RouteID: routeID,
-		DBFields: db.GetTripRow{
+		DBFields: db.ListTripsRow{
 			ID:          tripID,
 			DirectionID: convert.NullBool(&directionID),
 		},
@@ -1151,9 +1330,9 @@ func mkTime(i int) time.Time {
 func gtfsTrip(tripID, routeID string, directionID gtfs.DirectionID, stus []gtfs.StopTimeUpdate) *gtfs.Trip {
 	return &gtfs.Trip{
 		ID: gtfs.TripID{
-			ID:          tripID1,
-			RouteID:     routeID1,
-			DirectionID: gtfs.DirectionID_True,
+			ID:          tripID,
+			RouteID:     routeID,
+			DirectionID: directionID,
 		},
 		StopTimeUpdates: stus,
 	}

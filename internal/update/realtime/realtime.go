@@ -57,7 +57,6 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 		validTripEntities = trips
 	}
 
-	// ASSUMPTIONS: route ID is populated. If not, get it from the static data in an earlier phase
 	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDsInTrips(validTripEntities))
 	if err != nil {
 		return err
@@ -66,11 +65,39 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	if err != nil {
 		return err
 	}
-	routeIDToPk, err := dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, routeIDsInTrips(validTripEntities))
-	if err != nil {
-		return err
+
+	var routePks []int64
+
+	// Collect all trips without a route ID in update
+	var tripIDsWithoutRouteIDs []string
+	for _, trip := range validTripEntities {
+		if trip.ID.RouteID == "" {
+			tripIDsWithoutRouteIDs = append(tripIDsWithoutRouteIDs, trip.ID.ID)
+		}
 	}
-	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, updateCtx.SystemPk, common.MapValues(routeIDToPk))
+
+	// Try to get route IDs for trips without route IDs in update from static data
+	var tripIDToRoutePk map[string]int64
+	if len(tripIDsWithoutRouteIDs) > 0 {
+		tripIDToRoutePk, err = dbwrappers.MapScheduledTripIDToRoutePkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, tripIDsWithoutRouteIDs)
+		if err != nil {
+			return err
+		}
+		routePks = common.MapValues(tripIDToRoutePk)
+	}
+
+	// For all trips with provided route IDs, get the corresponding route Pks
+	var routeIDToPk map[string]int64
+	routeIDsInTrips := routeIDsInTrips(validTripEntities)
+	if len(routeIDsInTrips) > 0 {
+		routeIDToPk, err = dbwrappers.MapRouteIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, routeIDsInTrips)
+		if err != nil {
+			return err
+		}
+		routePks = append(routePks, common.MapValues(routeIDToPk)...)
+	}
+
+	existingTrips, err := dbwrappers.ListTripsForUpdate(ctx, updateCtx.Querier, updateCtx.SystemPk, routePks)
 	if err != nil {
 		return err
 	}
@@ -82,8 +109,16 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	activeTripPks := []int64{}
 	for i := range validTripEntities {
 		trip := &validTripEntities[i]
-		routePk, ok := routeIDToPk[trip.ID.RouteID]
-		if !ok {
+
+		var routePk int64
+		var routeOk bool
+		// If empty route ID, try to infer from static data.
+		if trip.ID.RouteID == "" {
+			routePk, routeOk = tripIDToRoutePk[trip.ID.ID]
+		} else {
+			routePk, routeOk = routeIDToPk[trip.ID.RouteID]
+		}
+		if !routeOk {
 			continue
 		}
 		// We need to guard against duplicate trip UIDs. If we try to insert two trips with
@@ -321,6 +356,9 @@ func stopIDsInTrips(trips []gtfs.Trip) []string {
 func routeIDsInTrips(trips []gtfs.Trip) []string {
 	set := map[string]bool{}
 	for i := range trips {
+		if trips[i].ID.RouteID == "" {
+			continue
+		}
 		set[trips[i].ID.RouteID] = true
 	}
 	var routeIDs []string

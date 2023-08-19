@@ -284,6 +284,68 @@ func (s *System) NewStop(id string, params ...db.InsertStopParams) db.Stop {
 	)
 }
 
+func (s *System) NewScheduledService(id string, params ...db.InsertScheduledServiceParams) db.ScheduledService {
+	var p db.InsertScheduledServiceParams
+	if len(params) > 0 {
+		p = params[0]
+	}
+	p.ID = id
+	p.SystemPk = s.Data.Pk
+	p.FeedPk = s.DefaultFeed.Data.Pk
+	return insertAndGet(
+		s.q, id,
+		func() error {
+			_, err := s.q.InsertScheduledService(context.Background(), p)
+			return err
+		},
+		func() (db.ScheduledService, error) {
+			return s.q.GetScheduledService(context.Background(), db.GetScheduledServiceParams{
+				SystemPk: s.Data.Pk,
+				ID:       id,
+			})
+		},
+	)
+}
+
+func (s *System) NewScheduledTrip(id string, serviceID string, routeID string, params ...db.InsertScheduledTripParams) db.ScheduledTrip {
+	var p db.InsertScheduledTripParams
+	if len(params) > 0 {
+		p = params[0]
+	}
+	p.ID = id
+	return insertAndGet(
+		s.q, id,
+		func() error {
+			service, err := s.q.GetScheduledService(context.Background(), db.GetScheduledServiceParams{
+				SystemPk: s.Data.Pk,
+				ID:       serviceID,
+			})
+			if err != nil {
+				return err
+			}
+			p.ServicePk = service.Pk
+
+			route, err := s.q.GetRoute(context.Background(), db.GetRouteParams{
+				SystemPk: s.Data.Pk,
+				RouteID:  routeID,
+			})
+			if err != nil {
+				return err
+			}
+			p.RoutePk = route.Pk
+
+			_, err = s.q.InsertScheduledTrip(context.Background(), []db.InsertScheduledTripParams{p})
+			return err
+		},
+		func() (db.ScheduledTrip, error) {
+			return s.q.GetScheduledTrip(context.Background(), db.GetScheduledTripParams{
+				SystemPk: s.Data.Pk,
+				TripID:   id,
+			})
+		},
+	)
+}
+
 func (q *Querier) AssertNilErr(err error, action string) {
 	if err != nil {
 		q.t.Fatalf("failed to %s: %+v", action, err)
