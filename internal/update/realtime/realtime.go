@@ -463,6 +463,10 @@ func updateAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 	var alertsToInsert []*gtfs.Alert
 	for i := range alerts {
 		alert := &alerts[i]
+		if _, duplicateAlert := idToHash[alert.ID]; duplicateAlert {
+			updateCtx.Logger.DebugCtx(ctx, fmt.Sprintf("skipping alert with duplicate ID %q", alert.ID))
+			continue
+		}
 		idToHash[alert.ID] = calculateHash(alert)
 		if pkAndHash, alreadyExists := idToPkAndHash[alert.ID]; alreadyExists {
 			if idToHash[alert.ID] == pkAndHash.Hash {

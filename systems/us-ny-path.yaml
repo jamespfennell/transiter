@@ -2,9 +2,9 @@ name: Port Authority Trans-Hudson (PATH)
 
 feeds:
   - id: gtfsstatic
-    parser: GTFS_STATIC
+    type: GTFS_STATIC
     url: 'http://data.trilliumtransit.com/gtfs/path-nj-us/path-nj-us.zip'
 
   - id: gtfsrealtime
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     url: 'https://path.transitdata.nyc/gtfsrt'

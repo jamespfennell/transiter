@@ -1,0 +1,28 @@
+name: Metro-North Railroad
+
+feeds:
+  - id: gtfsstatic
+    type: GTFS_STATIC
+    url: "http://web.mta.info/developers/data/mnr/google_transit.zip"
+
+  - id: "gtfsrealtime-alerts"
+    type: GTFS_REALTIME
+
+    gtfsRealtimeOptions:
+      extension: NYCT_ALERTS
+      nyctAlertsOptions:
+        elevatorAlertsDeduplicationPolicy: DEDUPLICATE_IN_COMPLEX
+        elevatorAlertsInformUsingStationIds: true
+        skipTimetabledNoServiceAlerts: true
+        addNyctMetadata: true
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fmnr-alerts"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+  - id: "gtfsrealtime-trips"
+    type: GTFS_REALTIME
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/mnr%2Fgtfs-mnr"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"

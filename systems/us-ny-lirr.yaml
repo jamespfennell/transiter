@@ -1,0 +1,28 @@
+name: Long Island Rail Road
+
+feeds:
+  - id: gtfsstatic
+    type: GTFS_STATIC
+    url: "http://web.mta.info/developers/data/lirr/google_transit.zip"
+
+  - id: "gtfsrealtime-alerts"
+    type: GTFS_REALTIME
+
+    gtfsRealtimeOptions:
+      extension: NYCT_ALERTS
+      nyctAlertsOptions:
+        elevatorAlertsDeduplicationPolicy: DEDUPLICATE_IN_COMPLEX
+        elevatorAlertsInformUsingStationIds: true
+        skipTimetabledNoServiceAlerts: true
+        addNyctMetadata: true
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Flirr-alerts"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
+
+  - id: "gtfsrealtime-trips"
+    type: GTFS_REALTIME
+
+    url: "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/lirr%2Fgtfs-lirr"
+    httpHeaders:
+      X-API-KEY: "{{ .Args.mta_api_key }}"
