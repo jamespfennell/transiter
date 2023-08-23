@@ -298,12 +298,7 @@ func TestUpdate(t *testing.T) {
 				{
 					data: &gtfs.Realtime{
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID1, nil, nil, nil),
 						},
 					},
 				},
@@ -385,17 +380,7 @@ func TestUpdate(t *testing.T) {
 							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 						},
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								Trip: &gtfs.Trip{
-									ID: gtfs.TripID{
-										ID: tripID1,
-									},
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID1, ptr(tripID1), nil, nil),
 						},
 					},
 				},
@@ -409,7 +394,7 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "duplicate trips, same update",
+			name: "vehicles with duplicate trips in same update",
 			updates: []update{
 				{
 					data: &gtfs.Realtime{
@@ -417,28 +402,8 @@ func TestUpdate(t *testing.T) {
 							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 						},
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								Trip: &gtfs.Trip{
-									ID: gtfs.TripID{
-										ID: tripID1,
-									},
-								},
-								IsEntityInMessage: true,
-							},
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID2,
-								},
-								Trip: &gtfs.Trip{
-									ID: gtfs.TripID{
-										ID: tripID1,
-									},
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID1, ptr(tripID1), nil, nil),
+							*gtfsVehicle(vehicleID2, ptr(tripID1), nil, nil),
 						},
 					},
 				},
@@ -452,7 +417,7 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "trip changes vehicles across updates",
+			name: "vehicle trip changes vehicles across updates",
 			updates: []update{
 				{
 					data: &gtfs.Realtime{
@@ -460,17 +425,7 @@ func TestUpdate(t *testing.T) {
 							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 						},
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								Trip: &gtfs.Trip{
-									ID: gtfs.TripID{
-										ID: tripID1,
-									},
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID1, ptr(tripID1), nil, nil),
 						},
 					},
 				},
@@ -480,17 +435,7 @@ func TestUpdate(t *testing.T) {
 							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 						},
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID2,
-								},
-								Trip: &gtfs.Trip{
-									ID: gtfs.TripID{
-										ID: tripID1,
-									},
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID2, ptr(tripID1), nil, nil),
 						},
 					},
 				},
@@ -504,7 +449,7 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "duplicate trips, different updates",
+			name: "vehicles with duplicate trips across different updates",
 			updates: []update{
 				{
 					data: &gtfs.Realtime{
@@ -512,17 +457,7 @@ func TestUpdate(t *testing.T) {
 							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 						},
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								Trip: &gtfs.Trip{
-									ID: gtfs.TripID{
-										ID: tripID1,
-									},
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID1, ptr(tripID1), nil, nil),
 						},
 					},
 				},
@@ -532,28 +467,8 @@ func TestUpdate(t *testing.T) {
 							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
 						},
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								Trip: &gtfs.Trip{
-									ID: gtfs.TripID{
-										ID: tripID1,
-									},
-								},
-								IsEntityInMessage: true,
-							},
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID2,
-								},
-								Trip: &gtfs.Trip{
-									ID: gtfs.TripID{
-										ID: tripID1,
-									},
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID1, ptr(tripID1), nil, nil),
+							*gtfsVehicle(vehicleID2, ptr(tripID1), nil, nil),
 						},
 					},
 				},
@@ -569,23 +484,13 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "duplicate vehicle ids",
+			name: "duplicate vehicle ids in same update",
 			updates: []update{
 				{
 					data: &gtfs.Realtime{
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								IsEntityInMessage: true,
-							},
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID1, nil, nil, nil),
+							*gtfsVehicle(vehicleID1, nil, nil, nil),
 						},
 					},
 				},
@@ -596,7 +501,7 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "associated trip and stop",
+			name: "vehicle with associated trip and stop",
 			updates: []update{
 				{
 					data: &gtfs.Realtime{
@@ -697,30 +602,15 @@ func TestUpdate(t *testing.T) {
 				{
 					data: &gtfs.Realtime{
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID1,
-								},
-								IsEntityInMessage: true,
-							},
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID2,
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID1, nil, nil, nil),
+							*gtfsVehicle(vehicleID2, nil, nil, nil),
 						},
 					},
 				},
 				{
 					data: &gtfs.Realtime{
 						Vehicles: []gtfs.Vehicle{
-							{
-								ID: &gtfs.VehicleID{
-									ID: vehicleID2,
-								},
-								IsEntityInMessage: true,
-							},
+							*gtfsVehicle(vehicleID2, nil, nil, nil),
 						},
 					},
 				},
@@ -731,7 +621,7 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "multiple feeds",
+			name: "vehicles from multiple feeds",
 			updates: []update{
 				{
 					feedID: feedID1,
@@ -768,7 +658,7 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "same vehicle, different feeds",
+			name: "same vehicle from different feeds",
 			updates: []update{
 				{
 					feedID: feedID1,
@@ -803,11 +693,14 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			name: "same trip, different feeds",
+			name: "same trip associated with different vehicles from different feeds",
 			updates: []update{
 				{
 					feedID: feedID1,
 					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
 						Vehicles: []gtfs.Vehicle{
 							{
 								ID: &gtfs.VehicleID{
@@ -842,17 +735,13 @@ func TestUpdate(t *testing.T) {
 					},
 				},
 			},
-			// TODO: this testing passing looks like a bug. I would expect:
-			/*
-				wantTrips: []*Trip{
-					wantTrip(tripID1, routeID1, true, nil, withVehicleID(vehicleID2)),
-				},
-				wantVehicles: []*Vehicle{
-					wantVehicle(vehicleID1, systemID, nil, nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-					wantVehicle(vehicleID2, systemID, ptr(tripID1), nil, nil, nil, nil,
-						nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
-				},*/
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil, withVehicleID(vehicleID2)),
+			},
+			wantVehicles: []*Vehicle{
+				wantVehicle(vehicleID2, systemID, ptr(tripID1), nil, nil, nil, nil,
+					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
+			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1224,8 +1113,32 @@ func gtfsTrip(tripID, routeID string, directionID gtfs.DirectionID, stus []gtfs.
 			RouteID:     routeID,
 			DirectionID: directionID,
 		},
-		StopTimeUpdates: stus,
+		StopTimeUpdates:   stus,
+		IsEntityInMessage: true,
 	}
+}
+
+func gtfsVehicle(vehicleID string, tripID *string, latitude, longitude *float32) *gtfs.Vehicle {
+	vehicle := &gtfs.Vehicle{
+		ID: &gtfs.VehicleID{
+			ID: vehicleID,
+		},
+		IsEntityInMessage: true,
+	}
+	if tripID != nil {
+		vehicle.Trip = &gtfs.Trip{
+			ID: gtfs.TripID{
+				ID: *tripID,
+			},
+		}
+	}
+	if latitude != nil && longitude != nil {
+		vehicle.Position = &gtfs.Position{
+			Latitude:  latitude,
+			Longitude: longitude,
+		}
+	}
+	return vehicle
 }
 
 func compareNumerics(x, y pgtype.Numeric) bool {
