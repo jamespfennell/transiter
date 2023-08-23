@@ -137,8 +137,6 @@ feeds:
     parser: GTFS_REALTIME
     schedulingPolicy: PERIODIC
     updatePeriodS: {realtime_periodic_update_period}
-    gtfsRealtimeOptions:
-      onlyProcessFullEntities: {only_process_full_entities}
 
 """
 
@@ -150,7 +148,7 @@ def install_system_1(
     source_server_host_within_transiter,
     install_system,
 ):
-    def install(system_id, realtime_periodic_update_period="3600000", only_process_full_entities = "false"):
+    def install(system_id, realtime_periodic_update_period="3600000"):
         static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
         source_server.put(static_feed_url, get_zip("gtfsstatic"))
         realtime_feed_url = source_server.create(
@@ -163,7 +161,6 @@ def install_system_1(
             + "/"
             + realtime_feed_url,
             realtime_periodic_update_period=realtime_periodic_update_period,
-            only_process_full_entities=only_process_full_entities,
         )
 
         install_system(system_id, system_config)
