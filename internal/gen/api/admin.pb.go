@@ -1000,10 +1000,7 @@ type GtfsRealtimeOptions struct {
 	// This should not be used for systems where a trip can call at the same
 	// stop multiple times.
 	ReassignStopSequences bool `protobuf:"varint,4,opt,name=reassign_stop_sequences,json=reassignStopSequences,proto3" json:"reassign_stop_sequences,omitempty"`
-	// If true, only process entities in a feed if the message contains
-	// the full entity. This is useful for cases where there are multiple
-	// feeds for the same system, and some feeds contain only partial
-	// information about entities.
+	// Deprecated: this field is ignored.
 	OnlyProcessFullEntities bool `protobuf:"varint,5,opt,name=only_process_full_entities,json=onlyProcessFullEntities,proto3" json:"only_process_full_entities,omitempty"`
 }
 

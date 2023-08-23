@@ -293,10 +293,7 @@ message GtfsRealtimeOptions {
   // stop multiple times.
   bool reassign_stop_sequences = 4;
 
-  // If true, only process entities in a feed if the message contains
-  // the full entity. This is useful for cases where there are multiple
-  // feeds for the same system, and some feeds contain only partial
-  // information about entities.
+  // Deprecated: this field is ignored.
   bool only_process_full_entities = 5;
 }
 

@@ -649,22 +649,17 @@ func convertOptionalTime(in *time.Time) pgtype.Timestamptz {
 }
 
 func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicles []gtfs.Vehicle) error {
-	onlyProcessFullEntities := updateCtx.FeedConfig != nil &&
-		updateCtx.FeedConfig.GetGtfsRealtimeOptions().GetOnlyProcessFullEntities()
 	var validVehicleEntities []gtfs.Vehicle
 	for _, vehicle := range vehicles {
-		// Only insert vehicles that are in the feed.
-		if onlyProcessFullEntities && !vehicle.IsEntityInMessage {
+		if !vehicle.IsEntityInMessage {
 			continue
 		}
-
 		// Note: We can insert a vehicle with no ID if it has an associated
 		// trip, per the GTFS-realtime spec. For now, we'll just skip them.
 		if vehicle.GetID().ID == "" {
 			updateCtx.Logger.DebugCtx(ctx, "Vehicle has no ID or empty ID")
 			continue
 		}
-
 		validVehicleEntities = append(validVehicleEntities, vehicle)
 	}
 
