@@ -84,8 +84,8 @@ github.com/jackc/puddle/v2 v2.2.0 h1:RdcDk92EJBuBS55nQMMYFXTxwstHug4jkhT5pq8VxPk
 github.com/jackc/puddle/v2 v2.2.0/go.mod h1:vriiEXHvEE654aYKXXjOvZM39qJ0q+azkZFrfEOc3H4=
 github.com/jackc/tern/v2 v2.0.1 h1:2J05jlmYFsNQe9rGsqoNs0+6eDm3iJns8RQb6DJl1V8=
 github.com/jackc/tern/v2 v2.0.1/go.mod h1:4cpqN/grjWYeRWcKXah5YGoviJKJuoqNLoORKLumoG0=
-github.com/jamespfennell/gtfs v0.1.18 h1:9ZaQs+gvx21zui3qdFMZk0K9dXInwtOF3eds73ZtE8w=
-github.com/jamespfennell/gtfs v0.1.18/go.mod h1:nj9QFIc695IUKM5djZXzyPtCIAYxufafb0sQNbiVMOs=
+github.com/jamespfennell/gtfs v0.1.19 h1:ZE9ypi8yyeZRXOJB/Xm+ug64drNfdVqOBJzDwg5wSvY=
+github.com/jamespfennell/gtfs v0.1.19/go.mod h1:nj9QFIc695IUKM5djZXzyPtCIAYxufafb0sQNbiVMOs=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
