@@ -292,9 +292,6 @@ message GtfsRealtimeOptions {
   // This should not be used for systems where a trip can call at the same
   // stop multiple times.
   bool reassign_stop_sequences = 4;
-
-  // Deprecated: this field is ignored.
-  bool only_process_full_entities = 5;
 }
 
 // Description of the configuration for a collection of service maps.
