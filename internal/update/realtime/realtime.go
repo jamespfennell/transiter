@@ -537,6 +537,7 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 	var agencyReferenced bool
 	var routeIDs []string
 	var stopIDs []string
+	var tripIDs []string
 	var newAlertPks []int64
 	for _, alert := range alerts {
 		for _, informedEntity := range alert.InformedEntities {
@@ -548,6 +549,9 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 			}
 			if informedEntity.StopID != nil {
 				stopIDs = append(stopIDs, *informedEntity.StopID)
+			}
+			if informedEntity.TripID != nil && informedEntity.TripID.ID != "" {
+				tripIDs = append(tripIDs, informedEntity.TripID.ID)
 			}
 		}
 	}
@@ -567,6 +571,15 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 	if err != nil {
 		return nil, err
 	}
+	tripIDToPk, err := dbwrappers.MapTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, tripIDs)
+	if err != nil {
+		return nil, err
+	}
+	scheduledTripIDToPk, err := dbwrappers.MapScheduledTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, tripIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, alert := range alerts {
 		pk, err := updateCtx.Querier.InsertAlert(ctx, db.InsertAlertParams{
 			ID:          alert.ID,
@@ -612,6 +625,35 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 					}); err != nil {
 						return nil, err
 					}
+				}
+			}
+			if informedEntity.TripID != nil {
+				tripID := informedEntity.TripID.ID
+				var tripPkOrNil *int64 = nil
+				if tripPk, ok := tripIDToPk[tripID]; ok {
+					tripPkOrNil = &tripPk
+				}
+				var scheduledTripPkOrNil *int64 = nil
+				if scheduledTripPk, ok := scheduledTripIDToPk[tripID]; ok {
+					scheduledTripPkOrNil = &scheduledTripPk
+				}
+				if tripPkOrNil != nil || scheduledTripPkOrNil != nil {
+					err := updateCtx.Querier.InsertAlertTrip(ctx, db.InsertAlertTripParams{
+						AlertPk:         pk,
+						TripPk:          convert.NullInt64(tripPkOrNil),
+						ScheduledTripPk: convert.NullInt64(scheduledTripPkOrNil),
+					})
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+			if informedEntity.RouteType != gtfs.RouteType_Unknown {
+				if err := updateCtx.Querier.InsertAlertRouteType(ctx, db.InsertAlertRouteTypeParams{
+					AlertPk:   pk,
+					RouteType: informedEntity.RouteType.String(),
+				}); err != nil {
+					return nil, err
 				}
 			}
 		}

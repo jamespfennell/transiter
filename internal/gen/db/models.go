@@ -52,14 +52,20 @@ type AlertRoute struct {
 	RoutePk int64
 }
 
+type AlertRouteType struct {
+	AlertPk   int64
+	RouteType string
+}
+
 type AlertStop struct {
 	AlertPk int64
 	StopPk  int64
 }
 
 type AlertTrip struct {
-	AlertPk int64
-	TripPk  int64
+	AlertPk         int64
+	TripPk          pgtype.Int8
+	ScheduledTripPk pgtype.Int8
 }
 
 type Feed struct {
