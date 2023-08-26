@@ -9,7 +9,6 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"golang.org/x/exp/slog"
-	"google.golang.org/protobuf/proto"
 )
 
 type UpdateContext struct {
