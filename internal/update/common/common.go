@@ -47,10 +47,3 @@ func MapKeys[T comparable, V any](in map[T]V) []T {
 	}
 	return out
 }
-
-func UnmarshallAndDiscardUnknown(b []byte, m proto.Message) error {
-	unmarshalOptions := proto.UnmarshalOptions{
-		DiscardUnknown: true,
-	}
-	return unmarshalOptions.Unmarshal(b, m)
-}
