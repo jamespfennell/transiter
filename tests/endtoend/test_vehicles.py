@@ -50,8 +50,7 @@ class TestVehicles:
 
     def test_vehicle_view(self, install_system_1, system_id, transiter_host,
                           source_server, stop_id_to_time, vehicles):
-        __, realtime_feed_url = install_system_1(
-            system_id, only_process_full_entities="true")
+        __, realtime_feed_url = install_system_1(system_id)
 
         source_server.put(
             realtime_feed_url,
@@ -163,8 +162,7 @@ class TestVehicles:
 
     def test_trip_view(self, install_system_1, system_id, transiter_host,
                        source_server, stop_id_to_time, vehicles):
-        __, realtime_feed_url = install_system_1(
-            system_id, only_process_full_entities="true")
+        __, realtime_feed_url = install_system_1(system_id)
 
         source_server.put(
             realtime_feed_url,
@@ -186,8 +184,7 @@ class TestVehicles:
 
     def test_stop_view(self, install_system_1, system_id, transiter_host,
                        source_server, stop_id_to_time, vehicles):
-        __, realtime_feed_url = install_system_1(
-            system_id, only_process_full_entities="true")
+        __, realtime_feed_url = install_system_1(system_id)
 
         source_server.put(
             realtime_feed_url,
