@@ -33,6 +33,7 @@ const (
 	defaultVehicleFeedID = "vehicles"
 	scheduledService     = "weekdays"
 	scheduledTripID1     = "scheduledTripID1"
+	alertID1             = "alertID1"
 )
 
 // update represents a single update operations
@@ -50,6 +51,7 @@ func TestUpdate(t *testing.T) {
 		updates             []update
 		wantTrips           []*Trip
 		wantVehicles        []*Vehicle
+		wantAlerts          []*Alert
 		gtfsRealtimeOptions *api.GtfsRealtimeOptions
 	}{
 		{
@@ -743,6 +745,271 @@ func TestUpdate(t *testing.T) {
 					nil, nil, nil, nil, nil, nil, nil, nil, nil, nil),
 			},
 		},
+		{
+			name: "simple alert",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Alerts: []gtfs.Alert{
+							*gtfsAlert(alertID1),
+						},
+					},
+				},
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1),
+			},
+		},
+		{
+			name: "alert with many fields",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.Maintenance,
+								Effect: gtfs.ModifiedService,
+								ActivePeriods: []gtfs.AlertActivePeriod{
+									{
+										StartsAt: ptr(mkTime(1)),
+										EndsAt:   ptr(mkTime(2)),
+									},
+									{
+										StartsAt: ptr(mkTime(3)),
+										EndsAt:   ptr(mkTime(4)),
+									},
+								},
+								Header: []gtfs.AlertText{
+									makeAlertText("Header 1", "en"),
+									makeAlertText("Header 2", "jp"),
+								},
+								Description: []gtfs.AlertText{
+									makeAlertText("Description 1", "en"),
+									makeAlertText("Description 2", "jp"),
+								},
+								URL: []gtfs.AlertText{
+									makeAlertText("Url 1", "en"),
+									makeAlertText("Url 2", "jp"),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wCause(gtfs.Maintenance), wEffect(gtfs.ModifiedService),
+					wActivePeriods(t, mkTime(1), mkTime(2), mkTime(3), mkTime(4)),
+					wHeaders(t, "Header 1", "en", "Header 2", "jp"),
+					wDescriptions(t, "Description 1", "en", "Description 2", "jp"),
+					wUrls(t, "Url 1", "en", "Url 2", "jp")),
+			},
+		},
+		{
+			name: "alert with informed agency",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										AgencyID:  ptr("defaultAgency"),
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedAgencies("defaultAgency")),
+			},
+		},
+		{
+			name: "alert with informed route",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										RouteID:   ptr(routeID1),
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedRoutes(routeID1)),
+			},
+		},
+		{
+			name: "alert with informed route type",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										RouteType: gtfs.RouteType_Subway,
+									},
+									{
+										RouteType: gtfs.RouteType_Bus,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedRouteTypes("BUS", "SUBWAY")),
+			},
+		},
+		{
+			name: "alert with informed stops",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										StopID:    ptr(stopID1),
+										RouteType: gtfs.RouteType_Unknown,
+									},
+									{
+										StopID:    ptr(stopID2),
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedStops(stopID1, stopID2)),
+			},
+		},
+		{
+			name: "alert with informed trip",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										TripID: &gtfs.TripID{
+											ID: tripID1,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil),
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedTrips(tripID1)),
+			},
+		},
+		{
+			name: "alert with informed scheduled trip",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										TripID: &gtfs.TripID{
+											ID: scheduledTripID1,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedScheduledTrips(scheduledTripID1)),
+			},
+		},
+		{
+			name: "alert with informed trip and informed scheduled trip",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										TripID: &gtfs.TripID{
+											ID: tripID1,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+									{
+										TripID: &gtfs.TripID{
+											ID: scheduledTripID1,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil),
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedTrips(tripID1), wInformedScheduledTrips(scheduledTripID1)),
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			querier := dbtesting.NewQuerier(t)
@@ -824,6 +1091,14 @@ func TestUpdate(t *testing.T) {
 			if diff := cmp.Diff(gotVehicles, tc.wantVehicles, opt); diff != "" {
 				t.Errorf("got = %v, want = %v, diff = %s", gotVehicles, tc.wantVehicles, diff)
 			}
+
+			if tc.wantAlerts == nil {
+				tc.wantAlerts = []*Alert{}
+			}
+			gotAlerts := readAlertsFromDB(ctx, t, querier, system.Data.Pk, systemPkToID)
+			if diff := cmp.Diff(gotAlerts, tc.wantAlerts); diff != "" {
+				t.Errorf("got = %v, want = %v, diff = %s", gotAlerts, tc.wantAlerts, diff)
+			}
 		})
 	}
 }
@@ -839,6 +1114,11 @@ type Vehicle struct {
 	TripID        *string
 	CurrentStopID *string
 	DBFields      db.GetVehicleRow
+}
+
+type Alert struct {
+	SystemID string
+	DBFields db.ListAlertsWithActivePeriodsAndAllInformedEntitiesRow
 }
 
 func readTripsFromDB(ctx context.Context, t *testing.T, querier db.Querier, systemPk int64, routePkToID map[int64]string, stopPkToID map[int64]string) []*Trip {
@@ -940,6 +1220,33 @@ func readVehiclesFromDB(
 	return vehicles
 }
 
+func readAlertsFromDB(
+	ctx context.Context,
+	t *testing.T, querier db.Querier,
+	systemPk int64,
+	systemPkToID map[int64]string) []*Alert {
+
+	dbAlerts, err := querier.ListAlertsWithActivePeriodsAndAllInformedEntities(ctx, systemPk)
+	if err != nil {
+		t.Fatalf("ListAlertsWithActivePeriodsAndInformedEntitiesInSystem(systemPk=%d) err got = %v, want = <nil>", systemPk, err)
+	}
+
+	alerts := make([]*Alert, 0, len(dbAlerts))
+	systemID, ok := systemPkToID[systemPk]
+	if !ok {
+		t.Fatalf("systemPkToID[%d] not found", systemPk)
+	}
+
+	for _, dbAlert := range dbAlerts {
+		alerts = append(alerts, &Alert{
+			SystemID: systemID,
+			DBFields: dbAlert,
+		})
+	}
+
+	return alerts
+}
+
 type wantTripOpt func(*Trip)
 
 func wantTrip(tripID, routeID string, directionID bool, sts []StopTime, opts ...wantTripOpt) *Trip {
@@ -998,6 +1305,129 @@ func wantVehicle(
 			OccupancyPercentage: convert.NullUInt32ToSigned(occupancyPercentage),
 		},
 	}
+}
+
+type wantAlertOpt func(*Alert)
+
+func wCause(cause gtfs.AlertCause) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Cause = cause.String()
+	}
+}
+
+func wEffect(effect gtfs.AlertEffect) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Effect = effect.String()
+	}
+}
+
+func wActivePeriods(tc *testing.T, times ...time.Time) wantAlertOpt {
+	if len(times)%2 != 0 {
+		tc.Fatalf("wActivePeriods: len(times) = %d, want even", len(times))
+	}
+	var activePeriods []pgtype.Range[pgtype.Timestamptz]
+	for i := 0; i < len(times); i += 2 {
+		activePeriods = append(activePeriods, pgtype.Range[pgtype.Timestamptz]{
+			Lower:     convert.NullTime(&times[i]),
+			Upper:     convert.NullTime(&times[i+1]),
+			LowerType: pgtype.Inclusive,
+			UpperType: pgtype.Exclusive,
+			Valid:     true,
+		})
+	}
+	return func(a *Alert) {
+		a.DBFields.ActivePeriods = activePeriods
+	}
+}
+
+func wHeaders(t *testing.T, textAndLangs ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Header = convertAlertText(convertTextLangPairsToAlertText(t, textAndLangs...))
+	}
+}
+
+func wDescriptions(t *testing.T, textAndLangs ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Description = convertAlertText(convertTextLangPairsToAlertText(t, textAndLangs...))
+	}
+}
+
+func wUrls(t *testing.T, textAndLangs ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Url = convertAlertText(convertTextLangPairsToAlertText(t, textAndLangs...))
+	}
+}
+
+func convertTextLangPairsToAlertText(t *testing.T, textAndLangs ...string) []gtfs.AlertText {
+	if len(textAndLangs)%2 != 0 {
+		t.Fatalf("convertTextLangPairsToAlertText: len(textAndLangs) = %d, want even", len(textAndLangs))
+	}
+	var headers []gtfs.AlertText
+	for i := 0; i < len(textAndLangs); i += 2 {
+		headers = append(headers, makeAlertText(textAndLangs[i], textAndLangs[i+1]))
+	}
+	return headers
+}
+
+func wInformedAgencies(agencyIDs ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Agencies = agencyIDs
+	}
+}
+
+func wInformedRoutes(routeIDs ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Routes = routeIDs
+	}
+}
+
+func wInformedRouteTypes(routeTypes ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.RouteTypes = routeTypes
+	}
+}
+
+func wInformedStops(stopIDs ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Stops = stopIDs
+	}
+}
+
+func wInformedTrips(tripIDs ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.Trips = tripIDs
+	}
+}
+
+func wInformedScheduledTrips(tripIDs ...string) wantAlertOpt {
+	return func(a *Alert) {
+		a.DBFields.ScheduledTrips = tripIDs
+	}
+}
+
+func wantAlert(systemID string, alertID string, opts ...wantAlertOpt) *Alert {
+	a := &Alert{
+		SystemID: systemID,
+		DBFields: db.ListAlertsWithActivePeriodsAndAllInformedEntitiesRow{
+			ID:             alertID,
+			Cause:          "UNKNOWN_CAUSE",
+			Effect:         "UNKNOWN_EFFECT",
+			Header:         "null",
+			Description:    "null",
+			Url:            "null",
+			ActivePeriods:  []pgtype.Range[pgtype.Timestamptz]{},
+			Agencies:       []string{},
+			Routes:         []string{},
+			RouteTypes:     []string{},
+			Stops:          []string{},
+			Trips:          []string{},
+			ScheduledTrips: []string{},
+		},
+	}
+	for _, opt := range opts {
+		opt(a)
+	}
+	return a
 }
 
 type StopTime struct {
@@ -1139,6 +1569,21 @@ func gtfsVehicle(vehicleID string, tripID *string, latitude, longitude *float32)
 		}
 	}
 	return vehicle
+}
+
+func gtfsAlert(alertID string) *gtfs.Alert {
+	return &gtfs.Alert{
+		ID:     alertID,
+		Cause:  gtfs.UnknownCause,
+		Effect: gtfs.UnknownEffect,
+	}
+}
+
+func makeAlertText(text string, language string) gtfs.AlertText {
+	return gtfs.AlertText{
+		Language: language,
+		Text:     text,
+	}
 }
 
 func compareNumerics(x, y pgtype.Numeric) bool {

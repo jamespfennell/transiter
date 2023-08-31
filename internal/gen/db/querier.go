@@ -50,7 +50,9 @@ type Querier interface {
 	InsertAlertActivePeriod(ctx context.Context, arg InsertAlertActivePeriodParams) error
 	InsertAlertAgency(ctx context.Context, arg InsertAlertAgencyParams) error
 	InsertAlertRoute(ctx context.Context, arg InsertAlertRouteParams) error
+	InsertAlertRouteType(ctx context.Context, arg InsertAlertRouteTypeParams) error
 	InsertAlertStop(ctx context.Context, arg InsertAlertStopParams) error
+	InsertAlertTrip(ctx context.Context, arg InsertAlertTripParams) error
 	InsertFeed(ctx context.Context, arg InsertFeedParams) error
 	InsertRoute(ctx context.Context, arg InsertRouteParams) (int64, error)
 	InsertScheduledService(ctx context.Context, arg InsertScheduledServiceParams) (int64, error)
@@ -80,6 +82,7 @@ type Querier interface {
 	ListAlertPksAndHashes(ctx context.Context, arg ListAlertPksAndHashesParams) ([]ListAlertPksAndHashesRow, error)
 	ListAlertsInSystem(ctx context.Context, systemPk int64) ([]Alert, error)
 	ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlertsInSystemAndByIDsParams) ([]Alert, error)
+	ListAlertsWithActivePeriodsAndAllInformedEntities(ctx context.Context, systemPk int64) ([]ListAlertsWithActivePeriodsAndAllInformedEntitiesRow, error)
 	ListFeeds(ctx context.Context, systemPk int64) ([]Feed, error)
 	ListRoutes(ctx context.Context, systemPk int64) ([]Route, error)
 	ListRoutesByPk(ctx context.Context, routePks []int64) ([]ListRoutesByPkRow, error)

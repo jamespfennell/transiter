@@ -22,7 +22,7 @@ func (q *Queries) DeleteAlerts(ctx context.Context, alertPks []int64) error {
 
 const deleteStaleAlerts = `-- name: DeleteStaleAlerts :exec
 DELETE FROM alert
-WHERE 
+WHERE
     alert.feed_pk = $1
     AND NOT alert.pk = ANY($2::bigint[])
 `
@@ -68,7 +68,7 @@ const insertAlert = `-- name: InsertAlert :one
 INSERT INTO alert
     (id, system_pk, feed_pk, cause, effect, header, description, url, hash)
 VALUES
-    ($1, $2, $3, $4,$5, 
+    ($1, $2, $3, $4,$5,
      $6, $7, $8, $9)
 RETURNING pk
 `
@@ -148,6 +148,20 @@ func (q *Queries) InsertAlertRoute(ctx context.Context, arg InsertAlertRoutePara
 	return err
 }
 
+const insertAlertRouteType = `-- name: InsertAlertRouteType :exec
+INSERT INTO alert_route_type (alert_pk, route_type) VALUES ($1, $2)
+`
+
+type InsertAlertRouteTypeParams struct {
+	AlertPk   int64
+	RouteType string
+}
+
+func (q *Queries) InsertAlertRouteType(ctx context.Context, arg InsertAlertRouteTypeParams) error {
+	_, err := q.db.Exec(ctx, insertAlertRouteType, arg.AlertPk, arg.RouteType)
+	return err
+}
+
 const insertAlertStop = `-- name: InsertAlertStop :exec
 INSERT INTO alert_stop (alert_pk, stop_pk) VALUES ($1, $2)
 `
@@ -159,6 +173,21 @@ type InsertAlertStopParams struct {
 
 func (q *Queries) InsertAlertStop(ctx context.Context, arg InsertAlertStopParams) error {
 	_, err := q.db.Exec(ctx, insertAlertStop, arg.AlertPk, arg.StopPk)
+	return err
+}
+
+const insertAlertTrip = `-- name: InsertAlertTrip :exec
+INSERT INTO alert_trip (alert_pk, trip_pk, scheduled_trip_pk) VALUES ($1, $2, $3)
+`
+
+type InsertAlertTripParams struct {
+	AlertPk         int64
+	TripPk          pgtype.Int8
+	ScheduledTripPk pgtype.Int8
+}
+
+func (q *Queries) InsertAlertTrip(ctx context.Context, arg InsertAlertTripParams) error {
+	_, err := q.db.Exec(ctx, insertAlertTrip, arg.AlertPk, arg.TripPk, arg.ScheduledTripPk)
 	return err
 }
 
@@ -363,8 +392,8 @@ func (q *Queries) ListActivePeriodsForAlerts(ctx context.Context, pks []int64) (
 }
 
 const listAlertPksAndHashes = `-- name: ListAlertPksAndHashes :many
-SELECT id, pk, hash FROM alert 
-WHERE id = ANY($1::text[]) 
+SELECT id, pk, hash FROM alert
+WHERE id = ANY($1::text[])
 AND system_pk = $2
 `
 
@@ -466,6 +495,103 @@ func (q *Queries) ListAlertsInSystemAndByIDs(ctx context.Context, arg ListAlerts
 			&i.Url,
 			&i.Hash,
 			&i.FeedPk,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertsWithActivePeriodsAndAllInformedEntities = `-- name: ListAlertsWithActivePeriodsAndAllInformedEntities :many
+SELECT alert.id,
+       alert.cause,
+       alert.effect,
+       alert.header,
+       alert.description,
+       alert.url,
+       COALESCE(
+               (ARRAY_AGG(
+                DISTINCT tstzrange(alert_active_period.starts_at::timestamptz, alert_active_period.ends_at::timestamptz, '[)')
+                ORDER BY tstzrange(alert_active_period.starts_at::timestamptz, alert_active_period.ends_at::timestamptz, '[)'))
+                FILTER ( WHERE alert_active_period.starts_at IS NOT NULL OR alert_active_period.ends_at IS NOT NULL )),
+               ARRAY []::tstzrange[])::tstzrange[] AS active_periods,
+       COALESCE(
+               (ARRAY_AGG(DISTINCT agency.id ORDER BY agency.id) FILTER (where agency.id is not null)),
+               ARRAY []::text[])::text[]           AS agencies,
+       COALESCE(
+               (ARRAY_AGG(DISTINCT route.id ORDER BY route.id) FILTER (where route.id is not null)),
+               ARRAY []::text[])::text[]           AS routes,
+       COALESCE(
+               (ARRAY_AGG(DISTINCT stop.id ORDER BY stop.id) FILTER (where stop.id is not null)),
+               ARRAY []::text[])::text[]           AS stops,
+       COALESCE(
+               (ARRAY_AGG(DISTINCT trip.id ORDER BY trip.id) FILTER (where trip.id is not null)),
+               ARRAY []::text[])::text[]           AS trips,
+       COALESCE(
+               (ARRAY_AGG(DISTINCT scheduled_trip.id ORDER BY scheduled_trip.id) FILTER (where scheduled_trip.id is not null)),
+               ARRAY []::text[])::text[]           AS scheduled_trips,
+       COALESCE(
+               (ARRAY_AGG(DISTINCT route_type ORDER BY route_type) FILTER (where route_type is not null)),
+               ARRAY []::text[])::text[]           AS route_types
+FROM alert
+         LEFT JOIN alert_active_period ON alert.pk = alert_active_period.alert_pk
+         LEFT JOIN alert_agency ON alert.pk = alert_agency.alert_pk
+         LEFT JOIN agency ON alert_agency.agency_pk = agency.pk
+         LEFT JOIN alert_route ON alert.pk = alert_route.alert_pk
+         LEFT JOIN route ON alert_route.route_pk = route.pk
+         LEFT JOIN alert_stop ON alert.pk = alert_stop.alert_pk
+         LEFT JOIN stop ON alert_stop.stop_pk = stop.pk
+         LEFT JOIN alert_trip ON alert.pk = alert_trip.alert_pk
+         LEFT JOIN trip ON alert_trip.trip_pk = trip.pk
+         LEFT JOIN scheduled_trip ON alert_trip.scheduled_trip_pk = scheduled_trip.pk
+         LEFT JOIN alert_route_type ON alert.pk = alert_route_type.alert_pk
+WHERE alert.system_pk = $1
+GROUP BY alert.id, alert.cause, alert.effect, alert.header, alert.description, alert.url
+`
+
+type ListAlertsWithActivePeriodsAndAllInformedEntitiesRow struct {
+	ID             string
+	Cause          string
+	Effect         string
+	Header         string
+	Description    string
+	Url            string
+	ActivePeriods  []pgtype.Range[pgtype.Timestamptz]
+	Agencies       []string
+	Routes         []string
+	Stops          []string
+	Trips          []string
+	ScheduledTrips []string
+	RouteTypes     []string
+}
+
+func (q *Queries) ListAlertsWithActivePeriodsAndAllInformedEntities(ctx context.Context, systemPk int64) ([]ListAlertsWithActivePeriodsAndAllInformedEntitiesRow, error) {
+	rows, err := q.db.Query(ctx, listAlertsWithActivePeriodsAndAllInformedEntities, systemPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAlertsWithActivePeriodsAndAllInformedEntitiesRow
+	for rows.Next() {
+		var i ListAlertsWithActivePeriodsAndAllInformedEntitiesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Cause,
+			&i.Effect,
+			&i.Header,
+			&i.Description,
+			&i.Url,
+			&i.ActivePeriods,
+			&i.Agencies,
+			&i.Routes,
+			&i.Stops,
+			&i.Trips,
+			&i.ScheduledTrips,
+			&i.RouteTypes,
 		); err != nil {
 			return nil, err
 		}
