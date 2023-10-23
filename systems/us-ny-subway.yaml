@@ -7,7 +7,7 @@ feeds:
 
   - id: subwaycsv
     type: NYCT_SUBWAY_CSV
-    url: "https://atisdata.s3.amazonaws.com/Station/Stations.csv"
+    url: "https://data.ny.gov/resource/39hk-dx4f.csv"
 
   - id: "alerts"
 

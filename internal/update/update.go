@@ -96,7 +96,7 @@ func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, m moni
 	totalLatencyMs := totalLatency.Milliseconds()
 	feedUpdate.TotalLatencyMs = &totalLatencyMs
 	if err != nil {
-		logger.ErrorCtx(ctx, fmt.Sprintf("failed update with reason %s and error %s in %s", feedUpdate.Status.String(), err, totalLatency))
+		logger.ErrorCtx(ctx, fmt.Sprintf("failed update with reason %s and error %q in %s", feedUpdate.Status.String(), err, totalLatency))
 	} else {
 		logger.DebugCtx(ctx, fmt.Sprintf("successful update with reason %s in %s", feedUpdate.Status.String(), totalLatency))
 	}
