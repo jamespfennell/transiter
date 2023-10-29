@@ -1,0 +1,14 @@
+name: Bay Area Rapid Transit
+
+feeds:
+  - id: gtfsstatic
+    type: GTFS_STATIC
+    url: "https://www.bart.gov/dev/schedules/google_transit.zip"
+
+  - id: tripupdate
+    type: GTFS_REALTIME
+    url: "http://api.bart.gov/gtfsrt/tripupdate.aspx"
+
+  - id: alerts
+    type: GTFS_REALTIME
+    url: "http://api.bart.gov/gtfsrt/alerts.aspx"
