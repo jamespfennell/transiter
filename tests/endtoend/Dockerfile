@@ -16,5 +16,6 @@ COPY test_periodicupdate.py .
 COPY test_servicemaps.py .
 COPY test_trips.py .
 COPY test_vehicles.py .
+COPY test_shapes.py .
 
 ENTRYPOINT ["pytest", "-n", "4"]
