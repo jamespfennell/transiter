@@ -302,8 +302,8 @@ func (Stop_Type) EnumDescriptor() ([]byte, []int) {
 	return file_api_public_proto_rawDescGZIP(), []int{34, 0}
 }
 
-// Corresponds to [VehicleStopStatus](https://developers.google.com/
-// transit/gtfs-realtime/reference#enum-vehiclestopstatus).
+// Corresponds to [VehicleStopStatus](https://gtfs.org/realtime/reference/
+// #enum-vehiclestopstatus).
 type Vehicle_CurrentStatus int32
 
 const (
@@ -353,8 +353,8 @@ func (Vehicle_CurrentStatus) EnumDescriptor() ([]byte, []int) {
 	return file_api_public_proto_rawDescGZIP(), []int{37, 0}
 }
 
-// Corresponds to [CongestionLevel](https://developers.google.com/
-// transit/gtfs-realtime/reference#enum-congestionlevel).
+// Corresponds to [CongestionLevel](https://gtfs.org/realtime/reference/
+// #enum-congestionlevel).
 type Vehicle_CongestionLevel int32
 
 const (
@@ -410,8 +410,8 @@ func (Vehicle_CongestionLevel) EnumDescriptor() ([]byte, []int) {
 	return file_api_public_proto_rawDescGZIP(), []int{37, 1}
 }
 
-// Corresponds to [OccupancyStatus](https://developers.google.com/
-// transit/gtfs-realtime/reference#enum-occupancystatus).
+// Corresponds to [OccupancyStatus](https://gtfs.org/realtime/reference/
+// #enum-occupancystatus).
 type Vehicle_OccupancyStatus int32
 
 const (
@@ -606,7 +606,7 @@ func (Route_Type) EnumDescriptor() ([]byte, []int) {
 }
 
 // Cause is the same as the [cause enum in the GTFS realtime
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-cause),
+// specification](https://gtfs.org/realtime/feed-entities/service-alerts/#cause),
 // except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy proto3 requirements.
 type Alert_Cause int32
 
@@ -685,7 +685,7 @@ func (Alert_Cause) EnumDescriptor() ([]byte, []int) {
 }
 
 // Effect is the same as the [effect enum in the GTFS realtime
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-effect),
+// specification](https://gtfs.org/realtime/feed-entities/service-alerts/#effect),
 // except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
 type Alert_Effect int32
 
@@ -3057,7 +3057,7 @@ func (x *ChildResources) GetHref() string {
 // The Stop resource.
 //
 // This resource corresponds to the [stop type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#stopstxt).
+// specification](https://gtfs.org/schedule/reference/#stopstxt).
 // Most of the static fields in the resource come directly from the `stops.txt` table.
 // Transiter adds some additional related fields (transfers, alerts, stop times)
 //
@@ -3106,7 +3106,7 @@ type Stop struct {
 	//
 	// These are determined using the `informed_entity` field in
 	// the [GTFS realtime alerts
-	// message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+	// message](https://gtfs.org/realtime/reference/#message-alert).
 	Alerts []*Alert_Reference `protobuf:"bytes,18,rep,name=alerts,proto3" json:"alerts,omitempty"`
 	// List of realtime stop times for this stop.
 	//
@@ -3303,7 +3303,7 @@ func (x *Stop) GetHeadsignRules() []*Stop_HeadsignRule {
 //
 // A stop time is an event in which a trip calls at a stop.
 // This message corresponds to the [GTFS realtime `StopTimeUpdate`
-// message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeupdate)
+// message](https://gtfs.org/realtime/reference/#message-stoptimeupdate)
 type StopTime struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3530,7 +3530,7 @@ func (x *Trip) GetShape() *Shape_Reference {
 // The Vehicle resource.
 //
 // This resource corresponds to the [vehicle position type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-vehicleposition).
+// specification](https://gtfs.org/realtime/reference/#message-vehicleposition).
 type Vehicle struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3699,7 +3699,7 @@ func (x *Vehicle) GetOccupancyPercentage() int32 {
 // The Route resource.
 //
 // This resource corresponds to the [route type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#routestxt).
+// specification](https://gtfs.org/schedule/reference/#routestxt).
 // Most of the fields in the resource come directly from the `routes.txt` table.
 // Transiter adds some additional related fields (agency, alerts)
 //
@@ -3744,7 +3744,7 @@ type Route struct {
 	//
 	// These are determined using the `informed_entity` field in
 	// the [GTFS realtime alerts
-	// message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+	// message](https://gtfs.org/realtime/reference/#message-alert).
 	Alerts []*Alert_Reference `protobuf:"bytes,15,rep,name=alerts,proto3" json:"alerts,omitempty"`
 	// An estimate of the interval of time between consecutive realtime trips, in seconds.
 	//
@@ -4028,7 +4028,7 @@ func (x *Feed) GetLastFailedUpdateMs() int64 {
 // The Agency resource.
 //
 // This resource corresponds to the [agency type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#agencytxt).
+// specification](https://gtfs.org/schedule/reference/#agencytxt).
 // Most of the fields in the resource come directly from the `agency.txt` table.
 // Transiter adds some additional related fields (alerts).
 type Agency struct {
@@ -4063,7 +4063,7 @@ type Agency struct {
 	//
 	// These are determined using the `informed_entity` field in
 	// the [GTFS realtime alerts
-	// message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+	// message](https://gtfs.org/realtime/reference/#message-alert).
 	Alerts []*Alert_Reference `protobuf:"bytes,12,rep,name=alerts,proto3" json:"alerts,omitempty"`
 }
 
@@ -4186,7 +4186,7 @@ func (x *Agency) GetAlerts() []*Alert_Reference {
 // The Alert resource.
 //
 // This resource corresponds to the [alert type in the GTFS realtime
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+// specification](https://gtfs.org/realtime/reference/#message-alert).
 //
 // TODO; alphabetize the messages
 type Alert struct {
@@ -4195,7 +4195,7 @@ type Alert struct {
 	unknownFields protoimpl.UnknownFields
 
 	// ID of the alert. This corresponds to the [ID field in the feed entity
-	// message](https://developers.google.com/transit/gtfs-realtime/reference#message-feedentity)
+	// message](https://gtfs.org/realtime/reference/#message-feedentity)
 	// corresponding to the alert.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Generic metadata about the alert resource.
@@ -4885,7 +4885,7 @@ func (x *Stop_Reference) GetName() string {
 
 // Message describing the arrival or departure time of a stop time.
 // This corresponds to the [GTFS realtime `StopTimeEvent`
-// message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeevent).
+// message](https://gtfs.org/realtime/reference/#message-stoptimeevent).
 type StopTime_EstimatedTime struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5366,7 +5366,7 @@ func (x *Agency_Reference) GetName() string {
 
 // The active period message describes a period when an alert is active.
 // It corresponds the the [time range message in the GTFS realtime
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-timerange).
+// specification](https://gtfs.org/realtime/reference/#message-timerange).
 type Alert_ActivePeriod struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5429,8 +5429,7 @@ func (x *Alert_ActivePeriod) GetEndsAt() int64 {
 
 // The text message describes an alert header/description/URL in a specified language.
 // It corresponds the the [translation message in the GTFS realtime
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-translation).
-type Alert_Text struct {
+// specification](\https://gtfs.org/realtime/reference/#message-translationruct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
