@@ -234,7 +234,7 @@ Reference is the reference type for the agency resource.
 
 The text message describes an alert header/description/URL in a specified language.
 It corresponds the the [translation message in the GTFS realtime
-specification]().
+specification](https://gtfs.org/realtime/reference/#message-translation).
 	
 
 

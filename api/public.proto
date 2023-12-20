@@ -833,7 +833,7 @@ message Stop {
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
-  // message](https://gtfs.org/realtime/feed-entities/service-alerts/#service-alerts).
+  // message](https://gtfs.org/realtime/reference/#message-alert).
   repeated Alert.Reference alerts = 18;
 
   // List of realtime stop times for this stop.
@@ -1195,7 +1195,7 @@ message Agency {
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
-  // message](https://gtfs.org/realtime/feed-entities/service-alerts/#service-alerts).
+  // message](https://gtfs.org/realtime/reference/#message-alert).
   repeated Alert.Reference alerts = 12;
 
   // Reference is the reference type for the agency resource.
@@ -1210,7 +1210,7 @@ message Agency {
 // The Alert resource.
 //
 // This resource corresponds to the [alert type in the GTFS realtime
-// specification](https://gtfs.org/realtime/feed-entities/service-alerts/#service-alerts).
+// specification](https://gtfs.org/realtime/reference/#message-alert).
 //
 // TODO; alphabetize the messages
 message Alert {
@@ -1245,7 +1245,7 @@ message Alert {
   Cause cause = 4;
 
   // Effect is the same as the [effect enum in the GTFS realtime
-  // specification](https://gtfs.org/realtime/feed-entities/service-alerts/#,
+  // specification](https://gtfs.org/realtime/feed-entities/service-alerts/#effect),
   // except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Effect {
     UNKNOWN_EFFECT = 0;
