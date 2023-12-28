@@ -6,15 +6,15 @@ This is the resource hierarchy:
 
 ```
 System
- |- Agency
- |- Alert
- |- Feed
- |- Route
- |   |- Trip
- |       |- Vehicle with no ID
- |- Stop
- |- Transfer
- |- Vehicle with ID
+|- Agency
+|- Alert
+|- Feed
+|- Route
+|   |- Trip
+|       |- Vehicle with no ID
+|- Stop
+|- Transfer
+|- Vehicle with ID
 ```
 
 For each resource there is a proto message type, a list endpoint, and a get endpoints.
@@ -34,10 +34,10 @@ For example, each route has an agency it is attached to.
 Each stop has a list of service maps, each of which contains a set of routes.
 In these situations the resource message contains a _reference_ to the other resource.
 The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
-  message.
+message.
 These reference messages contain at least enough information to uniquely identify the resource.
 However they also contain additional information that is considered generally useful;
-  thus, the [Stop.Reference](#stopreference) message contains the stop's name.
+thus, the [Stop.Reference](#stopreference) message contains the stop's name.
 What counts as "considered generally" is obviously very subjective and open to change.
 
 The following table summarizes all of the resources and their types.

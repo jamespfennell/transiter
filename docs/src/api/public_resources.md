@@ -367,7 +367,7 @@ Transiter adds some additional related fields (agency, alerts)
 | continuous_drop_off | [Route.ContinuousPolicy](public_resources.md#Route.ContinuousPolicy) | Continuous dropoff policy. This is the `continuous_dropoff` column in `routes.txt`.
 | type | [Route.Type](public_resources.md#Route.Type) | Type of the route. This is the `route_type` column in `routes.txt`.
 | agency | [Agency.Reference](public_resources.md#Agency.Reference) | Agency this route is associated to.<br /><br />This is determined using the `agency_id` column in `routes.txt`.
-| alerts | [Alert.Reference](public_resources.md#Alert.Reference) | Active alerts for this route.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://gtfs.org/realtime/reference/#message-alert).
+| alerts | [Alert.Reference](public_resources.md#Alert.Reference) | Active alerts for this route.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://gtfs.org/realtime/feed-entities/service-alerts/#service-alerts).
 | estimated_headway | int32 | An estimate of the interval of time between consecutive realtime trips, in seconds.<br /><br />If there is insufficient data to compute an estimate, the field will be empty.<br /><br />The estimate is computed as follows. For each stop that has realtime trips for the route, the list of arrival times for those trips is examined. The difference between consecutive arrival times is calculated. If there are `N` trips, there will be `N-1` such arrival time diffs. The estimated headway is the average of these diffs across all stops.
 | service_maps | [Route.ServiceMap](public_resources.md#Route.ServiceMap) | List of service maps for this route.
 
@@ -849,7 +849,8 @@ specification](https://gtfs.org/realtime/reference/#message-vehicleposition).
 
 #### Vehicle.CongestionLevel
 
-Corresponds to [CongestionLevel](https://gtfs.org/realtime/reference/#enum-congestionlevel).
+Corresponds to [CongestionLevel](https://gtfs.org/realtime/reference/
+#enum-congestionlevel).
 	
 
 
@@ -866,7 +867,8 @@ Corresponds to [CongestionLevel](https://gtfs.org/realtime/reference/#enum-conge
 
 #### Vehicle.CurrentStatus
 
-Corresponds to [VehicleStopStatus](https://gtfs.org/realtime/reference/#enum-vehiclestopstatus).
+Corresponds to [VehicleStopStatus](https://gtfs.org/realtime/reference/
+#enum-vehiclestopstatus).
 	
 
 
@@ -881,7 +883,8 @@ Corresponds to [VehicleStopStatus](https://gtfs.org/realtime/reference/#enum-veh
 
 #### Vehicle.OccupancyStatus
 
-Corresponds to [OccupancyStatus](https://gtfs.org/realtime/reference/#enum-occupancystatus).
+Corresponds to [OccupancyStatus](https://gtfs.org/realtime/reference/
+#enum-occupancystatus).
 	
 
 
