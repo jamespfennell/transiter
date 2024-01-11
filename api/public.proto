@@ -6,15 +6,15 @@ This is the resource hierarchy:
 
 ```
 System
- |- Agency
- |- Alert
- |- Feed
- |- Route
- |   |- Trip
- |       |- Vehicle with no ID
- |- Stop
- |- Transfer
- |- Vehicle with ID
+|- Agency
+|- Alert
+|- Feed
+|- Route
+|   |- Trip
+|       |- Vehicle with no ID
+|- Stop
+|- Transfer
+|- Vehicle with ID
 ```
 
 For each resource there is a proto message type, a list endpoint, and a get endpoints.
@@ -34,10 +34,10 @@ For example, each route has an agency it is attached to.
 Each stop has a list of service maps, each of which contains a set of routes.
 In these situations the resource message contains a _reference_ to the other resource.
 The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
-  message.
+message.
 These reference messages contain at least enough information to uniquely identify the resource.
 However they also contain additional information that is considered generally useful;
-  thus, the [Stop.Reference](#stopreference) message contains the stop's name.
+thus, the [Stop.Reference](#stopreference) message contains the stop's name.
 What counts as "considered generally" is obviously very subjective and open to change.
 
 The following table summarizes all of the resources and their types.
@@ -765,7 +765,7 @@ message ChildResources {
 // The Stop resource.
 //
 // This resource corresponds to the [stop type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#stopstxt).
+// specification](https://gtfs.org/schedule/reference/#stopstxt).
 // Most of the static fields in the resource come directly from the `stops.txt` table.
 // Transiter adds some additional related fields (transfers, alerts, stop times)
 //   and computed fields (service maps).
@@ -833,7 +833,7 @@ message Stop {
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+  // message](https://gtfs.org/realtime/reference/#message-alert).
   repeated Alert.Reference alerts = 18;
 
   // List of realtime stop times for this stop.
@@ -873,7 +873,7 @@ message Stop {
 //
 // A stop time is an event in which a trip calls at a stop.
 // This message corresponds to the [GTFS realtime `StopTimeUpdate`
-// message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeupdate)
+// message](https://gtfs.org/realtime/reference/#message-stoptimeupdate)
 message StopTime {
   // The stop.
   Stop.Reference stop = 1;
@@ -882,7 +882,7 @@ message StopTime {
 
   // Message describing the arrival or departure time of a stop time.
   // This corresponds to the [GTFS realtime `StopTimeEvent`
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeevent).
+  // message](https://gtfs.org/realtime/reference/#message-stoptimeevent).
   message EstimatedTime {
     optional int64 time = 1;
     optional int32 delay = 2;
@@ -937,7 +937,7 @@ message Trip {
 // The Vehicle resource.
 //
 // This resource corresponds to the [vehicle position type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-vehicleposition).
+// specification](https://gtfs.org/realtime/reference/#message-vehicleposition).
 message Vehicle {
   // A unique ID for the vehicle.
   string id = 1;
@@ -966,8 +966,8 @@ message Vehicle {
   // A reference to the vehicle's current stop.
   optional Stop.Reference stop = 9;
 
-  // Corresponds to [VehicleStopStatus](https://developers.google.com/
-  // transit/gtfs-realtime/reference#enum-vehiclestopstatus).
+  // Corresponds to [VehicleStopStatus](https://gtfs.org/realtime/reference/
+  // #enum-vehiclestopstatus).
   enum CurrentStatus {
     INCOMING_AT = 0;
     STOPPED_AT = 1;
@@ -979,8 +979,8 @@ message Vehicle {
   // The timestamp of the last update to the vehicle's position.
   optional int64 updated_at = 11;
 
-  // Corresponds to [CongestionLevel](https://developers.google.com/
-  // transit/gtfs-realtime/reference#enum-congestionlevel).
+  // Corresponds to [CongestionLevel](https://gtfs.org/realtime/reference/
+  // #enum-congestionlevel).
   enum CongestionLevel {
     UNKNOWN_CONGESTION_LEVEL = 0;
     RUNNING_SMOOTHLY = 1;
@@ -991,8 +991,8 @@ message Vehicle {
   // The vehicle's current congestion level.
   CongestionLevel congestion_level = 12;
 
-  // Corresponds to [OccupancyStatus](https://developers.google.com/
-  // transit/gtfs-realtime/reference#enum-occupancystatus).
+  // Corresponds to [OccupancyStatus](https://gtfs.org/realtime/reference/
+  // #enum-occupancystatus).
   enum OccupancyStatus {
     EMPTY = 0;
     MANY_SEATS_AVAILABLE = 1;
@@ -1018,7 +1018,7 @@ message Vehicle {
 // The Route resource.
 //
 // This resource corresponds to the [route type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#routestxt).
+// specification](https://gtfs.org/schedule/reference/#routestxt).
 // Most of the fields in the resource come directly from the `routes.txt` table.
 // Transiter adds some additional related fields (agency, alerts)
 //   and computed fields (estimated headway, service maps).
@@ -1088,7 +1088,7 @@ message Route {
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+  // message](https://gtfs.org/realtime/feed-entities/service-alerts/#service-alerts).
   repeated Alert.Reference alerts = 15;
 
   // An estimate of the interval of time between consecutive realtime trips, in seconds.
@@ -1162,7 +1162,7 @@ message Feed {
 // The Agency resource.
 //
 // This resource corresponds to the [agency type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#agencytxt).
+// specification](https://gtfs.org/schedule/reference/#agencytxt).
 // Most of the fields in the resource come directly from the `agency.txt` table.
 // Transiter adds some additional related fields (alerts).
 message Agency {
@@ -1195,7 +1195,7 @@ message Agency {
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+  // message](https://gtfs.org/realtime/reference/#message-alert).
   repeated Alert.Reference alerts = 12;
 
   // Reference is the reference type for the agency resource.
@@ -1210,12 +1210,12 @@ message Agency {
 // The Alert resource.
 //
 // This resource corresponds to the [alert type in the GTFS realtime
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+// specification](https://gtfs.org/realtime/reference/#message-alert).
 //
 // TODO; alphabetize the messages
 message Alert {
   // ID of the alert. This corresponds to the [ID field in the feed entity
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-feedentity)
+  // message](https://gtfs.org/realtime/reference/#message-feedentity)
   // corresponding to the alert.
   string id = 1;
   // Generic metadata about the alert resource.
@@ -1225,7 +1225,7 @@ message Alert {
   System.Reference system = 3;
 
   // Cause is the same as the [cause enum in the GTFS realtime
-  // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-cause),
+  // specification](https://gtfs.org/realtime/feed-entities/service-alerts/#cause),
   // except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Cause {
     UNKNOWN_CAUSE = 0;
@@ -1245,7 +1245,7 @@ message Alert {
   Cause cause = 4;
 
   // Effect is the same as the [effect enum in the GTFS realtime
-  // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-effect),
+  // specification](https://gtfs.org/realtime/feed-entities/service-alerts/#effect),
   // except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Effect {
     UNKNOWN_EFFECT = 0;
@@ -1265,7 +1265,7 @@ message Alert {
 
   // The active period message describes a period when an alert is active.
   // It corresponds the the [time range message in the GTFS realtime
-  // specification](https://developers.google.com/transit/gtfs-realtime/reference#message-timerange).
+  // specification](https://gtfs.org/realtime/reference/#message-timerange).
   message ActivePeriod {
     // Unix timestamp of the start time of the active period.
     // If not set, the alert be interpreted
@@ -1284,7 +1284,7 @@ message Alert {
 
   // The text message describes an alert header/description/URL in a specified language.
   // It corresponds the the [translation message in the GTFS realtime
-  // specification](https://developers.google.com/transit/gtfs-realtime/reference#message-translation).
+  // specification](https://gtfs.org/realtime/reference/#message-translation).
   message Text {
     // Content of the text.
     string text = 1;
