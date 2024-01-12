@@ -1,5 +1,6 @@
 # Configuring transit systems
 
+**This documentation is out of date**
 
 Transit systems are added to Transiter using
 a YAML configuration file.

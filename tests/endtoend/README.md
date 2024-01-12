@@ -29,15 +29,15 @@ During a test run, there are four live components:
 
 ## Running the test
 
-### Simplist way
+### Simplest way
 
 If you are on a machine with Docker and Docker compose available,
-    then in the root of the repo just run `bash tests/endtoend/run.sh`.
+    then run `just test-e2e`.
 
 ### Manual
 
 The Python tests have some dependencies which need to be installed.
-As usual, it's best to do this in a virtualenv. Then:
+As usual, it's best to do this in a virtual env. Then:
 ```
 pip install -r tests/endtoend/requirements.txt
 ```

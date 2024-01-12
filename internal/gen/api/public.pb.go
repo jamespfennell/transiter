@@ -1,60 +1,60 @@
 //
-//Public API
+// Public API
 //
-//The Transiter public API is based around hierarchal resources, like many REST APIs.
-//This is the resource hierarchy:
+// The Transiter public API is based around hierarchal resources, like many REST APIs.
+// This is the resource hierarchy:
 //
-//```
-//System
-//|- Agency
-//|- Alert
-//|- Feed
-//|- Route
-//|   |- Trip
-//|       |- Vehicle with no ID
-//|- Stop
-//|- Transfer
-//|- Vehicle with ID
-//```
+// ```
+// System
+// |- Agency
+// |- Alert
+// |- Feed
+// |- Route
+// |   |- Trip
+// |       |- Vehicle with no ID
+// |- Stop
+// |- Transfer
+// |- Vehicle with ID
+// ```
 //
-//For each resource there is a proto message type, a list endpoint, and a get endpoints.
-//For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
+// For each resource there is a proto message type, a list endpoint, and a get endpoints.
+// For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
 //
-//The URLs in the HTTP API are determined by the hierarchy; thus:
+// The URLs in the HTTP API are determined by the hierarchy; thus:
 //
-//- List all systems has URL `/systems`,
-//- Get system with ID `<system_id>` has URL `/systems/<system_id>`,
-//- List all routes in the system has URL `/systems/<system_id>/routes`,
-//- Get route has URL `/systems/<system_id>/routes/<route_id>`,
+// - List all systems has URL `/systems`,
+// - Get system with ID `<system_id>` has URL `/systems/<system_id>`,
+// - List all routes in the system has URL `/systems/<system_id>/routes`,
+// - Get route has URL `/systems/<system_id>/routes/<route_id>`,
 //
-//and so on.
+// and so on.
 //
-//Many resources refer to other resources across the hierarchy.
-//For example, each route has an agency it is attached to.
-//Each stop has a list of service maps, each of which contains a set of routes.
-//In these situations the resource message contains a _reference_ to the other resource.
-//The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
-//message.
-//These reference messages contain at least enough information to uniquely identify the resource.
-//However they also contain additional information that is considered generally useful;
-//thus, the [Stop.Reference](#stopreference) message contains the stop's name.
-//What counts as "considered generally" is obviously very subjective and open to change.
+// Many resources refer to other resources across the hierarchy.
+// For example, each route has an agency it is attached to.
+// Each stop has a list of service maps, each of which contains a set of routes.
+// In these situations the resource message contains a _reference_ to the other resource.
+// The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
+// message.
+// These reference messages contain at least enough information to uniquely identify the resource.
+// However they also contain additional information that is considered generally useful;
+// thus, the [Stop.Reference](#stopreference) message contains the stop's name.
+// What counts as "considered generally" is obviously very subjective and open to change.
 //
-//The following table summarizes all of the resources and their types.
-//The right-most column describes the source_of the resource.
-//The public API is a read-only API so all of the resources come from somewhere else.
+// The following table summarizes all of the resources and their types.
+// The right-most column describes the source_of the resource.
+// The public API is a read-only API so all of the resources come from somewhere else.
 //
-//| Resource    | Reference type | List endpoint | Get endpoint | Source |
-//| ----------- | --------------- | ---------- | ------------------ | -------|
-//| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
-//| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
-//| Feed        | System          |            |                    | system config
-//| Route       | System          |            |                    | GTFS static
-//| Trip        | Route           |            |                    | GTFS realtime
-//| Stop        | System          |            |                    | GTFS static
-//| System      | None            |            |                    | system config
-//| Transfer    | System          |            |                    | GTFS static
-//| Vehicle     | System or trip  |            |                    | GTFS realtime
+// | Resource    | Reference type | List endpoint | Get endpoint | Source |
+// | ----------- | --------------- | ---------- | ------------------ | -------|
+// | [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
+// | Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
+// | Feed        | System          |            |                    | system config
+// | Route       | System          |            |                    | GTFS static
+// | Trip        | Route           |            |                    | GTFS realtime
+// | Stop        | System          |            |                    | GTFS static
+// | System      | None            |            |                    | system config
+// | Transfer    | System          |            |                    | GTFS static
+// | Vehicle     | System or trip  |            |                    | GTFS realtime
 //
 
 // Code generated by protoc-gen-go. DO NOT EDIT.

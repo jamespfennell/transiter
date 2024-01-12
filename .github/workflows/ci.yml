@@ -1,9 +1,9 @@
-name: Build
+name: CI
 
 on: [push, pull_request]
 
 jobs:
-  build-and-tests:
+  CI:
     runs-on: ubuntu-latest
 
     steps:
@@ -11,16 +11,18 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: '^1.18.0'
-
-      - name: Set the version
+      - uses: extractions/setup-just@v1
+      - uses: docker/setup-buildx-action@v2
+  
+      - name: Set the Transiter version
         run: |
           BASE_VERSION=$(cat internal/version/BASE_VERSION)
-          VERSION=${BASE_VERSION}-alpha+build${{ github.run_number }}
+          VERSION=${BASE_VERSION}-dev.build${{ github.run_number }}
 
           # If this is a push to mainline, give it the beta release
           if [ "${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}" = "true" ]
           then
-            VERSION=${BASE_VERSION}-beta.${{ github.run_number }}
+            VERSION=${BASE_VERSION}-beta.build${{ github.run_number }}
           fi
 
           # If this is a release, give it the full version.
@@ -33,36 +35,22 @@ jobs:
           echo "Setting version to ${VERSION}"
           echo "TRANSITER_VERSION=${VERSION}" >> $GITHUB_ENV
 
-      - name: Go build
-        run: go build .
-  
       - name: Launch Postgres
         run: docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
 
-      - name: Go test
-        run: go test ./...
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build the Docker image
         uses: docker/build-push-action@v4
         with:
           tags: |
             jamespfennell/transiter:latest
+            jamespfennell/transiter:${{ env.TRANSITER_VERSION }}
           build-args: |
             "TRANSITER_VERSION=${{ env.TRANSITER_VERSION }}"
           outputs: type=docker
           context: .
 
-      - name: End-to-end tests (setup)
-        run: docker-compose -f tests/endtoend/compose.yml up --build --detach sourceserver transiter db
-
-      - name: End-to-end tests (run)
-        run: docker-compose -f tests/endtoend/compose.yml up --build --exit-code-from testrunner testrunner
-
-      - name: Linter
-        run: go install honnef.co/go/tools/cmd/staticcheck@2023.1 && staticcheck ./...
+      - name: Run CI
+        run: just ci
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -77,44 +65,11 @@ jobs:
         # Only push to Docker Hub if this workflow is a push to mainline
         if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         with:
+          tags: |
+            jamespfennell/transiter:latest
+            jamespfennell/transiter:${{ env.TRANSITER_VERSION }}
           build-args: |
             "TRANSITER_VERSION=${{ env.TRANSITER_VERSION }}"
-            jamespfennell/transiter:latest
-          tags: |
-            jamespfennell/transiter:${{ env.TRANSITER_VERSION }}
+          outputs: type=docker
           context: .
           push: true
-
-  docs:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build the Docker image
-        uses: docker/build-push-action@v4
-        with:
-          file: docs/Dockerfile
-          tags: jamespfennell/transiter-docs:latest
-          outputs: type=docker
-          context: .
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        # Only push to Docker Hub if this workflow is a push to mainline
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
-        with:
-          username: jamespfennell
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-
-      - name: Push to Docker Hub
-        uses: docker/build-push-action@v4
-        # Only push to Docker Hub if this workflow is a push to mainline
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
-        with:
-          tags: jamespfennell/transiter-docs:latest
-          file: docs/Dockerfile
-          context: .

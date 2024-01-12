@@ -78,20 +78,56 @@ localhost:8080/systems/us-ny-subway/stops/D15
     including how to run Tranister with Docker and how to use a non-default Postgres configuration.
 
 
-## Development
+## Development guide
 
-Transiter uses [sqlc](https://github.com/kyleconroy/sqlc)
-    for generating database access methods.
-The schema and queries are stored in the `db` directory.
-The Go files are generated using the following command in the repo root:
+This is a guide for those who are interested in developing Transiter.
+PRs are very welcome.
+
+### Dev requirements
+
+The basic requirements are the same as for running Transiter,
+    Postgres 14+ and Go 1.18+.
+Additionally, the project uses the [command runner tool Just](https://just.systems).
+Installing Just is optional: as an alternative,
+    you can always manually run the commands in the justfile.
+However we think Just is great, and the rest of this guide assumes you've installed it.
+Finally, having Docker available makes it really easy to run some other things locally
+    but is totally optional.
+
+### Changing the code
+
+If you just change the Go code, you can build the code using `go build .`
+    and run all the unit tests using `go test ./...` or `just test`.
+Note that the unit tests assume Postgres is up and use Postgres for a bunch of DB tests.
+
+If you have Docker installed you can also run all the Python E2E tests by running `just test-e2e`.
+(The command `just test-all` runs both the unit and E2E tests).
+The E2E tests are in the `tests/endtoend` directory.
+Without Docker it's still possible to run the E2E tests following the instructions in that directory.
+However the E2E tests also run on the GitHub actions CI and it's perhaps easiest to rely on that.
+The E2E tests generally don't break unless you've introduced a regression.
+For new major features it's great to add new E2E tests.
+
+Like many Go projects Transiter relies on some code generation:
+
+- Transiter uses [sqlc](https://github.com/kyleconroy/sqlc)
+    for generating all of the DB interaction code.
+    The DB schema and queries are stored in the `db` directory.
+
+- Transiter uses [gRPC](https://grpc.io/) for developing the API.
+    The HTTP REST API is generated automatically using annotations in the proto files.
+    [Buf](https://github.com/bufbuild/buf) is used for compiling the proto files to the Go code.
+
+If you make any changes to the API (`.proto` files) or DB SQL statements (`.sql` files),
+    you'll need to run the code generation tools.
+
+First install the tools:
+```
+just install-tools
+```
+
+Then run the code generation:
 
 ```
-sqlc --experimental generate
-```
-
-Transiter uses [gRPC](https://grpc.io/) for developing the API.
-The HTTP REST API is generated automatically using annotations in the proto files.
-[Buf](https://github.com/bufbuild/buf) is used for compiling the proto files to the Go code:
-```
-buf generate
+just generate
 ```

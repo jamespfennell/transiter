@@ -5,16 +5,14 @@ import "google/api/annotations.proto";
 option go_package = "github.com/jamespfennell/transiter/api";
 
 /**
-Admin API
+   Admin API
 */
 service Admin {
   // Get the config for a system
   //
   // `GET /systems/<system_id>/config`
   rpc GetSystemConfig(GetSystemConfigRequest) returns (SystemConfig) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/config"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/config"};
   }
 
   // Install or update a system
@@ -42,9 +40,7 @@ service Admin {
   //
   // Deletes the specified system.
   rpc DeleteSystem(DeleteSystemRequest) returns (DeleteSystemReply) {
-    option (google.api.http) = {
-      delete: "/systems/{system_id}"
-    };
+    option (google.api.http) = {delete: "/systems/{system_id}"};
   }
 
   // Update a feed
@@ -53,9 +49,7 @@ service Admin {
   //
   // Triggers a feed update for the specified feed.
   rpc UpdateFeed(UpdateFeedRequest) returns (UpdateFeedReply) {
-    option (google.api.http) = {
-      post: "/systems/{system_id}/feeds/{feed_id}"
-    };
+    option (google.api.http) = {post: "/systems/{system_id}/feeds/{feed_id}"};
   }
 
   // Get scheduler status
@@ -64,9 +58,7 @@ service Admin {
   //
   // Gets the status of the scheduler.
   rpc GetSchedulerStatus(GetSchedulerStatusRequest) returns (GetSchedulerStatusReply) {
-    option (google.api.http) = {
-      get: "/scheduler"
-    };
+    option (google.api.http) = {get: "/scheduler"};
   }
 
   // Reset scheduler
@@ -80,27 +72,21 @@ service Admin {
   //  The main usecase is when the Postgres configuration is manually
   //   updated and the scheduler needs to see the update.
   rpc ResetScheduler(ResetSchedulerRequest) returns (ResetSchedulerReply) {
-    option (google.api.http) = {
-      post: "/scheduler"
-    };
+    option (google.api.http) = {post: "/scheduler"};
   }
 
   // Get the current log level.
   //
   // `GET /loglevel`
   rpc GetLogLevel(GetLogLevelRequest) returns (GetLogLevelReply) {
-    option (google.api.http) = {
-      get: "/loglevel"
-    };
+    option (google.api.http) = {get: "/loglevel"};
   }
 
   // Set the log level.
   //
   // `PUT /loglevel`
   rpc SetLogLevel(SetLogLevelRequest) returns (SetLogLevelReply) {
-    option (google.api.http) = {
-      put: "/loglevel"
-    };
+    option (google.api.http) = {put: "/loglevel"};
   }
 
   // TODO: GetFeedConfig
@@ -214,7 +200,7 @@ message FeedConfig {
   SchedulingPolicy scheduling_policy = 14;
 
   // Deprecated: use `scheduling_policy` instead.
-  SchedulingPolicy update_strategy = 3 [deprecated=true];
+  SchedulingPolicy update_strategy = 3 [deprecated = true];
 
   // For feeds with a `PERIODIC` scheduling policy, the update period.
   //

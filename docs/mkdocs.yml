@@ -31,7 +31,5 @@ nav:
   - systems.md
   - Running and deployment:
     - Running Transiter: deployment/running-transiter.md
-    - Building and serving the docs: deployment/documentation.md
-    - Controlling permissions: deployment/permissions.md
     - Monitoring using Prometheus: deployment/monitoring.md
     - Production advice: deployment/production.md

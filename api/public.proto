@@ -1,61 +1,61 @@
 /**
-Public API
-
-The Transiter public API is based around hierarchal resources, like many REST APIs.
-This is the resource hierarchy:
-
-```
-System
-|- Agency
-|- Alert
-|- Feed
-|- Route
-|   |- Trip
-|       |- Vehicle with no ID
-|- Stop
-|- Transfer
-|- Vehicle with ID
-```
-
-For each resource there is a proto message type, a list endpoint, and a get endpoints.
-For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
-
-The URLs in the HTTP API are determined by the hierarchy; thus:
-
-- List all systems has URL `/systems`,
-- Get system with ID `<system_id>` has URL `/systems/<system_id>`,
-- List all routes in the system has URL `/systems/<system_id>/routes`,
-- Get route has URL `/systems/<system_id>/routes/<route_id>`,
-
-and so on.
-
-Many resources refer to other resources across the hierarchy.
-For example, each route has an agency it is attached to.
-Each stop has a list of service maps, each of which contains a set of routes.
-In these situations the resource message contains a _reference_ to the other resource.
-The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
-message.
-These reference messages contain at least enough information to uniquely identify the resource.
-However they also contain additional information that is considered generally useful;
-thus, the [Stop.Reference](#stopreference) message contains the stop's name.
-What counts as "considered generally" is obviously very subjective and open to change.
-
-The following table summarizes all of the resources and their types.
-The right-most column describes the source_of the resource.
-The public API is a read-only API so all of the resources come from somewhere else.
-
-| Resource    | Reference type | List endpoint | Get endpoint | Source |
-| ----------- | --------------- | ---------- | ------------------ | -------|
-| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
-| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
-| Feed        | System          |            |                    | system config
-| Route       | System          |            |                    | GTFS static
-| Trip        | Route           |            |                    | GTFS realtime
-| Stop        | System          |            |                    | GTFS static
-| System      | None            |            |                    | system config
-| Transfer    | System          |            |                    | GTFS static
-| Vehicle     | System or trip  |            |                    | GTFS realtime
-
+   Public API
+   
+   The Transiter public API is based around hierarchal resources, like many REST APIs.
+   This is the resource hierarchy:
+   
+   ```
+   System
+   |- Agency
+   |- Alert
+   |- Feed
+   |- Route
+   |   |- Trip
+   |       |- Vehicle with no ID
+   |- Stop
+   |- Transfer
+   |- Vehicle with ID
+   ```
+   
+   For each resource there is a proto message type, a list endpoint, and a get endpoints.
+   For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
+   
+   The URLs in the HTTP API are determined by the hierarchy; thus:
+   
+   - List all systems has URL `/systems`,
+   - Get system with ID `<system_id>` has URL `/systems/<system_id>`,
+   - List all routes in the system has URL `/systems/<system_id>/routes`,
+   - Get route has URL `/systems/<system_id>/routes/<route_id>`,
+   
+   and so on.
+   
+   Many resources refer to other resources across the hierarchy.
+   For example, each route has an agency it is attached to.
+   Each stop has a list of service maps, each of which contains a set of routes.
+   In these situations the resource message contains a _reference_ to the other resource.
+   The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
+   message.
+   These reference messages contain at least enough information to uniquely identify the resource.
+   However they also contain additional information that is considered generally useful;
+   thus, the [Stop.Reference](#stopreference) message contains the stop's name.
+   What counts as "considered generally" is obviously very subjective and open to change.
+   
+   The following table summarizes all of the resources and their types.
+   The right-most column describes the source_of the resource.
+   The public API is a read-only API so all of the resources come from somewhere else.
+   
+   | Resource    | Reference type | List endpoint | Get endpoint | Source |
+   | ----------- | --------------- | ---------- | ------------------ | -------|
+   | [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
+   | Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
+   | Feed        | System          |            |                    | system config
+   | Route       | System          |            |                    | GTFS static
+   | Trip        | Route           |            |                    | GTFS realtime
+   | Stop        | System          |            |                    | GTFS static
+   | System      | None            |            |                    | system config
+   | Transfer    | System          |            |                    | GTFS static
+   | Vehicle     | System or trip  |            |                    | GTFS realtime
+   
 */
 syntax = "proto3";
 
@@ -70,9 +70,7 @@ service Public {
   //
   // Provides basic information about this Transiter instance and the Transit systems it contains.
   rpc Entrypoint(EntrypointRequest) returns (EntrypointReply) {
-    option (google.api.http) = {
-      get: "/"
-    };
+    option (google.api.http) = {get: "/"};
   }
 
   // List systems
@@ -81,9 +79,7 @@ service Public {
   //
   // List all transit systems that are installed in this Transiter instance.
   rpc ListSystems(ListSystemsRequest) returns (ListSystemsReply) {
-    option (google.api.http) = {
-      get: "/systems"
-    };
+    option (google.api.http) = {get: "/systems"};
   }
 
   // Get system
@@ -92,9 +88,7 @@ service Public {
   //
   // Get a system by its ID.
   rpc GetSystem(GetSystemRequest) returns (System) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}"};
   }
 
   // List agencies
@@ -103,9 +97,7 @@ service Public {
   //
   // List all agencies in a system.
   rpc ListAgencies(ListAgenciesRequest) returns (ListAgenciesReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/agencies"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/agencies"};
   }
 
   // Get agency
@@ -114,9 +106,7 @@ service Public {
   //
   // Get an agency in a system by its ID.
   rpc GetAgency(GetAgencyRequest) returns (Agency) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/agencies/{agency_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/agencies/{agency_id}"};
   }
 
   // List stops
@@ -129,9 +119,7 @@ service Public {
   // If there are more results, the `next_id` field of the response will be populated.
   // To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
   rpc ListStops(ListStopsRequest) returns (ListStopsReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/stops"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/stops"};
   }
 
   // Get stop
@@ -140,9 +128,7 @@ service Public {
   //
   // Get a stop in a system by its ID.
   rpc GetStop(GetStopRequest) returns (Stop) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/stops/{stop_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/stops/{stop_id}"};
   }
 
   // List routes
@@ -151,9 +137,7 @@ service Public {
   //
   // List all routes in a system.
   rpc ListRoutes(ListRoutesRequest) returns (ListRoutesReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/routes"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/routes"};
   }
 
   // Get route
@@ -162,9 +146,7 @@ service Public {
   //
   // Get a route in a system by its ID.
   rpc GetRoute(GetRouteRequest) returns (Route) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/routes/{route_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/routes/{route_id}"};
   }
 
   // List trips
@@ -173,9 +155,7 @@ service Public {
   //
   // List all trips in a route.
   rpc ListTrips(ListTripsRequest) returns (ListTripsReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/routes/{route_id}/trips"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/routes/{route_id}/trips"};
   }
 
   // Get trip
@@ -184,9 +164,7 @@ service Public {
   //
   // Get a trip by its ID.
   rpc GetTrip(GetTripRequest) returns (Trip) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"};
   }
 
   // List alerts
@@ -197,9 +175,7 @@ service Public {
   // By default this endpoint returns both active alerts
   //   (alerts which have an active period containing the current time) and non-active alerts.
   rpc ListAlerts(ListAlertsRequest) returns (ListAlertsReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/alerts"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/alerts"};
   }
 
   // Get alert
@@ -208,9 +184,7 @@ service Public {
   //
   // Get an alert by its ID.
   rpc GetAlert(GetAlertRequest) returns (Alert) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/alerts/{alert_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/alerts/{alert_id}"};
   }
 
   // List transfers
@@ -219,9 +193,7 @@ service Public {
   //
   // List all transfers in a system.
   rpc ListTransfers(ListTransfersRequest) returns (ListTransfersReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/transfers"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/transfers"};
   }
 
   // List feeds
@@ -230,9 +202,7 @@ service Public {
   //
   // List all feeds for a system.
   rpc ListFeeds(ListFeedsRequest) returns (ListFeedsReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/feeds"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/feeds"};
   }
 
   // Get feed
@@ -241,9 +211,7 @@ service Public {
   //
   // Get a feed in a system by its ID.
   rpc GetFeed(GetFeedRequest) returns (Feed) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/feeds/{feed_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/feeds/{feed_id}"};
   }
 
   // List vehicles
@@ -252,9 +220,7 @@ service Public {
   //
   // List all feeds for a system.
   rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/vehicles"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/vehicles"};
   }
 
   // Get vehicle
@@ -263,9 +229,7 @@ service Public {
   //
   // Get a vehicle in a system by its ID.
   rpc GetVehicle(GetVehicleRequest) returns (Vehicle) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/vehicles/{vehicle_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/vehicles/{vehicle_id}"};
   }
 
   // List shapes
@@ -274,9 +238,7 @@ service Public {
   //
   // List all shapes in a system.
   rpc ListShapes(ListShapesRequest) returns (ListShapesReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/shapes"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/shapes"};
   }
 
   // Get shape
@@ -285,9 +247,7 @@ service Public {
   //
   // Get a shape in a system by its ID.
   rpc GetShape(GetShapeRequest) returns (Shape) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/shapes/{shape_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/shapes/{shape_id}"};
   }
 }
 
@@ -660,14 +620,14 @@ message ListVehiclesReply {
 }
 
 message GetVehicleRequest {
-    // ID of the system the vehicle is in.
-    //
-    // This is a URL parameter in the HTTP API.
-    string system_id = 1;
-    // ID of the vehicle.
-    //
-    // This is a URL parameter in the HTTP API.
-    string vehicle_id = 2;
+  // ID of the system the vehicle is in.
+  //
+  // This is a URL parameter in the HTTP API.
+  string system_id = 1;
+  // ID of the vehicle.
+  //
+  // This is a URL parameter in the HTTP API.
+  string vehicle_id = 2;
 }
 
 message ListShapesRequest {
