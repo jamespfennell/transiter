@@ -18,6 +18,10 @@ docs OUTPUT_DIR="docs/gen":
 	pip install -r docs/requirements.txt
 	mkdocs build --strict -f docs/mkdocs.yml -d ../{{OUTPUT_DIR}}
 
+# Preview the Transiter documentation on 0.0.0.0:8001
+docs-preview: docs
+	python3 -m http.server 8001 -d docs/gen
+
 # Run the CI steps. Requires Docker and Postgres. Assumes the Docker image has already been built.
 ci: test _run_e2e lint
 
