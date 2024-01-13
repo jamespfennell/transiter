@@ -1,6 +1,6 @@
 # Configuring transit systems
 
-Transit systems, like the NYC subway or San Francisco BART,
+Transit systems - like the NYC subway or San Francisco BART -
   are added to Transiter by providing
   a YAML configuration file that contains information about the transit system.
 You can find many examples of transit system configurations in
@@ -20,8 +20,8 @@ At the very least, this file contains:
 
 There are also some advanced configurations available, which are discussed below:
 
-- Custom definitions for the system's "service maps".
 - Parameters (like API keys) that must be provided with system install requests.
+- Custom definitions for the system's "service maps".
 
 After writing a YAML file, the transit system is installed in the same way:
 
@@ -30,7 +30,8 @@ transiter install -f $TRANSIT_SYSTEM_ID $PATH_TO_YAML_FILE
 ```
 
 The schema for the YAML config is given by the
-  [system config type](../api/admin/#systemconfig) in the API schema.
+  [system config type](api/admin.md#systemconfig) in the API schema.
+In the YAML file, all of the `snake_case` field names are in `camelCase`.
 
 
 ## Basic configuration
@@ -52,7 +53,7 @@ feeds:
     # Optional fields for the HTTP request. Generally these don't need to be set.
     headers:
     - X-Extra-Header: "header value"
-    request_timeout_ms: 4000
+    requestTimeoutMs: 4000
 ```
 
 
@@ -108,7 +109,7 @@ The configuration for the feed includes with instructions
     url: https://www.transitsystem.com/feed_2
     headers:
     - X-Extra-Header: "header value"
-    request_timeout_ms: 4000
+    requestTimeoutMs: 4000
 ```
 
 Transiter will perform a `GET` request to the given URL with the specified headers
@@ -142,7 +143,7 @@ feeds:
   - id: gtfsstatic
     # other fields...
     schedulingPolicy: PERIODIC
-    periodic_update_period_ms: 20000  # 20000 milliseconds = 20 seconds
+    periodicUpdatePeriodMs: 20000  # 20000 milliseconds = 20 seconds
 ```
 
 To update the feed at 5pm every day in the US Eastern timezone:
@@ -152,8 +153,8 @@ feeds:
   - id: gtfsstatic
     # other fields...
     schedulingPolicy: DAILY
-    daily_update_time: 17:00
-    daily_update_timezone: America/New_York
+    dailyUpdateTime: 17:00
+    dailyUpdateTimezone: America/New_York
 ```
 
 To stop automatic updates entirely:
@@ -166,7 +167,7 @@ feeds:
 ```
 
 Note that feed updates can always be triggered manually
-  by using the [feed update method in the admin API](../api/admin/#update-a-feed).
+  by using the [feed update method in the admin API](api/admin.md#update-a-feed).
 
 
 ### Advanced: required for install
@@ -198,36 +199,39 @@ For GTFS realtime feeds,
   additional options can be provided the affect how the feed is parsed.
 For example, Transiter supports GTFS realtime extensions for the NYC subway.
 These additional options are set using the `gtfsRealtimeOptions` field
-  and are described [in the API reference](../api/admin/#gtfsrealtimeoptions).
+  and are described [in the API reference](api/admin.md#gtfsrealtimeoptions).
 
 
 ## User provided parameters 
 
 Sometimes the transit system configuration
-needs to be personalized for each individual installation.
+  needs to be personalized for each individual installation.
 For example, if one of the feeds requires an API key,
-it's best to have that provided by the person installing the transit
-system rather than hard-coding a specific key into the configuration.
+  it's best to have that provided by the person installing the transit
+  system rather than hard-coding a specific key into the configuration.
 That way configurations can be safely shared without also sharing private keys.
 
-To support these situations, Transiter interprets every configuration
-file as a Jinja template and processes the template before parsing the YAML.
-Variables can be provided to the template using URL parameters in the
-[system install endpoint](api/admin.md#InstallOrUpdateSystem).
+To support these situations,
+  Transiter has a way for system configuration files to accept parameters.
+When installing a system using the CLI, the format is:
 
-The following is a simple example of providing an API key using Jinja:
+```
+transiter install --arg name1=value1 --arg name2=value2 -f $TRANSIT_SYSTEM_ID $PATH_TO_YAML_FILE
+```
+
+When arguments are passed like this,
+  Transiter interprets the configuration file as a Go template.
+The arguments can be used in the YAML config using the `{{ .Args.name1 }}` syntax
+
+The following is a simple example of providing an API key using arguments:
 ```yaml
     http:
-      url: "https://www.transitsystem.com/feed_1?api_key={{ user_api_key }}"
+      url: "https://www.transitsystem.com/feed_1?api_key={{ Args.api_key }}"
 ```
-Here the user provided parameter is `api_key`.
-The user installs the system by sending a `PUT` request to
 
-    /systems/system_id?user_api_key=123456789
+The [NYC Subway system configuration](https://github.com/jamespfennell/transiter/blob/master/systems/us-ny-subway.yaml)
+ is an example of a real configuration that uses arguments.
 
-The [NYC Subway system configuration](https://github.com/jamespfennell/transiter-nycsubway) 
- is a good example
-of a configuration using Jinja templates.
 
 ## Service maps
 
@@ -260,15 +264,15 @@ you can configure a service map for given "slices" of the timetable
 To see how service maps look in the HTTP API, check out
 the `service_maps` data given in these endpoints:
 
-- [New York City L route](https://demo.transiter.io/systems/nycsubway/routes/L)
-- [New York City Times Square station](https://demo.transiter.io/systems/stops/127-725-902-A27-R16)
+- [New York City L route](https://demo.transiter.dev/systems/us-ny-subway/routes/L)
+- [New York City Times Square station](https://demo.transiter.dev/systems/us-ny-subway/stops/127)
 
 
 ### Configuring service maps
 
 Each route in a transit system can have multiple service maps.
 The service maps desired are defined in the YAML configuration.
-If no service maps are defined, the default service maps will be used.
+If no service maps are defined, the default service maps are used.
 
 Here's an example of three service maps definitions; `any_time`, `weekday_day`, and `realtime`:
 
@@ -312,3 +316,4 @@ corresponding to trips that:
 - Run during the weekday (`weekday: true`).
 - Start after 7am in the morning (`starts_later_than: 7`).
 - End before 7pm in the evening (`ends_earlier_than: 19`).
+
