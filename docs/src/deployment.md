@@ -73,7 +73,22 @@ demo.transiter.dev {
 In this case requests to `demo.transiter.dev` are reverse proxied to `localhost:8080`.
 This is where the Transiter public HTTP API is listening if you used the Docker compose
   configuration above.
-The `X-Transiter-Host` header is described below.
+
+## (Optional) Setting the Transiter host
+
+
+The reverse proxy configuration above contains a `X-Transiter-Host` header instruction.
+This tells Caddy that when a HTTP request is forwarded to Transiter, the `X-Transiter-Host`
+  header should be added with value `https://demo.transiter.dev`.
+
+The point of this optional header is to support Transiter's version of "HATEOAS".
+When this header is set, every resource that is returned will have the full URL of the resource in the response.
+For example, when [listing systems on the demo site](https://demo.transiter.dev/systems),
+  the NYC subway resource contains the exact URL `https://demo.transiter.dev/systems/us-ny-subway`
+  for the resource.
+In general Transiter knows nothing about the base URL, so the `X-Transiter-Host` provides it.
+If the header is missing, Transiter simply skips returning URLs.
+
 
 ## Admin APIs
 
@@ -104,9 +119,6 @@ on your personal machine and it will work.
 You can also install/delete transit systems this way, and so on.
 
 
-## (Optional) Setting the Transiter host
-
-
-
 ## Monitoring
 
+After deploying Transiter you [may be interested in monitoring it](monitoring.md).
