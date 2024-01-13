@@ -1,19 +1,36 @@
 # Configuring transit systems
 
-**This documentation is out of date**
+Transit systems, like the NYC subway or San Francisco BART,
+  are added to Transiter by providing
+  a YAML configuration file that contains information about the transit system.
+You can find many examples of transit system configurations in
+  [the `systems` subdirectory of the Transiter repository](https://github.com/jamespfennell/transiter/tree/master/systems).
+If the system you're interested in is there, then you don't need to do anything!
+From the root of the Transiter repository, you can install the system using:
 
-Transit systems are added to Transiter using
-a YAML configuration file.
-The configuration file can be plain, or it can be a
- [Jinja template](https://jinja.palletsprojects.com/en/2.11.x/).
-It contains information such as:
+```
+transiter install -f $TRANSIT_SYSTEM_ID $PATH_TO_YAML_FILE
+```
+
+Otherwise, to add a transit system to Transiter you need to write a new YAML file.
+At the very least, this file contains:
 
 - The transit system's name.
-- The URLs of its data feeds and instructions on how to parse the feeds.
-- Definitions of "service maps" for the system.
+- The URLs of its GTFS data feeds.
 
-The transit system is installed by sending the YAML
-configuration file to the [system install endpoint](api/admin.md#InstallOrUpdateSystem).
+There are also some advanced configurations available, which are discussed below:
+
+- Custom definitions for the system's "service maps".
+- Parameters (like API keys) that must be provided with system install requests.
+
+After writing a YAML file, the transit system is installed in the same way:
+
+```
+transiter install -f $TRANSIT_SYSTEM_ID $PATH_TO_YAML_FILE
+```
+
+The schema for the YAML config is given by the
+  [system config type](../api/admin/#systemconfig) in the API schema.
 
 
 ## Basic configuration
@@ -22,52 +39,31 @@ The following is basic example of a transit system configuration.
 After presenting the full configuration, each section is described below.
 
 ```yaml
-name: Transit System Name
-preferred_id: transit-system-id
-timezone: America/New York
+name: Transit system name
 
 feeds:
-  
-  feed_one_id:
-    http:
-      url: https://www.transitsystem.com/feed_1
-      headers:
-      - X-Extra-Header: "header value"
+  - id: gtfsstatic
+    type: GTFS_STATIC
+    url: https://www.transitsystem.com/feed_1
 
-    parser:
-      built_in: "GTFS_STATIC" 
-
-    auto_update:
-      enabled: "true"
-      period: "15 seconds"
-  
-     # If not specified, required_for_install defaults to false.
-     # required_for_install: "false" 
-
-  feed_two_id:
-    http:
-      url: https://www.transitsystem.com/feed_2
-
-    parser:
-      custom: "module:function"  
-
-    # If not specified, auto-update is not enabled.
-    # auto_update:
-    #   enabled: "false"
-
-    required_for_install: "true" 
+  - id: gtfsrealtime
+    type: GTFS_REALTIME
+    url: https://www.transitsystem.com/feed_2
+    # Optional fields for the HTTP request. Generally these don't need to be set.
+    headers:
+    - X-Extra-Header: "header value"
+    request_timeout_ms: 4000
 ```
+
 
 ### Basic Transit system information
 
-The config begins with the Transit system name and an optional preferred ID:
+The config begins with the Transit system name:
 ```yaml
 name: Transit System Name
-preferred_id: transit-system-id
-timezone: America/New York
 ```
 The name can any string.
-The preferred ID can be any valid system ID, and should be the "default" ID for the system.
+
 
 ### Feeds
 
@@ -76,87 +72,136 @@ This is the most important part of the configuration.
 
 ```yaml
 feeds:
-  
-  feed_one_id:
+  - id: gtfsstatic
     # feed configuration...
 ```
 
-The feed ID can be any string you like, the only constraint is
-that it be unique in this transit system. 
+The feed ID must be unique within the configuration file, and can't contain the `/` character.
 
-### Feed location
 
-The configuration for the feed begins with instructions
-on how to obtain it over the internet:
+### Feed type
+
+The feed type tells Transiter what kind of feed this is.
 
 ```yaml
-    http:
-      url: https://www.transitsystem.com/feed_1
-      headers:
-      - X-Extra-Header: "header value"
+    type: GTFS_STATIC
 ```
 
-Transiter will perform a `GET` request to the given URL with the specified
-headers. 
-If not specified, no additional headers are sent.
-If you require any additional configuration of the HTTP request,
-for example sending a `POST` request instead, file an issue on the GitHub tracker
-for this functionality to be added.
+There are currently 3 options:
 
-### Parser
+- `GTFS_STATIC` a GTFS static feed.
 
-After obtaining the feed, Transiter will parse it using the specified parser.
-For the first feed in this example, the parser is one of two built-in parsers:
+- `GTFS_REALTIME` a GTFS realtime feed.
+
+- `NYCT_TRIPS_CSV` this is a special type of feed and only relevant for the NYC subway.
+
+The Transiter project is open to adding other types of feed,
+  especially to support transit systems that don't provide data in the GTFS format.
+
+
+### Feed URLs
+
+The configuration for the feed includes with instructions
+  for how to obtain it over the internet:
+
 ```yaml
-    parser:
-      built_in: "GTFS_STATIC"  
+    url: https://www.transitsystem.com/feed_2
+    headers:
+    - X-Extra-Header: "header value"
+    request_timeout_ms: 4000
 ```
-The two built-in parsers are:
 
-- `GTFS_STATIC`
-- `GTFS_REALTIME`
+Transiter will perform a `GET` request to the given URL with the specified headers
+  and with the provided timeout.
+If not specified:
 
-### Auto-update
+- no additional headers are sent.
 
-Next, you can configure the feed to be auto-updating, meaning Transiter
-will automatically perform feed updates with a desired frequency:
+- a default timeout of 5 seconds is used.
+
+
+### Advanced: scheduling policy
+
+After a transit system is installed,
+  Transiter periodically performs feed updates for all feeds in the system.
+A feed update fetches new data from the feed URL and updates the data in Transiter accordingly.
+By default Transiter uses the following schedule for feed updates:
+
+- For GTFS realtime feeds, Transiter performs a feed update every 5 seconds.
+
+- For GTFS static and other feeds,
+    Transiter performs a feed update at around 3am in the timezone of the transit system.
+    The timezone is read from the GTFS static data.
+
+This behavior can be overridden by setting the `schedulingPolicy`
+  field in the feed configuration.
+For example, to update the feed every 20 seconds:
+
 ```yaml
-    auto_update:
-      enabled: "true"
-      period: "15 seconds"
+feeds:
+  - id: gtfsstatic
+    # other fields...
+    schedulingPolicy: PERIODIC
+    periodic_update_period_ms: 20000  # 20000 milliseconds = 20 seconds
 ```
-The period can be any human readable time interval
-like "3 minutes", "five hours", "1 week", and so on.
 
-In general, all feeds should be auto-updating.
-For realtime feeds it's reasonable to update a few times every minute;
-for static feeds, once a day usually makes sense.
+To update the feed at 5pm every day in the US Eastern timezone:
 
-### Required for install
-
-Finally, you specify that a feed update takes place when
-the system is being installed:
 ```yaml
-     required_for_install: "true" 
+feeds:
+  - id: gtfsstatic
+    # other fields...
+    schedulingPolicy: DAILY
+    daily_update_time: 17:00
+    daily_update_timezone: America/New_York
 ```
-The system install will fail if the feed update fails.
 
-This is useful for GTFS static feeds, 
-which often bring in basic information about the system 
-(like the list of stops) which other realtime feeds rely on.
+To stop automatic updates entirely:
 
-The feed update can fail for transient reasons (like a failed HTTP request),
-and therefore to make system installs reliable you should only
-set `required_for_install` for feeds that actually need it.
+```yaml
+feeds:
+  - id: gtfsstatic
+    # other fields...
+    schedulingPolicy: NONE
+```
 
-Note that `required_for_install` feed updates
-take place sequentially, and in the order they are specified in the YAML
-file.
-This feature may be useful if one feed relies on data having been imported from
-another feed.
+Note that feed updates can always be triggered manually
+  by using the [feed update method in the admin API](../api/admin/#update-a-feed).
 
 
-## Adding user provided parameters 
+### Advanced: required for install
+
+In the process of installing a transit system,
+  Transiter by default performs feed updates for all static feeds in the system.
+The motivation is that a transit system is not very useful without static data
+  (like the list of all stations),
+  and so to fully install a system the data must already be in place.
+Transiter does not perform feed updates for realtime feeds during the install process.
+
+This behavior can be overridden using the `requiredForInstall` field:
+
+```yaml
+feeds:
+  - id: gtfsstatic
+    # other fields...
+    requiredForInstall: false
+
+  - id: gtfsrealtime
+    # other fields...
+    requiredForInstall: true
+```
+
+
+### Advanced: GTFS realtime options
+
+For GTFS realtime feeds,
+  additional options can be provided the affect how the feed is parsed.
+For example, Transiter supports GTFS realtime extensions for the NYC subway.
+These additional options are set using the `gtfsRealtimeOptions` field
+  and are described [in the API reference](../api/admin/#gtfsrealtimeoptions).
+
+
+## User provided parameters 
 
 Sometimes the transit system configuration
 needs to be personalized for each individual installation.
