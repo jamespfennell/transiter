@@ -70,6 +70,5 @@ jobs:
             jamespfennell/transiter:${{ env.TRANSITER_VERSION }}
           build-args: |
             "TRANSITER_VERSION=${{ env.TRANSITER_VERSION }}"
-          outputs: type=docker
           context: .
           push: true
