@@ -277,29 +277,28 @@ If no service maps are defined, the default service maps are used.
 Here's an example of three service maps definitions; `any_time`, `weekday_day`, and `realtime`:
 
 ```yaml
-service_maps:
 
-  any_time:
-    source: SCHEDULE
+serviceMaps:
+  - id: alltimes
+    source: STATIC
     threshold: 0.05
+    
+  - id: weekday_day
+    source: STATIC
+    staticOptions:
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+      startsLaterThan: 7
+      endsEarlierThan: 19
 
-  weekday_day:
-    source: SCHEDULE
-    conditions:
-      weekday: true
-      starts_later_than: 7
-      ends_earlier_than: 19
-    threshold: 0.1
-
-  realtime:
+  - id: realtime
     source: REALTIME
 ```
 
 Let's step through the options for each one.
 
-The `source` parameter can be either `SCHEDULE` 
-(so the map is generated using the timetable data, for example from a GTFS static)
-or `REALTIME` (so the map is generated using data, for example, from GTFS realtime feeds).
+The `source` parameter can be either `STATIC`
+(so the map is generated using the timetable data from the GTFS static feeds)
+or `REALTIME` (so the map is generated using data from the GTFS realtime feeds).
 
 The `threshold` parameter is a way of removing one-off trips that
 may follow a non-standard list of stops.
@@ -307,13 +306,13 @@ A `threshold` of `0.05` means that, after collecting all of the trips
 for a route, group them together based on the list of stops they call at,
 and remove trips if their group accounts for less that 5% of the trips for the route.
 
-The `conditions` parameter enables one to create maps based on
+The `staticOptions` field enables one to create maps based on
  certain portions of the timetable.
 The `any_time` map contains no conditions: it's built using the full timetable.
 However the `weekday_day` map contains three conditions: it only uses the timetable
 corresponding to trips that:
 
-- Run during the weekday (`weekday: true`).
-- Start after 7am in the morning (`starts_later_than: 7`).
-- End before 7pm in the evening (`ends_earlier_than: 19`).
+- Run during the weekdays: `days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]`
+- Start after 7am in the morning: `startsLaterThan: 7`
+- End before 7pm in the evening: `endsEarlierThan: 19`.
 
