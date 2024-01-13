@@ -30,5 +30,5 @@ nav:
       - Public API (endpoints): api/public_endpoints.md
       - Admin API: api/admin.md
   - Running and deployment:
-    - Running Transiter: deployment/running-transiter.md
+    - Running Transiter: deployment/deployment.md
     - Monitoring: deployment/monitoring.md
