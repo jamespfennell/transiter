@@ -25,10 +25,9 @@ nav:
   - Home: index.md
   - tour.md
   - systems.md
+  - deployment.md
+  - monitoring.md
   - API Reference:
       - Public API (resources): api/public_resources.md
       - Public API (endpoints): api/public_endpoints.md
       - Admin API: api/admin.md
-  - Running and deployment:
-    - Running Transiter: deployment/running-transiter.md
-    - Monitoring: deployment/monitoring.md

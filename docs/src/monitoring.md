@@ -1,4 +1,4 @@
-# Monitoring
+# Monitoring Transiter
 
 Transiter includes Prometheus metrics for monitoring a running Transiter deployment.
 If you are running Transiter,
