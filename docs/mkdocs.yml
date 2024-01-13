@@ -31,5 +31,4 @@ nav:
       - Admin API: api/admin.md
   - Running and deployment:
     - Running Transiter: deployment/running-transiter.md
-    - Monitoring using Prometheus: deployment/monitoring.md
-    - Production advice: deployment/production.md
+    - Monitoring: deployment/monitoring.md
