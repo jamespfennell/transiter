@@ -57,7 +57,7 @@ func GetStatusCode(err error) codes.Code {
 // ServeMuxOption returns a `runtime.ServeMuxOption` that makes errors user-friendly at the API boundary.
 func ServeMuxOption(logger *slog.Logger) runtime.ServeMuxOption {
 	return runtime.WithErrorHandler(func(ctx context.Context, sm *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
-		logger = logger.With(slog.String("http_method", r.Method), slog.String("http_url_path", r.URL.Path))
+		logger := logger.With(slog.String("http_method", r.Method), slog.String("http_url_path", r.URL.Path))
 		switch err.(type) {
 		case publicErr:
 			// nothing to do
