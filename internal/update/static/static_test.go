@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/gtfs"
+	"github.com/jamespfennell/transiter/db/types"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbtesting"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -112,8 +113,7 @@ func TestUpdate(t *testing.T) {
 					Name:               dbString("2"),
 					Description:        dbString("3"),
 					ZoneID:             dbString("4"),
-					Longitude:          convert.Gps(ptr(float64(5.5))),
-					Latitude:           convert.Gps(ptr(float64(6.6))),
+					Location:           types.NewPoint(5.5, 6.6),
 					Url:                dbString("7"),
 					Type:               gtfs.StopType_Station.String(),
 					Timezone:           dbString("8"),
@@ -1266,7 +1266,7 @@ func TestUpdate(t *testing.T) {
 			for i, update := range tc.updates {
 				err := Update(ctx, updateCtx, update)
 				if err != nil {
-					t.Fatalf("Update(update %d) got = %v, want = <nil>", err, i)
+					t.Fatalf("Update(update %d) got = %+v, want = <nil>", i, err)
 				}
 			}
 

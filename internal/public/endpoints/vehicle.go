@@ -41,9 +41,8 @@ func ListVehicles(ctx context.Context, r *Context, req *api.ListVehiclesRequest)
 		dbVehiclesGeo, err := r.Querier.ListVehicles_Geographic(ctx, db.ListVehicles_GeographicParams{
 			SystemPk:    system.Pk,
 			NumVehicles: numVehicles,
-			Latitude:    convert.Gps(req.Latitude),
-			Longitude:   convert.Gps(req.Longitude),
-			MaxDistance: convert.Gps(req.MaxDistance),
+			Base:        convert.Gps(req.Longitude, req.Latitude),
+			MaxDistance: *req.MaxDistance,
 		})
 
 		for _, dbVehicle := range dbVehiclesGeo {
@@ -52,8 +51,7 @@ func ListVehicles(ctx context.Context, r *Context, req *api.ListVehiclesRequest)
 				Label:               dbVehicle.Label,
 				LicensePlate:        dbVehicle.LicensePlate,
 				CurrentStatus:       dbVehicle.CurrentStatus,
-				Latitude:            dbVehicle.Latitude,
-				Longitude:           dbVehicle.Longitude,
+				Location:            dbVehicle.Location,
 				Bearing:             dbVehicle.Bearing,
 				Odometer:            dbVehicle.Odometer,
 				Speed:               dbVehicle.Speed,
@@ -87,7 +85,7 @@ func ListVehicles(ctx context.Context, r *Context, req *api.ListVehiclesRequest)
 		}
 	}
 
-	apiVehicles, err := buildApiVehicles(ctx, r, &system, dbVehicles)
+	apiVehicles, err := buildApiVehicles(r, &system, dbVehicles)
 	if err != nil {
 		return nil, err
 	}
@@ -118,14 +116,13 @@ func GetVehicle(ctx context.Context, r *Context, req *api.GetVehicleRequest) (*a
 		return nil, err
 	}
 
-	apiVehicles, err := buildApiVehicles(ctx, r, &system, []db.ListVehiclesRow{
+	apiVehicles, err := buildApiVehicles(r, &system, []db.ListVehiclesRow{
 		{
 			ID:                  dbVehicle.ID,
 			Label:               dbVehicle.Label,
 			LicensePlate:        dbVehicle.LicensePlate,
 			CurrentStatus:       dbVehicle.CurrentStatus,
-			Latitude:            dbVehicle.Latitude,
-			Longitude:           dbVehicle.Longitude,
+			Location:            dbVehicle.Location,
 			Bearing:             dbVehicle.Bearing,
 			Odometer:            dbVehicle.Odometer,
 			Speed:               dbVehicle.Speed,
@@ -150,7 +147,6 @@ func GetVehicle(ctx context.Context, r *Context, req *api.GetVehicleRequest) (*a
 }
 
 func buildApiVehicles(
-	ctx context.Context,
 	r *Context,
 	system *db.System,
 	vehicles []db.ListVehiclesRow) ([]*api.Vehicle, error) {
@@ -165,8 +161,8 @@ func buildApiVehicles(
 				nullRouteReferences(r, vehicle.RouteID, vehicle.RouteColor, system.ID),
 				vehicle.TripDirectionID.Bool,
 			),
-			Latitude:        convert.SQLGps(vehicle.Latitude),
-			Longitude:       convert.SQLGps(vehicle.Longitude),
+			Longitude:       vehicle.Location.NullableLongitude(),
+			Latitude:        vehicle.Location.NullableLatitude(),
 			Bearing:         convert.SQLNullFloat4(vehicle.Bearing),
 			Odometer:        convert.SQLNullFloat8(vehicle.Odometer),
 			Speed:           convert.SQLNullFloat4(vehicle.Speed),

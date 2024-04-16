@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -13,6 +12,7 @@ import (
 	"github.com/jamespfennell/gtfs/extensions"
 	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
 	"github.com/jamespfennell/gtfs/extensions/nycttrips"
+	"github.com/jamespfennell/transiter/db/types"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"golang.org/x/exp/slog"
 )
@@ -138,14 +138,15 @@ func SQLNullBool(t pgtype.Bool) *bool {
 	return &t.Bool
 }
 
-func Gps[T float32 | float64](f *T) pgtype.Numeric {
-	if f == nil {
-		return pgtype.Numeric{}
+func Gps[T float32 | float64](longitude, latitude *T) types.Geography {
+	if latitude == nil || longitude == nil {
+		return types.Geography{}
 	}
-	return pgtype.Numeric{
-		Int:   big.NewInt(int64(*f * 1000000)),
-		Exp:   -6,
-		Valid: true,
+	return types.Geography{
+		Valid:     true,
+		Type:      types.Point,
+		Longitude: float64(*longitude),
+		Latitude:  float64(*latitude),
 	}
 }
 

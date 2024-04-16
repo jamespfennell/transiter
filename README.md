@@ -1,13 +1,12 @@
 # Transiter
 
-Transiter is a program that makes it easy to use realtime transit data.
-Instead of figuring out how to parse data from your local transit agency,
-    you can run Transiter and access the data using a straightforward HTTP API.
-Using Transiter as a backend, you can build things like
+Transiter is a backend web service that makes it easy to use realtime transit data.
+Using Transiter, you can build things like
     web apps ([realtimerail.nyc](https://realtimerail.nyc), [closingdoors.nyc](https://closingdoors.nyc))
-    and arrival time boards.
+    and arrival time boards,
+    and query transit data from other software.
 
-Transiter subscribes to GTFS static and realtime feeds
+Transiter subscribes to GTFS transit data feeds from different agencies
     and provides integrated views of the data through a HTTP REST API.
 The [endpoint for a particular stop](https://demo.transiter.dev/systems/us-ny-subway/stops/L03), for example, returns:
 
@@ -20,23 +19,37 @@ The [endpoint for a particular stop](https://demo.transiter.dev/systems/us-ny-su
 
 You can get a sense for the data that's available by navigating
     through the [live demo site](https://demo.transiter.dev).
+You can do this programmatically, too:
+
+```python
+# Python snippet that finds the next train at the Rockefeller Center NYC subway station
+import requests, time
+data = requests.get("https://demo.transiter.dev/systems/us-ny-subway/stops/D15").json()
+firstStopTime = data["stopTimes"][0]
+secondsToLeave = int(firstStopTime["departure"]["time"]) - time.time()
+print(f'The next train leaves in {int(secondsToLeave)} seconds and goes to {firstStopTime["trip"]["destination"]["name"]}.')
+```
+
+Note that the demo site is best effort!
+In general each user of Transiter runs their own Transiter instance
+    that contains the transit systems of interest.
+
 Transiter has a [WIP documentation website](https://docs.transiter.dev)
 
+## Getting started locally
 
-## Getting started
-
-Transiter uses Postgres for storing data,
-    and by default assumes the database/user/password is `transiter`/`transiter`/`transiter`.
-These values can all be configured.
-If you have Docker compose,
-    you can easily spin up a Postgres instance with the default configuration from the root of the repo:
+Transiter uses Postgres with the PostGIS extension for persisting data.
+By default Transiter assumes the database/user/password is `transiter`/`transiter`/`transiter`,
+    but all these values can be configured.
+If you have Docker compose installed,
+    you can easily spin up an appropriate Postgres instance from the root of the repo:
 
 ```
 docker-compose up postgres
 ```
 
 Transiter is written in Go.
-To build Transiter and install it simply run:
+To build Transiter and install it run:
 
 ```
 go install .

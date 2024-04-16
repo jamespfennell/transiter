@@ -51,17 +51,16 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 		return nil, err
 	}
 	apiTrips, err := buildApiTrips(ctx, r, &system, &route, []db.ListTripsRow{{
-		Pk:               trip.Pk,
-		ID:               trip.ID,
-		RoutePk:          trip.RoutePk,
-		DirectionID:      trip.DirectionID,
-		StartedAt:        trip.StartedAt,
-		GtfsHash:         trip.GtfsHash,
-		FeedPk:           trip.FeedPk,
-		VehicleID:        trip.VehicleID,
-		VehicleLatitude:  trip.VehicleLatitude,
-		VehicleLongitude: trip.VehicleLongitude,
-		ShapeID:          trip.ShapeID,
+		Pk:              trip.Pk,
+		ID:              trip.ID,
+		RoutePk:         trip.RoutePk,
+		DirectionID:     trip.DirectionID,
+		StartedAt:       trip.StartedAt,
+		GtfsHash:        trip.GtfsHash,
+		FeedPk:          trip.FeedPk,
+		VehicleID:       trip.VehicleID,
+		VehicleLocation: trip.VehicleLocation,
+		ShapeID:         trip.ShapeID,
 	}})
 	if err != nil {
 		return nil, err

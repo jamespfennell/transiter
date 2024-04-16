@@ -811,8 +811,7 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 			Label:               convert.NullIfEmptyString(vehicle.ID.Label),
 			LicensePlate:        convert.NullIfEmptyString(vehicle.ID.LicensePlate),
 			CurrentStatus:       convert.NullVehicleCurrentStatus(vehicle.CurrentStatus),
-			Latitude:            convert.Gps(latitude),
-			Longitude:           convert.Gps(longitude),
+			Location:            convert.Gps(longitude, latitude),
 			Bearing:             convert.NullFloat32(bearing),
 			Odometer:            convert.NullFloat64(odometer),
 			Speed:               convert.NullFloat32(speed),
@@ -824,7 +823,9 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 		})
 	}
 
-	_, err = updateCtx.Querier.InsertVehicle(ctx, insertVehicleParams)
+	for _, param := range insertVehicleParams {
+		err = updateCtx.Querier.InsertVehicle(ctx, param)
+	}
 	return err
 }
 

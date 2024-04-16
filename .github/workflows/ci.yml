@@ -36,7 +36,7 @@ jobs:
           echo "TRANSITER_VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Launch Postgres
-        run: docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgres:12
+        run: docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgis/postgis:14-3.4
 
       - name: Build the Docker image
         uses: docker/build-push-action@v4

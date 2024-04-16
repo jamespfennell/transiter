@@ -3,7 +3,7 @@ version: '3.5'
 services:
 
   postgres:
-    image: postgres:14
+    image: postgis/postgis:14-3.4
     environment:
       - POSTGRES_USER=transiter
       - POSTGRES_PASSWORD=transiter

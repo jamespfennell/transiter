@@ -109,6 +109,7 @@ def test_install_system__stops(system_id, install_system_1, transiter_host):
     stops_response_geo = requests.get(
         transiter_host + "/systems/" + system_id + "/stops", params=query_params
     ).json()
+    print(stops_response_geo)
     stops_geo = stops_response_geo["stops"]
 
     # Only 'StopID' is within 1km of the relative location

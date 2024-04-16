@@ -19,7 +19,7 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	m, err := migrate.NewMigratorEx(context.Background(), conn.Conn(), "public.schema_version", &migrate.MigratorOptions{})
+	m, err := migrate.NewMigratorEx(ctx, conn.Conn(), "public.schema_version", &migrate.MigratorOptions{})
 	if err != nil {
 		return err
 	}

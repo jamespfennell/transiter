@@ -1,11 +1,12 @@
 -- name: InsertStop :one
 INSERT INTO stop
-    (id, system_pk, feed_pk, name, longitude, latitude,
+    (id, system_pk, feed_pk, name, location,
      url, code, description, platform_code, timezone, type,
      wheelchair_boarding, zone_id)
 VALUES
-    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(feed_pk), sqlc.arg(name), sqlc.arg(longitude),
-     sqlc.arg(latitude), sqlc.arg(url), sqlc.arg(code), sqlc.arg(description), sqlc.arg(platform_code),
+    (sqlc.arg(id), sqlc.arg(system_pk), sqlc.arg(feed_pk), sqlc.arg(name),
+     sqlc.arg(location)::geography,
+     sqlc.arg(url), sqlc.arg(code), sqlc.arg(description), sqlc.arg(platform_code),
      sqlc.arg(timezone), sqlc.arg(type), sqlc.arg(wheelchair_boarding), sqlc.arg(zone_id))
 RETURNING pk;
 
@@ -13,8 +14,7 @@ RETURNING pk;
 UPDATE stop SET
     feed_pk = sqlc.arg(feed_pk),
     name = sqlc.arg(name),
-    longitude = sqlc.arg(longitude),
-    latitude = sqlc.arg(latitude),
+    location = sqlc.arg(location)::geography,
     url = sqlc.arg(url),
     code = sqlc.arg(code),
     description = sqlc.arg(description),
@@ -52,16 +52,17 @@ LIMIT sqlc.arg(num_stops);
 
 -- name: ListStops_Geographic :many
 WITH distance AS (
-  SELECT
-  pk stop_pk,
-  (6371 * acos(cos(radians(latitude)) * cos(radians(sqlc.arg(latitude)::numeric)) * cos(radians(sqlc.arg(longitude)::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians(sqlc.arg(latitude)::numeric)))) val
-  FROM stop
-  WHERE stop.system_pk = sqlc.arg(system_pk)
+    SELECT
+        stop.pk stop_pk,
+        stop.location <-> sqlc.arg(base)::geography distance
+    FROM stop
+    WHERE stop.location IS NOT NULL
 )
 SELECT stop.* FROM stop
 INNER JOIN distance ON stop.pk = distance.stop_pk
-AND distance.val <= sqlc.arg(max_distance)::numeric
-ORDER BY distance.val
+WHERE stop.system_pk = sqlc.arg(system_pk) 
+    AND distance.distance <= 1000 * sqlc.arg(max_distance)::float
+ORDER by distance.distance
 LIMIT sqlc.arg(max_results);
 
 -- name: GetStop :one
@@ -73,8 +74,7 @@ SELECT stop.* FROM stop
 -- name: ListTripStopTimesByStops :many
 SELECT trip_stop_time.*,
        trip.*, vehicle.id vehicle_id,
-       vehicle.latitude vehicle_latitude,
-       vehicle.longitude vehicle_longitude,
+       vehicle.location::geography vehicle_location,
        vehicle.bearing vehicle_bearing,
        vehicle.updated_at vehicle_updated_at
     FROM trip_stop_time

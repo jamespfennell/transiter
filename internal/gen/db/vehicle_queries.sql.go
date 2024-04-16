@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jamespfennell/transiter/db/types"
 )
 
 const deleteVehicles = `-- name: DeleteVehicles :exec
@@ -37,7 +38,7 @@ func (q *Queries) DeleteVehicles(ctx context.Context, arg DeleteVehiclesParams) 
 }
 
 const getVehicle = `-- name: GetVehicle :one
-SELECT vehicle.pk, vehicle.id, vehicle.system_pk, vehicle.trip_pk, vehicle.label, vehicle.license_plate, vehicle.current_status, vehicle.latitude, vehicle.longitude, vehicle.bearing, vehicle.odometer, vehicle.speed, vehicle.congestion_level, vehicle.updated_at, vehicle.current_stop_pk, vehicle.current_stop_sequence, vehicle.occupancy_status, vehicle.feed_pk, vehicle.occupancy_percentage,
+SELECT vehicle.pk, vehicle.id, vehicle.system_pk, vehicle.trip_pk, vehicle.label, vehicle.license_plate, vehicle.current_status, vehicle.bearing, vehicle.odometer, vehicle.speed, vehicle.congestion_level, vehicle.updated_at, vehicle.current_stop_pk, vehicle.current_stop_sequence, vehicle.occupancy_status, vehicle.feed_pk, vehicle.occupancy_percentage, vehicle.location,
        stop.id as stop_id,
        stop.name as stop_name,
        trip.id as trip_id,
@@ -64,8 +65,6 @@ type GetVehicleRow struct {
 	Label               pgtype.Text
 	LicensePlate        pgtype.Text
 	CurrentStatus       pgtype.Text
-	Latitude            pgtype.Numeric
-	Longitude           pgtype.Numeric
 	Bearing             pgtype.Float4
 	Odometer            pgtype.Float8
 	Speed               pgtype.Float4
@@ -76,6 +75,7 @@ type GetVehicleRow struct {
 	OccupancyStatus     pgtype.Text
 	FeedPk              int64
 	OccupancyPercentage pgtype.Int4
+	Location            types.Geography
 	StopID              pgtype.Text
 	StopName            pgtype.Text
 	TripID              pgtype.Text
@@ -95,8 +95,6 @@ func (q *Queries) GetVehicle(ctx context.Context, arg GetVehicleParams) (GetVehi
 		&i.Label,
 		&i.LicensePlate,
 		&i.CurrentStatus,
-		&i.Latitude,
-		&i.Longitude,
 		&i.Bearing,
 		&i.Odometer,
 		&i.Speed,
@@ -107,6 +105,7 @@ func (q *Queries) GetVehicle(ctx context.Context, arg GetVehicleParams) (GetVehi
 		&i.OccupancyStatus,
 		&i.FeedPk,
 		&i.OccupancyPercentage,
+		&i.Location,
 		&i.StopID,
 		&i.StopName,
 		&i.TripID,
@@ -117,6 +116,13 @@ func (q *Queries) GetVehicle(ctx context.Context, arg GetVehicleParams) (GetVehi
 	return i, err
 }
 
+const insertVehicle = `-- name: InsertVehicle :exec
+INSERT INTO vehicle
+    (id, system_pk, trip_pk, label, license_plate, current_status, location, bearing, odometer, speed, congestion_level, updated_at, current_stop_pk, current_stop_sequence, occupancy_status, feed_pk, occupancy_percentage)
+VALUES
+    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+`
+
 type InsertVehicleParams struct {
 	ID                  pgtype.Text
 	SystemPk            int64
@@ -124,8 +130,7 @@ type InsertVehicleParams struct {
 	Label               pgtype.Text
 	LicensePlate        pgtype.Text
 	CurrentStatus       pgtype.Text
-	Latitude            pgtype.Numeric
-	Longitude           pgtype.Numeric
+	Location            types.Geography
 	Bearing             pgtype.Float4
 	Odometer            pgtype.Float8
 	Speed               pgtype.Float4
@@ -138,8 +143,31 @@ type InsertVehicleParams struct {
 	OccupancyPercentage pgtype.Int4
 }
 
+func (q *Queries) InsertVehicle(ctx context.Context, arg InsertVehicleParams) error {
+	_, err := q.db.Exec(ctx, insertVehicle,
+		arg.ID,
+		arg.SystemPk,
+		arg.TripPk,
+		arg.Label,
+		arg.LicensePlate,
+		arg.CurrentStatus,
+		arg.Location,
+		arg.Bearing,
+		arg.Odometer,
+		arg.Speed,
+		arg.CongestionLevel,
+		arg.UpdatedAt,
+		arg.CurrentStopPk,
+		arg.CurrentStopSequence,
+		arg.OccupancyStatus,
+		arg.FeedPk,
+		arg.OccupancyPercentage,
+	)
+	return err
+}
+
 const listVehicles = `-- name: ListVehicles :many
-SELECT vehicle.pk, vehicle.id, vehicle.system_pk, vehicle.trip_pk, vehicle.label, vehicle.license_plate, vehicle.current_status, vehicle.latitude, vehicle.longitude, vehicle.bearing, vehicle.odometer, vehicle.speed, vehicle.congestion_level, vehicle.updated_at, vehicle.current_stop_pk, vehicle.current_stop_sequence, vehicle.occupancy_status, vehicle.feed_pk, vehicle.occupancy_percentage,
+SELECT vehicle.pk, vehicle.id, vehicle.system_pk, vehicle.trip_pk, vehicle.label, vehicle.license_plate, vehicle.current_status, vehicle.bearing, vehicle.odometer, vehicle.speed, vehicle.congestion_level, vehicle.updated_at, vehicle.current_stop_pk, vehicle.current_stop_sequence, vehicle.occupancy_status, vehicle.feed_pk, vehicle.occupancy_percentage, vehicle.location,
        stop.id as stop_id,
        stop.name as stop_name,
        trip.id as trip_id,
@@ -176,8 +204,6 @@ type ListVehiclesRow struct {
 	Label               pgtype.Text
 	LicensePlate        pgtype.Text
 	CurrentStatus       pgtype.Text
-	Latitude            pgtype.Numeric
-	Longitude           pgtype.Numeric
 	Bearing             pgtype.Float4
 	Odometer            pgtype.Float8
 	Speed               pgtype.Float4
@@ -188,6 +214,7 @@ type ListVehiclesRow struct {
 	OccupancyStatus     pgtype.Text
 	FeedPk              int64
 	OccupancyPercentage pgtype.Int4
+	Location            types.Geography
 	StopID              pgtype.Text
 	StopName            pgtype.Text
 	TripID              pgtype.Text
@@ -219,8 +246,6 @@ func (q *Queries) ListVehicles(ctx context.Context, arg ListVehiclesParams) ([]L
 			&i.Label,
 			&i.LicensePlate,
 			&i.CurrentStatus,
-			&i.Latitude,
-			&i.Longitude,
 			&i.Bearing,
 			&i.Odometer,
 			&i.Speed,
@@ -231,6 +256,7 @@ func (q *Queries) ListVehicles(ctx context.Context, arg ListVehiclesParams) ([]L
 			&i.OccupancyStatus,
 			&i.FeedPk,
 			&i.OccupancyPercentage,
+			&i.Location,
 			&i.StopID,
 			&i.StopName,
 			&i.TripID,
@@ -250,13 +276,14 @@ func (q *Queries) ListVehicles(ctx context.Context, arg ListVehiclesParams) ([]L
 
 const listVehicles_Geographic = `-- name: ListVehicles_Geographic :many
 WITH distance AS (
-  SELECT
-  pk vehicle_pk,
-  (6371 * acos(cos(radians(latitude)) * cos(radians($3::numeric)) * cos(radians($4::numeric) - radians(longitude)) + sin(radians(latitude)) * sin(radians($3::numeric)))) val
-  FROM vehicle
-  WHERE vehicle.system_pk = $5 AND latitude IS NOT NULL AND longitude IS NOT NULL
+    SELECT
+        vehicle.pk vehicle_pk,
+        vehicle.location <-> $3::geography distance
+    FROM vehicle
+    WHERE vehicle.location IS NOT NULL
+    AND vehicle.system_pk = $4
 )
-SELECT vehicle.pk, vehicle.id, vehicle.system_pk, vehicle.trip_pk, vehicle.label, vehicle.license_plate, vehicle.current_status, vehicle.latitude, vehicle.longitude, vehicle.bearing, vehicle.odometer, vehicle.speed, vehicle.congestion_level, vehicle.updated_at, vehicle.current_stop_pk, vehicle.current_stop_sequence, vehicle.occupancy_status, vehicle.feed_pk, vehicle.occupancy_percentage,
+SELECT vehicle.pk, vehicle.id, vehicle.system_pk, vehicle.trip_pk, vehicle.label, vehicle.license_plate, vehicle.current_status, vehicle.bearing, vehicle.odometer, vehicle.speed, vehicle.congestion_level, vehicle.updated_at, vehicle.current_stop_pk, vehicle.current_stop_sequence, vehicle.occupancy_status, vehicle.feed_pk, vehicle.occupancy_percentage, vehicle.location,
        stop.id as stop_id,
        stop.name as stop_name,
        trip.id as trip_id,
@@ -265,19 +292,18 @@ SELECT vehicle.pk, vehicle.id, vehicle.system_pk, vehicle.trip_pk, vehicle.label
        route.color as route_color
 FROM vehicle
 INNER JOIN distance ON vehicle.pk = distance.vehicle_pk
-AND distance.val <= $1::numeric
+AND distance.distance <= 1000 * $1::float
 LEFT JOIN stop ON vehicle.current_stop_pk = stop.pk
 LEFT JOIN trip ON vehicle.trip_pk = trip.pk
 LEFT JOIN route ON trip.route_pk = route.pk
-ORDER BY distance.val
+ORDER BY distance.distance
 LIMIT $2
 `
 
 type ListVehicles_GeographicParams struct {
-	MaxDistance pgtype.Numeric
+	MaxDistance float64
 	NumVehicles int32
-	Latitude    pgtype.Numeric
-	Longitude   pgtype.Numeric
+	Base        types.Geography
 	SystemPk    int64
 }
 
@@ -289,8 +315,6 @@ type ListVehicles_GeographicRow struct {
 	Label               pgtype.Text
 	LicensePlate        pgtype.Text
 	CurrentStatus       pgtype.Text
-	Latitude            pgtype.Numeric
-	Longitude           pgtype.Numeric
 	Bearing             pgtype.Float4
 	Odometer            pgtype.Float8
 	Speed               pgtype.Float4
@@ -301,6 +325,7 @@ type ListVehicles_GeographicRow struct {
 	OccupancyStatus     pgtype.Text
 	FeedPk              int64
 	OccupancyPercentage pgtype.Int4
+	Location            types.Geography
 	StopID              pgtype.Text
 	StopName            pgtype.Text
 	TripID              pgtype.Text
@@ -313,8 +338,7 @@ func (q *Queries) ListVehicles_Geographic(ctx context.Context, arg ListVehicles_
 	rows, err := q.db.Query(ctx, listVehicles_Geographic,
 		arg.MaxDistance,
 		arg.NumVehicles,
-		arg.Latitude,
-		arg.Longitude,
+		arg.Base,
 		arg.SystemPk,
 	)
 	if err != nil {
@@ -332,8 +356,6 @@ func (q *Queries) ListVehicles_Geographic(ctx context.Context, arg ListVehicles_
 			&i.Label,
 			&i.LicensePlate,
 			&i.CurrentStatus,
-			&i.Latitude,
-			&i.Longitude,
 			&i.Bearing,
 			&i.Odometer,
 			&i.Speed,
@@ -344,6 +366,7 @@ func (q *Queries) ListVehicles_Geographic(ctx context.Context, arg ListVehicles_
 			&i.OccupancyStatus,
 			&i.FeedPk,
 			&i.OccupancyPercentage,
+			&i.Location,
 			&i.StopID,
 			&i.StopName,
 			&i.TripID,

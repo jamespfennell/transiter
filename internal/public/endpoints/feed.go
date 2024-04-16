@@ -17,7 +17,7 @@ func ListFeeds(ctx context.Context, r *Context, req *api.ListFeedsRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	apiFeeds, err := buildApiFeeds(ctx, r, &system, feeds)
+	apiFeeds, err := buildApiFeeds(r, &system, feeds)
 	if err != nil {
 		return nil, err
 	}
@@ -31,14 +31,14 @@ func GetFeed(ctx context.Context, r *Context, req *api.GetFeedRequest) (*api.Fee
 	if err != nil {
 		return nil, err
 	}
-	apiFeeds, err := buildApiFeeds(ctx, r, &system, []db.Feed{feed})
+	apiFeeds, err := buildApiFeeds(r, &system, []db.Feed{feed})
 	if err != nil {
 		return nil, err
 	}
 	return apiFeeds[0], nil
 }
 
-func buildApiFeeds(ctx context.Context, r *Context, system *db.System, feeds []db.Feed) ([]*api.Feed, error) {
+func buildApiFeeds(r *Context, system *db.System, feeds []db.Feed) ([]*api.Feed, error) {
 	var apiFeeds []*api.Feed
 	for i := range feeds {
 		feed := &feeds[i]

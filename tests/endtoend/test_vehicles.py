@@ -7,8 +7,8 @@ VEHICLE_ID_1 = "vehicle_id_1"
 VEHICLE_ID_2 = "vehicle_id_2"
 VEHICLE_ID_3 = "vehicle_id_3"
 VEHICLE_IDS = {VEHICLE_ID_1, VEHICLE_ID_2, VEHICLE_ID_3}
-VEHICLE_1_LAT = 40.7527
-VEHICLE_1_LON = -73.9772
+VEHICLE_1_LAT = 40.75
+VEHICLE_1_LON = -73.875
 TRIP_ID_1 = "trip_id_1"
 TRIP_ID_2 = "trip_id_2"
 TRIP_ID_3 = "trip_id_3"
@@ -40,7 +40,7 @@ FIRST_STOP_ID = "1AS"
             },
             VEHICLE_ID_3: {
                 "trip_id": TRIP_ID_3,
-                "lat": 150,
+                "lat": 30,
                 "lon": -150,
             },
         },
@@ -121,11 +121,11 @@ class TestVehicles:
             }, resp_vehicle)
 
         # Geolocation
-        relative_lat_lon = (40.7559, -73.9871)
+        relative_lat_lon = (40.755, -73.8755)
         vehicle_1_lat_lon = (VEHICLE_1_LAT, VEHICLE_1_LON)
 
         dist_km = haversine(relative_lat_lon, vehicle_1_lat_lon)
-        assert dist_km > 0.9 and dist_km < 1.0
+        assert dist_km > 0.5 and dist_km < 1.0
 
         query_params = {
             "search_mode": "DISTANCE",

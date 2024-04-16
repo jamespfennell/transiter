@@ -22,8 +22,7 @@ WITH shapes_for_scheduled_trips_in_system AS (
 )
 SELECT trip.*,
        vehicle.id as vehicle_id,
-       vehicle.latitude as vehicle_latitude,
-       vehicle.longitude as vehicle_longitude,
+       vehicle.location::geography as vehicle_location,
        vehicle.bearing as vehicle_bearing,
        vehicle.updated_at as vehicle_updated_at,
        shapes_for_scheduled_trips_in_system.shape_id as shape_id
@@ -50,8 +49,7 @@ WITH shapes_for_scheduled_trips_in_system AS (
 )
 SELECT trip.*,
        vehicle.id as vehicle_id,
-       vehicle.latitude as vehicle_latitude,
-       vehicle.longitude as vehicle_longitude,
+       vehicle.location::geography as vehicle_location,
        vehicle.bearing as vehicle_bearing,
        vehicle.updated_at as vehicle_updated_at,
        shapes_for_scheduled_trips_in_system.shape_id as shape_id

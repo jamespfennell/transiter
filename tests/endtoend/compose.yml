@@ -3,7 +3,7 @@ version: '3.5'
 services:
 
   db:
-    image: postgres:14
+    image: postgis/postgis:14-3.4
     expose:
       - "5432"
     environment:

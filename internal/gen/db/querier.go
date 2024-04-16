@@ -71,7 +71,7 @@ type Querier interface {
 	InsertTransfer(ctx context.Context, arg InsertTransferParams) error
 	InsertTrip(ctx context.Context, arg InsertTripParams) (int64, error)
 	InsertTripStopTime(ctx context.Context, arg []InsertTripStopTimeParams) (int64, error)
-	InsertVehicle(ctx context.Context, arg []InsertVehicleParams) (int64, error)
+	InsertVehicle(ctx context.Context, arg InsertVehicleParams) error
 	ListActiveAlertsForAgencies(ctx context.Context, arg ListActiveAlertsForAgenciesParams) ([]ListActiveAlertsForAgenciesRow, error)
 	// ListActiveAlertsForRoutes returns preview information about active alerts for the provided routes.
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)

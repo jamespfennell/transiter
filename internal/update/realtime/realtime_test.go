@@ -1068,7 +1068,7 @@ func TestUpdate(t *testing.T) {
 				}
 				err := Update(ctx, updateCtx, update.data)
 				if err != nil {
-					t.Fatalf("Update(trip update version %d) got = %v, want = <nil>", err, i)
+					t.Fatalf("Update(trip update version %d) got = %+v, want = <nil>", i, err)
 				}
 			}
 
@@ -1202,8 +1202,7 @@ func readVehiclesFromDB(
 				ID:                  dbVehicle.ID,
 				Label:               dbVehicle.Label,
 				LicensePlate:        dbVehicle.LicensePlate,
-				Latitude:            dbVehicle.Latitude,
-				Longitude:           dbVehicle.Longitude,
+				Location:            dbVehicle.Location,
 				Bearing:             dbVehicle.Bearing,
 				Odometer:            dbVehicle.Odometer,
 				Speed:               dbVehicle.Speed,
@@ -1293,8 +1292,7 @@ func wantVehicle(
 			Label:               convert.NullString(label),
 			LicensePlate:        convert.NullString(licensePlate),
 			CurrentStatus:       convert.NullVehicleCurrentStatus(currentStatus),
-			Latitude:            convert.Gps(latitude),
-			Longitude:           convert.Gps(longitude),
+			Location:            convert.Gps(longitude, latitude),
 			Bearing:             convert.NullFloat32(bearing),
 			Odometer:            convert.NullFloat64(odometer),
 			Speed:               convert.NullFloat32(speed),
