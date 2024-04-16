@@ -140,18 +140,9 @@ func Run(ctx context.Context, args RunArgs) error {
 		go func() {
 			defer cancelFunc()
 			defer wg.Done()
-			mux := newServeMux(logger)
-			_ = api.RegisterPublicHandlerServer(ctx, mux, publicService)
-			h := http.NewServeMux()
-			h.Handle("/", mux)
-			if args.EnablePublicMetrics {
-				h.Handle("/metrics", monitoring.Handler())
-			}
-			server := &http.Server{Addr: args.PublicHTTPAddr, Handler: h}
-			shutdownFuncs = append(shutdownFuncs, server.Shutdown)
 			logger.InfoCtx(ctx, fmt.Sprintf("public HTTP API listening on %s", args.PublicHTTPAddr))
 			_ = server.ListenAndServe()
-			logger.InfoCtx(ctx, "public HTTP API stopped")
+			logger.InfoCtx(ctx, "public HTTP API shutdown complete")
 		}()
 	}
 
@@ -195,20 +186,9 @@ func Run(ctx context.Context, args RunArgs) error {
 		go func() {
 			defer cancelFunc()
 			defer wg.Done()
-			mux := newServeMux(logger)
-			_ = api.RegisterPublicHandlerServer(ctx, mux, publicService)
-			_ = api.RegisterAdminHandlerServer(ctx, mux, adminService)
-			h := http.NewServeMux()
-			h.Handle("/", mux)
-			h.Handle("/metrics", monitoring.Handler())
-			if args.EnablePprof {
-				registerPprofHandlers(h)
-			}
-			server := &http.Server{Addr: args.AdminHTTPAddr, Handler: h}
-			shutdownFuncs = append(shutdownFuncs, server.Shutdown)
 			logger.InfoCtx(ctx, fmt.Sprintf("admin HTTP API listening on %s", args.AdminHTTPAddr))
 			_ = server.ListenAndServe()
-			logger.InfoCtx(ctx, "admin HTTP API stopped")
+			logger.InfoCtx(ctx, "admin HTTP API shutdown complete")
 		}()
 	}
 
@@ -236,11 +216,6 @@ func Run(ctx context.Context, args RunArgs) error {
 
 	<-ctx.Done()
 	logger.InfoCtx(ctx, "received cancellation signal; starting server shutdown")
-	for i, f := range shutdownFuncs {
-		if err := f(context.Background()); err != nil {
-			logger.ErrorCtx(ctx, fmt.Sprintf("failed to run shutdown function %d: %s", i+1, err))
-		}
-	}
 	wg.Wait()
 	logger.InfoCtx(ctx, "server shutdown complete")
 	return ctx.Err()
