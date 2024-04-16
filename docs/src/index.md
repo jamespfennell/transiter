@@ -6,16 +6,19 @@ the [Transiter Tour](tour.md) is the best place to start.
 
 ## Contents
 
+- [The Transiter Tour](tour.md).
+
+- [Configuring transit systems](systems.md).
+    Learn how to integrate a transit system you're interested in with Transiter.
+
+- [Deployment](deployment.md). Deploying Transiter in production.
+
+- [Monitoring](monitoring.md). Monitoring Transiter in production.
+
 - API reference:
     - [Public API resources](api/public_resources.md).
     - [Public API endpoints](api/public_endpoints.md).
     - [Admin API](api/admin.md).
-
-- [Configuring transit systems](systems.md).
-    Learn how to integrate a transit system you're interested in with Transiter.
-    
-- [Deployment](deployment/running-transiter.md).
-    Running Transiter locally and in production.
 
 ## External links
 

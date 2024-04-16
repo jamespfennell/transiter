@@ -1,61 +1,61 @@
 /**
-Public API
-
-The Transiter public API is based around hierarchal resources, like many REST APIs.
-This is the resource hierarchy:
-
-```
-System
- |- Agency
- |- Alert
- |- Feed
- |- Route
- |   |- Trip
- |       |- Vehicle with no ID
- |- Stop
- |- Transfer
- |- Vehicle with ID
-```
-
-For each resource there is a proto message type, a list endpoint, and a get endpoints.
-For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
-
-The URLs in the HTTP API are determined by the hierarchy; thus:
-
-- List all systems has URL `/systems`,
-- Get system with ID `<system_id>` has URL `/systems/<system_id>`,
-- List all routes in the system has URL `/systems/<system_id>/routes`,
-- Get route has URL `/systems/<system_id>/routes/<route_id>`,
-
-and so on.
-
-Many resources refer to other resources across the hierarchy.
-For example, each route has an agency it is attached to.
-Each stop has a list of service maps, each of which contains a set of routes.
-In these situations the resource message contains a _reference_ to the other resource.
-The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
-  message.
-These reference messages contain at least enough information to uniquely identify the resource.
-However they also contain additional information that is considered generally useful;
-  thus, the [Stop.Reference](#stopreference) message contains the stop's name.
-What counts as "considered generally" is obviously very subjective and open to change.
-
-The following table summarizes all of the resources and their types.
-The right-most column describes the source_of the resource.
-The public API is a read-only API so all of the resources come from somewhere else.
-
-| Resource    | Reference type | List endpoint | Get endpoint | Source |
-| ----------- | --------------- | ---------- | ------------------ | -------|
-| [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
-| Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
-| Feed        | System          |            |                    | system config
-| Route       | System          |            |                    | GTFS static
-| Trip        | Route           |            |                    | GTFS realtime
-| Stop        | System          |            |                    | GTFS static
-| System      | None            |            |                    | system config
-| Transfer    | System          |            |                    | GTFS static
-| Vehicle     | System or trip  |            |                    | GTFS realtime
-
+   Public API
+   
+   The Transiter public API is based around hierarchal resources, like many REST APIs.
+   This is the resource hierarchy:
+   
+   ```
+   System
+   |- Agency
+   |- Alert
+   |- Feed
+   |- Route
+   |   |- Trip
+   |       |- Vehicle with no ID
+   |- Stop
+   |- Transfer
+   |- Vehicle with ID
+   ```
+   
+   For each resource there is a proto message type, a list endpoint, and a get endpoints.
+   For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
+   
+   The URLs in the HTTP API are determined by the hierarchy; thus:
+   
+   - List all systems has URL `/systems`,
+   - Get system with ID `<system_id>` has URL `/systems/<system_id>`,
+   - List all routes in the system has URL `/systems/<system_id>/routes`,
+   - Get route has URL `/systems/<system_id>/routes/<route_id>`,
+   
+   and so on.
+   
+   Many resources refer to other resources across the hierarchy.
+   For example, each route has an agency it is attached to.
+   Each stop has a list of service maps, each of which contains a set of routes.
+   In these situations the resource message contains a _reference_ to the other resource.
+   The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
+   message.
+   These reference messages contain at least enough information to uniquely identify the resource.
+   However they also contain additional information that is considered generally useful;
+   thus, the [Stop.Reference](#stopreference) message contains the stop's name.
+   What counts as "considered generally" is obviously very subjective and open to change.
+   
+   The following table summarizes all of the resources and their types.
+   The right-most column describes the source_of the resource.
+   The public API is a read-only API so all of the resources come from somewhere else.
+   
+   | Resource    | Reference type | List endpoint | Get endpoint | Source |
+   | ----------- | --------------- | ---------- | ------------------ | -------|
+   | [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
+   | Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
+   | Feed        | System          |            |                    | system config
+   | Route       | System          |            |                    | GTFS static
+   | Trip        | Route           |            |                    | GTFS realtime
+   | Stop        | System          |            |                    | GTFS static
+   | System      | None            |            |                    | system config
+   | Transfer    | System          |            |                    | GTFS static
+   | Vehicle     | System or trip  |            |                    | GTFS realtime
+   
 */
 syntax = "proto3";
 
@@ -70,9 +70,7 @@ service Public {
   //
   // Provides basic information about this Transiter instance and the Transit systems it contains.
   rpc Entrypoint(EntrypointRequest) returns (EntrypointReply) {
-    option (google.api.http) = {
-      get: "/"
-    };
+    option (google.api.http) = {get: "/"};
   }
 
   // List systems
@@ -81,9 +79,7 @@ service Public {
   //
   // List all transit systems that are installed in this Transiter instance.
   rpc ListSystems(ListSystemsRequest) returns (ListSystemsReply) {
-    option (google.api.http) = {
-      get: "/systems"
-    };
+    option (google.api.http) = {get: "/systems"};
   }
 
   // Get system
@@ -92,9 +88,7 @@ service Public {
   //
   // Get a system by its ID.
   rpc GetSystem(GetSystemRequest) returns (System) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}"};
   }
 
   // List agencies
@@ -103,9 +97,7 @@ service Public {
   //
   // List all agencies in a system.
   rpc ListAgencies(ListAgenciesRequest) returns (ListAgenciesReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/agencies"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/agencies"};
   }
 
   // Get agency
@@ -114,9 +106,7 @@ service Public {
   //
   // Get an agency in a system by its ID.
   rpc GetAgency(GetAgencyRequest) returns (Agency) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/agencies/{agency_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/agencies/{agency_id}"};
   }
 
   // List stops
@@ -129,9 +119,7 @@ service Public {
   // If there are more results, the `next_id` field of the response will be populated.
   // To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
   rpc ListStops(ListStopsRequest) returns (ListStopsReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/stops"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/stops"};
   }
 
   // Get stop
@@ -140,9 +128,7 @@ service Public {
   //
   // Get a stop in a system by its ID.
   rpc GetStop(GetStopRequest) returns (Stop) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/stops/{stop_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/stops/{stop_id}"};
   }
 
   // List routes
@@ -151,9 +137,7 @@ service Public {
   //
   // List all routes in a system.
   rpc ListRoutes(ListRoutesRequest) returns (ListRoutesReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/routes"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/routes"};
   }
 
   // Get route
@@ -162,9 +146,7 @@ service Public {
   //
   // Get a route in a system by its ID.
   rpc GetRoute(GetRouteRequest) returns (Route) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/routes/{route_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/routes/{route_id}"};
   }
 
   // List trips
@@ -173,9 +155,7 @@ service Public {
   //
   // List all trips in a route.
   rpc ListTrips(ListTripsRequest) returns (ListTripsReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/routes/{route_id}/trips"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/routes/{route_id}/trips"};
   }
 
   // Get trip
@@ -184,9 +164,7 @@ service Public {
   //
   // Get a trip by its ID.
   rpc GetTrip(GetTripRequest) returns (Trip) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/routes/{route_id}/trips/{trip_id}"};
   }
 
   // List alerts
@@ -197,9 +175,7 @@ service Public {
   // By default this endpoint returns both active alerts
   //   (alerts which have an active period containing the current time) and non-active alerts.
   rpc ListAlerts(ListAlertsRequest) returns (ListAlertsReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/alerts"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/alerts"};
   }
 
   // Get alert
@@ -208,9 +184,7 @@ service Public {
   //
   // Get an alert by its ID.
   rpc GetAlert(GetAlertRequest) returns (Alert) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/alerts/{alert_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/alerts/{alert_id}"};
   }
 
   // List transfers
@@ -219,9 +193,7 @@ service Public {
   //
   // List all transfers in a system.
   rpc ListTransfers(ListTransfersRequest) returns (ListTransfersReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/transfers"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/transfers"};
   }
 
   // List feeds
@@ -230,9 +202,7 @@ service Public {
   //
   // List all feeds for a system.
   rpc ListFeeds(ListFeedsRequest) returns (ListFeedsReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/feeds"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/feeds"};
   }
 
   // Get feed
@@ -241,9 +211,7 @@ service Public {
   //
   // Get a feed in a system by its ID.
   rpc GetFeed(GetFeedRequest) returns (Feed) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/feeds/{feed_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/feeds/{feed_id}"};
   }
 
   // List vehicles
@@ -252,9 +220,7 @@ service Public {
   //
   // List all feeds for a system.
   rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesReply) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/vehicles"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/vehicles"};
   }
 
   // Get vehicle
@@ -263,11 +229,26 @@ service Public {
   //
   // Get a vehicle in a system by its ID.
   rpc GetVehicle(GetVehicleRequest) returns (Vehicle) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/vehicles/{vehicle_id}"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/vehicles/{vehicle_id}"};
   }
 
+  // List shapes
+  //
+  // `GET /systems/<system_id>/shapes`
+  //
+  // List all shapes in a system.
+  rpc ListShapes(ListShapesRequest) returns (ListShapesReply) {
+    option (google.api.http) = {get: "/systems/{system_id}/shapes"};
+  }
+
+  // Get shape
+  //
+  // `GET /systems/<system_id>/shapes/<shape_id>`
+  //
+  // Get a shape in a system by its ID.
+  rpc GetShape(GetShapeRequest) returns (Shape) {
+    option (google.api.http) = {get: "/systems/{system_id}/shapes/{shape_id}"};
+  }
 }
 
 // Request payload for the entrypoint endpoint.
@@ -639,14 +620,48 @@ message ListVehiclesReply {
 }
 
 message GetVehicleRequest {
-    // ID of the system the vehicle is in.
-    //
-    // This is a URL parameter in the HTTP API.
-    string system_id = 1;
-    // ID of the vehicle.
-    //
-    // This is a URL parameter in the HTTP API.
-    string vehicle_id = 2;
+  // ID of the system the vehicle is in.
+  //
+  // This is a URL parameter in the HTTP API.
+  string system_id = 1;
+  // ID of the vehicle.
+  //
+  // This is a URL parameter in the HTTP API.
+  string vehicle_id = 2;
+}
+
+message ListShapesRequest {
+  // System to list shapes for.
+  string system_id = 1;
+
+  // If true, only return shapes whose IDs are specified in the repeated `id` field.
+  bool only_return_specified_ids = 2;
+
+  // IDs to return if `only_return_specified_ids` is set to true. It is an error to
+  // populate this field if `only_return_specified_ids` is false.
+  repeated string id = 3;
+
+  // ID of the first shape to return. If not set, the shape with the smallest ID will be first.
+  optional string first_id = 4;
+
+  // Maximum number of shapes to return.
+  optional int32 limit = 5;
+}
+
+message ListShapesReply {
+  // Shapes that were listed.
+  repeated Shape shapes = 1;
+
+  // ID of the next shape to list, if there are more results.
+  optional string next_id = 2;
+}
+
+message GetShapeRequest {
+  // System to get shape for.
+  string system_id = 1;
+
+  // ID of the shape to get.
+  string shape_id = 2;
 }
 
 // The System resource.
@@ -710,7 +725,7 @@ message ChildResources {
 // The Stop resource.
 //
 // This resource corresponds to the [stop type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#stopstxt).
+// specification](https://gtfs.org/schedule/reference/#stopstxt).
 // Most of the static fields in the resource come directly from the `stops.txt` table.
 // Transiter adds some additional related fields (transfers, alerts, stop times)
 //   and computed fields (service maps).
@@ -778,7 +793,7 @@ message Stop {
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+  // message](https://gtfs.org/realtime/reference/#message-alert).
   repeated Alert.Reference alerts = 18;
 
   // List of realtime stop times for this stop.
@@ -818,7 +833,7 @@ message Stop {
 //
 // A stop time is an event in which a trip calls at a stop.
 // This message corresponds to the [GTFS realtime `StopTimeUpdate`
-// message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeupdate)
+// message](https://gtfs.org/realtime/reference/#message-stoptimeupdate)
 message StopTime {
   // The stop.
   Stop.Reference stop = 1;
@@ -827,7 +842,7 @@ message StopTime {
 
   // Message describing the arrival or departure time of a stop time.
   // This corresponds to the [GTFS realtime `StopTimeEvent`
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-stoptimeevent).
+  // message](https://gtfs.org/realtime/reference/#message-stoptimeevent).
   message EstimatedTime {
     optional int64 time = 1;
     optional int32 delay = 2;
@@ -866,6 +881,8 @@ message Trip {
 
   repeated StopTime stop_times = 7;
 
+  optional Shape.Reference shape = 8;
+
   // Reference is the reference type for the trip resource.
   message Reference {
     string id = 1;
@@ -880,7 +897,7 @@ message Trip {
 // The Vehicle resource.
 //
 // This resource corresponds to the [vehicle position type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-vehicleposition).
+// specification](https://gtfs.org/realtime/reference/#message-vehicleposition).
 message Vehicle {
   // A unique ID for the vehicle.
   string id = 1;
@@ -909,8 +926,8 @@ message Vehicle {
   // A reference to the vehicle's current stop.
   optional Stop.Reference stop = 9;
 
-  // Corresponds to [VehicleStopStatus](https://developers.google.com/
-  // transit/gtfs-realtime/reference#enum-vehiclestopstatus).
+  // Corresponds to [VehicleStopStatus](https://gtfs.org/realtime/reference/
+  // #enum-vehiclestopstatus).
   enum CurrentStatus {
     INCOMING_AT = 0;
     STOPPED_AT = 1;
@@ -922,8 +939,8 @@ message Vehicle {
   // The timestamp of the last update to the vehicle's position.
   optional int64 updated_at = 11;
 
-  // Corresponds to [CongestionLevel](https://developers.google.com/
-  // transit/gtfs-realtime/reference#enum-congestionlevel).
+  // Corresponds to [CongestionLevel](https://gtfs.org/realtime/reference/
+  // #enum-congestionlevel).
   enum CongestionLevel {
     UNKNOWN_CONGESTION_LEVEL = 0;
     RUNNING_SMOOTHLY = 1;
@@ -934,8 +951,8 @@ message Vehicle {
   // The vehicle's current congestion level.
   CongestionLevel congestion_level = 12;
 
-  // Corresponds to [OccupancyStatus](https://developers.google.com/
-  // transit/gtfs-realtime/reference#enum-occupancystatus).
+  // Corresponds to [OccupancyStatus](https://gtfs.org/realtime/reference/
+  // #enum-occupancystatus).
   enum OccupancyStatus {
     EMPTY = 0;
     MANY_SEATS_AVAILABLE = 1;
@@ -961,7 +978,7 @@ message Vehicle {
 // The Route resource.
 //
 // This resource corresponds to the [route type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#routestxt).
+// specification](https://gtfs.org/schedule/reference/#routestxt).
 // Most of the fields in the resource come directly from the `routes.txt` table.
 // Transiter adds some additional related fields (agency, alerts)
 //   and computed fields (estimated headway, service maps).
@@ -1031,7 +1048,7 @@ message Route {
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+  // message](https://gtfs.org/realtime/feed-entities/service-alerts/#service-alerts).
   repeated Alert.Reference alerts = 15;
 
   // An estimate of the interval of time between consecutive realtime trips, in seconds.
@@ -1105,7 +1122,7 @@ message Feed {
 // The Agency resource.
 //
 // This resource corresponds to the [agency type in the GTFS static
-// specification](https://developers.google.com/transit/gtfs/reference#agencytxt).
+// specification](https://gtfs.org/schedule/reference/#agencytxt).
 // Most of the fields in the resource come directly from the `agency.txt` table.
 // Transiter adds some additional related fields (alerts).
 message Agency {
@@ -1138,7 +1155,7 @@ message Agency {
   //
   // These are determined using the `informed_entity` field in
   // the [GTFS realtime alerts
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+  // message](https://gtfs.org/realtime/reference/#message-alert).
   repeated Alert.Reference alerts = 12;
 
   // Reference is the reference type for the agency resource.
@@ -1153,12 +1170,12 @@ message Agency {
 // The Alert resource.
 //
 // This resource corresponds to the [alert type in the GTFS realtime
-// specification](https://developers.google.com/transit/gtfs-realtime/reference#message-alert).
+// specification](https://gtfs.org/realtime/reference/#message-alert).
 //
 // TODO; alphabetize the messages
 message Alert {
   // ID of the alert. This corresponds to the [ID field in the feed entity
-  // message](https://developers.google.com/transit/gtfs-realtime/reference#message-feedentity)
+  // message](https://gtfs.org/realtime/reference/#message-feedentity)
   // corresponding to the alert.
   string id = 1;
   // Generic metadata about the alert resource.
@@ -1168,7 +1185,7 @@ message Alert {
   System.Reference system = 3;
 
   // Cause is the same as the [cause enum in the GTFS realtime
-  // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-cause),
+  // specification](https://gtfs.org/realtime/feed-entities/service-alerts/#cause),
   // except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Cause {
     UNKNOWN_CAUSE = 0;
@@ -1188,7 +1205,7 @@ message Alert {
   Cause cause = 4;
 
   // Effect is the same as the [effect enum in the GTFS realtime
-  // specification](https://developers.google.com/transit/gtfs-realtime/reference#enum-effect),
+  // specification](https://gtfs.org/realtime/feed-entities/service-alerts/#effect),
   // except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
   enum Effect {
     UNKNOWN_EFFECT = 0;
@@ -1208,7 +1225,7 @@ message Alert {
 
   // The active period message describes a period when an alert is active.
   // It corresponds the the [time range message in the GTFS realtime
-  // specification](https://developers.google.com/transit/gtfs-realtime/reference#message-timerange).
+  // specification](https://gtfs.org/realtime/reference/#message-timerange).
   message ActivePeriod {
     // Unix timestamp of the start time of the active period.
     // If not set, the alert be interpreted
@@ -1227,7 +1244,7 @@ message Alert {
 
   // The text message describes an alert header/description/URL in a specified language.
   // It corresponds the the [translation message in the GTFS realtime
-  // specification](https://developers.google.com/transit/gtfs-realtime/reference#message-translation).
+  // specification](https://gtfs.org/realtime/reference/#message-translation).
   message Text {
     // Content of the text.
     string text = 1;
@@ -1272,4 +1289,26 @@ message Transfer {
 
   optional int32 min_transfer_time = 7;
   optional int32 distance = 8;
+}
+
+message Shape {
+  // Unique ID for the shape.
+  string id = 1;
+
+  // A point within the shape.
+  message ShapePoint {
+    // Latitude of the point.
+    double latitude = 1;
+    // Longitude of the point.
+    double longitude = 2;
+    // Distance from the start of the shape to this point.
+    optional double distance = 3;
+  }
+  // Ordered list of points that make up the shape.
+  repeated ShapePoint points = 2;
+
+  message Reference {
+    string id = 1;
+    Resource resource = 2;
+  }
 }

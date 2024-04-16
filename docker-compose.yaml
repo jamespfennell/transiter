@@ -10,8 +10,6 @@ services:
       - POSTGRES_DB=transiter
     ports:
       - "5432:5432"
-    expose:
-      - "5432"
 
   transiter-server:
     image: jamespfennell/transiter:latest

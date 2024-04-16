@@ -68,12 +68,20 @@ func Parse(content []byte) ([]StopHeadsignRule, error) {
 	northHeadsignCol := -1
 	southHeadsignCol := -1
 	for i, header := range records[0] {
+		// In October 2023 the MTA announced a change to the URL to the stations.csv file [1],
+		// but they also changed the format a little bit. In the old stations.csv file the header
+		// cells were in the form "North Direction Label", while in the new file the cells are
+		// in the form "north_direction_label". To handle both simultaneously we normalize to
+		// the new format.
+		//
+		// [1] https://groups.google.com/g/mtadeveloperresources/c/0J07edOWH-Q
+		header = strings.ReplaceAll(strings.ToLower(header), " ", "_")
 		switch header {
-		case "GTFS Stop ID":
+		case "gtfs_stop_id":
 			stopIDCol = i
-		case "North Direction Label":
+		case "north_direction_label":
 			northHeadsignCol = i
-		case "South Direction Label":
+		case "south_direction_label":
 			southHeadsignCol = i
 		}
 	}
@@ -118,14 +126,16 @@ func cleanHeadsign(s string) (string, bool) {
 	return strings.ReplaceAll(s, "&", "and"), true
 }
 
-func customRules() []StopHeadsignRule {
-	eastSideAndQueens := "East Side and Queens"
-	manhattan := "Manhattan"
-	rockaways := "Euclid - Lefferts - Rockaways" // To be consistent with the MTA
-	uptown := "Uptown"
-	uptownAndTheBronx := "Uptown and The Bronx"
-	queens := "Queens"
+const (
+	eastSideAndQueens = "East Side and Queens"
+	manhattan         = "Manhattan"
+	rockaways         = "Euclid - Lefferts - Rockaways" // To be consistent with the MTA
+	uptown            = "Uptown"
+	uptownAndTheBronx = "Uptown and The Bronx"
+	queens            = "Queens"
+)
 
+func customRules() []StopHeadsignRule {
 	var rules []StopHeadsignRule
 	for _, g := range []struct {
 		stopID          string

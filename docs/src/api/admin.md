@@ -133,6 +133,7 @@ Triggers a feed update for the specified feed.
 | ----- | ---- | ----------- |
 | system_id | string | 
 | feed_id | string | 
+| force | bool | If true, a full feed update will be performed even if the download data is identical to the last update for this feed.
 
 
 
@@ -400,12 +401,14 @@ Description of a feed update operation.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | update_id | string | ID of the feed update. This is a randomly generated UUID. It can be used to find server logs for the update operation.
+| feed_config | [FeedConfig](admin.md#FeedConfig) | The feed configuration that was used to perform the feed update.
 | started_at_ms | int64 | Unix timestamp of when the update started.
 | finished_at_ms | int64 | Unix timestamp of when the update finished. Only populated if the update is finished.
 | total_latency_ms | int64 | 
 | download_latency_ms | int64 | 
 | parse_latency_ms | int64 | 
-| update_latency_ms | int64 | 
+| database_latency_ms | int64 | 
+| download_http_status_code | int32 | 
 | status | [FeedUpdate.Status](admin.md#FeedUpdate.Status) | Status of the update.
 | content_length | int32 | Number of bytes in the downloaded feed data. Only populated if the update successfully downloaded data.
 | content_hash | string | Hash of the downloaded feed data. This is used to skip updates if the feed data hasn't changed. Only populated if the update successfully downloaded data.
@@ -456,7 +459,6 @@ Message describing additional options for the GTFS realtime feeds.
 | nyct_trips_options | [GtfsRealtimeOptions.NyctTripsOptions](admin.md#GtfsRealtimeOptions.NyctTripsOptions) | 
 | nyct_alerts_options | [GtfsRealtimeOptions.NyctAlertsOptions](admin.md#GtfsRealtimeOptions.NyctAlertsOptions) | 
 | reassign_stop_sequences | bool | If true, stop sequences in the GTFS realtime feed data are ignored, and alternative stop sequences are generated and assigned by Transiter. This setting is designed for buggy GTFS realtime feeds in which stop sequences (incorrectly) change between updates. In many cases Transiter is able to generate stop sequences that are correct and stable across updates.<br /><br />This should not be used for systems where a trip can call at the same stop multiple times.
-| only_process_full_entities | bool | If true, only process entities in a feed if the message contains the full entity. This is useful for cases where there are multiple feeds for the same system, and some feeds contain only partial information about entities.
 
 
 
@@ -475,7 +477,6 @@ Message describing additional options for the GTFS realtime feeds.
 | NO_EXTENSION | 0 |  |
 | NYCT_TRIPS | 1 |  |
 | NYCT_ALERTS | 2 |  |
-| NYCT_BUS_TRIPS | 3 |  |
 
 
 

@@ -12,7 +12,6 @@ import (
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/gtfs/extensions"
 	"github.com/jamespfennell/gtfs/extensions/nyctalerts"
-	"github.com/jamespfennell/gtfs/extensions/nyctbustrips"
 	"github.com/jamespfennell/gtfs/extensions/nycttrips"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"golang.org/x/exp/slog"
@@ -118,6 +117,13 @@ func NullString(t *string) pgtype.Text {
 	return pgtype.Text{Valid: true, String: *t}
 }
 
+func NullIfEmptyString(t string) pgtype.Text {
+	if t == "" {
+		return pgtype.Text{}
+	}
+	return pgtype.Text{Valid: true, String: t}
+}
+
 func NullBool(t *bool) pgtype.Bool {
 	if t == nil {
 		return pgtype.Bool{}
@@ -153,12 +159,12 @@ func SQLGps(n pgtype.Numeric) *float64 {
 
 func DirectionID(d gtfs.DirectionID) pgtype.Bool {
 	switch d {
-	case gtfs.DirectionIDFalse:
+	case gtfs.DirectionID_False:
 		return pgtype.Bool{
 			Valid: true,
 			Bool:  false,
 		}
-	case gtfs.DirectionIDTrue:
+	case gtfs.DirectionID_True:
 		return pgtype.Bool{
 			Valid: true,
 			Bool:  true,
@@ -184,9 +190,34 @@ func NullDuration(d *time.Duration) pgtype.Int4 {
 	if d == nil {
 		return pgtype.Int4{}
 	}
+	return Duration(*d)
+}
+
+func Duration(d time.Duration) pgtype.Int4 {
 	return pgtype.Int4{
 		Valid: true,
 		Int32: int32(d.Milliseconds() / 1000),
+	}
+}
+
+func Bool(b bool) pgtype.Bool {
+	return pgtype.Bool{
+		Valid: true,
+		Bool:  b,
+	}
+}
+
+func Date(t time.Time) pgtype.Date {
+	return pgtype.Date{
+		Valid: true,
+		Time:  t,
+	}
+}
+
+func Time(duration time.Duration) pgtype.Time {
+	return pgtype.Time{
+		Microseconds: int64(duration.Microseconds()),
+		Valid:        true,
 	}
 }
 
@@ -305,8 +336,6 @@ func GtfsRealtimeExtension(in *api.GtfsRealtimeOptions) (extensions.Extension, e
 			SkipTimetabledNoServiceAlerts:       inOpts.GetSkipTimetabledNoServiceAlerts(),
 			AddNyctMetadata:                     inOpts.GetAddNyctMetadata(),
 		}), nil
-	case api.GtfsRealtimeOptions_NYCT_BUS_TRIPS:
-		return nyctbustrips.Extension(), nil
 	default:
 		return nil, fmt.Errorf("unknown extension %s", in.Extension)
 	}
@@ -342,5 +371,72 @@ func NullOccupancyStatus(occupancyStatus *gtfs.OccupancyStatus) pgtype.Text {
 	return pgtype.Text{
 		Valid:  true,
 		String: occupancyStatus.String(),
+	}
+}
+
+func ExactTimesToIsFrequencyBased(exactTime gtfs.ExactTimes) bool {
+	return exactTime == gtfs.FrequencyBased
+}
+
+func ApiShape(shape *gtfs.Shape) *api.Shape {
+	if shape == nil {
+		return nil
+	}
+
+	apiShape := &api.Shape{
+		Id: shape.ID,
+	}
+	for _, point := range shape.Points {
+		apiShape.Points = append(apiShape.Points, &api.Shape_ShapePoint{
+			Latitude:  point.Latitude,
+			Longitude: point.Longitude,
+			Distance:  point.Distance,
+		})
+	}
+
+	return apiShape
+}
+
+func JSONShapeToApiShape(bytes []byte) (*api.Shape, error) {
+	var shape api.Shape
+	if err := json.Unmarshal(bytes, &shape); err != nil {
+		return nil, err
+	}
+	return &shape, nil
+}
+
+func WheelchairAccessible(wheelchairBoarding gtfs.WheelchairBoarding) pgtype.Bool {
+	switch wheelchairBoarding {
+	case gtfs.WheelchairBoarding_Possible:
+		return pgtype.Bool{
+			Valid: true,
+			Bool:  true,
+		}
+	case gtfs.WheelchairBoarding_NotPossible:
+		return pgtype.Bool{
+			Valid: true,
+			Bool:  false,
+		}
+	}
+	return pgtype.Bool{
+		Valid: false,
+	}
+}
+
+func BikesAllowed(bikesAllowed gtfs.BikesAllowed) pgtype.Bool {
+	switch bikesAllowed {
+	case gtfs.BikesAllowed_Allowed:
+		return pgtype.Bool{
+			Valid: true,
+			Bool:  true,
+		}
+	case gtfs.BikesAllowed_NotAllowed:
+		return pgtype.Bool{
+			Valid: true,
+			Bool:  false,
+		}
+	}
+	return pgtype.Bool{
+		Valid: false,
 	}
 }

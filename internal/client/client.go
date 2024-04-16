@@ -101,12 +101,25 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 	}
 }
 
-func (c *Client) UpdateFeed(ctx context.Context, systemID, feedID string) error {
-	_, err := c.adminClient.UpdateFeed(ctx, &api.UpdateFeedRequest{
+func (c *Client) UpdateFeed(ctx context.Context, systemID, feedID string, force bool) error {
+	resp, err := c.adminClient.UpdateFeed(ctx, &api.UpdateFeedRequest{
 		SystemId: systemID,
 		FeedId:   feedID,
+		Force:    force,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	switch resp.GetFeedUpdate().GetStatus() {
+	case api.FeedUpdate_SKIPPED:
+		fmt.Println("Feed update skipped because downloaded data was identical to the last update (use --force to disable this check)")
+		return nil
+	case api.FeedUpdate_UPDATED:
+		fmt.Printf("Feed updated in %s\n", time.Duration(resp.GetFeedUpdate().GetTotalLatencyMs())*time.Millisecond)
+		return nil
+	default:
+		return fmt.Errorf("feed update failed with reason %s: %s", resp.GetFeedUpdate().GetStatus(), resp.GetFeedUpdate().GetErrorMessage())
+	}
 }
 
 func (c *Client) ListSystems(ctx context.Context) error {
@@ -202,4 +215,9 @@ func (c *Client) SetLogLevel(ctx context.Context, logLevel string) error {
 		LogLevel: logLevel,
 	})
 	return err
+}
+
+func (c *Client) Version(ctx context.Context) (string, error) {
+	r, err := c.publicClient.Entrypoint(ctx, &api.EntrypointRequest{})
+	return r.GetTransiter().GetVersion(), err
 }

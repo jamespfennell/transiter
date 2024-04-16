@@ -5,16 +5,14 @@ import "google/api/annotations.proto";
 option go_package = "github.com/jamespfennell/transiter/api";
 
 /**
-Admin API
+   Admin API
 */
 service Admin {
   // Get the config for a system
   //
   // `GET /systems/<system_id>/config`
   rpc GetSystemConfig(GetSystemConfigRequest) returns (SystemConfig) {
-    option (google.api.http) = {
-      get: "/systems/{system_id}/config"
-    };
+    option (google.api.http) = {get: "/systems/{system_id}/config"};
   }
 
   // Install or update a system
@@ -42,9 +40,7 @@ service Admin {
   //
   // Deletes the specified system.
   rpc DeleteSystem(DeleteSystemRequest) returns (DeleteSystemReply) {
-    option (google.api.http) = {
-      delete: "/systems/{system_id}"
-    };
+    option (google.api.http) = {delete: "/systems/{system_id}"};
   }
 
   // Update a feed
@@ -53,9 +49,7 @@ service Admin {
   //
   // Triggers a feed update for the specified feed.
   rpc UpdateFeed(UpdateFeedRequest) returns (UpdateFeedReply) {
-    option (google.api.http) = {
-      post: "/systems/{system_id}/feeds/{feed_id}"
-    };
+    option (google.api.http) = {post: "/systems/{system_id}/feeds/{feed_id}"};
   }
 
   // Get scheduler status
@@ -64,9 +58,7 @@ service Admin {
   //
   // Gets the status of the scheduler.
   rpc GetSchedulerStatus(GetSchedulerStatusRequest) returns (GetSchedulerStatusReply) {
-    option (google.api.http) = {
-      get: "/scheduler"
-    };
+    option (google.api.http) = {get: "/scheduler"};
   }
 
   // Reset scheduler
@@ -80,27 +72,21 @@ service Admin {
   //  The main usecase is when the Postgres configuration is manually
   //   updated and the scheduler needs to see the update.
   rpc ResetScheduler(ResetSchedulerRequest) returns (ResetSchedulerReply) {
-    option (google.api.http) = {
-      post: "/scheduler"
-    };
+    option (google.api.http) = {post: "/scheduler"};
   }
 
   // Get the current log level.
   //
   // `GET /loglevel`
   rpc GetLogLevel(GetLogLevelRequest) returns (GetLogLevelReply) {
-    option (google.api.http) = {
-      get: "/loglevel"
-    };
+    option (google.api.http) = {get: "/loglevel"};
   }
 
   // Set the log level.
   //
   // `PUT /loglevel`
   rpc SetLogLevel(SetLogLevelRequest) returns (SetLogLevelReply) {
-    option (google.api.http) = {
-      put: "/loglevel"
-    };
+    option (google.api.http) = {put: "/loglevel"};
   }
 
   // TODO: GetFeedConfig
@@ -189,7 +175,7 @@ message FeedConfig {
   // Additional options GTFS realtime feeds.
   optional GtfsRealtimeOptions gtfs_realtime_options = 9;
 
-  // Required for install specifies whether an update should be performed for this feed during system install. 
+  // Required for install specifies whether an update should be performed for this feed during system install.
   // If true, an update is performed and if the update fails the installation fails.
   //
   // If unspecified, defaults to false for GTFS realtime feeds and true for all other
@@ -214,7 +200,7 @@ message FeedConfig {
   SchedulingPolicy scheduling_policy = 14;
 
   // Deprecated: use `scheduling_policy` instead.
-  SchedulingPolicy update_strategy = 3 [deprecated=true];
+  SchedulingPolicy update_strategy = 3 [deprecated = true];
 
   // For feeds with a `PERIODIC` scheduling policy, the update period.
   //
@@ -260,7 +246,6 @@ message GtfsRealtimeOptions {
     NO_EXTENSION = 0;
     NYCT_TRIPS = 1;
     NYCT_ALERTS = 2;
-    NYCT_BUS_TRIPS = 3;
   }
   Extension extension = 1;
 
@@ -293,12 +278,6 @@ message GtfsRealtimeOptions {
   // This should not be used for systems where a trip can call at the same
   // stop multiple times.
   bool reassign_stop_sequences = 4;
-
-  // If true, only process entities in a feed if the message contains
-  // the full entity. This is useful for cases where there are multiple
-  // feeds for the same system, and some feeds contain only partial
-  // information about entities.
-  bool only_process_full_entities = 5;
 }
 
 // Description of the configuration for a collection of service maps.
@@ -348,6 +327,10 @@ message ServiceMapConfig {
 message UpdateFeedRequest {
   string system_id = 1;
   string feed_id = 2;
+
+  // If true, a full feed update will be performed even if the download data is identical
+  // to the last update for this feed.
+  bool force = 3;
 }
 
 // Description of a feed update operation.
@@ -355,6 +338,9 @@ message FeedUpdate {
   // ID of the feed update. This is a randomly generated UUID.
   // It can be used to find server logs for the update operation.
   string update_id = 1;
+
+  // The feed configuration that was used to perform the feed update.
+  FeedConfig feed_config = 27;
 
   // Unix timestamp of when the update started.
   int64 started_at_ms = 4;
@@ -365,7 +351,8 @@ message FeedUpdate {
   optional int64 total_latency_ms = 20;
   optional int64 download_latency_ms = 21;
   optional int64 parse_latency_ms = 22;
-  optional int64 update_latency_ms = 23;
+  optional int64 database_latency_ms = 25;
+  optional int32 download_http_status_code = 26;
 
   enum Status {
     // Unknown status.

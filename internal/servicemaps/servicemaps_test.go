@@ -17,8 +17,6 @@ const (
 )
 
 func TestBuildStaticMaps(t *testing.T) {
-	directionIDTrue := true
-	directionIDFalse := false
 	service1 := &gtfs.Service{
 		Id: serviceID1,
 	}
@@ -47,7 +45,7 @@ func TestBuildStaticMaps(t *testing.T) {
 			trips: []gtfs.ScheduledTrip{
 				{
 					StopTimes:   stopTimes("1", "2", "3"),
-					DirectionId: &directionIDTrue,
+					DirectionId: gtfs.DirectionID_True,
 				},
 			},
 			want: []int64{1, 2, 3},
@@ -57,7 +55,7 @@ func TestBuildStaticMaps(t *testing.T) {
 			trips: []gtfs.ScheduledTrip{
 				{
 					StopTimes:   stopTimes("3", "2", "1"),
-					DirectionId: &directionIDFalse,
+					DirectionId: gtfs.DirectionID_False,
 				},
 			},
 			want: []int64{1, 2, 3},
@@ -67,11 +65,11 @@ func TestBuildStaticMaps(t *testing.T) {
 			trips: []gtfs.ScheduledTrip{
 				{
 					StopTimes:   stopTimes("1", "2", "3"),
-					DirectionId: &directionIDTrue,
+					DirectionId: gtfs.DirectionID_True,
 				},
 				{
 					StopTimes:   stopTimes("3", "2", "1"),
-					DirectionId: &directionIDFalse,
+					DirectionId: gtfs.DirectionID_False,
 				},
 			},
 			want: []int64{1, 2, 3},
@@ -81,15 +79,15 @@ func TestBuildStaticMaps(t *testing.T) {
 			trips: []gtfs.ScheduledTrip{
 				{
 					StopTimes:   stopTimes("1", "2", "3"),
-					DirectionId: &directionIDTrue,
+					DirectionId: gtfs.DirectionID_True,
 				},
 				{
 					StopTimes:   stopTimes("3", "2", "1"),
-					DirectionId: &directionIDFalse,
+					DirectionId: gtfs.DirectionID_False,
 				},
 				{
 					StopTimes:   stopTimes("1", "2", "3", "4"),
-					DirectionId: &directionIDTrue,
+					DirectionId: gtfs.DirectionID_True,
 				},
 			},
 			want: []int64{1, 2, 3, 4},
@@ -100,15 +98,15 @@ func TestBuildStaticMaps(t *testing.T) {
 			trips: []gtfs.ScheduledTrip{
 				{
 					StopTimes:   stopTimes("1", "2", "3"),
-					DirectionId: &directionIDTrue,
+					DirectionId: gtfs.DirectionID_True,
 				},
 				{
 					StopTimes:   stopTimes("3", "2", "1"),
-					DirectionId: &directionIDFalse,
+					DirectionId: gtfs.DirectionID_False,
 				},
 				{
 					StopTimes:   stopTimes("1", "2", "3", "4"),
-					DirectionId: &directionIDTrue,
+					DirectionId: gtfs.DirectionID_True,
 				},
 			},
 			want: []int64{1, 2, 3},
@@ -139,7 +137,6 @@ func TestBuildStaticMaps(t *testing.T) {
 }
 
 func TestIsIncludedTrip(t *testing.T) {
-	directionIDTrue := true
 	service1 := &gtfs.Service{
 		Id: serviceID1,
 	}
@@ -166,7 +163,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			config: &api.ServiceMapConfig{},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
-				DirectionId: &directionIDTrue,
+				DirectionId: gtfs.DirectionID_True,
 				StopTimes:   stopTimes(10, 12),
 			},
 			want: true,
@@ -176,7 +173,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			config: &api.ServiceMapConfig{},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
-				DirectionId: nil,
+				DirectionId: gtfs.DirectionID_Unspecified,
 				StopTimes:   stopTimes(10, 12),
 			},
 			want: false,
@@ -186,7 +183,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			config: &api.ServiceMapConfig{},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
-				DirectionId: &directionIDTrue,
+				DirectionId: gtfs.DirectionID_True,
 				StopTimes:   nil,
 			},
 			want: false,
@@ -197,7 +194,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			trip: &gtfs.ScheduledTrip{
 				Service: &gtfs.Service{Id: serviceID2},
 
-				DirectionId: &directionIDTrue,
+				DirectionId: gtfs.DirectionID_True,
 				StopTimes:   stopTimes(10, 12),
 			},
 			want: false,
@@ -211,7 +208,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
-				DirectionId: &directionIDTrue,
+				DirectionId: gtfs.DirectionID_True,
 				StopTimes:   stopTimes(10, 12),
 			},
 			want: false,
@@ -225,7 +222,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
-				DirectionId: &directionIDTrue,
+				DirectionId: gtfs.DirectionID_True,
 				StopTimes:   stopTimes(10, 12),
 			},
 			want: false,
@@ -239,7 +236,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
-				DirectionId: &directionIDTrue,
+				DirectionId: gtfs.DirectionID_True,
 				StopTimes:   stopTimes(10, 12),
 			},
 			want: false,
@@ -253,7 +250,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
-				DirectionId: &directionIDTrue,
+				DirectionId: gtfs.DirectionID_True,
 				StopTimes:   stopTimes(10, 12),
 			},
 			want: false,
@@ -270,7 +267,7 @@ func TestIsIncludedTrip(t *testing.T) {
 			},
 			trip: &gtfs.ScheduledTrip{
 				Service:     service1,
-				DirectionId: &directionIDTrue,
+				DirectionId: gtfs.DirectionID_True,
 				StopTimes:   stopTimes(10, 12),
 			},
 			want: true,

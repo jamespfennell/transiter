@@ -9,6 +9,90 @@ import (
 	"context"
 )
 
+// iteratorForInsertScheduledTrip implements pgx.CopyFromSource.
+type iteratorForInsertScheduledTrip struct {
+	rows                 []InsertScheduledTripParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForInsertScheduledTrip) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForInsertScheduledTrip) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].RoutePk,
+		r.rows[0].ServicePk,
+		r.rows[0].ShapePk,
+		r.rows[0].DirectionID,
+		r.rows[0].BikesAllowed,
+		r.rows[0].BlockID,
+		r.rows[0].Headsign,
+		r.rows[0].ShortName,
+		r.rows[0].WheelchairAccessible,
+	}, nil
+}
+
+func (r iteratorForInsertScheduledTrip) Err() error {
+	return nil
+}
+
+func (q *Queries) InsertScheduledTrip(ctx context.Context, arg []InsertScheduledTripParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"scheduled_trip"}, []string{"id", "route_pk", "service_pk", "shape_pk", "direction_id", "bikes_allowed", "block_id", "headsign", "short_name", "wheelchair_accessible"}, &iteratorForInsertScheduledTrip{rows: arg})
+}
+
+// iteratorForInsertScheduledTripStopTime implements pgx.CopyFromSource.
+type iteratorForInsertScheduledTripStopTime struct {
+	rows                 []InsertScheduledTripStopTimeParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForInsertScheduledTripStopTime) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForInsertScheduledTripStopTime) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].TripPk,
+		r.rows[0].StopPk,
+		r.rows[0].ArrivalTime,
+		r.rows[0].DepartureTime,
+		r.rows[0].StopSequence,
+		r.rows[0].ContinuousDropOff,
+		r.rows[0].ContinuousPickup,
+		r.rows[0].DropOffType,
+		r.rows[0].ExactTimes,
+		r.rows[0].Headsign,
+		r.rows[0].PickupType,
+		r.rows[0].ShapeDistanceTraveled,
+	}, nil
+}
+
+func (r iteratorForInsertScheduledTripStopTime) Err() error {
+	return nil
+}
+
+func (q *Queries) InsertScheduledTripStopTime(ctx context.Context, arg []InsertScheduledTripStopTimeParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"scheduled_trip_stop_time"}, []string{"trip_pk", "stop_pk", "arrival_time", "departure_time", "stop_sequence", "continuous_drop_off", "continuous_pickup", "drop_off_type", "exact_times", "headsign", "pickup_type", "shape_distance_traveled"}, &iteratorForInsertScheduledTripStopTime{rows: arg})
+}
+
 // iteratorForInsertServiceMapStop implements pgx.CopyFromSource.
 type iteratorForInsertServiceMapStop struct {
 	rows                 []InsertServiceMapStopParams
@@ -84,4 +168,53 @@ func (r iteratorForInsertTripStopTime) Err() error {
 
 func (q *Queries) InsertTripStopTime(ctx context.Context, arg []InsertTripStopTimeParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"trip_stop_time"}, []string{"stop_pk", "trip_pk", "arrival_time", "arrival_delay", "arrival_uncertainty", "departure_time", "departure_delay", "departure_uncertainty", "stop_sequence", "track", "headsign", "past"}, &iteratorForInsertTripStopTime{rows: arg})
+}
+
+// iteratorForInsertVehicle implements pgx.CopyFromSource.
+type iteratorForInsertVehicle struct {
+	rows                 []InsertVehicleParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForInsertVehicle) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForInsertVehicle) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].SystemPk,
+		r.rows[0].TripPk,
+		r.rows[0].Label,
+		r.rows[0].LicensePlate,
+		r.rows[0].CurrentStatus,
+		r.rows[0].Latitude,
+		r.rows[0].Longitude,
+		r.rows[0].Bearing,
+		r.rows[0].Odometer,
+		r.rows[0].Speed,
+		r.rows[0].CongestionLevel,
+		r.rows[0].UpdatedAt,
+		r.rows[0].CurrentStopPk,
+		r.rows[0].CurrentStopSequence,
+		r.rows[0].OccupancyStatus,
+		r.rows[0].FeedPk,
+		r.rows[0].OccupancyPercentage,
+	}, nil
+}
+
+func (r iteratorForInsertVehicle) Err() error {
+	return nil
+}
+
+func (q *Queries) InsertVehicle(ctx context.Context, arg []InsertVehicleParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"vehicle"}, []string{"id", "system_pk", "trip_pk", "label", "license_plate", "current_status", "latitude", "longitude", "bearing", "odometer", "speed", "congestion_level", "updated_at", "current_stop_pk", "current_stop_sequence", "occupancy_status", "feed_pk", "occupancy_percentage"}, &iteratorForInsertVehicle{rows: arg})
 }

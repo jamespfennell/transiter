@@ -1,0 +1,6 @@
+name: Caltrain
+
+feeds:
+  - id: gtfsstatic
+    type: GTFS_STATIC
+    url: "http://data.trilliumtransit.com/gtfs/caltrain-ca-us/caltrain-ca-us.zip"

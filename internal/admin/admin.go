@@ -12,9 +12,11 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/constants"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/monitoring"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/scheduler"
 	"github.com/jamespfennell/transiter/internal/servicemaps"
@@ -25,18 +27,20 @@ import (
 
 // Service implements the Transiter admin API.
 type Service struct {
-	pool      *pgxpool.Pool
-	scheduler scheduler.Scheduler
-	logger    *slog.Logger
-	levelVar  *slog.LevelVar
+	pool       *pgxpool.Pool
+	scheduler  scheduler.Scheduler
+	logger     *slog.Logger
+	levelVar   *slog.LevelVar
+	monitoring monitoring.Monitoring
 }
 
-func New(pool *pgxpool.Pool, scheduler scheduler.Scheduler, logger *slog.Logger, levelVar *slog.LevelVar) *Service {
+func New(pool *pgxpool.Pool, scheduler scheduler.Scheduler, logger *slog.Logger, levelVar *slog.LevelVar, monitoring monitoring.Monitoring) *Service {
 	return &Service{
-		pool:      pool,
-		scheduler: scheduler,
-		logger:    logger,
-		levelVar:  levelVar,
+		pool:       pool,
+		scheduler:  scheduler,
+		logger:     logger,
+		levelVar:   levelVar,
+		monitoring: monitoring,
 	}
 }
 
@@ -59,7 +63,7 @@ func (s *Service) GetSystemConfig(ctx context.Context, req *api.GetSystemConfigR
 		for _, feed := range feeds {
 			feed := feed
 			var feedConfig api.FeedConfig
-			if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
+			if err := convert.UnmarshalJSONAndDiscardUnknown([]byte(feed.Config), &feedConfig); err != nil {
 				return err
 			}
 			reply.Feeds = append(reply.Feeds, &feedConfig)
@@ -113,7 +117,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 		go func() {
 			// TODO: can we wire through the context on the server?
 			ctx := context.Background()
-			err := performInstall(ctx, logger, s.pool, req.SystemId, systemConfig)
+			err := s.performInstall(ctx, req.SystemId, systemConfig)
 			if err != nil {
 				logger.ErrorCtx(ctx, fmt.Sprintf("install or update failed: %s", err))
 			}
@@ -155,8 +159,8 @@ func upsertSystemEntry(ctx context.Context, querier db.Querier, systemID string,
 	return true, err
 }
 
-func performInstall(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, systemID string, systemConfig *api.SystemConfig) error {
-	if err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
+func (s *Service) performInstall(ctx context.Context, systemID string, systemConfig *api.SystemConfig) error {
+	if err := pgx.BeginTxFunc(ctx, s.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return upsertSystemMetadata(ctx, db.New(tx), systemID, systemConfig)
 	}); err != nil {
 		return err
@@ -166,7 +170,7 @@ func performInstall(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool
 		if !feed.GetRequiredForInstall() {
 			continue
 		}
-		if _, err := update.Update(ctx, logger, pool, systemID, feed.Id); err != nil {
+		if _, err := update.Update(ctx, s.logger, s.pool, s.monitoring, systemID, feed.Id, false); err != nil {
 			return err
 		}
 	}

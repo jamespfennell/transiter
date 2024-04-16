@@ -1,5 +1,7 @@
 # The Transiter Tour
 
+**This documentation is out of date**
+
 The Tour is an introduction to Transiter - a getting started tutorial
     that will show you how to launch the software,
      configure it for transit systems you're interested in,
@@ -41,7 +43,7 @@ As you can see, there are no (transit) systems installed, and the next step is t
 
 ??? info "Running Transiter without Docker"
     It's possible to run Transiter on "bare metal" without Docker; 
-    the [running Transiter](deployment/running-transiter.md) page details how.
+    the [running Transiter](deployment.md) page details how.
     It's quite a bit more work though, so for getting started we recommend the Docker approach.
 
 ??? info "Building the Docker images locally"

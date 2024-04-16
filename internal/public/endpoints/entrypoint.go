@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/jamespfennell/transiter/internal/gen/api"
+	"github.com/jamespfennell/transiter/internal/version"
 )
 
 func Entrypoint(ctx context.Context, r *Context, req *api.EntrypointRequest) (*api.EntrypointReply, error) {
@@ -18,7 +19,7 @@ func Entrypoint(ctx context.Context, r *Context, req *api.EntrypointRequest) (*a
 	}
 	return &api.EntrypointReply{
 		Transiter: &api.EntrypointReply_TransiterDetails{
-			Version: "1.0.0alpha",
+			Version: version.Version(),
 			Href:    "https://github.com/jamespfennell/transiter",
 			// TODO: build information
 		},

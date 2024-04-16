@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jamespfennell/gtfs"
+	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/monitoring"
@@ -22,7 +23,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/update/realtime"
 	"github.com/jamespfennell/transiter/internal/update/static"
 	"golang.org/x/exp/slog"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -42,7 +43,7 @@ func NormalizeFeedConfig(feedConfig *api.FeedConfig) {
 	}
 }
 
-func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, systemID, feedID string) (*api.FeedUpdate, error) {
+func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, m monitoring.Monitoring, systemID, feedID string, force bool) (*api.FeedUpdate, error) {
 	startTime := time.Now()
 	updateID := uuid.New().String()
 	logger = logger.With(slog.String("system_id", systemID), slog.String("feed_id", feedID), slog.String("update_id", updateID))
@@ -64,7 +65,7 @@ func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, system
 		return nil, err
 	}
 
-	feedUpdate, err := run(ctx, pool, logger, systemID, feed)
+	feedUpdate, err := run(ctx, pool, logger, systemID, feed, force)
 	feedUpdate.UpdateId = updateID
 	feedUpdate.StartedAtMs = startTime.UnixMilli()
 
@@ -95,11 +96,11 @@ func Update(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, system
 	totalLatencyMs := totalLatency.Milliseconds()
 	feedUpdate.TotalLatencyMs = &totalLatencyMs
 	if err != nil {
-		logger.ErrorCtx(ctx, fmt.Sprintf("failed update with reason %s and error %s in %s", feedUpdate.Status.String(), err, totalLatency))
+		logger.ErrorCtx(ctx, fmt.Sprintf("failed update with reason %s and error %q in %s", feedUpdate.Status.String(), err, totalLatency))
 	} else {
 		logger.DebugCtx(ctx, fmt.Sprintf("successful update with reason %s in %s", feedUpdate.Status.String(), totalLatency))
 	}
-	monitoring.RecordFeedUpdate(systemID, feedID, feedUpdate.Status.String(), totalLatency)
+	m.RecordFeedUpdate(systemID, feedID, feedUpdate)
 	return feedUpdate, err
 }
 
@@ -115,14 +116,15 @@ func markSuccess(feedUpdate *api.FeedUpdate, status api.FeedUpdate_Status) (*api
 	return feedUpdate, nil
 }
 
-func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID string, feed db.Feed) (*api.FeedUpdate, error) {
+func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID string, feed db.Feed, force bool) (*api.FeedUpdate, error) {
 	feedUpdate := &api.FeedUpdate{}
 	var feedConfig api.FeedConfig
-	if err := protojson.Unmarshal([]byte(feed.Config), &feedConfig); err != nil {
+	if err := convert.UnmarshalJSONAndDiscardUnknown([]byte(feed.Config), &feedConfig); err != nil {
 		return markFailure(feedUpdate, api.FeedUpdate_FAILED_INVALID_FEED_CONFIG, fmt.Errorf("failed to parse feed config: %w", err))
 	}
 	NormalizeFeedConfig(&feedConfig)
-	content, err := getFeedContent(ctx, systemID, &feedConfig)
+	feedUpdate.FeedConfig = &feedConfig
+	content, err := getFeedContent(ctx, systemID, &feedConfig, feedUpdate)
 	if err != nil {
 		return markFailure(feedUpdate, api.FeedUpdate_FAILED_DOWNLOAD_ERROR, err)
 	}
@@ -133,13 +135,13 @@ func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID 
 	}
 	contentHash := common.HashBytes(content)
 	feedUpdate.ContentHash = &contentHash
-	if feed.LastContentHash.Valid && feed.LastContentHash.String == contentHash {
+	if feed.LastContentHash.Valid && feed.LastContentHash.String == contentHash && !force {
 		return markSuccess(feedUpdate, api.FeedUpdate_SKIPPED)
 	}
 
 	var p interface {
-		parse(b []byte) error
-		update(ctx context.Context, updateCtx common.UpdateContext) error
+		parse(b []byte, feedUpdate *api.FeedUpdate) error
+		update(ctx context.Context, updateCtx common.UpdateContext, feedUpdate *api.FeedUpdate) error
 	}
 	switch feedConfig.Type {
 	case GtfsStatic:
@@ -162,7 +164,7 @@ func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID 
 	default:
 		return markFailure(feedUpdate, api.FeedUpdate_FAILED_UNKNOWN_FEED_TYPE, fmt.Errorf("unknown feed type %q", feedConfig.Type))
 	}
-	if err := p.parse(content); err != nil {
+	if err := p.parse(content, feedUpdate); err != nil {
 		return markFailure(feedUpdate, api.FeedUpdate_FAILED_PARSE_ERROR, err)
 	}
 
@@ -174,7 +176,7 @@ func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID 
 			FeedPk:     feed.Pk,
 			FeedConfig: &feedConfig,
 		}
-		if err := p.update(ctx, updateCtx); err != nil {
+		if err := p.update(ctx, updateCtx, feedUpdate); err != nil {
 			return err
 		}
 		return updateCtx.Querier.MarkSuccessfulUpdate(ctx, db.MarkSuccessfulUpdateParams{
@@ -196,17 +198,23 @@ type parserAndUpdater[T any] struct {
 	parsedVal T
 }
 
-func (p *parserAndUpdater[T]) parse(b []byte) error {
+func (p *parserAndUpdater[T]) parse(b []byte, feedUpdate *api.FeedUpdate) error {
+	start := time.Now()
 	var err error
 	p.parsedVal, err = p.parseFn(b)
+	feedUpdate.ParseLatencyMs = proto.Int64(time.Since(start).Milliseconds())
 	return err
 }
 
-func (p *parserAndUpdater[T]) update(ctx context.Context, updateCtx common.UpdateContext) error {
-	return p.updateFn(ctx, updateCtx, p.parsedVal)
+func (p *parserAndUpdater[T]) update(ctx context.Context, updateCtx common.UpdateContext, feedUpdate *api.FeedUpdate) error {
+	start := time.Now()
+	err := p.updateFn(ctx, updateCtx, p.parsedVal)
+	feedUpdate.DatabaseLatencyMs = proto.Int64(time.Since(start).Milliseconds())
+	return err
 }
 
-func getFeedContent(ctx context.Context, systemID string, feedConfig *api.FeedConfig) ([]byte, error) {
+func getFeedContent(ctx context.Context, systemID string, feedConfig *api.FeedConfig, feedUpdate *api.FeedUpdate) ([]byte, error) {
+	start := time.Now()
 	client := http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -227,8 +235,12 @@ func getFeedContent(ctx context.Context, systemID string, feedConfig *api.FeedCo
 	defer func() {
 		_ = resp.Body.Close()
 	}()
+	defer resp.Body.Close()
+	feedUpdate.DownloadHttpStatusCode = proto.Int32(int32(resp.StatusCode))
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP request for %s/%s returned non-ok status %s", systemID, feedConfig.Id, resp.Status)
 	}
-	return io.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
+	feedUpdate.DownloadLatencyMs = proto.Int64(time.Since(start).Milliseconds())
+	return b, err
 }

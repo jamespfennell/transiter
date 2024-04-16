@@ -2,16 +2,16 @@ name: New York City Subway
 
 feeds:
   - id: gtfsstatic
-    parser: GTFS_STATIC
+    type: GTFS_STATIC
     url: "http://web.mta.info/developers/data/nyct/subway/google_transit.zip"
 
   - id: subwaycsv
-    parser: NYCT_SUBWAY_CSV
-    url: "https://atisdata.s3.amazonaws.com/Station/Stations.csv"
+    type: NYCT_SUBWAY_CSV
+    url: "https://data.ny.gov/resource/39hk-dx4f.csv"
 
   - id: "alerts"
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_ALERTS
       nyctAlertsOptions:
@@ -26,7 +26,7 @@ feeds:
 
   - id: "1234567"
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
@@ -38,7 +38,7 @@ feeds:
 
   - id: ACE
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
@@ -50,7 +50,7 @@ feeds:
 
   - id: BDFM
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
@@ -62,7 +62,7 @@ feeds:
 
   - id: G
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
@@ -74,7 +74,7 @@ feeds:
 
   - id: JZ
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
@@ -86,7 +86,7 @@ feeds:
 
   - id: L
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
@@ -98,7 +98,7 @@ feeds:
 
   - id: NQRW
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:
@@ -110,7 +110,7 @@ feeds:
 
   - id: SIR
 
-    parser: GTFS_REALTIME
+    type: GTFS_REALTIME
     gtfsRealtimeOptions:
       extension: NYCT_TRIPS
       nyctTripsOptions:

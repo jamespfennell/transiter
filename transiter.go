@@ -10,6 +10,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/argsflag"
 	"github.com/jamespfennell/transiter/internal/client"
 	"github.com/jamespfennell/transiter/internal/server"
+	"github.com/jamespfennell/transiter/internal/version"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/slog"
 )
@@ -166,9 +167,9 @@ func main() {
 						Value: false,
 					},
 					&cli.BoolFlag{
-						Name:  "enable-scheduler",
-						Usage: "Enable the feed update scheduler",
-						Value: true,
+						Name:  "disable-scheduler",
+						Usage: "Disable the feed update scheduler",
+						Value: false,
 					},
 					&cli.BoolFlag{
 						Name:  "enable-pprof",
@@ -176,9 +177,9 @@ func main() {
 						Value: true,
 					},
 					&cli.BoolFlag{
-						Name:  "enable-public-metrics",
-						Usage: "Report Prometheus metrics on the public HTTP API's /metrics endpoint. Metrics are always reported on the admin HTTP API",
-						Value: true,
+						Name:  "disable-public-metrics",
+						Usage: "Don't report Prometheus metrics on the public HTTP API's /metrics endpoint. Metrics are always reported on the admin HTTP API",
+						Value: false,
 					},
 					&cli.Int64Flag{
 						Name:  "max-connections",
@@ -186,13 +187,8 @@ func main() {
 						Value: 50,
 					},
 					&cli.Int64Flag{
-						Name:  "max-stops-per-request",
-						Usage: "Maximum number of stops that will be returned in a single list stops request. Specifying a value <= 0 will disable the limit.",
-						Value: 100,
-					},
-					&cli.Int64Flag{
-						Name:  "max-vehicles-per-request",
-						Usage: "Maximum number of vehicles that will be returned in a single list vehicles request. Specifying a value <= 0 will disable the limit.",
+						Name:  "max-entities-per-request",
+						Usage: "Maximum number of stops, vehicles, and shapes that will be returned in a single request. Specifying a value <= 0 will disable the limit.",
 						Value: 100,
 					},
 					&cli.StringFlag{
@@ -213,31 +209,38 @@ func main() {
 						AdminGrpcAddr:         c.String("admin-grpc-addr"),
 						PostgresConnStr:       c.String("postgres-connection-string"),
 						MaxConnections:        int32(c.Int64("max-connections")),
-						EnableScheduler:       c.Bool("enable-scheduler"),
-						EnablePublicMetrics:   c.Bool("enable-public-metrics"),
+						DisableScheduler:      c.Bool("disable-scheduler"),
+						DisablePublicMetrics:  c.Bool("disable-public-metrics"),
 						ReadOnly:              c.Bool("read-only"),
 						EnablePprof:           c.Bool("enable-pprof"),
-						MaxStopsPerRequest:    int32(c.Int64("max-stops-per-request")),
-						MaxVehiclesPerRequest: int32(c.Int64("max-vehicles-per-request")),
+						MaxEntitiesPerRequest: int32(c.Int64("max-entities-per-request")),
 						LogLevel:              logLevel,
 					}
 					ctx, cancel := context.WithCancel(c.Context)
-					ch := make(chan os.Signal, 1)
-					signal.Notify(ch, os.Interrupt)
-					// Ensure that the channel doesn't leak
-					defer func() {
-						signal.Stop(ch)
-						cancel()
-					}()
-					// Listen for the channel and cancel accordingly
+					defer cancel()
+
+					interruptCh := make(chan os.Signal, 1)
+					signal.Notify(interruptCh, os.Interrupt)
+					defer signal.Stop(interruptCh)
+
+					shutdownCh := make(chan error, 1)
 					go func() {
-						select {
-						case <-ch:
-							cancel()
-						case <-ctx.Done():
-						}
+						shutdownCh <- server.Run(ctx, args)
 					}()
-					return server.Run(ctx, args)
+
+					var cancelled bool
+					for {
+						select {
+						case <-interruptCh:
+							if cancelled {
+								return fmt.Errorf("forced an unclean shutdown after receiving second cancellation signal")
+							}
+							cancelled = true
+							cancel()
+						case err := <-shutdownCh:
+							return err
+						}
+					}
 				},
 			},
 			{
@@ -247,6 +250,13 @@ func main() {
 					{
 						Name:  "update",
 						Usage: "perform a feed update",
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:  "force",
+								Usage: "Perform a full update even if the downloaded data is identical to the last time this feed was updated",
+								Value: false,
+							},
+						},
 						Action: func(c *cli.Context) error {
 							if c.Args().Len() == 0 {
 								return fmt.Errorf("must provide the ID of the feed to update in the form <system_id>/<feed_id>")
@@ -261,11 +271,36 @@ func main() {
 								return fmt.Errorf("must provide the ID of the feed to update in the form <system_id>/<feed_id>")
 							}
 							return clientAction(func(ctx context.Context, client *client.Client) error {
-								return client.UpdateFeed(ctx, systemID, feedID)
+								return client.UpdateFeed(ctx, systemID, feedID, c.Bool("force"))
 							})(c)
 						},
 					},
 					// TODO: pause, unpause, status, etc
+				},
+			},
+			{
+				Name:  "version",
+				Usage: "print the version of this binary, or a Transiter server",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "server",
+						Usage: "Print the version of a Transiter server rather than this binary",
+						Value: false,
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					if !ctx.Bool("server") {
+						fmt.Println(version.Version())
+						return nil
+					}
+					return clientAction(func(ctx context.Context, client *client.Client) error {
+						version, err := client.Version(ctx)
+						if err != nil {
+							return err
+						}
+						fmt.Println(version)
+						return nil
+					})(ctx)
 				},
 			},
 		},

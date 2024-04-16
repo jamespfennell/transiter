@@ -712,6 +712,77 @@ Get a vehicle in a system by its ID.
 
 ### Response type: [Vehicle](public_resources.md#Vehicle)
 
+## List shapes
+
+`GET /systems/<system_id>/shapes`
+
+List all shapes in a system.
+
+### Request type: ListShapesRequest
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| system_id | string | System to list shapes for.
+| only_return_specified_ids | bool | If true, only return shapes whose IDs are specified in the repeated `id` field.
+| id | string | IDs to return if `only_return_specified_ids` is set to true. It is an error to populate this field if `only_return_specified_ids` is false.
+| first_id | string | ID of the first shape to return. If not set, the shape with the smallest ID will be first.
+| limit | int32 | Maximum number of shapes to return.
+
+
+
+
+
+
+
+
+### Response type: ListShapesReply
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| shapes | [Shape](public_resources.md#Shape) | Shapes that were listed.
+| next_id | string | ID of the next shape to list, if there are more results.
+
+
+
+
+
+
+
+
+## Get shape
+
+`GET /systems/<system_id>/shapes/<shape_id>`
+
+Get a shape in a system by its ID.
+
+### Request type: GetShapeRequest
+
+
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| system_id | string | System to get shape for.
+| shape_id | string | ID of the shape to get.
+
+
+
+
+
+
+
+
+### Response type: [Shape](public_resources.md#Shape)
+
 
 
 

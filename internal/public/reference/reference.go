@@ -143,6 +143,13 @@ func (h Generator) Vehicle(id string, systemID string) *api.Vehicle_Reference {
 	}
 }
 
+func (h Generator) Shape(id string, systemID string) *api.Shape_Reference {
+	return &api.Shape_Reference{
+		Id:       id,
+		Resource: h.generateResource("systems", systemID, "shapes", id),
+	}
+}
+
 func (h Generator) generateResource(elem ...string) *api.Resource {
 	return &api.Resource{
 		Path: path.Join(elem...),

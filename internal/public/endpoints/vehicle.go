@@ -17,8 +17,9 @@ func ListVehicles(ctx context.Context, r *Context, req *api.ListVehiclesRequest)
 		return nil, err
 	}
 
-	numVehicles := r.EndpointOptions.MaxVehiclesPerRequest
+	numVehicles := r.EndpointOptions.MaxEntitiesPerRequest
 	if numVehicles <= 0 {
+		// Avoid overflow since pagination over-fetches by one
 		numVehicles = math.MaxInt32 - 1
 	}
 	if req.Limit != nil && *req.Limit < numVehicles {

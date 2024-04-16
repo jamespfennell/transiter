@@ -5,8 +5,6 @@
 package db
 
 import (
-	"time"
-
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -54,14 +52,20 @@ type AlertRoute struct {
 	RoutePk int64
 }
 
+type AlertRouteType struct {
+	AlertPk   int64
+	RouteType string
+}
+
 type AlertStop struct {
 	AlertPk int64
 	StopPk  int64
 }
 
 type AlertTrip struct {
-	AlertPk int64
-	TripPk  int64
+	AlertPk         int64
+	TripPk          pgtype.Int8
+	ScheduledTripPk pgtype.Int8
 }
 
 type Feed struct {
@@ -128,28 +132,27 @@ type ScheduledTrip struct {
 	RoutePk              int64
 	ServicePk            int64
 	DirectionID          pgtype.Bool
-	BikesAllowed         string
+	BikesAllowed         pgtype.Bool
 	BlockID              pgtype.Text
 	Headsign             pgtype.Text
 	ShortName            pgtype.Text
-	WheelchairAccessible string
+	WheelchairAccessible pgtype.Bool
+	ShapePk              pgtype.Int8
 }
 
 type ScheduledTripFrequency struct {
 	Pk             int64
 	TripPk         int64
-	StartTime      time.Time
-	EndTime        time.Time
 	Headway        int32
 	FrequencyBased bool
+	StartTime      int32
+	EndTime        int32
 }
 
 type ScheduledTripStopTime struct {
 	Pk                    int64
 	TripPk                int64
 	StopPk                int64
-	ArrivalTime           pgtype.Time
-	DepartureTime         pgtype.Time
 	StopSequence          int32
 	ContinuousDropOff     string
 	ContinuousPickup      string
@@ -158,6 +161,8 @@ type ScheduledTripStopTime struct {
 	Headsign              pgtype.Text
 	PickupType            string
 	ShapeDistanceTraveled pgtype.Float8
+	ArrivalTime           pgtype.Int4
+	DepartureTime         pgtype.Int4
 }
 
 type ServiceMap struct {
@@ -178,6 +183,14 @@ type ServiceMapVertex struct {
 	StopPk   int64
 	MapPk    int64
 	Position int32
+}
+
+type Shape struct {
+	Pk       int64
+	ID       string
+	SystemPk int64
+	FeedPk   int64
+	Shape    []byte
 }
 
 type Stop struct {

@@ -22,9 +22,10 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 	if err != nil {
 		return nil, err
 	}
-	numStops := r.EndpointOptions.MaxStopsPerRequest
+	numStops := r.EndpointOptions.MaxEntitiesPerRequest
 	if numStops <= 0 {
-		numStops = math.MaxInt32
+		// Avoid overflow since pagination over-fetches by one
+		numStops = math.MaxInt32 - 1
 	}
 	if req.Limit != nil && *req.Limit < numStops {
 		numStops = *req.Limit

@@ -152,7 +152,10 @@ type TripUID struct {
 }
 
 func ListTripsForUpdate(ctx context.Context, querier db.Querier, systemPk int64, routePks []int64) (map[TripUID]db.ListTripsRow, error) {
-	rows, err := querier.ListTrips(ctx, routePks)
+	rows, err := querier.ListTrips(ctx, db.ListTripsParams{
+		SystemPk: systemPk,
+		RoutePks: routePks,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -183,28 +186,74 @@ func ListStopTimesForUpdate(ctx context.Context, querier db.Querier, tripUIDToPk
 	return m, nil
 }
 
-func MapVehicleIDToPkandTripPkToVehicleID(
+func MapTripPkToVehicleID(
 	ctx context.Context,
 	querier db.Querier,
 	systemPk int64,
-	vehicleIDs []string) (map[string]int64, map[int64]string, error) {
-	rows, err := querier.ListVehicleUniqueColumns(ctx, db.ListVehicleUniqueColumnsParams{
+	vehicleIDs []string) (map[int64]string, error) {
+	rows, err := querier.MapTripPkToVehicleID(ctx, db.MapTripPkToVehicleIDParams{
 		SystemPk:   systemPk,
 		VehicleIds: vehicleIDs,
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	vehicleIDToPk := map[string]int64{}
 	tripPkToVehicleID := map[int64]string{}
 	for _, row := range rows {
-		vehicleIDToPk[row.ID.String] = row.Pk
 		if row.TripPk.Valid {
 			tripPkToVehicleID[row.TripPk.Int64] = row.ID.String
 		}
 	}
-	return vehicleIDToPk, tripPkToVehicleID, nil
+	return tripPkToVehicleID, nil
+}
+
+func MapScheduledTripIDToPkInSystem(ctx context.Context, queries db.Querier, systemPk int64, scheduledTripIDs ...[]string) (map[string]int64, error) {
+	result := map[string]int64{}
+	var queryScheduledTripIDs []string
+	if len(scheduledTripIDs) > 0 {
+		queryScheduledTripIDs = scheduledTripIDs[0]
+		if len(queryScheduledTripIDs) == 0 {
+			return result, nil
+		}
+	}
+
+	rows, err := queries.MapScheduledTripIDToPkInSystem(ctx, db.MapScheduledTripIDToPkInSystemParams{
+		SystemPk:       systemPk,
+		FilterByTripID: len(scheduledTripIDs) > 0,
+		TripIds:        queryScheduledTripIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		result[row.ID] = row.Pk
+	}
+	return result, nil
+}
+
+func MapScheduledTripIDToRoutePkInSystem(ctx context.Context, queries db.Querier, systemPk int64, scheduledTripIDs ...[]string) (map[string]int64, error) {
+	result := map[string]int64{}
+	var queryScheduledTripIDs []string
+	if len(scheduledTripIDs) > 0 {
+		queryScheduledTripIDs = scheduledTripIDs[0]
+		if len(queryScheduledTripIDs) == 0 {
+			return result, nil
+		}
+	}
+
+	rows, err := queries.MapScheduledTripIDToRoutePkInSystem(ctx, db.MapScheduledTripIDToRoutePkInSystemParams{
+		SystemPk:       systemPk,
+		FilterByTripID: len(scheduledTripIDs) > 0,
+		TripIds:        queryScheduledTripIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		result[row.ID] = row.RoutePk
+	}
+	return result, nil
 }
 
 func Ping(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, numRetries int, waitBetweenPings time.Duration) error {

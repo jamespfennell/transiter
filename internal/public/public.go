@@ -19,16 +19,17 @@ import (
 type Server struct {
 	pool            *pgxpool.Pool
 	logger          *slog.Logger
+	monitoring      monitoring.Monitoring
 	endpointOptions *endpoints.EndpointOptions
 }
 
 // New creates a new `Server` that uses the provided pool to connect to the database.
-func New(pool *pgxpool.Pool, logger *slog.Logger, endpointOptions *endpoints.EndpointOptions) *Server {
+func New(pool *pgxpool.Pool, logger *slog.Logger, monitoring monitoring.Monitoring, endpointOptions *endpoints.EndpointOptions) *Server {
 	if endpointOptions == nil {
-		endpointOptions = &endpoints.EndpointOptions{MaxStopsPerRequest: 100, MaxVehiclesPerRequest: 100}
+		endpointOptions = &endpoints.EndpointOptions{MaxEntitiesPerRequest: 100}
 	}
 
-	return &Server{pool: pool, logger: logger, endpointOptions: endpointOptions}
+	return &Server{pool: pool, logger: logger, monitoring: monitoring, endpointOptions: endpointOptions}
 }
 
 func (s *Server) Entrypoint(ctx context.Context, req *api.EntrypointRequest) (*api.EntrypointReply, error) {
@@ -103,6 +104,14 @@ func (s *Server) GetVehicle(ctx context.Context, req *api.GetVehicleRequest) (*a
 	return run(ctx, s, "GetVehicle", endpoints.GetVehicle, req)
 }
 
+func (s *Server) ListShapes(ctx context.Context, req *api.ListShapesRequest) (*api.ListShapesReply, error) {
+	return run(ctx, s, "ListShapes", endpoints.ListShapes, req)
+}
+
+func (s *Server) GetShape(ctx context.Context, req *api.GetShapeRequest) (*api.Shape, error) {
+	return run(ctx, s, "GetShape", endpoints.GetShape, req)
+}
+
 func run[S, T any](ctx context.Context, s *Server, methodName string, f func(context.Context, *endpoints.Context, S) (T, error), req S) (T, error) {
 	startTime := time.Now()
 	var t T
@@ -116,6 +125,6 @@ func run[S, T any](ctx context.Context, s *Server, methodName string, f func(con
 		}, req)
 		return err
 	})
-	monitoring.RecordPublicRequest(methodName, err, time.Since(startTime))
+	s.monitoring.RecordPublicRequest(methodName, err, time.Since(startTime))
 	return t, err
 }

@@ -1,4 +1,4 @@
-site_name: Transiter 0.5
+site_name: Transiter v1.0.0
 docs_dir: src
 theme:
   name: material
@@ -24,14 +24,10 @@ markdown_extensions:
 nav:
   - Home: index.md
   - tour.md
+  - systems.md
+  - deployment.md
+  - monitoring.md
   - API Reference:
       - Public API (resources): api/public_resources.md
       - Public API (endpoints): api/public_endpoints.md
       - Admin API: api/admin.md
-  - systems.md
-  - Running and deployment:
-    - Running Transiter: deployment/running-transiter.md
-    - Building and serving the docs: deployment/documentation.md
-    - Controlling permissions: deployment/permissions.md
-    - Monitoring using Prometheus: deployment/monitoring.md
-    - Production advice: deployment/production.md

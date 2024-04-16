@@ -42,9 +42,22 @@ func NewInvalidArgumentError(msg string) error {
 	}
 }
 
+func GetStatusCode(err error) codes.Code {
+	if err == nil {
+		return codes.OK
+	}
+	if s, ok := err.(interface {
+		GRPCStatus() *status.Status
+	}); ok {
+		return s.GRPCStatus().Code()
+	}
+	return codes.Unknown
+}
+
 // ServeMuxOption returns a `runtime.ServeMuxOption` that makes errors user-friendly at the API boundary.
 func ServeMuxOption(logger *slog.Logger) runtime.ServeMuxOption {
 	return runtime.WithErrorHandler(func(ctx context.Context, sm *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
+		logger := logger.With(slog.String("http_method", r.Method), slog.String("http_url_path", r.URL.Path))
 		switch err.(type) {
 		case publicErr:
 			// nothing to do
@@ -53,14 +66,14 @@ func ServeMuxOption(logger *slog.Logger) runtime.ServeMuxOption {
 		}:
 			// nothing to do
 		default:
-			logger.ErrorCtx(ctx, fmt.Sprintf("unexpected internal error: %s", err))
+			logger.WarnCtx(ctx, fmt.Sprintf("API error of unknown type: %s", err))
 			s := status.New(codes.Internal, "internal error")
 			s, _ = s.WithDetails(status.Convert(err).Proto())
 			err = publicErr{
 				Status: s,
 			}
 		}
-		logger.DebugCtx(ctx, fmt.Sprintf("returning API error: %s", err))
+		logger.DebugCtx(ctx, fmt.Sprintf("API error: %s", err))
 		runtime.DefaultHTTPErrorHandler(ctx, sm, m, w, r, err)
 	})
 }
