@@ -82,7 +82,6 @@ def install_system(
     request,
     source_server: SourceServerClient,
     transiter_host,
-    source_server_host_within_transiter,
 ):
     def install(system_id, system_config, expected_status="ACTIVE"):
         def delete():
@@ -100,7 +99,7 @@ def install_system(
             transiter_host + "/systems/" + system_id,
             json={
                 "yaml_config": {
-                    "url": source_server_host_within_transiter + "/" + system_config_url
+                    "content": system_config,
                 },
             },
         )

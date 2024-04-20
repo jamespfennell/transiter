@@ -104,26 +104,20 @@ message InstallOrUpdateSystemRequest {
 
   oneof config {
     SystemConfig system_config = 2;
-    TextConfig yaml_config = 3;
-    // TODO: TextConfig json_config = 4;
+    YamlConfig yaml_config = 3;
   }
 
   // If true, do not perform an update if the system already exists.
   bool install_only = 4;
 }
 
-// TextConfig contains a Transiter system configuration in non-proto format
-// (e.g. YAML or JSON).
-message TextConfig {
-  oneof source {
-    // A URL where the config can be retrieved from using a simple GET request.
-    // If the URL requires a more complex interaction (authentication, a different
-    // HTTP verb), the config should be retrieved outside of Transiter and provided
-    // in the content field.
-    string url = 1;
-    // The text content of the config.
-    string content = 2;
-  }
+// YamlConfig contains a Transiter system configuration in YAML format.
+message YamlConfig {
+  reserved 1, 2;
+
+  // The YAML content.
+  string content = 5;
+
   // Whether the config is a template. If true the config will first be processed
   // using Go's template library.
   bool is_template = 3;

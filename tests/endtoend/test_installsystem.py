@@ -338,7 +338,7 @@ def test_update_system(system_id, install_system, transiter_host):
         requiredForInstall: false
         schedulingPolicy: PERIODIC
         updatePeriodS: {}
-        url: transiter.io
+        url: transiter.dev
         parser: GTFS_STATIC
     """
 

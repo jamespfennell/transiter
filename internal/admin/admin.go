@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"text/template"
 
 	"github.com/ghodss/yaml"
@@ -83,18 +81,7 @@ func (s *Service) InstallOrUpdateSystem(ctx context.Context, req *api.InstallOrU
 	case *api.InstallOrUpdateSystemRequest_SystemConfig:
 		systemConfig = c.SystemConfig
 	case *api.InstallOrUpdateSystemRequest_YamlConfig:
-		var rawConfig []byte
-		switch s := c.YamlConfig.Source.(type) {
-		case *api.TextConfig_Url:
-			rawConfig, err = getRawSystemConfigFromURL(s.Url)
-			if err != nil {
-				return nil, err
-			}
-		case *api.TextConfig_Content:
-			rawConfig = []byte(s.Content)
-		default:
-			return nil, fmt.Errorf("no system configuration provided")
-		}
+		rawConfig := c.YamlConfig.Content
 		systemConfig, err = parseSystemConfigYaml(rawConfig, c.YamlConfig.GetIsTemplate(), c.YamlConfig.GetTemplateArgs())
 		if err != nil {
 			return nil, err
@@ -276,20 +263,7 @@ func (s *Service) DeleteSystem(ctx context.Context, req *api.DeleteSystemRequest
 	return &api.DeleteSystemReply{}, nil
 }
 
-func getRawSystemConfigFromURL(url string) ([]byte, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read transit system config from URL %q: %w", url, err)
-	}
-	return body, nil
-}
-
-func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[string]string) (*api.SystemConfig, error) {
+func parseSystemConfigYaml(rawContent string, isTemplate bool, templateArgs map[string]string) (*api.SystemConfig, error) {
 	if !isTemplate {
 		return unmarshalFromYaml(rawContent)
 	}
@@ -306,11 +280,11 @@ func parseSystemConfigYaml(rawContent []byte, isTemplate bool, templateArgs map[
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse input as a Go text template: %w", err)
 	}
-	return unmarshalFromYaml(b.Bytes())
+	return unmarshalFromYaml(b.String())
 }
 
-func unmarshalFromYaml(y []byte) (*api.SystemConfig, error) {
-	j, err := yaml.YAMLToJSON(y)
+func unmarshalFromYaml(y string) (*api.SystemConfig, error) {
+	j, err := yaml.YAMLToJSON([]byte(y))
 	if err != nil {
 		return nil, err
 	}

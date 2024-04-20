@@ -1,63 +1,91 @@
 # The Transiter Tour
 
-**This documentation is out of date**
-
-The Tour is an introduction to Transiter - a getting started tutorial
-    that will show you how to launch the software,
-     configure it for transit systems you're interested in,
-     and getting the data you want.
-
 
 ## Launch Transiter
 
+Transiter uses Postgres for persisting data.
+The Postgres instance must has the PostGIS Postgres extension installed.
+Transiter uses PostGIS for storing geographic data (like the GPS location of stations)
+  and for performing efficient queries on that data (such as finding the nearest stations of a particular point).
 
-To begin, we're going to launch Transiter.
-The easiest way to do this is with Docker compose and the
-    [standard Transiter compose config file](https://github.com/jamespfennell/transiter/blob/master/docker/docker-compose.yml).
-Simply run,
+By default Transiter assumes the Postgres database/user/password is transiter/transiter/transiter.
+If you have Docker installed,
+    you can easily spin up the right kind of Postgres instance
+    by running the following command:
 
-    docker-compose up -f path/to/docker-compose.yml
+```
+docker run \
+    -e POSTGRES_USER=transiter -e POSTGRES_PASSWORD=transiter -e POSTGRES_DB=transiter \
+    -p 0.0.0.0:5432:5432 \
+    postgis/postgis:14-3.4
+```
 
-It will take a minute for the images to download from Docker Hub and for the containers to be launched successfully.
+You can also use a system-provided Postgres (e.g. `apt install postgresql`).
+Most system-provided Postgres installations include PostGIS,
+  as do most managed Postgres offerings by the main Cloud providers.
 
-When everything is launched, Transiter will be listening on port 8000.
-If you navigate to `localhost:8000` in your web browser (or use `curl`), you will find the Transiter landing page,
+After setting up Postgres, the next step is to start the Transiter server.
+The Transiter server is the backend web service that does all the work of subscribing to transit data feeds,
+  updating the data in Postgres,
+  and providing the data through the HTTP API.
+A full production deployment of Transiter consists simply of Postgres and the Transiter server.
+Later in the tour we will also learn about Transiter client commands,
+  which are used to perform one-off administrative tasks on the server like installing the NYC subway.
+
+The Transiter binary can be installed by running `go install .` in the root of the Transiter repository.
+(In the near future [we hope to offer prebuilt binaries](https://github.com/jamespfennell/transiter/issues/136).)
+With the binary installed, the Transiter server is run using:
+
+```
+transiter server
+```
+
+Depending on your Postgres setup,
+  you may need to provide a custom Postgres connection config.
+For example, you may be using a different username or password.
+You can use the `-p` or `--postgres-connection-string` flag to provide the connection config:
+
+```
+transiter server -p postgresql://$USER:$PASSWORD@localhost:5432/$DATABASE_NAME
+```
+
+By default Transiter exports a few APIs on different ports.
+The primary "public" HTTP API is exported on port 8000.
+When the server is launched,
+  you can navigate to `localhost:8000` in your web browser (or use `curl`) to the Transiter landing page:
 
 ```json
 {
   "transiter": {
-    "version": "0.4.5",
-    "href": "https://github.com/jamespfennell/transiter",
-    "docs": {
-      "href": "https://demo.transiter.io/docs/"
-    }
+    "version": "1.0.0-beta.build21",
+    "href": "https://github.com/jamespfennell/transiter"
   },
   "systems": {
-    "count": 0,
-    "href": "https://demo.transiter.io/systems"
+    "count": "0",
+    "href": "https://demo.transiter.dev/systems"
   }
 }
 ```
 
 As you can see, there are no (transit) systems installed, and the next step is to install one!
 
-??? info "Running Transiter without Docker"
-    It's possible to run Transiter on "bare metal" without Docker; 
-    the [running Transiter](deployment.md) page details how.
-    It's quite a bit more work though, so for getting started we recommend the Docker approach.
+??? info "Running Transiter using Docker"
+    In production the recommended way to run Transiter is to use
+    the Docker image `jamespfennell/transiter:latest` that is available on Docker hub.
+    See the [deployment page](deployment.md) for more information on this.
+  
+  
 
-??? info "Building the Docker images locally"
-    If you want to build the Docker images locally that's easy, too:
-    just check out the [Transiter Git repository](https://github.com/jamespfennell/transiter)
-    and in the root of repository run `make docker`.
-   
-## Install a system
+## THE TOUR IS OUT OF DATE STARTING FROM HERE! WORK IN PROGRESS AS OF APRIL 2024!
 
-Each deployment of Transiter can have multiple transit systems installed side-by-side.
-A transit system is installed using a YAML configuration file that 
+## Install a transit system
+
+Each deployment of Transiter can have multiple transit systems installed.
+A transit system is installed by providing Transiter with a YAML config file.
+This config file
     contains basic metadata about the system (like its name),
     the URLs of the data feeds,
-    and how to parse those data feeds (GTFS Static, GTFS Realtime, or a custom format).
+    and how to parse those data feeds (GTFS static, GTFS realtime).
 
 For this tour, we're going to start by installing the BART system in San Francisco.
 The YAML configuration file is stored in Github, you can [inspect it here](https://github.com/jamespfennell/transiter-sfbart/blob/master/Transiter-SF-BART-config.yaml).
@@ -82,7 +110,7 @@ After it finishes, hit the Transiter landing page again to get,
     "version": "0.4.5",
     "href": "https://github.com/jamespfennell/transiter",
     "docs": {
-      "href": "https://demo.transiter.io/docs/"
+      "href": "https://demo.transiter.dev/docs/"
     }
   },
   "systems": {

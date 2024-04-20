@@ -9,7 +9,7 @@ If the system you're interested in is there, then you don't need to do anything!
 From the root of the Transiter repository, you can install the system using:
 
 ```
-transiter install -f $TRANSIT_SYSTEM_ID $PATH_TO_YAML_FILE
+transiter install $SYSTEM_ID
 ```
 
 Otherwise, to add a transit system to Transiter you need to write a new YAML file.
@@ -26,12 +26,15 @@ There are also some advanced configurations available, which are discussed below
 After writing a YAML file, the transit system is installed in the same way:
 
 ```
-transiter install -f $TRANSIT_SYSTEM_ID $PATH_TO_YAML_FILE
+transiter install --file $PATH_TO_YAML_FILE
 ```
+
+The system ID will be the name of the YAML file (e.g., `path/to/my-system.yaml`
+will have ID `my-system`) but this can be overridden with the `--id` flag.
 
 The schema for the YAML config is given by the
   [system config type](api/admin.md#systemconfig) in the API schema.
-In the YAML file, all of the `snake_case` field names are in `camelCase`.
+All of the `snake_case` field names in the proto are in `camelCase` in the YAML.
 
 
 ## Basic configuration

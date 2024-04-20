@@ -1,7 +1,21 @@
 # Deploying Transiter
 
-Transiter is simply a Go binary that requires a running Postgres instance.
-There are thus many ways to deploy Transiter.
+A Transiter deployment has two pieces:
+
+- A running Postgres instance that has the PostGIS extension available.
+    If you've installed Postgres using your operating system's package manager (like `apt`),
+    or if you're using a managed Postgres offering from one of the Cloud providers,
+        PostGIS is probably already installed.
+    Even easier is to use the Docker image `postgis/postgis:14-3.4`.
+    For other options, consult [the PostGIS documentation](https://postgis.net/documentation/getting_started/#installing-postgis).
+
+- The Transiter binary.
+    This is available as a Docker image `jamespfennell/transiter:latest`
+    or can be built by running `go build .` in the Transiter repository.
+    In future we hope to distribute prebuilt binaries as part of our release process.
+
+Because the deployment model is so simple,
+    there are many ways to deploy Transiter.
 
 We recommend deploying Transiter using the Transiter Docker image.
 This Docker image is built on every push to mainline and
@@ -41,7 +55,7 @@ services:
       - "postgres://transiter:transiter@postgres:5432/transiter"
 
   postgres:
-    image: postgres:14
+    image: postgis/postgis:14-3.4
     environment:
       - POSTGRES_USER=transiter
       - POSTGRES_PASSWORD=transiter
@@ -52,8 +66,9 @@ services:
     restart: always
 ```
 
-The Postgres you use doesn't need to be on the same machine.
+The Postgres instance doesn't need to be on the same machine.
 You can even used a managed Postgres service like Google's CloudSQL.
+
 
 ## Reverse proxy
 
@@ -74,8 +89,8 @@ In this case requests to `demo.transiter.dev` are reverse proxied to `localhost:
 This is where the Transiter public HTTP API is listening if you used the Docker compose
   configuration above.
 
-## (Optional) Setting the Transiter host
 
+## (Optional) Setting the Transiter host
 
 The reverse proxy configuration above contains a `X-Transiter-Host` header instruction.
 This tells Caddy that when a HTTP request is forwarded to Transiter, the `X-Transiter-Host`

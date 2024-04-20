@@ -8,11 +8,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Validates that Flag implements the flag.Getter interface.
+// Validates that various types implement various interfaces
 var _ flag.Getter = &Flag{}
-
-// Validates that CliFlag implements the cli.Flag interface.
 var _ cli.Flag = &CliFlag{}
+var _ cli.DocGenerationFlag = &CliFlag{}
+var _ cli.DocGenerationSliceFlag = &CliFlag{}
+var _ cli.VisibleFlag = &CliFlag{}
 
 func TestFlag(t *testing.T) {
 	for _, tc := range []struct {

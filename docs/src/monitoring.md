@@ -1,6 +1,6 @@
 # Monitoring Transiter
 
-Transiter includes Prometheus metrics for monitoring a running Transiter deployment.
+Transiter includes Prometheus metrics for monitoring a running deployment.
 If you are running Transiter,
     the main thing you are likely interested in is how feed updates are performing.
 If feed updates are failing, the data being served by your Transiter instance will be stale.

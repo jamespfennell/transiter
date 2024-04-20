@@ -6,7 +6,9 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -46,45 +48,44 @@ func (c *Client) DeleteSystem(ctx context.Context, systemID string) error {
 	return err
 }
 
+type ConfigPathType int
+
+const (
+	TransiterRepo ConfigPathType = iota
+	File
+	URL
+)
+
 type InstallSystemArgs struct {
-	SystemID     string
-	ConfigPath   string
-	IsFile       bool
-	AllowUpdate  bool
-	IsTemplate   bool
-	TemplateArgs map[string]string
+	SystemID       string
+	ConfigPath     string
+	ConfigPathType ConfigPathType
+	AllowUpdate    bool
+	IsTemplate     bool
+	TemplateArgs   map[string]string
 }
 
 func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) error {
-	yamlConfig := &api.TextConfig{
-		IsTemplate:   args.IsTemplate,
-		TemplateArgs: args.TemplateArgs,
-	}
-	if args.IsFile {
-		yaml, err := os.ReadFile(args.ConfigPath)
-		if err != nil {
-			return err
-		}
-		yamlConfig.Source = &api.TextConfig_Content{
-			Content: string(yaml),
-		}
-	} else {
-		yamlConfig.Source = &api.TextConfig_Url{
-			Url: args.ConfigPath,
-		}
+	yamlContent, err := getYamlContent(args)
+	if err != nil {
+		return err
 	}
 	req := api.InstallOrUpdateSystemRequest{
 		SystemId:    args.SystemID,
 		InstallOnly: !args.AllowUpdate,
 		Config: &api.InstallOrUpdateSystemRequest_YamlConfig{
-			YamlConfig: yamlConfig,
+			YamlConfig: &api.YamlConfig{
+				Content:      yamlContent,
+				IsTemplate:   args.IsTemplate,
+				TemplateArgs: args.TemplateArgs,
+			},
 		},
 	}
-	_, err := c.adminClient.InstallOrUpdateSystem(ctx, &req)
+	_, err = c.adminClient.InstallOrUpdateSystem(ctx, &req)
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("System install started; waiting for system to become active.")
 	for {
 		system, err := c.publicClient.GetSystem(ctx, &api.GetSystemRequest{SystemId: args.SystemID})
 		if err != nil {
@@ -92,6 +93,7 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 		}
 		switch system.Status {
 		case api.System_ACTIVE:
+			fmt.Println("System installed.")
 			return nil
 		case api.System_INSTALL_FAILED, api.System_UPDATE_FAILED:
 			return fmt.Errorf("failed to install/update system")
@@ -99,6 +101,49 @@ func (c *Client) InstallSystem(ctx context.Context, args InstallSystemArgs) erro
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
+}
+
+func getYamlContent(args InstallSystemArgs) (string, error) {
+	switch args.ConfigPathType {
+	case File:
+		fmt.Printf("Reading system config from file %s.\n", args.ConfigPath)
+		yaml, err := os.ReadFile(args.ConfigPath)
+		if err != nil {
+			return "", err
+		}
+		return string(yaml), nil
+	case URL:
+		fmt.Printf("Getting system config from URL %s.\n", args.ConfigPath)
+		yaml, err := getURL(args.ConfigPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to read transit system config from URL: %w", err)
+		}
+		return yaml, nil
+	default:
+		url := fmt.Sprintf("https://raw.githubusercontent.com/jamespfennell/transiter/master/systems/%s.yaml", args.ConfigPath)
+		fmt.Printf("Getting system config from Transiter repository at %s.\n", url)
+		yaml, err := getURL(url)
+		if err != nil {
+			return "", fmt.Errorf("failed to read transit system config from the Transiter repository: %w", err)
+		}
+		return yaml, nil
+	}
+}
+
+func getURL(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("%s", resp.Status)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }
 
 func (c *Client) UpdateFeed(ctx context.Context, systemID, feedID string, force bool) error {

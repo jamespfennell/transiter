@@ -52,7 +52,7 @@ be determined by polling the GetSystem method and inspecting the status field.
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system to install or update.
 | system_config | [SystemConfig](admin.md#SystemConfig) | 
-| yaml_config | [TextConfig](admin.md#TextConfig) | TODO: TextConfig json_config = 4;
+| yaml_config | [YamlConfig](admin.md#YamlConfig) | 
 | install_only | bool | If true, do not perform an update if the system already exists.
 
 
@@ -600,26 +600,24 @@ Configuration for a system.
 
 
 
-### TextConfig
+### YamlConfig
 
-TextConfig contains a Transiter system configuration in non-proto format
-(e.g. YAML or JSON).
+YamlConfig contains a Transiter system configuration in YAML format.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| url | string | A URL where the config can be retrieved from using a simple GET request. If the URL requires a more complex interaction (authentication, a different HTTP verb), the config should be retrieved outside of Transiter and provided in the content field.
-| content | string | The text content of the config.
+| content | string | The YAML content.
 | is_template | bool | Whether the config is a template. If true the config will first be processed using Go's template library.
-| template_args | [TextConfig.TemplateArgsEntry](admin.md#TextConfig.TemplateArgsEntry) | Arguments to pass to Go's template library if the config is a template.<br /><br />In general as much information as possible should be in the config itself. The template args are intended for things like API keys which are secret and/or different for each person that installs the system.
+| template_args | [YamlConfig.TemplateArgsEntry](admin.md#YamlConfig.TemplateArgsEntry) | Arguments to pass to Go's template library if the config is a template.<br /><br />In general as much information as possible should be in the config itself. The template args are intended for things like API keys which are secret and/or different for each person that installs the system.
 
 
 
 
 
 
-#### TextConfig.TemplateArgsEntry
+#### YamlConfig.TemplateArgsEntry
 
 
 	

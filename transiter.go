@@ -18,8 +18,9 @@ import (
 func main() {
 	argsMap := map[string]string{}
 	app := &cli.App{
-		Name:  "Transiter",
-		Usage: "web service for transit data",
+		Name:        "transiter",
+		Usage:       "web service for transit data",
+		Description: binaryDescription,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "addr",
@@ -30,140 +31,29 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			{
-				Name:  "delete",
-				Usage: "delete a transit system",
-				Action: func(c *cli.Context) error {
-					if c.Args().Len() == 0 {
-						return fmt.Errorf("must provide the ID of the system to delete")
-					}
-					return clientAction(func(ctx context.Context, client *client.Client) error {
-						return client.DeleteSystem(ctx, c.Args().Get(0))
-					})(c)
-				},
-			},
-			{
-				Name:  "install",
-				Usage: "install a transit system",
+				Name:      "server",
+				Usage:     "run a Transiter server",
+				ArgsUsage: " ",
 				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:    "file",
-						Aliases: []string{"f"},
-						Usage:   "interpret the second argument as a local file path",
-						Value:   false,
-					},
-					&cli.BoolFlag{
-						Name:  "template",
-						Usage: "indicates that the input file is a Go template",
-						Value: false,
-					},
-					&cli.BoolFlag{
-						Name:    "update",
-						Aliases: []string{"u"},
-						Usage:   "if the system is already installed, update it with the provided config",
-						Value:   false,
-					},
-					argsflag.NewCliFlag("arg", "", argsMap),
-				},
-				Action: func(c *cli.Context) error {
-					if c.Args().Len() == 0 {
-						return fmt.Errorf("must provide the ID of the system to delete")
-					}
-					// TODO: pass the file name using --file and url using --url
-					if c.Args().Len() == 1 {
-						return fmt.Errorf("must provide a URL or file path for the transit system Yaml config")
-					}
-					args := client.InstallSystemArgs{
-						SystemID:     c.Args().Get(0),
-						ConfigPath:   c.Args().Get(1),
-						IsFile:       c.Bool("file"),
-						AllowUpdate:  c.Bool("update"),
-						IsTemplate:   c.Bool("template") || c.IsSet("arg"),
-						TemplateArgs: c.Value("arg").(map[string]string),
-					}
-					return clientAction(func(ctx context.Context, client *client.Client) error {
-						return client.InstallSystem(ctx, args)
-					})(c)
-				},
-			},
-			{
-				Name:  "list",
-				Usage: "list all installed transit systems",
-				Action: clientAction(func(ctx context.Context, client *client.Client) error {
-					return client.ListSystems(ctx)
-				}),
-			},
-			{
-				Name:  "log-level",
-				Usage: "get or set the log level",
-				Flags: []cli.Flag{
+					addrFlag("public HTTP", "public-http", 8080),
+					addrFlag("public gRPC", "public-grpc", 8081),
+					addrFlag("admin HTTP", "admin-http", 8082),
+					addrFlag("admin gRPC", "admin-grpc", 8083),
 					&cli.StringFlag{
-						Name:  "set",
-						Usage: "The new value of the log level. If not set, the current log level is just printed.",
-						Value: "",
+						Name:        "postgres-connection-string",
+						Aliases:     []string{"p"},
+						Usage:       "Postgres connection string",
+						Value:       "postgres://transiter:transiter@localhost:5432/transiter",
+						DefaultText: "postgres://transiter:transiter@localhost:5432/transiter",
 					},
-				},
-				Action: func(c *cli.Context) error {
-					return clientAction(func(ctx context.Context, client *client.Client) error {
-						if logLevel := c.String("set"); logLevel != "" {
-							return client.SetLogLevel(ctx, logLevel)
-						}
-						return client.GetLogLevel(ctx)
-					})(c)
-				},
-			},
-			{
-				Name:  "scheduler",
-				Usage: "perform operations on the Transiter feed update scheduler",
-				Subcommands: []*cli.Command{
-					{
-						Name:  "status",
-						Usage: "list the active periodic feed update tasks",
-						Action: clientAction(func(ctx context.Context, client *client.Client) error {
-							return client.SchedulerStatus(ctx)
-						}),
-					},
-					{
-						Name:  "reset",
-						Usage: "reset all of the periodic feed update tasks",
-						Action: clientAction(func(ctx context.Context, client *client.Client) error {
-							return client.ResetScheduler(ctx)
-						}),
-					},
-				},
-			},
-			{
-				Name:  "server",
-				Usage: "run a Transiter server",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "public-http-addr",
-						Usage: "Address the public HTTP server will listen on. Set to - to disable the public HTTP API.",
-						Value: "0.0.0.0:8080",
-					},
-					&cli.StringFlag{
-						Name:  "public-grpc-addr",
-						Usage: "Address the public gRPC server will listen on. Set to - to disable the public gRPC API.",
-						Value: "0.0.0.0:8081",
-					},
-					&cli.StringFlag{
-						Name:  "admin-http-addr",
-						Usage: "Address the admin HTTP server will listen on. Set to - to disable the admin HTTP API.",
-						Value: "0.0.0.0:8082",
-					},
-					&cli.StringFlag{
-						Name:  "admin-grpc-addr",
-						Usage: "Address the admin gRPC server will listen on. Set to - to disable the admin gRPC HTTP API.",
-						Value: "0.0.0.0:8083",
-					},
-					&cli.StringFlag{
-						Name:    "postgres-connection-string",
-						Aliases: []string{"p"},
-						Usage:   "Postgres connection string",
-						Value:   "postgres://transiter:transiter@localhost:5432/transiter",
+					&cli.Int64Flag{
+						Name:  "postgres-max-connections",
+						Usage: "Maximum size of the Postgres connection pool",
+						Value: 50,
 					},
 					&cli.BoolFlag{
 						Name:  "read-only",
-						Usage: "Run in read only mode (no admin APIs, no scheduler, read only database interactions)",
+						Usage: "Run the server in read only mode (no admin APIs, no scheduler, read-only database queries)",
 						Value: false,
 					},
 					&cli.BoolFlag{
@@ -173,28 +63,24 @@ func main() {
 					},
 					&cli.BoolFlag{
 						Name:  "enable-pprof",
-						Usage: "Enable pprof debugging via the admin HTTP API",
-						Value: true,
+						Usage: "Enable pprof debugging. When enabled, pprof dumps can be taken using the /debug/pprof endpoints of the admin HTTP API",
+						Value: false,
 					},
 					&cli.BoolFlag{
 						Name:  "disable-public-metrics",
-						Usage: "Don't report Prometheus metrics on the public HTTP API's /metrics endpoint. Metrics are always reported on the admin HTTP API",
+						Usage: "Disable report Prometheus metric reporting on the public HTTP API's /metrics endpoint. Metrics are always reported in the admin HTTP API",
 						Value: false,
 					},
 					&cli.Int64Flag{
-						Name:  "max-connections",
-						Usage: "Maximum size of the Postgres connection pool",
-						Value: 50,
-					},
-					&cli.Int64Flag{
 						Name:  "max-entities-per-request",
-						Usage: "Maximum number of stops, vehicles, and shapes that will be returned in a single request. Specifying a value <= 0 will disable the limit.",
+						Usage: "Maximum number of stops, vehicles, and shapes that will be returned in a single request. Specifying a value <= 0 will disable the limit",
 						Value: 100,
 					},
 					&cli.StringFlag{
-						Name:  "log-level",
-						Usage: "Log level, either debug, info, warning or error",
-						Value: "info",
+						Name:        "log-level",
+						Usage:       "The log level, either debug, info, warning or error. This can be changed after startup using the client's log-level command",
+						Value:       "info",
+						DefaultText: "info",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -208,7 +94,7 @@ func main() {
 						AdminHTTPAddr:         c.String("admin-http-addr"),
 						AdminGrpcAddr:         c.String("admin-grpc-addr"),
 						PostgresConnStr:       c.String("postgres-connection-string"),
-						MaxConnections:        int32(c.Int64("max-connections")),
+						MaxConnections:        int32(c.Int64("postgres-max-connections")),
 						DisableScheduler:      c.Bool("disable-scheduler"),
 						DisablePublicMetrics:  c.Bool("disable-public-metrics"),
 						ReadOnly:              c.Bool("read-only"),
@@ -241,6 +127,20 @@ func main() {
 							return err
 						}
 					}
+				},
+			},
+			{},
+			{
+				Name:      "delete",
+				Usage:     "delete a transit system",
+				ArgsUsage: "<system_id>",
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() == 0 {
+						return fmt.Errorf("must provide the ID of the system to delete")
+					}
+					return clientAction(func(ctx context.Context, client *client.Client) error {
+						return client.DeleteSystem(ctx, c.Args().Get(0))
+					})(c)
 				},
 			},
 			{
@@ -279,6 +179,122 @@ func main() {
 				},
 			},
 			{
+				Name:        "install",
+				Usage:       "install a transit system",
+				Description: installDescription,
+				ArgsUsage:   "<system>",
+				Flags: []cli.Flag{
+					// id
+					&cli.BoolFlag{
+						Name:    "file",
+						Aliases: []string{"f"},
+						Usage:   "treat <system> as a file path and get the config by reading the file",
+						Value:   false,
+					},
+					&cli.BoolFlag{
+						Name:    "url",
+						Aliases: []string{"u"},
+						Usage:   "treat <system> as a URL and get the config by sending a GET request to the URL",
+						Value:   false,
+					},
+					&cli.BoolFlag{
+						Name:    "allow-update",
+						Aliases: []string{"a"},
+						Usage:   "if the system is already installed, update it with the provided config",
+						Value:   false,
+					},
+					&cli.BoolFlag{
+						Name:  "template",
+						Usage: "indicates that the YAML config file is a Go template",
+						Value: false,
+					},
+					argsflag.NewCliFlag("arg", "", argsMap),
+					&cli.StringFlag{
+						Name:        "id",
+						Usage:       "system ID to install under",
+						Value:       "",
+						DefaultText: "inferred from <system>; e.g. my-system.yaml is installed under ID my-system",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					if c.Args().Len() != 1 {
+						return fmt.Errorf("exactly one argument <system> must be provided")
+					}
+					id := defaultSystemID(c.Args().Get(0))
+					if idOverride := c.String("id"); idOverride != "" {
+						id = idOverride
+					}
+					if c.Bool("file") && c.Bool("url") {
+						return fmt.Errorf("both -f/--file and -u/--url cannot be provided as it's ambiguous whether <system> is a file or a URL")
+					}
+					configPathType := client.TransiterRepo
+					if c.Bool("file") {
+						configPathType = client.File
+					}
+					if c.Bool("url") {
+						configPathType = client.URL
+					}
+					args := client.InstallSystemArgs{
+						SystemID:       id,
+						ConfigPath:     c.Args().Get(0),
+						ConfigPathType: configPathType,
+						AllowUpdate:    c.Bool("update"),
+						IsTemplate:     c.Bool("template") || c.IsSet("arg"),
+						TemplateArgs:   c.Value("arg").(map[string]string),
+					}
+					return clientAction(func(ctx context.Context, client *client.Client) error {
+						return client.InstallSystem(ctx, args)
+					})(c)
+				},
+			},
+			{
+				Name:  "list",
+				Usage: "list all installed transit systems",
+				Action: clientAction(func(ctx context.Context, client *client.Client) error {
+					return client.ListSystems(ctx)
+				}),
+			},
+			{
+				Name:  "log-level",
+				Usage: "get or set the log level on the server",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "set",
+						Usage: "The new value of the log level. If not specified, the current log level is just printed.",
+						Value: "",
+					},
+				},
+				Action: func(c *cli.Context) error {
+					return clientAction(func(ctx context.Context, client *client.Client) error {
+						if logLevel := c.String("set"); logLevel != "" {
+							return client.SetLogLevel(ctx, logLevel)
+						}
+						return client.GetLogLevel(ctx)
+					})(c)
+				},
+			},
+			{
+				Name:  "scheduler",
+				Usage: "perform operations on the Transiter feed update scheduler",
+				Subcommands: []*cli.Command{
+					{
+						Name:  "status",
+						Usage: "list the active periodic feed update tasks",
+						Action: clientAction(func(ctx context.Context, client *client.Client) error {
+							return client.SchedulerStatus(ctx)
+						}),
+					},
+					{
+						Name:  "reset",
+						Usage: "reset all of the periodic feed update tasks",
+						Action: clientAction(func(ctx context.Context, client *client.Client) error {
+							return client.ResetScheduler(ctx)
+						}),
+					},
+				},
+			},
+			{},
+			{
 				Name:  "version",
 				Usage: "print the version of this binary, or a Transiter server",
 				Flags: []cli.Flag{
@@ -308,6 +324,81 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
+	}
+}
+
+const binaryDescription = `The Transiter program contains two types of command.
+
+The ` + "`" + `transiter server` + "`" + ` command is used to start a Transiter server.
+This is a long-running program that subscribes to transit data feeds
+and provides APIs for querying transit data.
+
+All of the other commands in this binary are client commands. These
+perform operations on a running Transiter server, like installing a
+or deleting a transit system.
+
+Documentation: docs.transiter.dev.
+GitHub repo: github.com/jamespfennell/transiter.`
+
+const installDescription = `This command installs a transit system.
+
+A YAML configuration file must be provided. If the system exists in
+the Transiter
+repository (see [1]) then the system can be installed simply by 
+providing the ID of the system. This command will automatically pull
+the config from the Transiter repo. For example, to install the Bay
+Area BART:
+
+    transiter install us-ca-bart
+
+Alternatively, the system can be installed by providing a YAML
+configuration from a local file:
+
+	transiter install --file path/to/my-system.yaml
+
+In this case the system will be given the ID my-system, but this can
+be overridden by setting the --id flag. Similarly, the system can be
+installed by providing the YAML configuration at a URL:
+
+	transiter install --url example.com/my-system.yaml
+
+As before, the system will be given the ID my-system and this can be
+overridden.
+
+By default, if the system with the provided ID already exists Transiter
+will return an error. The motivation for this behavior is to avoid
+unintentionally damaging an existing transit system. Passing the flag
+--allow-update will instead the update the transit system with the
+provided configuration.
+
+Transit system configs can be plain YAML configs, or Go templates
+that resolve to a YAML config. The flags --arg and --template are
+used when the config is a Go template. See the documentation [2] for more
+information on how templated configs work.
+
+[1] https://github.com/jamespfennell/transiter/tree/master/systems
+[2] https://docs.transiter.dev/systems
+`
+
+func defaultSystemID(system string) string {
+	// remove the file extension
+	if i := strings.LastIndex(system, "."); i >= 0 {
+		system = system[:i]
+	}
+	// remove the directory
+	if i := strings.LastIndexAny(system, `\/`); i >= 0 {
+		system = system[i+1:]
+	}
+	return system
+}
+
+func addrFlag(api string, name string, defaultPort int) *cli.StringFlag {
+	defaultValue := fmt.Sprintf("0.0.0.0:%d", defaultPort)
+	return &cli.StringFlag{
+		Name:        fmt.Sprintf("%s-addr", name),
+		Usage:       fmt.Sprintf("Address for the %s service to listen on. Setting this flag to \"-\" disables the %s API", api, api),
+		DefaultText: defaultValue,
+		Value:       defaultValue,
 	}
 }
 

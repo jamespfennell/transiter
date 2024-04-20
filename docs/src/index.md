@@ -1,8 +1,9 @@
 # Transiter: web service for transit data
 
-Welcome to the Transiter documentation!
-If this is your first time encountering Transiter,
-the [Transiter Tour](tour.md) is the best place to start.
+This is the documentation for Transiter ([GitHub repo](https://github.com/jamespfennell/transiter)).
+If this is your first time encountering Transiter
+    we recommend that you start with [the Transiter Tour](tour.md).
+
 
 ## Contents
 
@@ -19,6 +20,7 @@ the [Transiter Tour](tour.md) is the best place to start.
     - [Public API resources](api/public_resources.md).
     - [Public API endpoints](api/public_endpoints.md).
     - [Admin API](api/admin.md).
+
 
 ## External links
 

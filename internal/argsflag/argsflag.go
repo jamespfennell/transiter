@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 )
 
 // Flag implements the standard library's Value and Getter interfaces.
@@ -14,7 +16,7 @@ type Flag struct {
 }
 
 func (f *Flag) String() string {
-	return "todo"
+	return "--arg key=value"
 }
 
 func (f *Flag) Set(rawValue string) error {
@@ -54,7 +56,7 @@ func NewCliFlag(Name, Usage string, Values map[string]string) *CliFlag {
 }
 
 func (c *CliFlag) String() string {
-	return c.flag.String()
+	return cli.FlagStringer(c)
 }
 
 func (c *CliFlag) Apply(f *flag.FlagSet) error {
@@ -68,4 +70,32 @@ func (c *CliFlag) Names() []string {
 
 func (c *CliFlag) IsSet() bool {
 	return c.flag.hasBeenSet
+}
+
+func (c *CliFlag) TakesValue() bool {
+	return true
+}
+
+func (c *CliFlag) GetUsage() string {
+	return "`arg` provides one or more Go template arguments for the config. Each arg must be of the form key=value"
+}
+
+func (c *CliFlag) GetValue() string {
+	return "GetValue"
+}
+
+func (c *CliFlag) GetDefaultText() string {
+	return "no arguments"
+}
+
+func (c *CliFlag) GetEnvVars() []string {
+	return nil
+}
+
+func (c *CliFlag) IsSliceFlag() bool {
+	return true
+}
+
+func (c *CliFlag) IsVisible() bool {
+	return true
 }

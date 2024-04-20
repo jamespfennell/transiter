@@ -1,25 +1,25 @@
 # Transiter
 
 Transiter is a backend web service that makes it easy to use realtime transit data.
-Using Transiter, you can build things like
+Transiter can be used to build things like
     web apps ([realtimerail.nyc](https://realtimerail.nyc), [closingdoors.nyc](https://closingdoors.nyc))
     and arrival time boards,
-    and query transit data from other software.
+    and query transit data from other applications.
 
-Transiter subscribes to GTFS transit data feeds from different agencies
+Transiter subscribes to GTFS transit data feeds from different transit agencies
     and provides integrated views of the data through a HTTP REST API.
-The [endpoint for a particular stop](https://demo.transiter.dev/systems/us-ny-subway/stops/L03), for example, returns:
+The [endpoint for each station](https://demo.transiter.dev/systems/us-ny-subway/stops/L03), for example, provides:
 
-- the stop's static data (such as its name and GPS coordinates), 
+- the station's static data (such as its name and GPS coordinates), 
 
-- the stop's realtime data (the list of vehicles that will arrive next, and the times they will arrive), 
+- the station's realtime data (the list of vehicles that will arrive next, and the times they will arrive), 
 
 - and derived data that Transiter computes automatically,
-    such as which routes usually call at the stop.
+    such as which routes usually call at the station.
 
 You can get a sense for the data that's available by navigating
-    through the [live demo site](https://demo.transiter.dev).
-You can do this programmatically, too:
+    through the [live demo site](https://demo.transiter.dev),
+    or by interacting with it programmatically:
 
 ```python
 # Python snippet that finds the next train at the Rockefeller Center NYC subway station
@@ -30,22 +30,30 @@ secondsToLeave = int(firstStopTime["departure"]["time"]) - time.time()
 print(f'The next train leaves in {int(secondsToLeave)} seconds and goes to {firstStopTime["trip"]["destination"]["name"]}.')
 ```
 
+The [Transiter tour](https://docs.transiter.dev/tour/) contains many
+    more examples like this.
+
 Note that the demo site is best effort!
-In general each user of Transiter runs their own Transiter instance
-    that contains the transit systems of interest.
+In general if you want to use Transiter for an application
+    you will run and own [your own Transiter deployment](https://docs.transiter.dev/deployment).
 
-Transiter has a [WIP documentation website](https://docs.transiter.dev)
+## Quickstart guide
 
-## Getting started locally
+This is a whirlwind version of the [Transiter tour](https://docs.transiter.dev/tour/)
+    on the [documentation website](https://docs.transiter.dev/).
 
-Transiter uses Postgres with the PostGIS extension for persisting data.
+Transiter uses Postgres for persisting data, and requires Postgres to have the PostGIS Postgres extension
 By default Transiter assumes the database/user/password is `transiter`/`transiter`/`transiter`,
     but all these values can be configured.
-If you have Docker compose installed,
-    you can easily spin up an appropriate Postgres instance from the root of the repo:
+If you have Docker installed,
+    you can easily spin up the right kind of Postgres instance
+    by running the following command:
 
 ```
-docker-compose up postgres
+docker run \
+    -e POSTGRES_USER=transiter -e POSTGRES_PASSWORD=transiter -e POSTGRES_DB=transiter \
+    -p 0.0.0.0:5432:5432 \
+    postgis/postgis:14-3.4
 ```
 
 Transiter is written in Go.
@@ -72,36 +80,35 @@ transiter list
 This will show that there are no transit systems installed.
 The next step is install one!
 
-**NY/NJ PATH train**:
+**San Francisco area BART**:
 
 ```
-transiter install -f us-ny-path systems/us-ny-path.yaml
+transiter install us-ca-bart
 ```
 
 **New York City subway**: If you have an [MTA API key](https://api.mta.info/#/landing):
 
 ```
-transiter install --arg mta_api_key=$MTA_API_KEY -f us-ny-subway systems/us-ny-subway.yaml
+transiter install --arg mta_api_key=$MTA_API_KEY us-ny-subway
 ```
 
 In either case, the server logs will show that GTFS feed updates are happening,
     and the HTTP API will be populated with data.
-If you installed the NYC subway, to get data about the Rockefeller Center station visit:
+If you installed the BART, you can get data about the Embarcadero station by visiting:
 
 ```
-localhost:8080/systems/us-ny-subway/stops/D15
+localhost:8080/systems/us-ca-bart/stops/place_EMBR
 ```
-
 
 ## Development guide
 
-This is a guide for those who are interested in developing Transiter.
-PRs are very welcome.
+This is a guide for people who are interested in developing Transiter.
+PRs are very welcome!
 
 ### Dev requirements
 
 The basic requirements are the same as for running Transiter,
-    Postgres 14+ and Go 1.18+.
+    Postgres 14+ with PostGIS and Go 1.18+.
 Additionally, the project uses the [command runner tool Just](https://just.systems).
 Installing Just is optional: as an alternative,
     you can always manually run the commands in the justfile.
@@ -146,3 +153,7 @@ Then run the code generation:
 ```
 just generate
 ```
+
+## License
+
+MIT
