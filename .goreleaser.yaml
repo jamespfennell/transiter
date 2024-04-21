@@ -1,0 +1,18 @@
+project_name: example
+builds:
+  - goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+nfpms:
+- maintainer: James Fennell <james@jpfennell.com>
+  description: "Transiter: web service for transit data",
+  homepage: https://github.com/jamespfennell/transiter
+  license: MIT
+  formats:
+  - deb
+  - rpm
+  - apk

@@ -18,11 +18,14 @@ jobs:
         run: |
           BASE_VERSION=$(cat internal/version/BASE_VERSION)
           VERSION=${BASE_VERSION}-dev.build${{ github.run_number }}
+          PUSH_DOCKER='false'
+          IS_RELEASE='false'
 
           # If this is a push to mainline, give it the beta release
           if [ "${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}" = "true" ]
           then
             VERSION=${BASE_VERSION}-beta.build${{ github.run_number }}
+            PUSH_DOCKER='true'
           fi
 
           # If this is a release, give it the full version.
@@ -30,10 +33,13 @@ jobs:
           if [ "${{ github.ref }}" = "refs/tags/v${BASE_VERSION}" ]
           then
             VERSION=${BASE_VERSION}
+            PUSH_DOCKER='true'
+            IS_RELEASE='true'
           fi
 
           echo "Setting version to ${VERSION}"
           echo "TRANSITER_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "TRANSITER_PUSH_DOCKER=${PUSH_DOCKER}" >> $GITHUB_ENV
 
       - name: Launch Postgres
         run: docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgis/postgis:14-3.4
@@ -54,16 +60,14 @@ jobs:
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
-        # Only push to Docker Hub if this workflow is a push to mainline
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
+        if: ${{ env.TRANSITER_PUSH_DOCKER = 'true' }}
         with:
           username: jamespfennell
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Push to Docker Hub
         uses: docker/build-push-action@v4
-        # Only push to Docker Hub if this workflow is a push to mainline
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
+        if: ${{ env.TRANSITER_PUSH_DOCKER = 'true' }}
         with:
           tags: |
             jamespfennell/transiter:latest
@@ -72,3 +76,12 @@ jobs:
             "TRANSITER_VERSION=${{ env.TRANSITER_VERSION }}"
           context: .
           push: true
+
+      - name: Run goreleaser
+        uses: goreleaser/goreleaser-action@v2
+        if: ${{ env.TRANSITER_IS_RELEASE = 'true' }}
+        with:
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GORELEASER_GITHUB_TOKEN }}
