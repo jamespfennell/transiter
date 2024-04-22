@@ -40,6 +40,7 @@ jobs:
           echo "Setting version to ${VERSION}"
           echo "TRANSITER_VERSION=${VERSION}" >> $GITHUB_ENV
           echo "TRANSITER_PUSH_DOCKER=${PUSH_DOCKER}" >> $GITHUB_ENV
+          echo "TRANSITER_IS_RELEASE=${IS_RELEASE}" >> $GITHUB_ENV
 
       - name: Launch Postgres
         run: docker run -d --env POSTGRES_USER=transiter --env POSTGRES_PASSWORD=transiter --env POSTGRES_DB=transiter -p 5432:5432 postgis/postgis:14-3.4
