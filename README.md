@@ -154,6 +154,21 @@ Then run the code generation:
 just generate
 ```
 
+### Creating a release
+
+Releases are created in the GitHub UI.
+The release number `vX.Y.Z` must match the contents of the file `internal/version/BASE_VERSION`.
+In the releases UI:
+
+- Use a new tag with name `vX.Y.Z`.
+- Set the release name to `vX.Y.Z`.
+- Mark the release as a pre-release. 
+    The goreleaser infrastructure will automatically promote it to a full release
+    when the assets are pushed.
+
+After the release is created, bump the version number in `internal/version/BASE_VERSION`
+    and commit to mainline.
+
 ## License
 
 MIT
