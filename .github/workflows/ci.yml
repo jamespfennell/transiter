@@ -33,7 +33,7 @@ jobs:
           if [ "${{ github.ref }}" = "refs/tags/v${BASE_VERSION}" ]
           then
             VERSION=${BASE_VERSION}
-            PUSH_DOCKER='true'
+            PUSH_DOCKER='todo'
             IS_RELEASE='true'
           fi
 
