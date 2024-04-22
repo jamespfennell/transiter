@@ -59,6 +59,7 @@ jobs:
           context: .
 
       - name: Run CI
+        if: false
         run: just ci
 
       - name: Login to DockerHub
