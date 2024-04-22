@@ -60,14 +60,14 @@ jobs:
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
-        if: ${{ env.TRANSITER_PUSH_DOCKER = 'true' }}
+        if: ${{ env.TRANSITER_PUSH_DOCKER == 'true' }}
         with:
           username: jamespfennell
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Push to Docker Hub
         uses: docker/build-push-action@v4
-        if: ${{ env.TRANSITER_PUSH_DOCKER = 'true' }}
+        if: ${{ env.TRANSITER_PUSH_DOCKER == 'true' }}
         with:
           tags: |
             jamespfennell/transiter:latest
@@ -79,7 +79,7 @@ jobs:
 
       - name: Run goreleaser
         uses: goreleaser/goreleaser-action@v2
-        if: ${{ env.TRANSITER_IS_RELEASE = 'true' }}
+        if: ${{ env.TRANSITER_IS_RELEASE == 'true' }}
         with:
           version: latest
           args: release --rm-dist
