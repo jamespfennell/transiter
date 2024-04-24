@@ -1,4 +1,4 @@
-# Deploying Transiter
+# Deployment
 
 A Transiter deployment has two pieces:
 
@@ -10,9 +10,10 @@ A Transiter deployment has two pieces:
     For other options, consult [the PostGIS documentation](https://postgis.net/documentation/getting_started/#installing-postgis).
 
 - The Transiter binary.
-    This is available as a Docker image `jamespfennell/transiter:latest`
-    or can be built by running `go build .` in the Transiter repository.
-    In future we hope to distribute prebuilt binaries as part of our release process.
+    This is available in a Docker image,
+    or can be built by running `go build .` in the Transiter repository,
+    or by downloading a prebuilt binary from
+    [the GitHub releases page](https://github.com/jamespfennell/transiter/releases).
 
 Because the deployment model is so simple,
     there are many ways to deploy Transiter.
@@ -25,7 +26,9 @@ Each build on mainline gets its own specific tag too,
   in case you want to pin to a specific version.
 The tags have one of two forms:
 
-- For _releases_ of version vA.B.C, the tag is `jamespfennell/transiter:vA.B.C`
+- For _releases_ of version vA.B.C, the tag is `jamespfennell/transiter:vA.B.C`.
+    The available releases are listed on [the GitHub releases page](https://github.com/jamespfennell/transiter/releases).
+
 - For non-release builds on mainline of version vA.B.C, the tag is `jamespfennell/transiter:vA.B.C-beta.buildN`,
     where N is a GitHub build number.
     The easiest way to find a valid tag is to
@@ -40,7 +43,7 @@ version: '3.5'
 services:
 
   transiter:
-    image: jamespfennell/transiter:1.0.0-beta.build12
+    image: jamespfennell/transiter:1.0.0
     ports:
       - "127.0.0.1:8080:8080"
       - "127.0.0.1:8081:8081"
@@ -131,9 +134,9 @@ transiter list
 ```
 
 on your personal machine and it will work.
-You can also install/delete transit systems this way, and so on.
+You can also install/delete transit systems this way, etc.
 
 
 ## Monitoring
 
-After deploying Transiter you [may be interested in monitoring it](monitoring.md).
+After deploying Transiter you [may be want to monitor it](monitoring.md).

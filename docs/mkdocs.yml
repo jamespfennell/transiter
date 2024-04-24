@@ -23,7 +23,7 @@ markdown_extensions:
 # Page tree
 nav:
   - Home: index.md
-  - tour.md
+  - beginner.md
   - systems.md
   - deployment.md
   - monitoring.md

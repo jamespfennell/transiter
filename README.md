@@ -30,8 +30,8 @@ secondsToLeave = int(firstStopTime["departure"]["time"]) - time.time()
 print(f'The next train leaves in {int(secondsToLeave)} seconds and goes to {firstStopTime["trip"]["destination"]["name"]}.')
 ```
 
-The [Transiter tour](https://docs.transiter.dev/tour/) contains many
-    more examples like this.
+The [beginner's guide](https://docs.transiter.dev/beginner/)
+    contains many more examples of data that's available from the API.
 
 Note that the demo site is best effort!
 In general if you want to use Transiter for an application
@@ -39,7 +39,7 @@ In general if you want to use Transiter for an application
 
 ## Quickstart guide
 
-This is a whirlwind version of the [Transiter tour](https://docs.transiter.dev/tour/)
+This is a whirlwind version of the [beginner's guide](https://docs.transiter.dev/beginner/)
     on the [documentation website](https://docs.transiter.dev/).
 
 Transiter uses Postgres for persisting data, and requires Postgres to have the PostGIS Postgres extension
@@ -56,17 +56,18 @@ docker run \
     postgis/postgis:14-3.4
 ```
 
-Transiter is written in Go.
-To build Transiter and install it run:
+Next you need to install Transiter, which is distributed both as a single standalone binary or a Docker image.
+There are few options for installing Transiter:
+
+- Prebuilt binaries are available on [the GitHub releases page](https://github.com/jamespfennell/transiter/releases).
+- If you have Go installed, you can simply run `go install .` in the root of the Transiter repo.
+- Run Transiter using Docker - replace `transiter`
+    with `docker run --network=host jamespfennell/transiter:latest` in the examples below.
+
+After installation, the Transiter _server_ is launched using:
 
 ```
-go install .
-```
-
-After this, the Transiter _server_ is launched using:
-
-```
-transiter server
+transiter server --log-level debug
 ```
 
 Transiter's HTTP API will now be available on `localhost:8080`.
@@ -92,7 +93,7 @@ transiter install us-ca-bart
 transiter install --arg mta_api_key=$MTA_API_KEY us-ny-subway
 ```
 
-In either case, the server logs will show that GTFS feed updates are happening,
+In either case, the server logs will show GTFS feed updates happening every few seconds,
     and the HTTP API will be populated with data.
 If you installed the BART, you can get data about the Embarcadero station by visiting:
 
@@ -102,7 +103,7 @@ localhost:8080/systems/us-ca-bart/stops/place_EMBR
 
 ## Development guide
 
-This is a guide for people who are interested in developing Transiter.
+This is a guide for developing Transiter itself.
 PRs are very welcome!
 
 ### Dev requirements

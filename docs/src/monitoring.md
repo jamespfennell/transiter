@@ -1,13 +1,12 @@
-# Monitoring Transiter
+# Monitoring
 
 Transiter includes Prometheus metrics for monitoring a running deployment.
-If you are running Transiter,
-    the main thing you are likely interested in is how feed updates are performing.
+The main thing you are likely interested in is the success of feed updates.
 If feed updates are failing, the data being served by your Transiter instance will be stale.
 
 This page describes the most interesting metrics.
 All of the metrics are defined [in this Go source file](https://github.com/jamespfennell/transiter/blob/master/internal/monitoring/monitoring.go)
-If you have an idea for a new metric, please file an issue or create a PR.
+If you have an idea for a new metric, please file an issue or create a PR!
 
 ## Feed update metrics
 
