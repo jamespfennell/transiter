@@ -22,7 +22,7 @@ type PublicClient interface {
 	//
 	// `GET /`
 	//
-	// Provides basic information about this Transiter instance and the Transit systems it contains.
+	// Provides basic information about this Transiter instance and the transit systems it contains.
 	Entrypoint(ctx context.Context, in *EntrypointRequest, opts ...grpc.CallOption) (*EntrypointReply, error)
 	// List systems
 	//
@@ -343,7 +343,7 @@ type PublicServer interface {
 	//
 	// `GET /`
 	//
-	// Provides basic information about this Transiter instance and the Transit systems it contains.
+	// Provides basic information about this Transiter instance and the transit systems it contains.
 	Entrypoint(context.Context, *EntrypointRequest) (*EntrypointReply, error)
 	// List systems
 	//

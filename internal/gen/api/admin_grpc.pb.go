@@ -33,7 +33,8 @@ type AdminClient interface {
 	// This is an asynchronous operation.
 	// The system configuration is validated before the request finishes
 	// but database and feed updates are performed asynchronously. The status of the operation can
-	// be determined by polling the GetSystem method and inspecting the status field.
+	// be determined by polling the [GetSystem endpoint](public_endpoints.md#get-system)
+	// and inspecting the status field of the system.
 	InstallOrUpdateSystem(ctx context.Context, in *InstallOrUpdateSystemRequest, opts ...grpc.CallOption) (*InstallOrUpdateSystemReply, error)
 	// Delete a system
 	//
@@ -64,7 +65,7 @@ type AdminClient interface {
 	// In general this endpoint should never be needed;
 	//
 	//	 Transiter automatically restarts the scheduler when needed.
-	//	The main usecase is when the Postgres configuration is manually
+	//	The main use-case is when the Postgres configuration is manually
 	//	 updated and the scheduler needs to see the update.
 	ResetScheduler(ctx context.Context, in *ResetSchedulerRequest, opts ...grpc.CallOption) (*ResetSchedulerReply, error)
 	// Get the current log level.
@@ -176,7 +177,8 @@ type AdminServer interface {
 	// This is an asynchronous operation.
 	// The system configuration is validated before the request finishes
 	// but database and feed updates are performed asynchronously. The status of the operation can
-	// be determined by polling the GetSystem method and inspecting the status field.
+	// be determined by polling the [GetSystem endpoint](public_endpoints.md#get-system)
+	// and inspecting the status field of the system.
 	InstallOrUpdateSystem(context.Context, *InstallOrUpdateSystemRequest) (*InstallOrUpdateSystemReply, error)
 	// Delete a system
 	//
@@ -207,7 +209,7 @@ type AdminServer interface {
 	// In general this endpoint should never be needed;
 	//
 	//	 Transiter automatically restarts the scheduler when needed.
-	//	The main usecase is when the Postgres configuration is manually
+	//	The main use-case is when the Postgres configuration is manually
 	//	 updated and the scheduler needs to see the update.
 	ResetScheduler(context.Context, *ResetSchedulerRequest) (*ResetSchedulerReply, error)
 	// Get the current log level.

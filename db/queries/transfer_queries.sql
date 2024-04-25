@@ -1,11 +1,11 @@
 -- name: InsertTransfer :exec
 INSERT INTO transfer
     (system_pk, feed_pk, from_stop_pk, to_stop_pk,
-     type, min_transfer_time, distance)
+     type, min_transfer_time)
 VALUES
     (sqlc.arg(system_pk), sqlc.arg(feed_pk),
      sqlc.arg(from_stop_pk), sqlc.arg(to_stop_pk), sqlc.arg(type),
-     sqlc.arg(min_transfer_time), NULL);
+     sqlc.arg(min_transfer_time));
 
 -- name: DeleteTransfers :exec
 DELETE FROM transfer

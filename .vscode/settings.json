@@ -1,11 +1,13 @@
 {
     "cSpell.words": [
+        "discoverability",
         "finalizer",
         "GTFS",
         "headsign",
         "jamespfennell",
         "promauto",
         "promhttp",
+        "protobuf",
         "Transiter",
         "upsert"
     ]

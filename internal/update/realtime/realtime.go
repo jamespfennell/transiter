@@ -178,7 +178,7 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	}
 	routePksWithPathChanges := map[int64]bool{}
 	for uid, trip := range tripUIDToTrip {
-		if pathChanged := calculateStopTimeChanges(ctx, updateCtx, updateStopTimesInDBArgs{
+		if pathChanged := calculateStopTimeChanges(updateCtx, updateStopTimesInDBArgs{
 			tripPk:              tripUIDToPk[uid],
 			trip:                trip,
 			existingStopTimes:   existingStopTimes[uid],
@@ -259,7 +259,7 @@ type updateStopTimesInDBArgs struct {
 
 // calculateStopTimeChanges updates the trip stop times in the database. The boolean return value indicates
 // whether the path of the trip has changed.
-func calculateStopTimeChanges(ctx context.Context, updateCtx common.UpdateContext, args updateStopTimesInDBArgs, t *stagedUpdates) bool {
+func calculateStopTimeChanges(updateCtx common.UpdateContext, args updateStopTimesInDBArgs, t *stagedUpdates) bool {
 	// Check to see if stop sequences should be reassigned by transiter (even if present in GTFS).
 	reassignStopSequences := updateCtx.FeedConfig.GetGtfsRealtimeOptions().GetReassignStopSequences()
 

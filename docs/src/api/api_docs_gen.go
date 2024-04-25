@@ -37,6 +37,9 @@ func run() error {
 		return err
 	}
 	for _, file := range in.Files {
+		if err := validateFile(file); err != nil {
+			return fmt.Errorf("validation error for file %s: %w", file.Name, err)
+		}
 		switch file.Name {
 		case "api/admin.proto":
 			if err := generate(generateArgs{
@@ -77,6 +80,30 @@ func run() error {
 	return nil
 }
 
+func validateFile(file *gendoc.File) error {
+	for _, message := range file.Messages {
+		// TODO: handle this differently in the output; display as `map<string, string>`
+		if message.LongName == "FeedConfig.HttpHeadersEntry" || message.LongName == "YamlConfig.TemplateArgsEntry" {
+			continue
+		}
+		if strings.TrimSpace(message.Description) == "" {
+			return fmt.Errorf("message %s has no description", message.LongName)
+		}
+		for _, field := range message.Fields {
+			if strings.TrimSpace(field.Description) == "" {
+				return fmt.Errorf("field %s for message %s has no description", field.Name, message.LongName)
+			}
+
+		}
+	}
+	for _, enum := range file.Enums {
+		if strings.TrimSpace(enum.Description) == "" {
+			return fmt.Errorf("enum %s has no description", enum.LongName)
+		}
+	}
+	return nil
+}
+
 type generateArgs struct {
 	file          *gendoc.File
 	scalars       []*gendoc.ScalarValue
@@ -99,12 +126,13 @@ func generate(args generateArgs) error {
 			return longName
 		}
 		var file string
-		if isResponseLongName(longName) {
+		if isRequestOrResponseType(longName) {
 			file = args.endpointsFile
 		} else {
 			file = args.resourcesFile
 		}
-		return fmt.Sprintf("[%s](%s#%s)", longName, file, longName)
+		anchor := strings.ToLower(strings.ReplaceAll(longName, ".", ""))
+		return fmt.Sprintf("[%s](%s#%s)", longName, file, anchor)
 	}
 	t := template.Must(template.New("base").Funcs(
 		template.FuncMap{
@@ -237,14 +265,14 @@ func (c Type) Description() string {
 }
 
 func (c Type) IsResponseType() bool {
-	return isResponseLongName(c.LongName())
+	return isRequestOrResponseType(c.LongName())
 }
 
-func isResponseLongName(longName string) bool {
-	if i := strings.Index(longName, "."); i >= 0 {
-		longName = longName[:i]
+func isRequestOrResponseType(messageLongName string) bool {
+	if i := strings.Index(messageLongName, "."); i >= 0 {
+		messageLongName = messageLongName[:i]
 	}
-	return strings.HasSuffix(longName, "Reply")
+	return strings.HasSuffix(messageLongName, "Reply") || strings.HasSuffix(messageLongName, "Request")
 }
 
 const baseTmpl = `
@@ -269,7 +297,7 @@ No fields.
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 {{range .Enum.Values -}}
-  | {{.Name}} | {{.Number}} | {{.Description}} |
+  | {{.Name}} | {{.Number}} | {{ multiline .Description }} |
 {{end}}
 {{end}}
 {{end}}
@@ -289,13 +317,13 @@ No fields.
 {{range . -}}
 ## {{.Method.Description}}
 
-### Request type: {{ template "root-doc" .RequestType }}
+### Request: {{ template "root-doc" .RequestType }}
 
 {{ if .ResponseType.Type.IsResponseType }}
-### Response type: {{ template "root-doc" .ResponseType }}
+### Response: {{ template "root-doc" .ResponseType }}
 
 {{ else }}
-### Response type: {{ link .ResponseType.Type.LongName }}
+### Response: {{ link .ResponseType.Type.LongName }}
 {{ end }}
 {{ end }}
 {{end}}
@@ -329,8 +357,9 @@ const publicEndpointsTmpl = `
 
 const adminTmpl = `
 
+# Admin API
 
-# {{ .File.Description }}
+{{ .File.Description }}
 
 ## Endpoints
 

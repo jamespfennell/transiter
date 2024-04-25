@@ -1,6 +1,7 @@
 # Transiter: web service for transit data
 
-This is the documentation for Transiter ([GitHub repo](https://github.com/jamespfennell/transiter)).
+This is the documentation for Transiter,
+    an open-source backend end web service that makes it easy to use transit data.
 If this is your first time here
     we recommend you start with the
     [beginner's guide](beginner.md).

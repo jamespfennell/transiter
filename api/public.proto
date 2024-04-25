@@ -1,26 +1,29 @@
 /**
-   Public API
-   
-   The Transiter public API is based around hierarchal resources, like many REST APIs.
-   This is the resource hierarchy:
+   The public API is Transiter's main API and
+    is used to query transit data from Transiter.
+   It's a read-only API and designed to be reachable from the internet.
+  
+   Transiter's other API is the private [admin API](admin.md) which is used to manage the Transiter deployment.
+
+   The public API is based on the following resource hierarchy:
    
    ```
    System
-   |- Agency
-   |- Alert
-   |- Feed
-   |- Route
-   |   |- Trip
-   |       |- Vehicle with no ID
-   |- Stop
-   |- Transfer
-   |- Vehicle with ID
+    |- Agency
+    |- Alert
+    |- Feed
+    |- Route
+    |   |- Trip
+    |- Shape
+    |- Stop
+    |- Transfer
+    |- Vehicle
    ```
    
-   For each resource there is a proto message type, a list endpoint, and a get endpoints.
-   For stops, the message is [Stop](#stop), the list endpoint is [ListStops], and the get endpoint is [GetStop].
+   For each resource there is a protobuf message type, a list endpoint, and a get endpoint.
+   In the HTTP API, the structure of the response is based on the protobuf message type.
    
-   The URLs in the HTTP API are determined by the hierarchy; thus:
+   The URLs in the HTTP API are determined by the resource hierarchy; thus:
    
    - List all systems has URL `/systems`,
    - Get system with ID `<system_id>` has URL `/systems/<system_id>`,
@@ -29,32 +32,33 @@
    
    and so on.
    
+   The following table summarizes all of the resources and their types.
+   The right-most column describes the _source_ of the resource.
+   The public API is a read-only API so all of the resources come from somewhere else.
+   
+   | Resource              | List endpoint                                       | Get endpoint                                    | Source               |
+   | --------------------- | --------------------------------------------------- | ----------------------------------------------- |----------------------|
+   | [Agency](#agency)     | [ListAgencies](public_endpoints.md#list-agencies)   | [GetAgency](public_endpoints.md#get-agency)     | GTFS static          |
+   | [Alert](#alert)       | [ListAlerts](public_endpoints.md#list-alerts)       | [GetAlert](public_endpoints.md#get-alert)       | GTFS realtime        |
+   | [Feed](#feed)         | [ListFeeds](public_endpoints.md#list-feeds)         | [GetFeed](public_endpoints.md#get-feed)         | System configuration |
+   | [Route](#route)       | [ListRoutes](public_endpoints.md#list-routes)       | [GetRoute](public_endpoints.md#get-route)       | GTFS static          |
+   | [Shape](#shape)       | [ListShapes](public_endpoints.md#list-shapes)       | [GetShape](public_endpoints.md#get-shape)       | GTFS static          |
+   | [Stop](#stop)         | [ListStops](public_endpoints.md#list-stops)         | [GetStop](public_endpoints.md#get-stop)         | GTFS static          |
+   | [System](#system)     | [ListSystems](public_endpoints.md#list-systems)     | [GetSystem](public_endpoints.md#get-system)     | System configuration |
+   | [Transfer](#transfer) | [ListTransfers](public_endpoints.md#list-transfers) | [GetTransfer](public_endpoints.md#get-transfer) | GTFS static          |
+   | [Trip](#trip)         | [ListTrips](public_endpoints.md#list-trips)         | [GetTrip](public_endpoints.md#get-trip)         | GTFS realtime        |
+   | [Vehicle](#vehicle)   | [ListVehicles](public_endpoints.md#list-vehicles)   | [GetVehicle](public_endpoints.md#get-vehicle)   | GTFS realtime        |
+  
    Many resources refer to other resources across the hierarchy.
    For example, each route has an agency it is attached to.
-   Each stop has a list of service maps, each of which contains a set of routes.
+   Each stop has a list of service maps, and each service map contains a set of routes.
    In these situations the resource message contains a _reference_ to the other resource.
    The [Route](#route) message contains an agency reference, in the form of an [Agency.Reference](#agencyreference)
    message.
    These reference messages contain at least enough information to uniquely identify the resource.
-   However they also contain additional information that is considered generally useful;
-   thus, the [Stop.Reference](#stopreference) message contains the stop's name.
-   What counts as "considered generally" is obviously very subjective and open to change.
-   
-   The following table summarizes all of the resources and their types.
-   The right-most column describes the source_of the resource.
-   The public API is a read-only API so all of the resources come from somewhere else.
-   
-   | Resource    | Reference type | List endpoint | Get endpoint | Source |
-   | ----------- | --------------- | ---------- | ------------------ | -------|
-   | [Agency](#agency)   | [Agency.Reference](#agencyreference) | [GetAgency] | [ListAgency]  | GTFS static
-   | Alert       | System          | [Alert]    | [Alert.Reference]    | GTFS realtime
-   | Feed        | System          |            |                    | system config
-   | Route       | System          |            |                    | GTFS static
-   | Trip        | Route           |            |                    | GTFS realtime
-   | Stop        | System          |            |                    | GTFS static
-   | System      | None            |            |                    | system config
-   | Transfer    | System          |            |                    | GTFS static
-   | Vehicle     | System or trip  |            |                    | GTFS realtime
+   However they also contain additional information that is considered generally useful.
+   For example, the [Stop.Reference](#stopreference) message contains the stop's name.
+   What counts as "considered generally" is obviously subjective and open to change.
    
 */
 syntax = "proto3";
@@ -63,12 +67,14 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/jamespfennell/transiter/api";
 
+// todo: alphabetize messages in the file
+
 service Public {
   // API entrypoint
   //
   // `GET /`
   //
-  // Provides basic information about this Transiter instance and the Transit systems it contains.
+  // Provides basic information about this Transiter instance and the transit systems it contains.
   rpc Entrypoint(EntrypointRequest) returns (EntrypointReply) {
     option (google.api.http) = {get: "/"};
   }
@@ -260,7 +266,7 @@ message EntrypointReply {
   message TransiterDetails {
     // The version of the Transiter binary this instance is running.
     string version = 1;
-    // URL of the Transiter GitHub respository.
+    // URL of the Transiter GitHub repository.
     string href = 2;
 
     // Message containing information about a specific Transiter CI build.
@@ -395,7 +401,7 @@ message ListStopsReply {
   optional string next_id = 2;
 }
 
-// Reqeust payload for the get stop endpoint.
+// Request payload for the get stop endpoint.
 message GetStopRequest {
   // ID of the system the stop is in.
   //
@@ -499,7 +505,7 @@ message ListAlertsRequest {
   repeated string alert_id = 2;
 }
 
-// Response payload for the list alerts endpoiont.
+// Response payload for the list alerts endpoint.
 message ListAlertsReply {
   // List of alerts.
   repeated Alert alerts = 1;
@@ -569,10 +575,12 @@ message ListTransfersReply {
   repeated Transfer transfers = 1;
 }
 
+// Request payload for the list vehicles endpoint.
 message ListVehiclesRequest {
   // ID of the system for which to list vehicles.
   string system_id = 1;
 
+  // Available search modes when listing vehicles.
   enum SearchMode {
     // Return a paginated list of vehicles sorted by vehicle ID.
     ID = 0;
@@ -611,6 +619,7 @@ message ListVehiclesRequest {
   optional double longitude = 9;
 }
 
+// Response payload for the list vehicles endpoint.
 message ListVehiclesReply {
   // List of vehicles.
   repeated Vehicle vehicles = 1;
@@ -619,6 +628,7 @@ message ListVehiclesReply {
   optional string next_id = 2;
 }
 
+// Request payload for the get vehicle endpoint.
 message GetVehicleRequest {
   // ID of the system the vehicle is in.
   //
@@ -630,6 +640,7 @@ message GetVehicleRequest {
   string vehicle_id = 2;
 }
 
+// Request payload for the list shapes endpoint.
 message ListShapesRequest {
   // System to list shapes for.
   string system_id = 1;
@@ -648,6 +659,7 @@ message ListShapesRequest {
   optional int32 limit = 5;
 }
 
+// Response payload for the list shapes endpoint.
 message ListShapesReply {
   // Shapes that were listed.
   repeated Shape shapes = 1;
@@ -656,6 +668,7 @@ message ListShapesReply {
   optional string next_id = 2;
 }
 
+// Request payload for the get shape endpoint.
 message GetShapeRequest {
   // System to get shape for.
   string system_id = 1;
@@ -678,7 +691,7 @@ message System {
   enum Status {
     // Unknown status, included for protobuf reasons.
     UNKNOWN = 0;
-    // The system is currently being installed through an asychronous install request.
+    // The system is currently being installed through an asynchronous install request.
     INSTALLING = 1;
     // The system was successfully installed and is now active.
     ACTIVE = 2;
@@ -694,31 +707,47 @@ message System {
   // Status of the system.
   Status status = 5;
 
+  // The system's agencies.
   ChildResources agencies = 6;
+  // The system's feeds.
   ChildResources feeds = 7;
+  // The system's routes.
   ChildResources routes = 8;
+  // The system's stops.
   ChildResources stops = 9;
+  // The system's transfers.
   ChildResources transfers = 10;
 
-  // Reference is the reference type for the system resource.
+  // Reference type for the system resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
   }
 }
 
-// The resource message contains generic metadata that applies to all resources.
+// This message contains generic metadata that applies to all resources.
 message Resource {
+  // Full path of the resource.
+  // For example, for systems this is `systems/<system_id>`
+  // and for routes it is `systems/<system_id>/routes/<route_id>`.
   string path = 1;
+  // URL of the resource.
+  // This is populated if the `X-Transiter-Host` HTTP header is provided in the request.
+  // See [the deployment documentation](../deployment.md#optional-setting-the-transiter-host) for more information
+  // about this header.
   optional string href = 2;
 }
 
 // Description of a collection of child resources for a resource.
-// This message and fields using this message exist to support API discoverability.
+// This message only exists to support API discoverability.
 message ChildResources {
   // Number of child resources.
   int64 count = 1;
   // URL of the endpoint to list child resources.
+  // This is populated if the `X-Transiter-Host` HTTP header is provided in the request.
+  // See [the deployment documentation](../deployment.md#optional-setting-the-transiter-host) for more information.
   optional string href = 2;
 }
 
@@ -776,7 +805,7 @@ message Stop {
 
   // Message describing the service maps view in stops.
   //
-  // See the service maps documentation for more information on this
+  // See the [service maps documentation](../systems.md#service-maps) for more information on this
   // message and the associated field.
   message ServiceMap {
     // Config ID of the service map, as specified in the system configuration file.
@@ -807,6 +836,9 @@ message Stop {
   repeated Transfer transfers = 20;
 
   // Message describing a headsign rule.
+  //
+  // This message is currently only used for the New York City subway.
+  // The data in it comes from the MTA's [subway stations feed](https://data.ny.gov/Transportation/MTA-Subway-Stations/39hk-dx4f).
   message HeadsignRule {
     // Stop the rule is for.
     Stop.Reference stop = 1;
@@ -814,17 +846,22 @@ message Stop {
     int32 priority = 2;
     // NYCT track.
     optional string track = 3;
-    // Headsign.
+    // Headsign for trains arriving on the track.
     string headsign = 4;
   }
   // List of headsign rules for this stop.
+  // See the message type for more information.
   repeated HeadsignRule headsign_rules = 21;
 
-  // Reference is the reference type for the stop resource.
+  // Reference type for the stop resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
+    // Same as the parent message.
     System.Reference system = 3;
+    // Same as the parent message.
     optional string name = 4;
   }
 }
@@ -833,7 +870,7 @@ message Stop {
 //
 // A stop time is an event in which a trip calls at a stop.
 // This message corresponds to the [GTFS realtime `StopTimeUpdate`
-// message](https://gtfs.org/realtime/reference/#message-stoptimeupdate)
+// message](https://gtfs.org/realtime/reference/#message-stoptimeupdate).
 message StopTime {
   // The stop.
   Stop.Reference stop = 1;
@@ -844,8 +881,11 @@ message StopTime {
   // This corresponds to the [GTFS realtime `StopTimeEvent`
   // message](https://gtfs.org/realtime/reference/#message-stoptimeevent).
   message EstimatedTime {
+    // Time of arrival.
     optional int64 time = 1;
+    // Delay from the scheduled time.
     optional int32 delay = 2;
+    // Measure of the uncertainty of the data in this message.
     optional int32 uncertainty = 3;
   }
   // Arrival time.
@@ -856,7 +896,7 @@ message StopTime {
   // This field is *not* based on the arrival or departure time.
   // Instead, a stop time is considered in the future if it appeared in the most recent
   // GTFS realtime feed for its trip.
-  // When this stop time disappears from the trip, Transiter marks it as past and freezes
+  // When this stop time disappears from the trip, Transiter marks it as in the past and freezes
   // its data.
   bool future = 5;
   // Stop sequence.
@@ -867,7 +907,12 @@ message StopTime {
   optional string track = 8;
 }
 
+// The Trip resource.
+//
+// This resource corresponds to the [trip update type in the GTFS static
+// specification](https://gtfs.org/realtime/reference/#message-tripupdate).
 message Trip {
+  // ID of the trip.
   string id = 1;
   // Generic metadata about the trip resource.
   Resource resource = 2;
@@ -875,21 +920,32 @@ message Trip {
   // This is the parent resource in Transiter's resource hierarchy.
   // It is determined using the `route_id` field in the GTFS realtime feed.
   Route.Reference route = 3;
+  // Time the trip started at.
   optional int64 started_at = 4;
+  // Vehicle corresponding to the trip.
   optional Vehicle.Reference vehicle = 5;
+  // Direction ID of the trip.
   bool direction_id = 6;
 
+  // Stop times of the trip.
   repeated StopTime stop_times = 7;
 
+  // Shape of the trip.
   optional Shape.Reference shape = 8;
 
-  // Reference is the reference type for the trip resource.
+  // Reference type for the trip resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
+    // Same as the parent message.
     Route.Reference route = 3;
+    // Same as the parent message.
     Stop.Reference destination = 4;
+    // Same as the parent message.
     optional Vehicle.Reference vehicle = 5;
+    // Same as the parent message.
     bool direction_id = 6;
   }
 }
@@ -926,8 +982,7 @@ message Vehicle {
   // A reference to the vehicle's current stop.
   optional Stop.Reference stop = 9;
 
-  // Corresponds to [VehicleStopStatus](https://gtfs.org/realtime/reference/
-  // #enum-vehiclestopstatus).
+  // Corresponds to [VehicleStopStatus](https://gtfs.org/realtime/reference/#enum-vehiclestopstatus).
   enum CurrentStatus {
     INCOMING_AT = 0;
     STOPPED_AT = 1;
@@ -939,8 +994,7 @@ message Vehicle {
   // The timestamp of the last update to the vehicle's position.
   optional int64 updated_at = 11;
 
-  // Corresponds to [CongestionLevel](https://gtfs.org/realtime/reference/
-  // #enum-congestionlevel).
+  // Corresponds to [CongestionLevel](https://gtfs.org/realtime/reference/#enum-congestionlevel).
   enum CongestionLevel {
     UNKNOWN_CONGESTION_LEVEL = 0;
     RUNNING_SMOOTHLY = 1;
@@ -951,8 +1005,7 @@ message Vehicle {
   // The vehicle's current congestion level.
   CongestionLevel congestion_level = 12;
 
-  // Corresponds to [OccupancyStatus](https://gtfs.org/realtime/reference/
-  // #enum-occupancystatus).
+  // Corresponds to [OccupancyStatus](https://gtfs.org/realtime/reference/#enum-occupancystatus).
   enum OccupancyStatus {
     EMPTY = 0;
     MANY_SEATS_AVAILABLE = 1;
@@ -968,9 +1021,11 @@ message Vehicle {
   // The percentage of seats occupied.
   optional int32 occupancy_percentage = 14;
 
-  // Reference is the reference type for the vehicle resource.
+  // Reference type for the vehicle resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
   }
 }
@@ -1066,12 +1121,12 @@ message Route {
 
   // Message describing the service maps view in routes.
   //
-  // See the service maps documentation for more information on this
+  // See the [service maps documentation](../systems.md#service-maps) for more information on this
   // message and the associated field.
   message ServiceMap {
     // Config ID of the service map, as specified in the system configuration file.
     string config_id = 1;
-    // Ordered list of stop at which this route calls.
+    // Ordered list of stops at which this route calls.
     //
     // This list may be empty, in which case the route has no service in the service map.
     repeated Stop.Reference stops = 2;
@@ -1079,11 +1134,15 @@ message Route {
   // List of service maps for this route.
   repeated ServiceMap service_maps = 17;
 
-  // Reference is the reference type for the route resource.
+  // Reference type for the route resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
+    // Same as the parent message.
     System.Reference system = 3;
+    // Same as the parent message.
     string color = 4;
   }
 }
@@ -1096,7 +1155,8 @@ message Route {
 //   by checking the last successful feed update time.
 //
 // More detailed information on a feed -- its full configuration, and the
-//   current status of its periodic updates -- can be retrieved through the admin API.
+//   current status of its periodic updates -- can be retrieved through the
+//   [admin API's GetSystemConfig endpoint](admin.md#get-the-config-for-a-system).
 message Feed {
   // ID of the feed, as specified in the system configuration file.
   string id = 1;
@@ -1106,25 +1166,39 @@ message Feed {
   // This is the parent resource in Transiter's resource hierarchy.
   System.Reference system = 3;
 
+  // Number of milliseconds since the last update of this feed finished.
+  // There are three outcomes for each update:
+  //    successful (new data is retrieved from the transit agency and persisted),
+  //    skipped (the transit agency returned the same data as the last update, so there is nothing to do),
+  //    and failed (something went wrong, e.g. the transit agency's feed is unavailable).
   optional int64 last_update_ms = 4;
+
+  // Number of milliseconds since the last successful update of this feed finished.
   optional int64 last_successful_update_ms = 5;
+  
+  // Number of milliseconds since the last skipped update of this feed finished.
   optional int64 last_skipped_update_ms = 6;
+  
+  // Number of milliseconds since the last failed update of this feed finished.
   optional int64 last_failed_update_ms = 7;
 
-  // Reference is the reference type for the feed resource.
+  // Reference type for the feed resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
+    // Same as the parent message.
     System.Reference system = 3;
   }
 }
 
 // The Agency resource.
 //
-// This resource corresponds to the [agency type in the GTFS static
+// This resource corresponds to the [`agency.txt` table in the GTFS static
 // specification](https://gtfs.org/schedule/reference/#agencytxt).
 // Most of the fields in the resource come directly from the `agency.txt` table.
-// Transiter adds some additional related fields (alerts).
+// Transiter adds some additional related fields (routes, alerts).
 message Agency {
   // ID of the agency. This is the `agency_id` column in `agency.txt`.
   string id = 1;
@@ -1149,6 +1223,9 @@ message Agency {
   // Email address of the agency. This is the `agency_email` column in `agency.txt`.
   optional string email = 10;
 
+  // List of routes operating under this agency.
+  //
+  // These are determined using the `agency_id` column in `routes.txt`.
   repeated Route.Reference routes = 11;
 
   // List of active alerts for the agency.
@@ -1158,21 +1235,23 @@ message Agency {
   // message](https://gtfs.org/realtime/reference/#message-alert).
   repeated Alert.Reference alerts = 12;
 
-  // Reference is the reference type for the agency resource.
+  // Reference type for the agency resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
+    // Same as the parent message.
     System.Reference system = 3;
+    // Same as the parent message.
     string name = 4;
   }
 }
 
 // The Alert resource.
 //
-// This resource corresponds to the [alert type in the GTFS realtime
+// This resource corresponds to the [alert message in the GTFS realtime
 // specification](https://gtfs.org/realtime/reference/#message-alert).
-//
-// TODO; alphabetize the messages
 message Alert {
   // ID of the alert. This corresponds to the [ID field in the feed entity
   // message](https://gtfs.org/realtime/reference/#message-feedentity)
@@ -1185,8 +1264,8 @@ message Alert {
   System.Reference system = 3;
 
   // Cause is the same as the [cause enum in the GTFS realtime
-  // specification](https://gtfs.org/realtime/feed-entities/service-alerts/#cause),
-  // except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy proto3 requirements.
+  // specification](https://gtfs.org/realtime/reference/#enum-cause),
+  // except `UNKNOWN_CAUSE` has value 0 instead of 1 to satisfy protobuf3 requirements.
   enum Cause {
     UNKNOWN_CAUSE = 0;
     OTHER_CAUSE = 2;
@@ -1205,8 +1284,8 @@ message Alert {
   Cause cause = 4;
 
   // Effect is the same as the [effect enum in the GTFS realtime
-  // specification](https://gtfs.org/realtime/feed-entities/service-alerts/#effect),
-  // except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy proto3 requirements.
+  // specification](https://gtfs.org/realtime/reference/#enum-effect),
+  // except `UNKNOWN_EFFECT` has value 0 instead of 1 to satisfy protobuf3 requirements.
   enum Effect {
     UNKNOWN_EFFECT = 0;
     NO_SERVICE = 1;
@@ -1261,36 +1340,57 @@ message Alert {
   // This corresponds to the `url` field in the realtime alert message.
   repeated Text url = 10;
 
-  // TODO: add informed entites for the alert.
+  // TODO: add informed entities for the alert.
 
-  // Reference is the reference type for the agency resource.
+  // Reference type for the agency resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
+    // Same as the parent message.
     System.Reference system = 3;
+    // Same as the parent message.
     Cause cause = 4;
+    // Same as the parent message.
     Effect effect = 5;
   }
 }
 
+// The Transfer resource.
+//
+// This resource corresponds to the [transfer table in the GTFS static
+// specification](https://gtfs.org/schedule/reference/#transferstxt).
 message Transfer {
+  reserved 8;
   // TODO: id, system, resource
   // Probably will use the pk of the DB row for the ID
+
+  // Beginning stop of the transfer. This is determined using the `from_stop_id` column in `transfers.txt`.
   Stop.Reference from_stop = 4;
+  // Ending stop of the transfer. This is determined using the `to_stop_id` column in `transfers.txt`.
   Stop.Reference to_stop = 5;
 
+  // Types of transfers.
+  // The supported types are described in the documentation for the `transfer_type` column
+  // in the GTFS static `transfers.txt` table.
   enum Type {
     RECOMMENDED = 0;
     TIMED = 1;
     REQUIRES_TIME = 2;
-    NO_POSSIBLE = 3;
+    NOT_POSSIBLE = 3;
   }
+  // Type of the transfer.
   Type type = 6;
 
+  // Minimum time required for the transfer, in seconds. This is the `min_transfer_time` column in `transfers.txt`.
   optional int32 min_transfer_time = 7;
-  optional int32 distance = 8;
 }
 
+// The Shape resource.
+//
+// This resource corresponds to the [shape type in the GTFS static
+// specification](https://gtfs.org/schedule/reference/#shapestxt).
 message Shape {
   // Unique ID for the shape.
   string id = 1;
@@ -1307,8 +1407,11 @@ message Shape {
   // Ordered list of points that make up the shape.
   repeated ShapePoint points = 2;
 
+  // Reference type for the shape resource.
   message Reference {
+    // Same as the parent message.
     string id = 1;
+    // Same as the parent message.
     Resource resource = 2;
   }
 }

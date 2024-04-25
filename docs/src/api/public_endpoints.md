@@ -9,9 +9,9 @@
 
 `GET /`
 
-Provides basic information about this Transiter instance and the Transit systems it contains.
+Provides basic information about this Transiter instance and the transit systems it contains.
 
-### Request type: EntrypointRequest
+### Request: EntrypointRequest
 
 Request payload for the entrypoint endpoint.
 	
@@ -25,7 +25,7 @@ No fields.
 
 
 
-### Response type: EntrypointReply
+### Response: EntrypointReply
 
 Response payload for the entrypoint endpoint.
 	
@@ -33,8 +33,8 @@ Response payload for the entrypoint endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| transiter | [EntrypointReply.TransiterDetails](public_endpoints.md#EntrypointReply.TransiterDetails) | Version and other information about this Transiter binary.
-| systems | [ChildResources](public_resources.md#ChildResources) | Systems that are installed in this Transiter instance.
+| transiter | [EntrypointReply.TransiterDetails](public_endpoints.md#entrypointreplytransiterdetails) | Version and other information about this Transiter binary.
+| systems | [ChildResources](public_resources.md#childresources) | Systems that are installed in this Transiter instance.
 
 
 
@@ -50,8 +50,8 @@ Message containing version information about a Transiter binary.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | version | string | The version of the Transiter binary this instance is running.
-| href | string | URL of the Transiter GitHub respository.
-| build | [EntrypointReply.TransiterDetails.Build](public_endpoints.md#EntrypointReply.TransiterDetails.Build) | Information about the CI build invocation that built this Transiter binary.
+| href | string | URL of the Transiter GitHub repository.
+| build | [EntrypointReply.TransiterDetails.Build](public_endpoints.md#entrypointreplytransiterdetailsbuild) | Information about the CI build invocation that built this Transiter binary.
 
 
 
@@ -85,7 +85,7 @@ Message containing information about a specific Transiter CI build.
 
 List all transit systems that are installed in this Transiter instance.
 
-### Request type: ListSystemsRequest
+### Request: ListSystemsRequest
 
 Request payload for the list systems endpoint.
 	
@@ -99,7 +99,7 @@ No fields.
 
 
 
-### Response type: ListSystemsReply
+### Response: ListSystemsReply
 
 Response payload for the list systems endpoint.
 	
@@ -107,7 +107,7 @@ Response payload for the list systems endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| systems | [System](public_resources.md#System) | List of systems.
+| systems | [System](public_resources.md#system) | List of systems.
 
 
 
@@ -122,7 +122,7 @@ Response payload for the list systems endpoint.
 
 Get a system by its ID.
 
-### Request type: GetSystemRequest
+### Request: GetSystemRequest
 
 Request payload for the get system endpoint.
 	
@@ -139,7 +139,7 @@ Request payload for the get system endpoint.
 
 
 
-### Response type: [System](public_resources.md#System)
+### Response: [System](public_resources.md#system)
 
 ## List agencies
 
@@ -147,7 +147,7 @@ Request payload for the get system endpoint.
 
 List all agencies in a system.
 
-### Request type: ListAgenciesRequest
+### Request: ListAgenciesRequest
 
 Request payload for the list agencies endpoint.
 	
@@ -164,7 +164,7 @@ Request payload for the list agencies endpoint.
 
 
 
-### Response type: ListAgenciesReply
+### Response: ListAgenciesReply
 
 Response payload for the list agencies endpoint.
 	
@@ -172,7 +172,7 @@ Response payload for the list agencies endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| agencies | [Agency](public_resources.md#Agency) | List of agencies.
+| agencies | [Agency](public_resources.md#agency) | List of agencies.
 
 
 
@@ -187,7 +187,7 @@ Response payload for the list agencies endpoint.
 
 Get an agency in a system by its ID.
 
-### Request type: GetAgencyRequest
+### Request: GetAgencyRequest
 
 Request payload for the get agency endpoint.
 	
@@ -205,7 +205,7 @@ Request payload for the get agency endpoint.
 
 
 
-### Response type: [Agency](public_resources.md#Agency)
+### Response: [Agency](public_resources.md#agency)
 
 ## List stops
 
@@ -217,7 +217,7 @@ This endpoint is paginated.
 If there are more results, the `next_id` field of the response will be populated.
 To get more results, make the same request with the `first_id` field set to the value of `next_id` in the response.
 
-### Request type: ListStopsRequest
+### Request: ListStopsRequest
 
 Request payload for the list stops endpoint.
 	
@@ -226,7 +226,7 @@ Request payload for the list stops endpoint.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system for which to list stops.<br /><br />This is a URL parameter in the HTTP API.
-| search_mode | [ListStopsRequest.SearchMode](public_resources.md#ListStopsRequest.SearchMode) | The type of search to perform when listing stops.
+| search_mode | [ListStopsRequest.SearchMode](public_endpoints.md#liststopsrequestsearchmode) | The type of search to perform when listing stops.
 | only_return_specified_ids | bool | If true, only return stops whose IDs are specified in the repeated `id` field. Only supported when the search mode is ID.
 | id | string | IDs to return if `only_return_specified_ids` is set to true. It is an error to populate this field if `only_return_specified_ids` is false. Only supported when the search mode is ID.
 | first_id | string | ID of the first stop to return. If not set, the stop with the smallest ID will be first. Only supported when the search mode is ID.
@@ -260,7 +260,7 @@ The possible search modes when listing stops.
 
 
 
-### Response type: ListStopsReply
+### Response: ListStopsReply
 
 Response payload for the list stops endpoint.
 	
@@ -268,7 +268,7 @@ Response payload for the list stops endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| stops | [Stop](public_resources.md#Stop) | List of stops.
+| stops | [Stop](public_resources.md#stop) | List of stops.
 | next_id | string | ID of the next stop to return, if there are more results.
 
 
@@ -284,9 +284,9 @@ Response payload for the list stops endpoint.
 
 Get a stop in a system by its ID.
 
-### Request type: GetStopRequest
+### Request: GetStopRequest
 
-Reqeust payload for the get stop endpoint.
+Request payload for the get stop endpoint.
 	
 
 
@@ -306,7 +306,7 @@ Reqeust payload for the get stop endpoint.
 
 
 
-### Response type: [Stop](public_resources.md#Stop)
+### Response: [Stop](public_resources.md#stop)
 
 ## List routes
 
@@ -314,7 +314,7 @@ Reqeust payload for the get stop endpoint.
 
 List all routes in a system.
 
-### Request type: ListRoutesRequest
+### Request: ListRoutesRequest
 
 Request payload for the list routes endpoint.
 	
@@ -334,7 +334,7 @@ Request payload for the list routes endpoint.
 
 
 
-### Response type: ListRoutesReply
+### Response: ListRoutesReply
 
 Response payload for the list routes endpoint.
 	
@@ -342,7 +342,7 @@ Response payload for the list routes endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| routes | [Route](public_resources.md#Route) | List of routes.
+| routes | [Route](public_resources.md#route) | List of routes.
 
 
 
@@ -357,7 +357,7 @@ Response payload for the list routes endpoint.
 
 Get a route in a system by its ID.
 
-### Request type: GetRouteRequest
+### Request: GetRouteRequest
 
 Request payload for the get route endpoint.
 	
@@ -378,7 +378,7 @@ Request payload for the get route endpoint.
 
 
 
-### Response type: [Route](public_resources.md#Route)
+### Response: [Route](public_resources.md#route)
 
 ## List trips
 
@@ -386,7 +386,7 @@ Request payload for the get route endpoint.
 
 List all trips in a route.
 
-### Request type: ListTripsRequest
+### Request: ListTripsRequest
 
 Request payload for the list trips endpoint.
 	
@@ -404,7 +404,7 @@ Request payload for the list trips endpoint.
 
 
 
-### Response type: ListTripsReply
+### Response: ListTripsReply
 
 Response payload for the list trips endpoint.
 	
@@ -412,7 +412,7 @@ Response payload for the list trips endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| trips | [Trip](public_resources.md#Trip) | List of trips.
+| trips | [Trip](public_resources.md#trip) | List of trips.
 
 
 
@@ -427,7 +427,7 @@ Response payload for the list trips endpoint.
 
 Get a trip by its ID.
 
-### Request type: GetTripRequest
+### Request: GetTripRequest
 
 Request payload for the get trip endpoint.
 	
@@ -446,7 +446,7 @@ Request payload for the get trip endpoint.
 
 
 
-### Response type: [Trip](public_resources.md#Trip)
+### Response: [Trip](public_resources.md#trip)
 
 ## List alerts
 
@@ -456,7 +456,7 @@ List all alerts in a system.
 By default this endpoint returns both active alerts
   (alerts which have an active period containing the current time) and non-active alerts.
 
-### Request type: ListAlertsRequest
+### Request: ListAlertsRequest
 
 Request payload for the list alerts endpoint.
 	
@@ -474,15 +474,15 @@ Request payload for the list alerts endpoint.
 
 
 
-### Response type: ListAlertsReply
+### Response: ListAlertsReply
 
-Response payload for the list alerts endpoiont.
+Response payload for the list alerts endpoint.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| alerts | [Alert](public_resources.md#Alert) | List of alerts.
+| alerts | [Alert](public_resources.md#alert) | List of alerts.
 
 
 
@@ -497,7 +497,7 @@ Response payload for the list alerts endpoiont.
 
 Get an alert by its ID.
 
-### Request type: GetAlertRequest
+### Request: GetAlertRequest
 
 Request payload for the get alert endpoint.
 	
@@ -515,7 +515,7 @@ Request payload for the get alert endpoint.
 
 
 
-### Response type: [Alert](public_resources.md#Alert)
+### Response: [Alert](public_resources.md#alert)
 
 ## List transfers
 
@@ -523,7 +523,7 @@ Request payload for the get alert endpoint.
 
 List all transfers in a system.
 
-### Request type: ListTransfersRequest
+### Request: ListTransfersRequest
 
 Request payload for the list transfers endpoint.
 	
@@ -540,7 +540,7 @@ Request payload for the list transfers endpoint.
 
 
 
-### Response type: ListTransfersReply
+### Response: ListTransfersReply
 
 Response payload for the list transfers endpoint.
 	
@@ -548,7 +548,7 @@ Response payload for the list transfers endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| transfers | [Transfer](public_resources.md#Transfer) | List of transfers.
+| transfers | [Transfer](public_resources.md#transfer) | List of transfers.
 
 
 
@@ -563,7 +563,7 @@ Response payload for the list transfers endpoint.
 
 List all feeds for a system.
 
-### Request type: ListFeedsRequest
+### Request: ListFeedsRequest
 
 Request payload for the list feeds endpoint.
 	
@@ -580,7 +580,7 @@ Request payload for the list feeds endpoint.
 
 
 
-### Response type: ListFeedsReply
+### Response: ListFeedsReply
 
 Response payload for the list feeds endpoint.
 	
@@ -588,7 +588,7 @@ Response payload for the list feeds endpoint.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| feeds | [Feed](public_resources.md#Feed) | List of feeds.
+| feeds | [Feed](public_resources.md#feed) | List of feeds.
 
 
 
@@ -603,7 +603,7 @@ Response payload for the list feeds endpoint.
 
 Get a feed in a system by its ID.
 
-### Request type: GetFeedRequest
+### Request: GetFeedRequest
 
 Request payload for the get feed endpoint.
 	
@@ -621,7 +621,7 @@ Request payload for the get feed endpoint.
 
 
 
-### Response type: [Feed](public_resources.md#Feed)
+### Response: [Feed](public_resources.md#feed)
 
 ## List vehicles
 
@@ -629,16 +629,16 @@ Request payload for the get feed endpoint.
 
 List all feeds for a system.
 
-### Request type: ListVehiclesRequest
+### Request: ListVehiclesRequest
 
-
+Request payload for the list vehicles endpoint.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system for which to list vehicles.
-| search_mode | [ListVehiclesRequest.SearchMode](public_resources.md#ListVehiclesRequest.SearchMode) | The type of search to perform when listing vehicles.
+| search_mode | [ListVehiclesRequest.SearchMode](public_endpoints.md#listvehiclesrequestsearchmode) | The type of search to perform when listing vehicles.
 | only_return_specified_ids | bool | If true, only return vehicles whose IDs are specified in the repeated `id` field. Only supported when the search mode is ID.
 | id | string | IDs to return if `only_return_specified_ids` is set to true. It is an error to populate this field if `only_return_specified_ids` is false. Only supported when the search mode is ID.
 | first_id | string | ID of the first vehicle to return. If not set, the vehicle with the smallest ID will be first. Only supported when the search mode is ID.
@@ -654,7 +654,7 @@ List all feeds for a system.
 
 #### ListVehiclesRequest.SearchMode
 
-
+Available search modes when listing vehicles.
 	
 
 
@@ -668,15 +668,15 @@ List all feeds for a system.
 
 
 
-### Response type: ListVehiclesReply
+### Response: ListVehiclesReply
 
-
+Response payload for the list vehicles endpoint.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| vehicles | [Vehicle](public_resources.md#Vehicle) | List of vehicles.
+| vehicles | [Vehicle](public_resources.md#vehicle) | List of vehicles.
 | next_id | string | ID of the next vehicle to return, if there are more results.
 
 
@@ -692,9 +692,9 @@ List all feeds for a system.
 
 Get a vehicle in a system by its ID.
 
-### Request type: GetVehicleRequest
+### Request: GetVehicleRequest
 
-
+Request payload for the get vehicle endpoint.
 	
 
 
@@ -710,7 +710,7 @@ Get a vehicle in a system by its ID.
 
 
 
-### Response type: [Vehicle](public_resources.md#Vehicle)
+### Response: [Vehicle](public_resources.md#vehicle)
 
 ## List shapes
 
@@ -718,9 +718,9 @@ Get a vehicle in a system by its ID.
 
 List all shapes in a system.
 
-### Request type: ListShapesRequest
+### Request: ListShapesRequest
 
-
+Request payload for the list shapes endpoint.
 	
 
 
@@ -739,15 +739,15 @@ List all shapes in a system.
 
 
 
-### Response type: ListShapesReply
+### Response: ListShapesReply
 
-
+Response payload for the list shapes endpoint.
 	
 
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| shapes | [Shape](public_resources.md#Shape) | Shapes that were listed.
+| shapes | [Shape](public_resources.md#shape) | Shapes that were listed.
 | next_id | string | ID of the next shape to list, if there are more results.
 
 
@@ -763,9 +763,9 @@ List all shapes in a system.
 
 Get a shape in a system by its ID.
 
-### Request type: GetShapeRequest
+### Request: GetShapeRequest
 
-
+Request payload for the get shape endpoint.
 	
 
 
@@ -781,7 +781,7 @@ Get a shape in a system by its ID.
 
 
 
-### Response type: [Shape](public_resources.md#Shape)
+### Response: [Shape](public_resources.md#shape)
 
 
 

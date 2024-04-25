@@ -309,7 +309,6 @@ func buildStopPkToApiTransfers(data rawStopData, stopPkToApiPreview map[int64]*a
 			ToStop:          stopPkToApiPreview[transfer.ToStopPk],
 			Type:            convert.TransferType(transfer.Type),
 			MinTransferTime: convert.SQLNullInt32(transfer.MinTransferTime),
-			Distance:        convert.SQLNullInt32(transfer.Distance),
 		})
 	}
 	return liftToAncestors(data, m)

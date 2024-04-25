@@ -256,8 +256,12 @@ func (c *Client) GetLogLevel(ctx context.Context) error {
 }
 
 func (c *Client) SetLogLevel(ctx context.Context, logLevel string) error {
+	ll, ok := api.LogLevel_value[logLevel]
+	if !ok {
+		return fmt.Errorf("invalid log level %q; allowed values are debug, info, warn, error", logLevel)
+	}
 	_, err := c.adminClient.SetLogLevel(ctx, &api.SetLogLevelRequest{
-		LogLevel: logLevel,
+		LogLevel: api.LogLevel(ll),
 	})
 	return err
 }

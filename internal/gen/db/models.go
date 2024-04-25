@@ -236,7 +236,6 @@ type Transfer struct {
 	ToStopPk        int64
 	Type            string
 	MinTransferTime pgtype.Int4
-	Distance        pgtype.Int4
 	FeedPk          int64
 }
 

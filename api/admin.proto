@@ -1,3 +1,8 @@
+/**
+  The admin API is a private API used to manage a running Transiter instance.
+  It should generally be inaccessible from the internet as the API can be used to e.g.
+  delete all of the transit systems that are installed.
+*/
 syntax = "proto3";
 
 import "google/api/annotations.proto";
@@ -26,7 +31,8 @@ service Admin {
   // This is an asynchronous operation.
   // The system configuration is validated before the request finishes
   // but database and feed updates are performed asynchronously. The status of the operation can
-  // be determined by polling the GetSystem method and inspecting the status field.
+  // be determined by polling the [GetSystem endpoint](public_endpoints.md#get-system)
+  // and inspecting the status field of the system.
   rpc InstallOrUpdateSystem(InstallOrUpdateSystemRequest) returns (InstallOrUpdateSystemReply) {
     option (google.api.http) = {
       put: "/systems/{system_id}"
@@ -69,7 +75,7 @@ service Admin {
   //   configurations retrieved fresh from the database.
   // In general this endpoint should never be needed;
   //   Transiter automatically restarts the scheduler when needed.
-  //  The main usecase is when the Postgres configuration is manually
+  //  The main use-case is when the Postgres configuration is manually
   //   updated and the scheduler needs to see the update.
   rpc ResetScheduler(ResetSchedulerRequest) returns (ResetSchedulerReply) {
     option (google.api.http) = {post: "/scheduler"};
@@ -88,14 +94,15 @@ service Admin {
   rpc SetLogLevel(SetLogLevelRequest) returns (SetLogLevelReply) {
     option (google.api.http) = {put: "/loglevel"};
   }
-
-  // TODO: GetFeedConfig
 }
 
+// Request payload for the get system config endpoint.
 message GetSystemConfigRequest {
+  // ID of the system whose config is to be retrieved.
   string system_id = 1;
 }
 
+// Request payload for the install or update system endpoint.
 message InstallOrUpdateSystemRequest {
   reserved 5;
 
@@ -103,7 +110,9 @@ message InstallOrUpdateSystemRequest {
   string system_id = 1;
 
   oneof config {
+    // Config for the system, in the form or a protobuf message.
     SystemConfig system_config = 2;
+    // Config for the system, in the form of a YAML file.
     YamlConfig yaml_config = 3;
   }
 
@@ -130,15 +139,23 @@ message YamlConfig {
   map<string, string> template_args = 4;
 }
 
+// Response payload for the install of update system endpoint.
 message InstallOrUpdateSystemReply {
+  // ID of the system that was installed.
   string system_id = 1;
+  // System configuration that was used for the install.
+  // If the configuration was provided as a YAML file or a YAML template,
+  // the value here represents the fully parsed and expanded configuration.
   SystemConfig system_config = 2;
 }
 
+// Request payload for the delete system endpoint.
 message DeleteSystemRequest {
+  // ID of the system to delete.
   string system_id = 1;
 }
 
+// Response payload for the delete system endpoint.
 message DeleteSystemReply {}
 
 // Configuration for a system.
@@ -151,6 +168,7 @@ message SystemConfig {
   repeated ServiceMapConfig service_maps = 3;
 }
 
+// Configuration for a transit system data feed.
 message FeedConfig {
   // Identifier of this feed config.
   // This must be unique within the system.
@@ -236,30 +254,56 @@ message FeedConfig {
 
 // Message describing additional options for the GTFS realtime feeds.
 message GtfsRealtimeOptions {
+  // Supported GTFS realtime extensions.
   enum Extension {
     NO_EXTENSION = 0;
     NYCT_TRIPS = 1;
     NYCT_ALERTS = 2;
   }
+  // GTFS realtime extension to use.
   Extension extension = 1;
 
+  // Options for the NYCT trips extension.
   message NyctTripsOptions {
+    // Filter out trips which are scheduled to run in the past but have no assigned trip and haven't started.
     bool filter_stale_unassigned_trips = 1;
+    // The raw MTA data has a bug in which the M train platforms are reported incorrectly for stations
+    // in Williamsburg and Bushwick that the M shares with the J train. In the raw data, M trains going towards
+    // the Williamsburg bridge stop at M11N, but J trains going towards the bridge stop at M11S. By default
+    // this extension fixes these platforms for the M train, so M11N becomes M11S. This fix can be disabled
+    // by setting this option to true.
     bool preserve_m_train_platforms_in_bushwick = 2;
   }
+  // Options for the NYCT trips extension.
+  // Ignored if the extension field is not `NYCT_TRIPS`.
   optional NyctTripsOptions nyct_trips_options = 2;
 
+  // Options for the NYCT alerts extension.
   message NyctAlertsOptions {
+    // Available deduplication policies for elevator alerts.
     enum ElevatorAlertsDeduplicationPolicy {
       NO_DEDUPLICATION = 0;
       DEDUPLICATE_IN_STATION = 1;
       DEDUPLICATE_IN_COMPLEX = 2;
     }
+    // Deduplication policy for elevator alerts.
     ElevatorAlertsDeduplicationPolicy elevator_alerts_deduplication_policy = 1;
+    // If true, the stop IDs in alerts will always be converted to point to stations.
+    // E.g., if the alert is for the stop F20N (northbound F platform at Bergen St.)
+    // it will be transformed to be for stop F20 (Bergen St. station).
     bool elevator_alerts_inform_using_station_ids = 2;
+    // When there are no trains running for a route due to the standard timetable (e.g., there are no C trains
+	  // overnight), the MTA publishes an alert. Arguably this is not really an alert because this information is
+	  // already in the timetable.
+	  // If true, these alerts are skipped.
     bool skip_timetabled_no_service_alerts = 3;
+    // The NYCT alerts extension contains many fields like "time alert created at" that don't map to fields in
+    // the standard GTFS realtime protobuf. If true, these fields are put in a json blob and included as an
+    // alert description.
     bool add_nyct_metadata = 4;
   }
+  // Options for the NYCT alerts extension.
+  // Ignored if the extension field is not `NYCT_ALERTS`.
   optional NyctAlertsOptions nyct_alerts_options = 3;
 
   // If true, stop sequences in the GTFS realtime feed data are ignored, and
@@ -299,7 +343,7 @@ message ServiceMapConfig {
   // Note that a trip's schedule is reversed if needed based on the direction ID.
   double threshold = 3;
 
-  // Description of options relevent for static service maps only.
+  // Description of options relevant for static service maps only.
   message StaticOptions {
     // If specified, only include trips that start earlier than this time.
     // The time is specified as a number of hours after midnight; i.e., 2:30am is '2.5'.
@@ -314,15 +358,18 @@ message ServiceMapConfig {
     // If left empty, no trip filtering is provided.
     repeated string days = 5;
   }
-  // Additional options relevent for static service maps only.
+  // Additional options relevant for static service maps only.
   optional StaticOptions static_options = 4;
 }
 
+// Request payload for the update feed endpoint.
 message UpdateFeedRequest {
+  // ID of the system containing the feed to update.
   string system_id = 1;
+  // ID of the feed to update.
   string feed_id = 2;
 
-  // If true, a full feed update will be performed even if the download data is identical
+  // If true, a full feed update will be performed even if the downloaded data is identical
   // to the last update for this feed.
   bool force = 3;
 }
@@ -341,13 +388,18 @@ message FeedUpdate {
   // Unix timestamp of when the update finished.
   // Only populated if the update is finished.
   optional int64 finished_at_ms = 6;
-
+  // Total latency of the feed update, in milliseconds.
   optional int64 total_latency_ms = 20;
+  // Latency of the HTTP request, in milliseconds.
   optional int64 download_latency_ms = 21;
+  // Latency of parsing the downloaded data, in milliseconds.
   optional int64 parse_latency_ms = 22;
+  // Latency of updating the database with the parsed data, in milliseconds.
   optional int64 database_latency_ms = 25;
+  // Status code returned by the HTTP request.
   optional int32 download_http_status_code = 26;
 
+  // Status of a feed update.
   enum Status {
     // Unknown status.
     UNKNOWN = 0;
@@ -371,7 +423,7 @@ message FeedUpdate {
     // Failed to update the database using the new feed data.
     // This typically indicates a bug in Transiter or a transient error connecting to the database.
     FAILED_UPDATE_ERROR = 9;
-    // An internal unspecified error occured.
+    // An internal unspecified error occurred.
     FAILED_INTERNAL_ERROR = 10;
     // The feed has an unknown type.
     FAILED_UNKNOWN_FEED_TYPE = 11;
@@ -390,32 +442,68 @@ message FeedUpdate {
   optional string error_message = 10;
 }
 
+// Response payload for the update feed endpoint.
 message UpdateFeedReply {
+  // Information about the feed update that was performed.
   FeedUpdate feed_update = 1;
 }
 
+// Request payload for the get scheduler status endpoint.
 message GetSchedulerStatusRequest {}
 
+// Response payload for the get scheduler status endpoint.
 message GetSchedulerStatusReply {
-  message Feed {
+  // Description of the status of one feed.
+  message FeedStatus {
+    // ID of the system this feed belongs to.
     string system_id = 1;
+    // Configuration of the feed as used by the scheduler.
+    // If Postgres is manually updated to change the feed configuration,
+    // this may be different what's in Postgres.
+    // The scheduler needs to be updated in this case.
+    // In general, however, the feed config here will match what's in Postgres.
     FeedConfig feed_config = 7;
+    // Unix timestamp of the last successful feed update.
     int64 last_successful_update = 4;
+    // Unix timestamp of the last finished update.
     int64 last_finished_update = 5;
+    // Whether a feed update for this feed is currently running.
     bool currently_running = 6;
   }
-  repeated Feed feeds = 1;
+  // Status for all feeds being updated by the scheduler.
+  repeated FeedStatus feeds = 1;
 }
 
+// Request payload for the reset scheduler endpoint.
 message ResetSchedulerRequest {}
 
+// Response payload for the reset scheduler endpoint.
 message ResetSchedulerReply {}
 
+// Request payload for the get log level endpoint.
 message GetLogLevelRequest {}
+
+// Response payload for the get log level endpoint.
 message GetLogLevelReply {
-  string log_level = 1;
+  reserved 1;
+  // Current log level.
+  LogLevel log_level = 2;
 }
+
+// Request payload for the set log level endpoint.
 message SetLogLevelRequest {
-  string log_level = 1;
+  reserved 1;
+  // New log level.
+  LogLevel log_level = 2;
 }
+
+// Response payload for the set log level endpoint.
 message SetLogLevelReply {}
+
+// Supported log levels in Transiter.
+enum LogLevel {
+  INFO = 0;
+  DEBUG = 1;
+  WARN = 2;
+  ERROR = 3;
+}
