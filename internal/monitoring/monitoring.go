@@ -16,6 +16,7 @@ import (
 type Monitoring interface {
 	RecordFeedUpdate(systemID, feedID string, feedUpdate *api.FeedUpdate)
 	RecordPublicRequest(methodName string, err error, duration time.Duration)
+	RecordDeprecatedFeatureUse(feature string)
 	Handler() http.Handler
 }
 
@@ -92,6 +93,14 @@ func NewPrometheusMonitoring(namespace string) Monitoring {
 			},
 			[]string{"method_name", "response_status"},
 		),
+		deprecatedFeatureUseCount: factory.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: namespace,
+				Name:      "deprecated_feature_use",
+				Help:      "Number of times a deprecated feature (like an API field) is used",
+			},
+			[]string{"feature"},
+		),
 	}
 }
 
@@ -105,6 +114,7 @@ type prometheusMonitoring struct {
 	feedUpdateCount           *prometheus.CounterVec
 	feedUpdateLastCompleted   *prometheus.GaugeVec
 	publicRequestLatency      *prometheus.HistogramVec
+	deprecatedFeatureUseCount *prometheus.CounterVec
 }
 
 func (m *prometheusMonitoring) RecordFeedUpdate(systemID, feedID string, feedUpdate *api.FeedUpdate) {
@@ -145,6 +155,10 @@ func (m *prometheusMonitoring) RecordFeedUpdate(systemID, feedID string, feedUpd
 func (m *prometheusMonitoring) RecordPublicRequest(methodName string, err error, duration time.Duration) {
 	responseStatus := errors.GetStatusCode(err).String()
 	m.publicRequestLatency.WithLabelValues(methodName, responseStatus).Observe(duration.Seconds())
+}
+
+func (m *prometheusMonitoring) RecordDeprecatedFeatureUse(feature string) {
+	m.deprecatedFeatureUseCount.WithLabelValues(feature).Inc()
 }
 
 func (m *prometheusMonitoring) Handler() http.Handler {

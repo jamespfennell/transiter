@@ -92,18 +92,18 @@ LIMIT $5
 `
 
 type ListShapesParams struct {
-	SystemPk               int64
-	FirstShapeID           string
-	OnlyReturnSpecifiedIds bool
-	ShapeIds               []string
-	NumShapes              int32
+	SystemPk     int64
+	FirstShapeID string
+	FilterByID   bool
+	ShapeIds     []string
+	NumShapes    int32
 }
 
 func (q *Queries) ListShapes(ctx context.Context, arg ListShapesParams) ([]Shape, error) {
 	rows, err := q.db.Query(ctx, listShapes,
 		arg.SystemPk,
 		arg.FirstShapeID,
-		arg.OnlyReturnSpecifiedIds,
+		arg.FilterByID,
 		arg.ShapeIds,
 		arg.NumShapes,
 	)

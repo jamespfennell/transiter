@@ -7,12 +7,22 @@ import (
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/public/errors"
 )
 
 func ListShapes(ctx context.Context, r *Context, req *api.ListShapesRequest) (*api.ListShapesReply, error) {
 	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
 		return nil, err
+	}
+	filterByID := req.GetFilterById()
+	//lint:ignore SA1019 we still consult the deprecated field as it's not been removed yet
+	if req.GetOnlyReturnSpecifiedIds() {
+		r.Monitoring.RecordDeprecatedFeatureUse("ListShapesRequest.only_return_specified_ids")
+		filterByID = true
+	}
+	if !filterByID && len(req.Id) > 0 {
+		return nil, errors.NewInvalidArgumentError("filter_by_id is false but IDs were provided")
 	}
 
 	numShapes := r.EndpointOptions.MaxEntitiesPerRequest
@@ -29,11 +39,11 @@ func ListShapes(ctx context.Context, r *Context, req *api.ListShapesRequest) (*a
 	}
 
 	dbShapes, err := r.Querier.ListShapes(ctx, db.ListShapesParams{
-		SystemPk:               system.Pk,
-		FirstShapeID:           firstID,
-		NumShapes:              numShapes + 1,
-		OnlyReturnSpecifiedIds: req.OnlyReturnSpecifiedIds,
-		ShapeIds:               req.Id,
+		SystemPk:     system.Pk,
+		FirstShapeID: firstID,
+		NumShapes:    numShapes + 1,
+		FilterByID:   filterByID,
+		ShapeIds:     req.Id,
 	})
 	if err != nil {
 		return nil, err

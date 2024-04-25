@@ -352,13 +352,16 @@ message ListStopsRequest {
   // The type of search to perform when listing stops.
   optional SearchMode search_mode = 13;
 
+  // Deprecated: use `filter_by_id` instead.
+  bool only_return_specified_ids = 8 [deprecated=true];
   // If true, only return stops whose IDs are specified in the repeated `id` field.
   // Only supported when the search mode is ID.
-  bool only_return_specified_ids = 8;
-  // IDs to return if `only_return_specified_ids` is set to true. It is an error to
-  // populate this field if `only_return_specified_ids` is false.
+  bool filter_by_id = 15;
+  // IDs to return if `filter_by_id` is set to true. It is an error to
+  // populate this field if `filter_by_id` is false.
   // Only supported when the search mode is ID.
   repeated string id = 9;
+
   // ID of the first stop to return. If not set, the stop with the smallest ID will be first.
   // Only supported when the search mode is ID.
   optional string first_id = 2;
@@ -590,12 +593,13 @@ message ListVehiclesRequest {
   // The type of search to perform when listing vehicles.
   optional SearchMode search_mode = 2;
 
+  // Deprecated: use `filter_by_id` instead.
+  bool only_return_specified_ids = 3 [deprecated=true];
   // If true, only return vehicles whose IDs are specified in the repeated `id` field.
   // Only supported when the search mode is ID.
-  bool only_return_specified_ids = 3;
-
-  // IDs to return if `only_return_specified_ids` is set to true. It is an error to
-  // populate this field if `only_return_specified_ids` is false.
+  bool filter_by_id = 10;
+  // IDs to return if `filter_by_id` is set to true. It is an error to
+  // populate this field if `filter_by_id` is false.
   // Only supported when the search mode is ID.
   repeated string id = 4;
 
@@ -645,11 +649,12 @@ message ListShapesRequest {
   // System to list shapes for.
   string system_id = 1;
 
+  // Deprecated: use `filter_by_id` instead.
+  bool only_return_specified_ids = 2 [deprecated=true];
   // If true, only return shapes whose IDs are specified in the repeated `id` field.
-  bool only_return_specified_ids = 2;
-
-  // IDs to return if `only_return_specified_ids` is set to true. It is an error to
-  // populate this field if `only_return_specified_ids` is false.
+  bool filter_by_id = 6;
+  // IDs to return if `filter_by_id` is set to true. It is an error to
+  // populate this field if `filter_by_id` is false.
   repeated string id = 3;
 
   // ID of the first shape to return. If not set, the shape with the smallest ID will be first.

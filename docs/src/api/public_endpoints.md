@@ -227,8 +227,9 @@ Request payload for the list stops endpoint.
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system for which to list stops.<br /><br />This is a URL parameter in the HTTP API.
 | search_mode | [ListStopsRequest.SearchMode](public_endpoints.md#liststopsrequestsearchmode) | The type of search to perform when listing stops.
-| only_return_specified_ids | bool | If true, only return stops whose IDs are specified in the repeated `id` field. Only supported when the search mode is ID.
-| id | string | IDs to return if `only_return_specified_ids` is set to true. It is an error to populate this field if `only_return_specified_ids` is false. Only supported when the search mode is ID.
+| only_return_specified_ids | bool | Deprecated: use `filter_by_id` instead.
+| filter_by_id | bool | If true, only return stops whose IDs are specified in the repeated `id` field. Only supported when the search mode is ID.
+| id | string | IDs to return if `filter_by_id` is set to true. It is an error to populate this field if `filter_by_id` is false. Only supported when the search mode is ID.
 | first_id | string | ID of the first stop to return. If not set, the stop with the smallest ID will be first. Only supported when the search mode is ID.
 | limit | int32 | Maximum number of stops to return. This is supported in all search modes. For performance reasons, if it is larger than 100 it is rounded down to 100.
 | skip_stop_times | bool | If true, the stop times field will not be populated. This will generally make the response faster to generate.
@@ -639,8 +640,9 @@ Request payload for the list vehicles endpoint.
 | ----- | ---- | ----------- |
 | system_id | string | ID of the system for which to list vehicles.
 | search_mode | [ListVehiclesRequest.SearchMode](public_endpoints.md#listvehiclesrequestsearchmode) | The type of search to perform when listing vehicles.
-| only_return_specified_ids | bool | If true, only return vehicles whose IDs are specified in the repeated `id` field. Only supported when the search mode is ID.
-| id | string | IDs to return if `only_return_specified_ids` is set to true. It is an error to populate this field if `only_return_specified_ids` is false. Only supported when the search mode is ID.
+| only_return_specified_ids | bool | Deprecated: use `filter_by_id` instead.
+| filter_by_id | bool | If true, only return vehicles whose IDs are specified in the repeated `id` field. Only supported when the search mode is ID.
+| id | string | IDs to return if `filter_by_id` is set to true. It is an error to populate this field if `filter_by_id` is false. Only supported when the search mode is ID.
 | first_id | string | ID of the first vehicle to return. If not set, the vehicle with the smallest ID will be first. Only supported when the search mode is ID.
 | limit | int32 | Maximum number of vehicles to return. This is supported in all search modes. For performance reasons, if it is larger than 100 it is rounded down to 100.
 | max_distance | double | The maximum distance in kilometers that a vehicle must be from latitude, longitude to be listed when using DISTANCE search mode.
@@ -727,8 +729,9 @@ Request payload for the list shapes endpoint.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | system_id | string | System to list shapes for.
-| only_return_specified_ids | bool | If true, only return shapes whose IDs are specified in the repeated `id` field.
-| id | string | IDs to return if `only_return_specified_ids` is set to true. It is an error to populate this field if `only_return_specified_ids` is false.
+| only_return_specified_ids | bool | Deprecated: use `filter_by_id` instead.
+| filter_by_id | bool | If true, only return shapes whose IDs are specified in the repeated `id` field.
+| id | string | IDs to return if `filter_by_id` is set to true. It is an error to populate this field if `filter_by_id` is false.
 | first_id | string | ID of the first shape to return. If not set, the shape with the smallest ID will be first.
 | limit | int32 | Maximum number of shapes to return.
 

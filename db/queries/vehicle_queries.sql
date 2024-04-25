@@ -19,7 +19,7 @@ LEFT JOIN route ON trip.route_pk = route.pk
 WHERE vehicle.system_pk = sqlc.arg(system_pk)
   AND vehicle.id >= sqlc.arg(first_vehicle_id)
   AND (
-    NOT sqlc.arg(only_return_specified_ids)::bool OR
+    NOT sqlc.arg(filter_by_id)::bool OR
     vehicle.id = ANY(sqlc.arg(vehicle_ids)::text[])
   )
 ORDER BY vehicle.id

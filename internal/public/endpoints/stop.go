@@ -15,13 +15,20 @@ import (
 )
 
 func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api.ListStopsReply, error) {
-	if !req.OnlyReturnSpecifiedIds && len(req.Id) > 0 {
-		return nil, errors.NewInvalidArgumentError("only_return_specified_ids is false but IDs were provided")
-	}
 	system, err := getSystem(ctx, r.Querier, req.SystemId)
 	if err != nil {
 		return nil, err
 	}
+	filterByID := req.GetFilterById()
+	//lint:ignore SA1019 we still consult the deprecated field as it's not been removed yet
+	if req.GetOnlyReturnSpecifiedIds() {
+		r.Monitoring.RecordDeprecatedFeatureUse("ListStopsRequest.only_return_specified_ids")
+		filterByID = true
+	}
+	if !filterByID && len(req.Id) > 0 {
+		return nil, errors.NewInvalidArgumentError("filter_by_id is false but IDs were provided")
+	}
+
 	numStops := r.EndpointOptions.MaxEntitiesPerRequest
 	if numStops <= 0 {
 		// Avoid overflow since pagination over-fetches by one
@@ -51,11 +58,11 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 		})
 	} else {
 		stops, err = r.Querier.ListStops(ctx, db.ListStopsParams{
-			SystemPk:               system.Pk,
-			FirstStopID:            firstID,
-			NumStops:               numStops + 1,
-			OnlyReturnSpecifiedIds: req.OnlyReturnSpecifiedIds,
-			StopIds:                req.Id,
+			SystemPk:    system.Pk,
+			FirstStopID: firstID,
+			NumStops:    numStops + 1,
+			FilterByID:  filterByID,
+			StopIds:     req.Id,
 		})
 	}
 

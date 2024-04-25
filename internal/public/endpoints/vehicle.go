@@ -16,6 +16,15 @@ func ListVehicles(ctx context.Context, r *Context, req *api.ListVehiclesRequest)
 	if err != nil {
 		return nil, err
 	}
+	filterByID := req.GetFilterById()
+	//lint:ignore SA1019 we still consult the deprecated field as it's not been removed yet
+	if req.GetOnlyReturnSpecifiedIds() {
+		r.Monitoring.RecordDeprecatedFeatureUse("ListVehiclesRequest.only_return_specified_ids")
+		filterByID = true
+	}
+	if !filterByID && len(req.Id) > 0 {
+		return nil, errors.NewInvalidArgumentError("filter_by_id is false but IDs were provided")
+	}
 
 	numVehicles := r.EndpointOptions.MaxEntitiesPerRequest
 	if numVehicles <= 0 {
@@ -74,11 +83,11 @@ func ListVehicles(ctx context.Context, r *Context, req *api.ListVehiclesRequest)
 		}
 	} else {
 		dbVehicles, err = r.Querier.ListVehicles(ctx, db.ListVehiclesParams{
-			SystemPk:               system.Pk,
-			FirstVehicleID:         convert.NullString(&firstID),
-			NumVehicles:            numVehicles + 1,
-			OnlyReturnSpecifiedIds: req.OnlyReturnSpecifiedIds,
-			VehicleIds:             req.Id,
+			SystemPk:       system.Pk,
+			FirstVehicleID: convert.NullString(&firstID),
+			NumVehicles:    numVehicles + 1,
+			FilterByID:     filterByID,
+			VehicleIds:     req.Id,
 		})
 		if err != nil {
 			return nil, err

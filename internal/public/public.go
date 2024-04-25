@@ -122,6 +122,7 @@ func run[S, T any](ctx context.Context, s *Server, methodName string, f func(con
 			Reference:       reference.NewGenerator(ctx),
 			Logger:          s.logger,
 			EndpointOptions: *s.endpointOptions,
+			Monitoring:      s.monitoring,
 		}, req)
 		return err
 	})

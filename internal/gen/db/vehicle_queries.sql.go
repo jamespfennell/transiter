@@ -189,11 +189,11 @@ LIMIT $5
 `
 
 type ListVehiclesParams struct {
-	SystemPk               int64
-	FirstVehicleID         pgtype.Text
-	OnlyReturnSpecifiedIds bool
-	VehicleIds             []string
-	NumVehicles            int32
+	SystemPk       int64
+	FirstVehicleID pgtype.Text
+	FilterByID     bool
+	VehicleIds     []string
+	NumVehicles    int32
 }
 
 type ListVehiclesRow struct {
@@ -227,7 +227,7 @@ func (q *Queries) ListVehicles(ctx context.Context, arg ListVehiclesParams) ([]L
 	rows, err := q.db.Query(ctx, listVehicles,
 		arg.SystemPk,
 		arg.FirstVehicleID,
-		arg.OnlyReturnSpecifiedIds,
+		arg.FilterByID,
 		arg.VehicleIds,
 		arg.NumVehicles,
 	)

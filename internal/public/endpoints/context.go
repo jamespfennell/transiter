@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jamespfennell/transiter/internal/gen/db"
+	"github.com/jamespfennell/transiter/internal/monitoring"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/jamespfennell/transiter/internal/public/reference"
 	"golang.org/x/exp/slog"
@@ -22,6 +23,7 @@ type Context struct {
 	Reference       reference.Generator
 	Logger          *slog.Logger
 	EndpointOptions EndpointOptions
+	Monitoring      monitoring.Monitoring
 }
 
 func getSystem(ctx context.Context, querier db.Querier, id string) (db.System, error) {

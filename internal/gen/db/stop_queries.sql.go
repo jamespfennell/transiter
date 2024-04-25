@@ -127,18 +127,18 @@ LIMIT $5
 `
 
 type ListStopsParams struct {
-	SystemPk               int64
-	FirstStopID            string
-	OnlyReturnSpecifiedIds bool
-	StopIds                []string
-	NumStops               int32
+	SystemPk    int64
+	FirstStopID string
+	FilterByID  bool
+	StopIds     []string
+	NumStops    int32
 }
 
 func (q *Queries) ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, error) {
 	rows, err := q.db.Query(ctx, listStops,
 		arg.SystemPk,
 		arg.FirstStopID,
-		arg.OnlyReturnSpecifiedIds,
+		arg.FilterByID,
 		arg.StopIds,
 		arg.NumStops,
 	)
