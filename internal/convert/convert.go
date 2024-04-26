@@ -248,6 +248,7 @@ func TransferType(t string) api.Transfer_Type {
 }
 
 func StopType(t string) api.Stop_Type {
+	// TODO: playform not covered
 	return api.Stop_Type(api.Stop_Type_value[t])
 }
 

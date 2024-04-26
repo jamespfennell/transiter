@@ -78,7 +78,7 @@ def test_install_system__stops(system_id, install_system_1, transiter_host):
         assert 40.7527 == stop_response["latitude"]
         assert -73.9772 == stop_response["longitude"]
         assert "StopUrl" == stop_response["url"]
-        assert "STOP" == stop_response["type"]
+        assert "PLATFORM" == stop_response["type"]
         assert "StopTimezone" == stop_response["timezone"]
         assert True == stop_response["wheelchairBoarding"]
         assert "PlatformCode" == stop_response["platformCode"]

@@ -357,10 +357,16 @@ message ListStopsRequest {
   // If true, only return stops whose IDs are specified in the repeated `id` field.
   // Only supported when the search mode is ID.
   bool filter_by_id = 15;
-  // IDs to return if `filter_by_id` is set to true. It is an error to
-  // populate this field if `filter_by_id` is false.
+  // IDs to return if `filter_by_id` is set to true.
+  // It is an error to populate this field if `filter_by_id` is false.
   // Only supported when the search mode is ID.
   repeated string id = 9;
+
+  // If true, only return stops whose types are specified in the repeated `type` field.
+  bool filter_by_type = 16;
+  // Types to filter by if `filter_by_type` is set to true. 
+  // It is an error to populate this field if `filter_by_id` is false.
+  repeated Stop.Type type = 17;
 
   // ID of the first stop to return. If not set, the stop with the smallest ID will be first.
   // Only supported when the search mode is ID.
@@ -793,6 +799,7 @@ message Stop {
     ENTRANCE_OR_EXIT = 2;
     GENERIC_NODE = 3;
     BOARDING_AREA = 4;
+    PLATFORM = 5;
   }
   // Type of the stop. This is the `platform_type` column in `stops.txt`.
   Type type = 11;

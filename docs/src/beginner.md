@@ -393,7 +393,7 @@ We can perform a geographical search in Transiter using Transiter's
   list stops endpoint and specifying a `DISTANCE` search mode:
 
 ```
-http://localhost:8080/systems/us-ca-bart/stops?search_mode=DISTANCE&latitude=37.788056&longitude=-122.4075&max_distance=1
+http://localhost:8080/systems/us-ca-bart/stops?search_mode=DISTANCE&latitude=37.788056&longitude=-122.4075&max_distance=1&filter_by_type=true&type=STATION
 ```
 
 The `max_distance` parameter uses kilometers.

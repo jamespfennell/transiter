@@ -47,6 +47,10 @@ WHERE system_pk = sqlc.arg(system_pk)
     NOT sqlc.arg(filter_by_id)::bool OR
     id = ANY(sqlc.arg(stop_ids)::text[])
   )
+  AND (
+    NOT sqlc.arg(filter_by_type)::bool OR
+    type = ANY(sqlc.arg(types)::text[])
+  )
 ORDER BY id
 LIMIT sqlc.arg(num_stops);
 
@@ -57,6 +61,10 @@ WITH distance AS (
         stop.location <-> sqlc.arg(base)::geography distance
     FROM stop
     WHERE stop.location IS NOT NULL
+    AND (
+        NOT sqlc.arg(filter_by_type)::bool OR
+        type = ANY(sqlc.arg(types)::text[])
+    )
 )
 SELECT stop.* FROM stop
 INNER JOIN distance ON stop.pk = distance.stop_pk

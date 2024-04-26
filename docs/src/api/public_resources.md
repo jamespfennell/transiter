@@ -627,6 +627,7 @@ Enum describing the possible stop types
 | ENTRANCE_OR_EXIT | 2 |  |
 | GENERIC_NODE | 3 |  |
 | BOARDING_AREA | 4 |  |
+| PLATFORM | 5 |  |
 
 
 

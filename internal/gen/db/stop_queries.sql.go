@@ -122,16 +122,22 @@ WHERE system_pk = $1
     NOT $3::bool OR
     id = ANY($4::text[])
   )
+  AND (
+    NOT $5::bool OR
+    type = ANY($6::text[])
+  )
 ORDER BY id
-LIMIT $5
+LIMIT $7
 `
 
 type ListStopsParams struct {
-	SystemPk    int64
-	FirstStopID string
-	FilterByID  bool
-	StopIds     []string
-	NumStops    int32
+	SystemPk     int64
+	FirstStopID  string
+	FilterByID   bool
+	StopIds      []string
+	FilterByType bool
+	Types        []string
+	NumStops     int32
 }
 
 func (q *Queries) ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, error) {
@@ -140,6 +146,8 @@ func (q *Queries) ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, e
 		arg.FirstStopID,
 		arg.FilterByID,
 		arg.StopIds,
+		arg.FilterByType,
+		arg.Types,
 		arg.NumStops,
 	)
 	if err != nil {
@@ -222,6 +230,10 @@ WITH distance AS (
         stop.location <-> $4::geography distance
     FROM stop
     WHERE stop.location IS NOT NULL
+    AND (
+        NOT $5::bool OR
+        type = ANY($6::text[])
+    )
 )
 SELECT stop.pk, stop.id, stop.system_pk, stop.parent_stop_pk, stop.name, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id, stop.feed_pk, stop.location FROM stop
 INNER JOIN distance ON stop.pk = distance.stop_pk
@@ -232,10 +244,12 @@ LIMIT $3
 `
 
 type ListStops_GeographicParams struct {
-	SystemPk    int64
-	MaxDistance float64
-	MaxResults  int32
-	Base        types.Geography
+	SystemPk     int64
+	MaxDistance  float64
+	MaxResults   int32
+	Base         types.Geography
+	FilterByType bool
+	Types        []string
 }
 
 func (q *Queries) ListStops_Geographic(ctx context.Context, arg ListStops_GeographicParams) ([]Stop, error) {
@@ -244,6 +258,8 @@ func (q *Queries) ListStops_Geographic(ctx context.Context, arg ListStops_Geogra
 		arg.MaxDistance,
 		arg.MaxResults,
 		arg.Base,
+		arg.FilterByType,
+		arg.Types,
 	)
 	if err != nil {
 		return nil, err

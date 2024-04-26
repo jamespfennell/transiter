@@ -28,6 +28,9 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 	if !filterByID && len(req.Id) > 0 {
 		return nil, errors.NewInvalidArgumentError("filter_by_id is false but IDs were provided")
 	}
+	if !req.GetFilterByType() && len(req.GetType()) > 0 {
+		return nil, errors.NewInvalidArgumentError("filter_by_type is false but types were provided")
+	}
 
 	numStops := r.EndpointOptions.MaxEntitiesPerRequest
 	if numStops <= 0 {
@@ -51,18 +54,22 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 			return nil, errors.NewInvalidArgumentError("first_id can not be used when using DISTANCE search_mode")
 		}
 		stops, err = r.Querier.ListStops_Geographic(ctx, db.ListStops_GeographicParams{
-			SystemPk:    system.Pk,
-			Base:        convert.Gps(req.Longitude, req.Latitude),
-			MaxDistance: *req.MaxDistance,
-			MaxResults:  numStops,
+			SystemPk:     system.Pk,
+			Base:         convert.Gps(req.Longitude, req.Latitude),
+			MaxDistance:  *req.MaxDistance,
+			MaxResults:   numStops,
+			FilterByType: req.GetFilterByType(),
+			Types:        apiTypesToStrings(req.GetType()),
 		})
 	} else {
 		stops, err = r.Querier.ListStops(ctx, db.ListStopsParams{
-			SystemPk:    system.Pk,
-			FirstStopID: firstID,
-			NumStops:    numStops + 1,
-			FilterByID:  filterByID,
-			StopIds:     req.Id,
+			SystemPk:     system.Pk,
+			FirstStopID:  firstID,
+			NumStops:     numStops + 1,
+			FilterByID:   filterByID,
+			StopIds:      req.Id,
+			FilterByType: req.GetFilterByType(),
+			Types:        apiTypesToStrings(req.GetType()),
 		})
 	}
 
@@ -82,6 +89,14 @@ func ListStops(ctx context.Context, r *Context, req *api.ListStopsRequest) (*api
 		Stops:  apiStops,
 		NextId: nextID,
 	}, nil
+}
+
+func apiTypesToStrings(in []api.Stop_Type) []string {
+	var out []string
+	for _, t := range in {
+		out = append(out, t.String())
+	}
+	return out
 }
 
 func ListTransfers(ctx context.Context, r *Context, req *api.ListTransfersRequest) (*api.ListTransfersReply, error) {

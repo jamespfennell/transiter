@@ -230,6 +230,8 @@ Request payload for the list stops endpoint.
 | only_return_specified_ids | bool | Deprecated: use `filter_by_id` instead.
 | filter_by_id | bool | If true, only return stops whose IDs are specified in the repeated `id` field. Only supported when the search mode is ID.
 | id | string | IDs to return if `filter_by_id` is set to true. It is an error to populate this field if `filter_by_id` is false. Only supported when the search mode is ID.
+| filter_by_type | bool | If true, only return stops whose types are specified in the repeated `type` field.
+| type | [Stop.Type](public_resources.md#stoptype) | Types to filter by if `filter_by_type` is set to true. It is an error to populate this field if `filter_by_id` is false.
 | first_id | string | ID of the first stop to return. If not set, the stop with the smallest ID will be first. Only supported when the search mode is ID.
 | limit | int32 | Maximum number of stops to return. This is supported in all search modes. For performance reasons, if it is larger than 100 it is rounded down to 100.
 | skip_stop_times | bool | If true, the stop times field will not be populated. This will generally make the response faster to generate.
