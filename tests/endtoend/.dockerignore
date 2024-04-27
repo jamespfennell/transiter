@@ -3,4 +3,5 @@
 
 !requirements.txt
 !*.py
+!client/*
 !data/*

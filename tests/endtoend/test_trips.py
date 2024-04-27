@@ -188,9 +188,9 @@ def build_gtfs_rt_message(
                             arrival=gtfs.TripUpdate.StopTimeEvent(time=time),
                             departure=gtfs.TripUpdate.StopTimeEvent(time=time + 15),
                             stop_id=stop_id,
-                            stop_sequence=stop_sequence + 25
-                            if use_stop_sequences
-                            else None,
+                            stop_sequence=(
+                                stop_sequence + 25 if use_stop_sequences else None
+                            ),
                         )
                         for stop_sequence, (stop_id, time) in enumerate(
                             stop_id_to_time.items()

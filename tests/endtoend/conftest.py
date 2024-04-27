@@ -3,9 +3,9 @@ import os
 import time
 import uuid
 import zipfile
-import json
 import pytest
 import requests
+from . import client
 
 
 class SourceServerClient:
@@ -59,6 +59,11 @@ def transiter_host():
 
 
 @pytest.fixture
+def transiter_client(transiter_host):
+    return client.TransiterClient(transiter_host)
+
+
+@pytest.fixture
 def source_server_host_within_transiter():
     return os.environ.get(
         "SOURCE_SERVER_HOST_WITHIN_TRANSITER",
@@ -85,9 +90,7 @@ def install_system(
 ):
     def install(system_id, system_config, expected_status="ACTIVE"):
         def delete():
-            requests.delete(
-                transiter_host + "/systems/" + system_id + "?sync=true"
-            )
+            requests.delete(transiter_host + "/systems/" + system_id + "?sync=true")
 
         system_config_url = source_server.create(
             "", "/" + system_id + "/system-config.yaml.jinja"

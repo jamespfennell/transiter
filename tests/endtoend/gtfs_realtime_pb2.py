@@ -2604,18 +2604,18 @@ _TRIPUPDATE_STOPTIMEEVENT.containing_type = _TRIPUPDATE
 _TRIPUPDATE_STOPTIMEUPDATE_STOPTIMEPROPERTIES.containing_type = (
     _TRIPUPDATE_STOPTIMEUPDATE
 )
-_TRIPUPDATE_STOPTIMEUPDATE.fields_by_name[
-    "arrival"
-].message_type = _TRIPUPDATE_STOPTIMEEVENT
-_TRIPUPDATE_STOPTIMEUPDATE.fields_by_name[
-    "departure"
-].message_type = _TRIPUPDATE_STOPTIMEEVENT
-_TRIPUPDATE_STOPTIMEUPDATE.fields_by_name[
-    "schedule_relationship"
-].enum_type = _TRIPUPDATE_STOPTIMEUPDATE_SCHEDULERELATIONSHIP
-_TRIPUPDATE_STOPTIMEUPDATE.fields_by_name[
-    "stop_time_properties"
-].message_type = _TRIPUPDATE_STOPTIMEUPDATE_STOPTIMEPROPERTIES
+_TRIPUPDATE_STOPTIMEUPDATE.fields_by_name["arrival"].message_type = (
+    _TRIPUPDATE_STOPTIMEEVENT
+)
+_TRIPUPDATE_STOPTIMEUPDATE.fields_by_name["departure"].message_type = (
+    _TRIPUPDATE_STOPTIMEEVENT
+)
+_TRIPUPDATE_STOPTIMEUPDATE.fields_by_name["schedule_relationship"].enum_type = (
+    _TRIPUPDATE_STOPTIMEUPDATE_SCHEDULERELATIONSHIP
+)
+_TRIPUPDATE_STOPTIMEUPDATE.fields_by_name["stop_time_properties"].message_type = (
+    _TRIPUPDATE_STOPTIMEUPDATE_STOPTIMEPROPERTIES
+)
 _TRIPUPDATE_STOPTIMEUPDATE.containing_type = _TRIPUPDATE
 _TRIPUPDATE_STOPTIMEUPDATE_SCHEDULERELATIONSHIP.containing_type = (
     _TRIPUPDATE_STOPTIMEUPDATE
@@ -2625,25 +2625,25 @@ _TRIPUPDATE.fields_by_name["trip"].message_type = _TRIPDESCRIPTOR
 _TRIPUPDATE.fields_by_name["vehicle"].message_type = _VEHICLEDESCRIPTOR
 _TRIPUPDATE.fields_by_name["stop_time_update"].message_type = _TRIPUPDATE_STOPTIMEUPDATE
 _TRIPUPDATE.fields_by_name["trip_properties"].message_type = _TRIPUPDATE_TRIPPROPERTIES
-_VEHICLEPOSITION_CARRIAGEDETAILS.fields_by_name[
-    "occupancy_status"
-].enum_type = _VEHICLEPOSITION_OCCUPANCYSTATUS
+_VEHICLEPOSITION_CARRIAGEDETAILS.fields_by_name["occupancy_status"].enum_type = (
+    _VEHICLEPOSITION_OCCUPANCYSTATUS
+)
 _VEHICLEPOSITION_CARRIAGEDETAILS.containing_type = _VEHICLEPOSITION
 _VEHICLEPOSITION.fields_by_name["trip"].message_type = _TRIPDESCRIPTOR
 _VEHICLEPOSITION.fields_by_name["vehicle"].message_type = _VEHICLEDESCRIPTOR
 _VEHICLEPOSITION.fields_by_name["position"].message_type = _POSITION
-_VEHICLEPOSITION.fields_by_name[
-    "current_status"
-].enum_type = _VEHICLEPOSITION_VEHICLESTOPSTATUS
-_VEHICLEPOSITION.fields_by_name[
-    "congestion_level"
-].enum_type = _VEHICLEPOSITION_CONGESTIONLEVEL
-_VEHICLEPOSITION.fields_by_name[
-    "occupancy_status"
-].enum_type = _VEHICLEPOSITION_OCCUPANCYSTATUS
-_VEHICLEPOSITION.fields_by_name[
-    "multi_carriage_details"
-].message_type = _VEHICLEPOSITION_CARRIAGEDETAILS
+_VEHICLEPOSITION.fields_by_name["current_status"].enum_type = (
+    _VEHICLEPOSITION_VEHICLESTOPSTATUS
+)
+_VEHICLEPOSITION.fields_by_name["congestion_level"].enum_type = (
+    _VEHICLEPOSITION_CONGESTIONLEVEL
+)
+_VEHICLEPOSITION.fields_by_name["occupancy_status"].enum_type = (
+    _VEHICLEPOSITION_OCCUPANCYSTATUS
+)
+_VEHICLEPOSITION.fields_by_name["multi_carriage_details"].message_type = (
+    _VEHICLEPOSITION_CARRIAGEDETAILS
+)
 _VEHICLEPOSITION_VEHICLESTOPSTATUS.containing_type = _VEHICLEPOSITION
 _VEHICLEPOSITION_CONGESTIONLEVEL.containing_type = _VEHICLEPOSITION
 _VEHICLEPOSITION_OCCUPANCYSTATUS.containing_type = _VEHICLEPOSITION
@@ -2660,15 +2660,15 @@ _ALERT.fields_by_name["severity_level"].enum_type = _ALERT_SEVERITYLEVEL
 _ALERT_CAUSE.containing_type = _ALERT
 _ALERT_EFFECT.containing_type = _ALERT
 _ALERT_SEVERITYLEVEL.containing_type = _ALERT
-_TRIPDESCRIPTOR.fields_by_name[
-    "schedule_relationship"
-].enum_type = _TRIPDESCRIPTOR_SCHEDULERELATIONSHIP
+_TRIPDESCRIPTOR.fields_by_name["schedule_relationship"].enum_type = (
+    _TRIPDESCRIPTOR_SCHEDULERELATIONSHIP
+)
 _TRIPDESCRIPTOR_SCHEDULERELATIONSHIP.containing_type = _TRIPDESCRIPTOR
 _ENTITYSELECTOR.fields_by_name["trip"].message_type = _TRIPDESCRIPTOR
 _TRANSLATEDSTRING_TRANSLATION.containing_type = _TRANSLATEDSTRING
-_TRANSLATEDSTRING.fields_by_name[
-    "translation"
-].message_type = _TRANSLATEDSTRING_TRANSLATION
+_TRANSLATEDSTRING.fields_by_name["translation"].message_type = (
+    _TRANSLATEDSTRING_TRANSLATION
+)
 DESCRIPTOR.message_types_by_name["FeedMessage"] = _FEEDMESSAGE
 DESCRIPTOR.message_types_by_name["FeedHeader"] = _FEEDHEADER
 DESCRIPTOR.message_types_by_name["FeedEntity"] = _FEEDENTITY
@@ -2688,7 +2688,7 @@ FeedMessage = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _FEEDMESSAGE,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.FeedMessage)
     },
 )
@@ -2699,7 +2699,7 @@ FeedHeader = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _FEEDHEADER,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.FeedHeader)
     },
 )
@@ -2710,7 +2710,7 @@ FeedEntity = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _FEEDENTITY,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.FeedEntity)
     },
 )
@@ -2725,7 +2725,7 @@ TripUpdate = _reflection.GeneratedProtocolMessageType(
             (_message.Message,),
             {
                 "DESCRIPTOR": _TRIPUPDATE_STOPTIMEEVENT,
-                "__module__": "gtfs_realtime_pb2"
+                "__module__": "gtfs_realtime_pb2",
                 # @@protoc_insertion_point(class_scope:transit_realtime.TripUpdate.StopTimeEvent)
             },
         ),
@@ -2738,12 +2738,12 @@ TripUpdate = _reflection.GeneratedProtocolMessageType(
                     (_message.Message,),
                     {
                         "DESCRIPTOR": _TRIPUPDATE_STOPTIMEUPDATE_STOPTIMEPROPERTIES,
-                        "__module__": "gtfs_realtime_pb2"
+                        "__module__": "gtfs_realtime_pb2",
                         # @@protoc_insertion_point(class_scope:transit_realtime.TripUpdate.StopTimeUpdate.StopTimeProperties)
                     },
                 ),
                 "DESCRIPTOR": _TRIPUPDATE_STOPTIMEUPDATE,
-                "__module__": "gtfs_realtime_pb2"
+                "__module__": "gtfs_realtime_pb2",
                 # @@protoc_insertion_point(class_scope:transit_realtime.TripUpdate.StopTimeUpdate)
             },
         ),
@@ -2752,12 +2752,12 @@ TripUpdate = _reflection.GeneratedProtocolMessageType(
             (_message.Message,),
             {
                 "DESCRIPTOR": _TRIPUPDATE_TRIPPROPERTIES,
-                "__module__": "gtfs_realtime_pb2"
+                "__module__": "gtfs_realtime_pb2",
                 # @@protoc_insertion_point(class_scope:transit_realtime.TripUpdate.TripProperties)
             },
         ),
         "DESCRIPTOR": _TRIPUPDATE,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.TripUpdate)
     },
 )
@@ -2776,12 +2776,12 @@ VehiclePosition = _reflection.GeneratedProtocolMessageType(
             (_message.Message,),
             {
                 "DESCRIPTOR": _VEHICLEPOSITION_CARRIAGEDETAILS,
-                "__module__": "gtfs_realtime_pb2"
+                "__module__": "gtfs_realtime_pb2",
                 # @@protoc_insertion_point(class_scope:transit_realtime.VehiclePosition.CarriageDetails)
             },
         ),
         "DESCRIPTOR": _VEHICLEPOSITION,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.VehiclePosition)
     },
 )
@@ -2793,7 +2793,7 @@ Alert = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _ALERT,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.Alert)
     },
 )
@@ -2804,7 +2804,7 @@ TimeRange = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _TIMERANGE,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.TimeRange)
     },
 )
@@ -2815,7 +2815,7 @@ Position = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _POSITION,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.Position)
     },
 )
@@ -2826,7 +2826,7 @@ TripDescriptor = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _TRIPDESCRIPTOR,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.TripDescriptor)
     },
 )
@@ -2837,7 +2837,7 @@ VehicleDescriptor = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _VEHICLEDESCRIPTOR,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.VehicleDescriptor)
     },
 )
@@ -2848,7 +2848,7 @@ EntitySelector = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     {
         "DESCRIPTOR": _ENTITYSELECTOR,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.EntitySelector)
     },
 )
@@ -2863,12 +2863,12 @@ TranslatedString = _reflection.GeneratedProtocolMessageType(
             (_message.Message,),
             {
                 "DESCRIPTOR": _TRANSLATEDSTRING_TRANSLATION,
-                "__module__": "gtfs_realtime_pb2"
+                "__module__": "gtfs_realtime_pb2",
                 # @@protoc_insertion_point(class_scope:transit_realtime.TranslatedString.Translation)
             },
         ),
         "DESCRIPTOR": _TRANSLATEDSTRING,
-        "__module__": "gtfs_realtime_pb2"
+        "__module__": "gtfs_realtime_pb2",
         # @@protoc_insertion_point(class_scope:transit_realtime.TranslatedString)
     },
 )

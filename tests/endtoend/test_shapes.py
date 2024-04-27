@@ -12,8 +12,9 @@ ROUTE_ID = "A"
 
 class TestShapes:
 
-    def test_shape_view(self, install_system_1, system_id, transiter_host,
-                        source_server):
+    def test_shape_view(
+        self, install_system_1, system_id, transiter_host, source_server
+    ):
         __, realtime_feed_url = install_system_1(system_id)
 
         source_server.put(
@@ -26,8 +27,7 @@ class TestShapes:
         print(response)
 
         # List shapes
-        response = requests.get(
-            f"{transiter_host}/systems/{system_id}/shapes").json()
+        response = requests.get(f"{transiter_host}/systems/{system_id}/shapes").json()
         print(response)
 
         shapes = response["shapes"]
@@ -47,8 +47,8 @@ class TestShapes:
             if next_id:
                 query_params["first_id"] = next_id
             response = requests.get(
-                f"{transiter_host}/systems/{system_id}/shapes",
-                params=query_params).json()
+                f"{transiter_host}/systems/{system_id}/shapes", params=query_params
+            ).json()
             assert len(response["shapes"]) <= 2
             paginated_shapes.extend(response["shapes"])
             num_pages += 1
@@ -56,8 +56,9 @@ class TestShapes:
             if "nextId" not in response:
                 break
             next_id = response["nextId"]
-        assert {SHAPE_ID_1, SHAPE_ID_2,
-                SHAPE_ID_3} == set(shape["id"] for shape in paginated_shapes)
+        assert {SHAPE_ID_1, SHAPE_ID_2, SHAPE_ID_3} == set(
+            shape["id"] for shape in paginated_shapes
+        )
         assert num_pages == 2
 
         # List shapes by ids
@@ -65,27 +66,30 @@ class TestShapes:
             "only_return_specified_ids": True,
             "id[]": [SHAPE_ID_1, SHAPE_ID_3],
         }
-        response = requests.get(f"{transiter_host}/systems/{system_id}/shapes",
-                                params=query_params).json()
+        response = requests.get(
+            f"{transiter_host}/systems/{system_id}/shapes", params=query_params
+        ).json()
         print(response)
-        assert {SHAPE_ID_1,
-                SHAPE_ID_3} == set(shape["id"] for shape in response["shapes"])
+        assert {SHAPE_ID_1, SHAPE_ID_3} == set(
+            shape["id"] for shape in response["shapes"]
+        )
 
         # Get shape
         response = requests.get(
-            f"{transiter_host}/systems/{system_id}/shapes/{SHAPE_ID_1}").json(
-            )
+            f"{transiter_host}/systems/{system_id}/shapes/{SHAPE_ID_1}"
+        ).json()
         print(response)
         assert_shape_1(response)
 
         response = requests.get(
-            f"{transiter_host}/systems/{system_id}/shapes/{SHAPE_ID_2}").json(
-            )
+            f"{transiter_host}/systems/{system_id}/shapes/{SHAPE_ID_2}"
+        ).json()
         print(response)
         assert_shape_2(response)
 
-    def test_trip_view(self, install_system_1, system_id, transiter_host,
-                       source_server):
+    def test_trip_view(
+        self, install_system_1, system_id, transiter_host, source_server
+    ):
         __, realtime_feed_url = install_system_1(system_id)
 
         source_server.put(
@@ -159,9 +163,10 @@ def build_gtfs_rt_message():
             gtfs.FeedEntity(
                 id="trip_update_1",
                 trip_update=gtfs.TripUpdate(
-                    trip=gtfs.TripDescriptor(trip_id=TRIP_ID_1,
-                                             route_id=ROUTE_ID,
-                                             direction_id=True), ),
+                    trip=gtfs.TripDescriptor(
+                        trip_id=TRIP_ID_1, route_id=ROUTE_ID, direction_id=True
+                    ),
+                ),
             ),
         ],
     )

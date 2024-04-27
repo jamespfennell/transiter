@@ -144,10 +144,7 @@ def _perform_service_map_test(
 ):
     source_server.put(realtime_feed_url, feed.build_feed())
     requests.post(
-        transiter_host
-        + "/systems/"
-        + system_id
-        + "/feeds/GtfsRealtimeFeed"
+        transiter_host + "/systems/" + system_id + "/feeds/GtfsRealtimeFeed"
     ).json()
 
     route_data = requests.get(

@@ -30,6 +30,7 @@ def test_periodic_update(system_id, install_system_1, transiter_host, source_ser
     source_server.put(realtime_feed_url, "not a valid GTFS realtime message")
     t = _wait_for_failed_update(system_id, transiter_host, t)
 
+
 def _wait_for_successful_update(system_id, transiter_host, lower_bound):
     actual_result = None
     for __ in range(40):
@@ -45,6 +46,7 @@ def _wait_for_successful_update(system_id, transiter_host, lower_bound):
             return last_successful_update
     assert False, "successful update never appeared"
 
+
 def _wait_for_skipped_update(system_id, transiter_host, lower_bound):
     actual_result = None
     for __ in range(40):
@@ -59,6 +61,7 @@ def _wait_for_skipped_update(system_id, transiter_host, lower_bound):
         if lower_bound < last_skipped_update:
             return last_skipped_update
     assert False, "skipped update never appeared"
+
 
 def _wait_for_failed_update(system_id, transiter_host, lower_bound):
     actual_result = None

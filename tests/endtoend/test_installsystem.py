@@ -1,34 +1,7 @@
-import pytest
 import requests
 from haversine import haversine
+from . import client
 
-STOP_IDS = {
-    "1A",
-    "1B",
-    "1C",
-    "1D",
-    "1E",
-    "1F",
-    "1G",
-    "1AS",
-    "1BS",
-    "1CS",
-    "1DS",
-    "1ES",
-    "1FS",
-    "1GS",
-    "1AN",
-    "1BN",
-    "1CN",
-    "1DN",
-    "1EN",
-    "1FN",
-    "1GN",
-    "2COL",
-    "2MEX",
-    "StopID",
-    "ParentStopID",
-}
 ROUTE_IDS = {"A", "B", "RouteID"}
 FEED_IDS = {"GtfsRealtimeFeed", "gtfsstatic"}
 STOP_ID_TO_USUAL_ROUTES = {
@@ -49,89 +22,6 @@ def test_install_system__basic_data(system_id, install_system_1, transiter_host)
 
     system_response = requests.get(transiter_host + "/systems/" + system_id).json()
     assert system_response["name"] == "Test System"
-
-
-def test_install_system__stops(system_id, install_system_1, transiter_host):
-
-    install_system_1(system_id)
-
-    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
-    stops_count = system_response["stops"]["count"]
-    assert len(STOP_IDS) == int(stops_count)
-
-    stops_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops"
-    ).json()
-    actual_stop_ids = set([stop["id"] for stop in stops_response["stops"]])
-    assert STOP_IDS == actual_stop_ids
-
-    stop_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops/StopID"
-    ).json()
-
-    def assert_stop_response_for_StopID(stop_response):
-        assert "StopID" == stop_response["id"]
-        assert "StopCode" == stop_response["code"]
-        assert "StopName" == stop_response["name"]
-        assert "StopDesc" == stop_response["description"]
-        assert "ZoneId" == stop_response["zoneId"]
-        assert 40.7527 == stop_response["latitude"]
-        assert -73.9772 == stop_response["longitude"]
-        assert "StopUrl" == stop_response["url"]
-        assert "PLATFORM" == stop_response["type"]
-        assert "StopTimezone" == stop_response["timezone"]
-        assert True == stop_response["wheelchairBoarding"]
-        assert "PlatformCode" == stop_response["platformCode"]
-        assert "ParentStopID" == stop_response["parentStop"]["id"]
-
-    assert_stop_response_for_StopID(stop_response)
-
-    parent_stop_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops/ParentStopID"
-    ).json()
-    assert 1 == len(parent_stop_response["childStops"])
-    assert "StopID" == parent_stop_response["childStops"][0]["id"]
-    assert "STATION" == parent_stop_response["type"]
-
-    # Geolocation
-    relative_lat_lon = (40.7559, -73.9871)
-    stop_lat_lon = (stop_response["latitude"], stop_response["longitude"])
-
-    dist_km = haversine(relative_lat_lon, stop_lat_lon)
-    assert dist_km > 0.9 and dist_km < 1.0
-
-    query_params = {
-        "search_mode": "DISTANCE",
-        "latitude": relative_lat_lon[0],
-        "longitude": relative_lat_lon[1],
-        "max_distance": 1.0,
-    }
-    stops_response_geo = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops", params=query_params
-    ).json()
-    print(stops_response_geo)
-    stops_geo = stops_response_geo["stops"]
-
-    # Only 'StopID' is within 1km of the relative location
-    assert 1 == len(stops_geo)
-    assert_stop_response_for_StopID(stops_geo[0])
-
-    query_params_closer = {**query_params, "max_distance": 0.5}
-    stops_response_geo_empty = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops", params=query_params_closer
-    ).json()
-
-    # No stops within 0.5km of relative location
-    assert 0 == len(stops_response_geo_empty["stops"])
-
-    query_params_all_of_earth = {**query_params, "max_distance": 40075}
-    stops_response_geo_all = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops",
-        params=query_params_all_of_earth,
-    ).json()
-
-    # All stops returned
-    assert STOP_IDS == set(stop["id"] for stop in stops_response_geo_all["stops"])
 
 
 def test_install_system__transfers(system_id, install_system_1, transiter_host):
@@ -225,9 +115,7 @@ def test_install_system__success__service_map_stop(
         assert usual_route == actual
 
 
-def test_install_system__service_map_route(
-    system_id, install_system_1, transiter_host
-):
+def test_install_system__service_map_route(system_id, install_system_1, transiter_host):
     install_system_1(system_id)
 
     for route_id, usual_stops in ROUTE_ID_TO_USUAL_ROUTE.items():
@@ -320,9 +208,7 @@ def _test_update_static_entities(
 def test_delete(system_id, install_system_1, transiter_host):
     install_system_1(system_id)
 
-    response = requests.delete(
-        transiter_host + "/systems/" + system_id
-    )
+    response = requests.delete(transiter_host + "/systems/" + system_id)
     response.raise_for_status()
 
     response = requests.get(transiter_host + "/systems/" + system_id)
