@@ -1,8 +1,6 @@
 import requests
-from haversine import haversine
 from . import client
 
-ROUTE_IDS = {"A", "B", "RouteID"}
 FEED_IDS = {"GtfsRealtimeFeed", "gtfsstatic"}
 STOP_ID_TO_USUAL_ROUTES = {
     "1A": ["A"],
@@ -53,34 +51,6 @@ def test_install_system__transfers(system_id, install_system_1, transiter_host):
     ).json()
     assert 0 == len(stop_response["transfers"])
 
-
-def test_install_system__routes(system_id, install_system_1, transiter_host):
-
-    install_system_1(system_id)
-
-    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
-    routes_count = system_response["routes"]["count"]
-    assert len(ROUTE_IDS) == int(routes_count)
-
-    routes_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/routes"
-    ).json()
-    actual_route_ids = set([route["id"] for route in routes_response["routes"]])
-    assert ROUTE_IDS == actual_route_ids
-
-    route_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/routes/RouteID"
-    ).json()
-    assert "RouteID" == route_response["id"]
-    assert "RouteColor" == route_response["color"]
-    assert "RouteTextColor" == route_response["textColor"]
-    assert "RouteShortName" == route_response["shortName"]
-    assert "RouteLongName" == route_response["longName"]
-    assert "RouteDesc" == route_response["description"]
-    assert 50 == route_response["sortOrder"]
-    assert "PHONE_AGENCY" == route_response["continuousPickup"]
-    assert "COORDINATE_WITH_DRIVER" == route_response["continuousDropOff"]
-    assert "SUBWAY" == route_response["type"]
 
 
 def test_install_system__feeds(system_id, install_system_1, transiter_host):

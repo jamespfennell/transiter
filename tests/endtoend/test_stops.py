@@ -57,7 +57,7 @@ def test_stop(
     install_system_1(system_id)
 
     system = transiter_client.get_system(system_id)
-    assert int(system.stops.count) == len(STOP_IDS)
+    assert system.stops.count == len(STOP_IDS)
 
     got_all_stops = transiter_client.list_stops(system_id)
     got_all_stop_ids = set([stop.id for stop in got_all_stops.stops])

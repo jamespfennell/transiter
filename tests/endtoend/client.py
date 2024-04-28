@@ -16,6 +16,9 @@ class ApiType:
             elif issubclass(field.type, ApiType):
                 if value is not None:
                     value = field.type.from_api(value)
+            elif issubclass(field.type, int):
+                if value is not None:
+                    value = int(value)
             d[field.name] = value
         return cls(**d)
 
@@ -34,6 +37,22 @@ class ChildResources(ApiType):
 class System(ApiType):
     id: str
     stops: ChildResources
+    routes: ChildResources
+
+
+@dataclasses.dataclass
+class Route(ApiType):
+    id: str
+    shortName: str
+    longName: str
+    color: str
+    textColor: str
+    description: str
+    url: str
+    sortOrder: int
+    continuousPickup: str
+    continuousDropOff: str
+    type: str
 
 
 @dataclasses.dataclass
@@ -59,6 +78,11 @@ class ListStopsResponse(ApiType):
     stops: typing.List[Stop]
 
 
+@dataclasses.dataclass
+class ListRoutesResponse(ApiType):
+    routes: typing.List[Route]
+
+
 class TransiterClient:
     def __init__(self, transiter_host):
         self._transiter_host = transiter_host
@@ -76,3 +100,9 @@ class TransiterClient:
 
     def get_stop(self, system_id: str, stop_id: str) -> Stop:
         return self._get(Stop, f"systems/{system_id}/stops/{stop_id}")
+
+    def list_routes(self, system_id: str, params={}) -> ListRoutesResponse:
+        return self._get(ListRoutesResponse, f"systems/{system_id}/routes", params)
+
+    def get_route(self, system_id: str, route_id: str) -> Route:
+        return self._get(Route, f"systems/{system_id}/routes/{route_id}")
