@@ -6,8 +6,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -15,7 +13,7 @@ type Querier interface {
 	CountFeedsInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountRoutesInSystem(ctx context.Context, systemPk int64) (int64, error)
 	CountStopsInSystem(ctx context.Context, systemPk int64) (int64, error)
-	CountTransfersInSystem(ctx context.Context, systemPk pgtype.Int8) (int64, error)
+	CountTransfersInSystem(ctx context.Context, systemPk int64) (int64, error)
 	DeleteAlerts(ctx context.Context, alertPks []int64) error
 	DeleteFeed(ctx context.Context, pk int64) error
 	DeleteScheduledServices(ctx context.Context, arg DeleteScheduledServicesParams) error
@@ -43,6 +41,7 @@ type Querier interface {
 	GetShape(ctx context.Context, arg GetShapeParams) (Shape, error)
 	GetStop(ctx context.Context, arg GetStopParams) (Stop, error)
 	GetSystem(ctx context.Context, id string) (System, error)
+	GetTransfer(ctx context.Context, arg GetTransferParams) (Transfer, error)
 	GetTrip(ctx context.Context, arg GetTripParams) (GetTripRow, error)
 	GetVehicle(ctx context.Context, arg GetVehicleParams) (GetVehicleRow, error)
 	InsertAgency(ctx context.Context, arg InsertAgencyParams) (int64, error)
@@ -106,7 +105,7 @@ type Querier interface {
 	ListStops_Geographic(ctx context.Context, arg ListStops_GeographicParams) ([]Stop, error)
 	ListSystems(ctx context.Context) ([]System, error)
 	ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]Transfer, error)
-	ListTransfersInSystem(ctx context.Context, systemPk pgtype.Int8) ([]ListTransfersInSystemRow, error)
+	ListTransfersInSystem(ctx context.Context, systemPk int64) ([]Transfer, error)
 	ListTripPksInSystem(ctx context.Context, arg ListTripPksInSystemParams) ([]ListTripPksInSystemRow, error)
 	ListTripStopTimesByStops(ctx context.Context, stopPks []int64) ([]ListTripStopTimesByStopsRow, error)
 	ListTripStopTimesForUpdate(ctx context.Context, tripPks []int64) ([]ListTripStopTimesForUpdateRow, error)

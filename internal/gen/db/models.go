@@ -231,12 +231,13 @@ type System struct {
 
 type Transfer struct {
 	Pk              int64
-	SystemPk        pgtype.Int8
+	SystemPk        int64
 	FromStopPk      int64
 	ToStopPk        int64
 	Type            string
 	MinTransferTime pgtype.Int4
 	FeedPk          int64
+	ID              string
 }
 
 type Trip struct {

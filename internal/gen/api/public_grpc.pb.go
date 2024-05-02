@@ -109,6 +109,12 @@ type PublicClient interface {
 	//
 	// List all transfers in a system.
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersReply, error)
+	// Get transfer
+	//
+	// `GET /systems/<system_id>/transfers/<transfer_id>`
+	//
+	// Get a transfer by its ID.
+	GetTransfer(ctx context.Context, in *GetTransferRequest, opts ...grpc.CallOption) (*Transfer, error)
 	// List feeds
 	//
 	// `GET /systems/<system_id>/feeds`
@@ -281,6 +287,15 @@ func (c *publicClient) ListTransfers(ctx context.Context, in *ListTransfersReque
 	return out, nil
 }
 
+func (c *publicClient) GetTransfer(ctx context.Context, in *GetTransferRequest, opts ...grpc.CallOption) (*Transfer, error) {
+	out := new(Transfer)
+	err := c.cc.Invoke(ctx, "/Public/GetTransfer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *publicClient) ListFeeds(ctx context.Context, in *ListFeedsRequest, opts ...grpc.CallOption) (*ListFeedsReply, error) {
 	out := new(ListFeedsReply)
 	err := c.cc.Invoke(ctx, "/Public/ListFeeds", in, out, opts...)
@@ -430,6 +445,12 @@ type PublicServer interface {
 	//
 	// List all transfers in a system.
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersReply, error)
+	// Get transfer
+	//
+	// `GET /systems/<system_id>/transfers/<transfer_id>`
+	//
+	// Get a transfer by its ID.
+	GetTransfer(context.Context, *GetTransferRequest) (*Transfer, error)
 	// List feeds
 	//
 	// `GET /systems/<system_id>/feeds`
@@ -513,6 +534,9 @@ func (UnimplementedPublicServer) GetAlert(context.Context, *GetAlertRequest) (*A
 }
 func (UnimplementedPublicServer) ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTransfers not implemented")
+}
+func (UnimplementedPublicServer) GetTransfer(context.Context, *GetTransferRequest) (*Transfer, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransfer not implemented")
 }
 func (UnimplementedPublicServer) ListFeeds(context.Context, *ListFeedsRequest) (*ListFeedsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFeeds not implemented")
@@ -796,6 +820,24 @@ func _Public_ListTransfers_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Public_GetTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PublicServer).GetTransfer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Public/GetTransfer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PublicServer).GetTransfer(ctx, req.(*GetTransferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Public_ListFeeds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListFeedsRequest)
 	if err := dec(in); err != nil {
@@ -966,6 +1008,10 @@ var Public_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTransfers",
 			Handler:    _Public_ListTransfers_Handler,
+		},
+		{
+			MethodName: "GetTransfer",
+			Handler:    _Public_GetTransfer_Handler,
 		},
 		{
 			MethodName: "ListFeeds",

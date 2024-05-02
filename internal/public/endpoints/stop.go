@@ -104,21 +104,54 @@ func ListTransfers(ctx context.Context, r *Context, req *api.ListTransfersReques
 	if err != nil {
 		return nil, err
 	}
-	transfers, err := r.Querier.ListTransfersInSystem(ctx, pgtype.Int8{Valid: true, Int64: system.Pk})
+	transfers, err := r.Querier.ListTransfersInSystem(ctx, system.Pk)
 	if err != nil {
 		return nil, err
 	}
-	reply := &api.ListTransfersReply{}
+	apiTransfers, err := buildTransfersResponse(ctx, r, req.GetSystemId(), transfers)
+	if err != nil {
+		return nil, err
+	}
+	return &api.ListTransfersReply{Transfers: apiTransfers}, nil
+}
+
+func GetTransfer(ctx context.Context, r *Context, req *api.GetTransferRequest) (*api.Transfer, error) {
+	_, transfer, err := getTransfer(ctx, r.Querier, req.SystemId, req.TransferId)
+	if err != nil {
+		return nil, err
+	}
+	apiTransfers, err := buildTransfersResponse(ctx, r, req.GetSystemId(), []db.Transfer{transfer})
+	if err != nil {
+		return nil, err
+	}
+	return apiTransfers[0], nil
+}
+
+func buildTransfersResponse(ctx context.Context, r *Context, systemID string, transfers []db.Transfer) ([]*api.Transfer, error) {
+	stopPksMap := map[int64]bool{}
 	for _, transfer := range transfers {
-		transfer := transfer
-		reply.Transfers = append(reply.Transfers, &api.Transfer{
-			FromStop:        r.Reference.Stop(transfer.FromStopID, system.ID, transfer.FromStopName),
-			ToStop:          r.Reference.Stop(transfer.ToStopID, system.ID, transfer.ToStopName),
+		stopPksMap[transfer.FromStopPk] = true
+		stopPksMap[transfer.ToStopPk] = true
+	}
+	stops, err := r.Querier.ListStopsByPk(ctx, mapToSlice(stopPksMap))
+	if err != nil {
+		return nil, err
+	}
+	stopPkToApiPreview := map[int64]*api.Stop_Reference{}
+	for _, stop := range stops {
+		stopPkToApiPreview[stop.Pk] = r.Reference.Stop(stop.StopID, systemID, stop.Name)
+	}
+	var apiTransfers []*api.Transfer
+	for _, transfer := range transfers {
+		apiTransfers = append(apiTransfers, &api.Transfer{
+			Id:              transfer.ID,
+			FromStop:        stopPkToApiPreview[transfer.FromStopPk],
+			ToStop:          stopPkToApiPreview[transfer.ToStopPk],
 			Type:            convert.TransferType(transfer.Type),
 			MinTransferTime: convert.SQLNullInt32(transfer.MinTransferTime),
 		})
 	}
-	return reply, nil
+	return apiTransfers, nil
 }
 
 func GetStop(ctx context.Context, r *Context, req *api.GetStopRequest) (*api.Stop, error) {
@@ -327,6 +360,7 @@ func buildStopPkToApiTransfers(data rawStopData, stopPkToApiPreview map[int64]*a
 	m := map[int64][]*api.Transfer{}
 	for _, transfer := range data.transfers {
 		m[transfer.FromStopPk] = append(m[transfer.FromStopPk], &api.Transfer{
+			Id:              transfer.ID,
 			FromStop:        stopPkToApiPreview[transfer.FromStopPk],
 			ToStop:          stopPkToApiPreview[transfer.ToStopPk],
 			Type:            convert.TransferType(transfer.Type),

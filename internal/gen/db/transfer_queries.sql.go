@@ -21,18 +21,47 @@ func (q *Queries) DeleteTransfers(ctx context.Context, feedPk int64) error {
 	return err
 }
 
+const getTransfer = `-- name: GetTransfer :one
+SELECT transfer.pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.feed_pk, transfer.id FROM transfer
+    INNER JOIN system ON transfer.system_pk = system.pk
+    WHERE system.id = $1
+    AND transfer.id = $2
+`
+
+type GetTransferParams struct {
+	SystemID   string
+	TransferID string
+}
+
+func (q *Queries) GetTransfer(ctx context.Context, arg GetTransferParams) (Transfer, error) {
+	row := q.db.QueryRow(ctx, getTransfer, arg.SystemID, arg.TransferID)
+	var i Transfer
+	err := row.Scan(
+		&i.Pk,
+		&i.SystemPk,
+		&i.FromStopPk,
+		&i.ToStopPk,
+		&i.Type,
+		&i.MinTransferTime,
+		&i.FeedPk,
+		&i.ID,
+	)
+	return i, err
+}
+
 const insertTransfer = `-- name: InsertTransfer :exec
 INSERT INTO transfer
-    (system_pk, feed_pk, from_stop_pk, to_stop_pk,
+    (id, system_pk, feed_pk, from_stop_pk, to_stop_pk,
      type, min_transfer_time)
 VALUES
-    ($1, $2,
-     $3, $4, $5,
-     $6)
+    ($1, $2, $3,
+     $4, $5, $6,
+     $7)
 `
 
 type InsertTransferParams struct {
-	SystemPk        pgtype.Int8
+	ID              string
+	SystemPk        int64
 	FeedPk          int64
 	FromStopPk      int64
 	ToStopPk        int64
@@ -42,6 +71,7 @@ type InsertTransferParams struct {
 
 func (q *Queries) InsertTransfer(ctx context.Context, arg InsertTransferParams) error {
 	_, err := q.db.Exec(ctx, insertTransfer,
+		arg.ID,
 		arg.SystemPk,
 		arg.FeedPk,
 		arg.FromStopPk,
@@ -53,7 +83,7 @@ func (q *Queries) InsertTransfer(ctx context.Context, arg InsertTransferParams) 
 }
 
 const listTransfersFromStops = `-- name: ListTransfersFromStops :many
-  SELECT transfer.pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.feed_pk
+  SELECT transfer.pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.feed_pk, transfer.id
   FROM transfer
   WHERE transfer.from_stop_pk = ANY($1::bigint[])
 `
@@ -75,6 +105,7 @@ func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int6
 			&i.Type,
 			&i.MinTransferTime,
 			&i.FeedPk,
+			&i.ID,
 		); err != nil {
 			return nil, err
 		}
@@ -87,44 +118,20 @@ func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int6
 }
 
 const listTransfersInSystem = `-- name: ListTransfersInSystem :many
-SELECT
-    transfer.pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.feed_pk,
-    from_stop.id from_stop_id, from_stop.name from_stop_name, from_system.id from_system_id,
-    to_stop.id to_stop_id, to_stop.name to_stop_name, to_system.id to_system_id
-FROM transfer
-    INNER JOIN stop from_stop ON from_stop.pk = transfer.from_stop_pk
-    INNER JOIN system from_system ON from_stop.system_pk = from_system.pk
-    INNER JOIN stop to_stop ON to_stop.pk = transfer.to_stop_pk
-    INNER JOIN system to_system ON to_stop.system_pk = to_system.pk
+SELECT transfer.pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.feed_pk, transfer.id FROM transfer
 WHERE transfer.system_pk = $1
-ORDER BY transfer.pk
+ORDER BY transfer.id
 `
 
-type ListTransfersInSystemRow struct {
-	Pk              int64
-	SystemPk        pgtype.Int8
-	FromStopPk      int64
-	ToStopPk        int64
-	Type            string
-	MinTransferTime pgtype.Int4
-	FeedPk          int64
-	FromStopID      string
-	FromStopName    pgtype.Text
-	FromSystemID    string
-	ToStopID        string
-	ToStopName      pgtype.Text
-	ToSystemID      string
-}
-
-func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk pgtype.Int8) ([]ListTransfersInSystemRow, error) {
+func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk int64) ([]Transfer, error) {
 	rows, err := q.db.Query(ctx, listTransfersInSystem, systemPk)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListTransfersInSystemRow
+	var items []Transfer
 	for rows.Next() {
-		var i ListTransfersInSystemRow
+		var i Transfer
 		if err := rows.Scan(
 			&i.Pk,
 			&i.SystemPk,
@@ -133,12 +140,7 @@ func (q *Queries) ListTransfersInSystem(ctx context.Context, systemPk pgtype.Int
 			&i.Type,
 			&i.MinTransferTime,
 			&i.FeedPk,
-			&i.FromStopID,
-			&i.FromStopName,
-			&i.FromSystemID,
-			&i.ToStopID,
-			&i.ToStopName,
-			&i.ToSystemID,
+			&i.ID,
 		); err != nil {
 			return nil, err
 		}

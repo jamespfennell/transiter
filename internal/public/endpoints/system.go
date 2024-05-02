@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 )
@@ -55,7 +54,7 @@ func buildApiSystems(ctx context.Context, r *Context, systems []db.System) ([]*a
 		if err != nil {
 			return nil, err
 		}
-		numTransfers, err := r.Querier.CountTransfersInSystem(ctx, pgtype.Int8{Valid: true, Int64: system.Pk})
+		numTransfers, err := r.Querier.CountTransfersInSystem(ctx, system.Pk)
 		if err != nil {
 			return nil, err
 		}
@@ -63,11 +62,11 @@ func buildApiSystems(ctx context.Context, r *Context, systems []db.System) ([]*a
 			Id:        system.ID,
 			Name:      system.Name,
 			Status:    api.System_Status(api.System_Status_value[strings.ToUpper(system.Status)]),
-			Agencies:  &api.ChildResources{Count: numAgencies, Href: r.Reference.AgenciesHref(system.ID)},
-			Feeds:     &api.ChildResources{Count: numFeeds, Href: r.Reference.FeedsHref(system.ID)},
-			Routes:    &api.ChildResources{Count: numRoutes, Href: r.Reference.RoutesHref(system.ID)},
-			Stops:     &api.ChildResources{Count: numStops, Href: r.Reference.StopsHref(system.ID)},
-			Transfers: &api.ChildResources{Count: numTransfers, Href: r.Reference.TransfersHref(system.ID)},
+			Agencies:  &api.ChildResources{Count: numAgencies, Url: r.Reference.AgenciesURL(system.ID)},
+			Feeds:     &api.ChildResources{Count: numFeeds, Url: r.Reference.FeedsURL(system.ID)},
+			Routes:    &api.ChildResources{Count: numRoutes, Url: r.Reference.RoutesURL(system.ID)},
+			Stops:     &api.ChildResources{Count: numStops, Url: r.Reference.StopsURL(system.ID)},
+			Transfers: &api.ChildResources{Count: numTransfers, Url: r.Reference.TransfersURL(system.ID)},
 		})
 	}
 	return apiSystems, nil

@@ -4,6 +4,7 @@ package static
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/convert"
@@ -240,8 +241,10 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 }
 
 func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transfers []gtfs.Transfer, stopIDToPk map[string]int64) error {
-	// Transfers are special because (a) they don't have an ID and (b) no other entity references them
-	// by foriegn key. It is thus possible (and easier) to update transfers by deleting the existing transfers
+	// Transfers are special because:
+	// (1) They don't have an ID in the GTFS static data. Transiter generates IDs for them.
+	// (2) No other entity references them by foreign key.
+	// It is thus possible (and easier) to update transfers by deleting the existing transfers
 	// and inserting the new ones.
 	if err := updateCtx.Querier.DeleteTransfers(ctx, updateCtx.FeedPk); err != nil {
 		return err
@@ -255,8 +258,30 @@ func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transf
 		if !ok {
 			continue
 		}
+		// The following line choses a unique ID for transfer IDs.
+		// This is important as the database has a unique ID constraint on the ID column, so if
+		// we mess up the update will fail.
+		// Note that Transiter currently only supports simple transfers, in which case
+		// we're guaranteed that for each pair (from_stop, to_stop) there is at most one transfer.
+		//
+		// Choosing a unique ID is a bit tricky. With naive schemes (e.g. "concatenate from_stop and to_stop")
+		// there are lots of edge cases where two different stop pairs lead to the same transfer ID.
+		//
+		// To see that our choice of ID below is unique we only need to prove that it's possible
+		// to recover from_stop and to_stop from the ID.
+		// That is the mapping (from_stop, to_stop) -> transfer_id is invertible and thus injective.
+		//
+		// With the following construction, the transfer ID has the following format:
+		//
+		//     <string where every _ appears in a pair __>_to_<string where every _ appears in a pair __>
+		//
+		// To recover from_stop and to_stop we find the unique occurrence of "_to_" in the transfer ID
+		// where "to" is preceded by an odd number of _ characters. We then split on that "_to_" and
+		// replace all __ with _.
+		id := fmt.Sprintf("%s_to_%s", strings.ReplaceAll(transfer.From.Id, "_", "__"), strings.ReplaceAll(transfer.To.Id, "_", "__"))
 		if err := updateCtx.Querier.InsertTransfer(ctx, db.InsertTransferParams{
-			SystemPk:        convert.NullInt64(&updateCtx.SystemPk),
+			ID:              id,
+			SystemPk:        updateCtx.SystemPk,
 			FeedPk:          updateCtx.FeedPk,
 			FromStopPk:      fromPk,
 			ToStopPk:        toPk,

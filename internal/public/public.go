@@ -60,6 +60,10 @@ func (s *Server) ListTransfers(ctx context.Context, req *api.ListTransfersReques
 	return run(ctx, s, "ListTransfers", endpoints.ListTransfers, req)
 }
 
+func (s *Server) GetTransfer(ctx context.Context, req *api.GetTransferRequest) (*api.Transfer, error) {
+	return run(ctx, s, "GetTransfer", endpoints.GetTransfer, req)
+}
+
 func (s *Server) GetStop(ctx context.Context, req *api.GetStopRequest) (*api.Stop, error) {
 	return run(ctx, s, "GetStop", endpoints.GetStop, req)
 }

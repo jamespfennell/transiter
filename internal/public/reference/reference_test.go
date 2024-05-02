@@ -46,7 +46,7 @@ func TestGenerator(t *testing.T) {
 				Id: systemID,
 				Resource: &api.Resource{
 					Path: fmt.Sprintf("systems/%s", systemID),
-					Href: proto.String(fmt.Sprintf("https://demo.transiter.dev/systems/%s", systemID)),
+					Url:  proto.String(fmt.Sprintf("https://demo.transiter.dev/systems/%s", systemID)),
 				},
 			},
 			builder: func(g Generator) any {

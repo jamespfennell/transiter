@@ -14,9 +14,9 @@ import (
 
 // Generator is used for generating reference messages.
 type Generator struct {
-	hrefEnabled bool
-	baseURL     string
-	systems     map[string]*api.System_Reference
+	urlEnabled bool
+	baseURL    string
+	systems    map[string]*api.System_Reference
 }
 
 // XTransiterHost is the key of the HTTP header whose value is used as the base URL in all link values.
@@ -27,23 +27,23 @@ const XTransiterHost = "X-Transiter-Host"
 var xTransiterHostLower = strings.ToLower(XTransiterHost)
 
 func NewGenerator(ctx context.Context) Generator {
-	var hrefEnabled bool
+	var urlEnabled bool
 	var baseURL string
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		if hdrVal, ok := md[xTransiterHostLower]; ok {
-			hrefEnabled = true
+			urlEnabled = true
 			baseURL = hdrVal[0]
 		}
 	}
 	return Generator{
-		hrefEnabled: hrefEnabled,
-		baseURL:     baseURL,
-		systems:     map[string]*api.System_Reference{},
+		urlEnabled: urlEnabled,
+		baseURL:    baseURL,
+		systems:    map[string]*api.System_Reference{},
 	}
 }
 
-func (h Generator) SystemsHref() *string {
-	return h.generateHref("systems")
+func (h Generator) SystemsURL() *string {
+	return h.generateURL("systems")
 }
 
 func (h Generator) System(id string) *api.System_Reference {
@@ -56,8 +56,8 @@ func (h Generator) System(id string) *api.System_Reference {
 	return h.systems[id]
 }
 
-func (h Generator) AgenciesHref(systemID string) *string {
-	return h.generateHref("systems", systemID, "agencies")
+func (h Generator) AgenciesURL(systemID string) *string {
+	return h.generateURL("systems", systemID, "agencies")
 }
 
 func (h Generator) Agency(id string, systemID string, name string) *api.Agency_Reference {
@@ -79,8 +79,8 @@ func (h Generator) Alert(id, systemID, cause, effect string) *api.Alert_Referenc
 	}
 }
 
-func (h Generator) FeedsHref(systemID string) *string {
-	return h.generateHref("systems", systemID, "feeds")
+func (h Generator) FeedsURL(systemID string) *string {
+	return h.generateURL("systems", systemID, "feeds")
 }
 
 func (h Generator) Feed(id string, systemID string) *api.Feed_Reference {
@@ -91,12 +91,8 @@ func (h Generator) Feed(id string, systemID string) *api.Feed_Reference {
 	}
 }
 
-func (h Generator) FeedUpdatesHref(systemID string, feedID string) *string {
-	return h.generateHref("systems", systemID, "feeds", feedID, "updates")
-}
-
-func (h Generator) RoutesHref(systemID string) *string {
-	return h.generateHref("systems", systemID, "routes")
+func (h Generator) RoutesURL(systemID string) *string {
+	return h.generateURL("systems", systemID, "routes")
 }
 
 func (h Generator) Route(id string, systemID string, color string) *api.Route_Reference {
@@ -119,8 +115,8 @@ func (h Generator) Trip(id string, route *api.Route_Reference, destination *api.
 	}
 }
 
-func (h Generator) StopsHref(systemID string) *string {
-	return h.generateHref("systems", systemID, "stops")
+func (h Generator) StopsURL(systemID string) *string {
+	return h.generateURL("systems", systemID, "stops")
 }
 
 func (h Generator) Stop(id string, systemID string, name pgtype.Text) *api.Stop_Reference {
@@ -132,8 +128,8 @@ func (h Generator) Stop(id string, systemID string, name pgtype.Text) *api.Stop_
 	}
 }
 
-func (h Generator) TransfersHref(systemID string) *string {
-	return h.generateHref("systems", systemID, "transfers")
+func (h Generator) TransfersURL(systemID string) *string {
+	return h.generateURL("systems", systemID, "transfers")
 }
 
 func (h Generator) Vehicle(id string, systemID string) *api.Vehicle_Reference {
@@ -153,12 +149,12 @@ func (h Generator) Shape(id string, systemID string) *api.Shape_Reference {
 func (h Generator) generateResource(elem ...string) *api.Resource {
 	return &api.Resource{
 		Path: path.Join(elem...),
-		Href: h.generateHref(elem...),
+		Url:  h.generateURL(elem...),
 	}
 }
 
-func (h Generator) generateHref(elem ...string) *string {
-	if !h.hrefEnabled {
+func (h Generator) generateURL(elem ...string) *string {
+	if !h.urlEnabled {
 		return nil
 	}
 	res := h.baseURL + "/" + path.Join(elem...)

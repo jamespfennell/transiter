@@ -54,8 +54,17 @@ func getStop(ctx context.Context, querier db.Querier, systemID, stopID string) (
 	if err != nil {
 		return system, db.Stop{}, err
 	}
-	route, err := querier.GetStop(ctx, db.GetStopParams{SystemID: system.ID, StopID: stopID})
-	return system, route, noRowsToNotFound(err, fmt.Sprintf("stop %q in system %q", stopID, system.ID))
+	stop, err := querier.GetStop(ctx, db.GetStopParams{SystemID: system.ID, StopID: stopID})
+	return system, stop, noRowsToNotFound(err, fmt.Sprintf("stop %q in system %q", stopID, system.ID))
+}
+
+func getTransfer(ctx context.Context, querier db.Querier, systemID, transferID string) (db.System, db.Transfer, error) {
+	system, err := getSystem(ctx, querier, systemID)
+	if err != nil {
+		return system, db.Transfer{}, err
+	}
+	transfer, err := querier.GetTransfer(ctx, db.GetTransferParams{SystemID: system.ID, TransferID: transferID})
+	return system, transfer, noRowsToNotFound(err, fmt.Sprintf("transfer %q in system %q", transferID, system.ID))
 }
 
 func noRowsToNotFound(err error, notFoundText string) error {

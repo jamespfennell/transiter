@@ -46,6 +46,7 @@ CHILD_STOP = client.Stop(
     platformCode="PlatformCode",
     parentStop=client.StopReference(id="ParentStopID"),
     childStops=[],
+    transfers=[],
 )
 
 

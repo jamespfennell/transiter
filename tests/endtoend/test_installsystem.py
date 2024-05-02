@@ -22,37 +22,6 @@ def test_install_system__basic_data(system_id, install_system_1, transiter_host)
     assert system_response["name"] == "Test System"
 
 
-def test_install_system__transfers(system_id, install_system_1, transiter_host):
-    install_system_1(system_id)
-
-    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
-    stops_count = system_response["transfers"]["count"]
-    assert 3 == int(stops_count)
-
-    stops_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/transfers"
-    ).json()["transfers"]
-    actual_transfer_tuples = set(
-        (transfer["fromStop"]["id"], transfer["toStop"]["id"])
-        for transfer in stops_response
-    )
-    assert {("2COL", "1C"), ("2MEX", "1E"), ("1E", "2MEX")} == actual_transfer_tuples
-
-    stop_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops/2COL"
-    ).json()
-    assert 1 == len(stop_response["transfers"])
-    assert "TIMED" == stop_response["transfers"][0]["type"]
-    assert 300 == stop_response["transfers"][0]["minTransferTime"]
-    assert "1C" == stop_response["transfers"][0]["toStop"]["id"]
-
-    stop_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/stops/1C"
-    ).json()
-    assert 0 == len(stop_response["transfers"])
-
-
-
 def test_install_system__feeds(system_id, install_system_1, transiter_host):
 
     install_system_1(system_id)

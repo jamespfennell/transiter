@@ -113,7 +113,7 @@ def install_system(
         for _ in range(100):
             response = requests.get(transiter_host + "/systems/" + system_id)
             response.raise_for_status()
-            if response.json()["status"] == expected_status:
+            if response.json()["status"] not in {"INSTALLING", "UPDATING"}:
                 break
             time.sleep(0.05)
         assert response.json()["status"] == expected_status

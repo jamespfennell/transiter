@@ -50,7 +50,7 @@ Message containing version information about a Transiter binary.
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | version | string | The version of the Transiter binary this instance is running.
-| href | string | URL of the Transiter GitHub repository.
+| url | string | URL of the Transiter GitHub repository.
 | build | [EntrypointReply.TransiterDetails.Build](public_endpoints.md#entrypointreplytransiterdetailsbuild) | Information about the CI build invocation that built this Transiter binary.
 
 
@@ -70,7 +70,7 @@ Message containing information about a specific Transiter CI build.
 | built_at | string | Time the binary was built, in the form of a human readable string.
 | built_at_timestamp | string | Time the binary was built, in the form of a Unix timestamp.
 | git_commit_hash | string | Hash of the Git commit that the binary was built at.
-| href | string | URL of the GitHub actions CI run.
+| url | string | URL of the GitHub actions CI run.
 
 
 
@@ -559,6 +559,32 @@ Response payload for the list transfers endpoint.
 
 
 
+
+## Get transfer
+
+`GET /systems/<system_id>/transfers/<transfer_id>`
+
+Get a transfer by its ID.
+
+### Request: GetTransferRequest
+
+Request payload for the get transfer endpoint.
+	
+
+
+| Field | Type |  Description |
+| ----- | ---- | ----------- |
+| system_id | string | ID of the system the transfer is in.<br /><br />This is a URL parameter in the HTTP API.
+| transfer_id | string | ID of the transfer.<br /><br />This is a URL parameter in the HTTP API.
+
+
+
+
+
+
+
+
+### Response: [Transfer](public_resources.md#transfer)
 
 ## List feeds
 

@@ -76,7 +76,7 @@ When the server is launched,
 {
   "transiter": {
     "version": "1.0.0",
-    "href": "https://github.com/jamespfennell/transiter"
+    "url": "https://github.com/jamespfennell/transiter"
   },
   "systems": {
     "count": "0"
@@ -112,7 +112,7 @@ After it finishes, the Transiter landing page will show 1 system installed:
 {
   "transiter": {
     "version": "1.0.0",
-    "href": "https://github.com/jamespfennell/transiter"
+    "url": "https://github.com/jamespfennell/transiter"
   },
   "systems": {
     "count": "1"

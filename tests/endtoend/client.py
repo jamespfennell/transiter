@@ -26,6 +26,7 @@ class ApiType:
 @dataclasses.dataclass
 class StopReference(ApiType):
     id: str
+    # todo: system, resource
 
 
 @dataclasses.dataclass
@@ -36,8 +37,20 @@ class ChildResources(ApiType):
 @dataclasses.dataclass
 class System(ApiType):
     id: str
+    # todo: resource
     stops: ChildResources
+    transfers: ChildResources
     routes: ChildResources
+
+
+@dataclasses.dataclass
+class Transfer(ApiType):
+    id: str
+    # todo: system, resource
+    fromStop: StopReference
+    toStop: StopReference
+    type: str
+    minTransferTime: int
 
 
 @dataclasses.dataclass
@@ -58,6 +71,7 @@ class Route(ApiType):
 @dataclasses.dataclass
 class Stop(ApiType):
     id: str
+    # todo: system, resource
     code: str
     name: str
     description: str
@@ -71,11 +85,17 @@ class Stop(ApiType):
     platformCode: str
     parentStop: StopReference
     childStops: typing.List[StopReference]
+    transfers: typing.List[Transfer]
 
 
 @dataclasses.dataclass
 class ListStopsResponse(ApiType):
     stops: typing.List[Stop]
+
+
+@dataclasses.dataclass
+class ListTransfersResponse(ApiType):
+    transfers: typing.List[Transfer]
 
 
 @dataclasses.dataclass
@@ -100,6 +120,12 @@ class TransiterClient:
 
     def get_stop(self, system_id: str, stop_id: str) -> Stop:
         return self._get(Stop, f"systems/{system_id}/stops/{stop_id}")
+
+    def list_transfers(self, system_id: str) -> ListTransfersResponse:
+        return self._get(ListTransfersResponse, f"systems/{system_id}/transfers")
+
+    def get_transfer(self, system_id: str, transfer_id: str) -> Transfer:
+        return self._get(Transfer, f"systems/{system_id}/transfers/{transfer_id}")
 
     def list_routes(self, system_id: str, params={}) -> ListRoutesResponse:
         return self._get(ListRoutesResponse, f"systems/{system_id}/routes", params)

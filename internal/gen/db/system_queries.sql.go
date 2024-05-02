@@ -7,8 +7,6 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countAgenciesInSystem = `-- name: CountAgenciesInSystem :one
@@ -59,7 +57,7 @@ const countTransfersInSystem = `-- name: CountTransfersInSystem :one
 SELECT COUNT(*) FROM transfer WHERE system_pk = $1
 `
 
-func (q *Queries) CountTransfersInSystem(ctx context.Context, systemPk pgtype.Int8) (int64, error) {
+func (q *Queries) CountTransfersInSystem(ctx context.Context, systemPk int64) (int64, error) {
 	row := q.db.QueryRow(ctx, countTransfersInSystem, systemPk)
 	var count int64
 	err := row.Scan(&count)
