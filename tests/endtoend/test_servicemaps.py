@@ -1,12 +1,10 @@
-import requests
-
 from . import gtfsrealtimegenerator
 
 # TODO: stop using this module ^
-#  Also break up these tests if reasonable
+from . import client
 
 
-def test_service_maps(system_id, install_system_1, transiter_host, source_server):
+def test_realtime(system_id, install_system_1, transiter_client, source_server):
     __, realtime_feed_url = install_system_1(system_id)
 
     # (1) Regular case
@@ -29,14 +27,13 @@ def test_service_maps(system_id, install_system_1, transiter_host, source_server
             gtfsrealtimegenerator.FeedTrip("trip_2", "A", trip_2_stops, 0),
         ],
     )
-    _perform_service_map_test(
+    _check_realtime_service_maps(
         system_id,
-        transiter_host,
+        transiter_client,
         source_server,
         realtime_feed_url,
         feed_1,
         ["1A", "1B", "1C", "1D", "1E", "1F"],
-        ["trip_1", "trip_2"],
     )
 
     # (2) Old trips + new trips give an invalid map, but the update still happens
@@ -60,14 +57,13 @@ def test_service_maps(system_id, install_system_1, transiter_host, source_server
             gtfsrealtimegenerator.FeedTrip("trip_4", "A", trip_4_stops, 0),
         ],
     )
-    _perform_service_map_test(
+    _check_realtime_service_maps(
         system_id,
-        transiter_host,
+        transiter_client,
         source_server,
         realtime_feed_url,
         feed_1,
         list(reversed(["1A", "1B", "1C", "1D", "1E", "1F"])),
-        ["trip_3", "trip_4"],
     )
 
     # (3) With this update the map is now invalid so should not be updated, but the
@@ -85,14 +81,13 @@ def test_service_maps(system_id, install_system_1, transiter_host, source_server
             gtfsrealtimegenerator.FeedTrip("trip_5", "A", trip_5_stops, 0),
         ],
     )
-    _perform_service_map_test(
+    _check_realtime_service_maps(
         system_id,
-        transiter_host,
+        transiter_client,
         source_server,
         realtime_feed_url,
         feed_1,
         list(reversed(["1A", "1B", "1C", "1D", "1E", "1F"])),
-        ["trip_3", "trip_4", "trip_5"],
     )
 
     # (4) Valid map again
@@ -107,14 +102,13 @@ def test_service_maps(system_id, install_system_1, transiter_host, source_server
             gtfsrealtimegenerator.FeedTrip("trip_1", "A", trip_1_stops, 0),
         ],
     )
-    _perform_service_map_test(
+    _check_realtime_service_maps(
         system_id,
-        transiter_host,
+        transiter_client,
         source_server,
         realtime_feed_url,
         feed_1,
         ["1A", "1E", "1F"],
-        ["trip_1"],
     )
 
     # (5) No more trips, service map is deleted.
@@ -122,43 +116,58 @@ def test_service_maps(system_id, install_system_1, transiter_host, source_server
         0,
         [],
     )
-    _perform_service_map_test(
+    _check_realtime_service_maps(
         system_id,
-        transiter_host,
+        transiter_client,
         source_server,
         realtime_feed_url,
         feed_1,
         [],
-        [],
     )
 
 
-def _perform_service_map_test(
+def _check_realtime_service_maps(
     system_id,
-    transiter_host,
+    transiter_client: client.TransiterClient,
     source_server,
     realtime_feed_url,
     feed,
-    expected_map_stop_ids,
-    expected_trip_ids,
+    want_stop_ids,
 ):
     source_server.put(realtime_feed_url, feed.build_feed())
-    requests.post(
-        transiter_host + "/systems/" + system_id + "/feeds/GtfsRealtimeFeed"
-    ).json()
+    transiter_client.perform_feed_update(system_id, "GtfsRealtimeFeed")
 
-    route_data = requests.get(
-        transiter_host + "/systems/" + system_id + "/routes/A"
-    ).json()
-    stop_ids = None
-    for service_map in route_data["serviceMaps"]:
-        if service_map["configId"] != "realtime":
+    # (1) validate the service map appears in the route endpoints
+    route = transiter_client.get_route(system_id, "A")
+    want_stops = [client.StopReference(id=stop_id) for stop_id in want_stop_ids]
+    got_stops = []
+    for service_map in route.serviceMaps:
+        if service_map.configId != "realtime":
             continue
-        stop_ids = [stop["id"] for stop in service_map["stops"]]
-    assert expected_map_stop_ids == stop_ids
+        got_stops = service_map.stops
+        break
+    assert got_stops == want_stops
 
-    trips_in_route_data = requests.get(
-        transiter_host + "/systems/" + system_id + "/routes/A/trips"
-    ).json()["trips"]
-    trip_ids = set(trip["id"] for trip in trips_in_route_data)
-    assert set(expected_trip_ids) == trip_ids
+    # (2) validate the service map appears in the stop endpoints
+    want_stop_ids = set(want_stop_ids)
+    for stop in transiter_client.list_stops(system_id).stops:
+        want_routes = []
+        if stop.id in want_stop_ids:
+            want_routes = [client.RouteReference(id="A")]
+        want_service_map = client.ServiceMapAtStop(
+            configId="realtime",
+            routes=want_routes,
+        )
+
+        got_routes = []
+        for service_map in stop.serviceMaps:
+            if service_map.configId != "realtime":
+                continue
+            got_routes = service_map.routes
+            break
+        got_service_map = client.ServiceMapAtStop(
+            configId="realtime",
+            routes=got_routes,
+        )
+
+        assert got_service_map == want_service_map

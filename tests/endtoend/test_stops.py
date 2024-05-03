@@ -47,6 +47,7 @@ CHILD_STOP = client.Stop(
     parentStop=client.StopReference(id="ParentStopID"),
     childStops=[],
     transfers=[],
+    serviceMaps=[],
 )
 
 

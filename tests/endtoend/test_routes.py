@@ -30,6 +30,9 @@ def test_route(
         continuousPickup="PHONE_AGENCY",
         continuousDropOff="COORDINATE_WITH_DRIVER",
         type="SUBWAY",
+        serviceMaps=[],
     )
-    got_route = transiter_client.get_route(system_id, "RouteID")
+    # We skip service maps because those are tested in their own test.
+    params = {"skip_service_maps": "true"}
+    got_route = transiter_client.get_route(system_id, "RouteID", params)
     assert got_route == want_route

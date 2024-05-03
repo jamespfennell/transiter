@@ -30,8 +30,27 @@ class StopReference(ApiType):
 
 
 @dataclasses.dataclass
+class RouteReference(ApiType):
+    id: str
+    # todo: system, resource
+
+
+@dataclasses.dataclass
 class ChildResources(ApiType):
+    # todo: url
     count: int
+
+
+@dataclasses.dataclass
+class ServiceMapAtStop(ApiType):
+    configId: str
+    routes: typing.List[RouteReference]
+
+
+@dataclasses.dataclass
+class ServiceMapInRoute(ApiType):
+    configId: str
+    stops: typing.List[StopReference]
 
 
 @dataclasses.dataclass
@@ -80,6 +99,7 @@ class Route(ApiType):
     continuousPickup: str
     continuousDropOff: str
     type: str
+    serviceMaps: typing.List[ServiceMapInRoute]
 
 
 @dataclasses.dataclass
@@ -100,6 +120,7 @@ class Stop(ApiType):
     parentStop: StopReference
     childStops: typing.List[StopReference]
     transfers: typing.List[Transfer]
+    serviceMaps: typing.List[ServiceMapAtStop]
 
 
 @dataclasses.dataclass
@@ -133,6 +154,11 @@ class TransiterClient:
     def get_system(self, system_id: str) -> System:
         return self._get(System, f"systems/{system_id}")
 
+    def perform_feed_update(self, system_id: str, feed_id: str):
+        requests.post(
+            f"{self._transiter_host}/systems/{system_id}/feeds/{feed_id}"
+        ).json()
+
     def list_agencies(self, system_id: str) -> ListAgenciesResponse:
         return self._get(ListAgenciesResponse, f"systems/{system_id}/agencies")
 
@@ -154,5 +180,5 @@ class TransiterClient:
     def list_routes(self, system_id: str, params={}) -> ListRoutesResponse:
         return self._get(ListRoutesResponse, f"systems/{system_id}/routes", params)
 
-    def get_route(self, system_id: str, route_id: str) -> Route:
-        return self._get(Route, f"systems/{system_id}/routes/{route_id}")
+    def get_route(self, system_id: str, route_id: str, params={}) -> Route:
+        return self._get(Route, f"systems/{system_id}/routes/{route_id}", params)
