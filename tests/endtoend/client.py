@@ -44,6 +44,20 @@ class System(ApiType):
 
 
 @dataclasses.dataclass
+class Agency(ApiType):
+    id: str
+    # todo: system, resource
+    name: str
+    url: str
+    timezone: str
+    language: str
+    phone: str
+    fareUrl: str
+    email: str
+    # todo: routes
+
+
+@dataclasses.dataclass
 class Transfer(ApiType):
     id: str
     # todo: system, resource
@@ -94,6 +108,11 @@ class ListStopsResponse(ApiType):
 
 
 @dataclasses.dataclass
+class ListAgenciesResponse(ApiType):
+    agencies: typing.List[Agency]
+
+
+@dataclasses.dataclass
 class ListTransfersResponse(ApiType):
     transfers: typing.List[Transfer]
 
@@ -108,12 +127,17 @@ class TransiterClient:
         self._transiter_host = transiter_host
 
     def _get(self, cls: ApiType, relative_url: str, params={}):
-        return cls.from_api(
-            requests.get(f"{self._transiter_host}/{relative_url}", params=params).json()
-        )
+        j = requests.get(f"{self._transiter_host}/{relative_url}", params=params).json()
+        return cls.from_api(j)
 
     def get_system(self, system_id: str) -> System:
         return self._get(System, f"systems/{system_id}")
+
+    def list_agencies(self, system_id: str) -> ListAgenciesResponse:
+        return self._get(ListAgenciesResponse, f"systems/{system_id}/agencies")
+
+    def get_agency(self, system_id: str, agency_id: str) -> Agency:
+        return self._get(Agency, f"systems/{system_id}/agencies/{agency_id}")
 
     def list_stops(self, system_id: str, params={}) -> ListStopsResponse:
         return self._get(ListStopsResponse, f"systems/{system_id}/stops", params)
