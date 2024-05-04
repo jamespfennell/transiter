@@ -56,8 +56,8 @@ func (h Generator) System(id string) *api.System_Reference {
 	return h.systems[id]
 }
 
-func (h Generator) AgenciesURL(systemID string) *string {
-	return h.generateURL("systems", systemID, "agencies")
+func (h Generator) AgenciesChildResources(systemID string, count int64) *api.ChildResources {
+	return h.generateChildResources(count, "systems", systemID, "agencies")
 }
 
 func (h Generator) Agency(id string, systemID string, name string) *api.Agency_Reference {
@@ -91,8 +91,8 @@ func (h Generator) Feed(id string, systemID string) *api.Feed_Reference {
 	}
 }
 
-func (h Generator) RoutesURL(systemID string) *string {
-	return h.generateURL("systems", systemID, "routes")
+func (h Generator) RoutesChildResources(systemID string, count int64) *api.ChildResources {
+	return h.generateChildResources(count, "systems", systemID, "routes")
 }
 
 func (h Generator) Route(id string, systemID string, color string) *api.Route_Reference {
@@ -150,6 +150,14 @@ func (h Generator) generateResource(elem ...string) *api.Resource {
 	return &api.Resource{
 		Path: path.Join(elem...),
 		Url:  h.generateURL(elem...),
+	}
+}
+
+func (h Generator) generateChildResources(count int64, elem ...string) *api.ChildResources {
+	return &api.ChildResources{
+		Count: count,
+		Path:  path.Join(elem...),
+		Url:   h.generateURL(elem...),
 	}
 }
 

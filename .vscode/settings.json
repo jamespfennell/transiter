@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "addfinalizer",
         "discoverability",
         "finalizer",
         "GTFS",
@@ -10,6 +11,7 @@
         "promhttp",
         "protobuf",
         "Transiter",
+        "txtar",
         "upsert"
     ]
 }

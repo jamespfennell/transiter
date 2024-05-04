@@ -1,23 +1,16 @@
 from . import client
 
 
-ROUTE_IDS = {"A", "B", "RouteID"}
-
-
 def test_route(
     system_id,
-    install_system_1,
+    install_system_using_txtar,
     transiter_client: client.TransiterClient,
 ):
-    install_system_1(system_id)
-
-    got_system = transiter_client.get_system(system_id)
-    assert got_system.routes.count == len(ROUTE_IDS)
-
-    got_list_routes = transiter_client.list_routes(system_id)
-    got_route_ids = set([route.id for route in got_list_routes.routes])
-    assert got_route_ids == ROUTE_IDS
-
+    gtfs_static_txtar = """
+    -- routes.txt --
+    route_id,route_color,route_text_color,route_short_name,route_long_name,route_desc,route_type,route_url,route_sort_order,continuous_pickup,continuous_drop_off
+    RouteID,RouteColor,RouteTextColor,RouteShortName,RouteLongName,RouteDesc,1,RouteUrl,50,2,3
+    """
     want_route = client.Route(
         id="RouteID",
         url="RouteUrl",
@@ -32,7 +25,18 @@ def test_route(
         type="SUBWAY",
         serviceMaps=[],
     )
+    install_system_using_txtar(system_id, gtfs_static_txtar)
+
+    got_system = transiter_client.get_system(system_id)
+    assert got_system.routes == client.ChildResources(
+        count=1, path=f"systems/{system_id}/routes"
+    )
+
     # We skip service maps because those are tested in their own test.
     params = {"skip_service_maps": "true"}
+
+    got_list_routes = transiter_client.list_routes(system_id, params)
+    assert got_list_routes.routes == [want_route]
+
     got_route = transiter_client.get_route(system_id, "RouteID", params)
     assert got_route == want_route

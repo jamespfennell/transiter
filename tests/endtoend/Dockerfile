@@ -9,4 +9,4 @@ COPY data data
 COPY *.py ./
 RUN rm test_feedflush.py
 
-ENTRYPOINT ["pytest", "-n", "4"]
+ENTRYPOINT ["pytest", "-n", "8"]

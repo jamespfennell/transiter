@@ -6,6 +6,7 @@ import zipfile
 import pytest
 import requests
 from . import client
+from . import txtar
 
 
 class SourceServerClient:
@@ -85,18 +86,11 @@ def get_zip(directory):
 @pytest.fixture
 def install_system(
     request,
-    source_server: SourceServerClient,
     transiter_host,
 ):
     def install(system_id, system_config, expected_status="ACTIVE"):
         def delete():
             requests.delete(transiter_host + "/systems/" + system_id + "?sync=true")
-
-        system_config_url = source_server.create(
-            "", "/" + system_id + "/system-config.yaml.jinja"
-        )
-
-        source_server.put(system_config_url, system_config)
 
         response = requests.put(
             transiter_host + "/systems/" + system_id,
@@ -163,6 +157,49 @@ def install_system_1(
             + "/"
             + realtime_feed_url,
             realtime_periodic_update_period=realtime_periodic_update_period,
+        )
+
+        install_system(system_id, system_config)
+        return static_feed_url, realtime_feed_url
+
+    return install
+
+
+GTFS_STATIC_DEFAULT_TXTAR = """
+-- agency.txt --
+agency_name,agency_url,agency_timezone
+AgencyName,AgencyURL,AgencyTimezone
+-- routes.txt --
+route_id,route_type
+-- stops.txt --
+stop_id
+-- stop_times.txt --
+trip_id,stop_id,stop_sequence
+-- trips.txt --
+trip_id,route_id,service_id
+"""
+
+
+@pytest.fixture
+def install_system_using_txtar(
+    source_server: SourceServerClient,
+    source_server_host_within_transiter,
+    install_system,
+):
+    def install(system_id: str, gtfs_static_txtar: str):
+        static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
+        gtfs_static_txtar = GTFS_STATIC_DEFAULT_TXTAR + gtfs_static_txtar
+        source_server.put(static_feed_url, txtar.to_zip(gtfs_static_txtar))
+        realtime_feed_url = source_server.create(
+            "", "/" + system_id + "/gtfs-realtime.gtfs"
+        )
+
+        system_config = SYSTEM_1_CONFIG.format(
+            static_feed_url=source_server_host_within_transiter + "/" + static_feed_url,
+            realtime_feed_url=source_server_host_within_transiter
+            + "/"
+            + realtime_feed_url,
+            realtime_periodic_update_period="3600000",
         )
 
         install_system(system_id, system_config)

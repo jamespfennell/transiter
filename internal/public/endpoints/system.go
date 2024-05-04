@@ -62,9 +62,9 @@ func buildApiSystems(ctx context.Context, r *Context, systems []db.System) ([]*a
 			Id:        system.ID,
 			Name:      system.Name,
 			Status:    api.System_Status(api.System_Status_value[strings.ToUpper(system.Status)]),
-			Agencies:  &api.ChildResources{Count: numAgencies, Url: r.Reference.AgenciesURL(system.ID)},
+			Agencies:  r.Reference.AgenciesChildResources(system.ID, numAgencies),
 			Feeds:     &api.ChildResources{Count: numFeeds, Url: r.Reference.FeedsURL(system.ID)},
-			Routes:    &api.ChildResources{Count: numRoutes, Url: r.Reference.RoutesURL(system.ID)},
+			Routes:    r.Reference.RoutesChildResources(system.ID, numRoutes),
 			Stops:     &api.ChildResources{Count: numStops, Url: r.Reference.StopsURL(system.ID)},
 			Transfers: &api.ChildResources{Count: numTransfers, Url: r.Reference.TransfersURL(system.ID)},
 		})

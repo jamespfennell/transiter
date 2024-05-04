@@ -37,8 +37,8 @@ class RouteReference(ApiType):
 
 @dataclasses.dataclass
 class ChildResources(ApiType):
-    # todo: url
     count: int
+    path: str
 
 
 @dataclasses.dataclass
@@ -57,9 +57,10 @@ class ServiceMapInRoute(ApiType):
 class System(ApiType):
     id: str
     # todo: resource
+    agencies: ChildResources
+    routes: ChildResources
     stops: ChildResources
     transfers: ChildResources
-    routes: ChildResources
 
 
 @dataclasses.dataclass
