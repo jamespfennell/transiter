@@ -206,11 +206,12 @@ func buildStopsResponse(ctx context.Context, r *Context, systemID string, stops 
 
 	var result []*api.Stop
 	for _, stop := range stops {
+		stop := stop
 		var parent *api.Stop_Reference
 		if stop.ParentStopPk.Valid {
 			parent = stopPkToApiPreview[stop.ParentStopPk.Int64]
 		}
-		stop := &api.Stop{
+		result = append(result, &api.Stop{
 			Id:                 stop.ID,
 			Code:               convert.SQLNullString(stop.Code),
 			Name:               convert.SQLNullString(stop.Name),
@@ -230,8 +231,7 @@ func buildStopsResponse(ctx context.Context, r *Context, systemID string, stops 
 			Alerts:             stopPkToApiAlerts[stop.Pk],
 			StopTimes:          stopPkToApiStopTimes[stop.Pk],
 			HeadsignRules:      stopPkToApiHeadsignRules[stop.Pk],
-		}
-		result = append(result, stop)
+		})
 	}
 	return result, nil
 }

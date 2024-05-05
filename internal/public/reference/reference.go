@@ -115,8 +115,8 @@ func (h Generator) Trip(id string, route *api.Route_Reference, destination *api.
 	}
 }
 
-func (h Generator) StopsURL(systemID string) *string {
-	return h.generateURL("systems", systemID, "stops")
+func (h Generator) StopsChildResources(systemID string, count int64) *api.ChildResources {
+	return h.generateChildResources(count, "systems", systemID, "stops")
 }
 
 func (h Generator) Stop(id string, systemID string, name pgtype.Text) *api.Stop_Reference {

@@ -127,6 +127,7 @@ class Stop(ApiType):
 @dataclasses.dataclass
 class ListStopsResponse(ApiType):
     stops: typing.List[Stop]
+    nextId: str
 
 
 @dataclasses.dataclass
@@ -169,8 +170,8 @@ class TransiterClient:
     def list_stops(self, system_id: str, params={}) -> ListStopsResponse:
         return self._get(ListStopsResponse, f"systems/{system_id}/stops", params)
 
-    def get_stop(self, system_id: str, stop_id: str) -> Stop:
-        return self._get(Stop, f"systems/{system_id}/stops/{stop_id}")
+    def get_stop(self, system_id: str, stop_id: str, params={}) -> Stop:
+        return self._get(Stop, f"systems/{system_id}/stops/{stop_id}", params)
 
     def list_transfers(self, system_id: str) -> ListTransfersResponse:
         return self._get(ListTransfersResponse, f"systems/{system_id}/transfers")

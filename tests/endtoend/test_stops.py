@@ -1,36 +1,14 @@
 from haversine import haversine
 from . import client
+import pytest
 
-STOP_IDS = {
-    "1A",
-    "1B",
-    "1C",
-    "1D",
-    "1E",
-    "1F",
-    "1G",
-    "1AS",
-    "1BS",
-    "1CS",
-    "1DS",
-    "1ES",
-    "1FS",
-    "1GS",
-    "1AN",
-    "1BN",
-    "1CN",
-    "1DN",
-    "1EN",
-    "1FN",
-    "1GN",
-    "2COL",
-    "2MEX",
-    "StopID",
-    "ParentStopID",
-}
 
-CHILD_STOP_REFERENCE = client.StopReference(id="StopID")
-
+GTFS_STATIC_TXTAR = """
+-- stops.txt --
+stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,stop_code,stop_desc,zone_id,stop_url,stop_timezone,wheelchair_boarding,level_id,platform_code
+StopID,StopName,40.7527,-73.9772,0,ParentStopID,StopCode,StopDesc,ZoneId,StopUrl,StopTimezone,1,LevelId,PlatformCode
+ParentStopID,,30,50,1,,,,,,,,,
+"""
 CHILD_STOP = client.Stop(
     id="StopID",
     code="StopCode",
@@ -49,51 +27,120 @@ CHILD_STOP = client.Stop(
     transfers=[],
     serviceMaps=[],
 )
+PARENT_STOP = client.Stop(
+    id="ParentStopID",
+    code=None,
+    name=None,
+    description=None,
+    zoneId=None,
+    latitude=30,
+    longitude=50,
+    url=None,
+    type="STATION",
+    timezone=None,
+    wheelchairBoarding=None,
+    platformCode=None,
+    parentStop=None,
+    childStops=[
+        client.StopReference(id="StopID"),
+    ],
+    transfers=[],
+    serviceMaps=[],
+)
 
 
 def test_stop(
     system_id,
-    install_system_1,
+    install_system_using_txtar,
     transiter_client: client.TransiterClient,
 ):
-    install_system_1(system_id)
+    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
 
-    system = transiter_client.get_system(system_id)
-    assert system.stops.count == len(STOP_IDS)
+    got_system = transiter_client.get_system(system_id)
+    assert got_system.stops == client.ChildResources(
+        count=2, path=f"systems/{system_id}/stops"
+    )
 
-    got_all_stops = transiter_client.list_stops(system_id)
-    got_all_stop_ids = set([stop.id for stop in got_all_stops.stops])
-    assert STOP_IDS == got_all_stop_ids
+    # We skip service maps because those are tested in their own test.
+    params = {"skip_service_maps": "true"}
 
-    got_child_stop = transiter_client.get_stop(system_id, "StopID")
-    assert got_child_stop == CHILD_STOP
+    got_all_stops = transiter_client.list_stops(system_id, params)
+    assert got_all_stops.stops == [PARENT_STOP, CHILD_STOP]
 
-    got_parent_stop = transiter_client.get_stop(system_id, "ParentStopID")
-    assert got_parent_stop.childStops == [CHILD_STOP_REFERENCE]
+    for want_stop in [PARENT_STOP, CHILD_STOP]:
+        got_stop = transiter_client.get_stop(system_id, want_stop.id, params)
+        assert got_stop == want_stop
 
-    # Geolocation
+
+SEARCH_LATITUDE = 40.7559
+SEARCH_LONGITUDE = -73.9871
+
+
+@pytest.mark.parametrize(
+    "search_distance,want_stops",
+    [
+        # No stops within 0.5km of relative location
+        (0, []),
+        # Only 'StopID' is within 1km of the relative location
+        (1, [CHILD_STOP]),
+        # All stops returned in order of distance
+        (40075, [CHILD_STOP, PARENT_STOP]),
+    ],
+)
+def test_geographic_search(
+    system_id,
+    install_system_using_txtar,
+    transiter_client: client.TransiterClient,
+    search_distance,
+    want_stops,
+):
+    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+
     # First we verify that the child stop is between 0.9 and 1km of the search point.
-    relative_lat_lon = (40.7559, -73.9871)
-    stop_lat_lon = (got_child_stop.latitude, got_child_stop.longitude)
-    dist_km = haversine(relative_lat_lon, stop_lat_lon)
+    stop_lat_lon = (CHILD_STOP.latitude, CHILD_STOP.longitude)
+    dist_km = haversine((SEARCH_LATITUDE, SEARCH_LONGITUDE), stop_lat_lon)
     assert dist_km > 0.9 and dist_km < 1.0
 
     query_params = {
         "search_mode": "DISTANCE",
-        "latitude": relative_lat_lon[0],
-        "longitude": relative_lat_lon[1],
-        "max_distance": 1.0,
+        "latitude": SEARCH_LATITUDE,
+        "longitude": SEARCH_LONGITUDE,
+        "max_distance": search_distance,
+        # We skip service maps because those are tested in their own test.
+        "skip_service_maps": "true",
     }
     got_geo_stops = transiter_client.list_stops(system_id, query_params)
-    # Only 'StopID' is within 1km of the relative location
-    assert got_geo_stops.stops == [CHILD_STOP]
+    assert got_geo_stops.stops == want_stops
 
-    query_params_closer = {**query_params, "max_distance": 0.5}
-    got_geo_stops = transiter_client.list_stops(system_id, query_params_closer)
-    # No stops within 0.5km of relative location
-    assert got_geo_stops.stops == []
 
-    query_params_all_of_earth = {**query_params, "max_distance": 40075}
-    got_geo_stops = transiter_client.list_stops(system_id, query_params_all_of_earth)
-    # All stops returned
-    assert STOP_IDS == set(stop.id for stop in got_geo_stops.stops)
+def test_list_stops_pagination(
+    system_id,
+    install_system_using_txtar,
+    transiter_client: client.TransiterClient,
+):
+    def stop_id(i):
+        return f"stop_{i:03d}"
+
+    gtfs_static_txtar = """
+    -- stops.txt --
+    stop_id
+    """
+    for i in range(150):
+        gtfs_static_txtar += stop_id(i) + "\n"
+
+    install_system_using_txtar(system_id, gtfs_static_txtar)
+
+    got_all_stops = transiter_client.list_stops(system_id)
+    got_stop_ids = [stop.id for stop in got_all_stops.stops]
+    assert got_stop_ids == [stop_id(i) for i in range(100)]
+    assert got_all_stops.nextId == stop_id(100)
+
+    got_all_stops = transiter_client.list_stops(
+        system_id,
+        params={
+            "first_id": got_all_stops.nextId,
+        },
+    )
+    got_stop_ids = [stop.id for stop in got_all_stops.stops]
+    assert got_stop_ids == [stop_id(i) for i in range(100, 150)]
+    assert got_all_stops.nextId == None
