@@ -18,6 +18,7 @@ def test_agencies(
         phone="AgencyPhone",
         fareUrl="AgencyFareUrl",
         email="AgencyEmail",
+        alerts=[],
     )
 
     install_system_using_txtar(system_id, gtfs_static_txtar)

@@ -24,6 +24,12 @@ class ApiType:
 
 
 @dataclasses.dataclass
+class ShapeReference(ApiType):
+    id: str
+    # todo: system, resource
+
+
+@dataclasses.dataclass
 class StopReference(ApiType):
     id: str
     # todo: system, resource
@@ -33,6 +39,14 @@ class StopReference(ApiType):
 class RouteReference(ApiType):
     id: str
     # todo: system, resource
+
+
+@dataclasses.dataclass
+class AlertReference(ApiType):
+    id: str
+    # todo: system, resource
+    cause: str
+    effect: str
 
 
 @dataclasses.dataclass
@@ -75,6 +89,32 @@ class Agency(ApiType):
     fareUrl: str
     email: str
     # todo: routes
+    alerts: typing.List[AlertReference]
+
+
+@dataclasses.dataclass
+class AlertActivePeriod(ApiType):
+    startsAt: int
+    endsAt: int
+
+
+@dataclasses.dataclass
+class AlertText(ApiType):
+    text: str
+    language: str
+
+
+@dataclasses.dataclass
+class Alert(ApiType):
+    id: str
+    # todo: system, resource
+    cause: str
+    effect: str
+    currentActivePeriod: AlertActivePeriod
+    allActivePeriods: typing.List[AlertActivePeriod]
+    header: typing.List[AlertText]
+    description: typing.List[AlertText]
+    url: typing.List[AlertText]
 
 
 @dataclasses.dataclass
@@ -101,6 +141,21 @@ class Route(ApiType):
     continuousDropOff: str
     type: str
     serviceMaps: typing.List[ServiceMapInRoute]
+    alerts: typing.List[AlertReference]
+
+
+@dataclasses.dataclass
+class ShapePoint(ApiType):
+    latitude: float
+    longitude: float
+    distance: float
+
+
+@dataclasses.dataclass
+class Shape(ApiType):
+    id: str
+    # todo: system, resource
+    points: typing.List[ShapePoint]
 
 
 @dataclasses.dataclass
@@ -122,6 +177,19 @@ class Stop(ApiType):
     childStops: typing.List[StopReference]
     transfers: typing.List[Transfer]
     serviceMaps: typing.List[ServiceMapAtStop]
+    alerts: typing.List[AlertReference]
+
+
+@dataclasses.dataclass
+class Trip(ApiType):
+    # todo: system, resource
+    shape: ShapeReference
+
+
+@dataclasses.dataclass
+class ListShapesResponse(ApiType):
+    shapes: typing.List[Shape]
+    nextId: str
 
 
 @dataclasses.dataclass
@@ -133,6 +201,11 @@ class ListStopsResponse(ApiType):
 @dataclasses.dataclass
 class ListAgenciesResponse(ApiType):
     agencies: typing.List[Agency]
+
+
+@dataclasses.dataclass
+class ListAlertsResponse(ApiType):
+    alerts: typing.List[Alert]
 
 
 @dataclasses.dataclass
@@ -150,22 +223,37 @@ class TransiterClient:
         self._transiter_host = transiter_host
 
     def _get(self, cls: ApiType, relative_url: str, params={}):
-        j = requests.get(f"{self._transiter_host}/{relative_url}", params=params).json()
+        r = requests.get(f"{self._transiter_host}/{relative_url}", params=params)
+        r.raise_for_status()
+        j = r.json()
         return cls.from_api(j)
 
     def get_system(self, system_id: str) -> System:
         return self._get(System, f"systems/{system_id}")
 
     def perform_feed_update(self, system_id: str, feed_id: str):
-        requests.post(
-            f"{self._transiter_host}/systems/{system_id}/feeds/{feed_id}"
-        ).json()
+        r = requests.post(f"{self._transiter_host}/systems/{system_id}/feeds/{feed_id}")
+        r.raise_for_status()
+        j = r.json()
+        assert j["feedUpdate"]["status"] == "UPDATED", f"feed update: {j}"
 
     def list_agencies(self, system_id: str) -> ListAgenciesResponse:
         return self._get(ListAgenciesResponse, f"systems/{system_id}/agencies")
 
     def get_agency(self, system_id: str, agency_id: str) -> Agency:
         return self._get(Agency, f"systems/{system_id}/agencies/{agency_id}")
+
+    def list_alerts(self, system_id: str) -> ListAlertsResponse:
+        return self._get(ListAlertsResponse, f"systems/{system_id}/alerts")
+
+    def get_alert(self, system_id: str, alert_id: str) -> Alert:
+        return self._get(Alert, f"systems/{system_id}/alerts/{alert_id}")
+
+    def list_shapes(self, system_id: str, params={}) -> ListShapesResponse:
+        return self._get(ListShapesResponse, f"systems/{system_id}/shapes", params)
+
+    def get_shape(self, system_id: str, shape_id: str, params={}) -> Shape:
+        return self._get(Shape, f"systems/{system_id}/shapes/{shape_id}", params)
 
     def list_stops(self, system_id: str, params={}) -> ListStopsResponse:
         return self._get(ListStopsResponse, f"systems/{system_id}/stops", params)
@@ -184,3 +272,8 @@ class TransiterClient:
 
     def get_route(self, system_id: str, route_id: str, params={}) -> Route:
         return self._get(Route, f"systems/{system_id}/routes/{route_id}", params)
+
+    def get_trip(self, system_id: str, route_id: str, trip_id: str, params={}) -> Trip:
+        return self._get(
+            Trip, f"systems/{system_id}/routes/{route_id}/trips/{trip_id}", params
+        )

@@ -1,7 +1,6 @@
 import time
-
 import requests
-
+from . import shared
 from . import gtfsrealtimegenerator
 
 
@@ -36,7 +35,11 @@ def _wait_for_successful_update(system_id, transiter_host, lower_bound):
     for __ in range(40):
         time.sleep(0.1)
         feed = requests.get(
-            transiter_host + "/systems/" + system_id + "/feeds/GtfsRealtimeFeed"
+            transiter_host
+            + "/systems/"
+            + system_id
+            + "/feeds/"
+            + shared.GTFS_REALTIME_FEED_ID
         ).json()
         print(feed)
         last_successful_update = feed.get("lastSuccessfulUpdateMs")
@@ -52,7 +55,11 @@ def _wait_for_skipped_update(system_id, transiter_host, lower_bound):
     for __ in range(40):
         time.sleep(0.1)
         feed = requests.get(
-            transiter_host + "/systems/" + system_id + "/feeds/GtfsRealtimeFeed"
+            transiter_host
+            + "/systems/"
+            + system_id
+            + "/feeds/"
+            + shared.GTFS_REALTIME_FEED_ID
         ).json()
         print(feed)
         last_skipped_update = feed.get("lastSkippedUpdateMs")
@@ -68,7 +75,11 @@ def _wait_for_failed_update(system_id, transiter_host, lower_bound):
     for __ in range(40):
         time.sleep(0.1)
         feed = requests.get(
-            transiter_host + "/systems/" + system_id + "/feeds/GtfsRealtimeFeed"
+            transiter_host
+            + "/systems/"
+            + system_id
+            + "/feeds/"
+            + shared.GTFS_REALTIME_FEED_ID
         ).json()
         print(feed)
         last_failed_update = feed.get("lastFailedUpdateMs")

@@ -1,7 +1,49 @@
+# TODO: stop using this module, just construct the message manually.
+# This will remove a layer of abstraction
 from . import gtfsrealtimegenerator
-
-# TODO: stop using this module ^
 from . import client
+from . import shared
+
+STOP_ID_TO_USUAL_ROUTES = {
+    "1A": ["A"],
+    "1B": [],
+    "1C": [],
+    "1D": ["A"],
+    "1E": ["A"],
+    "1F": [],
+    "1G": ["A"],
+}
+ROUTE_ID_TO_USUAL_STOPS = {"A": ["1A", "1D", "1E", "1G"], "B": []}
+
+
+def test_static_stop_view(system_id, install_system_1, transiter_client):
+    install_system_1(system_id)
+
+    for stop_id, want_route_ids in STOP_ID_TO_USUAL_ROUTES.items():
+        stop = transiter_client.get_stop(system_id, stop_id)
+        got_routes = None
+        for service_map in stop.serviceMaps:
+            if service_map.configId != "weekday":
+                continue
+            got_routes = service_map.routes
+        assert got_routes == [
+            client.RouteReference(id=route_id) for route_id in want_route_ids
+        ]
+
+
+def test_static_route_view(system_id, install_system_1, transiter_client):
+    install_system_1(system_id)
+
+    for route_id, want_stop_ids in ROUTE_ID_TO_USUAL_STOPS.items():
+        route = transiter_client.get_route(system_id, route_id)
+        got_stops = None
+        for service_map in route.serviceMaps:
+            if service_map.configId != "alltimes":
+                continue
+            got_stops = service_map.stops
+        assert got_stops == [
+            client.StopReference(id=stop_id) for stop_id in want_stop_ids
+        ]
 
 
 def test_realtime(system_id, install_system_1, transiter_client, source_server):
@@ -135,7 +177,7 @@ def _check_realtime_service_maps(
     want_stop_ids,
 ):
     source_server.put(realtime_feed_url, feed.build_feed())
-    transiter_client.perform_feed_update(system_id, "GtfsRealtimeFeed")
+    transiter_client.perform_feed_update(system_id, shared.GTFS_REALTIME_FEED_ID)
 
     # (1) validate the service map appears in the route endpoints
     route = transiter_client.get_route(system_id, "A")

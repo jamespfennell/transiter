@@ -37,7 +37,7 @@ func getFeed(ctx context.Context, querier db.Querier, systemID, feedID string) (
 		return system, db.Feed{}, err
 	}
 	feed, err := querier.GetFeed(ctx, db.GetFeedParams{SystemID: system.ID, FeedID: feedID})
-	return system, feed, noRowsToNotFound(err, fmt.Sprintf("route %q in system %q", feedID, system.ID))
+	return system, feed, noRowsToNotFound(err, fmt.Sprintf("feed %q in system %q", feedID, system.ID))
 }
 
 func getRoute(ctx context.Context, querier db.Querier, systemID, routeID string) (db.System, db.Route, error) {

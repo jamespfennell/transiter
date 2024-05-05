@@ -2,6 +2,7 @@ import pytest
 import requests
 from . import gtfs_realtime_pb2 as gtfs
 from haversine import haversine
+from . import shared
 
 VEHICLE_ID_1 = "vehicle_id_1"
 VEHICLE_ID_2 = "vehicle_id_2"
@@ -66,7 +67,7 @@ class TestVehicles:
             build_gtfs_rt_message(stop_id_to_time, vehicles).SerializeToString(),
         )
         response = requests.post(
-            f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
+            f"{transiter_host}/systems/{system_id}/feeds/{shared.GTFS_REALTIME_FEED_ID}"
         ).json()
         print(response)
 
@@ -186,7 +187,7 @@ class TestVehicles:
             build_gtfs_rt_message(stop_id_to_time, vehicles).SerializeToString(),
         )
         response = requests.post(
-            f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
+            f"{transiter_host}/systems/{system_id}/feeds/{shared.GTFS_REALTIME_FEED_ID}"
         ).json()
         print(response)
 
@@ -214,7 +215,7 @@ class TestVehicles:
             build_gtfs_rt_message(stop_id_to_time, vehicles).SerializeToString(),
         )
         response = requests.post(
-            f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
+            f"{transiter_host}/systems/{system_id}/feeds/{shared.GTFS_REALTIME_FEED_ID}"
         ).json()
         print(response)
 

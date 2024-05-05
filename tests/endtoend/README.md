@@ -12,7 +12,7 @@ The tests are written in Python, which is an artifact of Transiter originally be
 However, the intent is to keep the tests in Python because the language difference
   is nicely enforces that the tests don't use non-API aspects of Transiter.
 
-## Structure of the test
+## Structure of a test run
 
 During a test run, there are four live components:
 
@@ -27,7 +27,7 @@ During a test run, there are four live components:
 1. The test driver itself. 
    It interacts with Transiter solely through Transiter's admin HTTP API.
 
-## Running the test
+## Running the tests
 
 ### Simplest way
 
@@ -85,3 +85,8 @@ First launch Transiter, Postgres and the source server:
 Then in another terminal run the tests:
 
     docker-compose -f tests/endtoend/compose.yml up --build testrunner
+
+## Writing new tests
+
+Best to cargo cult from the existing tests.
+The tests in `test_shapes.py` and `test_routes.py` are particularly good and worth emulating.

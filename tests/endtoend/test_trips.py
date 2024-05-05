@@ -1,9 +1,7 @@
-import uuid
-
 import pytest
 import requests
 from . import gtfs_realtime_pb2 as gtfs
-
+from . import shared
 
 TRIP_ID = "trip_id"
 ROUTE_ID = "A"
@@ -78,7 +76,7 @@ class TestTrip:
                 ).SerializeToString(),
             )
             response = requests.post(
-                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
+                f"{transiter_host}/systems/{system_id}/feeds/{shared.GTFS_REALTIME_FEED_ID}"
             ).json()
             print(response)
 
@@ -133,7 +131,7 @@ class TestTrip:
                 ).SerializeToString(),
             )
             response = requests.post(
-                f"{transiter_host}/systems/{system_id}/feeds/GtfsRealtimeFeed"
+                f"{transiter_host}/systems/{system_id}/feeds/{shared.GTFS_REALTIME_FEED_ID}"
             ).json()
             print(response)
 

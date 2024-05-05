@@ -1,17 +1,7 @@
 import requests
-from . import client
+from . import shared
 
-FEED_IDS = {"GtfsRealtimeFeed", "gtfsstatic"}
-STOP_ID_TO_USUAL_ROUTES = {
-    "1A": ["A"],
-    "1B": [],
-    "1C": [],
-    "1D": ["A"],
-    "1E": ["A"],
-    "1F": [],
-    "1G": ["A"],
-}
-ROUTE_ID_TO_USUAL_ROUTE = {"A": ["1A", "1D", "1E", "1G"], "B": []}
+FEED_IDS = {shared.GTFS_REALTIME_FEED_ID, shared.GTFS_STATIC_FEED_ID}
 
 
 def test_install_system__basic_data(system_id, install_system_1, transiter_host):
@@ -35,38 +25,6 @@ def test_install_system__feeds(system_id, install_system_1, transiter_host):
     ).json()
     actual_feed_ids = set([feed["id"] for feed in feeds_response["feeds"]])
     assert FEED_IDS == actual_feed_ids
-
-
-def test_install_system__success__service_map_stop(
-    system_id, install_system_1, transiter_host
-):
-    install_system_1(system_id)
-
-    for stop_id, usual_route in STOP_ID_TO_USUAL_ROUTES.items():
-        stop_response = requests.get(
-            "{}/systems/{}/stops/{}".format(transiter_host, system_id, stop_id)
-        ).json()
-        actual = None
-        for service_map in stop_response["serviceMaps"]:
-            if service_map["configId"] != "weekday":
-                continue
-            actual = [route["id"] for route in service_map["routes"]]
-        assert usual_route == actual
-
-
-def test_install_system__service_map_route(system_id, install_system_1, transiter_host):
-    install_system_1(system_id)
-
-    for route_id, usual_stops in ROUTE_ID_TO_USUAL_ROUTE.items():
-        route_response = requests.get(
-            "{}/systems/{}/routes/{}".format(transiter_host, system_id, route_id)
-        ).json()
-        actual_stops = None
-        for service_map in route_response["serviceMaps"]:
-            if service_map["configId"] != "alltimes":
-                continue
-            actual_stops = [stop["id"] for stop in service_map["stops"]]
-        assert usual_stops == actual_stops
 
 
 def _test_install_system__bad_config(system_id, install_system, transiter_host):
@@ -107,20 +65,6 @@ def _test_install_system__bad_update(system_id, install_system, transiter_host):
             transiter_host + "/systems/" + system_id + "/" + sub_entity
         )
         assert sub_entity_response.status_code == 404
-
-
-def _test_update_static_entities(
-    system_id, install_system_1, transiter_host, source_server, updated_gtfs_zip
-):
-    static_feed_url, __ = install_system_1(system_id)
-
-    source_server.put(static_feed_url, updated_gtfs_zip)
-
-    response = requests.post(
-        transiter_host + "/systems/" + system_id + "/feeds/gtfsstatic"
-    ).json()
-
-    assert response["status"] != "FAILURE"
 
 
 def test_delete(system_id, install_system_1, transiter_host):

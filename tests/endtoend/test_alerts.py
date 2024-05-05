@@ -1,54 +1,161 @@
-import datetime
 import time
-
 import pytest
-import requests
 from . import gtfs_realtime_pb2 as gtfs
+from . import shared
+from . import client
 
 ONE_DAY_IN_SECONDS = 60 * 60 * 24
-TIME_1 = datetime.datetime.utcfromtimestamp(time.time() - ONE_DAY_IN_SECONDS)
-TIME_2 = datetime.datetime.utcfromtimestamp(time.time() + ONE_DAY_IN_SECONDS)
+TIMESTAMP_1 = int(time.time()) - ONE_DAY_IN_SECONDS
+TIMESTAMP_2 = int(time.time()) + ONE_DAY_IN_SECONDS
 
-ALERT_SMALL_JSON = {"id": "alert_id", "cause": "STRIKE", "effect": "MODIFIED_SERVICE"}
 
-ALERT_LARGE_JSON = {
-    "id": "alert_id",
-    "cause": "STRIKE",
-    "effect": "MODIFIED_SERVICE",
-    "currentActivePeriod": {
-        "startsAt": str(int(TIME_1.timestamp())),
-        "endsAt": str(int(TIME_2.timestamp())),
-    },
-    "allActivePeriods": [
-        {
-            "startsAt": str(int(TIME_1.timestamp())),
-            "endsAt": str(int(TIME_2.timestamp())),
-        }
+ALERT = client.Alert(
+    id="alert_id",
+    cause="STRIKE",
+    effect="MODIFIED_SERVICE",
+    currentActivePeriod=client.AlertActivePeriod(
+        startsAt=TIMESTAMP_1,
+        endsAt=TIMESTAMP_2,
+    ),
+    allActivePeriods=[
+        client.AlertActivePeriod(
+            startsAt=TIMESTAMP_1,
+            endsAt=TIMESTAMP_2,
+        )
     ],
-    "header": [
-        {
-            "text": "Advertencia",
-            "language": "es",
-        }
+    header=[
+        client.AlertText(
+            text="Advertencia",
+            language="es",
+        )
     ],
-    "description": [
-        {
-            "text": "Description",
-            "language": "en",
-        }
+    description=[
+        client.AlertText(
+            text="Description",
+            language="en",
+        )
     ],
-    "url": [
-        {
-            "text": "URL",
-            "language": "en",
-        }
+    url=[
+        client.AlertText(
+            text="URL",
+            language="en",
+        )
     ],
-}
+)
+
+ALERT_REFERENCE = client.AlertReference(
+    id=ALERT.id,
+    effect=ALERT.effect,
+    cause=ALERT.cause,
+)
+
+AGENCY_ID = "AgencyID"
+ROUTE_ID = "RouteID"
+STOP_ID = "StopID"
+GTFS_STATIC_TXTAR = f"""
+-- agency.txt --
+agency_id,agency_name,agency_url,agency_timezone
+{AGENCY_ID},AgencyName,AgencyURL,AgencyTimezone
+-- routes.txt --
+route_id,route_type
+{ROUTE_ID},3
+-- stops.txt --
+stop_id
+{STOP_ID}
+"""
 
 
-def setup_test(system_id, install_system_1, transiter_host, source_server):
+def test_list_alerts(
+    system_for_alerts_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_alerts_test
+    got_list_alerts = transiter_client.list_alerts(system_id)
+    assert got_list_alerts.alerts == [ALERT]
 
-    __, realtime_feed_url = install_system_1(system_id)
+
+def test_get_alert(
+    system_for_alerts_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_alerts_test
+    got_alert = transiter_client.get_alert(system_id, ALERT.id)
+    assert got_alert == ALERT
+
+
+def test_alert_appears_in_list_agencies(
+    system_for_alerts_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_alerts_test
+    got_list_agencies = transiter_client.list_agencies(system_id)
+    assert got_list_agencies.agencies[0].alerts == [ALERT_REFERENCE]
+
+
+def test_alert_appears_in_get_agency(
+    system_for_alerts_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_alerts_test
+    got_agency = transiter_client.get_agency(system_id, AGENCY_ID)
+    assert got_agency.alerts == [ALERT_REFERENCE]
+
+
+def test_alert_appears_in_list_route(
+    system_for_alerts_test,
+    system_id,
+    transiter_client,
+):
+    _ = system_for_alerts_test
+    got_list_routes = transiter_client.list_routes(system_id)
+    assert got_list_routes.routes[0].alerts == [ALERT_REFERENCE]
+
+
+def test_alert_appears_in_get_route(
+    system_for_alerts_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_alerts_test
+    got_route = transiter_client.get_route(system_id, ROUTE_ID)
+    assert got_route.alerts == [ALERT_REFERENCE]
+
+
+def test_alert_appears_in_list_stop(
+    system_for_alerts_test,
+    system_id,
+    transiter_client,
+):
+    _ = system_for_alerts_test
+    got_list_stops = transiter_client.list_stops(system_id)
+    assert got_list_stops.stops[0].alerts == [ALERT_REFERENCE]
+
+
+def test_alert_appears_in_get_stop(
+    system_for_alerts_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_alerts_test
+    got_stop = transiter_client.get_stop(system_id, STOP_ID)
+    assert got_stop.alerts == [ALERT_REFERENCE]
+
+
+# TODO: get and list trips
+
+
+@pytest.fixture
+def system_for_alerts_test(
+    system_id,
+    install_system_using_txtar,
+    transiter_client: client.TransiterClient,
+    source_server: shared.SourceServerClient,
+):
+    __, realtime_feed_url = install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
 
     message = gtfs.FeedMessage(
         header=gtfs.FeedHeader(gtfs_realtime_version="2.0", timestamp=int(time.time())),
@@ -64,8 +171,8 @@ def setup_test(system_id, install_system_1, transiter_host, source_server):
                 alert=gtfs.Alert(
                     active_period=[
                         gtfs.TimeRange(
-                            start=int(TIME_1.timestamp()),
-                            end=int(TIME_2.timestamp()),
+                            start=TIMESTAMP_1,
+                            end=TIMESTAMP_2,
                         )
                     ],
                     header_text=gtfs.TranslatedString(
@@ -88,9 +195,9 @@ def setup_test(system_id, install_system_1, transiter_host, source_server):
                         ],
                     ),
                     informed_entity=[
-                        gtfs.EntitySelector(agency_id="AgencyId"),
-                        gtfs.EntitySelector(route_id="A"),
-                        gtfs.EntitySelector(stop_id="1A"),
+                        gtfs.EntitySelector(agency_id=AGENCY_ID),
+                        gtfs.EntitySelector(route_id=ROUTE_ID),
+                        gtfs.EntitySelector(stop_id=STOP_ID),
                         gtfs.EntitySelector(
                             trip=gtfs.TripDescriptor(trip_id="trip_id")
                         ),
@@ -103,133 +210,4 @@ def setup_test(system_id, install_system_1, transiter_host, source_server):
     )
 
     source_server.put(realtime_feed_url, message.SerializeToString())
-    requests.post(
-        "{}/systems/{}/feeds/GtfsRealtimeFeed".format(transiter_host, system_id)
-    ).raise_for_status()
-
-
-@pytest.mark.parametrize(
-    "path,entity_id",
-    [
-        ["routes", "A"],
-        ["stops", "1A"],
-        ["agencies", "AgencyId"],
-        # TODO: renable
-        # [
-        #     "routes/A/trips",
-        #     "trip_id",
-        #     ,
-        #     ALERT_SMALL_JSON,
-        # ],
-    ],
-)
-def test_alerts_list_informed_entities(
-    install_system_1,
-    transiter_host,
-    source_server,
-    path,
-    entity_id,
-):
-    system_id = "test_alerts__list_informed_entities_" + str(hash(path))
-    setup_test(
-        system_id=system_id,
-        install_system_1=install_system_1,
-        transiter_host=transiter_host,
-        source_server=source_server,
-    )
-
-    url = "{}/systems/{}/{}/{}".format(transiter_host, system_id, path, entity_id)
-
-    actual_data = requests.get(url).json()
-    print(actual_data)
-    actual_data = actual_data["alerts"][0]
-    del actual_data["system"]
-    del actual_data["resource"]
-    # actual_data = {response["id"]: response for response in actual_data}[entity_id]
-
-    assert ALERT_SMALL_JSON == actual_data
-
-
-@pytest.mark.parametrize(
-    "path",
-    [
-        "routes/A",
-        "stops/1A",
-        # TODO: renable
-        # [
-        #     "routes/A/trips/trip_id",
-        #     None,
-        # ],
-        "stops/1A",
-        "agencies/AgencyId",
-    ],
-)
-def test_alerts_get_informed_entity(
-    install_system_1,
-    transiter_host,
-    source_server,
-    path,
-):
-    system_id = "test_alerts__get_informed_entity_" + str(hash(path))
-    setup_test(
-        system_id=system_id,
-        install_system_1=install_system_1,
-        transiter_host=transiter_host,
-        source_server=source_server,
-    )
-
-    url = "{}/systems/{}/{}".format(transiter_host, system_id, path)
-
-    actual_data = requests.get(url).json()
-
-    expected_json = ALERT_SMALL_JSON
-    actual_json = actual_data["alerts"][0]
-    del actual_json["system"]
-    del actual_json["resource"]
-    assert expected_json == actual_json
-
-
-def test_alerts_list_alerts(
-    install_system_1,
-    transiter_host,
-    source_server,
-):
-    system_id = "test_alerts__list_alerts_"
-    setup_test(
-        system_id=system_id,
-        install_system_1=install_system_1,
-        transiter_host=transiter_host,
-        source_server=source_server,
-    )
-
-    url = "{}/systems/{}/alerts".format(transiter_host, system_id)
-
-    actual_data = requests.get(url).json()["alerts"][0]
-    del actual_data["system"]
-    del actual_data["resource"]
-
-    expected_json = ALERT_LARGE_JSON
-    assert expected_json == actual_data
-
-
-def test_alerts_get(
-    install_system_1,
-    transiter_host,
-    source_server,
-):
-    system_id = "test_alerts__get_or_list_alert_"
-    setup_test(
-        system_id=system_id,
-        install_system_1=install_system_1,
-        transiter_host=transiter_host,
-        source_server=source_server,
-    )
-
-    url = "{}/systems/{}/alerts/alert_id".format(transiter_host, system_id)
-
-    actual_data = requests.get(url).json()
-    del actual_data["system"]
-    del actual_data["resource"]
-
-    expected_json = ALERT_LARGE_JSON
-    assert expected_json == actual_data
+    transiter_client.perform_feed_update(system_id, shared.GTFS_REALTIME_FEED_ID)

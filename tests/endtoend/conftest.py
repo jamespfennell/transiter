@@ -7,40 +7,12 @@ import pytest
 import requests
 from . import client
 from . import txtar
-
-
-class SourceServerClient:
-    def __init__(self, base_url, add_finalizer):
-        self._created_urls = []
-        self._base_url = base_url
-        self._add_finalizer = add_finalizer
-
-    def create(self, prefix="", suffix=""):
-        response = requests.post(self._base_url)
-        response.raise_for_status()
-        created_url = response.text + suffix
-        self._add_finalizer(self._delete_factory(created_url))
-        self._created_urls.append(created_url)
-        return created_url
-
-    def put(self, url, content):
-        requests.put(self._base_url + "/" + url, data=content).raise_for_status()
-
-    def delete(self, url):
-        requests.delete(self._base_url + "/" + url).raise_for_status()
-
-    def _delete_factory(self, url):
-        full_url = self._base_url + "/" + url
-
-        def delete():
-            requests.delete(full_url)
-
-        return delete
+from . import shared
 
 
 @pytest.fixture
-def source_server(request):
-    return SourceServerClient(
+def source_server(request) -> shared.SourceServerClient:
+    return shared.SourceServerClient(
         os.environ.get("SOURCE_SERVER_HOST", "http://localhost:8090"),
         request.addfinalizer,
     )
@@ -123,12 +95,12 @@ name: Test System
 
 feeds:
 
-  - id: gtfsstatic
+  - id: {static_feed_id}
     url: "{static_feed_url}"
     parser: GTFS_STATIC
     requiredForInstall: true
 
-  - id: GtfsRealtimeFeed
+  - id: {realtime_feed_id}
     url: "{realtime_feed_url}"
     parser: GTFS_REALTIME
     schedulingPolicy: PERIODIC
@@ -139,8 +111,7 @@ feeds:
 
 @pytest.fixture
 def install_system_1(
-    source_server: SourceServerClient,
-    transiter_host,
+    source_server: shared.SourceServerClient,
     source_server_host_within_transiter,
     install_system,
 ):
@@ -152,10 +123,10 @@ def install_system_1(
         )
 
         system_config = SYSTEM_1_CONFIG.format(
-            static_feed_url=source_server_host_within_transiter + "/" + static_feed_url,
-            realtime_feed_url=source_server_host_within_transiter
-            + "/"
-            + realtime_feed_url,
+            static_feed_id=shared.GTFS_STATIC_FEED_ID,
+            static_feed_url=f"{source_server_host_within_transiter}/{static_feed_url}",
+            realtime_feed_id=shared.GTFS_REALTIME_FEED_ID,
+            realtime_feed_url=f"{source_server_host_within_transiter}/{realtime_feed_url}",
             realtime_periodic_update_period=realtime_periodic_update_period,
         )
 
@@ -165,40 +136,25 @@ def install_system_1(
     return install
 
 
-GTFS_STATIC_DEFAULT_TXTAR = """
--- agency.txt --
-agency_name,agency_url,agency_timezone
-AgencyName,AgencyURL,AgencyTimezone
--- routes.txt --
-route_id,route_type
--- stops.txt --
-stop_id
--- stop_times.txt --
-trip_id,stop_id,stop_sequence
--- trips.txt --
-trip_id,route_id,service_id
-"""
-
-
 @pytest.fixture
 def install_system_using_txtar(
-    source_server: SourceServerClient,
+    source_server: shared.SourceServerClient,
     source_server_host_within_transiter,
     install_system,
 ):
     def install(system_id: str, gtfs_static_txtar: str):
         static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
-        gtfs_static_txtar = GTFS_STATIC_DEFAULT_TXTAR + gtfs_static_txtar
+        gtfs_static_txtar = shared.GTFS_STATIC_DEFAULT_TXTAR + gtfs_static_txtar
         source_server.put(static_feed_url, txtar.to_zip(gtfs_static_txtar))
         realtime_feed_url = source_server.create(
             "", "/" + system_id + "/gtfs-realtime.gtfs"
         )
 
         system_config = SYSTEM_1_CONFIG.format(
-            static_feed_url=source_server_host_within_transiter + "/" + static_feed_url,
-            realtime_feed_url=source_server_host_within_transiter
-            + "/"
-            + realtime_feed_url,
+            static_feed_id=shared.GTFS_STATIC_FEED_ID,
+            static_feed_url=f"{source_server_host_within_transiter}/{static_feed_url}",
+            realtime_feed_id=shared.GTFS_REALTIME_FEED_ID,
+            realtime_feed_url=f"{source_server_host_within_transiter}/{realtime_feed_url}",
             realtime_periodic_update_period="3600000",
         )
 
