@@ -49,26 +49,6 @@ PARENT_STOP = client.Stop(
     serviceMaps=[],
     alerts=[],
 )
-PARENT_STOP = client.Stop(
-    id="ParentStopID",
-    code=None,
-    name=None,
-    description=None,
-    zoneId=None,
-    latitude=30,
-    longitude=50,
-    url=None,
-    type="STATION",
-    timezone=None,
-    wheelchairBoarding=None,
-    platformCode=None,
-    parentStop=None,
-    childStops=[
-        client.StopReference(id="StopID"),
-    ],
-    transfers=[],
-    serviceMaps=[],
-)
 
 
 def test_stop(
