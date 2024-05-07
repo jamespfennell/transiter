@@ -1,316 +1,246 @@
 import pytest
-import requests
 from . import gtfs_realtime_pb2 as gtfs
 from haversine import haversine
 from . import shared
+from . import client
 
-VEHICLE_ID_1 = "vehicle_id_1"
-VEHICLE_ID_2 = "vehicle_id_2"
-VEHICLE_ID_3 = "vehicle_id_3"
-VEHICLE_IDS = {VEHICLE_ID_1, VEHICLE_ID_2, VEHICLE_ID_3}
-VEHICLE_1_LAT = 40.75
-VEHICLE_1_LON = -73.875
-TRIP_ID_1 = "trip_id_1"
-TRIP_ID_2 = "trip_id_2"
-TRIP_ID_3 = "trip_id_3"
+
 ROUTE_ID = "A"
-FIRST_STOP_ID = "1AS"
-
-
-@pytest.mark.parametrize(
-    "stop_id_to_time",
-    [
-        {
-            FIRST_STOP_ID: 300,
-            "1BS": 800,
-            "1CS": 850,
-        }
-    ],
+STOP_1_ID = "stop_1_id"
+STOP_2_ID = "stop_2_id"
+STOP_3_ID = "stop_3_id"
+VEHICLE_1 = client.Vehicle(
+    id="vehicle_1_id",
+    trip=client.TripReference(
+        id="trip_1_id",
+        vehicle=None,
+    ),
+    latitude=40.75,
+    longitude=-73.875,
 )
-@pytest.mark.parametrize(
-    "vehicles",
-    [
-        {
-            VEHICLE_ID_1: {
-                "trip_id": TRIP_ID_1,
-                "lat": VEHICLE_1_LAT,
-                "lon": VEHICLE_1_LON,
-            },
-            VEHICLE_ID_2: {
-                "trip_id": TRIP_ID_2,
-                "lat": 50,
-                "lon": -50,
-            },
-            VEHICLE_ID_3: {
-                "trip_id": TRIP_ID_3,
-                "lat": 30,
-                "lon": -150,
-            },
-        },
-    ],
+VEHICLE_2 = client.Vehicle(
+    id="vehicle_2_id",
+    trip=client.TripReference(
+        id="trip_2_id",
+        vehicle=None,
+    ),
+    latitude=30,
+    longitude=-150,
 )
-class TestVehicles:
+VEHICLE_3 = client.Vehicle(
+    id="vehicle_3_id",
+    trip=client.TripReference(
+        id="trip_3_id",
+        vehicle=None,
+    ),
+    latitude=50,
+    longitude=-50,
+)
+GTFS_STATIC_TXTAR = f"""
+-- routes.txt --
+route_id,route_type
+{ROUTE_ID},2
+-- stops.txt --
+stop_id
+{STOP_1_ID}
+{STOP_2_ID}
+{STOP_3_ID}
+"""
 
-    def test_vehicle_view(
-        self,
-        install_system_1,
+
+def test_list_vehicles(
+    system_for_vehicles_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_vehicles_test
+    got_list_vehicles = transiter_client.list_vehicles(system_id)
+    assert got_list_vehicles.vehicles == [VEHICLE_1, VEHICLE_2, VEHICLE_3]
+
+
+def test_list_vehicles_with_pagination(
+    system_for_vehicles_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_vehicles_test
+
+    got_list_vehicles = transiter_client.list_vehicles(system_id, params={"limit": 2})
+    assert got_list_vehicles == client.ListVehiclesResponse(
+        vehicles=[VEHICLE_1, VEHICLE_2],
+        nextId=VEHICLE_3.id,
+    )
+
+    got_list_vehicles = transiter_client.list_vehicles(
+        system_id, params={"limit": 2, "first_id": got_list_vehicles.nextId}
+    )
+    assert got_list_vehicles == client.ListVehiclesResponse(
+        vehicles=[VEHICLE_3], nextId=None
+    )
+
+
+def test_list_vehicles_with_filtering(
+    system_for_vehicles_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_vehicles_test
+
+    got_list_vehicles = transiter_client.list_vehicles(
         system_id,
-        transiter_host,
-        source_server,
-        stop_id_to_time,
-        vehicles,
-    ):
-        __, realtime_feed_url = install_system_1(system_id)
-
-        source_server.put(
-            realtime_feed_url,
-            build_gtfs_rt_message(stop_id_to_time, vehicles).SerializeToString(),
-        )
-        response = requests.post(
-            f"{transiter_host}/systems/{system_id}/feeds/{shared.GTFS_REALTIME_FEED_ID}"
-        ).json()
-        print(response)
-
-        # List vehicles
-        response = requests.get(f"{transiter_host}/systems/{system_id}/vehicles").json()
-        print(response)
-
-        resp_vehicles = response["vehicles"]
-        compare_vehicles_to_resp(vehicles, resp_vehicles)
-
-        # List vehicles (pagination)
-        paginated_vehicles = []
-        next_id = None
-        num_pages = 0
-        while len(paginated_vehicles) < len(vehicles):
-            query_params = {
-                "limit": 2,
-            }
-            if next_id:
-                query_params["first_id"] = next_id
-            response = requests.get(
-                f"{transiter_host}/systems/{system_id}/vehicles", params=query_params
-            ).json()
-            assert len(response["vehicles"]) <= 2
-            paginated_vehicles.extend(response["vehicles"])
-            num_pages += 1
-
-            if "nextId" not in response:
-                break
-            next_id = response["nextId"]
-
-        compare_vehicles_to_resp(vehicles, paginated_vehicles)
-        assert num_pages == 2
-
-        # List vehicles by ids
-        query_params = {
+        params={
             "only_return_specified_ids": True,
-            "id[]": [VEHICLE_ID_2, VEHICLE_ID_3],
-        }
-        response = requests.get(
-            f"{transiter_host}/systems/{system_id}/vehicles", params=query_params
-        ).json()
-        print(response)
-        assert {VEHICLE_ID_2, VEHICLE_ID_3} == set(
-            vehicle["id"] for vehicle in response["vehicles"]
-        )
-        compare_vehicles_to_resp(
-            vehicles,
-            response["vehicles"],
-            {
-                VEHICLE_ID_2,
-                VEHICLE_ID_3,
-            },
-        )
+            "id[]": [VEHICLE_2.id, VEHICLE_3.id],
+        },
+    )
+    assert got_list_vehicles.vehicles == [VEHICLE_2, VEHICLE_3]
 
-        # Get vehicle
-        for vehicle_id, vehicle in vehicles.items():
-            resp_vehicle = requests.get(
-                f"{transiter_host}/systems/{system_id}/vehicles/{vehicle_id}"
-            ).json()
-            compare_vehicle_to_resp({**vehicle, "id": vehicle_id}, resp_vehicle)
 
-        # Geolocation
-        relative_lat_lon = (40.755, -73.8755)
-        vehicle_1_lat_lon = (VEHICLE_1_LAT, VEHICLE_1_LON)
+def test_get_vehicle(
+    system_for_vehicles_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_vehicles_test
 
-        dist_km = haversine(relative_lat_lon, vehicle_1_lat_lon)
-        assert dist_km > 0.5 and dist_km < 1.0
+    for want_vehicle in [VEHICLE_1, VEHICLE_2, VEHICLE_3]:
+        got_vehicle = transiter_client.get_vehicle(system_id, want_vehicle.id)
+        assert got_vehicle == want_vehicle
 
-        query_params = {
-            "search_mode": "DISTANCE",
-            "latitude": relative_lat_lon[0],
-            "longitude": relative_lat_lon[1],
-            "max_distance": 1.0,
-        }
 
-        response = requests.get(
-            f"{transiter_host}/systems/{system_id}/vehicles", params=query_params
-        ).json()
-        print(response)
-        vehicles_geo = response["vehicles"]
+SEARCH_LATITUDE = 40.755
+SEARCH_LONGITUDE = -73.8755
 
-        # Only 1st vehicle is within 1km of the relative location
-        assert 1 == len(vehicles_geo)
-        assert VEHICLE_ID_1 == vehicles_geo[0]["id"]
 
-        query_params_closer = {**query_params, "max_distance": 0.5}
-        response = requests.get(
-            f"{transiter_host}/systems/{system_id}/vehicles", params=query_params_closer
-        ).json()
-
+@pytest.mark.parametrize(
+    "search_distance,want_vehicles",
+    [
         # No vehicles within 0.5km of relative location
-        assert 0 == len(response["vehicles"])
+        (0, []),
+        # Only vehicle 1 is within 1km of the relative location
+        (1, [VEHICLE_1]),
+        # All vehicles returned in order of distance
+        (40075, [VEHICLE_1, VEHICLE_3, VEHICLE_2]),
+    ],
+)
+def test_geographic_search(
+    system_for_vehicles_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+    search_distance,
+    want_vehicles,
+):
+    _ = system_for_vehicles_test
 
-        query_params_all_of_earth = {**query_params, "max_distance": 40075}
-        response = requests.get(
-            f"{transiter_host}/systems/{system_id}/vehicles",
-            params=query_params_all_of_earth,
-        ).json()
+    dist_km = haversine(
+        (SEARCH_LATITUDE, SEARCH_LONGITUDE), (VEHICLE_1.latitude, VEHICLE_1.longitude)
+    )
+    assert dist_km > 0.5 and dist_km < 1.0
 
-        # All vehicles returned
-        compare_vehicles_to_resp(vehicles, response["vehicles"])
-
-    def test_trip_view(
-        self,
-        install_system_1,
+    got_list_vehicles = transiter_client.list_vehicles(
         system_id,
-        transiter_host,
-        source_server,
-        stop_id_to_time,
-        vehicles,
-    ):
-        __, realtime_feed_url = install_system_1(system_id)
-
-        source_server.put(
-            realtime_feed_url,
-            build_gtfs_rt_message(stop_id_to_time, vehicles).SerializeToString(),
-        )
-        response = requests.post(
-            f"{transiter_host}/systems/{system_id}/feeds/{shared.GTFS_REALTIME_FEED_ID}"
-        ).json()
-        print(response)
-
-        response = requests.get(
-            f"{transiter_host}/systems/{system_id}/routes/{ROUTE_ID}/trips/{TRIP_ID_1}"
-        ).json()
-        print(response)
-
-        assert response["id"] == TRIP_ID_1
-        assert response["vehicle"]["id"] == VEHICLE_ID_1
-
-    def test_stop_view(
-        self,
-        install_system_1,
-        system_id,
-        transiter_host,
-        source_server,
-        stop_id_to_time,
-        vehicles,
-    ):
-        __, realtime_feed_url = install_system_1(system_id)
-
-        source_server.put(
-            realtime_feed_url,
-            build_gtfs_rt_message(stop_id_to_time, vehicles).SerializeToString(),
-        )
-        response = requests.post(
-            f"{transiter_host}/systems/{system_id}/feeds/{shared.GTFS_REALTIME_FEED_ID}"
-        ).json()
-        print(response)
-
-        response = requests.get(
-            f"{transiter_host}/systems/{system_id}/stops/{FIRST_STOP_ID}"
-        ).json()
-        print(response)
-
-        stop_times = response["stopTimes"]
-        assert len(stop_times) == 1
-
-        stop_time = stop_times[0]
-        assert stop_time["trip"]["id"] == TRIP_ID_1
-        assert stop_time["trip"]["vehicle"]["id"] == VEHICLE_ID_1
+        params={
+            "search_mode": "DISTANCE",
+            "latitude": SEARCH_LATITUDE,
+            "longitude": SEARCH_LONGITUDE,
+            "max_distance": search_distance,
+        },
+    )
+    assert got_list_vehicles.vehicles == want_vehicles
 
 
-def compare_vehicles_to_resp(vehicles, resp_vehicles, expected_ids=None):
-    if expected_ids is None:
-        expected_ids = set(vehicles.keys())
-    assert len(expected_ids) == len(resp_vehicles)
+def test_trip_view(
+    system_for_vehicles_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_vehicles_test
 
-    for vehicle_id in expected_ids:
-        vehicle = vehicles[vehicle_id]
-        resp_vehicles_with_id = [v for v in resp_vehicles if v["id"] == vehicle_id]
-        assert len(resp_vehicles_with_id) == 1
-
-        resp_vehicle = resp_vehicles_with_id[0]
-        compare_vehicle_to_resp({**vehicle, "id": vehicle_id}, resp_vehicle)
-
-
-def compare_vehicle_to_resp(vehicle, resp_vehicle):
-    assert resp_vehicle["id"] == vehicle["id"]
-    assert resp_vehicle["latitude"] == vehicle["lat"]
-    assert resp_vehicle["longitude"] == vehicle["lon"]
-    assert resp_vehicle["trip"]["id"] == vehicle["trip_id"]
-    assert resp_vehicle["trip"]["route"]["id"] == ROUTE_ID
+    trip = transiter_client.get_trip(system_id, ROUTE_ID, VEHICLE_1.trip.id)
+    assert trip.vehicle == client.VehicleReference(
+        id=VEHICLE_1.id,
+    )
 
 
-def build_gtfs_rt_message(stop_id_to_time, vehicles):
-    vehicles_entities = [
-        gtfs.FeedEntity(
-            id=f"vehicle_{idx}",
+def test_stop_view(
+    system_for_vehicles_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_vehicles_test
+
+    stop = transiter_client.get_stop(system_id, STOP_1_ID)
+    assert len(stop.stopTimes) == 1
+
+    assert stop.stopTimes[0].trip.vehicle == client.VehicleReference(
+        id=VEHICLE_1.id,
+    )
+
+
+@pytest.fixture
+def system_for_vehicles_test(
+    system_id,
+    install_system_using_txtar,
+    transiter_client: client.TransiterClient,
+    source_server: shared.SourceServerClient,
+):
+    __, realtime_feed_url = install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    source_server.put(
+        realtime_feed_url,
+        build_gtfs_rt_message().SerializeToString(),
+    )
+    transiter_client.perform_feed_update(system_id, shared.GTFS_REALTIME_FEED_ID)
+
+
+def build_gtfs_rt_message():
+    def vehicle_entity(vehicle: client.Vehicle):
+        return gtfs.FeedEntity(
+            id=f"vehicle_{vehicle.id}",
             vehicle=gtfs.VehiclePosition(
-                vehicle=gtfs.VehicleDescriptor(id=vehicle_id),
-                trip=gtfs.TripDescriptor(trip_id=vehicle["trip_id"]),
+                vehicle=gtfs.VehicleDescriptor(id=vehicle.id),
+                trip=gtfs.TripDescriptor(trip_id=vehicle.trip.id),
                 position=gtfs.Position(
-                    latitude=vehicle["lat"],
-                    longitude=vehicle["lon"],
+                    latitude=vehicle.latitude,
+                    longitude=vehicle.longitude,
                 ),
             ),
         )
-        for idx, (vehicle_id, vehicle) in enumerate(vehicles.items())
-    ]
+
+    def trip_entity(vehicle: client.Vehicle, stop_time_updates):
+        return gtfs.FeedEntity(
+            id=f"trip_{vehicle.trip.id}",
+            trip_update=gtfs.TripUpdate(
+                vehicle=gtfs.VehicleDescriptor(id=vehicle.id),
+                trip=gtfs.TripDescriptor(
+                    trip_id=vehicle.trip.id, route_id=ROUTE_ID, direction_id=True
+                ),
+                stop_time_update=stop_time_updates,
+            ),
+        )
+
+    def stop_time_update(stop_id, arrival_time, stop_sequence):
+        return gtfs.TripUpdate.StopTimeUpdate(
+            arrival=gtfs.TripUpdate.StopTimeEvent(time=arrival_time),
+            departure=gtfs.TripUpdate.StopTimeEvent(time=arrival_time + 15),
+            stop_id=stop_id,
+            stop_sequence=stop_sequence + 25,
+        )
 
     return gtfs.FeedMessage(
         header=gtfs.FeedHeader(gtfs_realtime_version="2.0", timestamp=0),
-        entity=vehicles_entities
-        + [
-            gtfs.FeedEntity(
-                id="trip_update_1",
-                trip_update=gtfs.TripUpdate(
-                    vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID_1),
-                    trip=gtfs.TripDescriptor(
-                        trip_id=TRIP_ID_1, route_id=ROUTE_ID, direction_id=True
-                    ),
-                    stop_time_update=[
-                        gtfs.TripUpdate.StopTimeUpdate(
-                            arrival=gtfs.TripUpdate.StopTimeEvent(time=time),
-                            departure=gtfs.TripUpdate.StopTimeEvent(time=time + 15),
-                            stop_id=stop_id,
-                            stop_sequence=stop_sequence + 25,
-                        )
-                        for stop_sequence, (stop_id, time) in enumerate(
-                            stop_id_to_time.items()
-                        )
-                    ],
-                ),
+        entity=[
+            vehicle_entity(VEHICLE_1),
+            vehicle_entity(VEHICLE_2),
+            vehicle_entity(VEHICLE_3),
+            trip_entity(
+                VEHICLE_1,
+                [
+                    stop_time_update(STOP_1_ID, 300, 1),
+                    stop_time_update(STOP_2_ID, 800, 2),
+                    stop_time_update(STOP_3_ID, 850, 3),
+                ],
             ),
-            gtfs.FeedEntity(
-                id="trip_update_2",
-                trip_update=gtfs.TripUpdate(
-                    vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID_2),
-                    trip=gtfs.TripDescriptor(
-                        trip_id=TRIP_ID_2, route_id=ROUTE_ID, direction_id=True
-                    ),
-                ),
-            ),
-            gtfs.FeedEntity(
-                id="trip_update_3",
-                trip_update=gtfs.TripUpdate(
-                    vehicle=gtfs.VehicleDescriptor(id=VEHICLE_ID_3),
-                    trip=gtfs.TripDescriptor(
-                        trip_id=TRIP_ID_3, route_id=ROUTE_ID, direction_id=True
-                    ),
-                ),
-            ),
+            trip_entity(VEHICLE_2, []),
+            trip_entity(VEHICLE_3, []),
         ],
     )

@@ -27,6 +27,7 @@ CHILD_STOP = client.Stop(
     transfers=[],
     serviceMaps=[],
     alerts=[],
+    stopTimes=[],
 )
 PARENT_STOP = client.Stop(
     id="ParentStopID",
@@ -48,6 +49,7 @@ PARENT_STOP = client.Stop(
     transfers=[],
     serviceMaps=[],
     alerts=[],
+    stopTimes=[],
 )
 
 

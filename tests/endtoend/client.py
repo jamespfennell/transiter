@@ -36,6 +36,19 @@ class StopReference(ApiType):
 
 
 @dataclasses.dataclass
+class VehicleReference(ApiType):
+    id: str
+    # todo: system, resource
+
+
+@dataclasses.dataclass
+class TripReference(ApiType):
+    id: str
+    vehicle: VehicleReference
+    # todo: system, resource
+
+
+@dataclasses.dataclass
 class RouteReference(ApiType):
     id: str
     # todo: system, resource
@@ -159,6 +172,11 @@ class Shape(ApiType):
 
 
 @dataclasses.dataclass
+class StopTime(ApiType):
+    trip: TripReference
+
+
+@dataclasses.dataclass
 class Stop(ApiType):
     id: str
     # todo: system, resource
@@ -178,12 +196,23 @@ class Stop(ApiType):
     transfers: typing.List[Transfer]
     serviceMaps: typing.List[ServiceMapAtStop]
     alerts: typing.List[AlertReference]
+    stopTimes: typing.List[StopTime]
 
 
 @dataclasses.dataclass
 class Trip(ApiType):
     # todo: system, resource
     shape: ShapeReference
+    vehicle: VehicleReference
+
+
+@dataclasses.dataclass
+class Vehicle(ApiType):
+    id: str
+    # todo: system, resource
+    trip: TripReference
+    latitude: float
+    longitude: float
 
 
 @dataclasses.dataclass
@@ -195,6 +224,12 @@ class ListShapesResponse(ApiType):
 @dataclasses.dataclass
 class ListStopsResponse(ApiType):
     stops: typing.List[Stop]
+    nextId: str
+
+
+@dataclasses.dataclass
+class ListVehiclesResponse(ApiType):
+    vehicles: typing.List[Vehicle]
     nextId: str
 
 
@@ -277,3 +312,9 @@ class TransiterClient:
         return self._get(
             Trip, f"systems/{system_id}/routes/{route_id}/trips/{trip_id}", params
         )
+
+    def list_vehicles(self, system_id: str, params={}) -> ListVehiclesResponse:
+        return self._get(ListVehiclesResponse, f"systems/{system_id}/vehicles", params)
+
+    def get_vehicle(self, system_id: str, vehicle_id: str, params={}) -> Vehicle:
+        return self._get(Vehicle, f"systems/{system_id}/vehicles/{vehicle_id}", params)
