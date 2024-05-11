@@ -86,6 +86,7 @@ const listTransfersFromStops = `-- name: ListTransfersFromStops :many
   SELECT transfer.pk, transfer.system_pk, transfer.from_stop_pk, transfer.to_stop_pk, transfer.type, transfer.min_transfer_time, transfer.feed_pk, transfer.id
   FROM transfer
   WHERE transfer.from_stop_pk = ANY($1::bigint[])
+  ORDER BY transfer.id
 `
 
 func (q *Queries) ListTransfersFromStops(ctx context.Context, fromStopPks []int64) ([]Transfer, error) {

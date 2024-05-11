@@ -25,4 +25,5 @@ SELECT transfer.* FROM transfer
 -- name: ListTransfersFromStops :many
   SELECT transfer.*
   FROM transfer
-  WHERE transfer.from_stop_pk = ANY(sqlc.arg(from_stop_pks)::bigint[]);
+  WHERE transfer.from_stop_pk = ANY(sqlc.arg(from_stop_pks)::bigint[])
+  ORDER BY transfer.id;

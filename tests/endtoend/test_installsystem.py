@@ -1,111 +1,113 @@
-import requests
 from . import shared
+from . import client
 
 FEED_IDS = {shared.GTFS_REALTIME_FEED_ID, shared.GTFS_STATIC_FEED_ID}
 
-
-def test_install_system__basic_data(system_id, install_system_1, transiter_host):
-
-    install_system_1(system_id)
-
-    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
-    assert system_response["name"] == "Test System"
-
-
-def test_install_system__feeds(system_id, install_system_1, transiter_host):
-
-    install_system_1(system_id)
-
-    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
-    feeds_count = system_response["feeds"]["count"]
-    assert len(FEED_IDS) == int(feeds_count)
-
-    feeds_response = requests.get(
-        transiter_host + "/systems/" + system_id + "/feeds"
-    ).json()
-    actual_feed_ids = set([feed["id"] for feed in feeds_response["feeds"]])
-    assert FEED_IDS == actual_feed_ids
+STATIC_FEED = client.Feed(
+    id=shared.GTFS_STATIC_FEED_ID,
+    lastSuccessfulUpdateMs=None,
+    lastSkippedUpdateMs=None,
+    lastFailedUpdateMs=None,
+)
+REALTIME_FEED = client.Feed(
+    id=shared.GTFS_REALTIME_FEED_ID,
+    lastSuccessfulUpdateMs=None,
+    lastSkippedUpdateMs=None,
+    lastFailedUpdateMs=None,
+)
 
 
-def _test_install_system__bad_config(system_id, install_system, transiter_host):
-    install_system(
-        system_id,
-        "This is not a valid Transiter YAML config!",
-        expected_status="INSTALL_FAILED",
+def test_get_system(
+    system_id,
+    install_system,
+    transiter_client: client.TransiterClient,
+):
+    install_system(system_id, shared.GTFS_STATIC_DEFAULT_TXTAR)
+
+    got_system = transiter_client.get_system(system_id)
+    assert got_system == client.System(
+        id=system_id,
+        name="Test System",
+        status="ACTIVE",
+        agencies=client.ChildResources(count=1, path=f"systems/{system_id}/agencies"),
+        feeds=client.ChildResources(count=2, path=f"systems/{system_id}/feeds"),
+        routes=client.ChildResources(count=0, path=f"systems/{system_id}/routes"),
+        stops=client.ChildResources(count=0, path=f"systems/{system_id}/stops"),
+        transfers=client.ChildResources(count=0, path=f"systems/{system_id}/transfers"),
     )
 
-    for sub_entity in ["stops", "routes", "feeds"]:
-        sub_entity_response = requests.get(
-            transiter_host + "/systems/" + system_id + "/" + sub_entity
-        )
-        assert sub_entity_response.status_code == 404
+
+def test_list_feeds(
+    system_id,
+    install_system,
+    transiter_client: client.TransiterClient,
+):
+    install_system(system_id, shared.GTFS_STATIC_DEFAULT_TXTAR)
+
+    got_list_feeds = transiter_client.list_feeds(system_id)
+    # Clear least successful update time because it's non-deterministic
+    for feed in got_list_feeds.feeds:
+        feed.lastSuccessfulUpdateMs = None
+    assert got_list_feeds.feeds == [
+        REALTIME_FEED,
+        STATIC_FEED,
+    ]
 
 
-SYSTEM_CONFIG = """
-name: Test System
+def test_get_feeds(
+    system_id,
+    install_system,
+    transiter_client: client.TransiterClient,
+):
+    install_system(system_id, shared.GTFS_STATIC_DEFAULT_TXTAR)
 
-feeds:
-  - id: feed_1
-    url: {feed_url}
-    parser: GTFS_STATIC
-    requiredForInstall: false
-
-"""
-
-
-def _test_install_system__bad_update(system_id, install_system, transiter_host):
-    install_system(
-        system_id,
-        SYSTEM_CONFIG.format(feed_url="non_url"),
-        expected_status="INSTALL_FAILED",
-    )
-
-    for sub_entity in ["stops", "routes", "feeds"]:
-        sub_entity_response = requests.get(
-            transiter_host + "/systems/" + system_id + "/" + sub_entity
-        )
-        assert sub_entity_response.status_code == 404
+    got_feed = transiter_client.get_feed(system_id, REALTIME_FEED.id)
+    assert got_feed == REALTIME_FEED
 
 
-def test_delete(system_id, install_system_1, transiter_host):
-    install_system_1(system_id)
+def test_update_system(
+    system_id,
+    install_system,
+    transiter_client: client.TransiterClient,
+):
+    install_system(system_id, shared.GTFS_STATIC_DEFAULT_TXTAR)
+    got_system = transiter_client.get_system(system_id)
+    assert got_system.name == "Test System"
 
-    response = requests.delete(transiter_host + "/systems/" + system_id)
-    response.raise_for_status()
-
-    response = requests.get(transiter_host + "/systems/" + system_id)
-    assert response.status_code == 404
-
-
-def test_update_system(system_id, install_system, transiter_host):
     config = """
-    name: {}
+    name: New Name
 
     feeds:
-      - id: feed_1
-        requiredForInstall: false
-        schedulingPolicy: PERIODIC
-        updatePeriodS: {}
-        url: transiter.dev
+      - id: new_feed
+        url: "https://www.example.com"
         parser: GTFS_STATIC
+        requiredForInstall: false
     """
 
-    install_system(system_id, config.format("name1", 5))
+    install_system(system_id, shared.GTFS_STATIC_DEFAULT_TXTAR, config=config)
 
-    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
-    assert system_response["name"] == "name1"
-    feed_data = requests.get(
-        transiter_host + "/systems/" + system_id + "/feeds/feed_1"
-    ).json()
-    # TODO: renable
-    # assert "5" == feed_data["updatePeriodS"]
+    got_system = transiter_client.get_system(system_id)
+    assert got_system.name == "New Name"
+    assert got_system.feeds == client.ChildResources(
+        count=1, path=f"systems/{system_id}/feeds"
+    )
 
-    install_system(system_id, config.format("name2", 15))
+    got_list_feeds = transiter_client.list_feeds(system_id)
+    assert got_list_feeds.feeds == [
+        client.Feed(
+            id="new_feed",
+            lastSuccessfulUpdateMs=None,
+            lastSkippedUpdateMs=None,
+            lastFailedUpdateMs=None,
+        ),
+    ]
 
-    system_response = requests.get(transiter_host + "/systems/" + system_id).json()
-    assert system_response["name"] == "name2"
-    feed_data = requests.get(
-        transiter_host + "/systems/" + system_id + "/feeds/feed_1"
-    ).json()
-    # TODO: renable
-    # assert "15" == feed_data["updatePeriodS"]
+
+def test_delete_system(
+    system_id, install_system, transiter_client: client.TransiterClient
+):
+    install_system(system_id, shared.GTFS_STATIC_DEFAULT_TXTAR)
+    transiter_client.delete_system(system_id)
+
+    response = transiter_client.get(f"systems/{system_id}")
+    assert response.status_code == 404

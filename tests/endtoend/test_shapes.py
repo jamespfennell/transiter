@@ -1,4 +1,4 @@
-import shared
+from . import shared
 from . import gtfs_realtime_pb2 as gtfs
 from . import client
 
@@ -55,22 +55,22 @@ route_id,service_id,trip_id,direction_id,shape_id
 
 
 def test_list_shapes(
-    install_system_using_txtar,
+    install_system,
     system_id,
     transiter_client: client.TransiterClient,
 ):
-    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    install_system(system_id, GTFS_STATIC_TXTAR)
 
     got_list_shapes = transiter_client.list_shapes(system_id)
     assert got_list_shapes.shapes == [SHAPE_1, SHAPE_2, SHAPE_3]
 
 
 def test_list_shapes_with_pagination(
-    install_system_using_txtar,
+    install_system,
     system_id,
     transiter_client: client.TransiterClient,
 ):
-    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    install_system(system_id, GTFS_STATIC_TXTAR)
 
     got_list_shapes = transiter_client.list_shapes(
         system_id,
@@ -97,11 +97,11 @@ def test_list_shapes_with_pagination(
 
 
 def test_list_shapes_with_filtering(
-    install_system_using_txtar,
+    install_system,
     system_id,
     transiter_client: client.TransiterClient,
 ):
-    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    install_system(system_id, GTFS_STATIC_TXTAR)
     got_list_shapes = transiter_client.list_shapes(
         system_id,
         params={
@@ -113,11 +113,11 @@ def test_list_shapes_with_filtering(
 
 
 def test_get_shape(
-    install_system_using_txtar,
+    install_system,
     system_id,
     transiter_client: client.TransiterClient,
 ):
-    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    install_system(system_id, GTFS_STATIC_TXTAR)
 
     for want_shape in [SHAPE_1, SHAPE_2, SHAPE_3]:
         got_shape = transiter_client.get_shape(system_id, want_shape.id)
@@ -125,12 +125,12 @@ def test_get_shape(
 
 
 def test_trip_view(
-    install_system_using_txtar,
+    install_system,
     system_id,
     transiter_client: client.TransiterClient,
     source_server: shared.SourceServerClient,
 ):
-    __, realtime_feed_url = install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    __, realtime_feed_url = install_system(system_id, GTFS_STATIC_TXTAR)
 
     gtfs_rt_message = gtfs.FeedMessage(
         header=gtfs.FeedHeader(gtfs_realtime_version="2.0", timestamp=0),

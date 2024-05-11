@@ -151,11 +151,11 @@ def test_alert_appears_in_get_stop(
 @pytest.fixture
 def system_for_alerts_test(
     system_id,
-    install_system_using_txtar,
+    install_system,
     transiter_client: client.TransiterClient,
     source_server: shared.SourceServerClient,
 ):
-    __, realtime_feed_url = install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    __, realtime_feed_url = install_system(system_id, GTFS_STATIC_TXTAR)
 
     message = gtfs.FeedMessage(
         header=gtfs.FeedHeader(gtfs_realtime_version="2.0", timestamp=int(time.time())),

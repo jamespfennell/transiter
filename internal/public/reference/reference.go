@@ -79,8 +79,8 @@ func (h Generator) Alert(id, systemID, cause, effect string) *api.Alert_Referenc
 	}
 }
 
-func (h Generator) FeedsURL(systemID string) *string {
-	return h.generateURL("systems", systemID, "feeds")
+func (h Generator) FeedsChildResources(systemID string, count int64) *api.ChildResources {
+	return h.generateChildResources(count, "systems", systemID, "feeds")
 }
 
 func (h Generator) Feed(id string, systemID string) *api.Feed_Reference {
@@ -128,8 +128,8 @@ func (h Generator) Stop(id string, systemID string, name pgtype.Text) *api.Stop_
 	}
 }
 
-func (h Generator) TransfersURL(systemID string) *string {
-	return h.generateURL("systems", systemID, "transfers")
+func (h Generator) TransfersChildResources(systemID string, count int64) *api.ChildResources {
+	return h.generateChildResources(count, "systems", systemID, "transfers")
 }
 
 func (h Generator) Vehicle(id string, systemID string) *api.Vehicle_Reference {

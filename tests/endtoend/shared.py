@@ -20,6 +20,26 @@ GTFS_STATIC_FEED_ID = "gtfs_static"
 GTFS_REALTIME_FEED_ID = "gtfs_realtime"
 
 
+DEFAULT_SYSTEM_CONFIG = """
+
+name: {system_name}
+
+feeds:
+
+  - id: {static_feed_id}
+    url: "{static_feed_url}"
+    parser: GTFS_STATIC
+    requiredForInstall: true
+
+  - id: {realtime_feed_id}
+    url: "{realtime_feed_url}"
+    parser: GTFS_REALTIME
+    schedulingPolicy: PERIODIC
+    updatePeriodS: {realtime_periodic_update_period}
+
+"""
+
+
 class SourceServerClient:
     def __init__(self, base_url, add_finalizer):
         self._created_urls = []

@@ -1,8 +1,6 @@
-import io
 import os
 import time
 import uuid
-import zipfile
 import pytest
 import requests
 from . import client
@@ -44,105 +42,19 @@ def source_server_host_within_transiter():
     )
 
 
-def get_zip(directory):
-    output_bytes = io.BytesIO()
-    # writing files to a zipfile
-    data_dir = os.path.join(os.path.dirname(__file__), "data", directory)
-    with zipfile.ZipFile(output_bytes, "w") as zip_file:
-        for file_name in os.listdir(data_dir):
-            full_path = os.path.join(data_dir, file_name)
-            zip_file.write(full_path, arcname=file_name)
-    return output_bytes.getvalue()
-
-
 @pytest.fixture
 def install_system(
     request,
-    transiter_host,
-):
-    def install(system_id, system_config, expected_status="ACTIVE"):
-        def delete():
-            requests.delete(transiter_host + "/systems/" + system_id + "?sync=true")
-
-        response = requests.put(
-            transiter_host + "/systems/" + system_id,
-            json={
-                "yaml_config": {
-                    "content": system_config,
-                },
-            },
-        )
-        if expected_status == "ACTIVE":
-            # Uncomment this line to debug system install failures
-            # print(json.dumps(response.json(), indent=2))
-            response.raise_for_status()
-        for _ in range(100):
-            response = requests.get(transiter_host + "/systems/" + system_id)
-            response.raise_for_status()
-            if response.json()["status"] not in {"INSTALLING", "UPDATING"}:
-                break
-            time.sleep(0.05)
-        assert response.json()["status"] == expected_status
-
-        request.addfinalizer(delete)
-
-    return install
-
-
-SYSTEM_1_CONFIG = """
-
-name: Test System
-
-feeds:
-
-  - id: {static_feed_id}
-    url: "{static_feed_url}"
-    parser: GTFS_STATIC
-    requiredForInstall: true
-
-  - id: {realtime_feed_id}
-    url: "{realtime_feed_url}"
-    parser: GTFS_REALTIME
-    schedulingPolicy: PERIODIC
-    updatePeriodS: {realtime_periodic_update_period}
-
-"""
-
-
-@pytest.fixture
-def install_system_1(
     source_server: shared.SourceServerClient,
     source_server_host_within_transiter,
-    install_system,
+    transiter_client: client.TransiterClient,
 ):
-    def install(system_id, realtime_periodic_update_period="3600000"):
-        static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
-        source_server.put(static_feed_url, get_zip("gtfsstatic"))
-        realtime_feed_url = source_server.create(
-            "", "/" + system_id + "/gtfs-realtime.gtfs"
-        )
-
-        system_config = SYSTEM_1_CONFIG.format(
-            static_feed_id=shared.GTFS_STATIC_FEED_ID,
-            static_feed_url=f"{source_server_host_within_transiter}/{static_feed_url}",
-            realtime_feed_id=shared.GTFS_REALTIME_FEED_ID,
-            realtime_feed_url=f"{source_server_host_within_transiter}/{realtime_feed_url}",
-            realtime_periodic_update_period=realtime_periodic_update_period,
-        )
-
-        install_system(system_id, system_config)
-        return static_feed_url, realtime_feed_url
-
-    return install
-
-
-@pytest.fixture
-def install_system_using_txtar(
-    source_server: shared.SourceServerClient,
-    source_server_host_within_transiter,
-    install_system,
-):
-    def install(system_id: str, gtfs_static_txtar: str):
+    def install(
+        system_id: str,
+        gtfs_static_txtar,
+        config: str = shared.DEFAULT_SYSTEM_CONFIG,
+        realtime_update_period=3600000,
+    ):
         static_feed_url = source_server.create("", "/" + system_id + "/gtfs-static.zip")
         gtfs_static_txtar = shared.GTFS_STATIC_DEFAULT_TXTAR + gtfs_static_txtar
         source_server.put(static_feed_url, txtar.to_zip(gtfs_static_txtar))
@@ -150,23 +62,25 @@ def install_system_using_txtar(
             "", "/" + system_id + "/gtfs-realtime.gtfs"
         )
 
-        system_config = SYSTEM_1_CONFIG.format(
+        system_config = config.format(
+            system_name="Test System",
             static_feed_id=shared.GTFS_STATIC_FEED_ID,
             static_feed_url=f"{source_server_host_within_transiter}/{static_feed_url}",
             realtime_feed_id=shared.GTFS_REALTIME_FEED_ID,
             realtime_feed_url=f"{source_server_host_within_transiter}/{realtime_feed_url}",
-            realtime_periodic_update_period="3600000",
+            realtime_periodic_update_period=realtime_update_period,
         )
 
-        install_system(system_id, system_config)
+        transiter_client.install_system(system_id, system_config)
+
+        def delete():
+            transiter_client.delete_system(system_id)
+
+        request.addfinalizer(delete)
+
         return static_feed_url, realtime_feed_url
 
     return install
-
-
-@pytest.fixture
-def updated_gtfs_zip():
-    return get_zip("gtfsstatic_updated")
 
 
 @pytest.fixture

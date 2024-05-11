@@ -294,10 +294,10 @@ More detailed information on a feed -- its full configuration, and the
 | id | string | ID of the feed, as specified in the system configuration file.
 | resource | [Resource](public_resources.md#resource) | Generic metadata about the feed resource.
 | system | [System.Reference](public_resources.md#systemreference) | System corresponding to this feed. This is the parent resource in Transiter's resource hierarchy.
-| last_update_ms | int64 | Number of milliseconds since the last update of this feed finished. There are three outcomes for each update: successful (new data is retrieved from the transit agency and persisted), skipped (the transit agency returned the same data as the last update, so there is nothing to do), and failed (something went wrong, e.g. the transit agency's feed is unavailable).
-| last_successful_update_ms | int64 | Number of milliseconds since the last successful update of this feed finished.
-| last_skipped_update_ms | int64 | Number of milliseconds since the last skipped update of this feed finished.
-| last_failed_update_ms | int64 | Number of milliseconds since the last failed update of this feed finished.
+| last_update_ms | int64 | Unix milliseconds timestamp of when the last update of this feed finished. There are three outcomes for each update: successful (new data is retrieved from the transit agency and persisted), skipped (the transit agency returned the same data as the last update, so there is nothing to do), and failed (something went wrong, e.g. the transit agency's feed is unavailable).
+| last_successful_update_ms | int64 | Unix milliseconds timestamp of when the last successful update of this feed finished.
+| last_skipped_update_ms | int64 | Unix milliseconds timestamp of when the last skipped update of this feed finished.
+| last_failed_update_ms | int64 | Unix milliseconds timestamp of when the last failed update of this feed finished.
 
 
 
@@ -649,6 +649,8 @@ message](https://gtfs.org/realtime/reference/#message-stoptimeupdate).
 | ----- | ---- | ----------- |
 | stop | [Stop.Reference](public_resources.md#stopreference) | The stop.
 | trip | [Trip.Reference](public_resources.md#tripreference) | The trip.
+| destination | [Stop.Reference](public_resources.md#stopreference) | The last stop the trip calls at. Only populated for StopTime messages returned in Stops. For Trip messages, the destination can be determined from the list of stop times in the message.
+| vehicle | [Vehicle.Reference](public_resources.md#vehiclereference) | Vehicle corresponding to this trip, if set. Only populated for StopTime messages returned in Stops. For Trip messages, the vehicle is contained in the message itself.
 | arrival | [StopTime.EstimatedTime](public_resources.md#stoptimeestimatedtime) | Arrival time.
 | departure | [StopTime.EstimatedTime](public_resources.md#stoptimeestimatedtime) | Departure time.
 | future | bool | If this stop time is in the future. This field is *not* based on the arrival or departure time. Instead, a stop time is considered in the future if it appeared in the most recent GTFS realtime feed for its trip. When this stop time disappears from the trip, Transiter marks it as in the past and freezes its data.
@@ -825,8 +827,8 @@ Reference type for the trip resource.
 | id | string | Same as the parent message.
 | resource | [Resource](public_resources.md#resource) | Same as the parent message.
 | route | [Route.Reference](public_resources.md#routereference) | Same as the parent message.
-| destination | [Stop.Reference](public_resources.md#stopreference) | Same as the parent message.
-| vehicle | [Vehicle.Reference](public_resources.md#vehiclereference) | Same as the parent message.
+| destination | [Stop.Reference](public_resources.md#stopreference) | The last stop this trip calls at. This field is only populated in trip references in StopTime messages. It is deprecated in favor of the destination field on the StopTime message itself, and will be removed in v2.
+| vehicle | [Vehicle.Reference](public_resources.md#vehiclereference) | Vehicle corresponding to this trip. This field is only populated in trip references in StopTime messages. It is deprecated in favor of the destination field on the StopTime message itself, and will be removed in v2.
 | direction_id | bool | Same as the parent message.
 
 

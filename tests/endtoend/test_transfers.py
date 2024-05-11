@@ -1,48 +1,121 @@
 from . import client
+import pytest
 
 
-def test_transfers(
+STOP_1_ID = "stop-1-id"
+STOP_2_ID = "stop-2-id"
+STOP_3_ID = "stop-3-id"
+STOP_4_ID = "stop-4-id"
+STOP_5_ID = "stop-5-id"
+
+GTFS_STATIC_TXTAR = f"""
+-- stops.txt --
+stop_id,parent_station
+{STOP_1_ID},
+{STOP_2_ID},{STOP_1_ID}
+{STOP_3_ID},
+{STOP_4_ID},
+{STOP_5_ID},
+-- transfers.txt --
+from_stop_id,to_stop_id,transfer_type,min_transfer_time
+{STOP_1_ID},{STOP_3_ID},2,300
+{STOP_2_ID},{STOP_4_ID},1,200
+{STOP_4_ID},{STOP_2_ID},1,100
+"""
+
+TRANSFER_1 = client.Transfer(
+    id=f"{STOP_1_ID}_to_{STOP_3_ID}",
+    fromStop=client.StopReference(id=STOP_1_ID),
+    toStop=client.StopReference(id=STOP_3_ID),
+    type="REQUIRES_TIME",
+    minTransferTime=300,
+)
+TRANSFER_2 = client.Transfer(
+    id=f"{STOP_2_ID}_to_{STOP_4_ID}",
+    fromStop=client.StopReference(id=STOP_2_ID),
+    toStop=client.StopReference(id=STOP_4_ID),
+    type="TIMED",
+    minTransferTime=200,
+)
+TRANSFER_3 = client.Transfer(
+    id=f"{STOP_4_ID}_to_{STOP_2_ID}",
+    fromStop=client.StopReference(id=STOP_4_ID),
+    toStop=client.StopReference(id=STOP_2_ID),
+    type="TIMED",
+    minTransferTime=100,
+)
+
+
+def test_get_system(
     system_id,
-    install_system_1,
+    install_system,
     transiter_client: client.TransiterClient,
 ):
-    install_system_1(system_id)
+    install_system(system_id, GTFS_STATIC_TXTAR)
 
     system = transiter_client.get_system(system_id)
-    assert system.transfers.count == 3
+    assert system.transfers == client.ChildResources(
+        count=3, path=f"systems/{system_id}/transfers"
+    )
 
-    want_transfers = [
-        client.Transfer(
-            id="1E_to_2MEX",
-            fromStop=client.StopReference(id="1E"),
-            toStop=client.StopReference(id="2MEX"),
-            type="REQUIRES_TIME",
-            minTransferTime=200,
-        ),
-        client.Transfer(
-            id="2COL_to_1C",
-            fromStop=client.StopReference(id="2COL"),
-            toStop=client.StopReference(id="1C"),
-            type="TIMED",
-            minTransferTime=300,
-        ),
-        client.Transfer(
-            id="2MEX_to_1E",
-            fromStop=client.StopReference(id="2MEX"),
-            toStop=client.StopReference(id="1E"),
-            type="REQUIRES_TIME",
-            minTransferTime=200,
-        ),
-    ]
+
+def test_list_transfers(
+    system_id,
+    install_system,
+    transiter_client: client.TransiterClient,
+):
+    install_system(system_id, GTFS_STATIC_TXTAR)
+
     got_list_transfers = transiter_client.list_transfers(system_id)
-    assert got_list_transfers.transfers == want_transfers
+    assert got_list_transfers.transfers == [
+        TRANSFER_1,
+        TRANSFER_2,
+        TRANSFER_3,
+    ]
 
-    for want_transfer in want_transfers:
+
+def test_get_transfer(
+    system_id,
+    install_system,
+    transiter_client: client.TransiterClient,
+):
+    install_system(system_id, GTFS_STATIC_TXTAR)
+
+    for want_transfer in [
+        TRANSFER_1,
+        TRANSFER_2,
+        TRANSFER_3,
+    ]:
         got_transfer = transiter_client.get_transfer(system_id, want_transfer.id)
         assert got_transfer == want_transfer
 
-    stop_1 = transiter_client.get_stop(system_id, "2COL")
-    assert stop_1.transfers == [want_transfers[1]]
 
-    stop_2 = transiter_client.get_stop(system_id, "2MEX")
-    assert stop_2.transfers == [want_transfers[2]]
+@pytest.mark.parametrize(
+    "stop_id,want_transfers",
+    [
+        # No transfers
+        (STOP_5_ID, []),
+        # Single simple transfer
+        (STOP_4_ID, [TRANSFER_3]),
+        # The next two cases indicate a bug in Transiter.
+        # Transfers for stations apply to all child stops, but not the other way around.
+        # When querying transfers for stop 1, the transfers for stop 2 should _not_ be returned.
+        # When querying transfers for stop 2, the transfers for stop 1 _should_ be returned.
+        # TODO: fix the bug
+        (STOP_1_ID, [TRANSFER_1, TRANSFER_2]),
+        (STOP_2_ID, [TRANSFER_2]),
+    ],
+)
+def test_transfers_at_stop(
+    system_id,
+    install_system,
+    transiter_client: client.TransiterClient,
+    stop_id,
+    want_transfers,
+):
+    install_system(system_id, GTFS_STATIC_TXTAR)
+
+    stop = transiter_client.get_stop(system_id, stop_id)
+    # TODO: transfers are not returned in order. This is bug.
+    stop.transfers.sort(key=lambda transfer: transfer.id)
+    assert stop.transfers == want_transfers

@@ -55,10 +55,10 @@ PARENT_STOP = client.Stop(
 
 def test_stop(
     system_id,
-    install_system_using_txtar,
+    install_system,
     transiter_client: client.TransiterClient,
 ):
-    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    install_system(system_id, GTFS_STATIC_TXTAR)
 
     got_system = transiter_client.get_system(system_id)
     assert got_system.stops == client.ChildResources(
@@ -93,12 +93,12 @@ SEARCH_LONGITUDE = -73.9871
 )
 def test_geographic_search(
     system_id,
-    install_system_using_txtar,
+    install_system,
     transiter_client: client.TransiterClient,
     search_distance,
     want_stops,
 ):
-    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    install_system(system_id, GTFS_STATIC_TXTAR)
 
     # First we verify that the child stop is between 0.9 and 1km of the search point.
     stop_lat_lon = (CHILD_STOP.latitude, CHILD_STOP.longitude)
@@ -119,7 +119,7 @@ def test_geographic_search(
 
 def test_list_stops_pagination(
     system_id,
-    install_system_using_txtar,
+    install_system,
     transiter_client: client.TransiterClient,
 ):
     def stop_id(i):
@@ -132,7 +132,7 @@ def test_list_stops_pagination(
     for i in range(150):
         gtfs_static_txtar += stop_id(i) + "\n"
 
-    install_system_using_txtar(system_id, gtfs_static_txtar)
+    install_system(system_id, gtfs_static_txtar)
 
     got_all_stops = transiter_client.list_stops(system_id)
     got_stop_ids = [stop.id for stop in got_all_stops.stops]

@@ -19,7 +19,7 @@ RouteID1,RouteColor3,RouteTextColor3,RouteShortName3,RouteLongName3,RouteDesc3,3
 
 def test_route(
     system_id,
-    install_system_using_txtar,
+    install_system,
     transiter_client: client.TransiterClient,
 ):
     route_1 = client.Route(
@@ -52,7 +52,7 @@ def test_route(
         serviceMaps=[],
         alerts=[],
     )
-    install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    install_system(system_id, GTFS_STATIC_TXTAR)
 
     got_system = transiter_client.get_system(system_id)
     assert got_system.routes == client.ChildResources(
@@ -71,7 +71,7 @@ def test_route(
 
 def test_update(
     system_id,
-    install_system_using_txtar,
+    install_system,
     source_server,
     transiter_client: client.TransiterClient,
 ):
@@ -90,7 +90,7 @@ def test_update(
         serviceMaps=[],
         alerts=[],
     )
-    static_feed_url, _ = install_system_using_txtar(system_id, GTFS_STATIC_TXTAR)
+    static_feed_url, _ = install_system(system_id, GTFS_STATIC_TXTAR)
     source_server.put(
         static_feed_url,
         txtar.to_zip(shared.GTFS_STATIC_DEFAULT_TXTAR + GTFS_STATIC_TXTAR_UPDATED),

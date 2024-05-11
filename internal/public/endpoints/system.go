@@ -63,10 +63,10 @@ func buildApiSystems(ctx context.Context, r *Context, systems []db.System) ([]*a
 			Name:      system.Name,
 			Status:    api.System_Status(api.System_Status_value[strings.ToUpper(system.Status)]),
 			Agencies:  r.Reference.AgenciesChildResources(system.ID, numAgencies),
-			Feeds:     &api.ChildResources{Count: numFeeds, Url: r.Reference.FeedsURL(system.ID)},
+			Feeds:     r.Reference.FeedsChildResources(system.ID, numFeeds),
 			Routes:    r.Reference.RoutesChildResources(system.ID, numRoutes),
 			Stops:     r.Reference.StopsChildResources(system.ID, numStops),
-			Transfers: &api.ChildResources{Count: numTransfers, Url: r.Reference.TransfersURL(system.ID)},
+			Transfers: r.Reference.TransfersChildResources(system.ID, numTransfers),
 		})
 	}
 	return apiSystems, nil

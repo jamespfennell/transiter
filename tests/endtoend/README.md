@@ -1,12 +1,11 @@
 # Transiter end to end tests
 
-The end to end tests simulate real world usage of Transiter.
-In the tests, Transiter is running as it would in production
-and various standard operations (installing transit systems, performing feed updates,
- querying the resulting data)
-are performed and verified.
-Because the test closely resembles actual usage, these tests are really
-valuable for ensuring the correctness of the software.
+In the end-to-end tests, Transiter is running as it would in production
+    and various standard operations
+    (installing transit systems, performing feed updates, querying the resulting data)
+    are performed and verified.
+Because the tests closely resemble actual usage, these tests are really
+    valuable for ensuring Transiter's correctness.
 
 The tests are written in Python, which is an artifact of Transiter originally being written in Python, too.
 However, the intent is to keep the tests in Python because the language difference
@@ -82,9 +81,13 @@ First launch Transiter, Postgres and the source server:
 
     docker-compose -f tests/endtoend/compose.yml up --build sourceserver transiter db
 
-Then in another terminal run the tests:
+Then in another terminal run the tests with either:
 
     docker-compose -f tests/endtoend/compose.yml up --build testrunner
+
+Or assuming all the Python dependencies are installed:
+
+    SOURCE_SERVER_HOST_WITHIN_TRANSITER=http://sourceserver:8090 pytest
 
 ## Writing new tests
 

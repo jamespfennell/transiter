@@ -923,6 +923,14 @@ message StopTime {
   Stop.Reference stop = 1;
   // The trip.
   Trip.Reference trip = 2;
+  // The last stop the trip calls at.
+  // Only populated for StopTime messages returned in Stops.
+  // For Trip messages, the destination can be determined from the list of stop times in the message.
+  Stop.Reference destination = 9;
+  // Vehicle corresponding to this trip, if set.
+  // Only populated for StopTime messages returned in Stops.
+  // For Trip messages, the vehicle is contained in the message itself.
+  optional Vehicle.Reference vehicle = 10;
 
   // Message describing the arrival or departure time of a stop time.
   // This corresponds to the [GTFS realtime `StopTimeEvent`
@@ -988,10 +996,16 @@ message Trip {
     Resource resource = 2;
     // Same as the parent message.
     Route.Reference route = 3;
-    // Same as the parent message.
-    Stop.Reference destination = 4;
-    // Same as the parent message.
-    optional Vehicle.Reference vehicle = 5;
+    // The last stop this trip calls at.
+    // This field is only populated in trip references in StopTime messages.
+    // It is deprecated in favor of the destination field on the StopTime message itself,
+    //    and will be removed in v2.
+    Stop.Reference destination = 4 [deprecated = true];
+    // Vehicle corresponding to this trip.
+    // This field is only populated in trip references in StopTime messages.
+    // It is deprecated in favor of the destination field on the StopTime message itself,
+    //    and will be removed in v2.
+    optional Vehicle.Reference vehicle = 5 [deprecated=true];
     // Same as the parent message.
     bool direction_id = 6;
   }
@@ -1213,20 +1227,20 @@ message Feed {
   // This is the parent resource in Transiter's resource hierarchy.
   System.Reference system = 3;
 
-  // Number of milliseconds since the last update of this feed finished.
+  // Unix milliseconds timestamp of when the last update of this feed finished.
   // There are three outcomes for each update:
   //    successful (new data is retrieved from the transit agency and persisted),
   //    skipped (the transit agency returned the same data as the last update, so there is nothing to do),
   //    and failed (something went wrong, e.g. the transit agency's feed is unavailable).
   optional int64 last_update_ms = 4;
 
-  // Number of milliseconds since the last successful update of this feed finished.
+  // Unix milliseconds timestamp of when the last successful update of this feed finished.
   optional int64 last_successful_update_ms = 5;
   
-  // Number of milliseconds since the last skipped update of this feed finished.
+  // Unix milliseconds timestamp of when the last skipped update of this feed finished.
   optional int64 last_skipped_update_ms = 6;
   
-  // Number of milliseconds since the last failed update of this feed finished.
+  // Unix milliseconds timestamp of when the last failed update of this feed finished.
   optional int64 last_failed_update_ms = 7;
 
   // Reference type for the feed resource.

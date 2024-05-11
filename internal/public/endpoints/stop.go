@@ -436,10 +436,13 @@ func buildStopPkToApiStopsTimes(
 				nil,
 				stopTime.DirectionID.Bool,
 			),
-			Stop: stopPkToApiPreview[stopTime.StopPk],
+			Destination: tripPkToDestination[stopTime.TripPk],
+			Stop:        stopPkToApiPreview[stopTime.StopPk],
 		}
 		if stopTime.VehicleID.Valid {
-			apiStopTime.Trip.Vehicle = r.Reference.Vehicle(stopTime.VehicleID.String, systemID)
+			vehicle := r.Reference.Vehicle(stopTime.VehicleID.String, systemID)
+			apiStopTime.Trip.Vehicle = vehicle
+			apiStopTime.Vehicle = vehicle
 		}
 
 		m[stopTime.StopPk] = append(m[stopTime.StopPk], apiStopTime)
@@ -467,9 +470,11 @@ func buildStopPkToApiHeadsignRules(data rawStopData, stopPkToApiPreview map[int6
 func liftToAncestors[T any](data rawStopData, in map[int64][]T) map[int64][]T {
 	out := map[int64][]T{}
 	for stopPk, descendentPks := range data.stopPkToDescendentPks {
+		var s []T
 		for descendentPk := range descendentPks {
-			out[stopPk] = append(out[stopPk], in[descendentPk]...)
+			s = append(s, in[descendentPk]...)
 		}
+		out[stopPk] = s
 	}
 	return out
 }
