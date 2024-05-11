@@ -441,6 +441,7 @@ func buildStopPkToApiStopsTimes(
 		}
 		if stopTime.VehicleID.Valid {
 			vehicle := r.Reference.Vehicle(stopTime.VehicleID.String, systemID)
+			//lint:ignore SA1019 we still populate the deprecated field until v2
 			apiStopTime.Trip.Vehicle = vehicle
 			apiStopTime.Vehicle = vehicle
 		}
