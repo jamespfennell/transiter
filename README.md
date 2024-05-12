@@ -87,10 +87,10 @@ The next step is install one!
 transiter install us-ca-bart
 ```
 
-**New York City subway**: If you have an [MTA API key](https://api.mta.info/#/landing):
+**New York City subway**:
 
 ```
-transiter install --arg mta_api_key=$MTA_API_KEY us-ny-subway
+transiter install us-ny-subway
 ```
 
 In either case, the server logs will show GTFS feed updates happening every few seconds,
