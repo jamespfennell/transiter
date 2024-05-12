@@ -90,7 +90,7 @@ SELECT trip_stop_time.*,
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
     AND NOT trip_stop_time.past
-    ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time;
+    ORDER BY COALESCE(trip_stop_time.arrival_time, trip_stop_time.departure_time);
 
 -- name: ListStopsByPk :many
 SELECT stop.pk, stop.id stop_id, stop.name, system.id system_id

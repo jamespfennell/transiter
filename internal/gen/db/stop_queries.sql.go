@@ -306,7 +306,7 @@ SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_s
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
     WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
     AND NOT trip_stop_time.past
-    ORDER BY trip_stop_time.departure_time, trip_stop_time.arrival_time
+    ORDER BY COALESCE(trip_stop_time.arrival_time, trip_stop_time.departure_time)
 `
 
 type ListTripStopTimesByStopsRow struct {
