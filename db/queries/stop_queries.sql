@@ -68,7 +68,7 @@ WITH distance AS (
 )
 SELECT stop.* FROM stop
 INNER JOIN distance ON stop.pk = distance.stop_pk
-WHERE stop.system_pk = sqlc.arg(system_pk) 
+WHERE stop.system_pk = sqlc.arg(system_pk)
     AND distance.distance <= 1000 * sqlc.arg(max_distance)::float
 ORDER by distance.distance
 LIMIT sqlc.arg(max_results);
@@ -84,10 +84,15 @@ SELECT trip_stop_time.*,
        trip.*, vehicle.id vehicle_id,
        vehicle.location::geography vehicle_location,
        vehicle.bearing vehicle_bearing,
-       vehicle.updated_at vehicle_updated_at
+       vehicle.updated_at vehicle_updated_at,
+       COALESCE(scheduled_trip_stop_time.headsign, scheduled_trip.headsign) scheduled_trip_headsign
     FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+    LEFT JOIN scheduled_trip ON scheduled_trip.id = trip.id AND scheduled_trip.route_pk = trip.route_pk
+    LEFT JOIN scheduled_trip_stop_time ON scheduled_trip_stop_time.trip_pk = scheduled_trip.pk AND
+                                          scheduled_trip_stop_time.stop_pk = trip_stop_time.stop_pk AND
+                                          scheduled_trip_stop_time.stop_sequence = trip_stop_time.stop_sequence
     WHERE trip_stop_time.stop_pk = ANY(sqlc.arg(stop_pks)::bigint[])
     AND NOT trip_stop_time.past
     ORDER BY COALESCE(trip_stop_time.arrival_time, trip_stop_time.departure_time);

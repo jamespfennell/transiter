@@ -2,6 +2,7 @@ import pytest
 from . import gtfs_realtime_pb2 as gtfs
 from . import shared
 from . import client
+from . import gtfs_utils
 
 STOP_1 = "stop-1"
 STOP_2 = "stop-2"
@@ -109,10 +110,13 @@ class TestTrip:
         ]:
             source_server.put(
                 realtime_feed_url,
-                build_gtfs_rt_message(
+                gtfs_utils.build_gtfs_rt_trip_update_message(
+                    TRIP_1_ID,
+                    ROUTE_ID,
                     time_at_update,
                     stop_id_to_time,
                     use_stop_sequences,
+                    25,
                 ).SerializeToString(),
             )
             transiter_client.perform_feed_update(
@@ -180,10 +184,13 @@ class TestTrip:
         ]:
             source_server.put(
                 realtime_feed_url,
-                build_gtfs_rt_message(
+                gtfs_utils.build_gtfs_rt_trip_update_message(
+                    TRIP_1_ID,
+                    ROUTE_ID,
                     time_at_update,
                     stop_id_to_time,
                     use_stop_sequences,
+                    25,
                 ).SerializeToString(),
             )
             transiter_client.perform_feed_update(
@@ -242,40 +249,6 @@ class TestTrip:
             stop_time.stopSequence = None
 
         assert got_trip == want_trip
-
-
-def build_gtfs_rt_message(
-    current_time,
-    stop_id_to_time,
-    use_stop_sequences,
-):
-    return gtfs.FeedMessage(
-        header=gtfs.FeedHeader(gtfs_realtime_version="2.0", timestamp=current_time),
-        entity=[
-            gtfs.FeedEntity(
-                id="1",
-                trip_update=gtfs.TripUpdate(
-                    trip=gtfs.TripDescriptor(
-                        trip_id=TRIP_1_ID, route_id=ROUTE_ID, direction_id=True
-                    ),
-                    stop_time_update=[
-                        gtfs.TripUpdate.StopTimeUpdate(
-                            arrival=gtfs.TripUpdate.StopTimeEvent(time=time),
-                            departure=gtfs.TripUpdate.StopTimeEvent(time=time + 15),
-                            stop_id=stop_id,
-                            stop_sequence=(
-                                stop_sequence + 25 if use_stop_sequences else None
-                            ),
-                        )
-                        for stop_sequence, (stop_id, time) in enumerate(
-                            stop_id_to_time.items()
-                        )
-                        if time >= current_time
-                    ],
-                ),
-            )
-        ],
-    )
 
 
 @pytest.mark.parametrize("data_present", ["arrival", "departure"])

@@ -237,7 +237,7 @@ WITH distance AS (
 )
 SELECT stop.pk, stop.id, stop.system_pk, stop.parent_stop_pk, stop.name, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id, stop.feed_pk, stop.location FROM stop
 INNER JOIN distance ON stop.pk = distance.stop_pk
-WHERE stop.system_pk = $1 
+WHERE stop.system_pk = $1
     AND distance.distance <= 1000 * $2::float
 ORDER by distance.distance
 LIMIT $3
@@ -300,40 +300,46 @@ SELECT trip_stop_time.pk, trip_stop_time.stop_pk, trip_stop_time.trip_pk, trip_s
        trip.pk, trip.id, trip.route_pk, trip.direction_id, trip.started_at, trip.gtfs_hash, trip.feed_pk, vehicle.id vehicle_id,
        vehicle.location::geography vehicle_location,
        vehicle.bearing vehicle_bearing,
-       vehicle.updated_at vehicle_updated_at
+       vehicle.updated_at vehicle_updated_at,
+       COALESCE(scheduled_trip_stop_time.headsign, scheduled_trip.headsign) scheduled_trip_headsign
     FROM trip_stop_time
     INNER JOIN trip ON trip_stop_time.trip_pk = trip.pk
     LEFT JOIN vehicle ON vehicle.trip_pk = trip.pk
+    LEFT JOIN scheduled_trip ON scheduled_trip.id = trip.id AND scheduled_trip.route_pk = trip.route_pk
+    LEFT JOIN scheduled_trip_stop_time ON scheduled_trip_stop_time.trip_pk = scheduled_trip.pk AND
+                                          scheduled_trip_stop_time.stop_pk = trip_stop_time.stop_pk AND
+                                          scheduled_trip_stop_time.stop_sequence = trip_stop_time.stop_sequence
     WHERE trip_stop_time.stop_pk = ANY($1::bigint[])
     AND NOT trip_stop_time.past
     ORDER BY COALESCE(trip_stop_time.arrival_time, trip_stop_time.departure_time)
 `
 
 type ListTripStopTimesByStopsRow struct {
-	Pk                   int64
-	StopPk               int64
-	TripPk               int64
-	ArrivalTime          pgtype.Timestamptz
-	ArrivalDelay         pgtype.Int4
-	ArrivalUncertainty   pgtype.Int4
-	DepartureTime        pgtype.Timestamptz
-	DepartureDelay       pgtype.Int4
-	DepartureUncertainty pgtype.Int4
-	StopSequence         int32
-	Track                pgtype.Text
-	Headsign             pgtype.Text
-	Past                 bool
-	Pk_2                 int64
-	ID                   string
-	RoutePk              int64
-	DirectionID          pgtype.Bool
-	StartedAt            pgtype.Timestamptz
-	GtfsHash             string
-	FeedPk               int64
-	VehicleID            pgtype.Text
-	VehicleLocation      types.Geography
-	VehicleBearing       pgtype.Float4
-	VehicleUpdatedAt     pgtype.Timestamptz
+	Pk                    int64
+	StopPk                int64
+	TripPk                int64
+	ArrivalTime           pgtype.Timestamptz
+	ArrivalDelay          pgtype.Int4
+	ArrivalUncertainty    pgtype.Int4
+	DepartureTime         pgtype.Timestamptz
+	DepartureDelay        pgtype.Int4
+	DepartureUncertainty  pgtype.Int4
+	StopSequence          int32
+	Track                 pgtype.Text
+	Headsign              pgtype.Text
+	Past                  bool
+	Pk_2                  int64
+	ID                    string
+	RoutePk               int64
+	DirectionID           pgtype.Bool
+	StartedAt             pgtype.Timestamptz
+	GtfsHash              string
+	FeedPk                int64
+	VehicleID             pgtype.Text
+	VehicleLocation       types.Geography
+	VehicleBearing        pgtype.Float4
+	VehicleUpdatedAt      pgtype.Timestamptz
+	ScheduledTripHeadsign pgtype.Text
 }
 
 func (q *Queries) ListTripStopTimesByStops(ctx context.Context, stopPks []int64) ([]ListTripStopTimesByStopsRow, error) {
@@ -370,6 +376,7 @@ func (q *Queries) ListTripStopTimesByStops(ctx context.Context, stopPks []int64)
 			&i.VehicleLocation,
 			&i.VehicleBearing,
 			&i.VehicleUpdatedAt,
+			&i.ScheduledTripHeadsign,
 		); err != nil {
 			return nil, err
 		}
