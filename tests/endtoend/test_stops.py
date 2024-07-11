@@ -1,5 +1,7 @@
 from haversine import haversine
+from . import shared
 from . import client
+from . import gtfs_utils
 import pytest
 
 
@@ -148,3 +150,123 @@ def test_list_stops_pagination(
     got_stop_ids = [stop.id for stop in got_all_stops.stops]
     assert got_stop_ids == [stop_id(i) for i in range(100, 150)]
     assert got_all_stops.nextId == None
+
+def test_trip_headsigns(
+    system_id,
+    install_system,
+    transiter_client: client.TransiterClient,
+    source_server: shared.SourceServerClient,):
+
+    stop_1 = "stop_1_id"
+    stop_2 = "stop_2_id"
+    route_1_id = "route_id_1"
+    route_2_id = "route_id_2"
+    trip_1_id = "trip_1_id"
+    trip_2_id = "trip_2_id"
+    gtfs_static_txtar = f"""
+    -- stops.txt --
+    stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,stop_code,stop_desc,zone_id,stop_url,stop_timezone,wheelchair_boarding,level_id,platform_code
+    {stop_1},,30,50,1,,,,,,,,,
+    {stop_2},,80,90,1,,,,,,,,,
+    -- agency.txt --
+    agency_id,agency_name,agency_url,agency_timezone
+    AgencyID,AgencyName,AgencyURL,AgencyTimezone
+    -- calendar.txt --
+    service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+    Weekday,1,1,1,1,1,0,0,20180101,20181231
+    -- routes.txt --
+    route_id,route_type
+    {route_1_id},2
+    {route_2_id},2
+    -- trips.txt --
+    route_id,service_id,trip_id,direction_id,trip_headsign
+    {route_1_id},Weekday,{trip_1_id},1,headsign_1
+    {route_2_id},Weekday,{trip_2_id},1,headsign_2
+    -- stop_times.txt --
+    trip_id,arrival_time,departure_time,stop_id,direction_id,stop_sequence,stop_headsign
+    {trip_1_id},11:00:00,11:00:10,{stop_1},1,0,
+    {trip_1_id},11:02:00,11:02:10,{stop_2},1,1,
+    {trip_2_id},11:00:00,11:00:10,{stop_1},1,0,headsign_3
+    {trip_2_id},11:02:00,11:02:10,{stop_2},1,1,headsign_4
+    """
+
+    __, realtime_feed_url = install_system(system_id, gtfs_static_txtar)
+
+    trip_1_timetable = {
+        stop_1: 300,
+        stop_2: 600,
+    }
+
+    trip_2_timetable = {
+        stop_1: 700,
+        stop_2: 800,
+    }
+
+    # Add trip 1 times
+    update_msg = gtfs_utils.build_gtfs_rt_trip_update_message(
+            trip_1_id,
+            route_1_id,
+            0,
+            trip_1_timetable,
+            True,
+        )
+    # Append trip 2 times
+    trip_2_entity = gtfs_utils.build_gtfs_rt_trip_update_message(
+            trip_2_id,
+            route_2_id,
+            0,
+            trip_2_timetable,
+            True,
+            feed_id="2",
+        ).entity
+    update_msg.entity.extend(trip_2_entity)
+
+    # Perform the feed update
+    source_server.put(realtime_feed_url, update_msg.SerializeToString())
+    transiter_client.perform_feed_update(
+        system_id, shared.GTFS_REALTIME_FEED_ID
+    )
+
+    # Validate headsigns at STOP_1
+    stop_1 = transiter_client.get_stop(system_id, stop_1)
+    stop_1_stop_times = stop_1.stopTimes
+    trip_1_stop_times = [
+        stop_time
+        for stop_time in stop_1_stop_times
+        if stop_time.trip.id == trip_1_id
+    ]
+    trip_2_stop_times = [
+        stop_time
+        for stop_time in stop_1_stop_times
+        if stop_time.trip.id == trip_2_id
+    ]
+
+    assert len(trip_1_stop_times) == 1
+    assert trip_1_stop_times[0].headsign == "headsign_1"
+
+    # Trip 2 has a headsign "headsign_2" defined in trips.txt,
+    # but the stop_times.txt file overrides it with "headsign_3
+    assert len(trip_2_stop_times) == 1
+    assert trip_2_stop_times[0].headsign == "headsign_3"
+
+    # Validate headsigns at STOP_2
+    stop_2 = transiter_client.get_stop(system_id, stop_2)
+    stop_2_stop_times = stop_2.stopTimes
+    trip_1_stop_times = [
+        stop_time
+        for stop_time in stop_2_stop_times
+        if stop_time.trip.id == trip_1_id
+    ]
+    trip_2_stop_times = [
+        stop_time
+        for stop_time in stop_2_stop_times
+        if stop_time.trip.id == trip_2_id
+    ]
+
+    assert len(trip_1_stop_times) == 1
+    assert trip_1_stop_times[0].headsign == "headsign_1"
+
+    # Trip 2 has a headsign "headsign_2" defined in trips.txt,
+    # but the stop_times.txt file overrides it with "headsign_4
+    assert len(trip_2_stop_times) == 1
+    assert trip_2_stop_times[0].headsign == "headsign_4"

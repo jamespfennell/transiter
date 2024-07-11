@@ -422,11 +422,18 @@ func buildStopPkToApiStopsTimes(
 	}
 	for i := range data.stopTimes {
 		stopTime := &data.stopTimes[i]
+		headsign := stopTime.Headsign
+		// If the headsign is not calculated from realtime trip data,
+		// try to fall back to the scheduled trip headsign
+		if !headsign.Valid {
+			headsign = stopTime.ScheduledTripHeadsign
+		}
+
 		apiStopTime := &api.StopTime{
 			StopSequence: stopTime.StopSequence,
 			Track:        convert.SQLNullString(stopTime.Track),
 			Future:       !stopTime.Past,
-			Headsign:     convert.SQLNullString(stopTime.Headsign),
+			Headsign:     convert.SQLNullString(headsign),
 			Arrival:      buildEstimatedTime(stopTime.ArrivalTime, stopTime.ArrivalDelay, stopTime.ArrivalUncertainty),
 			Departure:    buildEstimatedTime(stopTime.DepartureTime, stopTime.DepartureDelay, stopTime.DepartureUncertainty),
 			Trip: r.Reference.Trip(

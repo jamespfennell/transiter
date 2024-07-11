@@ -4,23 +4,38 @@ import typing
 import time
 
 
+@dataclasses.dataclass
 class ApiType:
     @classmethod
     def from_api(cls, api_response):
         d = {}
         for field in dataclasses.fields(cls):
             value = api_response.get(field.name)
-            if typing.get_origin(field.type) is list:
-                element_type = typing.get_args(field.type)[0]
+            field_type = field.type
+
+            # Handle Optional types
+            if typing.get_origin(field_type) is typing.Union:
+                args = typing.get_args(field_type)
+                if len(args) == 2 and type(None) in args:
+                    field_type = args[0] if args[1] is type(None) else args[1]
+            if typing.get_origin(field_type) is list:
+                element_type = typing.get_args(field_type)[0]
                 assert issubclass(element_type, ApiType)
-                value = [element_type.from_api(elem) for elem in value]
-            elif issubclass(field.type, ApiType):
+                value = [element_type.from_api(elem) for elem in value] if value is not None else None
+            elif issubclass(field_type, ApiType):
                 if value is not None:
-                    value = field.type.from_api(value)
-            elif issubclass(field.type, int):
+                    value = field_type.from_api(value)
+            elif field_type is int:
                 if value is not None:
                     value = int(value)
+            elif field_type is str:
+                if value is not None:
+                    value = str(value)
+            elif field_type is float:
+                if value is not None:
+                    value = float(value)
             d[field.name] = value
+
         return cls(**d)
 
 
@@ -196,6 +211,7 @@ class StopTime(ApiType):
     departure: EstimatedTime
     stopSequence: int
     future: bool
+    headsign: typing.Optional[str] = None
 
 
 @dataclasses.dataclass
