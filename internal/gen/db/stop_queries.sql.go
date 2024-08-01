@@ -29,6 +29,17 @@ func (q *Queries) DeleteStaleStops(ctx context.Context, arg DeleteStaleStopsPara
 	return err
 }
 
+const deleteWheelchairBoardingForSystem = `-- name: DeleteWheelchairBoardingForSystem :exec
+UPDATE stop
+SET wheelchair_boarding = NULL
+WHERE system_pk = $1
+`
+
+func (q *Queries) DeleteWheelchairBoardingForSystem(ctx context.Context, systemPk int64) error {
+	_, err := q.db.Exec(ctx, deleteWheelchairBoardingForSystem, systemPk)
+	return err
+}
+
 const getStop = `-- name: GetStop :one
 SELECT stop.pk, stop.id, stop.system_pk, stop.parent_stop_pk, stop.name, stop.url, stop.code, stop.description, stop.platform_code, stop.timezone, stop.type, stop.wheelchair_boarding, stop.zone_id, stop.feed_pk, stop.location FROM stop
     INNER JOIN system ON stop.system_pk = system.pk
@@ -633,5 +644,21 @@ type UpdateStop_ParentParams struct {
 
 func (q *Queries) UpdateStop_Parent(ctx context.Context, arg UpdateStop_ParentParams) error {
 	_, err := q.db.Exec(ctx, updateStop_Parent, arg.ParentStopPk, arg.Pk)
+	return err
+}
+
+const updateWheelchairBoardingForStop = `-- name: UpdateWheelchairBoardingForStop :exec
+UPDATE stop
+SET wheelchair_boarding = $1
+WHERE pk = $2
+`
+
+type UpdateWheelchairBoardingForStopParams struct {
+	WheelchairBoarding pgtype.Bool
+	StopPk             int64
+}
+
+func (q *Queries) UpdateWheelchairBoardingForStop(ctx context.Context, arg UpdateWheelchairBoardingForStopParams) error {
+	_, err := q.db.Exec(ctx, updateWheelchairBoardingForStop, arg.WheelchairBoarding, arg.StopPk)
 	return err
 }
