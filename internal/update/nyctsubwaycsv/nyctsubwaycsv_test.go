@@ -113,10 +113,10 @@ func TestUpdate(t *testing.T) {
 			wantStops: []db.Stop{
 
 				{
-					ID:       "103",
-					Name:     pgtype.Text{String: "238 St", Valid: true},
-					Type:     "STATION",
-					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
+					ID:                 "103",
+					Name:               pgtype.Text{String: "238 St", Valid: true},
+					Type:               "STATION",
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
 				},
 				{
 					ID:       "103N",
@@ -131,10 +131,11 @@ func TestUpdate(t *testing.T) {
 					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
 				},
 				{
-					ID:       "A25",
-					Name:     pgtype.Text{String: "50 St", Valid: true},
-					Type:     "STATION",
-					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
+					ID:                 "A25",
+					Name:               pgtype.Text{String: "50 St", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Bool: true, Valid: true},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
 				},
 				{
 					ID:                 "A25N",
@@ -151,10 +152,11 @@ func TestUpdate(t *testing.T) {
 					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
 				},
 				{
-					ID:       "R01",
-					Name:     pgtype.Text{String: "Astoria-Ditmars Blvd", Valid: true},
-					Type:     "STATION",
-					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
+					ID:                 "R01",
+					Name:               pgtype.Text{String: "Astoria-Ditmars Blvd", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: true},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
 				},
 				{
 					ID:                 "R01N",
@@ -171,10 +173,11 @@ func TestUpdate(t *testing.T) {
 					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
 				},
 				{
-					ID:       "R03",
-					Name:     pgtype.Text{String: "Astoria Blvd", Valid: true},
-					Type:     "STATION",
-					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
+					ID:                 "R03",
+					Name:               pgtype.Text{String: "Astoria Blvd", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Bool: true, Valid: true},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
 				},
 				{
 					ID:                 "R03N",
@@ -191,10 +194,11 @@ func TestUpdate(t *testing.T) {
 					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
 				},
 				{
-					ID:       "R15",
-					Name:     pgtype.Text{String: "49 St", Valid: true},
-					Type:     "STATION",
-					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.984139, Latitude: 40.759901},
+					ID:                 "R15",
+					Name:               pgtype.Text{String: "49 St", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Bool: true, Valid: true},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.984139, Latitude: 40.759901},
 				},
 				{
 					ID:                 "R15N",

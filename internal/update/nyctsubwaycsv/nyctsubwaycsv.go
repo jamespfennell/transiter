@@ -53,6 +53,16 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *NyctSubwa
 	if err := updateCtx.Querier.DeleteWheelchairBoardingForSystem(ctx, updateCtx.SystemPk); err != nil {
 		return err
 	}
+
+	stopIDs = nil
+	for _, stopAccessibilityInfo := range data.stopAccessibilityData {
+		stopIDs = append(stopIDs, stopAccessibilityInfo.stopID)
+	}
+	stopIDToPk, err = dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDs)
+	if err != nil {
+		return err
+	}
+
 	for _, stopAccessibilityInfo := range data.stopAccessibilityData {
 		stopPk, ok := stopIDToPk[stopAccessibilityInfo.stopID]
 		if !ok {
