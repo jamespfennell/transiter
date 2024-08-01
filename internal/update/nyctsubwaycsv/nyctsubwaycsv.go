@@ -8,18 +8,20 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jamespfennell/gtfs"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/db"
 	"github.com/jamespfennell/transiter/internal/update/common"
 )
 
-func Update(ctx context.Context, updateCtx common.UpdateContext, rules []StopHeadsignRule) error {
+func Update(ctx context.Context, updateCtx common.UpdateContext, data *NyctSubwayStopCsvData) error {
 	if err := updateCtx.Querier.DeleteStopHeadsignRules(ctx, updateCtx.FeedPk); err != nil {
 		return err
 	}
 	stopIDsSet := map[string]bool{}
 	var stopIDs []string
+	rules := data.stopHeadsignRules
 	for _, rule := range rules {
 		if stopIDsSet[rule.stopID] {
 			continue
@@ -46,7 +48,30 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, rules []StopHea
 			return err
 		}
 	}
+
+	// Update stop ADA info, which is not currently included in the static GTFS feed
+	if err := updateCtx.Querier.DeleteWheelchairBoardingForSystem(ctx, updateCtx.SystemPk); err != nil {
+		return err
+	}
+	for _, stopAccessibilityInfo := range data.stopAccessibilityData {
+		stopPk, ok := stopIDToPk[stopAccessibilityInfo.stopID]
+		if !ok {
+			continue
+		}
+		if err := updateCtx.Querier.UpdateWheelchairBoardingForStop(ctx, db.UpdateWheelchairBoardingForStopParams{
+			StopPk:             stopPk,
+			WheelchairBoarding: convert.WheelchairAccessible(stopAccessibilityInfo.wheelchairBoarding),
+		}); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+type NyctSubwayStopCsvData struct {
+	stopHeadsignRules     []StopHeadsignRule
+	stopAccessibilityData []StopAccessibilityInfo
 }
 
 type StopHeadsignRule struct {
@@ -55,7 +80,12 @@ type StopHeadsignRule struct {
 	headsign string
 }
 
-func Parse(content []byte) ([]StopHeadsignRule, error) {
+type StopAccessibilityInfo struct {
+	stopID             string
+	wheelchairBoarding gtfs.WheelchairBoarding
+}
+
+func Parse(content []byte) (*NyctSubwayStopCsvData, error) {
 	csvReader := csv.NewReader(bytes.NewReader(content))
 	records, err := csvReader.ReadAll()
 	if err != nil {
@@ -67,6 +97,9 @@ func Parse(content []byte) ([]StopHeadsignRule, error) {
 	stopIDCol := -1
 	northHeadsignCol := -1
 	southHeadsignCol := -1
+	adaCol := -1
+	northAdaCol := -1
+	southAdaCol := -1
 	for i, header := range records[0] {
 		// In October 2023 the MTA announced a change to the URL to the stations.csv file [1],
 		// but they also changed the format a little bit. In the old stations.csv file the header
@@ -83,6 +116,12 @@ func Parse(content []byte) ([]StopHeadsignRule, error) {
 			northHeadsignCol = i
 		case "south_direction_label":
 			southHeadsignCol = i
+		case "ada":
+			adaCol = i
+		case "ada_northbound":
+			northAdaCol = i
+		case "ada_southbound":
+			southAdaCol = i
 		}
 	}
 	if stopIDCol < 0 {
@@ -93,6 +132,15 @@ func Parse(content []byte) ([]StopHeadsignRule, error) {
 	}
 	if southHeadsignCol < 0 {
 		return nil, fmt.Errorf("subway.csv file is missing the south headsign/label column")
+	}
+	if adaCol < 0 {
+		return nil, fmt.Errorf("subway.csv file is missing the ada column")
+	}
+	if northAdaCol < 0 {
+		return nil, fmt.Errorf("subway.csv file is missing the north ada column")
+	}
+	if southAdaCol < 0 {
+		return nil, fmt.Errorf("subway.csv file is missing the south ada column")
 	}
 	rules := customRules()
 	customStopIDs := map[string]bool{}
@@ -115,7 +163,40 @@ func Parse(content []byte) ([]StopHeadsignRule, error) {
 			})
 		}
 	}
-	return rules, nil
+
+	// Apply ADA rules
+	stopAdaData := []StopAccessibilityInfo{}
+	for _, row := range records[1:] {
+		stopID := row[stopIDCol]
+
+		// Parent stop ADA info
+		adaInfo := convertAdaColumnToWheelchairBoarding(row[adaCol])
+		stopAdaData = append(stopAdaData, StopAccessibilityInfo{
+			stopID:             stopID,
+			wheelchairBoarding: adaInfo,
+		})
+
+		// Northbound ADA info
+		northStopID := stopID + "N"
+		northAdaInfo := convertAdaColumnToWheelchairBoarding(row[northAdaCol])
+		stopAdaData = append(stopAdaData, StopAccessibilityInfo{
+			stopID:             northStopID,
+			wheelchairBoarding: northAdaInfo,
+		})
+
+		// Southbound ADA info
+		southStopID := stopID + "S"
+		southAdaInfo := convertAdaColumnToWheelchairBoarding(row[southAdaCol])
+		stopAdaData = append(stopAdaData, StopAccessibilityInfo{
+			stopID:             southStopID,
+			wheelchairBoarding: southAdaInfo,
+		})
+	}
+
+	return &NyctSubwayStopCsvData{
+		stopHeadsignRules:     rules,
+		stopAccessibilityData: stopAdaData,
+	}, nil
 }
 
 func cleanHeadsign(s string) (string, bool) {
@@ -222,4 +303,17 @@ func customRules() []StopHeadsignRule {
 		)
 	}
 	return rules
+}
+
+func convertAdaColumnToWheelchairBoarding(s string) gtfs.WheelchairBoarding {
+	switch s {
+	case "0":
+		return gtfs.WheelchairBoarding_NotPossible
+	case "1":
+		return gtfs.WheelchairBoarding_Possible
+	case "2":
+		return gtfs.WheelchairBoarding_Possible
+	default:
+		return gtfs.WheelchairBoarding_NotSpecified
+	}
 }

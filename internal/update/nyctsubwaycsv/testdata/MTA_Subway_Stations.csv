@@ -1,0 +1,5 @@
+GTFS Stop ID,Station ID,Complex ID,Division,Line,Stop Name,Borough,CBD,Daytime Routes,Structure,GTFS Latitude,GTFS Longitude,North Direction Label,South Direction Label,ADA,ADA Northbound,ADA Southbound,ADA Notes,Georeference
+R01,1,1,BMT,Astoria,Astoria-Ditmars Blvd,Q,FALSE,N W,Elevated,40.775036,-73.912034,Last Stop,Manhattan,0,0,0,,POINT (-73.912034 40.775036)
+R03,2,2,BMT,Astoria,Astoria Blvd,Q,FALSE,N W,Elevated,40.770258,-73.917843,Astoria,Manhattan,1,1,1,,POINT (-73.917843 40.770258)
+R15,10,10,BMT,Broadway - Brighton,49 St,M,TRUE,N R W,Subway,40.759901,-73.984139,Uptown,Downtown,2,1,0,Uptown only,POINT (-73.984139 40.759901)
+A25,162,162,IND,8th Av - Fulton St,50 St,M,TRUE,C E,Subway,40.762456,-73.985984,Uptown,Downtown,2,0,1,Downtown only,POINT (-73.985984 40.762456)
