@@ -237,6 +237,28 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 			return nil, err
 		}
 	}
+
+	// Finally, we need to handle the case where the stop does not have a value for wheelchair_boarding but it's parent station does.
+	// In such cases, we need to inherit the value from the parent station.
+	// See: https://gtfs.org/schedule/reference/#stopstxt
+	for _, stop := range stops {
+		// If already set, we don't need to do anything
+		if stop.WheelchairBoarding != gtfs.WheelchairBoarding_NotSpecified {
+			continue
+		}
+
+		// Check if the parent is both a station and has a wheelchair boarding value
+		if stop.Parent != nil && stop.Parent.Type == gtfs.StopType_Station && stop.Parent.WheelchairBoarding != gtfs.WheelchairBoarding_NotSpecified {
+			stopPk := newIDToPk[stop.Id]
+			if err := updateCtx.Querier.UpdateStopWheelchairBoarding(ctx, db.UpdateStopWheelchairBoardingParams{
+				Pk:                 stopPk,
+				WheelchairBoarding: convert.WheelchairAccessible(stop.Parent.WheelchairBoarding),
+			}); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	return newIDToPk, nil
 }
 

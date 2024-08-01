@@ -2,6 +2,7 @@ package static
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"math/big"
 	"testing"
@@ -1246,6 +1247,52 @@ func TestUpdate(t *testing.T) {
 			},
 			onlyCheckTrips: true,
 		},
+		{
+			name: "stop wheelchair boarding inherits direct parent, accessible",
+			updates: []*gtfs.Static{
+				{
+					Stops: buildStopHierarcyWithWheelchairBoarding(gtfs.WheelchairBoarding_Possible),
+				},
+			},
+			wantStops: []db.Stop{
+				{
+					ID:                 "stop_0",
+					Type:               gtfs.StopType_Station.String(),
+					WheelchairBoarding: convert.Bool(true),
+				},
+				{
+					ID:                 "stop_1",
+					Type:               gtfs.StopType_Platform.String(),
+					WheelchairBoarding: convert.Bool(true),
+				},
+			},
+			wantStopIDToParentID: map[string]string{
+				"stop_1": "stop_0",
+			},
+		},
+		{
+			name: "stop wheelchair boarding inherits direct parent, inaccessible",
+			updates: []*gtfs.Static{
+				{
+					Stops: buildStopHierarcyWithWheelchairBoarding(gtfs.WheelchairBoarding_NotPossible),
+				},
+			},
+			wantStops: []db.Stop{
+				{
+					ID:                 "stop_0",
+					Type:               gtfs.StopType_Station.String(),
+					WheelchairBoarding: convert.Bool(false),
+				},
+				{
+					ID:                 "stop_1",
+					Type:               gtfs.StopType_Platform.String(),
+					WheelchairBoarding: convert.Bool(false),
+				},
+			},
+			wantStopIDToParentID: map[string]string{
+				"stop_1": "stop_0",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			querier := dbtesting.NewQuerier(t)
@@ -1417,6 +1464,29 @@ func listScheduledTripShapes(ctx context.Context, t *testing.T, querier db.Queri
 	}
 
 	return shapeAndTripIDs
+}
+
+func buildStopHierarcyWithWheelchairBoarding(wheelchairBoarding gtfs.WheelchairBoarding) []gtfs.Stop {
+	stops := []gtfs.Stop{}
+	for i := 0; i < 2; i++ {
+		stop := gtfs.Stop{
+			Id:   fmt.Sprintf("stop_%d", i),
+			Type: gtfs.StopType_Platform,
+		}
+
+		// Assign wheelchair boarding to the root stop
+		if i == 0 {
+			stop.Type = gtfs.StopType_Station
+			stop.WheelchairBoarding = wheelchairBoarding
+		}
+
+		if i > 0 {
+			stop.Parent = &stops[i-1]
+		}
+
+		stops = append(stops, stop)
+	}
+	return stops
 }
 
 func ptr[T any](t T) *T {

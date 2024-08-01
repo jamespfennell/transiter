@@ -165,3 +165,8 @@ WHERE
         NOT sqlc.arg(filter_by_stop_id)::bool
         OR id = ANY(sqlc.arg(stop_ids)::text[])
     );
+
+-- name: UpdateStopWheelchairBoarding :exec
+UPDATE stop
+SET wheelchair_boarding = sqlc.arg(wheelchair_boarding)
+WHERE pk = sqlc.arg(pk);

@@ -619,6 +619,22 @@ func (q *Queries) UpdateStop(ctx context.Context, arg UpdateStopParams) error {
 	return err
 }
 
+const updateStopWheelchairBoarding = `-- name: UpdateStopWheelchairBoarding :exec
+UPDATE stop
+SET wheelchair_boarding = $1
+WHERE pk = $2
+`
+
+type UpdateStopWheelchairBoardingParams struct {
+	WheelchairBoarding pgtype.Bool
+	Pk                 int64
+}
+
+func (q *Queries) UpdateStopWheelchairBoarding(ctx context.Context, arg UpdateStopWheelchairBoardingParams) error {
+	_, err := q.db.Exec(ctx, updateStopWheelchairBoarding, arg.WheelchairBoarding, arg.Pk)
+	return err
+}
+
 const updateStop_Parent = `-- name: UpdateStop_Parent :exec
 UPDATE stop SET
     parent_stop_pk = $1

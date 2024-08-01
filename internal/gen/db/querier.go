@@ -131,6 +131,7 @@ type Querier interface {
 	UpdateRoute(ctx context.Context, arg UpdateRouteParams) error
 	UpdateServiceMapConfig(ctx context.Context, arg UpdateServiceMapConfigParams) error
 	UpdateStop(ctx context.Context, arg UpdateStopParams) error
+	UpdateStopWheelchairBoarding(ctx context.Context, arg UpdateStopWheelchairBoardingParams) error
 	UpdateStop_Parent(ctx context.Context, arg UpdateStop_ParentParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
 	UpdateSystemStatus(ctx context.Context, arg UpdateSystemStatusParams) error
