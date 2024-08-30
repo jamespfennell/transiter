@@ -1830,7 +1830,7 @@ type FeedConfig_NyctSubwayOptions struct {
 	//
 	// To use the data from the CSV feed, set thie field to true on that feed and
 	// false on the GTFS static feed. If this field is not set on either feed,
-	// the CSV feed will be used by default.
+	// the GTFS static feed will be used.
 	//
 	// Avoid setting this field to true on both feeds, as this will result in
 	// non-deterministic behavior, since feed updates are not guaranteed to be ordered
