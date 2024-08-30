@@ -387,7 +387,7 @@ Additional options for NYCT Subway CSV feeds.
 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
-| use_accessibility_info | bool | If true, infer the 'wheelchair_boarding' field from this feed.<br /><br />Historically, this information is not set in the NYC Subway GTFS feed, but is included in the extended NYCT_SUBWAY_CSV feed.<br /><br />To use the data from the CSV feed, set thie field to true on that feed and false on the GTFS static feed. If this field is not set on either feed, the CSV feed will be used by default.<br /><br />Avoid setting this field to true on both feeds, as this will result in non-deterministic behavior, since feed updates are not guaranteed to be ordered after initial system installation.
+| use_accessibility_info | bool | If true, infer the 'wheelchair_boarding' field from this feed.<br /><br />Historically, this information is not set in the NYC Subway GTFS feed, but is included in the extended NYCT_SUBWAY_CSV feed.<br /><br />To use the data from the CSV feed, set thie field to true on that feed and false on the GTFS static feed. If this field is not set on either feed, the GTFS static feed will be used.<br /><br />Avoid setting this field to true on both feeds, as this will result in non-deterministic behavior, since feed updates are not guaranteed to be ordered after initial system installation.
 
 
 
