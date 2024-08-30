@@ -19,6 +19,37 @@ type UpdateContext struct {
 	FeedConfig *api.FeedConfig
 }
 
+func GetFeedType(feedConfig *api.FeedConfig) string {
+	if feedConfig == nil {
+		return ""
+	}
+	if feedConfig.GetType() != "" {
+		return feedConfig.GetType()
+	}
+	// Deprecated, but included for backwards compatibility
+	return feedConfig.GetParser()
+}
+
+func UseAccessibilityInfoFromFeed(feedConfig *api.FeedConfig) bool {
+	if feedConfig == nil {
+		return true
+	}
+
+	feed_type := GetFeedType(feedConfig)
+
+	// Default to static GTFS feeds having accessibility info
+	if feedConfig.NyctSubwayOptions == nil {
+		return feed_type == "GTFS_STATIC"
+	}
+
+	if feed_type == "GTFS_STATIC" || feed_type == "NYCT_SUBWAY_CSV" {
+		return feedConfig.NyctSubwayOptions.UseAccessibilityInfo
+	}
+
+	// Accessibility info is not currently available for other feed types
+	return false
+}
+
 func HashBytes(b []byte) string {
 	return fmt.Sprintf("%x", md5.Sum(b))
 }

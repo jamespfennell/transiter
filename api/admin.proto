@@ -250,6 +250,26 @@ message FeedConfig {
   optional int64 request_timeout_ms = 6;
   // HTTP headers to send in the request.
   map<string, string> http_headers = 7;
+
+  // Additional options for NYCT Subway CSV feeds.
+  message NyctSubwayOptions {
+    // If true, infer the 'wheelchair_boarding' field from this feed.
+    //
+    // Historically, this information is not set in the NYC Subway GTFS feed, but
+    // is included in the extended NYCT_SUBWAY_CSV feed.
+    //
+    // To use the data from the CSV feed, set thie field to true on that feed and
+    // false on the GTFS static feed. If this field is not set on either feed,
+    // the GTFS static feed will be used.
+    //
+    // Avoid setting this field to true on both feeds, as this will result in
+    // non-deterministic behavior, since feed updates are not guaranteed to be ordered
+    // after initial system installation.
+    bool use_accessibility_info = 1;
+  }
+
+  // Additional options for NYCT Subway feeds.
+  optional NyctSubwayOptions nyct_subway_options = 15;
 }
 
 // Message describing additional options for the GTFS realtime feeds.
@@ -293,9 +313,9 @@ message GtfsRealtimeOptions {
     // it will be transformed to be for stop F20 (Bergen St. station).
     bool elevator_alerts_inform_using_station_ids = 2;
     // When there are no trains running for a route due to the standard timetable (e.g., there are no C trains
-	  // overnight), the MTA publishes an alert. Arguably this is not really an alert because this information is
-	  // already in the timetable.
-	  // If true, these alerts are skipped.
+      // overnight), the MTA publishes an alert. Arguably this is not really an alert because this information is
+      // already in the timetable.
+      // If true, these alerts are skipped.
     bool skip_timetabled_no_service_alerts = 3;
     // The NYCT alerts extension contains many fields like "time alert created at" that don't map to fields in
     // the standard GTFS realtime protobuf. If true, these fields are put in a json blob and included as an
