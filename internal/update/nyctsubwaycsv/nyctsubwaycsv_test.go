@@ -81,17 +81,27 @@ func TestParse(t *testing.T) {
 	}
 }
 
+type AccessibilityUpdateSource int
+
+const (
+	NYCT_SUBWAY_CSV AccessibilityUpdateSource = iota
+	GTFS_STATIC
+	UNSPECIFIED
+)
+
 func TestUpdate(t *testing.T) {
 	for _, tc := range []struct {
 		name               string
 		staticGtfsDataPath string
 		csvDataPath        *string
 		updates            []NyctSubwayStopCsvData
+		checkHeadsignRules *bool
 		wantHeadsignRules  []db.ListStopHeadsignRulesForFeedRow
 		wantStops          []db.Stop
+		accesibilitySource AccessibilityUpdateSource
 	}{
 		{
-			name:               "stop added",
+			name:               "accessibility info from csv",
 			staticGtfsDataPath: "testdata/nyct_subway.zip",
 			csvDataPath:        ptr("testdata/MTA_Subway_Stations.csv"),
 			wantHeadsignRules: []db.ListStopHeadsignRulesForFeedRow{
@@ -113,10 +123,10 @@ func TestUpdate(t *testing.T) {
 			wantStops: []db.Stop{
 
 				{
-					ID:                 "103",
-					Name:               pgtype.Text{String: "238 St", Valid: true},
-					Type:               "STATION",
-					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
+					ID:       "103",
+					Name:     pgtype.Text{String: "238 St", Valid: true},
+					Type:     "STATION",
+					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
 				},
 				{
 					ID:       "103N",
@@ -216,6 +226,228 @@ func TestUpdate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:               "accessibility info from gtfs static",
+			staticGtfsDataPath: "testdata/nyct_subway.zip",
+			csvDataPath:        ptr("testdata/MTA_Subway_Stations.csv"),
+			checkHeadsignRules: ptr(false),
+			accesibilitySource: GTFS_STATIC,
+			wantStops: []db.Stop{
+				{
+					ID:       "103",
+					Name:     pgtype.Text{String: "238 St", Valid: true},
+					Type:     "STATION",
+					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
+				},
+				{
+					ID:       "103N",
+					Name:     pgtype.Text{String: "238 St", Valid: true},
+					Type:     "PLATFORM",
+					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
+				},
+				{
+					ID:       "103S",
+					Name:     pgtype.Text{String: "238 St", Valid: true},
+					Type:     "PLATFORM",
+					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
+				},
+				{
+					ID:                 "A25",
+					Name:               pgtype.Text{String: "50 St", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
+				},
+				{
+					ID:                 "A25N",
+					Name:               pgtype.Text{String: "50 St", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
+				},
+				{
+					ID:                 "A25S",
+					Name:               pgtype.Text{String: "50 St", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
+				},
+				{
+					ID:                 "R01",
+					Name:               pgtype.Text{String: "Astoria-Ditmars Blvd", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
+				},
+				{
+					ID:                 "R01N",
+					Name:               pgtype.Text{String: "Astoria-Ditmars Blvd", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
+				},
+				{
+					ID:                 "R01S",
+					Name:               pgtype.Text{String: "Astoria-Ditmars Blvd", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
+				},
+				{
+					ID:                 "R03",
+					Name:               pgtype.Text{String: "Astoria Blvd", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
+				},
+				{
+					ID:                 "R03N",
+					Name:               pgtype.Text{String: "Astoria Blvd", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
+				},
+				{
+					ID:                 "R03S",
+					Name:               pgtype.Text{String: "Astoria Blvd", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
+				},
+				{
+					ID:                 "R15",
+					Name:               pgtype.Text{String: "49 St", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.984139, Latitude: 40.759901},
+				},
+				{
+					ID:                 "R15N",
+					Name:               pgtype.Text{String: "49 St", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.984139, Latitude: 40.759901},
+				},
+				{
+					ID:                 "R15S",
+					Name:               pgtype.Text{String: "49 St", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.984139, Latitude: 40.759901},
+				},
+			},
+		},
+		{
+			name:               "unspecified accessibility source",
+			staticGtfsDataPath: "testdata/nyct_subway.zip",
+			csvDataPath:        ptr("testdata/MTA_Subway_Stations.csv"),
+			checkHeadsignRules: ptr(false),
+			accesibilitySource: UNSPECIFIED,
+			wantStops: []db.Stop{
+				{
+					ID:       "103",
+					Name:     pgtype.Text{String: "238 St", Valid: true},
+					Type:     "STATION",
+					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
+				},
+				{
+					ID:       "103N",
+					Name:     pgtype.Text{String: "238 St", Valid: true},
+					Type:     "PLATFORM",
+					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
+				},
+				{
+					ID:       "103S",
+					Name:     pgtype.Text{String: "238 St", Valid: true},
+					Type:     "PLATFORM",
+					Location: types.Geography{Valid: true, Type: 536870913, Longitude: -73.90087, Latitude: 40.884667},
+				},
+				{
+					ID:                 "A25",
+					Name:               pgtype.Text{String: "50 St", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
+				},
+				{
+					ID:                 "A25N",
+					Name:               pgtype.Text{String: "50 St", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
+				},
+				{
+					ID:                 "A25S",
+					Name:               pgtype.Text{String: "50 St", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.985984, Latitude: 40.762456},
+				},
+				{
+					ID:                 "R01",
+					Name:               pgtype.Text{String: "Astoria-Ditmars Blvd", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
+				},
+				{
+					ID:                 "R01N",
+					Name:               pgtype.Text{String: "Astoria-Ditmars Blvd", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
+				},
+				{
+					ID:                 "R01S",
+					Name:               pgtype.Text{String: "Astoria-Ditmars Blvd", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.912034, Latitude: 40.775036},
+				},
+				{
+					ID:                 "R03",
+					Name:               pgtype.Text{String: "Astoria Blvd", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
+				},
+				{
+					ID:                 "R03N",
+					Name:               pgtype.Text{String: "Astoria Blvd", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
+				},
+				{
+					ID:                 "R03S",
+					Name:               pgtype.Text{String: "Astoria Blvd", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.917843, Latitude: 40.770258},
+				},
+				{
+					ID:                 "R15",
+					Name:               pgtype.Text{String: "49 St", Valid: true},
+					Type:               "STATION",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.984139, Latitude: 40.759901},
+				},
+				{
+					ID:                 "R15N",
+					Name:               pgtype.Text{String: "49 St", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.984139, Latitude: 40.759901},
+				},
+				{
+					ID:                 "R15S",
+					Name:               pgtype.Text{String: "49 St", Valid: true},
+					Type:               "PLATFORM",
+					WheelchairBoarding: pgtype.Bool{Valid: false},
+					Location:           types.Geography{Valid: true, Type: 536870913, Longitude: -73.984139, Latitude: 40.759901},
+				},
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			querier := dbtesting.NewQuerier(t)
@@ -224,14 +456,25 @@ func TestUpdate(t *testing.T) {
 			csvFeed := system.NewFeed("csvFeedID")
 
 			ctx := context.Background()
-			updateCtx := common.UpdateContext{
+			staticUpdateCtx := common.UpdateContext{
 				Querier:  querier,
 				SystemPk: system.Data.Pk,
 				FeedPk:   staticFeed.Data.Pk,
 				FeedConfig: &api.FeedConfig{
 					Parser: "GTFS_STATIC",
+					NyctSubwayOptions: &api.FeedConfig_NyctSubwayOptions{
+						UseAccessibilityInfo: false,
+					},
 				},
 				Logger: slog.Default(),
+			}
+
+			if tc.accesibilitySource == GTFS_STATIC {
+				staticUpdateCtx.FeedConfig.NyctSubwayOptions.UseAccessibilityInfo = true
+			}
+
+			if tc.accesibilitySource == UNSPECIFIED {
+				staticUpdateCtx.FeedConfig.NyctSubwayOptions = nil
 			}
 
 			// Update static data first
@@ -243,7 +486,7 @@ func TestUpdate(t *testing.T) {
 			if err != nil {
 				t.Fatalf("gtfs.ParseStatic() err = %v, want = nil", err)
 			}
-			err = static.Update(ctx, updateCtx, gtfsStaticData)
+			err = static.Update(ctx, staticUpdateCtx, gtfsStaticData)
 			if err != nil {
 				t.Fatalf("Static Update() got = %+v, want = <nil>", err)
 			}
@@ -264,29 +507,55 @@ func TestUpdate(t *testing.T) {
 			}
 
 			for i, update := range tc.updates {
-				updateCtx := common.UpdateContext{
+				csvUpdateCtx := common.UpdateContext{
 					Querier:  querier,
 					SystemPk: system.Data.Pk,
 					FeedPk:   csvFeed.Data.Pk,
 					FeedConfig: &api.FeedConfig{
 						Parser: "NYCT_SUBWAY_CSV",
+						NyctSubwayOptions: &api.FeedConfig_NyctSubwayOptions{
+							UseAccessibilityInfo: true,
+						},
 					},
 					Logger: slog.Default(),
 				}
-				err := Update(ctx, updateCtx, &update)
+
+				if tc.accesibilitySource != NYCT_SUBWAY_CSV {
+					csvUpdateCtx.FeedConfig.NyctSubwayOptions.UseAccessibilityInfo = false
+				}
+
+				if tc.accesibilitySource == UNSPECIFIED {
+					csvUpdateCtx.FeedConfig.NyctSubwayOptions = nil
+				}
+
+				err := Update(ctx, csvUpdateCtx, &update)
 				if err != nil {
 					t.Fatalf("Update(update = %d) got = %+v, want = <nil>", i, err)
 				}
 			}
 
-			gotStops, _ := listStops(ctx, t, querier, updateCtx.SystemPk)
+			gotStops, _ := listStops(ctx, t, querier, staticUpdateCtx.SystemPk)
 			if diff := cmp.Diff(gotStops, tc.wantStops, cmp.Comparer(compareBigInt)); diff != "" {
 				t.Errorf("ListStops() got = %v, want = %v, diff = %s", gotStops, tc.wantStops, diff)
 			}
 
-			gotHeadsignRules, _ := querier.ListStopHeadsignRulesForFeed(ctx, csvFeed.Data.Pk)
-			if diff := cmp.Diff(gotHeadsignRules, tc.wantHeadsignRules, cmp.Comparer(compareBigInt)); diff != "" {
-				t.Errorf("ListStopHeadsignRulesForFeed() got = %v, want = %v, diff = %s", gotHeadsignRules, tc.wantHeadsignRules, diff)
+			// Check headsign rules if they are expected (on by default if not specified)
+			if tc.checkHeadsignRules == nil || *tc.checkHeadsignRules {
+				gotHeadsignRules, _ := querier.ListStopHeadsignRulesForFeed(ctx, csvFeed.Data.Pk)
+				if diff := cmp.Diff(gotHeadsignRules, tc.wantHeadsignRules, cmp.Comparer(compareBigInt)); diff != "" {
+					t.Errorf("ListStopHeadsignRulesForFeed() got = %v, want = %v, diff = %s", gotHeadsignRules, tc.wantHeadsignRules, diff)
+				}
+			}
+
+			// Do one more update from static feed and verify stops still has accessibility info
+			// This is to test that the GTFS static data does not overwrite the accessibility info from the CSV
+			err = static.Update(ctx, staticUpdateCtx, gtfsStaticData)
+			if err != nil {
+				t.Fatalf("Static Update() got = %+v, want = <nil>", err)
+			}
+			gotStops, _ = listStops(ctx, t, querier, staticUpdateCtx.SystemPk)
+			if diff := cmp.Diff(gotStops, tc.wantStops, cmp.Comparer(compareBigInt)); diff != "" {
+				t.Errorf("ListStops() got = %v, want = %v, diff = %s", gotStops, tc.wantStops, diff)
 			}
 		})
 	}

@@ -49,6 +49,11 @@ func Update(ctx context.Context, updateCtx common.UpdateContext, data *NyctSubwa
 		}
 	}
 
+	useAccessibilityInfo := common.UseAccessibilityInfoFromFeed(updateCtx.FeedConfig)
+	if !useAccessibilityInfo {
+		return nil
+	}
+
 	// Update stop ADA info, which is not currently included in the static GTFS feed
 	if err := updateCtx.Querier.DeleteWheelchairBoardingForSystem(ctx, updateCtx.SystemPk); err != nil {
 		return err

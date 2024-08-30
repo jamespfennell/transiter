@@ -174,24 +174,42 @@ func updateStops(ctx context.Context, updateCtx common.UpdateContext, stops []gt
 	if err != nil {
 		return nil, err
 	}
+
+	useAccessibilityInfo := common.UseAccessibilityInfoFromFeed(updateCtx.FeedConfig)
 	newIDToPk := map[string]int64{}
 	for _, stop := range stops {
 		pk, ok := oldIDToPk[stop.Id]
 		if ok {
-			err = updateCtx.Querier.UpdateStop(ctx, db.UpdateStopParams{
-				Pk:                 pk,
-				FeedPk:             updateCtx.FeedPk,
-				Name:               convert.NullIfEmptyString(stop.Name),
-				Type:               stop.Type.String(),
-				Location:           convert.Gps(stop.Longitude, stop.Latitude),
-				Url:                convert.NullIfEmptyString(stop.Url),
-				Code:               convert.NullIfEmptyString(stop.Code),
-				Description:        convert.NullIfEmptyString(stop.Description),
-				PlatformCode:       convert.NullIfEmptyString(stop.PlatformCode),
-				Timezone:           convert.NullIfEmptyString(stop.Timezone),
-				WheelchairBoarding: convert.WheelchairAccessible(stop.WheelchairBoarding),
-				ZoneID:             convert.NullIfEmptyString(stop.ZoneId),
-			})
+			if useAccessibilityInfo {
+				err = updateCtx.Querier.UpdateStop(ctx, db.UpdateStopParams{
+					Pk:                 pk,
+					FeedPk:             updateCtx.FeedPk,
+					Name:               convert.NullIfEmptyString(stop.Name),
+					Type:               stop.Type.String(),
+					Location:           convert.Gps(stop.Longitude, stop.Latitude),
+					Url:                convert.NullIfEmptyString(stop.Url),
+					Code:               convert.NullIfEmptyString(stop.Code),
+					Description:        convert.NullIfEmptyString(stop.Description),
+					PlatformCode:       convert.NullIfEmptyString(stop.PlatformCode),
+					Timezone:           convert.NullIfEmptyString(stop.Timezone),
+					WheelchairBoarding: convert.WheelchairAccessible(stop.WheelchairBoarding),
+					ZoneID:             convert.NullIfEmptyString(stop.ZoneId),
+				})
+			} else {
+				err = updateCtx.Querier.UpdateStopWithoutWheelchairBoarding(ctx, db.UpdateStopWithoutWheelchairBoardingParams{
+					Pk:           pk,
+					FeedPk:       updateCtx.FeedPk,
+					Name:         convert.NullIfEmptyString(stop.Name),
+					Type:         stop.Type.String(),
+					Location:     convert.Gps(stop.Longitude, stop.Latitude),
+					Url:          convert.NullIfEmptyString(stop.Url),
+					Code:         convert.NullIfEmptyString(stop.Code),
+					Description:  convert.NullIfEmptyString(stop.Description),
+					PlatformCode: convert.NullIfEmptyString(stop.PlatformCode),
+					Timezone:     convert.NullIfEmptyString(stop.Timezone),
+					ZoneID:       convert.NullIfEmptyString(stop.ZoneId),
+				})
+			}
 		} else {
 			pk, err = updateCtx.Querier.InsertStop(ctx, db.InsertStopParams{
 				ID:                 stop.Id,

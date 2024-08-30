@@ -27,6 +27,22 @@ UPDATE stop SET
 WHERE
     pk = sqlc.arg(pk);
 
+-- name: UpdateStopWithoutWheelchairBoarding :exec
+UPDATE stop SET
+    feed_pk = sqlc.arg(feed_pk),
+    name = sqlc.arg(name),
+    location = sqlc.arg(location)::geography,
+    url = sqlc.arg(url),
+    code = sqlc.arg(code),
+    description = sqlc.arg(description),
+    platform_code = sqlc.arg(platform_code),
+    timezone = sqlc.arg(timezone),
+    type = sqlc.arg(type),
+    zone_id = sqlc.arg(zone_id),
+    parent_stop_pk = NULL
+WHERE
+    pk = sqlc.arg(pk);
+
 -- name: UpdateStop_Parent :exec
 UPDATE stop SET
     parent_stop_pk = sqlc.arg(parent_stop_pk)
