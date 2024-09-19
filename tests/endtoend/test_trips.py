@@ -241,6 +241,7 @@ class TestTrip:
             shape=None,
             vehicle=None,
             stopTimes=want_stop_times,
+            alerts=[],
         )
 
         got_trip = transiter_client.get_trip(system_id, ROUTE_ID, TRIP_1_ID)
