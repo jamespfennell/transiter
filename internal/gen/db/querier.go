@@ -75,6 +75,7 @@ type Querier interface {
 	// ListActiveAlertsForRoutes returns preview information about active alerts for the provided routes.
 	ListActiveAlertsForRoutes(ctx context.Context, arg ListActiveAlertsForRoutesParams) ([]ListActiveAlertsForRoutesRow, error)
 	ListActiveAlertsForStops(ctx context.Context, arg ListActiveAlertsForStopsParams) ([]ListActiveAlertsForStopsRow, error)
+	ListActiveAlertsForTrips(ctx context.Context, arg ListActiveAlertsForTripsParams) ([]ListActiveAlertsForTripsRow, error)
 	ListActivePeriodsForAlerts(ctx context.Context, pks []int64) ([]ListActivePeriodsForAlertsRow, error)
 	ListAgencies(ctx context.Context, systemPk int64) ([]Agency, error)
 	ListAgenciesByPk(ctx context.Context, pk []int64) ([]Agency, error)

@@ -177,17 +177,29 @@ func (q *Queries) InsertAlertStop(ctx context.Context, arg InsertAlertStopParams
 }
 
 const insertAlertTrip = `-- name: InsertAlertTrip :exec
-INSERT INTO alert_trip (alert_pk, trip_pk, scheduled_trip_pk) VALUES ($1, $2, $3)
+INSERT INTO alert_trip (alert_pk, trip_pk, scheduled_trip_pk, route_pk, direction_id, start_date, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type InsertAlertTripParams struct {
 	AlertPk         int64
 	TripPk          pgtype.Int8
 	ScheduledTripPk pgtype.Int8
+	RoutePk         pgtype.Int8
+	DirectionID     pgtype.Bool
+	StartDate       pgtype.Timestamptz
+	StartTime       pgtype.Int4
 }
 
 func (q *Queries) InsertAlertTrip(ctx context.Context, arg InsertAlertTripParams) error {
-	_, err := q.db.Exec(ctx, insertAlertTrip, arg.AlertPk, arg.TripPk, arg.ScheduledTripPk)
+	_, err := q.db.Exec(ctx, insertAlertTrip,
+		arg.AlertPk,
+		arg.TripPk,
+		arg.ScheduledTripPk,
+		arg.RoutePk,
+		arg.DirectionID,
+		arg.StartDate,
+		arg.StartTime,
+	)
 	return err
 }
 
@@ -341,6 +353,69 @@ func (q *Queries) ListActiveAlertsForStops(ctx context.Context, arg ListActiveAl
 		var i ListActiveAlertsForStopsRow
 		if err := rows.Scan(
 			&i.StopPk,
+			&i.Pk,
+			&i.ID,
+			&i.Cause,
+			&i.Effect,
+			&i.StartsAt,
+			&i.EndsAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveAlertsForTrips = `-- name: ListActiveAlertsForTrips :many
+SELECT trip.pk trip_pk, alert.pk, alert.id, alert.cause, alert.effect, alert_active_period.starts_at, alert_active_period.ends_at
+FROM trip
+    -- TODO (1): Trips can sometimes be uniquely inferred without a trip_id based on route, direction_id, start_date, and start_time.
+    -- TODO (2): Frequency based trips are not correctly handled here.
+    INNER JOIN alert_trip ON alert_trip.trip_pk = trip.pk
+    INNER JOIN alert ON alert_trip.alert_pk = alert.pk
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE trip.pk = ANY($1::bigint[])
+    AND (
+        alert_active_period.starts_at < $2
+        OR alert_active_period.starts_at IS NULL
+    )
+    AND (
+        alert_active_period.ends_at > $2
+        OR alert_active_period.ends_at IS NULL
+    )
+ORDER BY alert.id ASC
+`
+
+type ListActiveAlertsForTripsParams struct {
+	TripPks     []int64
+	PresentTime pgtype.Timestamptz
+}
+
+type ListActiveAlertsForTripsRow struct {
+	TripPk   int64
+	Pk       int64
+	ID       string
+	Cause    string
+	Effect   string
+	StartsAt pgtype.Timestamptz
+	EndsAt   pgtype.Timestamptz
+}
+
+func (q *Queries) ListActiveAlertsForTrips(ctx context.Context, arg ListActiveAlertsForTripsParams) ([]ListActiveAlertsForTripsRow, error) {
+	rows, err := q.db.Query(ctx, listActiveAlertsForTrips, arg.TripPks, arg.PresentTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveAlertsForTripsRow
+	for rows.Next() {
+		var i ListActiveAlertsForTripsRow
+		if err := rows.Scan(
+			&i.TripPk,
 			&i.Pk,
 			&i.ID,
 			&i.Cause,

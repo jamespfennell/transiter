@@ -3,6 +3,7 @@ package endpoints
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -69,6 +70,16 @@ func GetTrip(ctx context.Context, r *Context, req *api.GetTripRequest) (*api.Tri
 }
 
 func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db.Route, trips []db.ListTripsRow) ([]*api.Trip, error) {
+	var tripPks []int64
+	for i := range trips {
+		tripPks = append(tripPks, trips[i].Pk)
+	}
+
+	alertPreviews, err := buildTripAlertPreviews(ctx, r, system.ID, tripPks)
+	if err != nil {
+		return nil, err
+	}
+
 	var apiTrips []*api.Trip
 	for i := range trips {
 		trip := &trips[i]
@@ -82,6 +93,7 @@ func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db
 			StartedAt:   convert.SQLNullTime(trip.StartedAt),
 			Route:       r.Reference.Route(route.ID, system.ID, route.Color),
 			Shape:       nullShapeReference(r, trip.ShapeID, system.ID),
+			Alerts:      alertPreviews[trip.Pk],
 		}
 		if trip.VehicleID.Valid {
 			reply.Vehicle = r.Reference.Vehicle(trip.VehicleID.String, system.ID)
@@ -99,6 +111,25 @@ func buildApiTrips(ctx context.Context, r *Context, system *db.System, route *db
 		apiTrips = append(apiTrips, reply)
 	}
 	return apiTrips, nil
+}
+
+func buildTripAlertPreviews(ctx context.Context, r *Context, systemID string, tripPks []int64) (map[int64][]*api.Alert_Reference, error) {
+	alerts, err := r.Querier.ListActiveAlertsForTrips(
+		ctx, db.ListActiveAlertsForTripsParams{
+			TripPks:     tripPks,
+			PresentTime: pgtype.Timestamptz{Valid: true, Time: time.Now()},
+		})
+	if err != nil {
+		return nil, err
+	}
+	m := map[int64][]*api.Alert_Reference{}
+	for _, alert := range alerts {
+		m[alert.TripPk] = append(
+			m[alert.TripPk],
+			r.Reference.Alert(alert.ID, systemID, alert.Cause, alert.Effect),
+		)
+	}
+	return m, nil
 }
 
 func nullShapeReference(r *Context, shapeID pgtype.Text, systemID string) *api.Shape_Reference {

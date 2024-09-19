@@ -64,6 +64,8 @@ stop_id
 {STOP_ID}
 """
 
+TRIP_ID = "trip_id"
+
 
 def test_list_alerts(
     system_for_alerts_test,
@@ -145,7 +147,24 @@ def test_alert_appears_in_get_stop(
     assert got_stop.alerts == [ALERT_REFERENCE]
 
 
-# TODO: get and list trips
+def test_alert_appears_in_get_trip(
+    system_for_alerts_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_alerts_test
+    got_trip = transiter_client.get_trip(system_id, ROUTE_ID, TRIP_ID)
+    assert got_trip.alerts == [ALERT_REFERENCE]
+
+
+def test_alert_appears_in_list_trip(
+    system_for_alerts_test,
+    system_id,
+    transiter_client: client.TransiterClient,
+):
+    _ = system_for_alerts_test
+    got_list_trips = transiter_client.list_trips(system_id, ROUTE_ID, TRIP_ID)
+    assert got_list_trips.trips[0].alerts == [ALERT_REFERENCE]
 
 
 @pytest.fixture
@@ -161,9 +180,9 @@ def system_for_alerts_test(
         header=gtfs.FeedHeader(gtfs_realtime_version="2.0", timestamp=int(time.time())),
         entity=[
             gtfs.FeedEntity(
-                id="trip_id",
+                id=TRIP_ID,
                 trip_update=gtfs.TripUpdate(
-                    trip=gtfs.TripDescriptor(trip_id="trip_id", route_id="A")
+                    trip=gtfs.TripDescriptor(trip_id=TRIP_ID, route_id=ROUTE_ID),
                 ),
             ),
             gtfs.FeedEntity(
@@ -199,7 +218,7 @@ def system_for_alerts_test(
                         gtfs.EntitySelector(route_id=ROUTE_ID),
                         gtfs.EntitySelector(stop_id=STOP_ID),
                         gtfs.EntitySelector(
-                            trip=gtfs.TripDescriptor(trip_id="trip_id")
+                            trip=gtfs.TripDescriptor(trip_id=TRIP_ID)
                         ),
                     ],
                     cause=gtfs.Alert.Cause.STRIKE,

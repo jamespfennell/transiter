@@ -27,7 +27,7 @@ INSERT INTO alert_stop (alert_pk, stop_pk) VALUES (sqlc.arg(alert_pk), sqlc.arg(
 INSERT INTO alert_route (alert_pk, route_pk) VALUES (sqlc.arg(alert_pk), sqlc.arg(route_pk));
 
 -- name: InsertAlertTrip :exec
-INSERT INTO alert_trip (alert_pk, trip_pk, scheduled_trip_pk) VALUES (sqlc.arg(alert_pk), sqlc.narg(trip_pk), sqlc.narg(scheduled_trip_pk));
+INSERT INTO alert_trip (alert_pk, trip_pk, scheduled_trip_pk, route_pk, direction_id, start_date, start_time) VALUES (sqlc.arg(alert_pk), sqlc.narg(trip_pk), sqlc.narg(scheduled_trip_pk), sqlc.narg(route_pk), sqlc.narg(direction_id), sqlc.narg(start_date), sqlc.narg(start_time));
 
 -- name: InsertAlertRouteType :exec
 INSERT INTO alert_route_type (alert_pk, route_type) VALUES (sqlc.arg(alert_pk), sqlc.arg(route_type));
@@ -104,6 +104,25 @@ FROM stop
     INNER JOIN alert ON alert_stop.alert_pk = alert.pk
     INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
 WHERE stop.pk = ANY(sqlc.arg(stop_pks)::bigint[])
+    AND (
+        alert_active_period.starts_at < sqlc.arg(present_time)
+        OR alert_active_period.starts_at IS NULL
+    )
+    AND (
+        alert_active_period.ends_at > sqlc.arg(present_time)
+        OR alert_active_period.ends_at IS NULL
+    )
+ORDER BY alert.id ASC;
+
+-- name: ListActiveAlertsForTrips :many
+SELECT trip.pk trip_pk, alert.pk, alert.id, alert.cause, alert.effect, alert_active_period.starts_at, alert_active_period.ends_at
+FROM trip
+    -- TODO (1): Trips can sometimes be uniquely inferred without a trip_id based on route, direction_id, start_date, and start_time.
+    -- TODO (2): Frequency based trips are not correctly handled here.
+    INNER JOIN alert_trip ON alert_trip.trip_pk = trip.pk
+    INNER JOIN alert ON alert_trip.alert_pk = alert.pk
+    INNER JOIN alert_active_period ON alert_active_period.alert_pk = alert.pk
+WHERE trip.pk = ANY(sqlc.arg(trip_pks)::bigint[])
     AND (
         alert_active_period.starts_at < sqlc.arg(present_time)
         OR alert_active_period.starts_at IS NULL
