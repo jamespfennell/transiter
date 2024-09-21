@@ -540,18 +540,53 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 	var tripIDs []string
 	var newAlertPks []int64
 	for _, alert := range alerts {
+		var informedRoutesFromTripIDs = make(map[string]map[gtfs.DirectionID]bool)
+		var informedRoutes = make(map[string]bool)
 		for _, informedEntity := range alert.InformedEntities {
 			if informedEntity.AgencyID != nil {
 				agencyReferenced = true
 			}
 			if informedEntity.RouteID != nil {
 				routeIDs = append(routeIDs, *informedEntity.RouteID)
+				informedRoutes[*informedEntity.RouteID] = true
 			}
 			if informedEntity.StopID != nil {
 				stopIDs = append(stopIDs, *informedEntity.StopID)
 			}
-			if informedEntity.TripID != nil && informedEntity.TripID.ID != "" {
-				tripIDs = append(tripIDs, informedEntity.TripID.ID)
+			if informedEntity.TripID != nil {
+				if informedEntity.TripID.ID != "" {
+					tripIDs = append(tripIDs, informedEntity.TripID.ID)
+				}
+				if informedEntity.TripID.RouteID != "" {
+					routeIDs = append(routeIDs, informedEntity.TripID.RouteID)
+					if informedEntity.TripID.ID == "" {
+						if informedEntity.TripID.DirectionID == gtfs.DirectionID_Unspecified {
+							informedRoutesFromTripIDs[informedEntity.TripID.RouteID] = map[gtfs.DirectionID]bool{
+								gtfs.DirectionID_False: true,
+								gtfs.DirectionID_True:  true,
+							}
+						} else {
+							if _, ok := informedRoutesFromTripIDs[informedEntity.TripID.RouteID]; !ok {
+								informedRoutesFromTripIDs[informedEntity.TripID.RouteID] = map[gtfs.DirectionID]bool{}
+							}
+							informedRoutesFromTripIDs[informedEntity.TripID.RouteID][informedEntity.TripID.DirectionID] = true
+						}
+					}
+				}
+			}
+		}
+
+		for routeID, directions := range informedRoutesFromTripIDs {
+			if informedRoutes[routeID] {
+				continue
+			}
+
+			if directions[gtfs.DirectionID_False] && directions[gtfs.DirectionID_True] {
+				routeIDCopy := routeID
+				alert.InformedEntities = append(alert.InformedEntities, gtfs.AlertInformedEntity{
+					RouteID:   &routeIDCopy,
+					RouteType: gtfs.RouteType_Unknown,
+				})
 			}
 		}
 	}
@@ -637,11 +672,29 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 				if scheduledTripPk, ok := scheduledTripIDToPk[tripID]; ok {
 					scheduledTripPkOrNil = &scheduledTripPk
 				}
-				if tripPkOrNil != nil || scheduledTripPkOrNil != nil {
+				var routePkOrNil *int64 = nil
+				if informedEntity.TripID.RouteID != "" {
+					if routePkVal, ok := routeIDToPk[informedEntity.TripID.RouteID]; ok {
+						routePkOrNil = &routePkVal
+					}
+				}
+				var startDateOrNil *time.Time = nil
+				if informedEntity.TripID.HasStartDate {
+					startDateOrNil = &informedEntity.TripID.StartDate
+				}
+				var startTimeOrNil *time.Duration = nil
+				if informedEntity.TripID.HasStartTime {
+					startTimeOrNil = &informedEntity.TripID.StartTime
+				}
+				if tripPkOrNil != nil || scheduledTripPkOrNil != nil || routePkOrNil != nil {
 					err := updateCtx.Querier.InsertAlertTrip(ctx, db.InsertAlertTripParams{
 						AlertPk:         pk,
 						TripPk:          convert.NullInt64(tripPkOrNil),
 						ScheduledTripPk: convert.NullInt64(scheduledTripPkOrNil),
+						RoutePk:         convert.NullInt64(routePkOrNil),
+						DirectionID:     convert.DirectionID(informedEntity.TripID.DirectionID),
+						StartDate:       convert.NullTime(startDateOrNil),
+						StartTime:       convert.NullDuration(startTimeOrNil),
 					})
 					if err != nil {
 						return nil, err

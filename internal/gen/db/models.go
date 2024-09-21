@@ -67,6 +67,10 @@ type AlertTrip struct {
 	AlertPk         int64
 	TripPk          pgtype.Int8
 	ScheduledTripPk pgtype.Int8
+	RoutePk         pgtype.Int8
+	DirectionID     pgtype.Bool
+	StartDate       pgtype.Timestamptz
+	StartTime       pgtype.Int4
 }
 
 type Feed struct {

@@ -810,6 +810,7 @@ specification](https://gtfs.org/realtime/reference/#message-tripupdate).
 | direction_id | bool | Direction ID of the trip.
 | stop_times | [StopTime](public_resources.md#stoptime) | Stop times of the trip.
 | shape | [Shape.Reference](public_resources.md#shapereference) | Shape of the trip.
+| alerts | [Alert.Reference](public_resources.md#alertreference) | Active alerts for this trip.<br /><br />These are determined using the `informed_entity` field in the [GTFS realtime alerts message](https://gtfs.org/realtime/feed-entities/service-alerts/#service-alerts).
 
 
 

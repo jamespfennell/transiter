@@ -244,6 +244,7 @@ class Trip(ApiType):
     shape: ShapeReference
     vehicle: VehicleReference
     stopTimes: typing.List[StopTime]
+    alerts: typing.List[AlertReference]
 
 
 @dataclasses.dataclass
@@ -296,6 +297,11 @@ class ListTransfersResponse(ApiType):
 @dataclasses.dataclass
 class ListRoutesResponse(ApiType):
     routes: typing.List[Route]
+
+
+@dataclasses.dataclass
+class ListTripsResponse(ApiType):
+    trips: typing.List[Trip]
 
 
 class TransiterClient:
@@ -391,6 +397,11 @@ class TransiterClient:
     def get_trip(self, system_id: str, route_id: str, trip_id: str, params={}) -> Trip:
         return self._get_typed(
             Trip, f"systems/{system_id}/routes/{route_id}/trips/{trip_id}", params
+        )
+
+    def list_trips(self, system_id: str, route_id: str, params={}) -> ListTripsResponse:
+        return self._get_typed(
+            ListTripsResponse, f"systems/{system_id}/routes/{route_id}/trips", params
         )
 
     def list_vehicles(self, system_id: str, params={}) -> ListVehiclesResponse:

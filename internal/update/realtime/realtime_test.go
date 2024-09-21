@@ -1010,6 +1010,148 @@ func TestUpdate(t *testing.T) {
 				wantAlert(systemID, alertID1, wInformedTrips(tripID1), wInformedScheduledTrips(scheduledTripID1)),
 			},
 		},
+		{
+			name: "alert with informed route via trip entity, no direction id",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										TripID: &gtfs.TripID{
+											RouteID: routeID1,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil),
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedRoutes(routeID1), wInformedTrips(tripID1)),
+			},
+		},
+		{
+			name: "alert with informed route via trip entity, both direction ids",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										TripID: &gtfs.TripID{
+											RouteID:     routeID1,
+											DirectionID: gtfs.DirectionID_False,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+									{
+										TripID: &gtfs.TripID{
+											RouteID:     routeID1,
+											DirectionID: gtfs.DirectionID_True,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil),
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedRoutes(routeID1), wInformedTrips(tripID1)),
+			},
+		},
+		{
+			name: "alert with informed route via trip entity, single direction id",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										TripID: &gtfs.TripID{
+											RouteID:     routeID1,
+											DirectionID: gtfs.DirectionID_True,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil),
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1, wInformedTrips(tripID1)),
+			},
+		},
+		{
+			name: "alert with informed route via trip entity, direction id mismatch",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+						Alerts: []gtfs.Alert{
+							{
+								ID:     alertID1,
+								Cause:  gtfs.UnknownCause,
+								Effect: gtfs.UnknownEffect,
+								InformedEntities: []gtfs.AlertInformedEntity{
+									{
+										TripID: &gtfs.TripID{
+											RouteID:     routeID1,
+											DirectionID: gtfs.DirectionID_False,
+										},
+										RouteType: gtfs.RouteType_Unknown,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, nil),
+			},
+			wantAlerts: []*Alert{
+				wantAlert(systemID, alertID1),
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			querier := dbtesting.NewQuerier(t)
