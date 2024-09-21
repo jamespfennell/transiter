@@ -79,11 +79,11 @@ Assuming the Docker image has been built locally with:
 
 First launch Transiter, Postgres and the source server:
 
-    docker-compose -f tests/endtoend/compose.yml up --build sourceserver transiter db
+    docker compose -f tests/endtoend/compose.yml up --build sourceserver transiter db
 
 Then in another terminal run the tests with either:
 
-    docker-compose -f tests/endtoend/compose.yml up --build testrunner
+    docker compose -f tests/endtoend/compose.yml up --build testrunner
 
 Or assuming all the Python dependencies are installed:
 
