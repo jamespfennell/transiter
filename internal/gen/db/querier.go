@@ -30,6 +30,7 @@ type Querier interface {
 	DeleteTransfers(ctx context.Context, feedPk int64) error
 	DeleteTripStopTimes(ctx context.Context, pks []int64) error
 	DeleteVehicles(ctx context.Context, arg DeleteVehiclesParams) error
+	DeleteWheelchairBoardingForSystem(ctx context.Context, systemPk int64) error
 	EstimateHeadwaysForRoutes(ctx context.Context, arg EstimateHeadwaysForRoutesParams) ([]EstimateHeadwaysForRoutesRow, error)
 	GetAgency(ctx context.Context, arg GetAgencyParams) (Agency, error)
 	GetAlertInSystem(ctx context.Context, arg GetAlertInSystemParams) (Alert, error)
@@ -97,6 +98,7 @@ type Querier interface {
 	ListServiceMapsForStops(ctx context.Context, stopPks []int64) ([]ListServiceMapsForStopsRow, error)
 	ListShapes(ctx context.Context, arg ListShapesParams) ([]Shape, error)
 	ListShapesAndTrips(ctx context.Context, systemPk int64) ([]ListShapesAndTripsRow, error)
+	ListStopHeadsignRulesForFeed(ctx context.Context, feedPk int64) ([]ListStopHeadsignRulesForFeedRow, error)
 	ListStopHeadsignRulesForStops(ctx context.Context, stopPks []int64) ([]StopHeadsignRule, error)
 	ListStopPksForRealtimeMap(ctx context.Context, routePk int64) ([]ListStopPksForRealtimeMapRow, error)
 	ListStops(ctx context.Context, arg ListStopsParams) ([]Stop, error)
@@ -131,11 +133,13 @@ type Querier interface {
 	UpdateRoute(ctx context.Context, arg UpdateRouteParams) error
 	UpdateServiceMapConfig(ctx context.Context, arg UpdateServiceMapConfigParams) error
 	UpdateStop(ctx context.Context, arg UpdateStopParams) error
+	UpdateStopWithoutWheelchairBoarding(ctx context.Context, arg UpdateStopWithoutWheelchairBoardingParams) error
 	UpdateStop_Parent(ctx context.Context, arg UpdateStop_ParentParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
 	UpdateSystemStatus(ctx context.Context, arg UpdateSystemStatusParams) error
 	UpdateTrip(ctx context.Context, arg []UpdateTripParams) *UpdateTripBatchResults
 	UpdateTripStopTime(ctx context.Context, arg UpdateTripStopTimeParams) error
+	UpdateWheelchairBoardingForStop(ctx context.Context, arg UpdateWheelchairBoardingForStopParams) error
 }
 
 var _ Querier = (*Queries)(nil)

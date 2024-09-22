@@ -157,7 +157,7 @@ func run(ctx context.Context, pool *pgxpool.Pool, logger *slog.Logger, systemID 
 			updateFn: realtime.Update,
 		}
 	case NyctSubwayCsv:
-		p = &parserAndUpdater[[]nyctsubwaycsv.StopHeadsignRule]{
+		p = &parserAndUpdater[*nyctsubwaycsv.NyctSubwayStopCsvData]{
 			parseFn:  nyctsubwaycsv.Parse,
 			updateFn: nyctsubwaycsv.Update,
 		}
