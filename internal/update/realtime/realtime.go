@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/gtfs"
+	gtfsrt "github.com/jamespfennell/gtfs/proto"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -48,6 +49,15 @@ func updateTrips(ctx context.Context, updateCtx common.UpdateContext, trips []gt
 	for _, trip := range trips {
 		// Only insert trips that are in the feed.
 		if trip.IsEntityInMessage {
+			// Handle delete or cancelled trips. As transiter only surfaces realtime data currently, there
+			// is no real distinction between these 2 schedule relationships. However, in the future, we may
+			// need to handle how static data is exposed to the user based on whether the trip is deleted (don't surface)
+			// or cancelled (surface with a note).
+			if trip.ID.ScheduleRelationship == gtfsrt.TripDescriptor_CANCELED ||
+				trip.ID.ScheduleRelationship == gtfsrt.TripDescriptor_DELETED {
+				continue
+			}
+
 			tripEntitiesInFeed = append(tripEntitiesInFeed, trip)
 		}
 	}
@@ -291,6 +301,11 @@ func calculateStopTimeChanges(updateCtx common.UpdateContext, args updateStopTim
 		} else {
 			pathChanged = true
 		}
+
+		if stopTime.ScheduleRelationship == gtfsrt.TripUpdate_StopTimeUpdate_SKIPPED {
+			continue
+		}
+
 		t.insertStopTimes = append(t.insertStopTimes, db.InsertTripStopTimeParams{
 			TripPk:               args.tripPk,
 			StopPk:               stopPk,
