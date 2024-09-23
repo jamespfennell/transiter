@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jamespfennell/gtfs"
+	gtfsrt "github.com/jamespfennell/gtfs/proto"
 	"github.com/jamespfennell/transiter/internal/convert"
 	"github.com/jamespfennell/transiter/internal/db/dbtesting"
 	"github.com/jamespfennell/transiter/internal/gen/api"
@@ -1010,6 +1011,108 @@ func TestUpdate(t *testing.T) {
 				wantAlert(systemID, alertID1, wInformedTrips(tripID1), wInformedScheduledTrips(scheduledTripID1)),
 			},
 		},
+		{
+			name: "trip cancelled via schedule relationship",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+					},
+				},
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTripWithScheduleRelationship(tripID1, routeID1, gtfs.DirectionID_True,
+								[]gtfs.StopTimeUpdate{}, gtfsrt.TripDescriptor_CANCELED),
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{},
+		},
+		{
+			name: "trip deleted via schedule relationship",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{}),
+						},
+					},
+				},
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTripWithScheduleRelationship(tripID1, routeID1, gtfs.DirectionID_True,
+								[]gtfs.StopTimeUpdate{}, gtfsrt.TripDescriptor_DELETED),
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{},
+		},
+		{
+			name: "skipped stop time",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25), gStopScheduleRelationship(gtfsrt.TripUpdate_StopTimeUpdate_SKIPPED)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, []StopTime{
+					wantSt(0, stopID1, wDepTime(5)),
+					wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+					wantSt(3, stopID4, wArrTime(30)),
+				}),
+			},
+		},
+		{
+			name: "skipped stop time between updates",
+			updates: []update{
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
+					},
+				},
+				{
+					data: &gtfs.Realtime{
+						Trips: []gtfs.Trip{
+							*gtfsTrip(tripID1, routeID1, gtfs.DirectionID_True, []gtfs.StopTimeUpdate{
+								gtfsStu(gStopID(stopID1), gDepTime(5)),
+								gtfsStu(gStopID(stopID2), gArrTime(10), gDepTime(15)),
+								gtfsStu(gStopID(stopID3), gArrTime(20), gDepTime(25), gStopScheduleRelationship(gtfsrt.TripUpdate_StopTimeUpdate_SKIPPED)),
+								gtfsStu(gStopID(stopID4), gArrTime(30)),
+							}),
+						},
+					},
+				},
+			},
+			wantTrips: []*Trip{
+				wantTrip(tripID1, routeID1, true, []StopTime{
+					wantSt(0, stopID1, wDepTime(5)),
+					wantSt(1, stopID2, wArrTime(10), wDepTime(15)),
+					wantSt(3, stopID4, wArrTime(30)),
+				}),
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			querier := dbtesting.NewQuerier(t)
@@ -1499,6 +1602,12 @@ func gStopID(stopID string) gtfsStuOpt {
 	}
 }
 
+func gStopScheduleRelationship(sr gtfsrt.TripUpdate_StopTimeUpdate_ScheduleRelationship) gtfsStuOpt {
+	return func(stu *gtfs.StopTimeUpdate) {
+		stu.ScheduleRelationship = sr
+	}
+}
+
 /*
 func gSeq(stopSequence uint32) gtfsStuOpt {
 	return func(stu *gtfs.StopTimeUpdate) {
@@ -1534,16 +1643,21 @@ func mkTime(i int) time.Time {
 	return time.Date(2023, time.April, 22, 10, i, 0, 0, time.UTC)
 }
 
-func gtfsTrip(tripID, routeID string, directionID gtfs.DirectionID, stus []gtfs.StopTimeUpdate) *gtfs.Trip {
+func gtfsTripWithScheduleRelationship(tripID, routeID string, directionID gtfs.DirectionID, stus []gtfs.StopTimeUpdate, sr gtfs.TripScheduleRelationship) *gtfs.Trip {
 	return &gtfs.Trip{
 		ID: gtfs.TripID{
-			ID:          tripID,
-			RouteID:     routeID,
-			DirectionID: directionID,
+			ID:                   tripID,
+			RouteID:              routeID,
+			DirectionID:          directionID,
+			ScheduleRelationship: sr,
 		},
 		StopTimeUpdates:   stus,
 		IsEntityInMessage: true,
 	}
+}
+
+func gtfsTrip(tripID, routeID string, directionID gtfs.DirectionID, stus []gtfs.StopTimeUpdate) *gtfs.Trip {
+	return gtfsTripWithScheduleRelationship(tripID, routeID, directionID, stus, gtfsrt.TripDescriptor_SCHEDULED)
 }
 
 func gtfsVehicle(vehicleID string, tripID *string, latitude, longitude *float32) *gtfs.Vehicle {
