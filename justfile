@@ -47,7 +47,7 @@ install-tools: install-linters
 
 # Install linters used on Transiter
 install-linters:
-	go install honnef.co/go/tools/cmd/staticcheck@2023.1
+	go install honnef.co/go/tools/cmd/staticcheck@2024.1.1
 
 # Print the versions of all tools
 tool-versions:
