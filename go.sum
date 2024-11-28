@@ -52,8 +52,8 @@ github.com/jackc/puddle/v2 v2.2.0 h1:RdcDk92EJBuBS55nQMMYFXTxwstHug4jkhT5pq8VxPk
 github.com/jackc/puddle/v2 v2.2.0/go.mod h1:vriiEXHvEE654aYKXXjOvZM39qJ0q+azkZFrfEOc3H4=
 github.com/jackc/tern/v2 v2.0.1 h1:2J05jlmYFsNQe9rGsqoNs0+6eDm3iJns8RQb6DJl1V8=
 github.com/jackc/tern/v2 v2.0.1/go.mod h1:4cpqN/grjWYeRWcKXah5YGoviJKJuoqNLoORKLumoG0=
-github.com/jamespfennell/gtfs v0.1.20 h1:RUIeHv0H86cN+TbIiZOOXxWtjlBHa/5fVbUEzllKlHc=
-github.com/jamespfennell/gtfs v0.1.20/go.mod h1:nj9QFIc695IUKM5djZXzyPtCIAYxufafb0sQNbiVMOs=
+github.com/jamespfennell/gtfs v0.1.23 h1:Vy/4VkXHdmig4lljigWoDshfOAvaGU6WCUDcOVXrywk=
+github.com/jamespfennell/gtfs v0.1.23/go.mod h1:nj9QFIc695IUKM5djZXzyPtCIAYxufafb0sQNbiVMOs=
 github.com/kr/pretty v0.3.0 h1:WgNl7dwNpEZ6jJ9k1snq4pZsg7DOEN8hP9Xw0Tsjwk0=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zkfA9PSy5pEvNWRP0ET0TIVo=
