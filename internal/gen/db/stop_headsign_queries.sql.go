@@ -48,6 +48,44 @@ func (q *Queries) InsertStopHeadSignRule(ctx context.Context, arg InsertStopHead
 	return err
 }
 
+const listStopHeadsignRulesForFeed = `-- name: ListStopHeadsignRulesForFeed :many
+SELECT stop.id as stop_id, priority, track, headsign FROM stop_headsign_rule
+INNER JOIN stop ON stop.pk = stop_headsign_rule.stop_pk
+WHERE stop_headsign_rule.feed_pk = $1
+`
+
+type ListStopHeadsignRulesForFeedRow struct {
+	StopID   string
+	Priority int32
+	Track    pgtype.Text
+	Headsign string
+}
+
+func (q *Queries) ListStopHeadsignRulesForFeed(ctx context.Context, feedPk int64) ([]ListStopHeadsignRulesForFeedRow, error) {
+	rows, err := q.db.Query(ctx, listStopHeadsignRulesForFeed, feedPk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStopHeadsignRulesForFeedRow
+	for rows.Next() {
+		var i ListStopHeadsignRulesForFeedRow
+		if err := rows.Scan(
+			&i.StopID,
+			&i.Priority,
+			&i.Track,
+			&i.Headsign,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStopHeadsignRulesForStops = `-- name: ListStopHeadsignRulesForStops :many
 SELECT pk, priority, stop_pk, track, headsign, feed_pk FROM stop_headsign_rule
 WHERE stop_pk = ANY($1::bigint[])
