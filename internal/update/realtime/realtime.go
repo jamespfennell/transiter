@@ -567,6 +567,9 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 			}
 			if informedEntity.TripID != nil && informedEntity.TripID.ID != "" {
 				tripIDs = append(tripIDs, informedEntity.TripID.ID)
+				if informedEntity.TripID.RouteID != "" {
+					routeIDs = append(routeIDs, informedEntity.TripID.RouteID)
+				}
 			}
 		}
 	}
@@ -624,6 +627,7 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 			}
 			if informedEntity.RouteID != nil {
 				if routePk, ok := routeIDToPk[*informedEntity.RouteID]; ok {
+					// TODO: Also insert the direction ID
 					if err := updateCtx.Querier.InsertAlertRoute(ctx, db.InsertAlertRouteParams{
 						AlertPk: pk,
 						RoutePk: routePk,
@@ -652,11 +656,32 @@ func insertAlerts(ctx context.Context, updateCtx common.UpdateContext, alerts []
 				if scheduledTripPk, ok := scheduledTripIDToPk[tripID]; ok {
 					scheduledTripPkOrNil = &scheduledTripPk
 				}
-				if tripPkOrNil != nil || scheduledTripPkOrNil != nil {
+				var routePkOrNil *int64 = nil
+				if informedEntity.TripID.RouteID != "" {
+					if routePkVal, ok := routeIDToPk[informedEntity.TripID.RouteID]; ok {
+						routePkOrNil = &routePkVal
+					}
+				}
+				var startDateOrNil *time.Time = nil
+				if informedEntity.TripID.HasStartDate {
+					startDateOrNil = &informedEntity.TripID.StartDate
+				}
+				var startTimeOrNil *time.Duration = nil
+				if informedEntity.TripID.HasStartTime {
+					startTimeOrNil = &informedEntity.TripID.StartTime
+				}
+				// Trips can sometimes be inferred without an explicit trip ID if the route ID, direction ID, start date, and start time are provided.
+				// This case is not currently handled at the API level, but we still add the information to the database.
+				if tripPkOrNil != nil || scheduledTripPkOrNil != nil ||
+					(routePkOrNil != nil && informedEntity.TripID.DirectionID != gtfs.DirectionID_Unspecified && startDateOrNil != nil && startTimeOrNil != nil) {
 					err := updateCtx.Querier.InsertAlertTrip(ctx, db.InsertAlertTripParams{
 						AlertPk:         pk,
 						TripPk:          convert.NullInt64(tripPkOrNil),
 						ScheduledTripPk: convert.NullInt64(scheduledTripPkOrNil),
+						RoutePk:         convert.NullInt64(routePkOrNil),
+						DirectionID:     convert.DirectionID(informedEntity.TripID.DirectionID),
+						StartDate:       convert.NullTime(startDateOrNil),
+						StartTime:       convert.NullDuration(startTimeOrNil),
 					})
 					if err != nil {
 						return nil, err
