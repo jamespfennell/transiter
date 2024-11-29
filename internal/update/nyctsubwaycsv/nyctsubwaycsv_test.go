@@ -84,8 +84,8 @@ func TestParse(t *testing.T) {
 type AccessibilityUpdateSource int
 
 const (
-	NYCT_SUBWAY_CSV AccessibilityUpdateSource = iota
-	GTFS_STATIC
+	NYCTSUBWAYCSV AccessibilityUpdateSource = iota
+	GTFSSTATIC
 	UNSPECIFIED
 )
 
@@ -231,7 +231,7 @@ func TestUpdate(t *testing.T) {
 			staticGtfsDataPath: "testdata/nyct_subway.zip",
 			csvDataPath:        ptr("testdata/MTA_Subway_Stations.csv"),
 			checkHeadsignRules: ptr(false),
-			accesibilitySource: GTFS_STATIC,
+			accesibilitySource: GTFSSTATIC,
 			wantStops: []db.Stop{
 				{
 					ID:       "103",
@@ -469,7 +469,7 @@ func TestUpdate(t *testing.T) {
 				Logger: slog.Default(),
 			}
 
-			if tc.accesibilitySource == GTFS_STATIC {
+			if tc.accesibilitySource == GTFSSTATIC {
 				staticUpdateCtx.FeedConfig.NyctSubwayOptions.UseAccessibilityInfo = true
 			}
 
@@ -520,7 +520,7 @@ func TestUpdate(t *testing.T) {
 					Logger: slog.Default(),
 				}
 
-				if tc.accesibilitySource != NYCT_SUBWAY_CSV {
+				if tc.accesibilitySource != NYCTSUBWAYCSV {
 					csvUpdateCtx.FeedConfig.NyctSubwayOptions.UseAccessibilityInfo = false
 				}
 

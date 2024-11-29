@@ -26,7 +26,7 @@ func GetFeedType(feedConfig *api.FeedConfig) string {
 	if feedConfig.GetType() != "" {
 		return feedConfig.GetType()
 	}
-	// Deprecated, but included for backwards compatibility
+	//lint:ignore SA1019  Deprecated, but included for backwards compatibility
 	return feedConfig.GetParser()
 }
 
@@ -35,14 +35,14 @@ func UseAccessibilityInfoFromFeed(feedConfig *api.FeedConfig) bool {
 		return true
 	}
 
-	feed_type := GetFeedType(feedConfig)
+	feedType := GetFeedType(feedConfig)
 
 	// Default to static GTFS feeds having accessibility info
 	if feedConfig.NyctSubwayOptions == nil {
-		return feed_type == "GTFS_STATIC"
+		return feedType == "GTFS_STATIC"
 	}
 
-	if feed_type == "GTFS_STATIC" || feed_type == "NYCT_SUBWAY_CSV" {
+	if feedType == "GTFS_STATIC" || feedType == "NYCT_SUBWAY_CSV" {
 		return feedConfig.NyctSubwayOptions.UseAccessibilityInfo
 	}
 
