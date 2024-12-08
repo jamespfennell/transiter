@@ -613,7 +613,6 @@ type UpdateStopParams struct {
 	Pk                       int64
 }
 
-// case when done = false then o2.done_ts else o.done_ts end
 func (q *Queries) UpdateStop(ctx context.Context, arg UpdateStopParams) error {
 	_, err := q.db.Exec(ctx, updateStop,
 		arg.FeedPk,

@@ -132,7 +132,6 @@ type Querier interface {
 	UpdateFeed(ctx context.Context, arg UpdateFeedParams) error
 	UpdateRoute(ctx context.Context, arg UpdateRouteParams) error
 	UpdateServiceMapConfig(ctx context.Context, arg UpdateServiceMapConfigParams) error
-	// case when done = false then o2.done_ts else o.done_ts end
 	UpdateStop(ctx context.Context, arg UpdateStopParams) error
 	UpdateStop_Parent(ctx context.Context, arg UpdateStop_ParentParams) error
 	UpdateSystem(ctx context.Context, arg UpdateSystemParams) error
