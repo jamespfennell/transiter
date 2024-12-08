@@ -10,6 +10,7 @@ VALUES
      sqlc.arg(timezone), sqlc.arg(type), sqlc.arg(wheelchair_boarding), sqlc.arg(zone_id))
 RETURNING pk;
 
+-- case when done = false then o2.done_ts else o.done_ts end
 -- name: UpdateStop :exec
 UPDATE stop SET
     feed_pk = sqlc.arg(feed_pk),
@@ -21,7 +22,7 @@ UPDATE stop SET
     platform_code = sqlc.arg(platform_code),
     timezone = sqlc.arg(timezone),
     type = sqlc.arg(type),
-    wheelchair_boarding = IF(sqlc.arg(update_wheelchair_boarding), sqlc.arg(wheelchair_boarding), wheelchair_boarding),
+    wheelchair_boarding = CASE WHEN sqlc.arg(update_wheelchair_boarding)::boolean THEN sqlc.arg(wheelchair_boarding) ELSE wheelchair_boarding END,
     zone_id = sqlc.arg(zone_id),
     parent_stop_pk = NULL
 WHERE

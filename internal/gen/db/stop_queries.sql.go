@@ -590,7 +590,7 @@ UPDATE stop SET
     platform_code = $7,
     timezone = $8,
     type = $9,
-    wheelchair_boarding = IF($10, $11, wheelchair_boarding),
+    wheelchair_boarding = CASE WHEN $10::boolean THEN $11 ELSE wheelchair_boarding END,
     zone_id = $12,
     parent_stop_pk = NULL
 WHERE
@@ -607,12 +607,13 @@ type UpdateStopParams struct {
 	PlatformCode             pgtype.Text
 	Timezone                 pgtype.Text
 	Type                     string
-	UpdateWheelchairBoarding interface{}
-	WheelchairBoarding       interface{}
+	UpdateWheelchairBoarding bool
+	WheelchairBoarding       pgtype.Bool
 	ZoneID                   pgtype.Text
 	Pk                       int64
 }
 
+// case when done = false then o2.done_ts else o.done_ts end
 func (q *Queries) UpdateStop(ctx context.Context, arg UpdateStopParams) error {
 	_, err := q.db.Exec(ctx, updateStop,
 		arg.FeedPk,
