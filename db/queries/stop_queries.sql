@@ -27,6 +27,22 @@ UPDATE stop SET
 WHERE
     pk = sqlc.arg(pk);
 
+-- name: UpdateStopWithoutWheelchairBoarding :exec
+UPDATE stop SET
+    feed_pk = sqlc.arg(feed_pk),
+    name = sqlc.arg(name),
+    location = sqlc.arg(location)::geography,
+    url = sqlc.arg(url),
+    code = sqlc.arg(code),
+    description = sqlc.arg(description),
+    platform_code = sqlc.arg(platform_code),
+    timezone = sqlc.arg(timezone),
+    type = sqlc.arg(type),
+    zone_id = sqlc.arg(zone_id),
+    parent_stop_pk = NULL
+WHERE
+    pk = sqlc.arg(pk);
+
 -- name: UpdateStop_Parent :exec
 UPDATE stop SET
     parent_stop_pk = sqlc.arg(parent_stop_pk)
@@ -165,3 +181,13 @@ WHERE
         NOT sqlc.arg(filter_by_stop_id)::bool
         OR id = ANY(sqlc.arg(stop_ids)::text[])
     );
+
+-- name: DeleteWheelchairBoardingForSystem :exec
+UPDATE stop
+SET wheelchair_boarding = NULL
+WHERE system_pk = sqlc.arg(system_pk);
+
+-- name: UpdateWheelchairBoardingForStop :exec
+UPDATE stop
+SET wheelchair_boarding = sqlc.arg(wheelchair_boarding)
+WHERE pk = sqlc.arg(stop_pk);
