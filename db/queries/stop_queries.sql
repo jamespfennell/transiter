@@ -21,23 +21,7 @@ UPDATE stop SET
     platform_code = sqlc.arg(platform_code),
     timezone = sqlc.arg(timezone),
     type = sqlc.arg(type),
-    wheelchair_boarding = sqlc.arg(wheelchair_boarding),
-    zone_id = sqlc.arg(zone_id),
-    parent_stop_pk = NULL
-WHERE
-    pk = sqlc.arg(pk);
-
--- name: UpdateStopWithoutWheelchairBoarding :exec
-UPDATE stop SET
-    feed_pk = sqlc.arg(feed_pk),
-    name = sqlc.arg(name),
-    location = sqlc.arg(location)::geography,
-    url = sqlc.arg(url),
-    code = sqlc.arg(code),
-    description = sqlc.arg(description),
-    platform_code = sqlc.arg(platform_code),
-    timezone = sqlc.arg(timezone),
-    type = sqlc.arg(type),
+    wheelchair_boarding = CASE WHEN sqlc.arg(update_wheelchair_boarding)::boolean THEN sqlc.arg(wheelchair_boarding) ELSE wheelchair_boarding END,
     zone_id = sqlc.arg(zone_id),
     parent_stop_pk = NULL
 WHERE
