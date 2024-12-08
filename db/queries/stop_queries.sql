@@ -10,7 +10,6 @@ VALUES
      sqlc.arg(timezone), sqlc.arg(type), sqlc.arg(wheelchair_boarding), sqlc.arg(zone_id))
 RETURNING pk;
 
--- case when done = false then o2.done_ts else o.done_ts end
 -- name: UpdateStop :exec
 UPDATE stop SET
     feed_pk = sqlc.arg(feed_pk),
