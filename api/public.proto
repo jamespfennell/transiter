@@ -2,11 +2,11 @@
    The public API is Transiter's main API and
     is used to query transit data from Transiter.
    It's a read-only API and designed to be reachable from the internet.
-  
+
    Transiter's other API is the private [admin API](admin.md) which is used to manage the Transiter deployment.
 
    The public API is based on the following resource hierarchy:
-   
+
    ```
    System
     |- Agency
@@ -19,23 +19,23 @@
     |- Transfer
     |- Vehicle
    ```
-   
+
    For each resource there is a protobuf message type, a list endpoint, and a get endpoint.
    In the HTTP API, the structure of the response is based on the protobuf message type.
-   
+
    The URLs in the HTTP API are determined by the resource hierarchy; thus:
-   
+
    - List all systems has URL `/systems`,
    - Get system with ID `<system_id>` has URL `/systems/<system_id>`,
    - List all routes in the system has URL `/systems/<system_id>/routes`,
    - Get route has URL `/systems/<system_id>/routes/<route_id>`,
-   
+
    and so on.
-   
+
    The following table summarizes all of the resources and their types.
    The right-most column describes the _source_ of the resource.
    The public API is a read-only API so all of the resources come from somewhere else.
-   
+
    | Resource              | List endpoint                                       | Get endpoint                                    | Source               |
    | --------------------- | --------------------------------------------------- | ----------------------------------------------- |----------------------|
    | [Agency](#agency)     | [ListAgencies](public_endpoints.md#list-agencies)   | [GetAgency](public_endpoints.md#get-agency)     | GTFS static          |
@@ -48,7 +48,7 @@
    | [Transfer](#transfer) | [ListTransfers](public_endpoints.md#list-transfers) | [GetTransfer](public_endpoints.md#get-transfer) | GTFS static          |
    | [Trip](#trip)         | [ListTrips](public_endpoints.md#list-trips)         | [GetTrip](public_endpoints.md#get-trip)         | GTFS realtime        |
    | [Vehicle](#vehicle)   | [ListVehicles](public_endpoints.md#list-vehicles)   | [GetVehicle](public_endpoints.md#get-vehicle)   | GTFS realtime        |
-  
+
    Many resources refer to other resources across the hierarchy.
    For example, each route has an agency it is attached to.
    Each stop has a list of service maps, and each service map contains a set of routes.
@@ -59,7 +59,7 @@
    However they also contain additional information that is considered generally useful.
    For example, the [Stop.Reference](#stopreference) message contains the stop's name.
    What counts as "considered generally" is obviously subjective and open to change.
-   
+
 */
 syntax = "proto3";
 
@@ -274,7 +274,7 @@ message EntrypointReply {
   // Message containing version information about a Transiter binary.
   message TransiterDetails {
     reserved 2;
-  
+
     // The version of the Transiter binary this instance is running.
     string version = 1;
     // URL of the Transiter GitHub repository.
@@ -283,7 +283,7 @@ message EntrypointReply {
     // Message containing information about a specific Transiter CI build.
     message Build {
       reserved 7;
-  
+
       // The GitHub build number.
       string number = 3;
       // Time the binary was built, in the form of a human readable string.
@@ -377,7 +377,7 @@ message ListStopsRequest {
 
   // If true, only return stops whose types are specified in the repeated `type` field.
   bool filter_by_type = 16;
-  // Types to filter by if `filter_by_type` is set to true. 
+  // Types to filter by if `filter_by_type` is set to true.
   // It is an error to populate this field if `filter_by_id` is false.
   repeated Stop.Type type = 17;
 
@@ -988,6 +988,13 @@ message Trip {
   // Shape of the trip.
   optional Shape.Reference shape = 8;
 
+  // Active alerts for this trip.
+  //
+  // These are determined using the `informed_entity` field in
+  // the [GTFS realtime alerts
+  // message](https://gtfs.org/realtime/feed-entities/service-alerts/#service-alerts).
+  repeated Alert.Reference alerts = 9;
+
   // Reference type for the trip resource.
   message Reference {
     // Same as the parent message.
@@ -1236,10 +1243,10 @@ message Feed {
 
   // Unix milliseconds timestamp of when the last successful update of this feed finished.
   optional int64 last_successful_update_ms = 5;
-  
+
   // Unix milliseconds timestamp of when the last skipped update of this feed finished.
   optional int64 last_skipped_update_ms = 6;
-  
+
   // Unix milliseconds timestamp of when the last failed update of this feed finished.
   optional int64 last_failed_update_ms = 7;
 
