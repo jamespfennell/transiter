@@ -590,26 +590,27 @@ UPDATE stop SET
     platform_code = $7,
     timezone = $8,
     type = $9,
-    wheelchair_boarding = $10,
-    zone_id = $11,
+    wheelchair_boarding = IF($10, $11, wheelchair_boarding),
+    zone_id = $12,
     parent_stop_pk = NULL
 WHERE
-    pk = $12
+    pk = $13
 `
 
 type UpdateStopParams struct {
-	FeedPk             int64
-	Name               pgtype.Text
-	Location           types.Geography
-	Url                pgtype.Text
-	Code               pgtype.Text
-	Description        pgtype.Text
-	PlatformCode       pgtype.Text
-	Timezone           pgtype.Text
-	Type               string
-	WheelchairBoarding pgtype.Bool
-	ZoneID             pgtype.Text
-	Pk                 int64
+	FeedPk                   int64
+	Name                     pgtype.Text
+	Location                 types.Geography
+	Url                      pgtype.Text
+	Code                     pgtype.Text
+	Description              pgtype.Text
+	PlatformCode             pgtype.Text
+	Timezone                 pgtype.Text
+	Type                     string
+	UpdateWheelchairBoarding interface{}
+	WheelchairBoarding       interface{}
+	ZoneID                   pgtype.Text
+	Pk                       int64
 }
 
 func (q *Queries) UpdateStop(ctx context.Context, arg UpdateStopParams) error {
@@ -623,55 +624,8 @@ func (q *Queries) UpdateStop(ctx context.Context, arg UpdateStopParams) error {
 		arg.PlatformCode,
 		arg.Timezone,
 		arg.Type,
+		arg.UpdateWheelchairBoarding,
 		arg.WheelchairBoarding,
-		arg.ZoneID,
-		arg.Pk,
-	)
-	return err
-}
-
-const updateStopWithoutWheelchairBoarding = `-- name: UpdateStopWithoutWheelchairBoarding :exec
-UPDATE stop SET
-    feed_pk = $1,
-    name = $2,
-    location = $3::geography,
-    url = $4,
-    code = $5,
-    description = $6,
-    platform_code = $7,
-    timezone = $8,
-    type = $9,
-    zone_id = $10,
-    parent_stop_pk = NULL
-WHERE
-    pk = $11
-`
-
-type UpdateStopWithoutWheelchairBoardingParams struct {
-	FeedPk       int64
-	Name         pgtype.Text
-	Location     types.Geography
-	Url          pgtype.Text
-	Code         pgtype.Text
-	Description  pgtype.Text
-	PlatformCode pgtype.Text
-	Timezone     pgtype.Text
-	Type         string
-	ZoneID       pgtype.Text
-	Pk           int64
-}
-
-func (q *Queries) UpdateStopWithoutWheelchairBoarding(ctx context.Context, arg UpdateStopWithoutWheelchairBoardingParams) error {
-	_, err := q.db.Exec(ctx, updateStopWithoutWheelchairBoarding,
-		arg.FeedPk,
-		arg.Name,
-		arg.Location,
-		arg.Url,
-		arg.Code,
-		arg.Description,
-		arg.PlatformCode,
-		arg.Timezone,
-		arg.Type,
 		arg.ZoneID,
 		arg.Pk,
 	)
