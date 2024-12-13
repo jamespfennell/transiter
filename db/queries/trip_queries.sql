@@ -137,5 +137,4 @@ SELECT trip.id, trip.pk
 FROM trip
     INNER JOIN feed ON trip.feed_pk = feed.pk
 WHERE trip.id = ANY(sqlc.arg(trip_ids)::text[])
-    AND feed.system_pk = sqlc.arg(system_pk)
-FOR UPDATE;
+    AND feed.system_pk = sqlc.arg(system_pk);

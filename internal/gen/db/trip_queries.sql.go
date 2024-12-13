@@ -424,7 +424,6 @@ FROM trip
     INNER JOIN feed ON trip.feed_pk = feed.pk
 WHERE trip.id = ANY($1::text[])
     AND feed.system_pk = $2
-FOR UPDATE
 `
 
 type MapTripIDToPkInSystemParams struct {
