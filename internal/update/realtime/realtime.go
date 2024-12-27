@@ -760,8 +760,6 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 		}
 	}
 
-	// This statement also acquires a lock on the rows in the trip table associated
-	// with vehicles being inserted/updated.
 	tripIDToPk, err := dbwrappers.MapTripIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, tripIDs)
 	if err != nil {
 		return err
@@ -772,9 +770,6 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 		return err
 	}
 
-	// This statement does not currently lock the rows in the stop table associated
-	// with vehicles being inserted/updated. However, changes to the stop table should
-	// be rare, so conflicts should not be a major issue.
 	stopIDToPk, err := dbwrappers.MapStopIDToPkInSystem(ctx, updateCtx.Querier, updateCtx.SystemPk, stopIDs)
 	if err != nil {
 		return err
@@ -865,8 +860,11 @@ func updateVehicles(ctx context.Context, updateCtx common.UpdateContext, vehicle
 
 	for _, param := range insertVehicleParams {
 		err = updateCtx.Querier.InsertVehicle(ctx, param)
+		if err != nil {
+			return err
+		}
 	}
-	return err
+	return nil
 }
 
 func ptr[T any](t T) *T {
