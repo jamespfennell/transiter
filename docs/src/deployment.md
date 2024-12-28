@@ -93,6 +93,103 @@ This is where the Transiter public HTTP API is listening if you used the Docker 
   configuration above.
 
 
+Alternatively, you can use a Docker compose configuration such as below:
+
+```
+version: '3.5'
+
+services:
+
+  transiter:
+    image: jamespfennell/transiter:latest
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"
+      - "127.0.0.1:8082:8082"
+      - "127.0.0.1:8083:8083"
+    restart: always
+    command:
+      - server
+      - --log-level
+      - info
+      - --postgres-connection-string
+      - "postgres://transiter:transiter@postgres:5432/transiter"
+
+  caddy:
+    image: caddy:2.8.4
+    ports:
+      - "127.0.0.1:8090:8090"
+    command:
+      - caddy
+      - reverse-proxy
+      - --from
+      - :8090
+      - --to
+      - transiter:8080
+      - --header-up
+      - "X-Transiter-Host: https://demo.transiter.dev"
+
+  postgres:
+    image: postgis/postgis:14-3.4
+    environment:
+      - POSTGRES_USER=transiter
+      - POSTGRES_PASSWORD=transiter
+      - POSTGRES_DB=transiter
+    restart: always
+```
+
+### (Optional) Configuring CORS
+
+If you plan to make requests to Transiter from a web browser, you may run into [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+issues if you do not run Transiter on the same origin as your web application. Since the Transiter public API is generally accessible using
+["Simple requests"](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests), you can simply configure your reverse proxy to add the
+`Access-Control-Allow-Origin` header to all responses from Transiter and avoid handling CORS "preflight" requests.
+
+!!! Note
+
+    For local web application development, it is likely sufficient to use the built-in proxy functionality of your bundler/framework. For example:
+
+    - Create React App's [`proxy` option](https://create-react-app.dev/docs/proxying-api-requests-in-development/)
+    - Vite's [`server.proxy` option](https://vite.dev/config/server-options#server-proxy)
+    - Next.js's [`rewrites` configuration](https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites)
+
+Below is a simple Caddy configuration that adds the `Access-Control-Allow-Origin` header to all responses from Transiter:
+
+!!! warning
+
+    The below examples allow *any* origin to access your Transiter host. In most cases you should specify a more
+    specific `Access-Control-Allow-Origin` header to properly limit access.
+
+```
+demo.transiter.dev {
+    encode gzip
+    reverse_proxy 127.0.0.1:8080 {
+        header_up X-Transiter-Host "https://demo.transiter.dev"
+        header_down Access-Control-Allow-Origin "*"
+    }
+}
+```
+
+And here is the equivalent Caddy setup within a Docker compose configuration:
+
+```
+  caddy:
+    image: caddy:2.8.4
+    ports:
+      - "127.0.0.1:8090:8090"
+    command:
+      - caddy
+      - reverse-proxy
+      - --from
+      - :8090
+      - --to
+      - transiter:8080
+      - --header-up
+      - "X-Transiter-Host: https://demo.transiter.dev"
+      - --header-down
+      - "Access-Control-Allow-Origin: *"
+```
+
 ## (Optional) Setting the Transiter host
 
 The reverse proxy configuration above contains a `X-Transiter-Host` header instruction.
