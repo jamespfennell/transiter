@@ -42,8 +42,8 @@ func NewGenerator(ctx context.Context) Generator {
 	}
 }
 
-func (h Generator) SystemsURL() *string {
-	return h.generateURL("systems")
+func (h Generator) SystemsChildResources(count int) *api.ChildResources {
+	return h.generateChildResources(int64(count), "systems")
 }
 
 func (h Generator) System(id string) *api.System_Reference {

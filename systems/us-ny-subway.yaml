@@ -3,7 +3,7 @@ name: New York City Subway
 feeds:
   - id: gtfsstatic
     type: GTFS_STATIC
-    url: "http://web.mta.info/developers/data/nyct/subway/google_transit.zip"
+    url: "https://rrgtfsfeeds.s3.amazonaws.com/gtfs_subway.zip"
 
   - id: subwaycsv
     type: NYCT_SUBWAY_CSV

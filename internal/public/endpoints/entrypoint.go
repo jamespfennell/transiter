@@ -17,11 +17,7 @@ func Entrypoint(ctx context.Context, r *Context, req *api.EntrypointRequest) (*a
 		Transiter: &api.EntrypointReply_TransiterDetails{
 			Version: version.Version(),
 			Url:     "https://github.com/jamespfennell/transiter",
-			// TODO: build information
 		},
-		Systems: &api.ChildResources{
-			Count: int64(len(systems)),
-			Url:   r.Reference.SystemsURL(),
-		},
+		Systems: r.Reference.SystemsChildResources(len(systems)),
 	}, nil
 }

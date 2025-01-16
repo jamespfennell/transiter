@@ -51,26 +51,6 @@ Message containing version information about a Transiter binary.
 | ----- | ---- | ----------- |
 | version | string | The version of the Transiter binary this instance is running.
 | url | string | URL of the Transiter GitHub repository.
-| build | [EntrypointReply.TransiterDetails.Build](public_endpoints.md#entrypointreplytransiterdetailsbuild) | Information about the CI build invocation that built this Transiter binary.
-
-
-
-
-
-
-#### EntrypointReply.TransiterDetails.Build
-
-Message containing information about a specific Transiter CI build.
-	
-
-
-| Field | Type |  Description |
-| ----- | ---- | ----------- |
-| number | string | The GitHub build number.
-| built_at | string | Time the binary was built, in the form of a human readable string.
-| built_at_timestamp | string | Time the binary was built, in the form of a Unix timestamp.
-| git_commit_hash | string | Hash of the Git commit that the binary was built at.
-| url | string | URL of the GitHub actions CI run.
 
 
 

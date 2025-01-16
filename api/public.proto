@@ -273,30 +273,12 @@ message EntrypointRequest {}
 message EntrypointReply {
   // Message containing version information about a Transiter binary.
   message TransiterDetails {
-    reserved 2;
+    reserved 2, 3;
 
     // The version of the Transiter binary this instance is running.
     string version = 1;
     // URL of the Transiter GitHub repository.
     string url = 4;
-
-    // Message containing information about a specific Transiter CI build.
-    message Build {
-      reserved 7;
-
-      // The GitHub build number.
-      string number = 3;
-      // Time the binary was built, in the form of a human readable string.
-      string built_at = 4;
-      // Time the binary was built, in the form of a Unix timestamp.
-      string built_at_timestamp = 5;
-      // Hash of the Git commit that the binary was built at.
-      string git_commit_hash = 6;
-      // URL of the GitHub actions CI run.
-      string url = 8;
-    }
-    // Information about the CI build invocation that built this Transiter binary.
-    optional Build build = 3;
   }
   // Version and other information about this Transiter binary.
   TransiterDetails transiter = 1;
