@@ -1,25 +1,3 @@
-# Ignore everything
-*
-
-!buf.gen.yaml
-!buf.lock
-!buf.yaml
-!go.mod
-!go.sum
-!justfile
-!sqlc.yaml
-
-!db/*
-!api/*proto
-
-!docs/mkdocs.yml
-!docs/requirements.txt
-!docs/src
+README.md
 docs/src/api/api_docs_gen_input.json
-
-!transiter.go
-!parse/*
-!config/*
-!internal/*
-
 internal/gen/staticcheck.conf

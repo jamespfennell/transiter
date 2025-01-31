@@ -1,10 +1,5 @@
-FROM python:3.10
+FROM golang:1.22
 
 WORKDIR /endtoend
-
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY *.py ./
-
-ENTRYPOINT ["pytest", "-n", "8"]
+COPY . .
+CMD ["go", "test", "./tests/endtoend/...", "-v"]

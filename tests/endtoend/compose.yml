@@ -32,7 +32,8 @@ services:
 
   testrunner:
     build:
-      context: ./
+      context: ../..
+      dockerfile: tests/endtoend/Dockerfile
     environment:
       - TRANSITER_HOST=http://transiter:8082
       - SOURCE_SERVER_HOST=http://sourceserver:8090

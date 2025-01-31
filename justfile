@@ -66,7 +66,8 @@ lint: install-linters
 
 # Run all the unit tests
 test:
-	go test ./...
+	go test $(go list ./... | grep -v /tests/endtoend)
+	
 # Run all the E2E tests (requires Docker)
 test-e2e: build-docker _run_e2e
 # Run all the unit and E2E tests (requires Docker)
