@@ -24,7 +24,7 @@ RUN just install-tools
 COPY buf.gen.yaml .
 COPY buf.lock .
 COPY buf.yaml .
-COPY api/*proto api/
+COPY api api
 COPY sqlc.yaml .
 COPY db db
 COPY docs/src/api/api_docs_gen.go docs/src/api/api_docs_gen.go
@@ -35,14 +35,9 @@ RUN just generate
 RUN mv internal/gen internal/genNew
 RUN mv docs/src/api docs/src/apiNew
 RUN rm docs/src/apiNew/api_docs_gen_input.json
+COPY . ./
 
-# (2.4) Copy the source code in and checked-in docs.
-COPY transiter.go .
-COPY internal internal
-COPY docs/src/api docs/src/api
-COPY docs/src docs/src
-
-# (2.5) Diff the newly generated files with the ones in source control.
+# (2.4) Diff the newly generated files with the ones in source control.
 # If there are differences, this will fail
 RUN diff --recursive internal/gen internal/genNew
 RUN rm -r internal/genNew
@@ -77,4 +72,4 @@ COPY --from=caddy /usr/bin/caddy /usr/bin
 COPY --from=docs-builder /transiter/docs/gen /usr/share/doc/transiter
 COPY --from=builder /transiter/transiter /usr/bin
 ENTRYPOINT ["transiter"]
-
+ 
