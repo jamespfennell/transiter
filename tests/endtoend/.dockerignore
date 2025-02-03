@@ -1,7 +1,0 @@
-# Ignore everything
-*
-
-!requirements.txt
-!*.py
-!client/*
-!data/*
