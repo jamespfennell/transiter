@@ -27,7 +27,7 @@ func ListAlerts(ctx context.Context, r *Context, req *api.ListAlertsRequest) (*a
 	if err != nil {
 		return nil, err
 	}
-	apiAlerts, err := convertAlerts(ctx, r, alerts)
+	apiAlerts, err := convertAlerts(ctx, r, system.ID, alerts)
 	if err != nil {
 		return nil, err
 	}
@@ -48,14 +48,14 @@ func GetAlert(ctx context.Context, r *Context, req *api.GetAlertRequest) (*api.A
 	if err != nil {
 		return nil, noRowsToNotFound(nil, fmt.Sprintf("alert %q in system %q", req.AlertId, req.SystemId))
 	}
-	apiAlert, err := convertAlerts(ctx, r, []db.Alert{alert})
+	apiAlert, err := convertAlerts(ctx, r, system.ID, []db.Alert{alert})
 	if err != nil {
 		return nil, err
 	}
 	return apiAlert[0], nil
 }
 
-func convertAlerts(ctx context.Context, r *Context, alerts []db.Alert) ([]*api.Alert, error) {
+func convertAlerts(ctx context.Context, r *Context, systemID string, alerts []db.Alert) ([]*api.Alert, error) {
 	var alertPks []int64
 	for _, alert := range alerts {
 		alertPks = append(alertPks, alert.Pk)
@@ -68,6 +68,8 @@ func convertAlerts(ctx context.Context, r *Context, alerts []db.Alert) ([]*api.A
 	for _, alert := range alerts {
 		apiAlerts = append(apiAlerts, &api.Alert{
 			Id:                  alert.ID,
+			Resource:            r.Reference.Alert(alert.ID, systemID, alert.Cause, alert.Effect).Resource,
+			System:              r.Reference.System(systemID),
 			Cause:               convert.AlertCause(alert.Cause),
 			Effect:              convert.AlertEffect(alert.Effect),
 			CurrentActivePeriod: currentActivePeriods[alert.Pk],

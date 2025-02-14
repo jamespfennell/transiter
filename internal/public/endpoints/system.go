@@ -60,6 +60,7 @@ func buildApiSystems(ctx context.Context, r *Context, systems []db.System) ([]*a
 		}
 		apiSystems = append(apiSystems, &api.System{
 			Id:        system.ID,
+			Resource:  r.Reference.System(system.ID).Resource,
 			Name:      system.Name,
 			Status:    api.System_Status(api.System_Status_value[strings.ToUpper(system.Status)]),
 			Agencies:  r.Reference.AgenciesChildResources(system.ID, numAgencies),
