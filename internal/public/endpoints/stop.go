@@ -145,6 +145,7 @@ func buildTransfersResponse(ctx context.Context, r *Context, systemID string, tr
 	for _, transfer := range transfers {
 		apiTransfers = append(apiTransfers, &api.Transfer{
 			Id:              transfer.ID,
+			System:          r.Reference.System(systemID),
 			FromStop:        stopPkToApiPreview[transfer.FromStopPk],
 			ToStop:          stopPkToApiPreview[transfer.ToStopPk],
 			Type:            convert.TransferType(transfer.Type),
@@ -213,6 +214,8 @@ func buildStopsResponse(ctx context.Context, r *Context, systemID string, stops 
 		}
 		result = append(result, &api.Stop{
 			Id:                 stop.ID,
+			System:             r.Reference.System(systemID),
+			Resource:           r.Reference.Stop(stop.ID, systemID, stop.Name).Resource,
 			Code:               convert.SQLNullString(stop.Code),
 			Name:               convert.SQLNullString(stop.Name),
 			Description:        convert.SQLNullString(stop.Description),
