@@ -85,6 +85,8 @@ func buildApiRoutes(ctx context.Context, r *Context, req routeRequest, routes []
 		route := &routes[i]
 		apiRoutes = append(apiRoutes, &api.Route{
 			Id:                route.ID,
+			Resource:          r.Reference.Route(route.ID, req.GetSystemId(), route.Color).Resource,
+			System:            r.Reference.System(req.GetSystemId()),
 			ShortName:         convert.SQLNullString(route.ShortName),
 			LongName:          convert.SQLNullString(route.LongName),
 			Color:             route.Color,

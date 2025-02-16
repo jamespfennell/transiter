@@ -64,6 +64,8 @@ func buildApiAgencies(ctx context.Context, r *Context, systemID string, dbAgenci
 		}
 		apiAgency := &api.Agency{
 			Id:       dbAgency.ID,
+			Resource: r.Reference.Agency(dbAgency.ID, systemID, dbAgency.Name).Resource,
+			System:   r.Reference.System(systemID),
 			Name:     dbAgency.Name,
 			Url:      dbAgency.Url,
 			Timezone: dbAgency.Timezone,

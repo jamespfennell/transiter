@@ -45,6 +45,7 @@ func buildApiFeeds(r *Context, system *db.System, feeds []db.Feed) ([]*api.Feed,
 		apiFeeds = append(apiFeeds, &api.Feed{
 			Id:                     feed.ID,
 			System:                 r.Reference.System(system.ID),
+			Resource:               r.Reference.Feed(feed.ID, system.ID).Resource,
 			LastUpdateMs:           convert.SQLNullTimeMs(feed.LastUpdate),
 			LastSuccessfulUpdateMs: convert.SQLNullTimeMs(feed.LastSuccessfulUpdate),
 			LastSkippedUpdateMs:    convert.SQLNullTimeMs(feed.LastSkippedUpdate),
