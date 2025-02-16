@@ -23,3 +23,6 @@ docs/src/api/api_docs_gen_input.json
 !internal/*
 
 internal/gen/staticcheck.conf
+
+# Allow e2e tests to be run in the container
+!tests/endtoend
