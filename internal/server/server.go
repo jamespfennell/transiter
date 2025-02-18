@@ -241,6 +241,8 @@ func newServeMux(logger *slog.Logger) *runtime.ServeMux {
 			}),
 		// Option to map internal errors to nice HTTP error
 		errors.ServeMuxOption(logger),
+		// Escape all URL characters except for /
+		runtime.WithUnescapingMode(runtime.UnescapingModeAllExceptSlash),
 	)
 }
 

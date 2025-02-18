@@ -47,11 +47,18 @@ feeds:
 
 `
 
-func transiterHost() string {
-	if host, ok := os.LookupEnv("TRANSITER_HOST"); ok {
+func transiterAdminHost() string {
+	if host, ok := os.LookupEnv("TRANSITER_ADMIN_HOST"); ok {
 		return host
 	}
 	return "http://localhost:8082"
+}
+
+func transiterPublicHost() string {
+	if host, ok := os.LookupEnv("TRANSITER_PUBLIC_HOST"); ok {
+		return host
+	}
+	return "http://localhost:8080"
 }
 
 func sourceServerHostWithinTransiter() string {
@@ -62,8 +69,9 @@ func sourceServerHostWithinTransiter() string {
 }
 
 func GetTransiterClient(t *testing.T) *transiterclient.TransiterClient {
-	host := transiterHost()
-	client := transiterclient.NewTransiterClient(host)
+	publicHost := transiterPublicHost()
+	adminHost := transiterAdminHost()
+	client := transiterclient.NewTransiterClient(adminHost, publicHost)
 	if err := client.PingUntilOK(20); err != nil {
 		t.Fatalf("failed to ping Transiter: %v", err)
 	}

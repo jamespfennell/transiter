@@ -47,16 +47,16 @@ Steps:
    can also be run from your IDE, such as VSCode.
 
 **Advanced usage** The test assumes there is a running Transiter instance with
-an HTTP admin service listening at the location given in the environment
-variable `TRANSITER_HOST`. It also requires the source server to be running. The
-source server should be accessible to the test driver at the location
-`SOURCE_SERVER_HOST` and be accessible to the Transiter instance at the location
-`SOURCE_SERVER_HOST_WITHIN_TRANSITER`. The defaults for these are:
+an HTTP admin and public service listening at the locations given in the
+environment variables `TRANSITER_ADMIN_HOST` and `TRANSITER_PUBLIC_HOST`. It also
+requires the source server to be running. The source server should be accessible
+to the test driver at the location `SOURCE_SERVER_HOST` and be accessible to
+the Transiter instance at the location `SOURCE_SERVER_HOST_WITHIN_TRANSITER`.
+The defaults for these are:
 
-- `TRANSITER_HOST=http://localhost:8082` (this is also the Transiter default)
-
+- `TRANSITER_ADMIN_HOST=http://localhost:8082`
+- `TRANSITER_PUBLIC_HOST=http://localhost:8080`
 - `SOURCE_SERVER_HOST=http://localhost:8090`
-
 - `SOURCE_SERVER_HOST_WITHIN_TRANSITER=SOURCE_SERVER_HOST`
 
 So by default everything works without customization, but all of the
