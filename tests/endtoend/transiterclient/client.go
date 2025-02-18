@@ -12,12 +12,30 @@ import (
 )
 
 type TransiterClient struct {
+	// Currently active host
 	host string
+	// Host for the admin and public APIs
+	adminHost string
+	// Host for the public APIs
+	publicHost string
 }
 
-func NewTransiterClient(host string) *TransiterClient {
-	trimmedHost := strings.TrimSuffix(host, "/")
-	return &TransiterClient{host: trimmedHost}
+func NewTransiterClient(adminHost string, publicHost string) *TransiterClient {
+	trimmedAdminHost := strings.TrimSuffix(adminHost, "/")
+	trimmedPublicHost := strings.TrimSuffix(publicHost, "/")
+	return &TransiterClient{
+		host:       trimmedAdminHost,
+		adminHost:  trimmedAdminHost,
+		publicHost: trimmedPublicHost,
+	}
+}
+
+func (c *TransiterClient) UseAdminHost() {
+	c.host = c.adminHost
+}
+
+func (c *TransiterClient) UsePublicHost() {
+	c.host = c.publicHost
 }
 
 type QueryParam struct {

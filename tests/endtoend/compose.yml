@@ -35,6 +35,7 @@ services:
       context: ../..
       dockerfile: tests/endtoend/Dockerfile
     environment:
-      - TRANSITER_HOST=http://transiter:8082
+      - TRANSITER_ADMIN_HOST=http://transiter:8082
+      - TRANSITER_PUBLIC_HOST=http://transiter:8080
       - SOURCE_SERVER_HOST=http://sourceserver:8090
       - SOURCE_SERVER_HOST_WITHIN_TRANSITER=http://sourceserver:8090
