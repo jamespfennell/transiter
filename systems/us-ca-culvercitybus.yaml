@@ -1,0 +1,19 @@
+name: Culver City Bus
+
+feeds:
+  - id: gtfsstatic
+    type: GTFS_STATIC
+    url: "https://www.culvercity.org/files/assets/public/v/5/documents/information-technology/maps/gtfsexport.zip"
+
+  - id: vehicles
+    type: GTFS_REALTIME
+    url: "https://nextccbus.org/gtfsrt/vehicles"
+
+  - id: trips
+    type: GTFS_REALTIME
+    url: "https://nextccbus.org/gtfsrt/trips"
+
+  - id: alerts
+    type: GTFS_REALTIME
+    url: "https://nextccbus.org/gtfsrt/alerts"
+
