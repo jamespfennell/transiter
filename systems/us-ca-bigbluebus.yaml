@@ -1,0 +1,19 @@
+name: Big Blue Bus (Santa Monica)
+
+feeds:
+  - id: gtfsstatic
+    type: GTFS_STATIC
+    url: "https://gtfs.bigbluebus.com/current.zip"
+
+  - id: vehicles
+    type: GTFS_REALTIME
+    url: "https://gtfs.bigbluebus.com/vehiclepositions.bin"
+
+  - id: trips
+    type: GTFS_REALTIME
+    url: "https://gtfs.bigbluebus.com/tripupdates.bin"
+
+  - id: alerts
+    type: GTFS_REALTIME
+    url: "https://gtfs.bigbluebus.com/alerts.bin"
+
