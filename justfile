@@ -7,7 +7,7 @@ default:
 
 # Build the Transiter binary and stamp it with the provided version
 build VERSION="":
-	go build --ldflags "-X github.com/jamespfennell/transiter/internal/version.version={{VERSION}}" .
+	go build --ldflags "-X github.com/jamespfennell/transiter/internal/version.version={{VERSION}} ${EXTRA_LDFLAGS:-}" ${EXTRA_GOFLAGS:-} .
 
 # Build the Transiter Docker image
 build-docker: _require-docker
