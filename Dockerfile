@@ -22,13 +22,6 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # (2.2) Generate the gRPC and DB files and then move them because changes to the bind mount are
 # not persisted beyond the RUN / to the build context.
-COPY buf.gen.yaml .
-COPY buf.lock .
-COPY buf.yaml .
-COPY api api
-COPY sqlc.yaml .
-COPY db db
-COPY docs/src/api/api_docs_gen.go docs/src/api/api_docs_gen.go
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     --mount=type=bind,source=.,target=/transiter,rw=true \
