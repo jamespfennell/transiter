@@ -36,6 +36,9 @@ generate:
 	buf generate
 	go run docs/src/api/api_docs_gen.go
 
+verify-generate-docker: _require-docker
+  docker buildx build --target=verify-codegen --output=type=cacheonly .
+
 # Install all tools for working on Transiter
 install-tools: install-linters
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.15.2

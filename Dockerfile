@@ -20,7 +20,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     just install-tools
 
-# (2.2) Generate the gRPC and DB files.
+# (2.2) Generate the gRPC and DB files and then move them because changes to the bind mount are
+# not persisted beyond the RUN / to the build context.
 COPY buf.gen.yaml .
 COPY buf.lock .
 COPY buf.yaml .
@@ -28,21 +29,23 @@ COPY api api
 COPY sqlc.yaml .
 COPY db db
 COPY docs/src/api/api_docs_gen.go docs/src/api/api_docs_gen.go
-RUN just generate
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=bind,source=.,target=/transiter,rw=true \
+    just generate && \
+    mkdir -p /out/internal /out/docs/src && \
+    mv internal/gen /out/internal/gen && \
+    mv docs/src/api /out/docs/src/api && \
+    rm /out/docs/src/api/api_docs_gen_input.json
 
-# (2.3) Move the newly generated files so that they don't get clobbered when we copy the source code in.
-# Then copy the source in.
-RUN mv internal/gen internal/genNew
-RUN mv docs/src/api docs/src/apiNew
-RUN rm docs/src/apiNew/api_docs_gen_input.json
-COPY . ./
-
-# (2.4) Diff the newly generated files with the ones in source control.
+# (2.3) Diff the newly generated files with the ones in source control.
 # If there are differences, this will fail
-RUN diff --recursive internal/gen internal/genNew
-RUN rm -r internal/genNew
-RUN diff --recursive docs/src/api docs/src/apiNew
-RUN rm -r docs/src/apiNew
+FROM codegen AS verify-codegen
+RUN --mount=type=bind,source=./internal/gen,target=/in \
+    diff --recursive /in /out/internal/gen
+
+RUN --mount=type=bind,source=./docs/src/api,target=/in \
+    diff --recursive /in /out/docs/src/api
 
 FROM builder AS build
 
