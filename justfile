@@ -7,7 +7,7 @@ default:
 
 # Build the Transiter binary and stamp it with the provided version
 build VERSION="":
-	go build --ldflags "-X github.com/jamespfennell/transiter/internal/version.version={{VERSION}}" .
+	go build --ldflags "-X github.com/jamespfennell/transiter/internal/version.version={{VERSION}} ${EXTRA_LDFLAGS:-}" ${EXTRA_GOFLAGS:-} .
 
 # Build the Transiter Docker image
 build-docker: _require-docker
@@ -35,6 +35,9 @@ generate:
 	sqlc --experimental generate
 	buf generate
 	go run docs/src/api/api_docs_gen.go
+
+verify-generate-docker: _require-docker
+  docker buildx build --target=verify-codegen --output=type=cacheonly .
 
 # Install all tools for working on Transiter
 install-tools: install-linters
