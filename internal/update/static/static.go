@@ -253,6 +253,10 @@ func updateTransfers(ctx context.Context, updateCtx common.UpdateContext, transf
 		return err
 	}
 	for _, transfer := range transfers {
+		if transfer.FromRoute != nil || transfer.FromTrip != nil {
+			// Transfers for specific routes/trips not supported, only generic stop-to-stop transfers.
+			continue
+		}
 		fromPk, ok := stopIDToPk[transfer.From.Id]
 		if !ok {
 			continue
