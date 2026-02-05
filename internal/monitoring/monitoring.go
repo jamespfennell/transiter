@@ -9,6 +9,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/public/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -22,6 +23,10 @@ type Monitoring interface {
 
 func NewPrometheusMonitoring(namespace string) Monitoring {
 	registry := prometheus.NewRegistry()
+	registry.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
 	factory := promauto.With(registry)
 	return &prometheusMonitoring{
 		registry: registry,
