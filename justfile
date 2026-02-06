@@ -32,7 +32,7 @@ fmt:
 
 # Generate the DB and proto API code
 generate:
-	sqlc --experimental generate
+	sqlc generate
 	buf generate
 	go run docs/src/api/api_docs_gen.go
 
@@ -42,12 +42,12 @@ install-tools: install-linters
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.30.0
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1.0
 	go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v1.5.1
-	go install github.com/kyleconroy/sqlc/cmd/sqlc@v1.17.2
+	go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
 	go install github.com/bufbuild/buf/cmd/buf@v1.13.1
 
 # Install linters used on Transiter
 install-linters:
-	go install honnef.co/go/tools/cmd/staticcheck@2024.1.1
+	go install honnef.co/go/tools/cmd/staticcheck@2025.1.1
 
 # Print the versions of all tools
 tool-versions:
