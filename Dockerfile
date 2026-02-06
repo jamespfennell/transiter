@@ -1,5 +1,5 @@
 # (A) Build the Go binary
-FROM golang:1.22 AS builder
+FROM golang:1.25 AS builder
 WORKDIR /transiter
 
 # (1) Install all the dependencies before copying in the source code.

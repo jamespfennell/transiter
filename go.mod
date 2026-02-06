@@ -1,6 +1,6 @@
 module github.com/jamespfennell/transiter
 
-go 1.22
+go 1.25
 
 require (
 	github.com/benbjohnson/clock v1.3.0
