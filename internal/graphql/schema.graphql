@@ -1,0 +1,68 @@
+scalar DateTime
+
+enum StopType {
+    STOP
+    STATION
+    ENTRANCE_OR_EXIT
+    GENERIC_NODE
+    BOARDING_AREA
+    PLATFORM
+}
+
+type Query {
+    """
+    List stops near a location. Requires a geographic coordinate.
+    first defaults to 50, max 100. radius_meters defaults to 500.
+    """
+    stops(systemId: String!, location: LocationInput!, radius_meters: Int = 500, first: Int = 50): [Stop!]!
+}
+
+input LocationInput {
+    lat: Float!
+    lon: Float!
+}
+
+type Location {
+    lat: Float!
+    lon: Float!
+}
+
+type Stop {
+    id: String!
+    name: String
+    location: Location!
+    type: StopType!
+    parentStop: Stop
+    childStops: [Stop!]!
+    """
+    Upcoming arrival/departure times. Includes times from child stops.
+    first defaults to 10, max 100. Only future (non-past) stop times.
+    """
+    stopTimes(first: Int = 10): [StopTime!]!
+}
+
+type StopTime {
+    arrival: TimeEstimate!
+    departure: TimeEstimate!
+    headsign: String
+    trip: Trip!
+}
+
+type TimeEstimate {
+    time: DateTime
+    delay: Int
+    uncertainty: Int
+}
+
+type Trip {
+    id: String!
+    directionId: Boolean
+    route: Route!
+}
+
+type Route {
+    id: String!
+    color: String!
+    shortName: String
+    longName: String
+}

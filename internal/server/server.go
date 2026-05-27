@@ -18,6 +18,7 @@ import (
 	"github.com/jamespfennell/transiter/internal/db/dbwrappers"
 	"github.com/jamespfennell/transiter/internal/gen/api"
 	"github.com/jamespfennell/transiter/internal/monitoring"
+	gql "github.com/jamespfennell/transiter/internal/graphql"
 	"github.com/jamespfennell/transiter/internal/public"
 	"github.com/jamespfennell/transiter/internal/public/endpoints"
 	"github.com/jamespfennell/transiter/internal/public/errors"
@@ -127,6 +128,7 @@ func Run(ctx context.Context, args RunArgs) error {
 		mux := newServeMux(logger)
 		api.RegisterPublicHandlerServer(ctx, mux, publicService)
 		h := http.NewServeMux()
+		h.Handle("/graphql", gql.NewHandler(pool))
 		h.Handle("/", mux)
 		if !args.DisablePublicMetrics {
 			h.Handle("/metrics", monitoring.Handler())

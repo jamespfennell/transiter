@@ -3,27 +3,34 @@ module github.com/jamespfennell/transiter
 go 1.25
 
 require (
+	github.com/99designs/gqlgen v0.17.45
 	github.com/benbjohnson/clock v1.3.0
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/jackc/tern/v2 v2.0.1
 	github.com/jamespfennell/gtfs v0.1.23
 	github.com/prometheus/client_golang v1.14.0
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
-	github.com/urfave/cli/v2 v2.25.1
+	github.com/urfave/cli/v2 v2.27.1
+	github.com/vektah/gqlparser/v2 v2.5.11
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	google.golang.org/genproto v0.0.0-20230331144136-dcfb400f0633
 	google.golang.org/grpc v1.54.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
+	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
+	github.com/sosodev/duration v1.2.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/sync v0.17.0 // indirect
@@ -37,7 +44,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -50,9 +57,9 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/pseudomuto/protokit v0.2.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/crypto v0.41.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

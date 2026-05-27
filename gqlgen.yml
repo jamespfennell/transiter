@@ -1,0 +1,48 @@
+schema:
+  - internal/graphql/schema.graphql
+
+exec:
+  filename: internal/graphql/generated.go
+  package: graphql
+
+model:
+  filename: internal/graphql/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: internal/graphql
+  package: graphql
+  filename_template: "{name}.resolvers.go"
+
+autobind:
+  - github.com/jamespfennell/transiter/internal/graphql/model
+
+models:
+  DateTime:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.DateTime
+  Location:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.Location
+  LocationInput:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.LocationInput
+  Stop:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.Stop
+  StopTime:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.StopTime
+  TimeEstimate:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.TimeEstimate
+  Trip:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.Trip
+  Route:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.Route
+  StopType:
+    model:
+      - github.com/jamespfennell/transiter/internal/graphql/model.StopType
