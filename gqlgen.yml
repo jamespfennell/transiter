@@ -19,9 +19,6 @@ autobind:
   - github.com/jamespfennell/transiter/internal/graphql/model
 
 models:
-  DateTime:
-    model:
-      - github.com/jamespfennell/transiter/internal/graphql/model.DateTime
   Location:
     model:
       - github.com/jamespfennell/transiter/internal/graphql/model.Location

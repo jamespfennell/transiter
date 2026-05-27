@@ -1,5 +1,3 @@
-scalar DateTime
-
 enum StopType {
     STOP
     STATION
@@ -49,7 +47,8 @@ type StopTime {
 }
 
 type TimeEstimate {
-    time: DateTime
+    """Unix timestamp in seconds, or null if unknown."""
+    time: Int
     delay: Int
     uncertainty: Int
 }

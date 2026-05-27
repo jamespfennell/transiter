@@ -4,35 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"time"
-
-	"github.com/99designs/gqlgen/graphql"
 )
-
-func MarshalDateTime(t time.Time) graphql.Marshaler {
-	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, strconv.FormatInt(t.Unix(), 10))
-	})
-}
-
-func UnmarshalDateTime(v interface{}) (time.Time, error) {
-	switch v := v.(type) {
-	case int64:
-		return time.Unix(v, 0), nil
-	case int:
-		return time.Unix(int64(v), 0), nil
-	case float64:
-		return time.Unix(int64(v), 0), nil
-	case string:
-		n, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return time.Time{}, fmt.Errorf("DateTime must be a unix timestamp, got %q", v)
-		}
-		return time.Unix(n, 0), nil
-	default:
-		return time.Time{}, fmt.Errorf("DateTime must be a unix timestamp, got %T", v)
-	}
-}
 
 type Location struct {
 	Lat float64 `json:"lat"`
@@ -66,9 +38,9 @@ type StopTime struct {
 }
 
 type TimeEstimate struct {
-	Time        *time.Time `json:"time"`
-	Delay       *int32     `json:"delay"`
-	Uncertainty *int32     `json:"uncertainty"`
+	Time        *int64 `json:"time"`
+	Delay       *int32 `json:"delay"`
+	Uncertainty *int32 `json:"uncertainty"`
 }
 
 type Trip struct {
