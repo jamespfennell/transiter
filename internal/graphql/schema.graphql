@@ -13,6 +13,19 @@ type Query {
     first defaults to 50, max 100. radius_meters defaults to 500.
     """
     stops(systemId: String!, location: LocationInput!, radius_meters: Int = 500, first: Int = 50): [Stop!]!
+
+    """Same as stops but without dataloaders — for performance comparison only."""
+    stops_slow(systemId: String!, location: LocationInput!, radius_meters: Int = 500, first: Int = 50): [SlowStop!]!
+}
+
+type SlowStop {
+    id: String!
+    name: String
+    location: Location!
+    type: StopType!
+    parentStop: SlowStop
+    childStops: [SlowStop!]!
+    stopTimes(first: Int = 10): [StopTime!]!
 }
 
 input LocationInput {

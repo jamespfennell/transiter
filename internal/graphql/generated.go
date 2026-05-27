@@ -24,7 +24,6 @@ import (
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 	return &executableSchema{
-		schema:     cfg.Schema,
 		resolvers:  cfg.Resolvers,
 		directives: cfg.Directives,
 		complexity: cfg.Complexity,
@@ -32,7 +31,6 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 }
 
 type Config struct {
-	Schema     *ast.Schema
 	Resolvers  ResolverRoot
 	Directives DirectiveRoot
 	Complexity ComplexityRoot
@@ -40,6 +38,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Query() QueryResolver
+	SlowStop() SlowStopResolver
 	Stop() StopResolver
 	StopTime() StopTimeResolver
 	Trip() TripResolver
@@ -55,7 +54,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Stops func(childComplexity int, systemID string, location model.LocationInput, radiusMeters *int, first *int) int
+		Stops     func(childComplexity int, systemID string, location model.LocationInput, radiusMeters *int, first *int) int
+		StopsSlow func(childComplexity int, systemID string, location model.LocationInput, radiusMeters *int, first *int) int
 	}
 
 	Route struct {
@@ -63,6 +63,16 @@ type ComplexityRoot struct {
 		ID        func(childComplexity int) int
 		LongName  func(childComplexity int) int
 		ShortName func(childComplexity int) int
+	}
+
+	SlowStop struct {
+		ChildStops func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Location   func(childComplexity int) int
+		Name       func(childComplexity int) int
+		ParentStop func(childComplexity int) int
+		StopTimes  func(childComplexity int, first *int) int
+		Type       func(childComplexity int) int
 	}
 
 	Stop struct {
@@ -97,6 +107,12 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Stops(ctx context.Context, systemID string, location model.LocationInput, radiusMeters *int, first *int) ([]*model.Stop, error)
+	StopsSlow(ctx context.Context, systemID string, location model.LocationInput, radiusMeters *int, first *int) ([]*model.SlowStop, error)
+}
+type SlowStopResolver interface {
+	ParentStop(ctx context.Context, obj *model.SlowStop) (*model.SlowStop, error)
+	ChildStops(ctx context.Context, obj *model.SlowStop) ([]*model.SlowStop, error)
+	StopTimes(ctx context.Context, obj *model.SlowStop, first *int) ([]*model.StopTime, error)
 }
 type StopResolver interface {
 	ParentStop(ctx context.Context, obj *model.Stop) (*model.Stop, error)
@@ -111,16 +127,12 @@ type TripResolver interface {
 }
 
 type executableSchema struct {
-	schema     *ast.Schema
 	resolvers  ResolverRoot
 	directives DirectiveRoot
 	complexity ComplexityRoot
 }
 
 func (e *executableSchema) Schema() *ast.Schema {
-	if e.schema != nil {
-		return e.schema
-	}
 	return parsedSchema
 }
 
@@ -155,6 +167,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Stops(childComplexity, args["systemId"].(string), args["location"].(model.LocationInput), args["radius_meters"].(*int), args["first"].(*int)), true
 
+	case "Query.stops_slow":
+		if e.complexity.Query.StopsSlow == nil {
+			break
+		}
+
+		args, err := ec.field_Query_stops_slow_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.StopsSlow(childComplexity, args["systemId"].(string), args["location"].(model.LocationInput), args["radius_meters"].(*int), args["first"].(*int)), true
+
 	case "Route.color":
 		if e.complexity.Route.Color == nil {
 			break
@@ -182,6 +206,60 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Route.ShortName(childComplexity), true
+
+	case "SlowStop.childStops":
+		if e.complexity.SlowStop.ChildStops == nil {
+			break
+		}
+
+		return e.complexity.SlowStop.ChildStops(childComplexity), true
+
+	case "SlowStop.id":
+		if e.complexity.SlowStop.ID == nil {
+			break
+		}
+
+		return e.complexity.SlowStop.ID(childComplexity), true
+
+	case "SlowStop.location":
+		if e.complexity.SlowStop.Location == nil {
+			break
+		}
+
+		return e.complexity.SlowStop.Location(childComplexity), true
+
+	case "SlowStop.name":
+		if e.complexity.SlowStop.Name == nil {
+			break
+		}
+
+		return e.complexity.SlowStop.Name(childComplexity), true
+
+	case "SlowStop.parentStop":
+		if e.complexity.SlowStop.ParentStop == nil {
+			break
+		}
+
+		return e.complexity.SlowStop.ParentStop(childComplexity), true
+
+	case "SlowStop.stopTimes":
+		if e.complexity.SlowStop.StopTimes == nil {
+			break
+		}
+
+		args, err := ec.field_SlowStop_stopTimes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.SlowStop.StopTimes(childComplexity, args["first"].(*int)), true
+
+	case "SlowStop.type":
+		if e.complexity.SlowStop.Type == nil {
+			break
+		}
+
+		return e.complexity.SlowStop.Type(childComplexity), true
 
 	case "Stop.childStops":
 		if e.complexity.Stop.ChildStops == nil {
@@ -387,14 +465,14 @@ func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapSchema(ec.Schema()), nil
+	return introspection.WrapSchema(parsedSchema), nil
 }
 
 func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
+	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
 }
 
 //go:embed "schema.graphql"
@@ -471,6 +549,63 @@ func (ec *executionContext) field_Query_stops_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["first"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_stops_slow_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["systemId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("systemId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["systemId"] = arg0
+	var arg1 model.LocationInput
+	if tmp, ok := rawArgs["location"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+		arg1, err = ec.unmarshalNLocationInput2githubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐLocationInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["location"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["radius_meters"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("radius_meters"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["radius_meters"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_SlowStop_stopTimes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
 	return args, nil
 }
 
@@ -681,7 +816,78 @@ func (ec *executionContext) fieldContext_Query_stops(ctx context.Context, field 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_stops_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return fc, err
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_stops_slow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_stops_slow(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().StopsSlow(rctx, fc.Args["systemId"].(string), fc.Args["location"].(model.LocationInput), fc.Args["radius_meters"].(*int), fc.Args["first"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.SlowStop)
+	fc.Result = res
+	return ec.marshalNSlowStop2ᚕᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐSlowStopᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_stops_slow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_SlowStop_id(ctx, field)
+			case "name":
+				return ec.fieldContext_SlowStop_name(ctx, field)
+			case "location":
+				return ec.fieldContext_SlowStop_location(ctx, field)
+			case "type":
+				return ec.fieldContext_SlowStop_type(ctx, field)
+			case "parentStop":
+				return ec.fieldContext_SlowStop_parentStop(ctx, field)
+			case "childStops":
+				return ec.fieldContext_SlowStop_childStops(ctx, field)
+			case "stopTimes":
+				return ec.fieldContext_SlowStop_stopTimes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SlowStop", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_stops_slow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -755,7 +961,7 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query___type_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return fc, err
+		return
 	}
 	return fc, nil
 }
@@ -981,6 +1187,367 @@ func (ec *executionContext) fieldContext_Route_longName(ctx context.Context, fie
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlowStop_id(ctx context.Context, field graphql.CollectedField, obj *model.SlowStop) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SlowStop_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SlowStop_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlowStop",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlowStop_name(ctx context.Context, field graphql.CollectedField, obj *model.SlowStop) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SlowStop_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SlowStop_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlowStop",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlowStop_location(ctx context.Context, field graphql.CollectedField, obj *model.SlowStop) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SlowStop_location(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Location, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Location)
+	fc.Result = res
+	return ec.marshalNLocation2githubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐLocation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SlowStop_location(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlowStop",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "lat":
+				return ec.fieldContext_Location_lat(ctx, field)
+			case "lon":
+				return ec.fieldContext_Location_lon(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Location", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlowStop_type(ctx context.Context, field graphql.CollectedField, obj *model.SlowStop) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SlowStop_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.StopType)
+	fc.Result = res
+	return ec.marshalNStopType2githubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐStopType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SlowStop_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlowStop",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type StopType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlowStop_parentStop(ctx context.Context, field graphql.CollectedField, obj *model.SlowStop) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SlowStop_parentStop(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.SlowStop().ParentStop(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SlowStop)
+	fc.Result = res
+	return ec.marshalOSlowStop2ᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐSlowStop(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SlowStop_parentStop(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlowStop",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_SlowStop_id(ctx, field)
+			case "name":
+				return ec.fieldContext_SlowStop_name(ctx, field)
+			case "location":
+				return ec.fieldContext_SlowStop_location(ctx, field)
+			case "type":
+				return ec.fieldContext_SlowStop_type(ctx, field)
+			case "parentStop":
+				return ec.fieldContext_SlowStop_parentStop(ctx, field)
+			case "childStops":
+				return ec.fieldContext_SlowStop_childStops(ctx, field)
+			case "stopTimes":
+				return ec.fieldContext_SlowStop_stopTimes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SlowStop", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlowStop_childStops(ctx context.Context, field graphql.CollectedField, obj *model.SlowStop) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SlowStop_childStops(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.SlowStop().ChildStops(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.SlowStop)
+	fc.Result = res
+	return ec.marshalNSlowStop2ᚕᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐSlowStopᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SlowStop_childStops(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlowStop",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_SlowStop_id(ctx, field)
+			case "name":
+				return ec.fieldContext_SlowStop_name(ctx, field)
+			case "location":
+				return ec.fieldContext_SlowStop_location(ctx, field)
+			case "type":
+				return ec.fieldContext_SlowStop_type(ctx, field)
+			case "parentStop":
+				return ec.fieldContext_SlowStop_parentStop(ctx, field)
+			case "childStops":
+				return ec.fieldContext_SlowStop_childStops(ctx, field)
+			case "stopTimes":
+				return ec.fieldContext_SlowStop_stopTimes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SlowStop", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlowStop_stopTimes(ctx context.Context, field graphql.CollectedField, obj *model.SlowStop) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SlowStop_stopTimes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.SlowStop().StopTimes(rctx, obj, fc.Args["first"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.StopTime)
+	fc.Result = res
+	return ec.marshalNStopTime2ᚕᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐStopTimeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SlowStop_stopTimes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlowStop",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "arrival":
+				return ec.fieldContext_StopTime_arrival(ctx, field)
+			case "departure":
+				return ec.fieldContext_StopTime_departure(ctx, field)
+			case "headsign":
+				return ec.fieldContext_StopTime_headsign(ctx, field)
+			case "trip":
+				return ec.fieldContext_StopTime_trip(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StopTime", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_SlowStop_stopTimes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -1341,7 +1908,7 @@ func (ec *executionContext) fieldContext_Stop_stopTimes(ctx context.Context, fie
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Stop_stopTimes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return fc, err
+		return
 	}
 	return fc, nil
 }
@@ -3226,7 +3793,7 @@ func (ec *executionContext) fieldContext___Type_fields(ctx context.Context, fiel
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field___Type_fields_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return fc, err
+		return
 	}
 	return fc, nil
 }
@@ -3414,7 +3981,7 @@ func (ec *executionContext) fieldContext___Type_enumValues(ctx context.Context, 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field___Type_enumValues_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return fc, err
+		return
 	}
 	return fc, nil
 }
@@ -3593,6 +4160,8 @@ func (ec *executionContext) unmarshalInputLocationInput(ctx context.Context, obj
 		}
 		switch k {
 		case "lat":
+			var err error
+
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lat"))
 			data, err := ec.unmarshalNFloat2float64(ctx, v)
 			if err != nil {
@@ -3600,6 +4169,8 @@ func (ec *executionContext) unmarshalInputLocationInput(ctx context.Context, obj
 			}
 			it.Lat = data
 		case "lon":
+			var err error
+
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lon"))
 			data, err := ec.unmarshalNFloat2float64(ctx, v)
 			if err != nil {
@@ -3705,6 +4276,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "stops_slow":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_stops_slow(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -3761,6 +4354,162 @@ func (ec *executionContext) _Route(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Route_shortName(ctx, field, obj)
 		case "longName":
 			out.Values[i] = ec._Route_longName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var slowStopImplementors = []string{"SlowStop"}
+
+func (ec *executionContext) _SlowStop(ctx context.Context, sel ast.SelectionSet, obj *model.SlowStop) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slowStopImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlowStop")
+		case "id":
+			out.Values[i] = ec._SlowStop_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "name":
+			out.Values[i] = ec._SlowStop_name(ctx, field, obj)
+		case "location":
+			out.Values[i] = ec._SlowStop_location(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "type":
+			out.Values[i] = ec._SlowStop_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "parentStop":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SlowStop_parentStop(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "childStops":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SlowStop_childStops(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "stopTimes":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SlowStop_stopTimes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4518,6 +5267,60 @@ func (ec *executionContext) marshalNRoute2ᚖgithubᚗcomᚋjamespfennellᚋtran
 	return ec._Route(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNSlowStop2ᚕᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐSlowStopᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SlowStop) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSlowStop2ᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐSlowStop(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSlowStop2ᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐSlowStop(ctx context.Context, sel ast.SelectionSet, v *model.SlowStop) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SlowStop(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNStop2ᚕᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐStopᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Stop) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -4994,6 +5797,13 @@ func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.Se
 	}
 	res := graphql.MarshalInt64(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOSlowStop2ᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐSlowStop(ctx context.Context, sel ast.SelectionSet, v *model.SlowStop) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SlowStop(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOStop2ᚖgithubᚗcomᚋjamespfennellᚋtransiterᚋinternalᚋgraphqlᚋmodelᚐStop(ctx context.Context, sel ast.SelectionSet, v *model.Stop) graphql.Marshaler {

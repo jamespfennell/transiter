@@ -26,6 +26,16 @@ type Stop struct {
 	ParentStopPk *int64 `json:"-"`
 }
 
+type SlowStop struct {
+	Pk           int64    `json:"-"`
+	SystemPk     int64    `json:"-"`
+	ID           string   `json:"id"`
+	Name         *string  `json:"name"`
+	Location     Location `json:"location"`
+	Type         StopType `json:"type"`
+	ParentStopPk *int64   `json:"-"`
+}
+
 type StopTime struct {
 	Arrival    TimeEstimate `json:"arrival"`
 	Departure  TimeEstimate `json:"departure"`
