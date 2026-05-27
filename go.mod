@@ -14,6 +14,7 @@ require (
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/urfave/cli/v2 v2.27.1
 	github.com/vektah/gqlparser/v2 v2.5.11
+	github.com/vikstrous/dataloadgen v0.0.10
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	google.golang.org/genproto v0.0.0-20230331144136-dcfb400f0633
 	google.golang.org/grpc v1.54.0
@@ -33,6 +34,8 @@ require (
 	github.com/sosodev/duration v1.2.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	go.opentelemetry.io/otel v1.11.1 // indirect
+	go.opentelemetry.io/otel/trace v1.11.1 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 )
 
